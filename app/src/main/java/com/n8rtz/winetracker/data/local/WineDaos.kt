@@ -1,4 +1,4 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.data.local
 
 import androidx.room.Dao
 import androidx.room.Embedded

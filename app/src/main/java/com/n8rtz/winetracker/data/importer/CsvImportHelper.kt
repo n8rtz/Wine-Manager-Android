@@ -1,7 +1,11 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
 import android.util.Log
+import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.WineBottle
+import com.n8rtz.winetracker.data.local.WineDatabase
+import com.n8rtz.winetracker.data.local.WineDefinition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -47,9 +51,15 @@ object CsvImportHelper {
                                 idToDefinition[oldId] = Pair(maker, name)
                                 
                                 if (wineDao.getDefinitionByDetails(maker, name) == null) {
-                                    wineDao.insertDefinition(WineDefinition(
-                                        maker = maker, name = name, type = type, country = country, region = region
-                                    ))
+                                    wineDao.insertDefinition(
+                                        WineDefinition(
+                                            maker = maker,
+                                            name = name,
+                                            type = type,
+                                            country = country,
+                                            region = region
+                                        )
+                                    )
                                 }
                             }
                         } else if (parsingBottles && !line.startsWith("ID,")) {
@@ -67,15 +77,17 @@ object CsvImportHelper {
                                 val definition = wineDao.getDefinitionByDetails(maker, name)
 
                                 if (definition != null && (qty > 0 || status == BottleStatus.ARCHIVED)) {
-                                    inventoryDao.insertBottle(WineBottle(
-                                        definitionId = definition.definitionId,
-                                        vintage = vintage,
-                                        quantity = qty,
-                                        price = price,
-                                        qtyType = null,
-                                        location = null,
-                                        status = status
-                                    ))
+                                    inventoryDao.insertBottle(
+                                        WineBottle(
+                                            definitionId = definition.definitionId,
+                                            vintage = vintage,
+                                            quantity = qty,
+                                            price = price,
+                                            qtyType = null,
+                                            location = null,
+                                            status = status
+                                        )
+                                    )
                                 }
                             }
                         }

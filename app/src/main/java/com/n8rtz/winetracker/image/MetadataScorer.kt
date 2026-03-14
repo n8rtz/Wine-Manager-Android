@@ -1,4 +1,4 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.image
 
 // image/MetadataScorer.kt
 

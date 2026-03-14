@@ -1,17 +1,13 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.ui.screens
 
 import android.Manifest
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.util.Log
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,6 +28,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.viewmodels.WineViewModel
 import java.util.Calendar
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
@@ -59,12 +57,12 @@ fun AddWineScreen(
     var selectedRegion by remember { mutableStateOf("") }
     var selectedAppellation by remember { mutableStateOf("") }
 
-    val availableCountries = WineRepository.locationData.keys.toList().sorted()
+    val availableCountries = WineRepository.Companion.locationData.keys.toList().sorted()
     val availableRegions = if (selectedCountry.isNotEmpty()) {
-        WineRepository.locationData[selectedCountry]?.keys?.toList()?.sorted() ?: emptyList()
+        WineRepository.Companion.locationData[selectedCountry]?.keys?.toList()?.sorted() ?: emptyList()
     } else emptyList()
     val availableAppellations = if (selectedCountry.isNotEmpty() && selectedRegion.isNotEmpty()) {
-        WineRepository.locationData[selectedCountry]?.get(selectedRegion)?.sorted() ?: emptyList()
+        WineRepository.Companion.locationData[selectedCountry]?.get(selectedRegion)?.sorted() ?: emptyList()
     } else emptyList()
 
     // Auto-fill form when scanner emits a result

@@ -39,7 +39,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.ui.screens.AddWineScreen
+import com.n8rtz.winetracker.ui.screens.ProfileScreen
+import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
+import com.n8rtz.winetracker.ui.screens.WineDetailScreen
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
+import com.n8rtz.winetracker.viewmodels.WineViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

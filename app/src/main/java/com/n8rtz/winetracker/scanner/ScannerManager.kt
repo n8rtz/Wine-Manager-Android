@@ -1,6 +1,8 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.scanner
 
 import android.graphics.Bitmap
+import androidx.annotation.OptIn
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -21,7 +23,7 @@ class ScannerManager {
         return processImage(image)
     }
 
-    @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
+    @OptIn(ExperimentalGetImage::class)
     suspend fun scanImageProxy(imageProxy: ImageProxy): ScannedWine {
         val mediaImage = imageProxy.image
         if (mediaImage != null) {

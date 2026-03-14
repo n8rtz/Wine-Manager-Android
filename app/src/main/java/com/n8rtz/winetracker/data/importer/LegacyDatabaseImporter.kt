@@ -1,7 +1,14 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
 import android.util.Log
+import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.InventoryDao
+import com.n8rtz.winetracker.data.local.TastingNoteDao
+import com.n8rtz.winetracker.data.local.WineBottle
+import com.n8rtz.winetracker.data.local.WineDao
+import com.n8rtz.winetracker.data.local.WineDatabase
+import com.n8rtz.winetracker.data.local.WineDefinition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -53,10 +60,10 @@ object LegacyDatabaseImporter {
                             var definition = wineDao.getDefinitionByDetails(maker, name)
                             if (definition == null) {
                                 val newDef = WineDefinition(
-                                    maker = maker, 
-                                    name = name, 
-                                    type = type, 
-                                    country = country, 
+                                    maker = maker,
+                                    name = name,
+                                    type = type,
+                                    country = country,
                                     region = region
                                 )
                                 wineDao.insertDefinition(newDef)

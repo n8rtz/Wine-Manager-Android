@@ -1,9 +1,13 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.room.withTransaction
+import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.WineBottle
+import com.n8rtz.winetracker.data.local.WineDatabase
+import com.n8rtz.winetracker.data.local.WineDefinition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -27,8 +31,8 @@ class DataImporter(
                     reader.lineSequence().forEach { line ->
                         val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
                             .map { it.replace("\"", "").trim() }
-                        
-                        if (columns.size >= 7) { 
+
+                        if (columns.size >= 7) {
                             val maker = columns[2]
                             val name = columns[3]
                             val type = columns[1]
@@ -59,13 +63,14 @@ class DataImporter(
                     reader.lineSequence().forEach { line ->
                         val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
                             .map { it.replace("\"", "").trim() }
-                        
+
                         if (columns.size >= 9) {
                             val qty = columns[0].toIntOrNull() ?: 0
                             val maker = columns[2]
                             val name = columns[3]
                             val vintage = columns[4]
-                            val price = columns[8].replace("$", "").replace(",", "").toDoubleOrNull() ?: 0.0
+                            val price =
+                                columns[8].replace("$", "").replace(",", "").toDoubleOrNull() ?: 0.0
 
                             val def = wineDao.getDefinitionByDetails(maker, name)
                             if (def != null) {
@@ -94,16 +99,17 @@ class DataImporter(
                     reader.lineSequence().forEach { line ->
                         val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
                             .map { it.replace("\"", "").trim() }
-                        
+
                         if (columns.size >= 5) {
                             val dateAdded = columns[0]
                             val maker = columns[3]
                             val nameAndVintage = columns[4]
-                            
+
                             Log.d("WineTracker", "Imported History: $nameAndVintage")
 
                             val name = nameAndVintage.substringBefore("(").trim()
-                            val vintage = nameAndVintage.substringAfter("(").substringBefore(")").trim()
+                            val vintage =
+                                nameAndVintage.substringAfter("(").substringBefore(")").trim()
 
                             val def = wineDao.getDefinitionByDetails(maker, name)
                             if (def != null) {
@@ -142,7 +148,7 @@ class DataImporter(
 
                 database.withTransaction {
                     var currentSection = ""
-                    
+
                     lines.forEach { line ->
                         if (line.startsWith("---")) {
                             currentSection = line.trim()
@@ -152,7 +158,7 @@ class DataImporter(
 
                         val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
                             .map { it.replace("\"", "").trim() }
-                        
+
                         try {
                             when (currentSection) {
                                 "--- Definitions ---" -> {
@@ -164,7 +170,8 @@ class DataImporter(
                                         val type = columns[3]
                                         val country = columns[4]
                                         val region = if (columns[5] == "null") null else columns[5]
-                                        val subregion = if (columns[6] == "null") null else columns[6]
+                                        val subregion =
+                                            if (columns[6] == "null") null else columns[6]
 
                                         val existing = wineDao.getDefinitionByDetails(maker, name)
                                         if (existing != null) {
@@ -184,18 +191,24 @@ class DataImporter(
                                         }
                                     }
                                 }
+
                                 "--- Bottles ---" -> {
                                     // File format: ID,DefinitionID,Vintage,Quantity,Price,Location,Status
                                     if (columns.size >= 7) {
                                         val fileDefId = columns[1].toLongOrNull() ?: return@forEach
-                                        val mappedDefinitionId = idMapping[fileDefId] ?: return@forEach
-                                        
+                                        val mappedDefinitionId =
+                                            idMapping[fileDefId] ?: return@forEach
+
                                         val vintage = columns[2]
                                         val qty = columns[3].toIntOrNull() ?: 0
                                         val price = columns[4].toDoubleOrNull() ?: 0.0
                                         val location = columns[5]
                                         val statusStr = columns[6]
-                                        val status = try { BottleStatus.valueOf(statusStr) } catch(e: Exception) { BottleStatus.IN_CELLAR }
+                                        val status = try {
+                                            BottleStatus.valueOf(statusStr)
+                                        } catch (e: Exception) {
+                                            BottleStatus.IN_CELLAR
+                                        }
 
                                         inventoryDao.insertBottle(
                                             WineBottle(
@@ -204,7 +217,7 @@ class DataImporter(
                                                 quantity = qty,
                                                 price = price,
                                                 qtyType = "Bottle",
-                                                location = if(location == "null") null else location,
+                                                location = if (location == "null") null else location,
                                                 status = status,
                                                 dateAdded = System.currentTimeMillis().toString()
                                             )

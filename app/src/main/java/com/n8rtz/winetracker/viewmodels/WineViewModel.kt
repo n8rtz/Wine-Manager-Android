@@ -1,16 +1,26 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.viewmodels
 
 import android.app.Application
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
+import com.n8rtz.winetracker.data.importer.CsvExporter
+import com.n8rtz.winetracker.data.importer.CsvImportHelper
+import com.n8rtz.winetracker.data.importer.DataImporter
+import com.n8rtz.winetracker.data.local.MIGRATION_5_6
+import com.n8rtz.winetracker.data.local.MIGRATION_6_7
+import com.n8rtz.winetracker.scanner.ScannedWine
+import com.n8rtz.winetracker.scanner.ScannerManager
+import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
+import com.n8rtz.winetracker.data.local.WineDatabase
+import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.WineImageBatchProcessor
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +33,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 class WineViewModel(application: Application) : AndroidViewModel(application) {
     private val db = Room.databaseBuilder(
@@ -32,9 +44,10 @@ class WineViewModel(application: Application) : AndroidViewModel(application) {
     .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
     .build()
 
-    private val repository = WineRepository(db.wineDao(), db.inventoryDao(), db.tastingNoteDao(), db.ratingDao())
+    private val repository =
+        WineRepository(db.wineDao(), db.inventoryDao(), db.tastingNoteDao(), db.ratingDao())
     private val scannerManager = ScannerManager()
-    
+
     // Image Pipeline
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://world.openfoodfacts.org/")
@@ -48,13 +61,13 @@ class WineViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var imageImportStatus by mutableStateOf("")
         private set
-    
-    val locationData = WineRepository.locationData
+
+    val locationData = WineRepository.Companion.locationData
 
     val activeInventory: Flow<List<WineBottleWithDefinition>> = repository.activeInventory
     val archivedInventory: Flow<List<WineBottleWithDefinition>> = repository.archivedInventory
     val getAllWinesWithBottles: Flow<List<WineBottleWithDefinition>> = repository.activeInventory
-    
+
     val tastingHistory: Flow<List<TastingNoteWithDefinition>> = repository.tastingHistory
     val allDefinitions: Flow<List<WineDefinition>> = repository.allDefinitions
 
@@ -166,7 +179,7 @@ class WineViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    
+
     fun prepareExport(launcher: ActivityResultLauncher<String>) {
         launcher.launch("WineTracker_Backup.csv")
     }

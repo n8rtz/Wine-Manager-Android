@@ -1,4 +1,4 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.viewmodels.WineViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

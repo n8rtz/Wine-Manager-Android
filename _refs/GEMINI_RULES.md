@@ -46,3 +46,10 @@ Before writing any code or analyzing `WISHES.md`, you MUST acknowledge and stric
 
 ## 11. DEBUG-FRIENDLY CODE
 * When generating complex logic, navigation routing, or API calls, proactively include standard Android `Log.d("WineTracker", "message")` statements so I can easily trace the app's behavior in Logcat.
+
+
+## 12. LIVING DOCUMENTATION:
+* If you create a new file or delete an existing one, you MUST immediately update the Directory Structure Map in _refs/ARCH.md to reflect the change, including a brief comment explaining the file's purpose.
+
+# 13. BUG LOGGING
+* If asked to store/log a known bug or minor change by the user that needs to be revisited later, add it to the bugs.md file in _refs folder. Comply with the markdown formatting outlined in bugs.md

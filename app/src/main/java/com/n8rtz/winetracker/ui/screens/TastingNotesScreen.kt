@@ -1,4 +1,4 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.viewmodels.WineViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

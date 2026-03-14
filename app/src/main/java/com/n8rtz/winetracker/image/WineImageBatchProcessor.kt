@@ -1,9 +1,9 @@
 package com.n8rtz.winetracker.image
 
 import android.content.Context
-import com.n8rtz.winetracker.MetadataScorer
-import com.n8rtz.winetracker.WineDao
-import com.n8rtz.winetracker.WineDefinition
+import android.util.Log
+import com.n8rtz.winetracker.data.local.WineDao
+import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.network.DuckDuckGoImageSearch
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import kotlinx.coroutines.*

@@ -16,7 +16,7 @@ and token-efficient. **Do not create "God Objects" or monolithic files.**
   from a ViewModel or Screen.
 - New ViewModels go in `viewmodels/`. Prefer one per screen
   over one monolithic ViewModel.
-- CSV-to-entity mapping logic stays in `DataImporter.kt`.
+- CSV-to-entity mapping logic stays in `data/importer/`.
   Do not create separate mapper classes unless there are
   3+ distinct import sources.
 
@@ -42,7 +42,8 @@ com.n8rtz.winetracker/
 │   │   ├── RankingsScreen.kt          # Sorted by 100-point rating
 │   │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns
 │   │   ├── WineDetailScreen.kt        # Full wine detail + "Mark as Consumed"
-│   │   └── NoteEditorScreen.kt        # Distraction-free note writing + score
+│   │   ├── NoteEditorScreen.kt        # Distraction-free note writing + score
+│   │   └── ProfileScreen.kt           # User settings and profile
 │   │
 │   └── components/
 │       ├── WineCard.kt                # Color-coded card for Cellar and Rankings
@@ -67,11 +68,23 @@ com.n8rtz.winetracker/
 │   ├── repository/
 │   │   └── WineRepository.kt          # Single source of truth for all data access
 │   │
-│   └── import/
-│       └── DataImporter.kt            # CSV import + mapping to relational structure
+│   └── importer/
+│       ├── DataImporter.kt            # Main CSV import + mapping to relational structure
+│       ├── CsvExporter.kt             # CSV export logic
+│       ├── CsvImportHelper.kt         # Parsing utilities
+│       ├── InventoryExporter.kt       # Exporter for cellar inventory
+│       └── LegacyDatabaseImporter.kt  # Legacy import support
 │
 ├── scanner/
 │   └── ScannerManager.kt              # ML Kit OCR + CameraX label scanning
+│
+├── network/                           # Shelved: API Integrations
+│   ├── OpenFoodFactsApi.kt            
+│   └── WineApiService.kt              
+│
+├── image/                             # Shelved: Automated image processing
+│   ├── WineImageBatchProcessor.kt     
+│   └── MetadataScorer.kt              
 │
 └── viewmodels/
 ├── CellarViewModel.kt             # Inventory state, filters, search, dashboard metrics

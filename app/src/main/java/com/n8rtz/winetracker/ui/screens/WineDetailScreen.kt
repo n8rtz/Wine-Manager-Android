@@ -1,4 +1,4 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.viewmodels.WineViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -181,7 +183,7 @@ fun WineDetailScreen(
 }
 
 @Composable
-fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+fun DetailRow(icon: ImageVector, label: String, value: String) {
     Row(
         modifier = Modifier.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically

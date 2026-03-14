@@ -1,4 +1,4 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

@@ -1,6 +1,7 @@
-package com.n8rtz.winetracker
+package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
+import com.n8rtz.winetracker.data.local.WineDatabase
 import java.io.File
 import java.io.FileWriter
 
