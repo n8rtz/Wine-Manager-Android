@@ -7,6 +7,7 @@ Before writing any code or analyzing `WISHES-2.md`, you MUST acknowledge and str
 * Execute ONLY the exact task or step requested in the current prompt.
 * **AMBIGUITY RULE:** If the user's intent is not 100% clear, or if a request seems to contradict the existing project structure, you MUST stop and ask for clarification before writing or modifying any code.
 * Do NOT anticipate future steps. If a user provides a list of tasks (e.g., 1, 2, 3), and asks you to do Task 1, you must completely stop after Task 1.
+* Push back on me if I instruct you to do something that seems like a non-value add suggestion/edit. 
 ## 2. ANTI-TRUNCATION & CODE PATCHING POLICY
 **CRITICAL:** Under no circumstances are you allowed to truncate code, use placeholders like `// ... rest of code`, or delete existing logic to save space.
 

@@ -25,6 +25,16 @@
 
 ## Active Bugs
 
+### **[Bug-004]**: Incorrect QTY in Consumption History
+* **Date Logged:** 2026-03-14
+* **Component/File:** `ui/screens/HistoryScreen.kt`
+* **Severity:** Minor UI
+* **Description:** The quantity displayed in the consumption history list is 0 for all bottles, which does not reflect actual consumption or remaining stock correctly.
+* **Steps to Reproduce:**
+    1. Open Consumption History screen.
+    2. Observe the "QTY" badge on any wine card.
+* **Known Workaround / Notes:** The `WineBottle` status is set to `ARCHIVED` when quantity reaches 0, but the UI should likely show the quantity consumed or a "Consumed" status instead of raw 0.
+
 ### **[Bug-001]**: Filters broken in Cellar screen
 * **Date Logged:** 2026-03-14
 * **Component/File:** `ui/screens/CellarScreen.kt`

@@ -1,5 +1,6 @@
 package com.n8rtz.winetracker.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,22 +49,39 @@ fun HistoryScreen(viewModel: WineViewModel) {
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(Color(0xFFF8F9FA)), // Off-White
+                modifier = Modifier.fillMaxSize().padding(padding).background(Color(0xFFF8F9FA)),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(historyBottles) { item ->
-                    val dateStr = item.bottle.dateAdded?.let { dateFormat.format(Date(it)) } ?: "N/A"
-                    HistoryWineCard(
-                        maker = item.definition.maker,
-                        name = item.definition.name,
-                        vintage = item.bottle.vintage ?: "NV",
-                        date = dateStr,
-                        quantity = item.bottle.quantity
-                    )
+                items(
+                    items = historyBottles,
+                    key = { it.bottle.bottleId }
+                ) { item ->
+                    val definition = item.definition
+                    val bottle = item.bottle
+
+                    if (definition != null) {
+                        val dateStr = try {
+                            bottle.dateAdded?.let { rawDate ->
+                                rawDate.toLongOrNull()?.let { timestamp ->
+                                    dateFormat.format(Date(timestamp))
+                                } ?: rawDate
+                            } ?: "N/A"
+                        } catch (e: Exception) {
+                            Log.e("WineTracker", "HistoryScreen: Failed to parse date: ${bottle.dateAdded}", e)
+                            "N/A"
+                        }
+
+                        HistoryWineCard(
+                            maker = definition.maker,
+                            name = definition.name,
+                            vintage = bottle.vintage,
+                            date = dateStr,
+                            quantity = bottle.quantity
+                        )
+                    } else {
+                        Log.w("WineTracker", "HistoryScreen: Found bottle ${bottle.bottleId} with no definition")
+                    }
                 }
             }
         }

@@ -198,7 +198,7 @@ fun MainAppScaffold(
                     tastingNoteViewModel = tastingNoteViewModel,
                     onNoteClick = { /* Handle note click */ },
                     onNavigateToHistory = {
-                        Log.d("WineTracker", "Navigating to History")
+                        Log.d("WineTracker", "MainActivity: Navigating to History")
                         navController.navigate("history")
                     }
                 )
@@ -207,6 +207,7 @@ fun MainAppScaffold(
                 RankingsScreen(viewModel)
             }
             composable("history") {
+                // Shared WineViewModel passed correctly to HistoryScreen
                 HistoryScreen(viewModel)
             }
             composable("profile") {
@@ -313,7 +314,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             items(filteredInventory) { item ->
                 WineCard(
                     title = run {
-                        val vintage = item.bottle.vintage?.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
+                        val vintage = item.bottle.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
                         "${item.definition.maker} - ${item.definition.name} ($vintage)"
                     },
                     subtitle = run {
@@ -411,7 +412,7 @@ fun RankingsScreen(viewModel: WineViewModel) {
                 items(rankedWines) { item ->
                     WineCard(
                         title = run {
-                            val vintage = item.note.vintage?.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
+                            val vintage = item.note.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
                             "${item.note.vintage} ${item.definition.maker} - ${item.definition.name}"
                         },
                         subtitle = run {
