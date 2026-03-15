@@ -10,7 +10,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import com.n8rtz.winetracker.data.importer.CsvExporter
-import com.n8rtz.winetracker.data.importer.CsvImportHelper
 import com.n8rtz.winetracker.data.importer.DataImporter
 import com.n8rtz.winetracker.data.local.MIGRATION_5_6
 import com.n8rtz.winetracker.data.local.MIGRATION_6_7
@@ -36,16 +35,15 @@ import retrofit2.converter.gson.GsonConverterFactory
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
-class WineViewModel(application: Application) : AndroidViewModel(application) {
-    private val db = Room.databaseBuilder(
-        application,
-        WineDatabase::class.java, "wine-database"
-    )
-    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
-    .build()
+sealed class RestoreImportState {
+    object Idle : RestoreImportState()
+    object Loading : RestoreImportState()
+    object Success : RestoreImportState()
+    data class Error(val message: String) : RestoreImportState()
+}
 
-    private val repository =
-        WineRepository(db.wineDao(), db.inventoryDao(), db.tastingNoteDao(), db.ratingDao())
+class WineViewModel(application: Application, val repository: WineRepository) : AndroidViewModel(application) {
+    private val db = repository.database
     private val scannerManager = ScannerManager()
 
     // Image Pipeline
@@ -56,20 +54,23 @@ class WineViewModel(application: Application) : AndroidViewModel(application) {
     private val api = retrofit.create(OpenFoodFactsApi::class.java)
     private val batchProcessor = WineImageBatchProcessor(api, db.wineDao(), getApplication())
 
-    // State for the UI to observe
+    // UI States
+    var importState = mutableStateOf<RestoreImportState>(RestoreImportState.Idle)
+        private set
+
     var imageImportProgress by mutableStateOf<Float?>(null)
         private set
     var imageImportStatus by mutableStateOf("")
         private set
 
     val locationData = WineRepository.Companion.locationData
-
     val activeInventory: Flow<List<WineBottleWithDefinition>> = repository.activeInventory
     val archivedInventory: Flow<List<WineBottleWithDefinition>> = repository.archivedInventory
-    val getAllWinesWithBottles: Flow<List<WineBottleWithDefinition>> = repository.activeInventory
-
     val tastingHistory: Flow<List<TastingNoteWithDefinition>> = repository.tastingHistory
     val allDefinitions: Flow<List<WineDefinition>> = repository.allDefinitions
+
+    // HistoryBottles flow for history screen: fetches archived bottles sorted descending by date
+    val historyBottles: Flow<List<WineBottleWithDefinition>> = repository.archivedInventory
 
     private val _scannedResult = MutableStateFlow<ScannedWine?>(null)
     val scannedResult: StateFlow<ScannedWine?> = _scannedResult.asStateFlow()
@@ -77,135 +78,48 @@ class WineViewModel(application: Application) : AndroidViewModel(application) {
     private val _isImporting = MutableStateFlow(false)
     val isImporting: StateFlow<Boolean> = _isImporting.asStateFlow()
 
-    private val _importProgress = MutableStateFlow(0f)
-    val importProgress: StateFlow<Float> = _importProgress.asStateFlow()
+    fun resetImportState() {
+        importState.value = RestoreImportState.Idle
+    }
 
-    private val _importStatus = MutableStateFlow("")
-    val importStatus: StateFlow<String> = _importStatus.asStateFlow()
-
+    // Existing methods...
     fun startImageImport() {
         viewModelScope.launch {
-            // 1. Get only wines that don't have images yet
             val winesToProcess = db.wineDao().getAllWithoutImages()
             if (winesToProcess.isEmpty()) return@launch
 
-            // 2. Start the waterfall pipeline
             batchProcessor.processImport(winesToProcess) { done, total ->
-                // Update the UI progress bar
                 imageImportProgress = done.toFloat() / total
                 imageImportStatus = "Finding images... $done/$total"
             }
-
-            // 3. Clear progress when finished
             imageImportStatus = "Done!"
-            delay(2000) // Let the user see "Done" for a moment
+            delay(2000)
             imageImportProgress = null
             imageImportStatus = ""
         }
     }
 
-    fun clearScannedResult() {
-        _scannedResult.value = null
-    }
-
-    fun onImageCaptured(bitmap: Bitmap) {
-        viewModelScope.launch {
-            val result = scannerManager.scanImage(bitmap)
-            _scannedResult.value = result
-        }
-    }
-
-    fun resetDatabase() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _isImporting.value = true
-            try {
-                db.clearAllTables()
-                Log.d("WineTracker", "Database reset complete.")
-            } catch (e: Exception) {
-                Log.e("WineTracker", "Database reset failed", e)
-            } finally {
-                _isImporting.value = false
-            }
-        }
-    }
-
-    fun runFreshImport() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _isImporting.value = true
-            try {
-                val importer = DataImporter(getApplication(), db)
-                importer.performThreeWayImport()
-                Log.d("WineTracker", "Fresh import complete.")
-            } catch (e: Exception) {
-                Log.e("WineTracker", "Fresh import failed", e)
-            } finally {
-                _isImporting.value = false
-            }
-        }
-    }
-
-    fun triggerLogImport() {
-        runFreshImport()
-    }
-
-    fun triggerCsvImportFromAssets() {
-        viewModelScope.launch {
-            _isImporting.value = true
-            try {
-                CsvImportHelper.importWines(getApplication(), db)
-            } finally {
-                _isImporting.value = false
-            }
-        }
-    }
-
-    fun deleteWine(bottleId: Long) {
-        viewModelScope.launch {
-            repository.deleteWine(bottleId)
-        }
-    }
-
+    fun clearScannedResult() { _scannedResult.value = null }
+    fun onImageCaptured(bitmap: Bitmap) { viewModelScope.launch { val result = scannerManager.scanImage(bitmap); _scannedResult.value = result } }
+    fun resetDatabase() { viewModelScope.launch(Dispatchers.IO) { db.clearAllTables() } }
+    fun deleteWine(bottleId: Long) { viewModelScope.launch { repository.deleteWine(bottleId) } }
+    
     fun importCsvFile(uri: Uri) {
-        viewModelScope.launch {
-            _isImporting.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            importState.value = RestoreImportState.Loading
             try {
                 val importer = DataImporter(getApplication(), db)
                 importer.standardImport(uri)
-                Log.d("WineTracker", "Successfully imported from CSV")
+                importState.value = RestoreImportState.Success
             } catch (e: Exception) {
-                Log.e("WineViewModel", "Import failed", e)
-            } finally {
-                _isImporting.value = false
+                Log.e("WineViewModel", "CSV import failed", e)
+                importState.value = RestoreImportState.Error(e.message ?: "Import failed")
             }
         }
     }
 
-    fun prepareExport(launcher: ActivityResultLauncher<String>) {
-        launcher.launch("WineTracker_Backup.csv")
-    }
-
-    fun performExport(uri: Uri) {
-        viewModelScope.launch {
-            _isImporting.value = true
-            try {
-                withContext(Dispatchers.IO) {
-                    val file = CsvExporter.exportDataToCsv(getApplication(), db)
-                    val contentResolver = getApplication<Application>().contentResolver
-                    contentResolver.openOutputStream(uri)?.use { output ->
-                        file.inputStream().use { input ->
-                            input.copyTo(output)
-                        }
-                    }
-                }
-                Log.d("WineTracker", "Export success")
-            } catch (e: Exception) {
-                Log.e("WineTracker", "Export failed", e)
-            } finally {
-                _isImporting.value = false
-            }
-        }
-    }
-
+    fun prepareExport(launcher: ActivityResultLauncher<String>) { launcher.launch("WineTracker_Backup.csv") }
+    fun performExport(uri: Uri) { viewModelScope.launch { withContext(Dispatchers.IO) { val file = CsvExporter.exportDataToCsv(getApplication(), db); getApplication<Application>().contentResolver.openOutputStream(uri)?.use { output -> file.inputStream().use { input -> input.copyTo(output) } } } } }
     fun addWine(maker: String, name: String, vintage: String, type: String, country: String, region: String?, subregion: String?, quantity: Int, price: Double) { viewModelScope.launch { repository.addWine(maker, name, vintage, type, country, region, subregion, quantity, price) } }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }
     fun consumeBottle(bottleId: Long, rating: Double? = null, notes: String? = null, rebuy: Boolean = false) { viewModelScope.launch { repository.consumeBottle(bottleId, rating, notes, rebuy) } }

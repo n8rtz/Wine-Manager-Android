@@ -25,6 +25,36 @@
 
 ## Active Bugs
 
+### **[Bug-001]**: Filters broken in Cellar screen
+* **Date Logged:** 2026-03-14
+* **Component/File:** `ui/screens/CellarScreen.kt`
+* **Severity:** Minor UI
+* **Description:** Filtering functionality in the cellar screen is not working as expected.
+* **Steps to Reproduce:**
+    1. Open Cellar screen.
+    2. Apply any filter.
+    3. Observe that the list does not update.
+* **Known Workaround / Notes:** N/A
+
+### **[Bug-002]**: Rankings screen card expansion needed
+* **Date Logged:** 2026-03-14
+* **Component/File:** `ui/screens/RankingsScreen.kt`
+* **Severity:** Minor UI
+* **Description:** Cards in the rankings screen do not expand to show full details (date of rating, cellar quantity, etc.).
+* **Steps to Reproduce:**
+    1. Open Rankings screen.
+    2. Click on a wine card.
+* **Known Workaround / Notes:** N/A
+
+### **[Bug-003]**: Tasting Notes screen card expansion needed
+* **Date Logged:** 2026-03-14
+* **Component/File:** `ui/screens/TastingNotesScreen.kt`
+* **Severity:** Minor UI
+* **Description:** Cards in the tasting notes screen do not expand to show full note, score, and date.
+* **Steps to Reproduce:**
+    1. Open Tasting Notes screen.
+    2. Click on a note card.
+* **Known Workaround / Notes:** N/A
 
 ---
 

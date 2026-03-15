@@ -8,6 +8,7 @@ import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.TastingNote
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -17,122 +18,6 @@ class DataImporter(
     private val context: Context,
     private val database: WineDatabase
 ) {
-    suspend fun performThreeWayImport() = withContext(Dispatchers.IO) {
-        database.withTransaction {
-            database.clearAllTables()
-
-            val wineDao = database.wineDao()
-            val inventoryDao = database.inventoryDao()
-
-            // 1. Phase 1: The Catalog (Wines - Log (In).csv)
-            context.assets.open("Wines - Log (In).csv").use { inputStream ->
-                BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                    reader.readLine() // Skip header
-                    reader.lineSequence().forEach { line ->
-                        val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
-                            .map { it.replace("\"", "").trim() }
-
-                        if (columns.size >= 7) {
-                            val maker = columns[2]
-                            val name = columns[3]
-                            val type = columns[1]
-                            val country = if (columns[5] == "null") null else columns[5]
-                            val region = if (columns[6] == "null") null else columns[6]
-
-                            if (wineDao.getDefinitionByDetails(maker, name) == null) {
-                                wineDao.insertDefinition(
-                                    WineDefinition(
-                                        maker = maker,
-                                        name = name,
-                                        type = type,
-                                        country = country ?: "",
-                                        region = region
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 2. Phase 2: Active Inventory (Wines - Cellar.csv)
-            context.assets.open("Wines - Cellar.csv").use { inputStream ->
-                BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                    repeat(27) { reader.readLine() }
-
-                    reader.lineSequence().forEach { line ->
-                        val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
-                            .map { it.replace("\"", "").trim() }
-
-                        if (columns.size >= 9) {
-                            val qty = columns[0].toIntOrNull() ?: 0
-                            val maker = columns[2]
-                            val name = columns[3]
-                            val vintage = columns[4]
-                            val price =
-                                columns[8].replace("$", "").replace(",", "").toDoubleOrNull() ?: 0.0
-
-                            val def = wineDao.getDefinitionByDetails(maker, name)
-                            if (def != null) {
-                                inventoryDao.insertBottle(
-                                    WineBottle(
-                                        definitionId = def.definitionId,
-                                        vintage = vintage,
-                                        quantity = qty,
-                                        price = price,
-                                        qtyType = "Bottle",
-                                        location = null,
-                                        status = BottleStatus.IN_CELLAR,
-                                        dateAdded = System.currentTimeMillis().toString()
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 3. Phase 3: History (Wines - Log (Out).csv)
-            context.assets.open("Wines - Log (Out).csv").use { inputStream ->
-                BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                    reader.readLine()
-                    reader.lineSequence().forEach { line ->
-                        val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
-                            .map { it.replace("\"", "").trim() }
-
-                        if (columns.size >= 5) {
-                            val dateAdded = columns[0]
-                            val maker = columns[3]
-                            val nameAndVintage = columns[4]
-
-                            Log.d("WineTracker", "Imported History: $nameAndVintage")
-
-                            val name = nameAndVintage.substringBefore("(").trim()
-                            val vintage =
-                                nameAndVintage.substringAfter("(").substringBefore(")").trim()
-
-                            val def = wineDao.getDefinitionByDetails(maker, name)
-                            if (def != null) {
-                                inventoryDao.insertBottle(
-                                    WineBottle(
-                                        definitionId = def.definitionId,
-                                        vintage = vintage,
-                                        quantity = 0,
-                                        price = 0.0,
-                                        qtyType = null,
-                                        location = null,
-                                        status = BottleStatus.ARCHIVED,
-                                        dateAdded = dateAdded
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     suspend fun standardImport(uri: Uri) = withContext(Dispatchers.IO) {
         val contentResolver = context.contentResolver
         contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -142,86 +27,124 @@ class DataImporter(
 
                 val wineDao = database.wineDao()
                 val inventoryDao = database.inventoryDao()
-
-                // Maps file-specific ID -> DB generated ID
+                val tastingNoteDao = database.tastingNoteDao()
                 val idMapping = mutableMapOf<Long, Long>()
+                val vintageMapping = mutableMapOf<Long, String>()
+                var currentSection = ""
+                
+                var definitionCount = 0
+                var bottleCount = 0
+
+                Log.d("WineTracker", "Starting standard import. Total lines: ${lines.size}")
 
                 database.withTransaction {
-                    var currentSection = ""
-
                     lines.forEach { line ->
-                        if (line.startsWith("---")) {
-                            currentSection = line.trim()
+                        val trimmedLine = line.trim()
+                        
+                        if (trimmedLine.startsWith("---")) {
+                            // Normalize section names by removing potential trailing commas from spreadsheet exports
+                            currentSection = when {
+                                trimmedLine.contains("Definitions") -> "--- Definitions ---"
+                                trimmedLine.contains("Bottles") -> "--- Bottles ---"
+                                trimmedLine.contains("Tasting Notes") -> "--- Tasting Notes ---"
+                                else -> trimmedLine
+                            }
+                            Log.d("WineTracker", "Normalized section: $currentSection")
                             return@forEach
                         }
-                        if (line.isBlank() || line.startsWith("ID,")) return@forEach
+                        
+                        // Skip headers and blank lines (be robust against trailing commas in headers)
+                        if (trimmedLine.isBlank() || trimmedLine.startsWith("ID,") || trimmedLine.all { it == ',' }) return@forEach
 
+                        // Use regex to handle quoted values containing commas
                         val columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
                             .map { it.replace("\"", "").trim() }
 
                         try {
                             when (currentSection) {
                                 "--- Definitions ---" -> {
-                                    // File format assumed: ID,Maker,Name,Type,Country,Region,Subregion
                                     if (columns.size >= 7) {
                                         val oldId = columns[0].toLongOrNull() ?: return@forEach
-                                        val maker = columns[1]
-                                        val name = columns[2]
-                                        val type = columns[3]
-                                        val country = columns[4]
-                                        val region = if (columns[5] == "null") null else columns[5]
-                                        val subregion =
-                                            if (columns[6] == "null") null else columns[6]
+                                        val maker = columns[1].takeIf { it != "null" && it.isNotBlank() } ?: "Unknown"
+                                        val name = columns[2].takeIf { it != "null" && it.isNotBlank() } ?: "Unknown"
+                                        val type = columns[3].takeIf { it != "null" && it.isNotBlank() } ?: "Unknown"
+                                        val country = columns[4].takeIf { it != "null" && it.isNotBlank() } ?: "Unknown"
+                                        val region = columns[5].takeIf { it != "null" && it.isNotBlank() }
+                                        val subregion = columns[6].takeIf { it != "null" && it.isNotBlank() }
 
                                         val existing = wineDao.getDefinitionByDetails(maker, name)
                                         if (existing != null) {
                                             idMapping[oldId] = existing.definitionId
+                                            Log.d("WineTracker", "Def mapping: $oldId -> ${existing.definitionId} (Existing)")
                                         } else {
                                             val newId = wineDao.insertDefinition(
-                                                WineDefinition(
-                                                    maker = maker,
-                                                    name = name,
-                                                    type = type,
-                                                    country = country,
-                                                    region = region,
-                                                    subregion = subregion
-                                                )
+                                                WineDefinition(maker = maker, name = name, type = type, country = country, region = region, subregion = subregion)
                                             )
                                             idMapping[oldId] = newId
+                                            definitionCount++
+                                            Log.d("WineTracker", "Def mapping: $oldId -> $newId (New: $maker $name)")
                                         }
                                     }
                                 }
-
                                 "--- Bottles ---" -> {
-                                    // File format: ID,DefinitionID,Vintage,Quantity,Price,Location,Status
                                     if (columns.size >= 7) {
+                                        val oldBottleId = columns[0].toLongOrNull() ?: return@forEach
                                         val fileDefId = columns[1].toLongOrNull() ?: return@forEach
-                                        val mappedDefinitionId =
-                                            idMapping[fileDefId] ?: return@forEach
-
-                                        val vintage = columns[2]
-                                        val qty = columns[3].toIntOrNull() ?: 0
-                                        val price = columns[4].toDoubleOrNull() ?: 0.0
-                                        val location = columns[5]
-                                        val statusStr = columns[6]
-                                        val status = try {
-                                            BottleStatus.valueOf(statusStr)
-                                        } catch (e: Exception) {
-                                            BottleStatus.IN_CELLAR
+                                        val mappedDefinitionId = idMapping[fileDefId]
+                                        
+                                        if (mappedDefinitionId == null) {
+                                            Log.e("WineTracker", "No mapping for DefID: $fileDefId in Bottle line: $line")
+                                            return@forEach
                                         }
 
-                                        inventoryDao.insertBottle(
+                                        val vintage = columns[2].takeIf { it != "null" && it.isNotBlank() } ?: "NV"
+                                        val qty = columns[3].toIntOrNull() ?: 0
+                                        val price = columns[4].toDoubleOrNull() ?: 0.0
+                                        val loc = columns[5].takeIf { it != "null" && it.isNotBlank() }
+                                        val statusStr = columns[6].takeIf { it != "null" && it.isNotBlank() } ?: "IN_CELLAR"
+                                        val status = try { BottleStatus.valueOf(statusStr) } catch (e: Exception) { BottleStatus.IN_CELLAR }
+                                        
+                                        vintageMapping[oldBottleId] = vintage
+                                        val insertedId = inventoryDao.insertBottle(
                                             WineBottle(
                                                 definitionId = mappedDefinitionId,
                                                 vintage = vintage,
                                                 quantity = qty,
                                                 price = price,
                                                 qtyType = "Bottle",
-                                                location = if (location == "null") null else location,
+                                                location = loc,
                                                 status = status,
                                                 dateAdded = System.currentTimeMillis().toString()
                                             )
                                         )
+                                        bottleCount++
+                                        Log.d("WineTracker", "Imported bottle: $insertedId (Def: $mappedDefinitionId, Qty: $qty, Status: $status)")
+                                    }
+                                }
+                                "--- Tasting Notes ---" -> {
+                                    if (columns.size >= 7) {
+                                        val fileBottleId = columns[1].toLongOrNull() ?: return@forEach
+                                        val fileDefId = columns[2].toLongOrNull() ?: return@forEach
+                                        val mappedDefinitionId = idMapping[fileDefId]
+                                        
+                                        if (mappedDefinitionId == null) {
+                                            Log.e("WineTracker", "No mapping for Note DefID: $fileDefId")
+                                            return@forEach
+                                        }
+
+                                        val vintage = vintageMapping[fileBottleId] ?: "NV"
+                                        
+                                        val noteId = tastingNoteDao.insertNote(
+                                            TastingNote(
+                                                definitionId = mappedDefinitionId,
+                                                vintage = vintage,
+                                                dateTasted = System.currentTimeMillis(),
+                                                rating = columns[4].toDoubleOrNull() ?: 0.0,
+                                                notes = columns[5].takeIf { it != "null" && it.isNotBlank() } ?: "",
+                                                rebuy = columns[6].toBooleanStrictOrNull() ?: false
+                                            )
+                                        )
+                                        Log.d("WineTracker", "Imported Note: $noteId for Def: $mappedDefinitionId")
                                     }
                                 }
                             }
@@ -230,6 +153,7 @@ class DataImporter(
                         }
                     }
                 }
+                Log.d("WineTracker", "Import finished. Imported $definitionCount definitions and $bottleCount bottles")
             }
         }
     }

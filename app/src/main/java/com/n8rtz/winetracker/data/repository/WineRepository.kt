@@ -1,5 +1,7 @@
 package com.n8rtz.winetracker.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.n8rtz.winetracker.network.WineImageFetcher
 import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.InventoryDao
@@ -10,6 +12,7 @@ import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDao
+import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.WineDefinition
 import kotlinx.coroutines.flow.Flow
 
@@ -17,7 +20,8 @@ class WineRepository(
     private val wineDao: WineDao,
     private val inventoryDao: InventoryDao,
     private val tastingNoteDao: TastingNoteDao,
-    private val ratingDao: RatingDao
+    private val ratingDao: RatingDao,
+    val database: WineDatabase
 ) {
     private val imageFetcher = WineImageFetcher()
     val activeInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getActiveInventory()

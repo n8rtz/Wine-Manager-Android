@@ -76,7 +76,7 @@ interface InventoryDao {
     fun getActiveInventory(): Flow<List<WineBottleWithDefinition>>
 
     @Transaction
-    @Query("SELECT * FROM wine_bottles WHERE status = 'ARCHIVED'")
+    @Query("SELECT * FROM wine_bottles WHERE status = 'ARCHIVED' ORDER BY dateAdded DESC")
     fun getArchivedBottles(): Flow<List<WineBottleWithDefinition>>
 
     @Query("SELECT * FROM wine_bottles WHERE bottleId = :bottleId")

@@ -69,11 +69,10 @@ com.n8rtz.winetracker/
 │   │   └── WineRepository.kt          # Single source of truth for all data access
 │   │
 │   └── importer/
-│       ├── DataImporter.kt            # Main CSV import + mapping to relational structure
+│       ├── DataImporter.kt            # Import Data (CSV) + mapping to relational structure
 │       ├── CsvExporter.kt             # CSV export logic
 │       ├── CsvImportHelper.kt         # Parsing utilities
-│       ├── InventoryExporter.kt       # Exporter for cellar inventory
-│       └── LegacyDatabaseImporter.kt  # Legacy import support
+│       └── InventoryExporter.kt       # Exporter for cellar inventory
 │
 ├── scanner/
 │   └── ScannerManager.kt              # ML Kit OCR + CameraX label scanning

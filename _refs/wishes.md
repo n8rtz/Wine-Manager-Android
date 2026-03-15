@@ -182,3 +182,57 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 * **Tasting History:** Use `Wines - Log (Out).csv` to create `WineBottle` records with `status = BottleStatus.ARCHIVED`.
   * *Data Point:* The "Date" column in Log (Out) should be mapped to the `lastUpdated` or `dateConsumed` field.
 * **Conflict Resolution:** If a wine appears in both Log (In) and Log (Out), the app should show one Definition in the catalog, one Archived bottle in History, and (if applicable) an Active bottle in the Cellar.
+
+# 32. Show All Attributes on Cellar Edit Screen
+* **Problem:** Currently, when editing a wine from the Cellar, the UI only renders data entry boxes for fields that already contain data. Missing fields are completely hidden.
+* **Goal:** Allow the user to go in at a later date and add missing information to incomplete wine profiles.
+* **Implementation:** Modify the Edit Wine UI to display input fields for *all* attributes, exactly mirroring the layout of the "Add Wine" menu. Even if an attribute is currently null/empty, its entry box must be visible and editable.
+
+## 33. Import Legacy Tasting Notes (CSV)
+* **Goal:** Import the historical notes from the original spreadsheet.
+* **Source File:** Must specifically target the export file named `Wines - Tasting Notes.csv`.
+* **UI/Trigger:** Add a dedicated "Import Tasting Notes" button inside the **Profile menu** to initiate this specific dataset import.
+* **Implementation:** The importer must read this CSV and map the text to the corresponding `TastingNote` entity, linking it accurately to the existing wines in the Room database.
+
+## 34. Import Legacy Consumption History (CSV)
+* **Goal:** Import the list of consumed bottles so historical drinking data isn't lost.
+* **Source File:** Must specifically target the export file named `Wines - Log (out).csv`.
+* **UI/Trigger:** Add a dedicated "Import History Log" button inside the **Profile menu** to initiate this process.
+* **Navigation/Location:** The imported data belongs on the **History screen**. This screen must be accessed via a button located in the **top right corner of the Tasting Notes screen**.
+* **Data Displayed:** The History UI must be formatted to show the **Date Consumed**, the **Wine Info**, and the **Quantity (qty)** based on the imported CSV rows.
+
+## 35. Country Flag Icons
+* **Goal:** Provide a quick visual geographic aid for the wine's origin.
+* **UI/Trigger:** Add a small country flag emoji or icon to each wine card.
+* **Navigation/Location:** Visible on both the **Cellar screen** and **Rankings screen** list items.
+
+## 36. Multi-Wheel Location Filter
+* **Goal:** Simplify complex location filtering with a intuitive, cascading UI.
+* **UI/Trigger:** A "triple scroll wheel" picker (Birthdate style). Left: Country, Middle: Region, Right: Appellation.
+* **Logic:** The Region and Appellation wheels must filter dynamically; they should only populate with relevant options once a parent location is selected.
+* **Navigation/Location:** Accessed within the **Filter Bottom Sheet** on the Cellar screen.
+
+## 37. Cellar Filter Reset
+* **Goal:** Allow users to clear all active filters in a single tap.
+* **UI/Trigger:** A "Reset" button/icon that clears search text, location wheels, and sorting.
+* **Navigation/Location:** Located at the top of the **Filter Bottom Sheet** or next to the search bar on the **Cellar screen**.
+
+## 38. Drinking Window Field
+* **Goal:** Track when a wine is at its peak quality.
+* **UI/Trigger:** An editable date-range field (e.g., 2024–2030).
+* **Navigation/Location:** This field should be hidden on the main cellar list but visible and editable on the **Wine Detail screen**.
+
+## 39. Inline Consumption History
+* **Goal:** View all previous interactions with a specific wine without leaving the detail page.
+* **UI/Trigger:** A chronological list showing past dates, scores, and tasting notes.
+* **Navigation/Location:** Positioned at the bottom of the **Wine Detail screen**.
+
+## 40. Drinking Window Filter & Sort
+* **Goal:** Prioritize drinking wines that are nearing the end of their window.
+* **UI/Trigger:** Add "Peak Window" as a filter category and "Drinking Window (Oldest/Newest)" as a sort option.
+* **Navigation/Location:** Found within the **Filter Bottom Sheet** of the Cellar screen.
+
+## 41. Rating Ranges on Cards
+* **Goal:** Show the user's personal rating history at a glance.
+* **UI/Trigger:** Display the score on the wine card. If multiple ratings exist for that wine, display them as a range (e.g., "88-90").
+* **Navigation/Location:** Visible on the **Cellar screen** list items.

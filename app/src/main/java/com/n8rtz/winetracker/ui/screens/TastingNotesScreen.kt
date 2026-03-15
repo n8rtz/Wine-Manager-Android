@@ -21,23 +21,23 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
-import com.n8rtz.winetracker.viewmodels.WineViewModel
+import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TastingNotesScreen(
-    viewModel: WineViewModel,
-    onNoteClick: (Long) -> Unit, // Navigates to a specific note editor
-    onNavigateToHistory: () -> Unit // Navigates to History Screen
+    tastingNoteViewModel: TastingNoteViewModel = viewModel(),
+    onNoteClick: (Long) -> Unit,
+    onNavigateToHistory: () -> Unit
 ) {
-    val history by viewModel.tastingHistory.collectAsState(initial = emptyList())
+    val history by tastingNoteViewModel.tastingNotes.collectAsState(initial = emptyList())
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
 
-    // Filters matching the Cellar pattern, plus a completion toggle
     var appliedTypes by remember { mutableStateOf(setOf<String>()) }
-    var noteStatusFilter by remember { mutableStateOf("All") } // "All", "Needs Notes", "Completed"
+    var noteStatusFilter by remember { mutableStateOf("All") }
 
     val filteredHistory = history.filter { item ->
         val matchesSearch = searchQuery.isBlank() ||
@@ -70,7 +70,6 @@ fun TastingNotesScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             
-            // Top Search Bar & Filter Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -103,7 +102,6 @@ fun TastingNotesScreen(
                 }
             }
 
-            // Repository List
             if (filteredHistory.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -118,7 +116,7 @@ fun TastingNotesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(filteredHistory) { item ->
+                    items(filteredHistory.sortedByDescending { it.note.dateTasted }) { item ->
                         CompactNoteItem(item) {
                             onNoteClick(item.note.noteId)
                         }
@@ -190,7 +188,6 @@ fun CompactNoteItem(item: TastingNoteWithDefinition, onClick: () -> Unit) {
             
             Spacer(Modifier.width(12.dp))
             
-            // Small badge for rating or an edit icon if it needs notes
             if (note.rating > 0) {
                 Surface(
                     shape = RoundedCornerShape(4.dp),
@@ -237,7 +234,6 @@ fun NotesFilterSheet(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Status Filter (Needs Notes vs Completed)
         Text("Completion Status", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -257,7 +253,6 @@ fun NotesFilterSheet(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-        // Type Filter
         Text("Wine Type", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(8.dp))
         FlowRow(
