@@ -22,7 +22,30 @@ import java.util.*
 @Composable
 fun HistoryScreen(viewModel: WineViewModel) {
     val historyBottles by viewModel.historyBottles.collectAsStateWithLifecycle(initialValue = emptyList())
+    val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
+    
+    val ratingsMap = remember(tastingHistory) {
+        tastingHistory
+            .filter { it.note.rating > 0 }
+            .groupBy { it.note.definitionId to it.note.vintage }
+            .mapValues { (_, notes) ->
+                val ratings = notes.map { it.note.rating }
+                val min = ratings.minOrNull()?.toInt() ?: 0
+                val max = ratings.maxOrNull()?.toInt() ?: 0
+                if (min == max) min.toString() else "$min-$max"
+            }
+    }
+
     val dateFormat = remember { SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()) }
+
+    val formattedDatesMap = remember(historyBottles, dateFormat) {
+        historyBottles.associate { item ->
+            val dateStr = item.bottle.dateConsumed?.let { 
+                dateFormat.format(Date(it)) 
+            } ?: "N/A"
+            item.bottle.bottleId to dateStr
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -61,16 +84,16 @@ fun HistoryScreen(viewModel: WineViewModel) {
                     val bottle = item.bottle
 
                     if (definition != null) {
-                        val dateStr = bottle.dateConsumed?.let { 
-                            dateFormat.format(Date(it)) 
-                        } ?: "N/A"
+                        val dateStr = formattedDatesMap[bottle.bottleId] ?: "N/A"
+                        val ratingStr = ratingsMap[definition.definitionId to bottle.vintage]
 
                         HistoryWineCard(
                             maker = definition.maker,
                             name = definition.name,
                             vintage = bottle.vintage,
                             date = dateStr,
-                            quantity = bottle.quantity
+                            quantity = bottle.quantity,
+                            rating = ratingStr
                         )
                     } else {
                         Log.w("WineTracker", "HistoryScreen: Found bottle ${bottle.bottleId} with no definition")

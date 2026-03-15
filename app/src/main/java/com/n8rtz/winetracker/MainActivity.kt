@@ -68,7 +68,9 @@ class MainActivity : ComponentActivity() {
             com.n8rtz.winetracker.data.local.MIGRATION_6_7,
             com.n8rtz.winetracker.data.local.MIGRATION_7_8,
             com.n8rtz.winetracker.data.local.MIGRATION_8_9,
-            com.n8rtz.winetracker.data.local.MIGRATION_9_10
+            com.n8rtz.winetracker.data.local.MIGRATION_9_10,
+            com.n8rtz.winetracker.data.local.MIGRATION_10_11,
+            com.n8rtz.winetracker.data.local.MIGRATION_11_12
         )
         .build()
     }

@@ -17,7 +17,8 @@ fun HistoryWineCard(
     name: String,
     vintage: String,
     date: String, // Focus: "MMM dd, yyyy"
-    quantity: Int
+    quantity: Int,
+    rating: String? = null
 ) {
     Card(
         modifier = Modifier
@@ -27,51 +28,66 @@ fun HistoryWineCard(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                // Emphasis: The Date is now the primary header for the record
-                Text(
-                    text = date.uppercase(),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        letterSpacing = 1.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = Color(0xFF722F37) // Bordeaux Red
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // Wine Identity
-                Text(
-                    text = "$maker $name",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF1C1C1E)
-                )
-                
-                Text(
-                    text = "Vintage: $vintage",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8E8E93)
-                )
+        Box {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // Emphasis: The Date is now the primary header for the record
+                    Text(
+                        text = date.uppercase(),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            letterSpacing = 1.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color(0xFF722F37) // Bordeaux Red
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Wine Identity: "Maker - Name (Vintage)"
+                    Text(
+                        text = "$maker - $name ($vintage)",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF1C1C1E)
+                    )
+                }
+
+                // High-density status/quantity badge
+                Surface(
+                    color = if (quantity == 0) Color(0xFF722F37).copy(alpha = 0.1f) else Color(0xFFF8F9FA),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = if (quantity == 0) "CONSUMED" else "QTY: $quantity",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (quantity == 0) Color(0xFF722F37) else Color(0xFF1C1C1E)
+                    )
+                }
             }
 
-            // High-density status/quantity badge
-            Surface(
-                color = if (quantity == 0) Color(0xFF722F37).copy(alpha = 0.1f) else Color(0xFFF8F9FA),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text(
-                    text = if (quantity == 0) "CONSUMED" else "QTY: $quantity",
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (quantity == 0) Color(0xFF722F37) else Color(0xFF1C1C1E)
-                )
+            // Rating Badge in Bottom Right
+            if (rating != null) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Text(
+                        text = rating,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
             }
         }
     }

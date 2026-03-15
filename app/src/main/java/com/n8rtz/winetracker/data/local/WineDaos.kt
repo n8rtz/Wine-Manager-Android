@@ -76,7 +76,7 @@ interface InventoryDao {
     fun getActiveInventory(): Flow<List<WineBottleWithDefinition>>
 
     @Transaction
-    @Query("SELECT * FROM wine_bottles WHERE status = 'ARCHIVED' ORDER BY dateAdded DESC")
+    @Query("SELECT * FROM wine_bottles WHERE status = 'ARCHIVED' ORDER BY dateConsumed DESC")
     fun getArchivedBottles(): Flow<List<WineBottleWithDefinition>>
 
     @Query("SELECT * FROM wine_bottles WHERE bottleId = :bottleId")
@@ -87,6 +87,22 @@ interface InventoryDao {
 
     @Query("SELECT * FROM wine_bottles")
     suspend fun getAllBottlesOnce(): List<WineBottle>
+
+    @Query("""
+        SELECT price FROM wine_bottles 
+        WHERE definitionId = :definitionId AND vintage = :vintage 
+        ORDER BY (price > 0) DESC, (status = 'IN_CELLAR') DESC, price DESC 
+        LIMIT 1
+    """)
+    suspend fun getBottlePrice(definitionId: Long, vintage: String): Double?
+
+    @Query("""
+        SELECT price FROM wine_bottles 
+        WHERE definitionId = :definitionId AND price > 0 
+        ORDER BY (status = 'IN_CELLAR') DESC, price DESC 
+        LIMIT 1
+    """)
+    suspend fun getLatestAnyPrice(definitionId: Long): Double?
 }
 
 @Dao
@@ -97,6 +113,9 @@ interface TastingNoteDao {
     @Transaction
     @Query("SELECT * FROM tasting_notes ORDER BY dateTasted DESC")
     fun getTastingHistory(): Flow<List<TastingNoteWithDefinition>>
+
+    @Query("SELECT * FROM tasting_notes WHERE definitionId = :definitionId AND (vintage = :vintage OR :vintage = 'NV')")
+    fun getTastingNotesForWine(definitionId: Long, vintage: String): Flow<List<TastingNote>>
 
     @Query("DELETE FROM tasting_notes WHERE definitionId = :definitionId AND vintage = :vintage AND noteId = (SELECT MAX(noteId) FROM tasting_notes WHERE definitionId = :definitionId AND vintage = :vintage)")
     suspend fun deleteLastNoteForWine(definitionId: Long, vintage: String)
@@ -109,4 +128,7 @@ interface TastingNoteDao {
 interface RatingDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRating(rating: Rating): Long
+
+    @Query("SELECT * FROM ratings WHERE wineId = :wineId")
+    fun getRatingsByWineId(wineId: Long): Flow<List<Rating>>
 }

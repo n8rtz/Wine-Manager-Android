@@ -132,7 +132,7 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
             }
         }
     }
-    fun addWine(maker: String, name: String, vintage: String, type: String, country: String, region: String?, subregion: String?, quantity: Int, price: Double) { viewModelScope.launch { repository.addWine(maker, name, vintage, type, country, region, subregion, quantity, price) } }
+    fun addWine(maker: String, name: String, vintage: String, type: String, country: String, region: String?, subregion: String?, quantity: Int, price: Double?) { viewModelScope.launch { repository.addWine(maker, name, vintage, type, country, region, subregion, quantity, price) } }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }
     
     // Cellar filtering state
@@ -142,6 +142,17 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     fun updateFilterState(newState: com.n8rtz.winetracker.ui.screens.CellarFilterState) {
         _filterState.value = newState
     }
+
+    // Rankings filtering state
+    private val _rankingsFilterState = MutableStateFlow(com.n8rtz.winetracker.ui.screens.RankingsFilterState())
+    val rankingsFilterState: StateFlow<com.n8rtz.winetracker.ui.screens.RankingsFilterState> = _rankingsFilterState.asStateFlow()
+
+    fun updateRankingsFilterState(newState: com.n8rtz.winetracker.ui.screens.RankingsFilterState) {
+        _rankingsFilterState.value = newState
+    }
+
+    // Expose inventoryDao for price lookups
+    val inventoryDao: com.n8rtz.winetracker.data.local.InventoryDao get() = db.inventoryDao()
 
     fun consumeBottle(bottleId: Long, rating: Double? = null, notes: String? = null, rebuy: Boolean = false) { viewModelScope.launch { repository.consumeBottle(bottleId, rating, notes, rebuy) } }
     fun undoConsumeBottle(bottleId: Long, removeLastNote: Boolean = true) { viewModelScope.launch { repository.undoConsumeBottle(bottleId, removeLastNote) } }

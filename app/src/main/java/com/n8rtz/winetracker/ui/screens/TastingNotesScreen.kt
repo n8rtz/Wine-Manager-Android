@@ -33,6 +33,18 @@ fun TastingNotesScreen(
     onNavigateToHistory: () -> Unit
 ) {
     val history by tastingNoteViewModel.tastingNotes.collectAsState(initial = emptyList())
+    
+    val ratingsMap = remember(history) {
+        history
+            .filter { it.note.rating > 0 }
+            .groupBy { it.note.definitionId to it.note.vintage }
+            .mapValues { (_, notes) ->
+                val ratings = notes.map { it.note.rating }
+                val min = ratings.minOrNull()?.toInt() ?: 0
+                val max = ratings.maxOrNull()?.toInt() ?: 0
+                if (min == max) min.toString() else "$min-$max"
+            }
+    }
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
 
@@ -40,21 +52,31 @@ fun TastingNotesScreen(
     var noteStatusFilter by remember { mutableStateOf("All") }
     var expandedNoteId by remember { mutableStateOf<Long?>(null) }
 
-    val filteredHistory = history.filter { item ->
-        val matchesSearch = searchQuery.isBlank() ||
-                item.definition.maker.contains(searchQuery, ignoreCase = true) ||
-                item.definition.name.contains(searchQuery, ignoreCase = true) ||
-                item.note.vintage.contains(searchQuery)
+    val dateFormat = remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
 
-        val matchesType = appliedTypes.isEmpty() || item.definition.type in appliedTypes
-        
-        val matchesStatus = when (noteStatusFilter) {
-            "Needs Notes" -> item.note.notes.isNullOrBlank()
-            "Completed" -> !item.note.notes.isNullOrBlank()
-            else -> true
+    val filteredHistory = remember(history, searchQuery, appliedTypes, noteStatusFilter) {
+        history.filter { item ->
+            val matchesSearch = searchQuery.isBlank() ||
+                    item.definition.maker.contains(searchQuery, ignoreCase = true) ||
+                    item.definition.name.contains(searchQuery, ignoreCase = true) ||
+                    item.note.vintage.contains(searchQuery)
+
+            val matchesType = appliedTypes.isEmpty() || item.definition.type in appliedTypes
+            
+            val matchesStatus = when (noteStatusFilter) {
+                "Needs Notes" -> item.note.notes.isNullOrBlank()
+                "Completed" -> !item.note.notes.isNullOrBlank()
+                else -> true
+            }
+
+            matchesSearch && matchesType && matchesStatus
+        }.sortedWith(compareByDescending<TastingNoteWithDefinition> { it.note.dateTasted }.thenByDescending { it.note.noteId })
+    }
+
+    val formattedDatesMap = remember(filteredHistory, dateFormat) {
+        filteredHistory.associate { item ->
+            item.note.noteId to dateFormat.format(java.util.Date(item.note.dateTasted))
         }
-
-        matchesSearch && matchesType && matchesStatus
     }
 
     Scaffold(
@@ -117,10 +139,12 @@ fun TastingNotesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(filteredHistory.sortedWith(compareByDescending<TastingNoteWithDefinition> { it.note.dateTasted }.thenByDescending { it.note.noteId })) { item ->
+                    items(filteredHistory, key = { it.note.noteId }) { item ->
                         CompactNoteItem(
                             item = item,
                             expanded = expandedNoteId == item.note.noteId,
+                            rating = ratingsMap[item.definition.definitionId to item.note.vintage],
+                            dateStr = formattedDatesMap[item.note.noteId] ?: "",
                             onExpandToggle = {
                                 expandedNoteId = if (expandedNoteId == item.note.noteId) null else item.note.noteId
                             },
@@ -156,6 +180,8 @@ fun TastingNotesScreen(
 fun CompactNoteItem(
     item: TastingNoteWithDefinition, 
     expanded: Boolean,
+    rating: String?,
+    dateStr: String,
     onExpandToggle: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -170,9 +196,9 @@ fun CompactNoteItem(
             listOfNotNull(validRegion, validCountry).joinToString(", ")
         },
         type = item.definition.type,
-        metadata = if (item.note.rating > 0) "Rating: ${item.note.rating.toInt()}" else "Needs Review",
+        metadata = if (item.note.rating > 0) "" else "Needs Review",
         imageUrl = item.definition.imageUrl,
-        rating = if (item.note.rating > 0) item.note.rating.toInt() else null,
+        rating = rating,
         onClick = onExpandToggle,
         details = if (expanded) {
             {
@@ -197,7 +223,7 @@ fun CompactNoteItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Tasted: ${java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date(item.note.dateTasted))}",
+                            text = "Tasted: $dateStr",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -435,7 +435,7 @@ fun AddWineScreen(
                             region = selectedRegion.takeIf { it.isNotEmpty() },
                             subregion = selectedAppellation.takeIf { it.isNotEmpty() },
                             quantity = quantity.toIntOrNull() ?: 1,
-                            price = price.toDoubleOrNull() ?: 0.0
+                            price = price.toDoubleOrNull()
                         )
                         onWineAdded()
                     },

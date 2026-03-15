@@ -222,7 +222,7 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 * **UI/Trigger:** An editable date-range field (e.g., 2024–2030).
 * **Navigation/Location:** This field should be hidden on the main cellar list but visible and editable on the **Wine Detail screen**.
 
-## 39. Inline Consumption History
+## ✅ 39. Inline Consumption History
 * **Goal:** View all previous interactions with a specific wine without leaving the detail page.
 * **UI/Trigger:** A chronological list showing past dates, scores, and tasting notes.
 * **Navigation/Location:** Positioned at the bottom of the **Wine Detail screen**.

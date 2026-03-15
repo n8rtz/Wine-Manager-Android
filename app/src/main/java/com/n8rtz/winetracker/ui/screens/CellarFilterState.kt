@@ -7,5 +7,7 @@ data class CellarFilterState(
     val ratingRange: ClosedFloatingPointRange<Float>? = null,
     val makers: Set<String> = emptySet(),
     val types: Set<String> = emptySet(),
-    val countries: Set<String> = emptySet()
+    val country: String? = null,
+    val region: String? = null,
+    val subregion: String? = null
 )

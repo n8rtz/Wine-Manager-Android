@@ -120,7 +120,7 @@ data class Rating(
 
 @Database(
     entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class],
-    version = 10,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -129,6 +129,81 @@ abstract class WineDatabase : RoomDatabase() {
     abstract fun inventoryDao(): InventoryDao
     abstract fun tastingNoteDao(): TastingNoteDao
     abstract fun ratingDao(): RatingDao
+}
+
+/**
+ * Migration 10 -> 11: Consolidate producer names and merge duplicate definitions.
+ * Fixes "Kirkland" vs "Kirkland Signature" discrepancy.
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 1. Redirect dependencies (bottles, notes, ratings) from 'Kirkland' to 'Kirkland Signature' where both definitions exist
+        val tablesWithDefId = listOf("wine_bottles", "tasting_notes")
+        tablesWithDefId.forEach { table ->
+            database.execSQL("""
+                UPDATE $table 
+                SET definitionId = (
+                    SELECT target.definitionId 
+                    FROM wine_definitions target 
+                    JOIN wine_definitions source ON target.name = source.name 
+                    WHERE source.definitionId = $table.definitionId 
+                      AND source.maker = 'Kirkland' 
+                      AND target.maker = 'Kirkland Signature'
+                    LIMIT 1
+                )
+                WHERE definitionId IN (
+                    SELECT s.definitionId 
+                    FROM wine_definitions s
+                    JOIN wine_definitions t ON s.name = t.name
+                    WHERE s.maker = 'Kirkland' AND t.maker = 'Kirkland Signature'
+                )
+            """)
+        }
+
+        // Special case for 'ratings' table which uses 'wineId' instead of 'definitionId'
+        database.execSQL("""
+            UPDATE ratings 
+            SET wineId = (
+                SELECT target.definitionId 
+                FROM wine_definitions target 
+                JOIN wine_definitions source ON target.name = source.name 
+                WHERE source.definitionId = ratings.wineId 
+                  AND source.maker = 'Kirkland' 
+                  AND target.maker = 'Kirkland Signature'
+                LIMIT 1
+            )
+            WHERE wineId IN (
+                SELECT s.definitionId 
+                FROM wine_definitions s
+                JOIN wine_definitions t ON s.name = t.name
+                WHERE s.maker = 'Kirkland' AND t.maker = 'Kirkland Signature'
+            )
+        """)
+
+        // 2. Delete 'Kirkland' definitions that were merged (now redundant)
+        database.execSQL("""
+            DELETE FROM wine_definitions 
+            WHERE maker = 'Kirkland' 
+              AND EXISTS (
+                SELECT 1 FROM wine_definitions target 
+                WHERE target.name = wine_definitions.name 
+                  AND target.maker = 'Kirkland Signature'
+              )
+        """)
+
+        // 3. Rename remaining 'Kirkland' entries to 'Kirkland Signature' (those that were unique)
+        database.execSQL("UPDATE wine_definitions SET maker = 'Kirkland Signature' WHERE maker = 'Kirkland'")
+    }
+}
+
+/**
+ * Migration 11 -> 12: Backfill missing dateAdded for existing bottles.
+ */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Use current timestamp as a reasonable fallback for existing stock
+        database.execSQL("UPDATE wine_bottles SET dateAdded = datetime('now') WHERE dateAdded IS NULL")
+    }
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {

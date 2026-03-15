@@ -40,7 +40,8 @@ com.n8rtz.winetracker/
     │   ├── CellarFilterState.kt       # Data class for cellar filtering
     │   ├── HistoryScreen.kt           # Consumed wines chronological (compact ListItems)
     │   ├── TastingNotesScreen.kt      # Tasting note repository + search + filters
-    │   ├── RankingsScreen.kt          # Sorted by 100-point rating
+    │   ├── RankingsScreen.kt          # Sorted by 100-point rating + search + filters
+    │   ├── RankingsFilterState.kt     # Data class for rankings filtering
     │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns
     │   ├── WineDetailScreen.kt        # Full wine detail + "Mark as Consumed"
     │   ├── NoteEditorScreen.kt        # Distraction-free note writing + score
@@ -51,6 +52,7 @@ com.n8rtz.winetracker/
         ├── HistoryWineCard.kt         # Compact list item for History screen
         ├── AnalyticsCard.kt           # Dashboard metrics cards (Total Bottles, Value, etc.)
         ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
+        ├── WheelPicker.kt             # Birthday-style scroll picker + LocationWheelPicker
         └── ConsumeConfirmDialog.kt    # Date picker for consumption confirmation
 │
 ├── data/

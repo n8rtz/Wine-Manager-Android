@@ -27,16 +27,27 @@
 
 ## Active Bugs
 
-### **[Bug-006]**: Incorrect pluralization for bottle count
-* **Date Logged:** 2026-03-14
-* **Component/File:** `ui/screens/CellarScreen.kt`
-* **Severity:** Low
-* **Description:** When a wine has exactly 1 bottle in the cellar, the UI displays "Qty: 1 bottles" instead of "Qty: 1 bottle".
+### **[Bug-011]**: Persistent Zero Prices in Rankings
+* **Date Logged:** 2026-03-15
+* **Component/File:** `data/local/InventoryDao` / `ui/screens/RankingsScreen.kt`
+* **Severity:** Minor UI
+* **Description:** Wines show as `$0.00` in rankings even when price data exists in archived bottles or other vintages.
 * **Steps to Reproduce:**
-    1. Navigate to the Cellar screen.
-    2. View a wine card that has a quantity of 1.
-    3. Observe the metadata text.
-* **Known Workaround / Notes:** The `metadata` string in `CellarScreen.kt` is hardcoded as `"Qty: ${item.bottle.quantity} bottles"` (or similar) without pluralization logic.
+    1. Add a bottle with $0 price to cellar.
+    2. Mark an older bottle of same wine ($20) as consumed.
+    3. View Rankings.
+* **Known Workaround / Notes:** Resolved in v0.5.1 by improving query priority and adding vintage fallback.
+
+### **[Bug-010]**: Duplicate Definitions from Name Variations
+* **Date Logged:** 2026-03-15
+* **Component/File:** `data/local/WineDatabase.kt`
+* **Severity:** Minor UI / Data Integrity
+* **Description:** Slight variations in producer names (e.g. "Kirkland" vs "Kirkland Signature") create duplicate definitions, breaking the link between inventory prices and tasting notes.
+* **Steps to Reproduce:**
+    1. Import data with different maker names for the same wine.
+    2. Observe two separate entries in the catalog.
+* **Known Workaround / Notes:** Resolved via MIGRATION_10_11 consolidation.
+
 
 ### **[Bug-005]**: Cellar button fails to reset screen state
 * **Date Logged:** 2026-03-14
@@ -52,6 +63,21 @@
 ---
 
 ## Resolved / Fixed
+
+### **[Bug-013]**: Missing "Added on" Dates
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 01:50
+* **Summary of fix:** Updated `WineRepository` and `DataImporter` to populate `dateAdded`, and implemented `MIGRATION_11_12` to backfill missing dates for existing cellar entries.
+
+### **[Bug-012]**: Application Crash (InputDispatcher) on Large Lists
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 01:58
+* **Summary of fix:** Comprehensive performance overhaul moving all O(N) computations (filtering, sorting, aggregation) into `remember` blocks across Cellar, History, Rankings, and Tasting Notes screens.
+
+### **[Bug-006]**: Incorrect pluralization for bottle count
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-15 01:46
+* **Summary of fix:** Implemented pluralization logic in `CellarScreen.kt` to correctly display "bottle" vs "bottles" based on the count.
 
 ### **[Bug-001]**: Filters broken in Cellar screen
 * **Date Logged:** 2026-03-14

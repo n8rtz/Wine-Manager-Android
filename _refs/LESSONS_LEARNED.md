@@ -34,3 +34,27 @@
     2. **Bottle import:** If an `ARCHIVED` bottle has no `dateConsumed`, it inherits the latest `dateTasted` from the corresponding tasting note.
     3. **Note import:** If a note has blank/NV vintage, it inherits the correct vintage from the corresponding bottle.
 * **Key Takeaway:** SQL migrations are a one-shot fix for existing data — they cannot repair data that is inserted *after* the migration runs (e.g., via a JSON import on a fresh install). When the root cause is in the import pipeline, the fix **must** live in the importer itself. Always cross-reference relational fields (like vintage, dates) between sibling tables within the same backup during import, rather than relying on post-hoc migrations.
+
+## [Structural: Data Normalization & Naming] - 3/15/2026
+* **Symptom:** Prices not showing up for specific wines in rankings even though they existed in the cellar under "Kirkland Signature".
+* **Cause:** Duplicate `WineDefinition` entries caused by slight naming inconsistencies (e.g., "Kirkland" vs. "Kirkland Signature"). Tasting notes were linked to one ID, while bottles were linked to the other, creating a siloed data structure.
+* **Fix:** Implemented `MIGRATION_10_11` to merge duplicate definitions and reassign all child records (bottles, notes, ratings) to a single standardized ID.
+* **Key Takeaway:** Fuzzy matching (like `LIKE` queries) is a good temporary bandage for UI, but **structural data normalization** via migrations is the only permanent fix for relational integrity. Always look for "Duplicate Definition" patterns when data seems to be missing across screens.
+
+## [Structural: Compose List Performance (InputDispatcher Errors)] - 3/15/2026
+* **Symptom:** Application hangs or crashes with `InputDispatcher: Channel is unrecoverably broken`.
+* **Cause:** Performing O(N*M) operations (like filtering a secondary list for every single item in a `LazyColumn`) inside the composition logic. In this case, filtering the entire `tastingHistory` for every `WineCard` to find a rating range was blocking the Main/UI thread beyond the ANR threshold.
+* **Fix:** Pre-calculate a lookup map (e.g., `ratingsMap`) using `remember(dependency) { history.groupBy { ... }.mapValues { ... } }` at the screen level, and then perform a simple O(1) map lookup inside the list items.
+* **Key Takeaway:** Never perform collection filtering or grouping inside a `LazyColumn` item block. If you need data from a different stream, transform it into a Map/Lookup table once at the parent level before rendering the list.
+
+## [Structural: Retroactive Data Backfilling via SQL] - 3/15/2026
+* **Symptom:** New UI features (like "Added on" date) show empty/null data for all existing records.
+* **Cause:** Adding a new field to an entity doesn't automatically populate historical data.
+* **Fix:** Implementing a database migration (e.g., `MIGRATION_11_12`) that uses SQL functions like `datetime('now')` or `(SELECT ...)` to populate the new column for all existing rows *at the moment the user updates the app*.
+* **Key Takeaway:** When introducing mandatory metadata (dates, counters), always include a migration that provides a sensible fallback for existing data to ensure the UI looks complete immediately after the update.
+
+## [Technical: M3 Divider API & State Destructuring] - 3/15/2026
+* **Symptom:** Compition error: `No parameter with name 'alpha' found` and `Unresolved reference 'totalBottles'`.
+* **Cause:** 1. The Material 3 `HorizontalDivider` does not have an `alpha` parameter (unlike the older M2 `Divider`). 2. Destructuring a `remember`ed state object (e.g., `val (a, b) = state`) requires careful variable naming to avoid "Unresolved reference" errors if the original names were used elsewhere.
+* **Fix:** 1. Use `color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)` for transparency. 2. Ensure destructured variables match the local usage site or keep the original object reference.
+* **Key Takeaway:** Composition performance overhauls are high-risk for build regressions. Always verify parameter names in M3 components and be explicit with variable naming when refactoring aggregations into `remember`ed objects.

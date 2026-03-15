@@ -141,7 +141,8 @@ class DataImporter(
                                 qtyType = oldBottle.qtyType,
                                 location = oldBottle.location,
                                 status = oldBottle.status,
-                                dateAdded = oldBottle.dateAdded?.takeIf { it.isNotBlank() },
+                                dateAdded = oldBottle.dateAdded?.takeIf { it.isNotBlank() } 
+                                    ?: java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date()),
                                 dateConsumed = resolvedDateConsumed
                             )
                             inventoryDao.insertBottle(newBottle)

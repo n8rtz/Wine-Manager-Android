@@ -69,7 +69,7 @@ class WineRepository(
         region: String?,
         subregion: String?,
         quantity: Int,
-        price: Double
+        price: Double?
     ) {
         val existingDefinition = wineDao.getDefinitionByDetails(maker, name)
 
@@ -117,7 +117,8 @@ class WineRepository(
                     quantity = quantity,
                     price = price,
                     qtyType = "Bottle",
-                    location = null
+                    location = null,
+                    dateAdded = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
                 )
             )
         }
