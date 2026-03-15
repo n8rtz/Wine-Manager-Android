@@ -26,7 +26,12 @@ data class TastingNoteWithDefinition(
         parentColumn = "definitionId",
         entityColumn = "definitionId"
     )
-    val definition: WineDefinition
+    val definition: WineDefinition,
+    @Relation(
+        parentColumn = "bottleId",
+        entityColumn = "bottleId"
+    )
+    val bottle: WineBottle?
 )
 
 @Dao
@@ -103,7 +108,17 @@ interface InventoryDao {
         LIMIT 1
     """)
     suspend fun getLatestAnyPrice(definitionId: Long): Double?
+
+    @Query("SELECT definitionId, vintage, price, status FROM wine_bottles WHERE definitionId IN (:definitionIds)")
+    suspend fun getAllPricesForDefinitions(definitionIds: List<Long>): List<PriceLookupResult>
 }
+
+data class PriceLookupResult(
+    val definitionId: Long,
+    val vintage: String,
+    val price: Double?,
+    val status: BottleStatus
+)
 
 @Dao
 interface TastingNoteDao {

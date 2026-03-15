@@ -2,6 +2,11 @@ package com.n8rtz.winetracker.ui.components
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -13,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +45,7 @@ fun WheelPicker(
     selectedIndex: Int,
     onSelectedChange: (Int) -> Unit,
     label: String? = null,
-    itemHeight: Dp = 40.dp,
+    itemHeight: Dp = 48.dp,
     visibleCount: Int = 5,
     modifier: Modifier = Modifier
 ) {
@@ -53,7 +59,8 @@ fun WheelPicker(
     // Scroll to initial selection
     LaunchedEffect(selectedIndex, items.size) {
         if (items.isNotEmpty() && selectedIndex in items.indices) {
-            listState.scrollToItem(selectedIndex)
+            // Animate scroll for tap/internal changes to provide visual feedback
+            listState.animateScrollToItem(selectedIndex)
         }
     }
 
@@ -89,6 +96,26 @@ fun WheelPicker(
             modifier = Modifier
                 .height(totalHeight)
                 .fillMaxWidth()
+                .pointerInput(items, selectedIndex) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        val up = waitForUpOrCancellation()
+                        if (up != null) {
+                            val tapY = up.position.y
+                            val halfHeight = size.height / 2f
+                            val threshold = itemHeight.toPx() / 2f
+                            
+                            // Check if movement was small enough to be a tap
+                            if ((up.position - up.previousPosition).getDistance() < 24.dp.toPx()) {
+                                if (tapY < halfHeight - threshold) {
+                                    onSelectedChange((selectedIndex - 1).coerceAtLeast(0))
+                                } else if (tapY > halfHeight + threshold) {
+                                    onSelectedChange((selectedIndex + 1).coerceAtMost(items.lastIndex))
+                                }
+                            }
+                        }
+                    }
+                }
         ) {
             LazyColumn(
                 state = listState,

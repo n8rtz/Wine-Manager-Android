@@ -63,15 +63,12 @@ class DataImporter(
                 var noteCount = 0
 
                 // Pre-process: build lookup maps from backup data for cross-referencing
-                // Map of old definitionId -> best known vintage (from bottles)
-                val vintageByOldDefId = mutableMapOf<Long, String>()
+                // Map of old bottleId -> bottle data (for vintage resolution during note import)
+                val bottlesByOldId = mutableMapOf<Long, WineBottle>()
                 backupData.bottles.forEach { bottle ->
-                    val v = bottle.vintage?.takeIf { it.isNotBlank() && it != "NV" }
-                    if (v != null) {
-                        vintageByOldDefId[bottle.definitionId] = v
-                    }
+                    bottlesByOldId[bottle.bottleId] = bottle
                 }
-                Log.d("WineTracker", "Built vintage lookup with ${vintageByOldDefId.size} entries")
+                Log.d("WineTracker", "Built bottle lookup with ${bottlesByOldId.size} entries")
 
                 // Map of old definitionId -> latest dateTasted (from notes)
                 val latestDateByOldDefId = mutableMapOf<Long, Long>()
@@ -84,6 +81,8 @@ class DataImporter(
                     }
                 }
                 Log.d("WineTracker", "Built dateTasted lookup with ${latestDateByOldDefId.size} entries")
+                // Mapping of old bottleId -> new bottleId for tasting note linking
+                val bottleIdMapping = mutableMapOf<Long, Long>()
 
                 database.withTransaction {
                     // 1. Process Definitions using old IDs to build mapping
@@ -145,8 +144,10 @@ class DataImporter(
                                     ?: java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date()),
                                 dateConsumed = resolvedDateConsumed
                             )
-                            inventoryDao.insertBottle(newBottle)
+                            val newBottleId = inventoryDao.insertBottle(newBottle)
+                            bottleIdMapping[oldBottle.bottleId] = newBottleId
                             bottleCount++
+                            Log.d("WineTracker", "Bottle mapping: ${oldBottle.bottleId} -> $newBottleId (vintage=${oldBottle.vintage})")
                             if (resolvedDateConsumed != null && oldBottle.dateConsumed == null) {
                                 Log.d("WineTracker", "Backfilled dateConsumed for bottle ${oldBottle.bottleId} -> $resolvedDateConsumed")
                             }
@@ -155,7 +156,7 @@ class DataImporter(
                         }
                     }
 
-                    // 3. Process Tasting Notes — fix NV vintage from bottle data
+                    // 3. Process Tasting Notes — derive vintage from linked bottle
                     backupData.notes.forEach { oldNote ->
                         try {
                             val mappedDefId = idMapping[oldNote.definitionId]
@@ -164,10 +165,17 @@ class DataImporter(
                                 return@forEach
                             }
                             
-                            // If note has blank/NV vintage, use the vintage from the bottle
-                            val resolvedVintage = oldNote.vintage?.takeIf { it.isNotBlank() && it != "NV" }
-                                ?: vintageByOldDefId[oldNote.definitionId]
-                                ?: "NV"
+                            // Resolve bottleId mapping and derive vintage from the actual bottle
+                            val mappedBottleId = oldNote.bottleId?.let { bottleIdMapping[it] }
+                            val resolvedVintage = if (oldNote.bottleId != null) {
+                                // Get vintage from the original bottle data (source of truth)
+                                bottlesByOldId[oldNote.bottleId]?.vintage?.takeIf { it.isNotBlank() }
+                                    ?: oldNote.vintage?.takeIf { it.isNotBlank() }
+                                    ?: "NV"
+                            } else {
+                                // No bottle link — trust the note's own vintage
+                                oldNote.vintage?.takeIf { it.isNotBlank() } ?: "NV"
+                            }
 
                             val newNote = TastingNote(
                                 definitionId = mappedDefId,
@@ -175,13 +183,12 @@ class DataImporter(
                                 dateTasted = oldNote.dateTasted.takeIf { it > 0 } ?: System.currentTimeMillis(),
                                 rating = oldNote.rating,
                                 notes = oldNote.notes,
-                                rebuy = oldNote.rebuy
+                                rebuy = oldNote.rebuy,
+                                bottleId = mappedBottleId
                             )
                             tastingNoteDao.insertNote(newNote)
                             noteCount++
-                            if (resolvedVintage != oldNote.vintage) {
-                                Log.d("WineTracker", "Fixed vintage for note ${oldNote.noteId}: '${oldNote.vintage}' -> '$resolvedVintage'")
-                            }
+                            Log.d("WineTracker", "Note imported: id=${oldNote.noteId}, vintage=$resolvedVintage, bottleId=${oldNote.bottleId}->${mappedBottleId}")
                         } catch (e: Exception) {
                             Log.e("DataImporter", "Error importing note", e)
                         }

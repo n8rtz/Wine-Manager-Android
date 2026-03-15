@@ -1,5 +1,14 @@
 # WineTracker: Lessons Learned & Bug Log
 
+## [Structural: Internal vs. External State Synchronization] - 3/15/2026
+* **Symptom:** Expandable UI components (like `WineCard`) requiring multiple taps to open/close or appearing "laggy" when used in large lists.
+* **Cause (Bug-018):** State conflict between a child component's internal state (e.g., `var expanded by remember { ... }`) and a parent screen's external state tracking (e.g., `var expandedGroupKey by remember { ... }`). When both try to manage the same visual property, they can drift out of sync, requiring one interaction to update the internal state and another for the parent state.
+* **Fix:** Implementing a "Stateless" or "Hoistable" pattern:
+    1. Update the child component (`WineCard`) to accept an optional external state parameter (e.g., `isExpanded: Boolean?`).
+    2. Add logic to use the external state if provided (`val expanded = isExpanded ?: internalExpanded`).
+    3. Update the parent screen to pass its state directly to the component, centralizing the source of truth.
+* **Key Takeaway:** For interactive list items, always prefer single-source-of-truth state hoisting. Internal component state is fine for simple, self-contained widgets, but once a parent needs to coordinate that state (e.g., single-expansion logic in a list), the internal state becomes a liability.
+
 ## [Bug: Navigation state missing] - 3/13/2026
 * **Symptom:** `Cannot access 'var saveState: Boolean': it is private`
 * **Cause:** Tried to declare `saveState = true` outside of the `popUpTo { ... }` block in a `Maps` call.
@@ -58,3 +67,20 @@
 * **Cause:** 1. The Material 3 `HorizontalDivider` does not have an `alpha` parameter (unlike the older M2 `Divider`). 2. Destructuring a `remember`ed state object (e.g., `val (a, b) = state`) requires careful variable naming to avoid "Unresolved reference" errors if the original names were used elsewhere.
 * **Fix:** 1. Use `color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)` for transparency. 2. Ensure destructured variables match the local usage site or keep the original object reference.
 * **Key Takeaway:** Composition performance overhauls are high-risk for build regressions. Always verify parameter names in M3 components and be explicit with variable naming when refactoring aggregations into `remember`ed objects.
+
+## [Bug: Vintage Corruption via Importer Fallback & Failed Migration Recovery] - 3/15/2026
+* **Symptom:** The Tasting Notes screen showed 4 notes under a single "Kirkland Signature - Malbec (2022)" card, when they should have been split across 2022, 2023, and 2024 vintages.
+* **Root Cause (Chain):**
+    1. `TastingNote` had no `bottleId` field —  it could only reference the parent `WineDefinition`, not the specific bottle consumed.
+    2. The `DataImporter` contained a `vintageByOldDefId` fallback that, when a note's vintage was blank or "NV," grabbed *any* bottle's vintage for that definition. During import, it assigned "2022" to all 4 notes because "2022" was the first vintage encountered for that `definitionId`.
+    3. This was especially devastating for horizontal tastings (same wine, multiple vintages consumed simultaneously) because timestamps were identical —  there was no way to differentiate them after the vintage was overwritten.
+* **Failed Fix #1 (MIGRATION_13_14 — timestamp matching):** Attempted to match `dateTasted` on notes to `dateConsumed` on bottles within a 2-second window. Failed because `MIGRATION_9_10` had already overwritten `dateConsumed` with the same backfilled timestamp for all archived bottles of the same definition.
+* **Failed Fix #2 (MIGRATION_14_15 — chronological ranking):** Attempted to rank bottles by `bottleId` (insertion order) and notes by `dateTasted`/`noteId`, then pair them 1:1. Failed because all notes from a horizontal tasting had identical timestamps, and the insertion order of bottles didn't correspond to vintage order.
+* **Failed Fix #3 (MIGRATION_15_16 — text matching):** Manually matched exact note text strings to specific vintages via SQL `LIKE` queries. Worked for this specific Malbec case, but was not a systemic fix — it could never handle future data.
+* **Correct Fix:** Fixed the **importer itself** (not migrations):
+    1. Added `bottleId` to `TastingNote` entity, linking notes directly to specific bottles.
+    2. Added `bottleIdMapping` dictionary to `DataImporter` — maps old bottle IDs to new auto-generated IDs during import.
+    3. Removed the `vintageByOldDefId` fallback entirely. Note vintage is now derived from the linked bottle's data in the backup JSON.
+    4. Updated `consumeBottle` in `WineRepository` to always store `bottleId` and `bottle.vintage` when creating a note.
+* **Key Takeaway (Critical):** SQL migrations are retroactive fixes for *existing* data. They **cannot** prevent future data corruption if the root cause is in the import/export pipeline. When data is silently overwritten during import, the fix **must** live in the importer code, not in a migration. Additionally, "helpful" fallback logic (like `vintageByOldDefId`) is extremely dangerous in relational databases — it trades a visible error (blank vintage) for an invisible corruption (wrong vintage), which is far worse.
+* **Secondary Takeaway:** When you have multiple entities that share a parent ID (like multiple bottles under one definition), never assume that a "best guess" lookup from the parent will correctly resolve to the right child. Always maintain explicit ID links (like `bottleId`) between siblings.

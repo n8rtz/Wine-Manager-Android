@@ -51,6 +51,7 @@ import com.n8rtz.winetracker.ui.screens.RankingsScreen
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
     
     // Consolidate database and repository as single instances for the entire app lifecycle
     private val database by lazy {
+        Log.d("WineTracker", "MainActivity: Initializing database builder")
         androidx.room.Room.databaseBuilder(
             applicationContext,
             com.n8rtz.winetracker.data.local.WineDatabase::class.java, 
@@ -70,12 +72,18 @@ class MainActivity : ComponentActivity() {
             com.n8rtz.winetracker.data.local.MIGRATION_8_9,
             com.n8rtz.winetracker.data.local.MIGRATION_9_10,
             com.n8rtz.winetracker.data.local.MIGRATION_10_11,
-            com.n8rtz.winetracker.data.local.MIGRATION_11_12
+            com.n8rtz.winetracker.data.local.MIGRATION_11_12,
+            com.n8rtz.winetracker.data.local.MIGRATION_12_13,
+            com.n8rtz.winetracker.data.local.MIGRATION_13_14,
+            com.n8rtz.winetracker.data.local.MIGRATION_14_15,
+            com.n8rtz.winetracker.data.local.MIGRATION_15_16
         )
+        // Ensure migrations don't block the main thread if possible (though they often do on first access)
         .build()
     }
 
     private val repository by lazy {
+        Log.d("WineTracker", "MainActivity: Initializing repository")
         com.n8rtz.winetracker.data.repository.WineRepository(
             database.wineDao(),
             database.inventoryDao(),
@@ -87,8 +95,9 @@ class MainActivity : ComponentActivity() {
 
     private val wineViewModel: WineViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
+                Log.d("WineTracker", "MainActivity: Creating WineViewModel")
                 return WineViewModel(this@MainActivity.application, repository) as T
             }
         }
@@ -96,8 +105,9 @@ class MainActivity : ComponentActivity() {
 
     private val tastingNoteViewModel: TastingNoteViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
+                Log.d("WineTracker", "MainActivity: Creating TastingNoteViewModel")
                 return TastingNoteViewModel(this@MainActivity.application, repository) as T
             }
         }
@@ -105,7 +115,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("WineTracker", "MainActivity: onCreate started")
         enableEdgeToEdge()
+        
+        // Trigger migrations in background to avoid blocking initial UI render
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            Log.d("WineTracker", "MainActivity: Triggering background migration check")
+            try {
+                database.query(androidx.sqlite.db.SimpleSQLiteQuery("SELECT 1"))
+                Log.d("WineTracker", "MainActivity: Background migration check complete")
+            } catch (e: Exception) {
+                Log.e("WineTracker", "MainActivity: Error during background migration", e)
+            }
+        }
+
         setContent {
             WineTrackerTheme {
                 val navController = rememberNavController()

@@ -68,3 +68,17 @@ fun existingFunction() {
 
 # 13. BUG LOGGING
 * If asked to store/log a known bug or minor change by the user that needs to be revisited later, add it to the bugs.md file in _refs folder. Comply with the markdown formatting outlined in bugs.md
+
+## 14. DATA INSPECTION BEFORE MIGRATIONS
+* Before writing any database migration that modifies or backfills data, you MUST first attempt to query or inspect the actual data to understand what values exist. Do NOT assume what the data looks like based on schema alone.
+* If you cannot run queries directly, explicitly state your assumptions about the data (e.g., "I'm assuming `dateConsumed` is unique per bottle") and ask the user to verify before proceeding.
+* **RATIONALE:** MIGRATION_13_14 and MIGRATION_14_15 both failed because they assumed timestamps were unique and chronologically ordered. Inspecting the actual data first would have revealed identical timestamps immediately.
+
+## 15. NO SILENT FALLBACKS IN DATA PIPELINES
+* When writing import, export, or migration logic, NEVER implement "helpful" fallback inference (e.g., "if field X is blank, grab a value from a related table"). These trade a visible error (blank field) for an invisible corruption (wrong value), which is far worse.
+* If data is missing, preserve the gap (`null` or `"NV"`) rather than guessing. Let the user see and fix the gap explicitly.
+* **RATIONALE:** The `vintageByOldDefId` fallback silently assigned "2022" to notes that belonged to 2023 and 2024 vintages, causing a data corruption bug that took 4 migration attempts to diagnose.
+
+## 16. REFERENCE DOCS BEFORE DATABASE CHANGES
+* Before modifying any file in `data/local/`, `data/repository/`, or `data/importer/`, you MUST re-read `_refs/ARCH.md` (Section 5: Import/Export Integrity Rules) and `_refs/LESSONS_LEARNED.md` to check for documented patterns and past bugs that are relevant to the change.
+* **RATIONALE:** The import ID-mapping pattern was already documented in LESSONS_LEARNED from a previous bug. Had it been consulted, the `bottleIdMapping` fix would have been the first approach, not the fourth.

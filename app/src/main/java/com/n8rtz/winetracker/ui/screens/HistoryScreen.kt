@@ -83,21 +83,17 @@ fun HistoryScreen(viewModel: WineViewModel) {
                     val definition = item.definition
                     val bottle = item.bottle
 
-                    if (definition != null) {
-                        val dateStr = formattedDatesMap[bottle.bottleId] ?: "N/A"
-                        val ratingStr = ratingsMap[definition.definitionId to bottle.vintage]
+                    val dateStr = formattedDatesMap[bottle.bottleId] ?: "N/A"
+                    val ratingStr = ratingsMap[definition.definitionId to bottle.vintage]
 
-                        HistoryWineCard(
-                            maker = definition.maker,
-                            name = definition.name,
-                            vintage = bottle.vintage,
-                            date = dateStr,
-                            quantity = bottle.quantity,
-                            rating = ratingStr
-                        )
-                    } else {
-                        Log.w("WineTracker", "HistoryScreen: Found bottle ${bottle.bottleId} with no definition")
-                    }
+                    HistoryWineCard(
+                        maker = definition.maker,
+                        name = definition.name,
+                        vintage = bottle.vintage,
+                        date = dateStr,
+                        quantity = bottle.quantity,
+                        rating = ratingStr
+                    )
                 }
             }
         }

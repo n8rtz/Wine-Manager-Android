@@ -128,6 +128,11 @@ class WineRepository(
         wineDao.updateDefinition(definition)
     }
 
+    suspend fun updateWine(definition: WineDefinition, bottle: WineBottle) {
+        wineDao.updateDefinition(definition)
+        inventoryDao.updateBottle(bottle)
+    }
+
     suspend fun consumeBottle(
         bottleId: Long,
         rating: Double?,
@@ -158,7 +163,8 @@ class WineRepository(
                     rating = rating,
                     notes = notes,
                     rebuy = rebuy,
-                    initialRating = rating.toInt()
+                    initialRating = rating.toInt(),
+                    bottleId = bottleId
                 )
             )
         }

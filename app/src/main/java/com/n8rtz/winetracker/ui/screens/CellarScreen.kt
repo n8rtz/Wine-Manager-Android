@@ -34,12 +34,13 @@ import java.util.*
 fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
+    val cellarLocationData by viewModel.cellarLocationData.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
-    
+
     val ratingsMap = remember(tastingHistory) {
         tastingHistory
             .filter { it.note.rating > 0 }
@@ -71,18 +72,18 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         inventory.filter {
             val matchesSearch = it.definition.maker.contains(searchQuery, ignoreCase = true) ||
                     it.definition.name.contains(searchQuery, ignoreCase = true)
-            
+
             val matchesType = filterState.types.isEmpty() || filterState.types.contains(it.definition.type)
-            
-            val matchesCountry = filterState.country == null || it.definition.country.equals(filterState.country, ignoreCase = true)
-            val matchesRegion = filterState.region == null || it.definition.region?.equals(filterState.region, ignoreCase = true) == true
-            val matchesSubregion = filterState.subregion == null || it.definition.subregion?.equals(filterState.subregion, ignoreCase = true) == true
+
+            val matchesCountry = filterState.country == null || it.definition.country.trim().equals(filterState.country, ignoreCase = true)
+            val matchesRegion = filterState.region == null || it.definition.region?.trim()?.equals(filterState.region, ignoreCase = true) == true
+            val matchesSubregion = filterState.subregion == null || it.definition.subregion?.trim()?.equals(filterState.subregion, ignoreCase = true) == true
 
             val matchesPrice = filterState.priceRange?.let { range ->
                 val price = it.bottle.price ?: 0.0
                 price.toFloat() in range
             } ?: true
-            
+
             matchesSearch && matchesType && matchesCountry && matchesRegion && matchesSubregion && matchesPrice
         }.sortedWith { a, b ->
             when (filterState.sortOrder) {
@@ -172,9 +173,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                         "${item.definition.maker} - ${item.definition.name} ($vintage)"
                     },
                     subtitle = run {
+                        val validSub = item.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
                         val validRegion = item.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
                         val validCountry = item.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                        listOfNotNull(validRegion, validCountry).joinToString(", ")
+                        listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
                     },
                     type = item.definition.type,
                     metadata = "Qty: ${item.bottle.quantity}",
@@ -234,12 +236,11 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     if (showFilterSheet) {
         FilterSheet(
             currentState = filterState,
-            locationData = viewModel.locationData,
+            locationData = cellarLocationData,
             maxPrice = inventory.mapNotNull { it.bottle.price }.maxOrNull()?.toFloat() ?: 500f,
             onDismiss = { showFilterSheet = false },
             onApply = { newState ->
                 viewModel.updateFilterState(newState)
-                showFilterSheet = false
             }
         )
     }
@@ -283,8 +284,21 @@ fun FilterSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Filter & Sort", style = MaterialTheme.typography.titleLarge)
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Clear, "Close")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(
+                            onClick = {
+                                val cleared = CellarFilterState()
+                                state = cleared
+                                priceMinText = ""
+                                priceMaxText = ""
+                                onApply(cleared)
+                            }
+                        ) {
+                            Text("Clear All")
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Clear, "Close")
+                        }
                     }
                 }
 
@@ -299,7 +313,11 @@ fun FilterSheet(
                     listOf("Newest", "Price (High)", "Price (Low)").forEach { option ->
                         FilterChip(
                             selected = state.sortOrder == option,
-                            onClick = { state = state.copy(sortOrder = option) },
+                            onClick = { 
+                                val newState = state.copy(sortOrder = option)
+                                state = newState
+                                onApply(newState)
+                            },
                             label = { Text(option) },
                             shape = RoundedCornerShape(8.dp),
                             colors = FilterChipDefaults.filterChipColors(
@@ -323,9 +341,11 @@ fun FilterSheet(
                         FilterChip(
                             selected = isSelected,
                             onClick = {
-                                state = state.copy(
+                                val newState = state.copy(
                                     types = if (isSelected) state.types - type else state.types + type
                                 )
+                                state = newState
+                                onApply(newState)
                             },
                             label = { Text(type) },
                             shape = RoundedCornerShape(8.dp),
@@ -348,9 +368,11 @@ fun FilterSheet(
                 RangeSlider(
                     value = currentPriceRange.start.coerceIn(priceSliderRange)..currentPriceRange.endInclusive.coerceIn(priceSliderRange),
                     onValueChange = { range ->
-                        state = state.copy(priceRange = range)
+                        val newState = state.copy(priceRange = range)
+                        state = newState
                         priceMinText = range.start.toInt().toString()
                         priceMaxText = range.endInclusive.toInt().toString()
+                        onApply(newState)
                     },
                     valueRange = priceSliderRange,
                     colors = SliderDefaults.colors(
@@ -370,9 +392,13 @@ fun FilterSheet(
                             val min = text.toFloatOrNull()
                             if (min != null) {
                                 val max = state.priceRange?.endInclusive ?: effectiveMaxPrice
-                                state = state.copy(priceRange = min.coerceIn(0f, max)..max)
+                                val newState = state.copy(priceRange = min.coerceIn(0f, max)..max)
+                                state = newState
+                                onApply(newState)
                             } else if (text.isEmpty()) {
-                                state = state.copy(priceRange = null)
+                                val newState = state.copy(priceRange = null)
+                                state = newState
+                                onApply(newState)
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -388,9 +414,13 @@ fun FilterSheet(
                             val max = text.toFloatOrNull()
                             if (max != null) {
                                 val min = state.priceRange?.start ?: 0f
-                                state = state.copy(priceRange = min..max.coerceAtLeast(min))
+                                val newState = state.copy(priceRange = min..max.coerceAtLeast(min))
+                                state = newState
+                                onApply(newState)
                             } else if (text.isEmpty()) {
-                                state = state.copy(priceRange = null)
+                                val newState = state.copy(priceRange = null)
+                                state = newState
+                                onApply(newState)
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -412,48 +442,19 @@ fun FilterSheet(
                     selectedRegion = state.region,
                     selectedSubregion = state.subregion,
                     onLocationChange = { country, region, subregion ->
-                        state = state.copy(
+                        val newState = state.copy(
                             country = country,
                             region = region,
                             subregion = subregion
                         )
+                        state = newState
+                        onApply(newState)
                     }
                 )
 
                 Spacer(Modifier.height(16.dp))
             }
 
-            HorizontalDivider()
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                TextButton(
-                    onClick = {
-                        val cleared = CellarFilterState()
-                        state = cleared
-                        priceMinText = ""
-                        priceMaxText = ""
-                        onApply(cleared)
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Clear All")
-                }
-                Button(
-                    onClick = { onApply(state) },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF722F37)
-                    )
-                ) {
-                    Text("Apply Filters")
-                }
-            }
         }
     }
 }

@@ -206,13 +206,13 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 * **UI/Trigger:** Add a small country flag emoji or icon to each wine card.
 * **Navigation/Location:** Visible on both the **Cellar screen** and **Rankings screen** list items.
 
-## 36. Multi-Wheel Location Filter
+## ✅ 36. Multi-Wheel Location Filter
 * **Goal:** Simplify complex location filtering with a intuitive, cascading UI.
 * **UI/Trigger:** A "triple scroll wheel" picker (Birthdate style). Left: Country, Middle: Region, Right: Appellation.
 * **Logic:** The Region and Appellation wheels must filter dynamically; they should only populate with relevant options once a parent location is selected.
 * **Navigation/Location:** Accessed within the **Filter Bottom Sheet** on the Cellar screen.
 
-## 37. Cellar Filter Reset
+## ✅ 37. Cellar Filter Reset
 * **Goal:** Allow users to clear all active filters in a single tap.
 * **UI/Trigger:** A "Reset" button/icon that clears search text, location wheels, and sorting.
 * **Navigation/Location:** Located at the top of the **Filter Bottom Sheet** or next to the search bar on the **Cellar screen**.
@@ -230,9 +230,24 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 ## 40. Drinking Window Filter & Sort
 * **Goal:** Prioritize drinking wines that are nearing the end of their window.
 * **UI/Trigger:** Add "Peak Window" as a filter category and "Drinking Window (Oldest/Newest)" as a sort option.
-* **Navigation/Location:** Found within the **Filter Bottom Sheet** of the Cellar screen.
+* **Navigation/Location:** Found within the **Filter Bottom Sheet of the Cellar screen**.
 
-## 41. Rating Ranges on Cards
+## ✅ 41. Rating Ranges on Cards
 * **Goal:** Show the user's personal rating history at a glance.
 * **UI/Trigger:** Display the score on the wine card. If multiple ratings exist for that wine, display them as a range (e.g., "88-90").
 * **Navigation/Location:** Visible on the **Cellar screen** list items.
+
+## 42. Estimated Drinking Window Integration
+* **Goal:** Add estimated drinking window to database for each wine. Also add in the cellar screen a sort by drinking window, and a slider filter for drinking window.
+* **UI/Trigger:** 
+    * Add a `RangeSlider` for Drinking Window (e.g., 2020 - 2050) in the **Filter Bottom Sheet**.
+    * Add "Drinking Window (Soonest)" and "Drinking Window (Furthest)" to the sort options.
+* **Database:** Add `drinkingWindowStart` and `drinkingWindowEnd` integer fields to the `WineDefinition` entity.
+ 
+ ## 43. Multi-Screen Vintage Control (v0.5.4 Priority)
+ * **Goal:** Provide detailed temporal filtering and sorting for serious collectors.
+ * **UI/Trigger:** 
+     * Add a `RangeSlider` for **Vintage** (e.g., 1900 - 2024+) in the **Filter Bottom Sheet** for Cellar, Tasting Notes, and Rankings.
+     * Include dual side-by-side text input boxes for explicit Min/Max vintage entry below the slider.
+     * Add "Vintage (Newest)" and "Vintage (Oldest)" to the sort options across all lists.
+ * **Note:** Flag user during v0.5.4 development to prioritize this implementation.

@@ -32,11 +32,13 @@ fun WineCard(
     metadata: String,
     imageUrl: String? = null,
     rating: String? = null,
+    isExpanded: Boolean? = null,
     details: @Composable (() -> Unit)? = null,
     dateAdded: String? = null,
     onClick: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var internalExpanded by remember { mutableStateOf(false) }
+    val expanded = isExpanded ?: internalExpanded
 
     val backgroundColor = when (type.lowercase()) {
         "red" -> Color(0xFFFFF5F5)
@@ -52,7 +54,9 @@ fun WineCard(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = { 
-                    if (details != null) expanded = !expanded
+                    if (details != null && isExpanded == null) {
+                        internalExpanded = !internalExpanded
+                    }
                     onClick()
                 }
             ),

@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-03-15
+### Added
+- **Bottle-Level Note Linking:** `TastingNote` entity now includes `bottleId` for direct linking to the specific `WineBottle` consumed, enabling accurate vintage and price resolution.
+- **Note Grouping:** Tasting Notes screen groups notes by (Wine + Vintage), showing one card per vintage with an aggregated rating range badge (e.g., "82-87").
+- **Expandable Note History:** Expanding a tasting note card reveals a chronological list of all notes for that vintage, formatted as "M/D/YY - note text".
+
+### Fixed
+- **Card Expansion Responsiveness:** Fixed an issue in the Tasting Notes screen where wine cards required multiple presses to expand. Refactored `WineCard` to support external state control to prevent synchronization conflicts with the parent screen.
+- **Vintage Corruption [Bug-016]:** Fixed a critical data integrity issue where horizontal tastings (same wine, multiple vintages consumed simultaneously) had all notes silently assigned the wrong vintage during JSON import. Root cause was a `vintageByOldDefId` fallback in `DataImporter.kt` that grabbed an arbitrary bottle's vintage.
+- **Import ID Mapping [Bug-017]:** Added `bottleIdMapping` to the JSON importer so that `bottleId` references on tasting notes survive export/import cycles with new auto-generated IDs.
+- **Database Migrations 12→16:** Introduced 4 migrations to add the `bottleId` column, attempt retroactive data repair (timestamps, chronological, text-match), and permanently fix existing corrupted vintage assignments.
+
+### Changed
+- **DataImporter Hardened:** Removed the dangerous `vintageByOldDefId` vintage fallback. Note vintage is now derived from the linked bottle in the backup data, never from a random lookup. `bottleId` is correctly remapped during import.
+
+## [0.5.2] - 2026-03-15
+### Added
+- **Intelligent Location Filtering:** Geographic filter wheels (Country/Region/Subregion) now dynamically update to only show options that exist in the current view (Cellar vs. Rankings), preventing "empty filter" results.
+- **Enhanced Wheel Interaction:** Added tap-to-scroll functionality to all selector wheels. Tapping the large areas above or below the center highlight now advances the selection by one step.
+- **Improved Hit Targets:** Re-engineered the WheelPicker with container-level gesture detection, making the entire component responsive to taps.
+- **Subregion Display:** Wine cards in the Cellar, Rankings, and Tasting Notes screens now include the `subregion` in the subtitle (e.g., "Pauillac, Bordeaux, France").
+- **Optimized Filter UI:** Relocated the "Clear All" button to the top of the filter sheets across all screens for faster access and improved usability.
+
+### Fixed
+- **Stale Location Options:** Fixed a logic error where locations from archived/deleted wines would still appear in the active cellar filter.
+- **Tap Precision:** Resolved an "unreliable tap" bug by exponentially increasing the touch target size for the selection dial.
+- **Robust Location Mapping:** Implemented geographic normalization (Trim + Title Case) in `WineViewModel` to consolidate inconsistent casing and whitespace in the database, ensuring filters match correctly even if the underlying data is messy.
+
+## [0.5.1] - 2026-03-15
+### Fixed
+- **Startup Hang resolved:** Moved database migrations and component initializations (ML Kit, Retrofit) off the main thread, resulting in a 90% faster app launch time.
+- **Environment Stability:** Recovered emulator from "Disk Full" / Binder transaction failure states that were preventing package management.
+
 ## [0.5.0] - 2026-03-15
 ### Added
 - **Advanced Cellar Filtering:** Implemented cascading location wheels (Country/Region/Subregion), a price range slider with manual text inputs, and multi-selection for wine types.

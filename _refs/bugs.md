@@ -26,27 +26,22 @@
 ---
 
 ## Active Bugs
+ 
+ ### **[Bug-019]**: Double Vintage Parentheses for NV wines
+ * **Date Logged:** 2026-03-15
+ * **Component/File:** `ui/screens/TastingNotesScreen.kt`
+ * **Severity:** Minor UI
+ * **Description:** Wines without a vintage (Non-Vintage) should show as "(NV)", but are displaying as "((NV))" in the Tasting Notes screen. 
+ * **Steps to Reproduce:**
+     1. Open Tasting Notes screen.
+     2. Locate a wine with "NV" as the vintage (e.g., Esperal - Vinho verde).
+     3. Observe the vintage display in the card title.
+ * **Known Workaround / Notes:** Redundant parentheses likely added in `TastingNotesScreen.kt` title construction.
+ 
+ ---
+ 
 
-### **[Bug-011]**: Persistent Zero Prices in Rankings
-* **Date Logged:** 2026-03-15
-* **Component/File:** `data/local/InventoryDao` / `ui/screens/RankingsScreen.kt`
-* **Severity:** Minor UI
-* **Description:** Wines show as `$0.00` in rankings even when price data exists in archived bottles or other vintages.
-* **Steps to Reproduce:**
-    1. Add a bottle with $0 price to cellar.
-    2. Mark an older bottle of same wine ($20) as consumed.
-    3. View Rankings.
-* **Known Workaround / Notes:** Resolved in v0.5.1 by improving query priority and adding vintage fallback.
 
-### **[Bug-010]**: Duplicate Definitions from Name Variations
-* **Date Logged:** 2026-03-15
-* **Component/File:** `data/local/WineDatabase.kt`
-* **Severity:** Minor UI / Data Integrity
-* **Description:** Slight variations in producer names (e.g. "Kirkland" vs "Kirkland Signature") create duplicate definitions, breaking the link between inventory prices and tasting notes.
-* **Steps to Reproduce:**
-    1. Import data with different maker names for the same wine.
-    2. Observe two separate entries in the catalog.
-* **Known Workaround / Notes:** Resolved via MIGRATION_10_11 consolidation.
 
 
 ### **[Bug-005]**: Cellar button fails to reset screen state
@@ -64,6 +59,54 @@
 
 ## Resolved / Fixed
 
+### **[Bug-018]**: Wine Card Expansion Multi-Press Issue
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 17:56
+* **Root Cause:** State synchronization conflict between `WineCard.kt` internal `expanded` state and the external state managed by `TastingNotesScreen.kt`. The card required one press to update the internal state and a second to update the external state (or vice versa), leading to laggy/unreliable expansion.
+* **Summary of fix:** Refactored `WineCard` to accept an optional `isExpanded` parameter for external control. When `isExpanded` is provided, the card bypasses its internal state logic. Updated `TastingNotesScreen` to pass its state directly to `WineCard` and provide the details content lambda unconditionally.
+
+### **[Bug-016]**: Tasting Notes Screen Duplication & Vintage Corruption
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 17:40
+* **Root Cause:** Two compounding failures:
+    1. `TastingNote` had no `bottleId` field — notes couldn't link to specific bottles.
+    2. The `DataImporter` had a `vintageByOldDefId` fallback (lines 168-170) that silently overwrote each note's vintage with a random bottle's vintage for that definition. During a horizontal tasting (2022/2023/2024 Malbec consumed simultaneously), all 3 notes got tagged "2022."
+* **Failed Fix Attempts:**
+    1. **MIGRATION_13_14** (timestamp matching): Tried to match `dateTasted` to `dateConsumed` within 2000ms. Failed because a previous migration (`MIGRATION_9_10`) had overwritten `dateConsumed` with identical values.
+    2. **MIGRATION_14_15** (chronological ranking): Tried pairing bottles/notes by insertion order. Failed because all 3 notes from a horizontal tasting had identical timestamps and creation order didn't map to vintage order.
+    3. **MIGRATION_15_16** (text matching): Manually matched exact note text to correct vintages. Worked for this specific case but was not a systemic fix.
+* **Correct Fix:**
+    1. Added `bottleId` to `TastingNote` entity + `@Relation` in `TastingNoteWithDefinition`.
+    2. Updated `consumeBottle` to store `bottleId` and `bottle.vintage` on each note.
+    3. Added `bottleIdMapping` to `DataImporter` — old bottle IDs are mapped to new IDs during import.
+    4. Removed the dangerous `vintageByOldDefId` fallback — note vintage is now derived from the linked bottle's data in the backup.
+
+### **[Bug-017]**: DataImporter Vintage Fallback Vulnerability
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 17:40
+* **Root Cause:** `DataImporter.kt` lines 168-170 contained a fallback that overwrote any note's vintage with an arbitrary bottle's vintage from the same definition. This meant any export/import cycle could silently corrupt vintage assignments, especially for horizontal tastings where multiple vintages share one `definitionId`.
+* **Summary of fix:** Removed the `vintageByOldDefId` fallback entirely. Added `bottleIdMapping` so the note's `bottleId` survives import. Vintage is now derived from the actual linked bottle in the backup data — never from a random lookup.
+
+### **[Bug-015]**: Missing Subregions in Filters & Cards
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 15:30
+* **Summary of fix:** Root cause was a corrupted data source (JSON/CSV) where subregions were missing or improperly mapped. Resolved code-side by implementing `normalizeLocation` (Trim/TitleCase) to handle messy data and updating all screen subtitles to explicitly include the `subregion` field.
+
+### **[Bug-011]**: Persistent Zero Prices in Rankings
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 10:15
+* **Summary of fix:** Prioritized non-zero prices in `InventoryDao` queries and added a vintage-agnostic fallback to ensure price data is pulled from the most relevant bottle available.
+
+### **[Bug-010]**: Duplicate Definitions from Name Variations
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 05:20
+* **Summary of fix:** Implemented `MIGRATION_10_11` to consolidate definitions and re-parent all child records (bottles/notes) to a unified ID based on standardized producer names.
+
+### **[Bug-014]**: Startup Hang (Main Thread Blocked)
+* **Date Logged:** 2026-03-15
+* **Date & time Fixed:** 2026-03-15 10:15
+* **Summary of fix:** Moved Room database migrations to background thread via `lifecycleScope` and converted heavy ViewModel components (Retrofit, ML Kit OCR) to `by lazy` initialization.
+ 
 ### **[Bug-013]**: Missing "Added on" Dates
 * **Date Logged:** 2026-03-15
 * **Date & time Fixed:** 2026-03-15 01:50
