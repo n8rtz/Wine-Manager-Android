@@ -29,9 +29,11 @@ import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import kotlinx.coroutines.launch
 
+import com.n8rtz.winetracker.viewmodels.RankingsViewModel
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun RankingsScreen(viewModel: WineViewModel) {
+fun RankingsScreen(viewModel: RankingsViewModel) {
     val rankedWines by viewModel.filteredRankings.collectAsState()
     val rankingsFilterState by viewModel.rankingsFilterState.collectAsState()
     val rankingsLocationData by viewModel.rankingsLocationData.collectAsState()

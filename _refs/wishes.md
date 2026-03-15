@@ -251,3 +251,38 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
      * Include dual side-by-side text input boxes for explicit Min/Max vintage entry below the slider.
      * Add "Vintage (Newest)" and "Vintage (Oldest)" to the sort options across all lists.
  * **Note:** Flag user during v0.5.4 development to prioritize this implementation.
+
+## 44. Expandable FAB for Add Actions
+* **Goal:** Provide a centralized, fast action menu from the main navigation without cluttering the screen.
+* **UI/Trigger:** The `[+]` button in the center of the bottom navigation bar should no longer navigate instantly to `AddWineScreen`.
+    * Tapping it should bring up a sleek popup menu (sliding up out of the button, centered on the screen) with two premium options:
+        1. **Add New Wine** (for entering catalog/inventory)
+        2. **Add Tasting Note** (for evaluating a consumed wine)
+* **Interaction:** The background should dim slightly when the menu pops up. Tapping anywhere outside dismisses it.
+
+## 45. Advanced Sensory Evaluation Form (AWS Inspired)
+* **Goal:** Elevate the Tasting Note entry into a comprehensive, professional evaluation framework, drawing inspiration from the American Wine Society (AWS) and similar systematic approaches.
+* **UI Structure:** 
+    * **Top Section:** A searchable dropdown / auto-complete field to quickly select the specific wine from the cellar/catalog being evaluated.
+    * **Visual Presentation:** Instead of basic numerical inputs, use sliding scales with clear semantic text descriptors at tick marks.
+    * **Color Palette:** Use aesthetically pleasing ombre colors for the sliders (e.g., transitioning from a light gold/blush to a deep bordeaux, or tailored to the trait like light green to deep purple for intensity).
+* **The Sliders & Descriptors:**
+    1. **Sweetness:** Bone Dry ➔ Dry ➔ Off-Dry ➔ Medium Sweet ➔ Sweet ➔ Luscious
+    2. **Aroma/Bouquet:** Very Subdued ➔ Subdued ➔ Moderate ➔ Expressive ➔ Powerful
+    3. **Acidity:** Flabby ➔ Low ➔ Balanced/Medium ➔ Crisp/High ➔ Tart/Searing
+    4. **Tannins/Grip:** None/Silky ➔ Low ➔ Medium ➔ High/Grippy ➔ Astringent/Harsh
+    5. **Body:** Light/Watery ➔ Medium-Minus ➔ Medium ➔ Medium-Plus ➔ Full/Heavy
+    6. **Balance:** Disjointed ➔ Unbalanced ➔ Acceptable ➔ Well-Balanced ➔ Seamless
+    7. **Intensity (Flavor):** Weak ➔ Light ➔ Moderate ➔ Pronounced ➔ Overwhelming
+    8. **Complexity:** Simple/One-Dimensional ➔ Moderate ➔ Complex ➔ Highly Complex
+    9. **Finish (Length):** Short (<3s) ➔ Medium-Minus ➔ Medium (4-7s) ➔ Long (8-10s) ➔ Lingering (>10s)
+    10. **Quality Assessment:** Poor ➔ Acceptable ➔ Good ➔ Very Good ➔ Outstanding
+    11. **Overall Score:** 50 ➔ 100 (Standard continuous slider for the final grade)
+* **Flaws Section:** A group of clearly styled selectable chips or checkboxes for common wine faults: *Cork Taint (TCA), Oxidation, Volatile Acidity (VA), Brettanomyces (Brett), Reduction (Sulfur), Heat Damage*.
+* **Open Notes:** A large, multi-line `OutlinedTextField` at the bottom for free-form tasting notes and overall impressions.
+* **Implementation Note (Advanced Persistence Strategy):**
+    * **The "Approach 3" Model:** To ensure maximum flexibility for future expansion (e.g., adding a 12th or 15th trait), all sensory data will be stored as a single JSON-serialized string in a new `sensoryData` column within the `TastingNote` database entity.
+    * **Data Structure:** A Kotlin `data class SensoryData` will hold the trait values (e.g., `sweetness: Int`, `acidity: Int`) and the list of checked flaws.
+    * **Room Integration:** A `TypeConverter` using **Gson** will automatically handle the translation between the Kotlin object and the database string.
+    * **Extensibility:** This architecture allows us to add new sensory parameters at any time by simply updating the `SensoryData` class with a new field and a default value, avoiding the need for future SQL migrations for every new trait.
+* **Implementation Thoughts:** To make this professional yet easy to use, the layout should utilize a `LazyColumn` or vertical scroll since there are many sliders. The ombre effect can be achieved using `Brush.horizontalGradient` applied to the active track color of the Compose `Slider`. A "Snap to grid" (`steps` parameter) is recommended for traits with finite text descriptors to make selection snappy.

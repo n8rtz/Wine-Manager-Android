@@ -69,7 +69,7 @@ class TastingNoteViewModel(application: Application, private val repository: Win
             val definitionIds = history.map { it.note.definitionId }.distinct()
             if (definitionIds.isEmpty()) return@map emptyMap()
             
-            val allBottles = repository.database.inventoryDao().getAllPricesForDefinitions(definitionIds)
+            val allBottles = repository.getAllPricesForDefinitions(definitionIds)
             val priceMap = mutableMapOf<Pair<Long, String>, Double?>()
             
             history.forEach { item ->

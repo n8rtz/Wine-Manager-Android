@@ -30,19 +30,20 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddWineScreen(
     viewModel: WineViewModel,
+    scannerViewModel: ScannerViewModel,
     onWineAdded: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
-    
-    val scannedResult by viewModel.scannedResult.collectAsState()
+    val scannedResult by scannerViewModel.scannedResult.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
     
     var maker by remember { mutableStateOf("") }
@@ -71,7 +72,7 @@ fun AddWineScreen(
             if (it.maker != null) maker = it.maker
             if (it.name != null) name = it.name
             if (it.vintage != null) vintage = it.vintage
-            viewModel.clearScannedResult()
+            scannerViewModel.clearScannedResult()
         }
     }
 
@@ -127,7 +128,7 @@ fun AddWineScreen(
                                 object : ImageCapture.OnImageCapturedCallback() {
                                     override fun onCaptureSuccess(image: ImageProxy) {
                                         val bitmap = image.toBitmap().rotate(image.imageInfo.rotationDegrees.toFloat())
-                                        viewModel.onImageCaptured(bitmap)
+                                        scannerViewModel.onImageCaptured(bitmap)
                                         image.close()
                                     }
                                 }
@@ -336,8 +337,8 @@ fun AddWineScreen(
                             DropdownMenuItem(
                                 text = { Text(country) },
                                 onClick = {
-                                    if (selectedCountry != country) {
-                                        selectedCountry = country
+                                    if (selectedCountry != country.toString()) {
+                                        selectedCountry = country.toString()
                                         selectedRegion = "" // Reset children
                                         selectedAppellation = ""
                                     }
@@ -373,8 +374,8 @@ fun AddWineScreen(
                                 DropdownMenuItem(
                                     text = { Text(region) },
                                     onClick = {
-                                        if (selectedRegion != region) {
-                                            selectedRegion = region
+                                        if (selectedRegion != region.toString()) {
+                                            selectedRegion = region.toString()
                                             selectedAppellation = "" // Reset child
                                         }
                                         regionExpanded = false

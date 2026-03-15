@@ -1,9 +1,21 @@
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.6.0] - 2026-03-15
+### Added
+- **ViewModel Decomposition:** Refactored the monolithic `WineViewModel` into specialized, single-responsibility ViewModels:
+  - `RankingsViewModel`: Handles rankings logic, price lookups, and specialized filtering/sorting.
+  - `ScannerViewModel`: Manages CameraX, MLKit OCR, OpenFoodFacts API, and batch image processing jobs.
+  - `WineViewModel`: Streamlined to focus exclusively on Cellar management, History flows, and Import/Export operations.
+- **Repository Pattern Enforcement:** Enforced a strict data flow where all ViewModels must use `WineRepository`. Removed direct DAO and Database access from all ViewModels (`WineViewModel`, `RankingsViewModel`, `ScannerViewModel`, `TastingNoteViewModel`).
+- **Unified Filter Alignment:** Aligned all cellar-style filtering to use `CellarFilterState` for architectural consistency.
+
+### Fixed
+- **Conflicting Imports:** Resolved ambiguous `AndroidViewModel` and `mutableStateOf` imports in `WineViewModel.kt`.
+- **Unresolved Database References:** Fixed `db` reference errors in `WineViewModel.kt` by routing all database access through the Repository or using the database instance via the Repository's handle.
+- **Repository Pattern Violation:** Corrected `TastingNoteViewModel` to use `repository.getAllPricesForDefinitions` instead of direct DAO access.
+
+### Changed
+- **Lean ViewModels:** All ViewModels are now lean wrappers around the Repository, holding only UI-specific state and logic.
 
 ## [0.5.3] - 2026-03-15
 ### Added

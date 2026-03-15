@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.viewmodels.RestoreImportState
+import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import kotlinx.coroutines.launch
 
@@ -25,10 +26,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(
     viewModel: WineViewModel,
+    scannerViewModel: ScannerViewModel,
     onImportComplete: () -> Unit
 ) {
     val importState by viewModel.importState
     
+    val imageImportStatus = scannerViewModel.imageImportStatus
+    val imageImportProgress = scannerViewModel.imageImportProgress
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showResetDialog by remember { mutableStateOf(false) }
@@ -131,6 +136,39 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showResetDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                // Fetch Missing Images
+                ListItem(
+                    headlineContent = { Text("Find Missing Images (OpenFoodFacts)") },
+                    supportingContent = {
+                        if (imageImportProgress != null) {
+                            Column {
+                                LinearProgressIndicator(
+                                    progress = { imageImportProgress ?: 0f },
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    color = bordeauxRed
+                                )
+                                Text(imageImportStatus, style = MaterialTheme.typography.bodySmall)
+                            }
+                        } else if (imageImportStatus.isNotEmpty()) {
+                            Text(imageImportStatus, style = MaterialTheme.typography.bodySmall, color = bordeauxRed)
+                        } else {
+                            Text("Searches API by Producer + Wine Name")
+                        }
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Filled.Download,
+                            contentDescription = "Find Images",
+                            tint = bordeauxRed
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = imageImportProgress == null) {
+                            scannerViewModel.startImageImport()
+                        }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }

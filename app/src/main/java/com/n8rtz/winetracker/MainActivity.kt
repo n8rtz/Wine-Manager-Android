@@ -51,6 +51,8 @@ import com.n8rtz.winetracker.ui.screens.RankingsScreen
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import com.n8rtz.winetracker.viewmodels.RankingsViewModel
+import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -113,6 +115,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val rankingsViewModel: RankingsViewModel by viewModels {
+        object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                Log.d("WineTracker", "MainActivity: Creating RankingsViewModel")
+                return RankingsViewModel(this@MainActivity.application, repository) as T
+            }
+        }
+    }
+
+    private val scannerViewModel: ScannerViewModel by viewModels {
+        object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                Log.d("WineTracker", "MainActivity: Creating ScannerViewModel")
+                return ScannerViewModel(this@MainActivity.application, repository) as T
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("WineTracker", "MainActivity: onCreate started")
@@ -132,7 +154,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WineTrackerTheme {
                 val navController = rememberNavController()
-                MainAppScaffold(navController, wineViewModel, tastingNoteViewModel)
+                MainAppScaffold(navController, wineViewModel, tastingNoteViewModel, rankingsViewModel, scannerViewModel)
             }
         }
     }
@@ -143,7 +165,9 @@ class MainActivity : ComponentActivity() {
 fun MainAppScaffold(
     navController: androidx.navigation.NavHostController, 
     viewModel: WineViewModel,
-    tastingNoteViewModel: TastingNoteViewModel
+    tastingNoteViewModel: TastingNoteViewModel,
+    rankingsViewModel: RankingsViewModel,
+    scannerViewModel: ScannerViewModel
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -231,19 +255,19 @@ fun MainAppScaffold(
                 )
             }
             composable("rankings") {
-                RankingsScreen(viewModel)
+                RankingsScreen(rankingsViewModel)
             }
             composable("history") {
                 // Shared WineViewModel passed correctly to HistoryScreen
                 HistoryScreen(viewModel)
             }
             composable("profile") {
-                ProfileScreen(viewModel = viewModel) {
+                ProfileScreen(viewModel = viewModel, scannerViewModel = scannerViewModel) {
                     navigateToTab(navController, "cellar")
                 }
             }
             composable("add_wine") {
-                AddWineScreen(viewModel) {
+                AddWineScreen(viewModel, scannerViewModel) {
                     navController.popBackStack("cellar", inclusive = false)
                 }
             }

@@ -83,4 +83,17 @@
     3. Removed the `vintageByOldDefId` fallback entirely. Note vintage is now derived from the linked bottle's data in the backup JSON.
     4. Updated `consumeBottle` in `WineRepository` to always store `bottleId` and `bottle.vintage` when creating a note.
 * **Key Takeaway (Critical):** SQL migrations are retroactive fixes for *existing* data. They **cannot** prevent future data corruption if the root cause is in the import/export pipeline. When data is silently overwritten during import, the fix **must** live in the importer code, not in a migration. Additionally, "helpful" fallback logic (like `vintageByOldDefId`) is extremely dangerous in relational databases — it trades a visible error (blank vintage) for an invisible corruption (wrong vintage), which is far worse.
-* **Secondary Takeaway:** When you have multiple entities that share a parent ID (like multiple bottles under one definition), never assume that a "best guess" lookup from the parent will correctly resolve to the right child. Always maintain explicit ID links (like `bottleId`) between siblings.
+* **Secondary Takeaway:** When you have multiple entities that share a parent ID (like multiple bottles under one definition), never assume that a "best guess" lookup from the parent will correctly resolve to the right child. Always maintain explicit ID links (like `bottleId`) between siblings.
+
+## [Structural: ViewModel Decomposition & SoC] - 3/15/2026
+* **Symptom:** ViewModels becoming "God Objects" with thousands of lines, mixing camera logic, API calls, and database management, making them hard to test and maintain.
+* **Cause:** Organic growth of features without periodic refactoring to split responsibilities.
+* **Fix:** Decomposed `WineViewModel` into `ScannerViewModel`, `RankingsViewModel`, and a leaner `WineViewModel`. This allows for smaller file sizes, better token efficiency for AI agents, and clearer separation of concerns between media processing and data management.
+* **Key Takeaway:** Proactively split ViewModels when they exceed 300-400 lines or start managing multiple distinct feature areas (e.g., UI state vs. hardware interactions).
+
+## [Structural: Strict Repository Pattern] - 3/15/2026
+* **Symptom:** Scattered database access across multiple ViewModels and Screens, leading to inconsistent data handling and code duplication.
+* **Cause:** Allowing direct DAO access in ViewModels for "quick fixes."
+* **Fix:** Centralized all database operations in `WineRepository`. Updated all ViewModels to use the Repository exclusively. Removed all `db` and `Dao` references from the UI layer.
+* **Key Takeaway:** The Repository is the single source of truth. Bypassing it for convenience leads to technical debt. Strict enforcement early on prevents fragmentation.
+

@@ -133,6 +133,14 @@ class WineRepository(
         inventoryDao.updateBottle(bottle)
     }
 
+    suspend fun getAllPricesForDefinitions(definitionIds: List<Long>): List<com.n8rtz.winetracker.data.local.PriceLookupResult> {
+        return inventoryDao.getAllPricesForDefinitions(definitionIds)
+    }
+
+    suspend fun getAllWithoutImages(): List<WineDefinition> {
+        return wineDao.getAllWithoutImages()
+    }
+
     suspend fun consumeBottle(
         bottleId: Long,
         rating: Double?,
@@ -187,5 +195,9 @@ class WineRepository(
 
     suspend fun deleteWine(bottleId: Long) {
         inventoryDao.deleteBottle(bottleId)
+    }
+
+    fun clearAllTables() {
+        database.clearAllTables()
     }
 }

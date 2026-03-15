@@ -5,8 +5,7 @@ We strictly enforce modularity to keep files small, maintainable,
 and token-efficient. **Do not create "God Objects" or monolithic files.**
 
 **Rules for the AI agent:**
-- If a Compose file exceeds 200 lines, extract components
-  into the `components/` folder.
+- Extract large blocks of code into the `components/` folder if they are reused across multiple places. Otherwise, consider extracting components when a file becomes too complex or unwieldy (typically > 400-500 lines) to maintain readability.
 - New screens go in `ui/screens/`.
 - New reusable widgets go in `ui/components/`.
 - New database entities go in `data/models/`.
@@ -16,8 +15,8 @@ and token-efficient. **Do not create "God Objects" or monolithic files.**
   from a ViewModel or Screen.
 - **Lazy Initialization:** Always use `by lazy` for heavy components in ViewModels (Retrofit, OCR managers, batch processors) to prevent blocking the main thread during startup.
 - **Background Migrations:** Database migrations must be triggered on a background thread during `MainActivity` creation to ensure the UI remains responsive.
-- New ViewModels go in `viewmodels/`. Prefer one per screen
-  over one monolithic ViewModel.
+- **ViewModel Specialization:** Avoid the "God ViewModel" pattern. Use specialized ViewModels for distinct feature areas (e.g., `ScannerViewModel` for media, `RankingsViewModel` for analytics). This keeps the code modular and prevents token-limit issues during development.
+- New ViewModels go in `viewmodels/`. Prefer one per screen or functional group over one monolithic ViewModel.
 - CSV-to-entity mapping logic stays in `data/importer/`.
   Do not create separate mapper classes unless there are
   3+ distinct import sources.
@@ -90,8 +89,10 @@ com.n8rtz.winetracker/
 │   └── MetadataScorer.kt              
 │
 └── viewmodels/
-    ├── WineViewModel.kt               # Main ViewModel: Cellar, History, Rankings states
-    └── TastingNoteViewModel.kt        # Note editor state, save logic
+    ├── WineViewModel.kt               # Core ViewModel: Cellar, History, Import/Export
+    ├── TastingNoteViewModel.kt        # Note editor state, save logic
+    ├── RankingsViewModel.kt           # Rankings filtering, sorting, price lookups
+    └── ScannerViewModel.kt            # Camera OCR scanning, batch image import via OpenFoodFacts
 
 ## 3. Data Flow Rule
 Every data operation follows this chain. No shortcuts.
