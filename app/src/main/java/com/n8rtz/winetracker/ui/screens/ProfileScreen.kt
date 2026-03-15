@@ -35,11 +35,11 @@ fun ProfileScreen(
     
     val bordeauxRed = Color(0xFF722F37)
 
-    val importCsvLauncher = rememberLauncherForActivityResult(
+    val importJsonLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
-            viewModel.importCsvFile(selectedUri)
+            viewModel.importJsonFile(selectedUri)
         }
     }
 
@@ -58,8 +58,8 @@ fun ProfileScreen(
         }
     }
 
-    val exportCsvLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
+    val exportJsonLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
             viewModel.performExport(selectedUri)
@@ -82,9 +82,9 @@ fun ProfileScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Import Data (CSV)
+                // Import Data (JSON)
                 ListItem(
-                    headlineContent = { Text("Import Data (CSV)") },
+                    headlineContent = { Text("Import Data (JSON)") },
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Filled.Upload,
@@ -95,7 +95,7 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            importCsvLauncher.launch("*/*")
+                            importJsonLauncher.launch("*/*")
                         }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -113,7 +113,7 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            viewModel.prepareExport(exportCsvLauncher)
+                            viewModel.prepareExport(exportJsonLauncher)
                         }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))

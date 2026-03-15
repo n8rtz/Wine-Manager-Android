@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import com.n8rtz.winetracker.data.importer.CsvExporter
 import com.n8rtz.winetracker.data.importer.DataImporter
+import com.n8rtz.winetracker.data.importer.JsonExporter
 import com.n8rtz.winetracker.data.local.MIGRATION_5_6
 import com.n8rtz.winetracker.data.local.MIGRATION_6_7
 import com.n8rtz.winetracker.scanner.ScannedWine
@@ -104,7 +105,7 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     fun resetDatabase() { viewModelScope.launch(Dispatchers.IO) { db.clearAllTables() } }
     fun deleteWine(bottleId: Long) { viewModelScope.launch { repository.deleteWine(bottleId) } }
     
-    fun importCsvFile(uri: Uri) {
+    fun importJsonFile(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             importState.value = RestoreImportState.Loading
             try {
@@ -112,16 +113,36 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
                 importer.standardImport(uri)
                 importState.value = RestoreImportState.Success
             } catch (e: Exception) {
-                Log.e("WineViewModel", "CSV import failed", e)
+                Log.e("WineViewModel", "JSON import failed", e)
                 importState.value = RestoreImportState.Error(e.message ?: "Import failed")
             }
         }
     }
 
-    fun prepareExport(launcher: ActivityResultLauncher<String>) { launcher.launch("WineTracker_Backup.csv") }
-    fun performExport(uri: Uri) { viewModelScope.launch { withContext(Dispatchers.IO) { val file = CsvExporter.exportDataToCsv(getApplication(), db); getApplication<Application>().contentResolver.openOutputStream(uri)?.use { output -> file.inputStream().use { input -> input.copyTo(output) } } } } }
+    fun prepareExport(launcher: ActivityResultLauncher<String>) { launcher.launch("WineTracker_Backup.json") }
+    fun performExport(uri: Uri) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val file = JsonExporter.exportDataToJson(getApplication(), db)
+                getApplication<Application>().contentResolver.openOutputStream(uri)?.use { output ->
+                    file.inputStream().use { input ->
+                        input.copyTo(output)
+                    }
+                }
+            }
+        }
+    }
     fun addWine(maker: String, name: String, vintage: String, type: String, country: String, region: String?, subregion: String?, quantity: Int, price: Double) { viewModelScope.launch { repository.addWine(maker, name, vintage, type, country, region, subregion, quantity, price) } }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }
+    
+    // Cellar filtering state
+    private val _filterState = MutableStateFlow(com.n8rtz.winetracker.ui.screens.CellarFilterState())
+    val filterState: StateFlow<com.n8rtz.winetracker.ui.screens.CellarFilterState> = _filterState.asStateFlow()
+
+    fun updateFilterState(newState: com.n8rtz.winetracker.ui.screens.CellarFilterState) {
+        _filterState.value = newState
+    }
+
     fun consumeBottle(bottleId: Long, rating: Double? = null, notes: String? = null, rebuy: Boolean = false) { viewModelScope.launch { repository.consumeBottle(bottleId, rating, notes, rebuy) } }
     fun undoConsumeBottle(bottleId: Long, removeLastNote: Boolean = true) { viewModelScope.launch { repository.undoConsumeBottle(bottleId, removeLastNote) } }
 }

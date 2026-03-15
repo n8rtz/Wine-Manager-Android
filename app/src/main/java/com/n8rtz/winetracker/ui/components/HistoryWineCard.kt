@@ -61,16 +61,16 @@ fun HistoryWineCard(
                 )
             }
 
-            // High-density quantity badge
+            // High-density status/quantity badge
             Surface(
-                color = Color(0xFFF8F9FA),
+                color = if (quantity == 0) Color(0xFF722F37).copy(alpha = 0.1f) else Color(0xFFF8F9FA),
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
-                    text = "QTY: $quantity",
+                    text = if (quantity == 0) "CONSUMED" else "QTY: $quantity",
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFF1C1C1E)
+                    color = if (quantity == 0) Color(0xFF722F37) else Color(0xFF1C1C1E)
                 )
             }
         }

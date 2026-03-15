@@ -139,7 +139,13 @@ class WineRepository(
         if (bottle.quantity > 1) {
             inventoryDao.updateBottle(bottle.copy(quantity = bottle.quantity - 1))
         } else {
-            inventoryDao.updateBottle(bottle.copy(quantity = 0, status = BottleStatus.ARCHIVED))
+            inventoryDao.updateBottle(
+                bottle.copy(
+                    quantity = 0, 
+                    status = BottleStatus.ARCHIVED,
+                    dateConsumed = consumptionDate
+                )
+            )
         }
 
         if (rating != null) {

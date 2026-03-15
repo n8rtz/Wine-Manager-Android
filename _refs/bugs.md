@@ -23,50 +23,66 @@
 
 ---
 
+---
+
 ## Active Bugs
 
-### **[Bug-004]**: Incorrect QTY in Consumption History
+### **[Bug-006]**: Incorrect pluralization for bottle count
 * **Date Logged:** 2026-03-14
-* **Component/File:** `ui/screens/HistoryScreen.kt`
-* **Severity:** Minor UI
-* **Description:** The quantity displayed in the consumption history list is 0 for all bottles, which does not reflect actual consumption or remaining stock correctly.
+* **Component/File:** `ui/screens/CellarScreen.kt`
+* **Severity:** Low
+* **Description:** When a wine has exactly 1 bottle in the cellar, the UI displays "Qty: 1 bottles" instead of "Qty: 1 bottle".
 * **Steps to Reproduce:**
-    1. Open Consumption History screen.
-    2. Observe the "QTY" badge on any wine card.
-* **Known Workaround / Notes:** The `WineBottle` status is set to `ARCHIVED` when quantity reaches 0, but the UI should likely show the quantity consumed or a "Consumed" status instead of raw 0.
+    1. Navigate to the Cellar screen.
+    2. View a wine card that has a quantity of 1.
+    3. Observe the metadata text.
+* **Known Workaround / Notes:** The `metadata` string in `CellarScreen.kt` is hardcoded as `"Qty: ${item.bottle.quantity} bottles"` (or similar) without pluralization logic.
 
-### **[Bug-001]**: Filters broken in Cellar screen
+### **[Bug-005]**: Cellar button fails to reset screen state
 * **Date Logged:** 2026-03-14
 * **Component/File:** `ui/screens/CellarScreen.kt`
 * **Severity:** Minor UI
-* **Description:** Filtering functionality in the cellar screen is not working as expected.
+* **Description:** When on the Cellar screen with a wine card expanded/viewed, pressing the Cellar navigation button does not return the user to the main/reset state of the Cellar screen.
 * **Steps to Reproduce:**
-    1. Open Cellar screen.
-    2. Apply any filter.
-    3. Observe that the list does not update.
-* **Known Workaround / Notes:** N/A
-
-### **[Bug-002]**: Rankings screen card expansion needed
-* **Date Logged:** 2026-03-14
-* **Component/File:** `ui/screens/RankingsScreen.kt`
-* **Severity:** Minor UI
-* **Description:** Cards in the rankings screen do not expand to show full details (date of rating, cellar quantity, etc.).
-* **Steps to Reproduce:**
-    1. Open Rankings screen.
-    2. Click on a wine card.
-* **Known Workaround / Notes:** N/A
-
-### **[Bug-003]**: Tasting Notes screen card expansion needed
-* **Date Logged:** 2026-03-14
-* **Component/File:** `ui/screens/TastingNotesScreen.kt`
-* **Severity:** Minor UI
-* **Description:** Cards in the tasting notes screen do not expand to show full note, score, and date.
-* **Steps to Reproduce:**
-    1. Open Tasting Notes screen.
-    2. Click on a note card.
-* **Known Workaround / Notes:** N/A
+    1. Navigate to the Cellar screen.
+    2. Expand a wine card to view details.
+    3. Tap the "Cellar" button in the bottom navigation bar.
+* **Known Workaround / Notes:** Internal screen state (like `expandedCardId`) is likely not being cleared on navigation re-selection.
 
 ---
 
 ## Resolved / Fixed
-*(AI Agent: Move fixed bugs here, add a "Date & time Fixed" line, and brief one sentence summary of fix)*
+
+### **[Bug-001]**: Filters broken in Cellar screen
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14
+* **Summary of fix:** Implemented `CellarFilterState`, updated `WineViewModel` to manage filter state, and added filtering logic/UI to the now extracted `CellarScreen.kt`.
+
+### **[Bug-002]**: Rankings screen card expansion needed
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14
+* **Summary of fix:** Extracted `WineCard` component with expansion support and implemented expansion details in `RankingsScreen.kt`.
+
+### **[Bug-003]**: Tasting Notes screen card expansion needed
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14
+* **Summary of fix:** Implemented expanded state in `CompactNoteItem` to show full notes, rating, and tasting date.
+
+### **[Bug-004]**: Incorrect QTY in Consumption History
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14
+* **Summary of fix:** Updated `HistoryWineCard` to display a "CONSUMED" badge instead of a raw "QTY: 0" for archived items.
+### **[Bug-007]**: Empty Rankings screen
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14 22:30
+* **Summary of fix:** Fixed logic error in `RankingsScreen.kt` where wines with ratings between 1 and 5 were hidden; filter threshold changed from `> 5` to `> 0`.
+
+### **[Bug-008]**: Inconsistent Tasting Notes styling
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14 22:35
+* **Summary of fix:** Refactored `TastingNotesScreen.kt` to use the shared `WineCard` component for 1:1 visual parity with the Cellar screen.
+
+### **[Bug-009]**: Fragile CSV Import (The "Shifted Columns" Bug)
+* **Date Logged:** 2026-03-14
+* **Date & time Fixed:** 2026-03-14 22:15
+* **Summary of fix:** Migrated the entire backup/restore system to JSON format using Gson to eliminate data misalignment caused by missing or optional columns in legacy CSV backups.

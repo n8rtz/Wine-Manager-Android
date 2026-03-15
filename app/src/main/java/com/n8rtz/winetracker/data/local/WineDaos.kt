@@ -95,7 +95,7 @@ interface TastingNoteDao {
     suspend fun insertNote(note: TastingNote): Long
 
     @Transaction
-    @Query("SELECT * FROM tasting_notes ORDER BY rating DESC")
+    @Query("SELECT * FROM tasting_notes ORDER BY dateTasted DESC")
     fun getTastingHistory(): Flow<List<TastingNoteWithDefinition>>
 
     @Query("DELETE FROM tasting_notes WHERE definitionId = :definitionId AND vintage = :vintage AND noteId = (SELECT MAX(noteId) FROM tasting_notes WHERE definitionId = :definitionId AND vintage = :vintage)")

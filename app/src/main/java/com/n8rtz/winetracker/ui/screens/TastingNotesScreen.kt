@@ -38,6 +38,7 @@ fun TastingNotesScreen(
 
     var appliedTypes by remember { mutableStateOf(setOf<String>()) }
     var noteStatusFilter by remember { mutableStateOf("All") }
+    var expandedNoteId by remember { mutableStateOf<Long?>(null) }
 
     val filteredHistory = history.filter { item ->
         val matchesSearch = searchQuery.isBlank() ||
@@ -116,10 +117,15 @@ fun TastingNotesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(filteredHistory.sortedByDescending { it.note.dateTasted }) { item ->
-                        CompactNoteItem(item) {
-                            onNoteClick(item.note.noteId)
-                        }
+                    items(filteredHistory.sortedWith(compareByDescending<TastingNoteWithDefinition> { it.note.dateTasted }.thenByDescending { it.note.noteId })) { item ->
+                        CompactNoteItem(
+                            item = item,
+                            expanded = expandedNoteId == item.note.noteId,
+                            onExpandToggle = {
+                                expandedNoteId = if (expandedNoteId == item.note.noteId) null else item.note.noteId
+                            },
+                            onClick = { onNoteClick(item.note.noteId) }
+                        )
                     }
                 }
             }
@@ -147,65 +153,62 @@ fun TastingNotesScreen(
 }
 
 @Composable
-fun CompactNoteItem(item: TastingNoteWithDefinition, onClick: () -> Unit) {
-    val wine = item.definition
-    val note = item.note
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "${wine.maker} - ${wine.name} (${note.vintage})",
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (note.notes.isNullOrBlank()) {
-                    Text(
-                        text = "No notes written...",
-                        style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    Text(
-                        text = note.notes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+fun CompactNoteItem(
+    item: TastingNoteWithDefinition, 
+    expanded: Boolean,
+    onExpandToggle: () -> Unit,
+    onClick: () -> Unit
+) {
+    com.n8rtz.winetracker.ui.components.WineCard(
+        title = run {
+            val vintage = item.note.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
+            "${item.definition.maker} - ${item.definition.name} ($vintage)"
+        },
+        subtitle = run {
+            val validRegion = item.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
+            val validCountry = item.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
+            listOfNotNull(validRegion, validCountry).joinToString(", ")
+        },
+        type = item.definition.type,
+        metadata = if (item.note.rating > 0) "Rating: ${item.note.rating.toInt()}" else "Needs Review",
+        imageUrl = item.definition.imageUrl,
+        rating = if (item.note.rating > 0) item.note.rating.toInt() else null,
+        onClick = onExpandToggle,
+        details = if (expanded) {
+            {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    if (!item.note.notes.isNullOrBlank()) {
+                        Text(
+                            text = item.note.notes ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    } else {
+                         Text(
+                            text = "No notes written...",
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Tasted: ${java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date(item.note.dateTasted))}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        TextButton(onClick = onClick) {
+                            Text("Full Details")
+                        }
+                    }
                 }
             }
-            
-            Spacer(Modifier.width(12.dp))
-            
-            if (note.rating > 0) {
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
-                    Text(
-                        text = note.rating.toInt().toString(),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                Icon(Icons.Default.Edit, contentDescription = "Needs Review", tint = MaterialTheme.colorScheme.error)
-            }
-        }
-    }
+        } else null
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)

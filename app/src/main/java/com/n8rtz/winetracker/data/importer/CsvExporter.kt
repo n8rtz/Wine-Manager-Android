@@ -20,18 +20,19 @@ object CsvExporter {
             
             // Bottles
             writer.append("\n--- Bottles ---\n")
-            writer.append("ID,DefinitionID,Vintage,Quantity,Price,Location,Status\n")
+            writer.append("ID,DefinitionID,Vintage,Quantity,Price,Location,Status,DateAdded,DateConsumed\n")
             val bottles = db.inventoryDao().getAllBottlesOnce()
             for (it in bottles) {
-                writer.append("${it.bottleId},${it.definitionId},\"${it.vintage}\",${it.quantity},${it.price ?: 0.0},\"${it.location}\",${it.status}\n")
+                writer.append("${it.bottleId},${it.definitionId},\"${it.vintage}\",${it.quantity},${it.price ?: 0.0},\"${it.location}\",${it.status},${it.dateAdded},${it.dateConsumed}\n")
             }
             
             // Tasting Notes
             writer.append("\n--- Tasting Notes ---\n")
-            writer.append("ID,DefinitionID,Vintage,Date,Rating,Notes,Rebuy\n")
+            writer.append("ID,BottleID,DefinitionID,Vintage,Date,Rating,Notes,Rebuy\n")
             val notes = db.tastingNoteDao().getAllNotesOnce()
             for (it in notes) {
-                writer.append("${it.noteId},${it.definitionId},\"${it.vintage}\",${it.dateTasted},${it.rating},\"${it.notes ?: ""}\",${it.rebuy}\n")
+                // Note: Using 0 for BottleID since we map by DefinitionID/Vintage during import
+                writer.append("${it.noteId},0,${it.definitionId},\"${it.vintage}\",${it.dateTasted},${it.rating},\"${it.notes ?: ""}\",${it.rebuy}\n")
             }
         }
         return file

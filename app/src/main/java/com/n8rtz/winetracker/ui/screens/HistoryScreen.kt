@@ -61,16 +61,9 @@ fun HistoryScreen(viewModel: WineViewModel) {
                     val bottle = item.bottle
 
                     if (definition != null) {
-                        val dateStr = try {
-                            bottle.dateAdded?.let { rawDate ->
-                                rawDate.toLongOrNull()?.let { timestamp ->
-                                    dateFormat.format(Date(timestamp))
-                                } ?: rawDate
-                            } ?: "N/A"
-                        } catch (e: Exception) {
-                            Log.e("WineTracker", "HistoryScreen: Failed to parse date: ${bottle.dateAdded}", e)
-                            "N/A"
-                        }
+                        val dateStr = bottle.dateConsumed?.let { 
+                            dateFormat.format(Date(it)) 
+                        } ?: "N/A"
 
                         HistoryWineCard(
                             maker = definition.maker,

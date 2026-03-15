@@ -10,6 +10,7 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.annotations.SerializedName
 
 enum class BottleStatus {
     IN_CELLAR,
@@ -30,6 +31,7 @@ class Converters {
     indices = [Index(value = ["maker", "name"], unique = true)]
 )
 data class WineDefinition(
+    @SerializedName("id", alternate = ["definitionId"])
     @PrimaryKey(autoGenerate = true) val definitionId: Long = 0,
     val maker: String,
     val name: String,
@@ -57,6 +59,7 @@ data class WineDefinition(
     ]
 )
 data class WineBottle(
+    @SerializedName("id", alternate = ["bottleId"])
     @PrimaryKey(autoGenerate = true) val bottleId: Long = 0,
     val definitionId: Long,
     val vintage: String,
@@ -65,7 +68,8 @@ data class WineBottle(
     val qtyType: String?,
     val location: String?,
     val status: BottleStatus = BottleStatus.IN_CELLAR,
-    val dateAdded: String? = null
+    val dateAdded: String? = null,
+    val dateConsumed: Long? = null
 )
 
 // 3. TASTING HISTORY & RANKINGS
@@ -82,6 +86,7 @@ data class WineBottle(
     indices = [Index("definitionId")]
 )
 data class TastingNote(
+    @SerializedName("id", alternate = ["noteId"])
     @PrimaryKey(autoGenerate = true) val noteId: Long = 0,
     val definitionId: Long,
     val vintage: String,
@@ -115,7 +120,7 @@ data class Rating(
 
 @Database(
     entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class],
-    version = 7,
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -144,7 +149,6 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
             )
         """)
         
-        // Copy only existing columns
         database.execSQL("""
             INSERT INTO wine_bottles_new (bottleId, definitionId, vintage, quantity, status)
             SELECT bottleId, definitionId, vintage, quantity, status FROM wine_bottles
@@ -152,16 +156,10 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         
         database.execSQL("DROP TABLE wine_bottles")
         database.execSQL("ALTER TABLE wine_bottles_new RENAME TO wine_bottles")
-        
-        // Add indices
         database.execSQL("CREATE INDEX IF NOT EXISTS `index_wine_bottles_definitionId` ON `wine_bottles` (`definitionId`)")
         database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_wine_bottles_definitionId_vintage_status` ON `wine_bottles` (`definitionId`, `vintage`, `status`)")
-
-        // --- 2. Update tasting_notes ---
         database.execSQL("ALTER TABLE tasting_notes ADD COLUMN recommendedBy TEXT")
         database.execSQL("ALTER TABLE tasting_notes ADD COLUMN initialRating INTEGER")
-
-        // --- 3. Create ratings table with index ---
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS `ratings` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
@@ -171,15 +169,12 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
                 FOREIGN KEY(`wineId`) REFERENCES `wine_definitions`(`definitionId`) ON DELETE CASCADE
             )
         """)
-        
-        // Add missing index to ratings
         database.execSQL("CREATE INDEX IF NOT EXISTS `index_ratings_wineId` ON `ratings` (`wineId`)")
     }
 }
 
 val MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // Check if column already exists to prevent crash
         val cursor = database.query("PRAGMA table_info(wine_definitions)")
         var hasColumn = false
         while (cursor.moveToNext()) {
@@ -190,9 +185,68 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
             }
         }
         cursor.close()
-        
         if (!hasColumn) {
             database.execSQL("ALTER TABLE wine_definitions ADD COLUMN imageUrl TEXT DEFAULT NULL")
         }
+    }
+}
+
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE wine_bottles ADD COLUMN dateConsumed INTEGER DEFAULT NULL")
+    }
+}
+
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Backfill dateConsumed for archived bottles based on the most recent tasting note for that wine
+        database.execSQL("""
+            UPDATE wine_bottles 
+            SET dateConsumed = (
+                SELECT dateTasted 
+                FROM tasting_notes 
+                WHERE tasting_notes.definitionId = wine_bottles.definitionId 
+                  AND tasting_notes.vintage = wine_bottles.vintage 
+                ORDER BY dateTasted DESC 
+                LIMIT 1
+            ) 
+            WHERE status = 'ARCHIVED' AND dateConsumed IS NULL
+        """)
+    }
+}
+
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Step 1: Fix tasting note vintages — copy from the bottle where unambiguous
+        // Only update notes with 'NV' where there's exactly one distinct non-NV vintage for that definition
+        database.execSQL("""
+            UPDATE tasting_notes 
+            SET vintage = (
+                SELECT DISTINCT wb.vintage 
+                FROM wine_bottles wb 
+                WHERE wb.definitionId = tasting_notes.definitionId 
+                  AND wb.vintage != 'NV'
+            )
+            WHERE vintage = 'NV' 
+              AND (
+                SELECT COUNT(DISTINCT wb.vintage) 
+                FROM wine_bottles wb 
+                WHERE wb.definitionId = tasting_notes.definitionId 
+                  AND wb.vintage != 'NV'
+              ) = 1
+        """)
+
+        // Step 2: Re-backfill dateConsumed from tasting notes, matching by definitionId only
+        database.execSQL("""
+            UPDATE wine_bottles 
+            SET dateConsumed = (
+                SELECT dateTasted 
+                FROM tasting_notes 
+                WHERE tasting_notes.definitionId = wine_bottles.definitionId 
+                ORDER BY dateTasted DESC 
+                LIMIT 1
+            ) 
+            WHERE status = 'ARCHIVED' AND dateConsumed IS NULL
+        """)
     }
 }

@@ -35,23 +35,23 @@ com.n8rtz.winetracker/
 │   ├── navigation/
 │   │   └── WineTrackerApp.kt          # Scaffold, NavHost, BottomNav, Routes
 │   │
-│   ├── screens/
-│   │   ├── CellarScreen.kt            # Active inventory + dashboard header + search
-│   │   ├── HistoryScreen.kt           # Consumed wines chronological (compact ListItems)
-│   │   ├── TastingNotesScreen.kt      # Tasting note repository + search + filters
-│   │   ├── RankingsScreen.kt          # Sorted by 100-point rating
-│   │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns
-│   │   ├── WineDetailScreen.kt        # Full wine detail + "Mark as Consumed"
-│   │   ├── NoteEditorScreen.kt        # Distraction-free note writing + score
-│   │   └── ProfileScreen.kt           # User settings and profile
-│   │
-│   └── components/
-│       ├── WineCard.kt                # Color-coded card for Cellar and Rankings
-│       ├── HistoryListItem.kt         # Compact list item for History screen
-│       ├── DashboardHeader.kt         # Analytics: Total Bottles, Value, Unique
-│       ├── FilterSheet.kt             # Modal bottom sheet (FlowRow chips, sliders)
-│       ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
-│       └── ConsumeConfirmDialog.kt    # Date picker for consumption confirmation
+│    ├── screens/
+    │   ├── CellarScreen.kt            # Active inventory + dashboard header + search
+    │   ├── CellarFilterState.kt       # Data class for cellar filtering
+    │   ├── HistoryScreen.kt           # Consumed wines chronological (compact ListItems)
+    │   ├── TastingNotesScreen.kt      # Tasting note repository + search + filters
+    │   ├── RankingsScreen.kt          # Sorted by 100-point rating
+    │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns
+    │   ├── WineDetailScreen.kt        # Full wine detail + "Mark as Consumed"
+    │   ├── NoteEditorScreen.kt        # Distraction-free note writing + score
+    │   └── ProfileScreen.kt           # User settings and profile
+    │
+    └── components/
+        ├── WineCard.kt                # Color-coded card for Cellar and Rankings (Supports Expansion)
+        ├── HistoryWineCard.kt         # Compact list item for History screen
+        ├── AnalyticsCard.kt           # Dashboard metrics cards (Total Bottles, Value, etc.)
+        ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
+        └── ConsumeConfirmDialog.kt    # Date picker for consumption confirmation
 │
 ├── data/
 │   ├── local/
@@ -69,9 +69,11 @@ com.n8rtz.winetracker/
 │   │   └── WineRepository.kt          # Single source of truth for all data access
 │   │
 │   └── importer/
-│       ├── DataImporter.kt            # Import Data (CSV) + mapping to relational structure
-│       ├── CsvExporter.kt             # CSV export logic
-│       ├── CsvImportHelper.kt         # Parsing utilities
+│       ├── DataImporter.kt            # JSON import logic + relational mapping
+│       ├── JsonExporter.kt            # JSON export logic using Gson
+│       ├── BackupData.kt              # Backup model for JSON serialization
+│       ├── CsvExporter.kt             # (Deprecated) CSV export logic
+│       ├── CsvImportHelper.kt         # CSV parsing utilities
 │       └── InventoryExporter.kt       # Exporter for cellar inventory
 │
 ├── scanner/
