@@ -1,0 +1,119 @@
+# WineTracker: Lessons Learned & Bug Log
+
+## [Navigation: Managing Tab Sub-route Persistence] - 3/16/2026
+* **Symptom:** Switching back to a primary tab (e.g., Cellar) shows a previously opened sub-screen (e.g., Add Wine) instead of the main list.
+* **Cause (Bug-021):** Jetpack Navigation's tab management (`restoreState = true`) preserves the backstack for each tab. If a sub-route like `add_wine` is not manually popped when navigating *away* from its parent tab, it remains at the top of that tab's stack indefinitely.
+* **Fix:** Intercepting the `navigateToTab` call to detect if the *current* route is a transient sub-route (`add_wine`, `history`). If so, execute `navController.popBackStack(parentRoute, inclusive = false)` before navigating to the new tab. This cleans up the stack while maintaining the "saved" state of the primary screen.
+* **Key Takeaway:** For professional tabbed navigation, avoid letting transient forms or deep sub-screens persist on the tab stack unless explicitly desired by the UX. Always define "exit conditions" for sub-routes during cross-tab navigation.
+
+
+## [UI Architecture: Preventing Touch Interception in Overlays] - 3/16/2026
+* **Symptom:** UI elements (like Bottom Navigation tabs) become unresponsive or "locked" after a popup menu or overlay is visually dismissed.
+* **Cause (Bug-020):** Using a full-screen container (`Modifier.fillMaxSize()`) that wraps an `AnimatedVisibility` block. Even when the content inside visibility is "hidden", the outer container remains in the view hierarchy and intercepts all touch events, effectively shielding the layers underneath (like the Scaffold).
+* **Fix:** Refactor the hierarchy so the `fillMaxSize()` modifier is applied *inside* the `AnimatedVisibility` block, or to the `AnimatedVisibility` itself. This ensures that when the state is `false`, the entire intercepting layer is removed from the composition.
+* **Key Takeaway:** Always ensure that full-screen overlay containers are completely removed from the hierarchy when inactive. Conditional visibility should be high enough in the tree to unblock the screens below.
+
+## [Structural: Syntax Integrity in Large Composables] - 3/16/2026
+* **Symptom:** "Modifier 'private' is not applicable to 'local function'" and "Unresolved reference" errors for top-level functions.
+* **Cause:** A missing or misplaced closing brace `}` in a large composable (like `MainAppScaffold`) causes the subsequent functions in the file to be interpreted as nested "local" functions. Local functions cannot have visibility modifiers like `private` and cannot be resolved by external callers.
+* **Fix:** Use a brace-counting script or meticulous indentation review to locate the mismatch. Breaking large composables (>300 lines) into smaller, separate files or components minimizes the "blast radius" of a single syntax error.
+* **Key Takeaway:** Large UI scaffold files are prone to "scope bleed" from missing braces. Extracting sub-layouts (like the FAB menu or Custom Navigation Bar) into their own `@Composable` functions or files prevents one bracket error from breaking the entire activity's scope.
+
+
+## [Structural: Internal vs. External State Synchronization] - 3/15/2026
+* **Symptom:** Expandable UI components (like `WineCard`) requiring multiple taps to open/close or appearing "laggy" when used in large lists.
+* **Cause (Bug-018):** State conflict between a child component's internal state (e.g., `var expanded by remember { ... }`) and a parent screen's external state tracking (e.g., `var expandedGroupKey by remember { ... }`). When both try to manage the same visual property, they can drift out of sync, requiring one interaction to update the internal state and another for the parent state.
+* **Fix:** Implementing a "Stateless" or "Hoistable" pattern:
+    1. Update the child component (`WineCard`) to accept an optional external state parameter (e.g., `isExpanded: Boolean?`).
+    2. Add logic to use the external state if provided (`val expanded = isExpanded ?: internalExpanded`).
+    3. Update the parent screen to pass its state directly to the component, centralizing the source of truth.
+* **Key Takeaway:** For interactive list items, always prefer single-source-of-truth state hoisting. Internal component state is fine for simple, self-contained widgets, but once a parent needs to coordinate that state (e.g., single-expansion logic in a list), the internal state becomes a liability.
+
+## [Bug: Navigation state missing] - 3/13/2026
+* **Symptom:** `Cannot access 'var saveState: Boolean': it is private`
+* **Cause:** Tried to declare `saveState = true` outside of the `popUpTo { ... }` block in a `Maps` call.
+* **Fix:** Moved `saveState = true` inside `popUpTo(navController.graph.findStartDestination().id) { saveState = true }`.
+
+## [Bug: Data Loss on Edit / "Wine Not Found"] - 3/13/2026
+* **Symptom:** Editing a wine definition caused the "Wine not found" error and wiped the entire Cellar list (inventory) for that wine.
+* **Cause:** `OnConflictStrategy.REPLACE` in the DAO. In Room, `REPLACE` is a `DELETE` + `INSERT`. Because child tables (`WineBottle`, `TastingNote`) used `ForeignKey.CASCADE`, the "Delete" part of the replace triggered a cascading wipe of all related data.
+* **Fix:** 1. Changed DAO strategy to `OnConflictStrategy.IGNORE` for inserts.
+    2. Added an explicit `@Update` method to the DAO for modifications.
+    3. Updated the Repository to call `@Update` instead of `@Insert` when editing existing definitions.
+* **Key Takeaway:** Never use `REPLACE` on a parent table if child tables rely on `CASCADE DELETE`. Use explicit `@Update` to modify data in place without breaking Foreign Key relations.
+
+## [Bug: Import Foreign Key Violation] - 3/13/2026
+* **Symptom:** App crashes or fails to import data when using the "Restore" feature. Errors indicate a `SQLiteConstraintException` (Foreign Key failure).
+* **Cause:** The app was trying to insert `WineBottle` records using the static IDs from the exported CSV. Because the new database auto-generates its own `definitionId` for the "Catalog" entries, the IDs in the CSV didn't match the IDs in the new database, breaking the link between the bottle and its definition.
+* **Fix:** Refactored `standardImport` in `DataImporter.kt` to use a **Two-Pass ID Mapping** strategy:
+  1. **Pass One (Definitions):** Read the Definitions section first. Insert them into the database and capture the *new* auto-generated definitionIds.
+  2. **ID Mapping:** Built a `MutableMap<Long, Long>` (`idMapping`) where the **Key** is the old ID from the CSV and the **Value** is the new ID generated by the Room database.
+  3. **Pass Two (Bottles):** When importing the Bottles section, use the `idMapping` to find the correct database definitionId for each bottle, ensuring the integrity of the Foreign Key relationship.
+* **Key Takeaway:** When importing relational data, you cannot trust old IDs from a file. Always create a mapping between the source IDs and the new database IDs to preserve parent-child relationships across different installs or device migrations.
+
+## [Bug: Consumption Dates All Show Today / NV Vintages in Notes & Rankings] - 3/14/2026
+* **Symptom:** Every wine in the Consumption History showed today's date instead of the actual consumption date. Additionally, every wine in the Notes and Rankings screens showed "NV" as the vintage, even though the Cellar had correct vintages.
+* **Cause (Chain):**
+    1. The original CSV→JSON migration did not preserve vintages on `TastingNote` records. The `DataImporter` defaulted blank vintages to `"NV"`.
+    2. `MIGRATION_8_9` tried to backfill `dateConsumed` on archived bottles by joining `tasting_notes.vintage = wine_bottles.vintage`. Since notes had `"NV"` and bottles had real vintages (e.g., "2023"), the join never matched, leaving `dateConsumed` as `null` for all archived bottles.
+    3. The `HistoryScreen` fell back to `dateAdded`, which was being set to `System.currentTimeMillis()` during import when the field was missing from the backup — resulting in today's date for every entry.
+* **Failed Fix (SQL Migration):** Adding a `MIGRATION_9_10` to repair the data at the SQL level did not work because the database was recreated fresh on reinstall (at the new version). The migration ran on an empty DB, and then the JSON import re-created the same bad data.
+* **Correct Fix:** Fixed the `DataImporter` itself to **cross-reference data within the backup** before inserting:
+    1. **Pre-processing step:** Builds two lookup maps from the backup data — `vintageByOldDefId` (bottle vintages keyed by old definitionId) and `latestDateByOldDefId` (latest tasting note dateTasted keyed by old definitionId).
+    2. **Bottle import:** If an `ARCHIVED` bottle has no `dateConsumed`, it inherits the latest `dateTasted` from the corresponding tasting note.
+    3. **Note import:** If a note has blank/NV vintage, it inherits the correct vintage from the corresponding bottle.
+* **Key Takeaway:** SQL migrations are a one-shot fix for existing data — they cannot repair data that is inserted *after* the migration runs (e.g., via a JSON import on a fresh install). When the root cause is in the import pipeline, the fix **must** live in the importer itself. Always cross-reference relational fields (like vintage, dates) between sibling tables within the same backup during import, rather than relying on post-hoc migrations.
+
+## [Structural: Data Normalization & Naming] - 3/15/2026
+* **Symptom:** Prices not showing up for specific wines in rankings even though they existed in the cellar under "Kirkland Signature".
+* **Cause:** Duplicate `WineDefinition` entries caused by slight naming inconsistencies (e.g., "Kirkland" vs. "Kirkland Signature"). Tasting notes were linked to one ID, while bottles were linked to the other, creating a siloed data structure.
+* **Fix:** Implemented `MIGRATION_10_11` to merge duplicate definitions and reassign all child records (bottles, notes, ratings) to a single standardized ID.
+* **Key Takeaway:** Fuzzy matching (like `LIKE` queries) is a good temporary bandage for UI, but **structural data normalization** via migrations is the only permanent fix for relational integrity. Always look for "Duplicate Definition" patterns when data seems to be missing across screens.
+
+## [Structural: Compose List Performance (InputDispatcher Errors)] - 3/15/2026
+* **Symptom:** Application hangs or crashes with `InputDispatcher: Channel is unrecoverably broken`.
+* **Cause:** Performing O(N*M) operations (like filtering a secondary list for every single item in a `LazyColumn`) inside the composition logic. In this case, filtering the entire `tastingHistory` for every `WineCard` to find a rating range was blocking the Main/UI thread beyond the ANR threshold.
+* **Fix:** Pre-calculate a lookup map (e.g., `ratingsMap`) using `remember(dependency) { history.groupBy { ... }.mapValues { ... } }` at the screen level, and then perform a simple O(1) map lookup inside the list items.
+* **Key Takeaway:** Never perform collection filtering or grouping inside a `LazyColumn` item block. If you need data from a different stream, transform it into a Map/Lookup table once at the parent level before rendering the list.
+
+## [Structural: Retroactive Data Backfilling via SQL] - 3/15/2026
+* **Symptom:** New UI features (like "Added on" date) show empty/null data for all existing records.
+* **Cause:** Adding a new field to an entity doesn't automatically populate historical data.
+* **Fix:** Implementing a database migration (e.g., `MIGRATION_11_12`) that uses SQL functions like `datetime('now')` or `(SELECT ...)` to populate the new column for all existing rows *at the moment the user updates the app*.
+* **Key Takeaway:** When introducing mandatory metadata (dates, counters), always include a migration that provides a sensible fallback for existing data to ensure the UI looks complete immediately after the update.
+
+## [Technical: M3 Divider API & State Destructuring] - 3/15/2026
+* **Symptom:** Compition error: `No parameter with name 'alpha' found` and `Unresolved reference 'totalBottles'`.
+* **Cause:** 1. The Material 3 `HorizontalDivider` does not have an `alpha` parameter (unlike the older M2 `Divider`). 2. Destructuring a `remember`ed state object (e.g., `val (a, b) = state`) requires careful variable naming to avoid "Unresolved reference" errors if the original names were used elsewhere.
+* **Fix:** 1. Use `color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)` for transparency. 2. Ensure destructured variables match the local usage site or keep the original object reference.
+* **Key Takeaway:** Composition performance overhauls are high-risk for build regressions. Always verify parameter names in M3 components and be explicit with variable naming when refactoring aggregations into `remember`ed objects.
+
+## [Bug: Vintage Corruption via Importer Fallback & Failed Migration Recovery] - 3/15/2026
+* **Symptom:** The Tasting Notes screen showed 4 notes under a single "Kirkland Signature - Malbec (2022)" card, when they should have been split across 2022, 2023, and 2024 vintages.
+* **Root Cause (Chain):**
+    1. `TastingNote` had no `bottleId` field —  it could only reference the parent `WineDefinition`, not the specific bottle consumed.
+    2. The `DataImporter` contained a `vintageByOldDefId` fallback that, when a note's vintage was blank or "NV," grabbed *any* bottle's vintage for that definition. During import, it assigned "2022" to all 4 notes because "2022" was the first vintage encountered for that `definitionId`.
+    3. This was especially devastating for horizontal tastings (same wine, multiple vintages consumed simultaneously) because timestamps were identical —  there was no way to differentiate them after the vintage was overwritten.
+* **Failed Fix #1 (MIGRATION_13_14 — timestamp matching):** Attempted to match `dateTasted` on notes to `dateConsumed` on bottles within a 2-second window. Failed because `MIGRATION_9_10` had already overwritten `dateConsumed` with the same backfilled timestamp for all archived bottles of the same definition.
+* **Failed Fix #2 (MIGRATION_14_15 — chronological ranking):** Attempted to rank bottles by `bottleId` (insertion order) and notes by `dateTasted`/`noteId`, then pair them 1:1. Failed because all notes from a horizontal tasting had identical timestamps, and the insertion order of bottles didn't correspond to vintage order.
+* **Failed Fix #3 (MIGRATION_15_16 — text matching):** Manually matched exact note text strings to specific vintages via SQL `LIKE` queries. Worked for this specific Malbec case, but was not a systemic fix — it could never handle future data.
+* **Correct Fix:** Fixed the **importer itself** (not migrations):
+    1. Added `bottleId` to `TastingNote` entity, linking notes directly to specific bottles.
+    2. Added `bottleIdMapping` dictionary to `DataImporter` — maps old bottle IDs to new auto-generated IDs during import.
+    3. Removed the `vintageByOldDefId` fallback entirely. Note vintage is now derived from the linked bottle's data in the backup JSON.
+    4. Updated `consumeBottle` in `WineRepository` to always store `bottleId` and `bottle.vintage` when creating a note.
+* **Key Takeaway (Critical):** SQL migrations are retroactive fixes for *existing* data. They **cannot** prevent future data corruption if the root cause is in the import/export pipeline. When data is silently overwritten during import, the fix **must** live in the importer code, not in a migration. Additionally, "helpful" fallback logic (like `vintageByOldDefId`) is extremely dangerous in relational databases — it trades a visible error (blank vintage) for an invisible corruption (wrong vintage), which is far worse.
+* **Secondary Takeaway:** When you have multiple entities that share a parent ID (like multiple bottles under one definition), never assume that a "best guess" lookup from the parent will correctly resolve to the right child. Always maintain explicit ID links (like `bottleId`) between siblings.
+
+## [Structural: ViewModel Decomposition & SoC] - 3/15/2026
+* **Symptom:** ViewModels becoming "God Objects" with thousands of lines, mixing camera logic, API calls, and database management, making them hard to test and maintain.
+* **Cause:** Organic growth of features without periodic refactoring to split responsibilities.
+* **Fix:** Decomposed `WineViewModel` into `ScannerViewModel`, `RankingsViewModel`, and a leaner `WineViewModel`. This allows for smaller file sizes, better token efficiency for AI agents, and clearer separation of concerns between media processing and data management.
+* **Key Takeaway:** Proactively split ViewModels when they exceed 300-400 lines or start managing multiple distinct feature areas (e.g., UI state vs. hardware interactions).
+
+## [Structural: Strict Repository Pattern] - 3/15/2026
+* **Symptom:** Scattered database access across multiple ViewModels and Screens, leading to inconsistent data handling and code duplication.
+* **Cause:** Allowing direct DAO access in ViewModels for "quick fixes."
+* **Fix:** Centralized all database operations in `WineRepository`. Updated all ViewModels to use the Repository exclusively. Removed all `db` and `Dao` references from the UI layer.
+* **Key Takeaway:** The Repository is the single source of truth. Bypassing it for convenience leads to technical debt. Strict enforcement early on prevents fragmentation.
+

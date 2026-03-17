@@ -1,0 +1,458 @@
+--- Definitions ---,,,,,,,
+ID,Maker,Name,Type,Country,Region,Subregion,
+1787,Los Haroldos,Malbec Reserva,Red,Argentina,Valle De Uco,null,
+1788,Penfold's,Koonunga Hill Cab,Red,Australia,,null,
+1789,Black Opal,Chardonnay,White,Australia,South Easern,null,
+1790,Valravn,Chardonnay,White,California,Sonoma County,null,
+1791,Au Bon Climat,Chardonnay,White,California,Santa Barbara,null,
+1792,Wente Vineyards,Morning Fog Chardonnay,White,California,Central Coast,null,
+1793,Gallo Family,Chardonnay,White,California,,null,
+1794,Bread & Butter,Chardonnay,White,California,,null,
+1795,Dark Horse,Sauvignon Blanc,White,California,,null,
+1796,Kirkland Signature,Pinot Noir,Red,California,Russian River Valley,null,
+1797,Blackstone,Merlot,Red,California,,null,
+1798,Barefoot,Cab Sauv,Red,California,,null,
+1799,Dante,Cab Sauv,Red,California,,null,
+1800,McManis,Cab Sauv,Red,California,,null,
+1801,Josh,Cab Sauv,Red,California,,null,
+1802,Smith & Hook,Cab Sauv,Red,California,Central Valley,null,
+1803,Juggernaut,Hillside Cab,Red,California,,null,
+1804,Gnarly Head,Bourbon Barrel Aged Double Black Cab,Red,California,Central Valley,null,
+1805,Adorn,Cab Sauv,Red,California,,null,
+1806,Hayes Ranch,Red Blend,Red,California,,null,
+1807,Marques de Casa Concha,Cab Sauv,Red,Chile,Maipo Valley,null,
+1808,Louis Latour,Grand Ardèche Chardonnay,White,France,Ardeche,null,
+1809,Domaine Delaye,Cuvée Delaye Saint-Véran,White,France,Saint-Veran,null,
+1810,Joseph Drouhin,Saint Veran,White,France,Burgundy,null,
+1811,Cave des Producteurs de Vouvray,Les Fosses d'Hareng,White,France,Vouvray,null,
+1812,Trimbach,Riesling,White,France,Alsace,null,
+1813,Chateau Marjosse,Bordeaux Rouge,Red,France,Bordeaux,null,
+1814,Kirkland Signature,Vacqueyras,Red,France,Rhone,null,
+1815,Marani,Tvishi,White,Georgia,,null,
+1816,Marani,Kindzmarauli,Red,Georgia,,null,
+1817,Nik Weis,Urban Riesling,White,Germany,Mosel,null,
+1818,Dr Loosen,Riesling,White,Germany,Mosel,null,
+1819,Bex,Riesling,White,Germany,Mosel,null,
+1820,Fritz Windisch,Riesling Kabinett,White,Germany,Nierstein,null,
+1821,Dr Volkmar,Riesling Spatlese,White,Germany,Rheinhessen,null,
+1822,Thanisch,Riesling Spatlese,White,Germany,Mosel,null,
+1823,Santo Wines,Santorini Assyrtiko,White,Greece,Santorini,null,
+1824,Vietti,Moscato d'asti,White,Italy,d'asti,null,
+1825,Caposaldo,Moscato NV,White,Italy,Provincia di Pavia,null,
+1826,Ca' Donini,Soave Pinot Grigio,White,Italy,,null,
+1827,Argiolas,Costamolino,White,Italy,Sardegna,null,
+1828,Brancott Estate,Sauvignon Blanc,White,New Zealand,Marlborough,null,
+1829,Kirkland Signature,Sauvignon Blanc,White,New Zealand,Marlborough,null,
+1830,TuaTea,Sauvignon Blanc,White,New Zealand,Marlborough,null,
+1831,Espiral,Vinho Verde,White,Portugal,Vinho Verde,null,
+1832,Raats,Original Chenin Blanc,White,South Africa,Stellenbosch,null,
+1833,Bloem,Chenin Blanc - Viognier,White,South Africa,Paarl,null,
+1834,Marquest de Riscal,Rueda,White,Spain,Rueda,null,
+1835,Marques de Riscal,Rueda,White,Spain,Rueda,null,
+1836,Juan Gil,Honoro Vera Monastrell,Red,Spain,Jumilla,null,
+1837,Bodegas Atalaya,Laya,Red,Spain,Almansa,null,
+1838,Juan Gil,Silver Label,Red,Spain,Jumilla,null,
+1839,Bodegas Ponce,Depaula,Red,Spain,Jumilla,null,
+1840,EGO,Goru Verde,Red,Spain,Jumilla,null,
+1841,Chateau Ste Michelle,Riesling,White,Washington,Columbia Valley,null,
+1842,H3,Cab Sauv,Red,Washington,Columbia Valley,null,
+1843,Stag's Leap,Cabernet Sauvignon,Red,California,Napa Valley,null,
+1844,Penfold's,Koonunga Hill Shiraz Cab,Red,Australia,Southwest,null,
+1845,Marques de Casa Concha,Concha y Toro,Red,Chile,Cachapoal Valley,null,
+1846,Dr Loosen,Riesling Spatlese,White,Germany,Mosel,null,
+1847,Confidencial,Reserva Tinto,Red,Portugal,Lisboa,null,
+1848,Marques de Riscal,Verdejo,White,Spain,Rueda,null,
+1849,Clos de los Siete,C7,Red,Argentina,Valle de Uco,null,
+1850,Pewsey Vale,Dry Riesling,White,Australia,Eden Valley,null,
+1851,Penfold's,Koonunga Hill Chardonnay,White,Australia,Southwest,null,
+1852,Black Opal,Shiraz,Red,Australia,Southeast,null,
+1853,Black Opal,Cabernet Sauvignon,Red,Australia,Southeast,null,
+1854,Blackstone,Cabernet Sauvignon,Red,California,,null,
+1855,Blackstone,Chardonnay,White,California,,null,
+1856,Los Vascos,Chardonnay,White,Chile,Colchagua,null,
+1857,Frontera,Merlot,Red,Chile,Central Valley,null,
+1858,Famille Perrin,Cotes Du Rhone Reserve,Red,France,Cotes Du Rhone,null,
+1859,Prunus,Dao,Red,Portugal,Dao,null,
+1860,Monopole,Blanco Seco,White,Spain,Rioja,null,
+1861,Kirkland Signature,Malbec,Red,Argentina,Mendoza,null,
+1862,Kirkland Signature,Carneros Pinot Noir,Red,California,Napa Valley,null,
+1863,Oak Ridge,Old Vine Zinfandel,Red,California,Lodi,null,
+1864,Kirkland Signature,Chateauneuf-du-Pape,Red,France,Rhone,null,
+1865,Villa Antinori,Toscana,Red,Italy,Toscana,null,
+1866,Kirkland Signature,Chianti Classico Riserva,Red,Italy,Chianti,null,
+1867,Kirkland Signature,Rioja Reserva JME Seleccion,Red,Spain,Rioja,null,
+1868,Rebuttel,Chardonnay,White,California,,null,
+1869,Trader Joe's,Syrah Reserve Lot #209,Red,California,Paso Robles,null,
+1870,Loudenotte,Pinot Noir Cuvee Reservee,Red,France,Pays D'oc,null,
+1871,Rosa dell Olmo,Langhe Nebbiolo,Red,Italy,Piemonte,null,
+1872,Trader Joe's,Grand Reserve Chardonnay Oak Knoll District,White,California,Napa Valley,null,
+1873,Reserve des Auleines,Sauvignon Blanc,Red,France,,null,
+1874,Castillo D Logrono,Rioja,Red,Spain,Rioja,null,
+1875,Primi,Cabernet Sauvignon,Red,Spain,Navarra,null,
+1876,Kirkland Signature,Cabernet Sauvignon,Red,Washington,Columbia Valley,null,
+1877,Belhara Estate,Single Vineyard Malbec,Red,Argentina,Valle de Uco,null,
+1878,Kirkland Signature,Chardonnay,White,California,Sonoma County,null,
+1879,Kirkland Signature,Cab Sauv Suscol Vineyard,Red,California,Napa valley,null,
+1880,Fonbadet,B Vin de Bordeaux,Red,France,Bordeaux,null,
+1881,Kirkland Signature,Prosecco Rose,White,Italy,,null,
+1882,Kirkland Signature,Alexander Valley Cabernet Sauvignon,Red,Washington,Sonoma County,null,
+1883,Esperal,Vinho Verde,White,Portugal,Vinho Verde,null,
+1884,Kirkland Signature,Cab Sauv Sonoma County,Red,California,Sonoma County,null,
+1885,Kirkland Signature,Barolo,Red,Italy,Piedmont,null,
+1886,Jose Maria Da Fonseca,Anticiclone Red Blend,Red,Portugal,Setubal,null,
+1887,Trader Joe's,Reserva Douro Lot #266,Red,Portugal,Douro,null,
+1888,Bodegas Los Pinos,Monastrell Cab Sauv,Red,Spain,Valencia,null,
+1889,Los Riscos,Cabernet Sauvignon,Red,Chile,Central Valley,null,
+1890,Kirkland Signature,St. Emilion Grand Cru,Red,France,Bordeaux,null,
+1891,Kirkland Signature,Pauillac Bordeaux,Red,France,Bordeaux,null,
+1892,Kirkland Signature,Cotes Du Rhone Villages,Red,France,Rhone,null,
+1893,Kirkland Signature,Pinot Noir Russian River Valley,Red,California,Russian River Valley,null,
+1894,Kirkland Signature,Brunello di Montalcino,Red,Italy,Tuscana,null,
+1895,El Domador,Rioja Reserva,Red,Spain,Rioja,null,
+1896,Bodegas Eidosela,Ethereo Albarino,White,Portugal,Rias Baixas,null,
+1897,Chateaux Grand Moulin,Cotes de Bourdeaux,Red,France,Bordeaux,null,
+1898,Chateau de Luc,Cotes de Bourdeaux,Red,France,Bordeaux,null,
+1899,Chateau de Laville,Cotes de Bourdeaux,Red,France,Bordeaux,null,
+1900,Chateau de Lyde,Cotes de Bourdeaux,Red,France,Bordeaux,null,
+1901,Averaen,Pinot Noir,Red,Oregon,Williamette Valley,null,
+1902,Kirkland Signature,Margaux,Red,France,Bordeaux,null,
+1903,Precision,Method Cabernet Sauvignon,Red,California,Napa Valley,null,
+1904,Kirkland Signature,Chablis Premier Cru,White,France,Burgundy,null,
+1905,La Reserve De L'Enclave,Cotes du Rhone Villages,Red,France,Rhone,null,
+1906,Kirkland Signature,Chianti Classico Gran Selezione,Red,Italy,Tuscany,null,
+1907,Kirkland Signature,Gigondas,Red,France,Rhone Valley,null,
+1908,Penfold's,Max's Cab,Red,Australia,,null,
+1909,Marques De La Concordia,Seleccion Especial Brut,White,Spain,,null,
+1910,LXV,The Spell,Red,California,Central Coast,null,
+1911,Kirkland Signature,Bordeaux Superieur,Red,France,Bordeaux,null,
+1912,Covalli,Barolo,Red,Italy,Piedmont,null,
+1913,Terras De Lava,Vinho Tinto,Red,Portugal,Azores,null,
+1914,Casa Ferreirinha,Vinha Grande,Red,Portugal,Douro,null,
+1915,Josh,Reserve Cabernet Sauvignon,Red,California,North Coast,null,
+1916,Kirkland Signature,Old Vine Zinfandel,Red,California,Sonoma County,null,
+1917,Kirkland Signature,Saint-Julien,Red,France,Bordeaux,null,
+1918,,,Red,,,null,
+1919,Kirkland,Vacqueyras,Red,France,null,null,
+1920,Penfolds,Koonunga Hill Chardonnay,White,Australia,null,null,
+1921,Kirkland,Malbec,Red,Argentina,null,null,
+1922,Kirkland,Chianti Classico Riserva,Red,Italy,null,null,
+1923,Kirkland,Alexander Valley Cabernet Sauvignon,Red,Washington,null,null,
+1924,Kirkland,Cabernet Sauvignon,Red,Washington,null,null,
+1925,Kirkland,Chateauneuf-du-Pape,Red,France,null,null,
+1926,Fonbadet,"""B"" Vin de Bordeaux",Red,France,null,null,
+,,,,,,,
+--- Bottles ---,,,,,,,
+ID,definitionId,vintage,quantity,price,location,status,lastUpdated
+3789,1918,,0,0,null,IN_CELLAR,
+3793,1791,2019,6,19.99,null,IN_CELLAR,
+3794,1838,2018,9,12.99,null,IN_CELLAR,
+3795,1838,2019,2,12.99,null,IN_CELLAR,
+3796,1838,2020,2,12.99,null,IN_CELLAR,
+3797,1843,2019,1,46.99,null,IN_CELLAR,
+3798,1822,2016,1,17.99,null,IN_CELLAR,
+3799,1811,2020,4,13.99,null,IN_CELLAR,
+3800,1847,2020,2,9.99,null,IN_CELLAR,
+3801,1846,2023,4,10.99,null,IN_CELLAR,
+3802,1816,2022,1,14.99,null,IN_CELLAR,
+3803,1845,2021,1,19.99,null,IN_CELLAR,
+3804,1848,2023,2,7.99,null,IN_CELLAR,
+3805,1844,2022,6,11.99,null,IN_CELLAR,
+3806,1853,2021,1,7.99,null,IN_CELLAR,
+3807,1789,2021,2,7.99,null,IN_CELLAR,
+3808,1852,2021,1,7.99,null,IN_CELLAR,
+3809,1854,,1,6.99,null,IN_CELLAR,
+3810,1855,2018,1,7.99,null,IN_CELLAR,
+3811,1797,,15,7.99,null,IN_CELLAR,
+3812,1849,2021,1,17.99,null,IN_CELLAR,
+3813,1858,2022,1,10.49,null,IN_CELLAR,
+3814,1857,,1,6.09,null,IN_CELLAR,
+3815,1787,2020,1,9.99,null,IN_CELLAR,
+3816,1856,2023,1,11.99,null,IN_CELLAR,
+3817,1860,2023,1,16.44,null,IN_CELLAR,
+3818,1851,2019,3,10.99,null,IN_CELLAR,
+3819,1851,2022,2,10.99,null,IN_CELLAR,
+3820,1851,2023,5,10.99,null,IN_CELLAR,
+3821,1850,2022,1,16.99,null,IN_CELLAR,
+3822,1859,2021,1,9.99,null,IN_CELLAR,
+3823,1862,2023,1,8.99,null,IN_CELLAR,
+3824,1864,2023,7,18.99,null,IN_CELLAR,
+3825,1866,2022,1,8.99,null,IN_CELLAR,
+3826,1861,2022,2,6.89,null,IN_CELLAR,
+3827,1867,2020,5,6.99,null,IN_CELLAR,
+3828,1814,2023,2,11.49,null,IN_CELLAR,
+3829,1863,2022,3,9.99,null,IN_CELLAR,
+3830,1865,2022,1,14.89,null,IN_CELLAR,
+3831,1870,2023,1,7.99,null,IN_CELLAR,
+3832,1868,2023,1,6.99,null,IN_CELLAR,
+3833,1871,2022,1,8.99,null,IN_CELLAR,
+3834,1869,2022,1,9.99,null,IN_CELLAR,
+3835,1872,2024,1,12.99,null,IN_CELLAR,
+3836,1909,2022,1,9.99,null,IN_CELLAR,
+3837,1874,2019,1,9.99,null,IN_CELLAR,
+3838,1876,2023,1,7.99,null,IN_CELLAR,
+3839,1829,2024,4,6.99,null,IN_CELLAR,
+3840,1875,2021,1,6.89,null,IN_CELLAR,
+3841,1873,2023,1,8.99,null,IN_CELLAR,
+3842,1877,2021,1,8.99,null,IN_CELLAR,
+3843,1880,2019,1,7.99,null,IN_CELLAR,
+3844,1879,2022,1,18.99,null,IN_CELLAR,
+3845,1878,2023,1,8.99,null,IN_CELLAR,
+3846,1881,2024,1,6.99,null,IN_CELLAR,
+3847,1882,2022,6,9.89,null,IN_CELLAR,
+3848,1883,,2,4.99,null,IN_CELLAR,
+3849,1888,2021,1,13.89,null,IN_CELLAR,
+3850,1886,2022,1,9.49,null,IN_CELLAR,
+3851,1885,2021,1,19.99,null,IN_CELLAR,
+3852,1884,2023,1,6.99,null,IN_CELLAR,
+3853,1887,2022,1,9.99,null,IN_CELLAR,
+3854,1889,,1,5.99,null,IN_CELLAR,
+3855,1890,2022,1,14.99,null,IN_CELLAR,
+3856,1891,2023,6,19.99,null,IN_CELLAR,
+3857,1901,2023,1,22.99,null,IN_CELLAR,
+3858,1896,2023,1,8.99,null,IN_CELLAR,
+3859,1899,2022,1,7.49,null,IN_CELLAR,
+3860,1898,2022,1,7.49,null,IN_CELLAR,
+3861,1900,2022,1,7.49,null,IN_CELLAR,
+3862,1897,2022,1,7.49,null,IN_CELLAR,
+3863,1895,2018,1,9.99,null,IN_CELLAR,
+3864,1894,2020,1,21.99,null,IN_CELLAR,
+3865,1892,2024,10,7.49,null,IN_CELLAR,
+3866,1893,2024,2,10.99,null,IN_CELLAR,
+3867,1908,2022,1,14.99,null,IN_CELLAR,
+3868,1902,2023,1,19.99,null,IN_CELLAR,
+3869,1903,2022,1,9.99,null,IN_CELLAR,
+3870,1904,2023,2,22.99,null,IN_CELLAR,
+3871,1905,2022,1,8.99,null,IN_CELLAR,
+3872,1906,2021,1,18.99,null,IN_CELLAR,
+3873,1907,2023,1,14.89,null,IN_CELLAR,
+3874,1910,2021,1,94.99,null,IN_CELLAR,
+3875,1912,2019,1,14.99,null,IN_CELLAR,
+3876,1911,2023,1,6.89,null,IN_CELLAR,
+3877,1913,2023,1,15.99,null,IN_CELLAR,
+3878,1914,2022,1,0,null,IN_CELLAR,
+3879,1915,2022,0,0,null,IN_CELLAR,
+3880,1882,2023,1,9.89,null,IN_CELLAR,
+3881,1916,2024,1,9.99,null,IN_CELLAR,
+3882,1917,2023,1,18.49,null,IN_CELLAR,
+3883,1861,2023,1,6.89,null,IN_CELLAR,
+3884,1861,2024,1,6.89,null,IN_CELLAR,
+3885,1829,2025,1,6.99,null,IN_CELLAR,
+3886,1856,2023,0,0,null,ARCHIVED,null
+3887,1877,2021,0,0,null,ARCHIVED,null
+3888,1892,2024,0,0,null,ARCHIVED,null
+3889,1893,2024,0,0,null,ARCHIVED,null
+3891,1886,2022,0,0,null,ARCHIVED,null
+3892,1884,2023,0,0,null,ARCHIVED,null
+3893,1851,2019,0,0,null,ARCHIVED,null
+3894,1894,2020,0,0,null,ARCHIVED,null
+3895,1890,2022,0,0,null,ARCHIVED,null
+3896,1907,2023,0,0,null,ARCHIVED,null
+3897,1906,2021,0,0,null,ARCHIVED,null
+3898,1838,2018,0,0,null,ARCHIVED,null
+3899,1908,2022,0,0,null,ARCHIVED,null
+3900,1909,2022,0,0,null,ARCHIVED,null
+3902,1869,2022,0,0,null,ARCHIVED,null
+3903,1911,2023,0,0,null,ARCHIVED,null
+3904,1845,2021,0,0,null,ARCHIVED,null
+3905,1860,2023,0,0,null,ARCHIVED,null
+3906,1791,2019,0,0,null,ARCHIVED,null
+3907,1910,2021,0,0,null,ARCHIVED,null
+3908,1918,,0,0,null,ARCHIVED,null
+3909,1790,2019,0,0,null,ARCHIVED,null
+3910,1792,2019,0,0,null,ARCHIVED,null
+3911,1793,(NV),0,0,null,ARCHIVED,null
+3912,1794,2019,0,0,null,ARCHIVED,null
+3913,1795,2019,0,0,null,ARCHIVED,null
+3914,1808,2019,0,0,null,ARCHIVED,null
+3915,1809,2019,0,0,null,ARCHIVED,null
+3916,1810,2018,0,0,null,ARCHIVED,null
+3917,1811,2018,0,0,null,ARCHIVED,null
+3918,1812,2020,0,0,null,ARCHIVED,null
+3919,1815,2019,0,0,null,ARCHIVED,null
+3920,1815,2023,0,0,null,ARCHIVED,null
+3921,1817,2019,0,0,null,ARCHIVED,null
+3922,1818,2020,0,0,null,ARCHIVED,null
+3923,1819,2018,0,0,null,ARCHIVED,null
+3924,1820,2020,0,0,null,ARCHIVED,null
+3925,1821,2019,0,0,null,ARCHIVED,null
+3926,1823,2020,0,0,null,ARCHIVED,null
+3927,1824,2020,0,0,null,ARCHIVED,null
+3928,1825,(NV),0,0,null,ARCHIVED,null
+3929,1826,2015,0,0,null,ARCHIVED,null
+3930,1827,2019,0,0,null,ARCHIVED,null
+3931,1828,2020,0,0,null,ARCHIVED,null
+3932,1830,2024,0,0,null,ARCHIVED,null
+3933,1832,2019,0,0,null,ARCHIVED,null
+3934,1833,(NV),0,0,null,ARCHIVED,null
+3935,1835,2019,0,0,null,ARCHIVED,null
+3936,1841,2020,0,0,null,ARCHIVED,null
+3937,1788,2018,0,0,null,ARCHIVED,null
+3938,1796,2019,0,0,null,ARCHIVED,null
+3939,1798,2020,0,0,null,ARCHIVED,null
+3940,1799,2019,0,0,null,ARCHIVED,null
+3941,1801,2018,0,0,null,ARCHIVED,null
+3942,1802,2019,0,0,null,ARCHIVED,null
+3943,1800,2018,0,0,null,ARCHIVED,null
+3944,1803,2018,0,0,null,ARCHIVED,null
+3945,1804,2020,0,0,null,ARCHIVED,null
+3946,1805,2018,0,0,null,ARCHIVED,null
+3947,1806,2018,0,0,null,ARCHIVED,null
+3948,1807,2018,0,0,null,ARCHIVED,null
+3949,1813,2019,0,0,null,ARCHIVED,null
+3950,1919,2023,0,0,null,ARCHIVED,null
+3951,1797,2017,0,0,null,ARCHIVED,null
+3952,1836,2019,0,0,null,ARCHIVED,null
+3953,1837,2019,0,0,null,ARCHIVED,null
+3954,1839,2020,0,0,null,ARCHIVED,null
+3955,1840,(NV),0,0,null,ARCHIVED,null
+3956,1838,2016,0,0,null,ARCHIVED,null
+3957,1842,2018,0,0,null,ARCHIVED,null
+3958,1920,2019,0,0,null,ARCHIVED,null
+3959,1921,2022,0,0,null,ARCHIVED,null
+3960,1922,2022,0,0,null,ARCHIVED,null
+3961,1923,2022,0,0,null,ARCHIVED,null
+3962,1924,2023,0,0,null,ARCHIVED,null
+3963,1883,(NV),0,0,null,ARCHIVED,null
+3964,1925,2023,0,0,null,ARCHIVED,null
+3965,1926,2019,0,0,null,ARCHIVED,null
+3966,1856,2023,1,0,null,ARCHIVED,9/8/2025
+3967,1877,2021,1,0,null,ARCHIVED,9/20/2025
+3968,1892,2024,1,0,null,ARCHIVED,10/13/2025
+3969,1893,2024,1,0,null,ARCHIVED,10/13/2025
+3970,1892,2024,1,0,null,ARCHIVED,10/28/2025
+3971,1886,2022,1,0,null,ARCHIVED,10/31/2025
+3972,1884,2023,1,0,null,ARCHIVED,11/2/2025
+3973,1851,2019,1,0,null,ARCHIVED,11/13/2025
+3974,1894,2020,1,0,null,ARCHIVED,10/21/2025
+3975,1890,2022,1,0,null,ARCHIVED,8/19/2025
+3976,1907,2023,1,0,null,ARCHIVED,12/5/2025
+3977,1906,2021,1,0,null,ARCHIVED,12/14/2025
+3978,1838,2018,1,0,null,ARCHIVED,12/25/2025
+3979,1908,2022,1,0,null,ARCHIVED,12/21/2025
+3980,1909,2022,1,0,null,ARCHIVED,12/25/2025
+3981,1908,2022,1,0,null,ARCHIVED,12/31/2025
+3982,1869,2022,1,0,null,ARCHIVED,1/4/2026
+3983,1911,2023,1,0,null,ARCHIVED,1/11/2026
+3984,1845,2021,1,0,null,ARCHIVED,1/14/2026
+3985,1860,2023,1,0,null,ARCHIVED,1/30/2026
+3986,1791,2019,1,0,null,ARCHIVED,1/31/2026
+3987,1910,2021,1,0,null,ARCHIVED,2/13/2026
+,,,,,,,
+--- Tasting Notes ---,,,,,,,
+ID,bottleId,definitionId,date,rating,note,rebuy,
+1,3807,1789,1/1/2021,88,,FALSE,
+2,3909,1790,1/1/2021,81,,FALSE,
+3,3910,1792,1/1/2021,85,,FALSE,
+4,3911,1793,1/1/2021,78,,FALSE,
+5,3912,1794,1/1/2021,64,,FALSE,
+6,3913,1795,1/1/2021,77,,FALSE,
+7,3914,1808,1/1/2021,88,,FALSE,
+8,3915,1809,1/1/2021,83,,FALSE,
+9,3916,1810,1/1/2021,82,,FALSE,
+10,3917,1811,1/1/2021,90,,FALSE,
+11,3918,1812,1/1/2021,87,,FALSE,
+12,3919,1815,1/1/2021,93,,FALSE,
+13,3920,1815,1/1/2021,82,,FALSE,
+14,3921,1817,1/1/2021,83,,FALSE,
+15,3922,1818,1/1/2021,92,,FALSE,
+16,3923,1819,1/1/2021,83,,FALSE,
+17,3924,1820,1/1/2021,81,,FALSE,
+18,3925,1821,1/1/2021,89,,FALSE,
+19,3798,1822,1/1/2021,95,,FALSE,
+20,3926,1823,1/1/2021,83,,FALSE,
+21,3927,1824,1/1/2021,82,,FALSE,
+22,3928,1825,1/1/2021,88,,FALSE,
+23,3929,1826,1/1/2021,64,,FALSE,
+24,3930,1827,1/1/2021,84,,FALSE,
+25,3931,1828,1/1/2021,60,,FALSE,
+26,3839,1829,1/1/2021,87,,FALSE,
+27,3932,1830,1/1/2021,82,,FALSE,
+28,3933,1832,1/1/2021,82,,FALSE,
+29,3934,1833,1/1/2021,85,,FALSE,
+30,3935,1835,1/1/2021,87,,FALSE,
+31,3936,1841,1/1/2021,76,,FALSE,
+32,3815,1787,1/1/2021,90,,FALSE,
+33,3937,1788,1/1/2021,89,,FALSE,
+34,3938,1796,1/1/2021,84,,FALSE,
+35,3939,1798,1/1/2021,78,,FALSE,
+36,3940,1799,1/1/2021,81,,FALSE,
+37,3941,1801,1/1/2021,84,,FALSE,
+38,3942,1802,1/1/2021,78,,FALSE,
+39,3943,1800,1/1/2021,79,,FALSE,
+40,3944,1803,1/1/2021,82,,FALSE,
+41,3945,1804,1/1/2021,85,,FALSE,
+42,3946,1805,1/1/2021,78,,FALSE,
+43,3947,1806,1/1/2021,81,,FALSE,
+44,3948,1807,1/1/2021,79,,FALSE,
+45,3949,1813,1/1/2021,84,,FALSE,
+46,3950,1919,1/1/2021,86,,FALSE,
+47,3802,1816,1/1/2021,84,,FALSE,
+48,3951,1797,1/1/2021,87,,FALSE,
+49,3952,1836,1/1/2021,78,,FALSE,
+50,3953,1837,1/1/2021,78,,FALSE,
+51,3898,1838,1/1/2021,88,,FALSE,
+52,3954,1839,1/1/2021,84,,FALSE,
+53,3955,1840,1/1/2021,77,,FALSE,
+54,3956,1838,1/1/2021,88,,FALSE,
+55,3957,1842,1/1/2021,83,,FALSE,
+56,3906,1791,11/2/2021,93,Well balanced; long finish;,FALSE,
+57,3898,1838,11/2/2021,89,Easy drinking. Smooth and balanced. high tannin and good finish,FALSE,
+58,3795,1838,11/2/2021,89,Easy drinking. Smooth and balanced. high tannin and good finish,FALSE,
+59,3797,1843,1/20/2022,96,,FALSE,
+60,3898,1838,8/24/2024,91,,FALSE,
+61,3906,1791,11/21/2024,95,Well balanced; long finish; Complexity and concentration with age,FALSE,
+62,3958,1920,4/27/2025,84,A bit over the hill. good concentration and lots of butter & oak,FALSE,
+63,3950,1919,5/2/2025,88,"Interesting on the nose, ok on the palette. Seemed like it was too young to drink, but had potential with more time in bottle",FALSE,
+64,3827,1867,5/5/2025,87,Great value,FALSE,
+65,3959,1921,5/18/2025,84,"""Nose: VA, tingly; moderate fruit & good roundnessPalette: Big entry, well balanced fruit; black currants, lacking depth & tannins; medium acidity, low-medium concentration; short finish. On second taste, some subtle oak and vanilla notes coming through""",FALSE,
+66,3960,1922,5/18/2025,81,Underwhelming and just frankly not good. Maybe a bad bottle?,FALSE,
+67,3961,1923,5/31/2025,89,"Light-medium color; ripe fruit on the nose, figs; wide entry, very round, well integrated. Medium tannins, some complexity and depth to it. flawless wine. long finish",FALSE,
+68,3839,1829,6/7/2025,88,,FALSE,
+69,3962,1924,6/7/2025,86,"Medium color and decent legs. Quiet on the nose but punchy and rich on the palate. lots of grip and a medium long finish, but lacking in flavors. Good spiciness to it and some sweet tobacco in the finish, but not getting any depth. Solid drinker for $7.99 but nothing special",FALSE,
+70,3833,1871,6/11/2025,77,"Astringent, not great",FALSE,
+71,3837,1874,6/11/2025,88,"Well rounded, no astringency like is common in Spanish reds. Needs a day or two to open up. Quiet on the nose, some sweet tobacco. Some plum on the palate, mild leather. overall enjoyable but lacking depth and finish",FALSE,
+72,3815,1787,6/16/2025,91,"No notes taken at the time; from memory: depth of flavor, refinement, balance, grip and long finish. Really good, exceptional for the price.",FALSE,
+73,3963,1883,6/19/2025,89,"Moderate amount of bubbles. very fresh, slightly herbaceous, green on the nose. Very high acidity. Fresh and crisp on entry. Vibrant green apples, spritzy. Light body. Strong notes of melon, light gooseberry. long finish. very easy drinking, very well balanced. excellent choice for table wine (especially lighter fare)",FALSE,
+74,3964,1925,6/21/2025,94,"Extremely well balanced. Tight entry. some mild fruit, oak, vanilla, sweet tobacco. Good acidity and nice long finish. Very good.",FALSE,
+75,3887,1877,6/22/2025,80,Add from card on table,FALSE,
+76,3965,1926,7/8/2025,83,"Lacking complexity or strong aromas, but overall well made and drinkable. some interesting earthiness on the nose. one note on the palate with good grip. Good acidity but finish just vanishes",FALSE,
+77,3829,1863,7/14/2025,92,"Deep, dark color. ripe fruit on the nose. hints of vanilla. EXTREMELY smooth entry, silky mouth feel and bursting with red fruit, accented with sweet tobacco, cassis, hints of oak and vanilla. Punchy flavor and excellent concentration, but still wonderfully balanced and not overdone. Medium- tannins, medium-long finish. Incredible value at $9.99/L",FALSE,
+78,3835,1872,7/18/2025,83,"""Nose: Buttery, oak, creaminess, smells very fresh. Palette: Bursts onto the palette with a very creamy texture & buttery entry. Gives way to a slight herbacious, green oakiness. Hot on the upper palette, spiciness leads into a long oaky/buttery finish. Good acidity & excellent concentration. Maybe a little too ripe / bold / heavy-handed production.Needs to be chilled to 55F to not be overly forward. Overall lacking nuance/complexity to back up the concentration & boldness""",FALSE,
+79,3851,1885,8/2/2025,88,,FALSE,
+80,3853,1887,8/6/2025,85,"Nothing on the nose. Balanced entry of red fruit, opening up to vibrant cherry flavor. Not a big wine, but well balanced and integrated. Dies quickly on the finish. Enjoyed the flavor but left wanting on body and finish.",FALSE,
+81,3895,1890,8/19/2025,92,Don't have notes (on vacation) but really really lovely wine. Wish I had more,FALSE,
+82,3887,1877,9/21/2025,80,"Lacking in complexity, overly ripe, flavor dies quickly in the glass",FALSE,
+83,3888,1892,10/11/2025,89,"Great Value. Not huge depth of flavor like the more expensive french reds, but cant beat the price-quality ratio",FALSE,
+84,3862,1897,10/13/2025,72,,FALSE,
+85,3860,1898,10/13/2025,77,,FALSE,
+86,3859,1899,10/13/2025,83,,FALSE,
+87,3861,1900,10/13/2025,84,,FALSE,
+88,3891,1886,10/17/2025,81,,FALSE,
+89,3889,1893,10/22/2025,87,,FALSE,
+90,3856,1891,10/25/2025,91,"Has lots of structure and potential to be great, but its just too closed off and young.",FALSE,
+91,3868,1902,10/27/2025,90,,FALSE,
+92,3869,1903,10/28/2025,88,,FALSE,
+93,3892,1884,11/2/2025,86,"Medium entry, some grip, decent balance and concentration but lacking flavor and any depth. Short finish",FALSE,
+94,3893,1851,11/12/2025,86,"Good balance and concentration from age. Not as over the hill as the first bottle I tried. For future vintages, probably best to drink before year 5",FALSE,
+95,3806,1853,11/15/2025,72,"Some sort of chemically... off... aroma on the nose; Same sort of taste on the palette. Low grip, lacking complexity, dies on the finish. Possibly contaminated but its a screw cap?",FALSE,
+96,3839,1829,6/7/2025,,,FALSE,
+97,3870,1904,11/19/2025,89,"Was not impressed at first, very quiet on the nose and entry. letting it soak onto the mid palate reveals nice richness and concentration. full finish but medium-short. For $23, it could be better from Kirkland. I expect it to get better with age.",FALSE,
+98,3871,1905,11/19/2025,83,"Muted fruit, leather, slight VA on the nose. Falls flat on the entry. There's a stealthy amount of grip. Finish was spoiled by the VA coming through, though the lingering finish gave nice notes of sweet tobacco",FALSE,
+99,3812,1849,12/9/2025,90,,FALSE,
+100,3896,1907,11/30/2025,92,,FALSE,
+101,3897,1906,11/30/2025,91,,FALSE,
+102,3899,1908,12/19/2025,91,"quiet on the nose. some slight herb notes. medium-tight entry. medium+ grip initially, holds well through the mid palate. Notes of blackberry and very mild tobacco, but not a ton of notes. Very very long finish, albeit subtle, finish",FALSE,
+103,3900,1909,12/25/2025,86,"Sparkling. Deep golden color, very sweet on the nose. Not much of any fragrance on the nose. Extremely bubbly on first open, bubbles dissolve on the tongue immediately and create a very ""airy"" mouthfeel. Entry is quite sweet/sugar-forward, but quickly gives way to the mid palate which is more sophisticated and dry. Medium acidity, some grassiness like a sauv Blanc; some melon coming through as a secondary. The finish lingers on the upper palate very well. Nice long finish, but not very complex. Overall successful wine. better after it's sat for a day and (unfortunately) lost its bubbles.",FALSE,
+104,3898,1838,12/25/2025,94,"Deep ruby red color; nice light brown hue ring around the edge. Decanted for 30min prior. Fragrant and balanced on the nose. Red fruit and black currants on the nose. Remarkably smooth entry. medium-light tightness. The tannins have softened a tremendous amount to give a silky, velvety smooth mouthfeel. Very fruit forward. More sweet-driven than typical Juan Gil. good grip on the upper palate/mid palate from residual tannins. Depth of red fruit flavors, lacking the pepper notes of younger Juan Gil. Extremely well balanced. Flawless. Tertiary notes of sweet tobacco pull through the fruit on the finish. Medium+ finish, shorter than young Juan Gil but still good. This wine is currently at peak.",FALSE,
+105,3902,1869,12/30/2025,83,"bottle says ""aromas of black fruits, baking spices, toasted oak, and dark plum"". I say: aromas of oak, oak, toasted oak, and, get this, oak. First few sips straight from cellar temp were completely dominated by oak. likely wood chips, definitely manipulated. sitting in glass 10 minutes longer seemed to dissipate some of the harshness of the oak. it's a shame because it's got decent grip and balance, just can't get much of the plum/fruit flavors through the oak. Considerably better after 30 min in glass. hard to rate.",FALSE,
+106,3903,1911,1/6/2026,87,"Needed a 20-30 min decant. Bold, sweet red fruit on the nose. skinny entry, lacks punch. Midpalate builds nicely, but still entirely one note. Slight astringency but overall decently balanced. Medium grip. flavor mostly dies on the finish but there is a subtle, proper oakiness left over. very subtle hints of sweet tobacco as well. Can't complain for the price, but it's nothing special.",FALSE,
+107,3905,1860,1/30/2026,87,"Melon and oak on the nose. buttery and oaky on the entry, very smooth mouthfeel.",FALSE,
+108,3906,1791,1/31/2026,92,"Little flatter than the last time. medium body, somewhat short finish",FALSE,
+109,3878,1914,1/31/2026,90,"Medium purple hue, quiet nose with earthy tones. Wide entry, grows to medium grip. Good balance. medium+ sweetness. Some tobacco notes on midpalate and finish. Medium+ finish",FALSE,
+110,3881,1916,2/14/2026,90,"Bold, ripe fruit on the nose and entry. Decent grip but falls away in the finish. Medium+ sweetness, maybe a little too much. Raspberry and jam on the midpalate. An interesting, pronounced black pepper spiciness on the finish. Subtle tobacco and oak on the finish. Long finish.",FALSE,
+111,3907,1910,2/8/2026,91,"Impeccable balance. lasted in the fridge for a week with no degradation. Nothing to pick out as ""wrong"", but just overall flat and uninteresting. Drinks like a $22-24 bottle.",FALSE,
+112,3830,1865,3/6/2026,86,"Pale red; sweet on the nose with some complexity of cherry and plum; long legs; falls flat on its face on entry. Soft, medium tannins and medium-high acidity; getting a slight hint of vanilla/oak in the finish, but not much. Very long finish but it's not interesting. Overall disappointed. Lacks concentration.",FALSE,
+113,3826,1861,3/9/2026,87,"Rich, round, concentrated red fruit on the nose. Smooth, balanced, soft entry. Light on the mid palate and very short finish. Upfront, a really well made wine but let down by lack of complexity on the palate and poor finish.",FALSE,
+114,3883,1861,3/9/2026,86,"Mostly subtle fruit on the nose, some elements of hay coming through. Wide entry, high acidity. Lacking fruit flavor and concentration. Gives a little bit more in the finish than 2022 but still quiet finish.",FALSE,
+115,3884,1861,3/9/2026,82,Very bright nose. Wine is severely lacking in body and concentration. Tastes watery. not sure if it just needs age or not,FALSE,
+116,3880,1882,3/10/2026,90,"Still young but showing great potential. Well balanced, medium grip, round red fruit, hints of secondary and tertiary flavors of oak, sweet tobacco, black currants. Medium acidity and very long finish. 93+ potential when aged, I believe.",FALSE,

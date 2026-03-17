@@ -1,0 +1,255 @@
+--- Definitions ---
+ID,Maker,Name,Type,Country,Region,Subregion
+1787,"Los Haroldos","Malbec Reserva","Red","Argentina","Valle De Uco","null"
+1788,"Penfold's","Koonunga Hill Cab","Red","Australia","","null"
+1789,"Black Opal","Chardonnay","White","Australia","South Easern","null"
+1790,"Valravn","Chardonnay","White","California","Sonoma County","null"
+1791,"Au Bon Climat","Chardonnay","White","California","Santa Barbara","null"
+1792,"Wente Vineyards","Morning Fog Chardonnay","White","California","Central Coast","null"
+1793,"Gallo Family","Chardonnay","White","California","","null"
+1794,"Bread & Butter","Chardonnay","White","California","","null"
+1795,"Dark Horse","Sauvignon Blanc","White","California","","null"
+1796,"Kirkland Signature","Pinot Noir","Red","California","Russian River Valley","null"
+1797,"Blackstone","Merlot","Red","California","","null"
+1798,"Barefoot","Cab Sauv","Red","California","","null"
+1799,"Dante","Cab Sauv","Red","California","","null"
+1800,"McManis","Cab Sauv","Red","California","","null"
+1801,"Josh","Cab Sauv","Red","California","","null"
+1802,"Smith & Hook","Cab Sauv","Red","California","Central Valley","null"
+1803,"Juggernaut","Hillside Cab","Red","California","","null"
+1804,"Gnarly Head","Bourbon Barrel Aged Double Black Cab","Red","California","Central Valley","null"
+1805,"Adorn","Cab Sauv","Red","California","","null"
+1806,"Hayes Ranch","Red Blend","Red","California","","null"
+1807,"Marques de Casa Concha","Cab Sauv","Red","Chile","Maipo Valley","null"
+1808,"Louis Latour","Grand Ardèche Chardonnay","White","France","Ardeche","null"
+1809,"Domaine Delaye","Cuvée Delaye Saint-Véran","White","France","Saint-Veran","null"
+1810,"Joseph Drouhin","Saint Veran","White","France","Burgundy","null"
+1811,"Cave des Producteurs de Vouvray","Les Fosses d'Hareng","White","France","Vouvray","null"
+1812,"Trimbach","Riesling","White","France","Alsace","null"
+1813,"Chateau Marjosse","Bordeaux Rouge","Red","France","Bordeaux","null"
+1814,"Kirkland Signature","Vacqueyras","Red","France","Rhone","null"
+1815,"Marani","Tvishi","White","Georgia","","null"
+1816,"Marani","Kindzmarauli","Red","Georgia","","null"
+1817,"Nik Weis","Urban Riesling","White","Germany","Mosel","null"
+1818,"Dr Loosen","Riesling","White","Germany","Mosel","null"
+1819,"Bex","Riesling","White","Germany","Mosel","null"
+1820,"Fritz Windisch","Riesling Kabinett","White","Germany","Nierstein","null"
+1821,"Dr Volkmar","Riesling Spatlese","White","Germany","Rheinhessen","null"
+1822,"Thanisch","Riesling Spatlese","White","Germany","Mosel","null"
+1823,"Santo Wines","Santorini Assyrtiko","White","Greece","Santorini","null"
+1824,"Vietti","Moscato d'asti","White","Italy","d'asti","null"
+1825,"Caposaldo","Moscato NV","White","Italy","Provincia di Pavia","null"
+1826,"Ca' Donini","Soave Pinot Grigio","White","Italy","","null"
+1827,"Argiolas","Costamolino","White","Italy","Sardegna","null"
+1828,"Brancott Estate","Sauvignon Blanc","White","New Zealand","Marlborough","null"
+1829,"Kirkland Signature","Sauvignon Blanc","White","New Zealand","Marlborough","null"
+1830,"TuaTea","Sauvignon Blanc","White","New Zealand","Marlborough","null"
+1831,"Espiral","Vinho Verde","White","Portugal","Vinho Verde","null"
+1832,"Raats","Original Chenin Blanc","White","South Africa","Stellenbosch","null"
+1833,"Bloem","Chenin Blanc - Viognier","White","South Africa","Paarl","null"
+1834,"Marquest de Riscal","Rueda","White","Spain","Rueda","null"
+1835,"Marques de Riscal","Rueda","White","Spain","Rueda","null"
+1836,"Juan Gil","Honoro Vera Monastrell","Red","Spain","Jumilla","null"
+1837,"Bodegas Atalaya","Laya","Red","Spain","Almansa","null"
+1838,"Juan Gil","Silver Label","Red","Spain","Jumilla","null"
+1839,"Bodegas Ponce","Depaula","Red","Spain","Jumilla","null"
+1840,"EGO","Goru Verde","Red","Spain","Jumilla","null"
+1841,"Chateau Ste Michelle","Riesling","White","Washington","Columbia Valley","null"
+1842,"H3","Cab Sauv","Red","Washington","Columbia Valley","null"
+1843,"Stag's Leap","Cabernet Sauvignon","Red","California","Napa Valley","null"
+1844,"Penfold's","Koonunga Hill Shiraz Cab","Red","Australia","Southwest","null"
+1845,"Marques de Casa Concha","Concha y Toro","Red","Chile","Cachapoal Valley","null"
+1846,"Dr Loosen","Riesling Spatlese","White","Germany","Mosel","null"
+1847,"Confidencial","Reserva Tinto","Red","Portugal","Lisboa","null"
+1848,"Marques de Riscal","Verdejo","White","Spain","Rueda","null"
+1849,"Clos de los Siete","C7","Red","Argentina","Valle de Uco","null"
+1850,"Pewsey Vale","Dry Riesling","White","Australia","Eden Valley","null"
+1851,"Penfold's","Koonunga Hill Chardonnay","White","Australia","Southwest","null"
+1852,"Black Opal","Shiraz","Red","Australia","Southeast","null"
+1853,"Black Opal","Cabernet Sauvignon","Red","Australia","Southeast","null"
+1854,"Blackstone","Cabernet Sauvignon","Red","California","","null"
+1855,"Blackstone","Chardonnay","White","California","","null"
+1856,"Los Vascos","Chardonnay","White","Chile","Colchagua","null"
+1857,"Frontera","Merlot","Red","Chile","Central Valley","null"
+1858,"Famille Perrin","Cotes Du Rhone Reserve","Red","France","Cotes Du Rhone","null"
+1859,"Prunus","Dao","Red","Portugal","Dao","null"
+1860,"Monopole","Blanco Seco","White","Spain","Rioja","null"
+1861,"Kirkland Signature","Malbec","Red","Argentina","Mendoza","null"
+1862,"Kirkland Signature","Carneros Pinot Noir","Red","California","Napa Valley","null"
+1863,"Oak Ridge","Old Vine Zinfandel","Red","California","Lodi","null"
+1864,"Kirkland Signature","Chateauneuf-du-Pape","Red","France","Rhone","null"
+1865,"Villa Antinori","Toscana","Red","Italy","Toscana","null"
+1866,"Kirkland Signature","Chianti Classico Riserva","Red","Italy","Chianti","null"
+1867,"Kirkland Signature","Rioja Reserva JME Seleccion","Red","Spain","Rioja","null"
+1868,"Rebuttel","Chardonnay","White","California","","null"
+1869,"Trader Joe's","Syrah Reserve Lot #209","Red","California","Paso Robles","null"
+1870,"Loudenotte","Pinot Noir Cuvee Reservee","Red","France","Pays D'oc","null"
+1871,"Rosa dell Olmo","Langhe Nebbiolo","Red","Italy","Piemonte","null"
+1872,"Trader Joe's","Grand Reserve Chardonnay Oak Knoll District","White","California","Napa Valley","null"
+1873,"Reserve des Auleines","Sauvignon Blanc","Red","France","","null"
+1874,"Castillo D Logrono","Rioja","Red","Spain","Rioja","null"
+1875,"Primi","Cabernet Sauvignon","Red","Spain","Navarra","null"
+1876,"Kirkland Signature","Cabernet Sauvignon","Red","Washington","Columbia Valley","null"
+1877,"Belhara Estate","Single Vineyard Malbec","Red","Argentina","Valle de Uco","null"
+1878,"Kirkland Signature","Chardonnay","White","California","Sonoma County","null"
+1879,"Kirkland Signature","Cab Sauv Suscol Vineyard","Red","California","Napa valley","null"
+1880,"Fonbadet","B Vin de Bordeaux","Red","France","Bordeaux","null"
+1881,"Kirkland Signature","Prosecco Rose","White","Italy","","null"
+1882,"Kirkland Signature","Alexander Valley Cabernet Sauvignon","Red","Washington","Sonoma County","null"
+1883,"Esperal","Vinho Verde","White","Portugal","Vinho Verde","null"
+1884,"Kirkland Signature","Cab Sauv Sonoma County","Red","California","Sonoma County","null"
+1885,"Kirkland Signature","Barolo","Red","Italy","Piedmont","null"
+1886,"Jose Maria Da Fonseca","Anticiclone Red Blend","Red","Portugal","Setubal","null"
+1887,"Trader Joe's","Reserva Douro Lot #266","Red","Portugal","Douro","null"
+1888,"Bodegas Los Pinos","Monastrell Cab Sauv","Red","Spain","Valencia","null"
+1889,"Los Riscos","Cabernet Sauvignon","Red","Chile","Central Valley","null"
+1890,"Kirkland Signature","St. Emilion Grand Cru","Red","France","Bordeaux","null"
+1891,"Kirkland Signature","Pauillac Bordeaux","Red","France","Bordeaux","null"
+1892,"Kirkland Signature","Cotes Du Rhone Villages","Red","France","Rhone","null"
+1893,"Kirkland Signature","Pinot Noir Russian River Valley","Red","California","Russian River Valley","null"
+1894,"Kirkland Signature","Brunello di Montalcino","Red","Italy","Tuscana","null"
+1895,"El Domador","Rioja Reserva","Red","Spain","Rioja","null"
+1896,"Bodegas Eidosela","Ethereo Albarino","White","Portugal","Rias Baixas","null"
+1897,"Chateaux Grand Moulin","Cotes de Bourdeaux","Red","France","Bordeaux","null"
+1898,"Chateau de Luc","Cotes de Bourdeaux","Red","France","Bordeaux","null"
+1899,"Chateau de Laville","Cotes de Bourdeaux","Red","France","Bordeaux","null"
+1900,"Chateau de Lyde","Cotes de Bourdeaux","Red","France","Bordeaux","null"
+1901,"Averaen","Pinot Noir","Red","Oregon","Williamette Valley","null"
+1902,"Kirkland Signature","Margaux","Red","France","Bordeaux","null"
+1903,"Precision","Method Cabernet Sauvignon","Red","California","Napa Valley","null"
+1904,"Kirkland Signature","Chablis Premier Cru","White","France","Burgundy","null"
+1905,"La Reserve De L'Enclave","Cotes du Rhone Villages","Red","France","Rhone","null"
+1906,"Kirkland Signature","Chianti Classico Gran Selezione","Red","Italy","Tuscany","null"
+1907,"Kirkland Signature","Gigondas","Red","France","Rhone Valley","null"
+1908,"Penfold's","Max's Cab","Red","Australia","","null"
+1909,"Marques De La Concordia","Seleccion Especial Brut","White","Spain","","null"
+1910,"LXV","The Spell","Red","California","Central Coast","null"
+1911,"Kirkland Signature","Bordeaux Superieur","Red","France","Bordeaux","null"
+1912,"Covalli","Barolo","Red","Italy","Piedmont","null"
+1913,"Terras De Lava","Vinho Tinto","Red","Portugal","Azores","null"
+1914,"Casa Ferreirinha","Vinha Grande","Red","Portugal","Douro","null"
+1915,"Josh","Reserve Cabernet Sauvignon","Red","California","North Coast","null"
+1916,"Kirkland Signature","Old Vine Zinfandel","Red","California","Sonoma County","null"
+1917,"Kirkland Signature","Saint-Julien","Red","France","Bordeaux","null"
+1918,"","","Red","","","null"
+
+--- Bottles ---
+ID,DefinitionID,Vintage,Quantity,Price,Location,Status
+3789,1918,"",0,0.0,"null",IN_CELLAR
+3793,1791,"2019",6,19.99,"null",IN_CELLAR
+3794,1838,"2018",9,12.99,"null",IN_CELLAR
+3795,1838,"2019",2,12.99,"null",IN_CELLAR
+3796,1838,"2020",2,12.99,"null",IN_CELLAR
+3797,1843,"2019",1,46.99,"null",IN_CELLAR
+3798,1822,"2016",1,17.99,"null",IN_CELLAR
+3799,1811,"2020",4,13.99,"null",IN_CELLAR
+3800,1847,"2020",2,9.99,"null",IN_CELLAR
+3801,1846,"2023",4,10.99,"null",IN_CELLAR
+3802,1816,"2022",1,14.99,"null",IN_CELLAR
+3803,1845,"2021",1,19.99,"null",IN_CELLAR
+3804,1848,"2023",2,7.99,"null",IN_CELLAR
+3805,1844,"2022",6,11.99,"null",IN_CELLAR
+3806,1853,"2021",1,7.99,"null",IN_CELLAR
+3807,1789,"2021",2,7.99,"null",IN_CELLAR
+3808,1852,"2021",1,7.99,"null",IN_CELLAR
+3809,1854,"",1,6.99,"null",IN_CELLAR
+3810,1855,"2018",1,7.99,"null",IN_CELLAR
+3811,1797,"",15,7.99,"null",IN_CELLAR
+3812,1849,"2021",1,17.99,"null",IN_CELLAR
+3813,1858,"2022",1,10.49,"null",IN_CELLAR
+3814,1857,"",1,6.09,"null",IN_CELLAR
+3815,1787,"2020",1,9.99,"null",IN_CELLAR
+3816,1856,"2023",1,11.99,"null",IN_CELLAR
+3817,1860,"2023",1,16.44,"null",IN_CELLAR
+3818,1851,"2019",3,10.99,"null",IN_CELLAR
+3819,1851,"2022",2,10.99,"null",IN_CELLAR
+3820,1851,"2023",5,10.99,"null",IN_CELLAR
+3821,1850,"2022",1,16.99,"null",IN_CELLAR
+3822,1859,"2021",1,9.99,"null",IN_CELLAR
+3823,1862,"2023",1,8.99,"null",IN_CELLAR
+3824,1864,"2023",7,18.99,"null",IN_CELLAR
+3825,1866,"2022",1,8.99,"null",IN_CELLAR
+3826,1861,"2022",2,6.89,"null",IN_CELLAR
+3827,1867,"2020",5,6.99,"null",IN_CELLAR
+3828,1814,"2023",2,11.49,"null",IN_CELLAR
+3829,1863,"2022",3,9.99,"null",IN_CELLAR
+3830,1865,"2022",1,14.89,"null",IN_CELLAR
+3831,1870,"2023",1,7.99,"null",IN_CELLAR
+3832,1868,"2023",1,6.99,"null",IN_CELLAR
+3833,1871,"2022",1,8.99,"null",IN_CELLAR
+3834,1869,"2022",1,9.99,"null",IN_CELLAR
+3835,1872,"2024",1,12.99,"null",IN_CELLAR
+3836,1909,"2022",1,9.99,"null",IN_CELLAR
+3837,1874,"2019",1,9.99,"null",IN_CELLAR
+3838,1876,"2023",1,7.99,"null",IN_CELLAR
+3839,1829,"2024",4,6.99,"null",IN_CELLAR
+3840,1875,"2021",1,6.89,"null",IN_CELLAR
+3841,1873,"2023",1,8.99,"null",IN_CELLAR
+3842,1877,"2021",1,8.99,"null",IN_CELLAR
+3843,1880,"2019",1,7.99,"null",IN_CELLAR
+3844,1879,"2022",1,18.99,"null",IN_CELLAR
+3845,1878,"2023",1,8.99,"null",IN_CELLAR
+3846,1881,"2024",1,6.99,"null",IN_CELLAR
+3847,1882,"2022",6,9.89,"null",IN_CELLAR
+3848,1883,"",2,4.99,"null",IN_CELLAR
+3849,1888,"2021",1,13.89,"null",IN_CELLAR
+3850,1886,"2022",1,9.49,"null",IN_CELLAR
+3851,1885,"2021",1,19.99,"null",IN_CELLAR
+3852,1884,"2023",1,6.99,"null",IN_CELLAR
+3853,1887,"2022",1,9.99,"null",IN_CELLAR
+3854,1889,"",1,5.99,"null",IN_CELLAR
+3855,1890,"2022",1,14.99,"null",IN_CELLAR
+3856,1891,"2023",6,19.99,"null",IN_CELLAR
+3857,1901,"2023",1,22.99,"null",IN_CELLAR
+3858,1896,"2023",1,8.99,"null",IN_CELLAR
+3859,1899,"2022",1,7.49,"null",IN_CELLAR
+3860,1898,"2022",1,7.49,"null",IN_CELLAR
+3861,1900,"2022",1,7.49,"null",IN_CELLAR
+3862,1897,"2022",1,7.49,"null",IN_CELLAR
+3863,1895,"2018",1,9.99,"null",IN_CELLAR
+3864,1894,"2020",1,21.99,"null",IN_CELLAR
+3865,1892,"2024",10,7.49,"null",IN_CELLAR
+3866,1893,"2024",2,10.99,"null",IN_CELLAR
+3867,1908,"2022",1,14.99,"null",IN_CELLAR
+3868,1902,"2023",1,19.99,"null",IN_CELLAR
+3869,1903,"2022",1,9.99,"null",IN_CELLAR
+3870,1904,"2023",2,22.99,"null",IN_CELLAR
+3871,1905,"2022",1,8.99,"null",IN_CELLAR
+3872,1906,"2021",1,18.99,"null",IN_CELLAR
+3873,1907,"2023",1,14.89,"null",IN_CELLAR
+3874,1910,"2021",1,94.99,"null",IN_CELLAR
+3875,1912,"2019",1,14.99,"null",IN_CELLAR
+3876,1911,"2023",1,6.89,"null",IN_CELLAR
+3877,1913,"2023",1,15.99,"null",IN_CELLAR
+3878,1914,"2022",1,0.0,"null",IN_CELLAR
+3879,1915,"2022",0,0.0,"null",IN_CELLAR
+3880,1882,"2023",1,9.89,"null",IN_CELLAR
+3881,1916,"2024",1,9.99,"null",IN_CELLAR
+3882,1917,"2023",1,18.49,"null",IN_CELLAR
+3883,1861,"2023",1,6.89,"null",IN_CELLAR
+3884,1861,"2024",1,6.89,"null",IN_CELLAR
+3885,1829,"2025",1,6.99,"null",IN_CELLAR
+3886,1856,"2023",0,0.0,"null",ARCHIVED
+3887,1877,"2021",0,0.0,"null",ARCHIVED
+3888,1892,"2024",0,0.0,"null",ARCHIVED
+3889,1893,"2024",0,0.0,"null",ARCHIVED
+3891,1886,"2022",0,0.0,"null",ARCHIVED
+3892,1884,"2023",0,0.0,"null",ARCHIVED
+3893,1851,"2019",0,0.0,"null",ARCHIVED
+3894,1894,"2020",0,0.0,"null",ARCHIVED
+3895,1890,"2022",0,0.0,"null",ARCHIVED
+3896,1907,"2023",0,0.0,"null",ARCHIVED
+3897,1906,"2021",0,0.0,"null",ARCHIVED
+3898,1838,"2018",0,0.0,"null",ARCHIVED
+3899,1908,"2022",0,0.0,"null",ARCHIVED
+3900,1909,"2022",0,0.0,"null",ARCHIVED
+3902,1869,"2022",0,0.0,"null",ARCHIVED
+3903,1911,"2023",0,0.0,"null",ARCHIVED
+3904,1845,"2021",0,0.0,"null",ARCHIVED
+3905,1860,"2023",0,0.0,"null",ARCHIVED
+3906,1791,"2019",0,0.0,"null",ARCHIVED
+3907,1910,"2021",0,0.0,"null",ARCHIVED
+3908,1918,"",0,0.0,"null",ARCHIVED
+
+--- Tasting Notes ---
+ID,DefinitionID,Vintage,Date,Rating,Notes,Rebuy
