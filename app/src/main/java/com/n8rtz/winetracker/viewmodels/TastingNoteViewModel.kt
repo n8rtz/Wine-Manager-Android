@@ -5,11 +5,12 @@ import androidx.lifecycle.AndroidViewModel
 import com.n8rtz.winetracker.data.repository.WineRepository
 
 import androidx.lifecycle.viewModelScope
-import com.n8rtz.winetracker.data.local.BottleStatus
-import com.n8rtz.winetracker.ui.screens.TastingNotesFilterState
+import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.data.models.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.n8rtz.winetracker.ui.screens.TastingNotesFilterState
 
 // TastingNoteViewModel is now a lean wrapper providing read-only access to tasting notes.
 // It no longer manages database instances or import operations.
@@ -23,6 +24,84 @@ class TastingNoteViewModel(application: Application, private val repository: Win
 
     fun updateFilterState(newState: TastingNotesFilterState) {
         _filterState.value = newState
+    }
+
+    // --- Note Editor State ---
+    private val _editorSensoryData = MutableStateFlow(SensoryData())
+    val editorSensoryData: StateFlow<SensoryData> = _editorSensoryData.asStateFlow()
+
+    fun updateSensoryData(update: (SensoryData) -> SensoryData) {
+        _editorSensoryData.value = update(_editorSensoryData.value)
+    }
+
+    fun loadNoteForEditing(noteId: Long, onLoaded: (TastingNoteWithDefinition) -> Unit) {
+        viewModelScope.launch {
+            val item = repository.getNoteWithDefinitionById(noteId)
+            if (item != null) {
+                _editorSensoryData.value = item.note.sensoryData ?: SensoryData(
+                    overallScore = if (item.note.rating > 0) item.note.rating.toInt() else null
+                )
+                onLoaded(item)
+            }
+        }
+    }
+
+    fun saveTastingNote(
+        definitionId: Long,
+        vintage: String,
+        bottleId: Long?,
+        dateTasted: Long,
+        notes: String?,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val score = _editorSensoryData.value.overallScore 
+                ?: com.n8rtz.winetracker.ui.components.calculateBaseScore(_editorSensoryData.value)
+            val updatedSensory = _editorSensoryData.value.copy(overallScore = score)
+            val note = TastingNote(
+                definitionId = definitionId,
+                vintage = vintage,
+                dateTasted = dateTasted,
+                rating = score.toDouble(),
+                notes = notes,
+                bottleId = bottleId,
+                sensoryData = updatedSensory
+            )
+            repository.insertTastingNote(note)
+            
+            _editorSensoryData.value = SensoryData()
+            onSuccess()
+        }
+    }
+
+    fun updateExistingTastingNote(
+        noteId: Long,
+        definitionId: Long,
+        vintage: String,
+        bottleId: Long?,
+        dateTasted: Long,
+        notes: String?,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val score = _editorSensoryData.value.overallScore 
+                ?: com.n8rtz.winetracker.ui.components.calculateBaseScore(_editorSensoryData.value)
+            val updatedSensory = _editorSensoryData.value.copy(overallScore = score)
+            val note = TastingNote(
+                noteId = noteId,
+                definitionId = definitionId,
+                vintage = vintage,
+                dateTasted = dateTasted,
+                rating = score.toDouble(),
+                notes = notes,
+                bottleId = bottleId,
+                sensoryData = updatedSensory
+            )
+            repository.updateTastingNote(note)
+            
+            _editorSensoryData.value = SensoryData()
+            onSuccess()
+        }
     }
 
     private fun String.normalizeLocation(): String {

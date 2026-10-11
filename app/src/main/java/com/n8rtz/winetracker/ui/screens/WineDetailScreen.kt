@@ -22,8 +22,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.n8rtz.winetracker.data.local.WineBottle
+import com.n8rtz.winetracker.data.models.*
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import java.util.Calendar

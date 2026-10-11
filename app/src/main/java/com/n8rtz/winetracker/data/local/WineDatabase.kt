@@ -10,12 +10,17 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import com.google.gson.reflect.TypeToken
+import com.n8rtz.winetracker.data.models.SensoryData
+import com.n8rtz.winetracker.data.models.BottleStatus
+import com.n8rtz.winetracker.data.models.WineDefinition
+import com.n8rtz.winetracker.data.models.WineBottle
+import com.n8rtz.winetracker.data.models.TastingNote
+import com.n8rtz.winetracker.data.models.Rating
 
-enum class BottleStatus {
-    IN_CELLAR,
-    ARCHIVED
-}
+// Models moved to com.n8rtz.winetracker.data.models package
 
 class Converters {
     @TypeConverter
@@ -23,105 +28,25 @@ class Converters {
 
     @TypeConverter
     fun toStatus(value: String): BottleStatus = BottleStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromSensoryData(data: SensoryData?): String? {
+        return Gson().toJson(data)
+    }
+
+    @TypeConverter
+    fun toSensoryData(json: String?): SensoryData? {
+        if (json == null) return null
+        val type = object : TypeToken<SensoryData>() {}.type
+        return Gson().fromJson(json, type)
+    }
 }
 
-// 1. THE WINE CATALOG (Static metadata)
-@Entity(
-    tableName = "wine_definitions",
-    indices = [Index(value = ["maker", "name"], unique = true)]
-)
-data class WineDefinition(
-    @SerializedName("id", alternate = ["definitionId"])
-    @PrimaryKey(autoGenerate = true) val definitionId: Long = 0,
-    val maker: String,
-    val name: String,
-    val type: String,
-    val country: String,
-    val region: String?,
-    val subregion: String? = null,
-    val imageUrl: String? = null
-)
-
-// 2. THE INVENTORY (Specific bottles/vintages)
-@Entity(
-    tableName = "wine_bottles",
-    foreignKeys = [
-        ForeignKey(
-            entity = WineDefinition::class,
-            parentColumns = ["definitionId"],
-            childColumns = ["definitionId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index("definitionId"),
-        Index(value = ["definitionId", "vintage", "status"], unique = true)
-    ]
-)
-data class WineBottle(
-    @SerializedName("id", alternate = ["bottleId"])
-    @PrimaryKey(autoGenerate = true) val bottleId: Long = 0,
-    val definitionId: Long,
-    val vintage: String,
-    val quantity: Int,
-    val price: Double?,
-    val qtyType: String?,
-    val location: String?,
-    val status: BottleStatus = BottleStatus.IN_CELLAR,
-    val dateAdded: String? = null,
-    val dateConsumed: Long? = null
-)
-
-// 3. TASTING HISTORY & RANKINGS
-@Entity(
-    tableName = "tasting_notes",
-    foreignKeys = [
-        ForeignKey(
-            entity = WineDefinition::class,
-            parentColumns = ["definitionId"],
-            childColumns = ["definitionId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index("definitionId")]
-)
-data class TastingNote(
-    @SerializedName("id", alternate = ["noteId"])
-    @PrimaryKey(autoGenerate = true) val noteId: Long = 0,
-    val definitionId: Long,
-    val vintage: String,
-    val dateTasted: Long,
-    val rating: Double,
-    val notes: String?,
-    val rebuy: Boolean = false,
-    val recommendedBy: String? = null,
-    val initialRating: Int? = null,
-    val bottleId: Long? = null
-)
-
-// 4. HISTORICAL RATINGS
-@Entity(
-    tableName = "ratings",
-    foreignKeys = [
-        ForeignKey(
-            entity = WineDefinition::class,
-            parentColumns = ["definitionId"],
-            childColumns = ["wineId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index("wineId")]
-)
-data class Rating(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val wineId: Long,
-    val score: Int,
-    val date: String
-)
+// Entities moved to com.n8rtz.winetracker.data.models package
 
 @Database(
     entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -468,5 +393,15 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
             ) 
             WHERE status = 'ARCHIVED' AND dateConsumed IS NULL
         """)
+    }
+}
+
+/**
+ * Migration 16 -> 17: Add sensoryData (JSON string) to TastingNote for
+ * the advanced Wine Evaluation AWS-style rating feature.
+ */
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasting_notes ADD COLUMN sensoryData TEXT DEFAULT NULL")
     }
 }

@@ -15,9 +15,8 @@ import com.n8rtz.winetracker.data.local.MIGRATION_6_7
 import com.n8rtz.winetracker.scanner.ScannedWine
 import com.n8rtz.winetracker.scanner.ScannerManager
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
-import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
-import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.models.*
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
 import com.n8rtz.winetracker.image.WineImageBatchProcessor
@@ -41,8 +40,8 @@ import kotlinx.coroutines.flow.combine
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.Date
-import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.PriceLookupResult
+import com.n8rtz.winetracker.data.models.*
 import com.n8rtz.winetracker.ui.screens.RankingsFilterState
 
 sealed class RestoreImportState {

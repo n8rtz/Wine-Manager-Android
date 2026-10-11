@@ -141,9 +141,9 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 * **Sticky Footer:** The "Apply Filters" and "Clear All" buttons MUST remain sticky at the bottom of the sheet, never scrolling out of view.
 * **Sort By Section:** At the very top of the sheet, include a "Sort By" section using selectable chips or a dropdown for: `Newest`, `Oldest`, `Price (Low to High)`, `Price (High to Low)`, `Country (A-Z)`, `Country (Z-A)`.
 * **Dual-Input Range Sliders (Price, Vintage, Rating):** For numerical filters, the UI must include BOTH a visual `RangeSlider` AND two side-by-side `OutlinedTextField` boxes (Min and Max) below it. Updating the text fields must update the slider, and vice versa.
-  * *Price Range:* e.g., $0 to $1000+
-  * *Vintage Range:* e.g., 1900 to Current Year
-  * *Rating Range:* 0 to 100
+  * *Price Range:** e.g., $0 to $1000+
+  * *Vintage Range:** e.g., 1900 to Current Year
+  * *Rating Range:** 0 to 100
 * **Maker/Producer Filter:** Include a section for "Maker/Producer". Because the list could be long, use a `FlowRow` of toggle chips for the most common makers, or a nested searchable autocomplete field inside the sheet.
 * **Keyboard Inset Safety:** Because we are adding text fields inside a bottom sheet, the sheet MUST handle `WindowInsets.ime` padding so the keyboard doesn't cover the Min/Max inputs when typing.
 
@@ -180,7 +180,7 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 * **Active Cellar:** Use `Wines - Cellar.csv` to create `WineBottle` records with `status = BottleStatus.IN_CELLAR`.
   * *Note:* If a wine is in the Cellar but NOT in Log (In), create a new Definition for it.
 * **Tasting History:** Use `Wines - Log (Out).csv` to create `WineBottle` records with `status = BottleStatus.ARCHIVED`.
-  * *Data Point:* The "Date" column in Log (Out) should be mapped to the `lastUpdated` or `dateConsumed` field.
+  * *Data Point:** The "Date" column in Log (Out) should be mapped to the `lastUpdated` or `dateConsumed` field.
 * **Conflict Resolution:** If a wine appears in both Log (In) and Log (Out), the app should show one Definition in the catalog, one Archived bottle in History, and (if applicable) an Active bottle in the Cellar.
 
 # 32. Show All Attributes on Cellar Edit Screen
@@ -286,3 +286,25 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
     * **Room Integration:** A `TypeConverter` using **Gson** will automatically handle the translation between the Kotlin object and the database string.
     * **Extensibility:** This architecture allows us to add new sensory parameters at any time by simply updating the `SensoryData` class with a new field and a default value, avoiding the need for future SQL migrations for every new trait.
 * **Implementation Thoughts:** To make this professional yet easy to use, the layout should utilize a `LazyColumn` or vertical scroll since there are many sliders. The ombre effect can be achieved using `Brush.horizontalGradient` applied to the active track color of the Compose `Slider`. A "Snap to grid" (`steps` parameter) is recommended for traits with finite text descriptors to make selection snappy.
+
+## 46. Tree-Style Tasting Note Selector (Placeholder)
+* **Goal:** Implement a basic hierarchical (tree-style) selector for aromas and flavors to serve as a functional placeholder until the high-fidelity interactive Aroma Wheel is fully implemented.
+* **UI/Trigger:** A nested list or expandable tree interface where users can drill down from broad categories (e.g., Fruity) to specific descriptors (e.g., Green Apple).
+* **Navigation/Location:** Integrated into the **Advanced Sensory Evaluation Form** (Nose/Palate sections).
+
+## 47. Integrated Reference Tools & Resources
+* **Goal:** Provide expert-level tools and reference data directly within the app to assist in accurate wine evaluation and collection management.
+* **Resources Included:**
+    * **Wine Vintage Ratings:** Quick access to vintage quality charts by region/year.
+    * **Wine Region Maps:** High-resolution maps of major wine appellations.
+    * **Wine Varietal Profiles:** Detailed summaries of grape characteristics and common tasting profiles.
+* **Navigation/Location:** Accessible via a new "Resources" or "Reference" section within the **Utility Hub / Settings**.
+
+## 48. Dual-Context Aroma Wheels
+* **Goal:** Improve usability and readability of the sensory evaluation by providing tailored aroma selections based on the wine's profile.
+* **UI/Trigger:** 
+    * Two separate interactive wheel configurations:
+        1. **Red Wine Wheel:** Focused on dark fruits, earthy, and spice notes.
+        2. **White/Rosé/Sparkling Wheel:** Focused on citrus, floral, and light fruit notes.
+* **Logic:** The app should automatically default to the appropriate wheel based on the `WineType` of the selected bottle, while still allowing the user to manually toggle between them if needed.
+* **Navigation/Location:** Found within the **Advanced Sensory Evaluation Form** (Nose section).

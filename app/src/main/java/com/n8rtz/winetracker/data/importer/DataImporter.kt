@@ -6,9 +6,7 @@ import android.util.Log
 import androidx.room.withTransaction
 import com.google.gson.Gson
 import com.n8rtz.winetracker.data.local.WineDatabase
-import com.n8rtz.winetracker.data.local.WineDefinition
-import com.n8rtz.winetracker.data.local.WineBottle
-import com.n8rtz.winetracker.data.local.TastingNote
+import com.n8rtz.winetracker.data.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
@@ -128,7 +126,7 @@ class DataImporter(
 
                             // If ARCHIVED and no dateConsumed, use latest dateTasted from notes
                             val resolvedDateConsumed = oldBottle.dateConsumed
-                                ?: if (oldBottle.status == com.n8rtz.winetracker.data.local.BottleStatus.ARCHIVED) {
+                                ?: if (oldBottle.status == BottleStatus.ARCHIVED) {
                                     latestDateByOldDefId[oldBottle.definitionId]
                                 } else null
 
@@ -184,11 +182,14 @@ class DataImporter(
                                 rating = oldNote.rating,
                                 notes = oldNote.notes,
                                 rebuy = oldNote.rebuy,
-                                bottleId = mappedBottleId
+                                recommendedBy = oldNote.recommendedBy,
+                                initialRating = oldNote.initialRating,
+                                bottleId = mappedBottleId,
+                                sensoryData = oldNote.sensoryData
                             )
                             tastingNoteDao.insertNote(newNote)
                             noteCount++
-                            Log.d("WineTracker", "Note imported: id=${oldNote.noteId}, vintage=$resolvedVintage, bottleId=${oldNote.bottleId}->${mappedBottleId}")
+                            Log.d("WineTracker", "Note imported: id=${oldNote.noteId}, vintage=$resolvedVintage, bottleId=${oldNote.bottleId}->${mappedBottleId}, hasSensory=${oldNote.sensoryData != null}")
                         } catch (e: Exception) {
                             Log.e("DataImporter", "Error importing note", e)
                         }

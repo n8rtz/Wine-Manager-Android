@@ -2,6 +2,7 @@ package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
 import com.n8rtz.winetracker.data.local.WineDatabase
+import com.n8rtz.winetracker.data.models.*
 import java.io.File
 import java.io.FileWriter
 

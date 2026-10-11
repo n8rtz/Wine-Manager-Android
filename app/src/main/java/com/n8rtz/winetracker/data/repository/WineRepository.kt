@@ -3,17 +3,8 @@ package com.n8rtz.winetracker.data.repository
 import android.content.Context
 import android.net.Uri
 import com.n8rtz.winetracker.network.WineImageFetcher
-import com.n8rtz.winetracker.data.local.BottleStatus
-import com.n8rtz.winetracker.data.local.InventoryDao
-import com.n8rtz.winetracker.data.local.RatingDao
-import com.n8rtz.winetracker.data.local.TastingNote
-import com.n8rtz.winetracker.data.local.TastingNoteDao
-import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
-import com.n8rtz.winetracker.data.local.WineBottle
-import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
-import com.n8rtz.winetracker.data.local.WineDao
-import com.n8rtz.winetracker.data.local.WineDatabase
-import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.*
+import com.n8rtz.winetracker.data.models.*
 import kotlinx.coroutines.flow.Flow
 
 class WineRepository(
@@ -131,6 +122,18 @@ class WineRepository(
     suspend fun updateWine(definition: WineDefinition, bottle: WineBottle) {
         wineDao.updateDefinition(definition)
         inventoryDao.updateBottle(bottle)
+    }
+
+    suspend fun insertTastingNote(note: TastingNote) {
+        tastingNoteDao.insertNote(note)
+    }
+
+    suspend fun updateTastingNote(note: TastingNote) {
+        tastingNoteDao.updateNote(note)
+    }
+
+    suspend fun getNoteWithDefinitionById(noteId: Long): TastingNoteWithDefinition? {
+        return tastingNoteDao.getNoteWithDefinitionById(noteId)
     }
 
     suspend fun getAllPricesForDefinitions(definitionIds: List<Long>): List<com.n8rtz.winetracker.data.local.PriceLookupResult> {

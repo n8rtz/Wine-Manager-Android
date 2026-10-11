@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -222,7 +224,7 @@ fun CompactNoteItem(
     val firstItem = group.first()
     com.n8rtz.winetracker.ui.components.WineCard(
         title = run {
-            val vintage = firstItem.note.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
+            val vintage = (firstItem.note.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV").removeSurrounding("(", ")")
             "${firstItem.definition.maker} - ${firstItem.definition.name} ($vintage)"
         },
         subtitle = run {
@@ -242,20 +244,81 @@ fun CompactNoteItem(
         isExpanded = expanded,
         onClick = onExpandToggle,
         details = {
-            Column(modifier = Modifier.padding(top = 8.dp)) {
+            Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 group.sortedByDescending { it.note.dateTasted }.forEach { item ->
                     val dateStr = listDateFormat.format(java.util.Date(item.note.dateTasted))
-                    Column(
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onNoteClick(item.note.noteId) }
-                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onNoteClick(item.note.noteId) },
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text(
-                            text = "$dateStr - ${item.note.notes ?: "No notes written..."}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (item.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                        )
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = dateStr,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "View / Edit Evaluation",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = item.note.notes ?: "No additional notes written...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (item.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                            )
+                            val aromas = item.note.sensoryData?.aromas ?: emptyList()
+                            if (aromas.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    aromas.take(4).forEach { aroma ->
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                        ) {
+                                            Text(
+                                                text = aroma,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                    if (aromas.size > 4) {
+                                        Text(
+                                            text = "+${aromas.size - 4} more",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

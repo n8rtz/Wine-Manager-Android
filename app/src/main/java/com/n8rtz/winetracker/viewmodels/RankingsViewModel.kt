@@ -4,7 +4,8 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
+import com.n8rtz.winetracker.data.models.*
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.RankingsFilterState
 import kotlinx.coroutines.flow.*

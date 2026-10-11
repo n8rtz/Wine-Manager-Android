@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Update
+import com.n8rtz.winetracker.data.models.*
 import kotlinx.coroutines.flow.Flow
 
 // POJOs for complex queries
@@ -134,6 +135,13 @@ interface TastingNoteDao {
 
     @Query("DELETE FROM tasting_notes WHERE definitionId = :definitionId AND vintage = :vintage AND noteId = (SELECT MAX(noteId) FROM tasting_notes WHERE definitionId = :definitionId AND vintage = :vintage)")
     suspend fun deleteLastNoteForWine(definitionId: Long, vintage: String)
+
+    @Update
+    suspend fun updateNote(note: TastingNote)
+
+    @Transaction
+    @Query("SELECT * FROM tasting_notes WHERE noteId = :noteId LIMIT 1")
+    suspend fun getNoteWithDefinitionById(noteId: Long): TastingNoteWithDefinition?
 
     @Query("SELECT * FROM tasting_notes")
     suspend fun getAllNotesOnce(): List<TastingNote>

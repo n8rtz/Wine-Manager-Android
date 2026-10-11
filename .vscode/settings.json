@@ -1,3 +1,4 @@
 {
-    "antigravity.workspace.initialized": true
+    "antigravity.workspace.initialized": true,
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

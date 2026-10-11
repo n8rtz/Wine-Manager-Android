@@ -51,6 +51,7 @@ import coil.request.ImageRequest
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
+import com.n8rtz.winetracker.ui.screens.WineEvaluationScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
 import com.n8rtz.winetracker.ui.screens.WineDetailScreen
 import com.n8rtz.winetracker.ui.screens.CellarScreen
@@ -85,7 +86,8 @@ class MainActivity : ComponentActivity() {
             com.n8rtz.winetracker.data.local.MIGRATION_12_13,
             com.n8rtz.winetracker.data.local.MIGRATION_13_14,
             com.n8rtz.winetracker.data.local.MIGRATION_14_15,
-            com.n8rtz.winetracker.data.local.MIGRATION_15_16
+            com.n8rtz.winetracker.data.local.MIGRATION_15_16,
+            com.n8rtz.winetracker.data.local.MIGRATION_16_17
         )
         // Ensure migrations don't block the main thread if possible (though they often do on first access)
         .build()
@@ -281,7 +283,10 @@ fun MainAppScaffold(
             composable("notes") {
                 TastingNotesScreen(
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onNoteClick = { /* Handle note click */ },
+                    onNoteClick = { noteId ->
+                        Log.d("WineTracker", "MainActivity: Navigating to evaluate noteId=$noteId")
+                        navController.navigate("evaluate?noteId=$noteId")
+                    },
                     onNavigateToHistory = {
                         Log.d("WineTracker", "MainActivity: Navigating to History")
                         navController.navigate("history")
@@ -294,6 +299,29 @@ fun MainAppScaffold(
             composable("history") {
                 // Shared WineViewModel passed correctly to HistoryScreen
                 HistoryScreen(viewModel)
+            }
+            composable(
+                route = "evaluate?noteId={noteId}",
+                arguments = listOf(navArgument("noteId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val noteIdStr = backStackEntry.arguments?.getString("noteId")
+                val noteId = noteIdStr?.toLongOrNull()
+                WineEvaluationScreen(
+                    noteId = noteId,
+                    tastingNoteViewModel = tastingNoteViewModel,
+                    wineViewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onSaveSuccess = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Evaluation saved successfully")
+                        }
+                        navController.popBackStack("notes", inclusive = false)
+                    }
+                )
             }
             composable("profile") {
                 ProfileScreen(viewModel = viewModel, scannerViewModel = scannerViewModel) {
@@ -397,7 +425,7 @@ fun MainAppScaffold(
                         onClick = {
                             Log.d("WineTracker", "Popup: Add Note clicked")
                             isMenuExpanded = false
-                            navController.navigate("notes")
+                            navController.navigate("evaluate")
                         }
                     )
                 }

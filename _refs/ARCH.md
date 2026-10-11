@@ -45,6 +45,7 @@ com.n8rtz.winetracker/
     │   ├── RankingsFilterState.kt     # Data class for rankings filtering
     │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns
     │   ├── WineDetailScreen.kt        # Full wine detail + "Mark as Consumed"
+    │   └── WineEvaluationScreen.kt    # Advanced AWS evaluation form (Sensory Analysis)
        └── components/
         ├── WineCard.kt                # Color-coded card for Cellar and Rankings (Supports Expansion)
         ├── HistoryWineCard.kt         # Compact list item for History screen
@@ -52,7 +53,16 @@ com.n8rtz.winetracker/
         ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
         ├── WheelPicker.kt             # Birthday-style scroll picker + LocationWheelPicker
         ├── ConsumeConfirmDialog.kt    # Date picker for confirmation
-        └── LocationWheelPicker.kt     # Scrollable dial-like selectors for location
+        ├── LocationWheelPicker.kt     # Scrollable dial-like selectors for location
+        ├── DynamicColorSlider.kt      # Ombre gradient slider for wine hue selection
+        ├── AromaWheelOverlay.kt       # High-fidelity radial aroma wheel with interactive zoom
+        ├── SommelierAromaWheelOverlay.kt # Standalone alternative aroma wheel (counterclockwise layout, drop-in swap)
+        ├── AppearanceCard.kt          # Evaluation section: Clarity, Type, Hue
+        ├── NoseCard.kt                # Evaluation section: Intensity, Aroma Wheel entry
+        ├── PalateCard.kt              # Evaluation section: Structural sliders (Tannin, Acidity, etc)
+        ├── FinishCard.kt              # Evaluation section: Length
+        ├── FlawsCard.kt               # Evaluation section: Common faults checkboxes
+        └── OverallCard.kt             # Evaluation section: 100-point score display & custom notes
 │
 ├── data/
 │   ├── local/
@@ -63,6 +73,7 @@ com.n8rtz.winetracker/
 │   │   ├── WineDefinition.kt          # Catalog: Maker, Name, Type, Country, Region
 │   │   ├── WineBottle.kt              # Inventory: links to Definition, Vintage, Qty, Price
 │   │   ├── TastingNote.kt             # Rating, notes text, rebuy boolean, bottleId (links to specific bottle)
+│   │   ├── SensoryData.kt             # Data class for JSON-serializable sensory analysis
 │   │   ├── BottleStatus.kt            # Enum: IN_CELLAR, ARCHIVED
 │   │   └── LocationData.kt            # Cascading dropdown data
 │   │

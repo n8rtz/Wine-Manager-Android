@@ -2,10 +2,8 @@ package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
 import android.util.Log
-import com.n8rtz.winetracker.data.local.BottleStatus
-import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineDatabase
-import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
