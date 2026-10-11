@@ -20,7 +20,8 @@ fun OverallCard(
     sensoryData: SensoryData,
     onDataChange: (SensoryData) -> Unit,
     notes: String,
-    onNotesChange: (String) -> Unit
+    onNotesChange: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -39,11 +40,13 @@ fun OverallCard(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { onDataChange(sensoryData.copy(overallScore = (score - 1).coerceAtLeast(50))) }) {
-                    Icon(Icons.Default.Remove, contentDescription = "Decrease Score")
+                if (enabled) {
+                    IconButton(onClick = { onDataChange(sensoryData.copy(overallScore = (score - 1).coerceAtLeast(50))) }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease Score")
+                    }
                 }
                 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = if (enabled) 0.dp else 16.dp)) {
                     Text(
                         text = "$score",
                         fontSize = 64.sp,
@@ -58,8 +61,10 @@ fun OverallCard(
                     )
                 }
                 
-                IconButton(onClick = { onDataChange(sensoryData.copy(overallScore = (score + 1).coerceAtMost(100))) }) {
-                    Icon(Icons.Default.Add, contentDescription = "Increase Score")
+                if (enabled) {
+                    IconButton(onClick = { onDataChange(sensoryData.copy(overallScore = (score + 1).coerceAtMost(100))) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase Score")
+                    }
                 }
             }
 
@@ -70,7 +75,8 @@ fun OverallCard(
                 onValueChange = onNotesChange,
                 label = { Text("Tasting Notes") },
                 modifier = Modifier.fillMaxWidth().height(160.dp),
-                maxLines = 10
+                maxLines = 10,
+                readOnly = !enabled
             )
         }
     }
