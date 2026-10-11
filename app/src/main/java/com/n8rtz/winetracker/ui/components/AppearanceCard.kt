@@ -13,7 +13,8 @@ import com.n8rtz.winetracker.data.models.SensoryData
 @Composable
 fun AppearanceCard(
     sensoryData: SensoryData,
-    onDataChange: (SensoryData) -> Unit
+    onDataChange: (SensoryData) -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -66,7 +67,8 @@ fun AppearanceCard(
                             onDataChange(sensoryData.copy(colorType = type, colorHue = null, intensity = 0.5f)) 
                         },
                         label = { Text(type) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        enabled = enabled
                     )
                 }
             }
@@ -82,7 +84,7 @@ fun AppearanceCard(
             DynamicColorSlider(
                 value = sliderValue,
                 onValueChange = { newValue ->
-                    onDataChange(sensoryData.copy(intensity = newValue))
+                    if (enabled) onDataChange(sensoryData.copy(intensity = newValue))
                 },
                 wineType = currentType
             )
@@ -102,7 +104,8 @@ fun AppearanceCard(
                         selected = selected,
                         onClick = { onDataChange(sensoryData.copy(clarity = clarity)) },
                         label = { Text(clarity) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        enabled = enabled
                     )
                 }
             }

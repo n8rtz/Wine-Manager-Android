@@ -13,7 +13,8 @@ import com.n8rtz.winetracker.data.models.SensoryData
 @Composable
 fun PalateCard(
     sensoryData: SensoryData,
-    onDataChange: (SensoryData) -> Unit
+    onDataChange: (SensoryData) -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -53,19 +54,19 @@ fun PalateCard(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Structural Micro-Sliders
-            StructuralSlider("Sweetness", "Bone Dry", "Sweet", sensoryData.sweetness ?: 0.2f) { 
+            StructuralSlider("Sweetness", "Bone Dry", "Sweet", sensoryData.sweetness ?: 0.2f, enabled = enabled) { 
                 onDataChange(sensoryData.copy(sweetness = it)) 
             }
-            StructuralSlider("Acidity", "Low", "High", sensoryData.acidity ?: 0.5f) { 
+            StructuralSlider("Acidity", "Low", "High", sensoryData.acidity ?: 0.5f, enabled = enabled) { 
                 onDataChange(sensoryData.copy(acidity = it)) 
             }
-            StructuralSlider("Tannin", "Low", "High", sensoryData.tannin ?: 0.5f) { 
+            StructuralSlider("Tannin", "Low", "High", sensoryData.tannin ?: 0.5f, enabled = enabled) { 
                 onDataChange(sensoryData.copy(tannin = it)) 
             }
-            StructuralSlider("Alcohol", "Low", "High", sensoryData.alcohol ?: 0.5f) { 
+            StructuralSlider("Alcohol", "Low", "High", sensoryData.alcohol ?: 0.5f, enabled = enabled) { 
                 onDataChange(sensoryData.copy(alcohol = it)) 
             }
-            StructuralSlider("Body", "Light", "Full", sensoryData.body ?: 0.5f) { 
+            StructuralSlider("Body", "Light", "Full", sensoryData.body ?: 0.5f, enabled = enabled) { 
                 onDataChange(sensoryData.copy(body = it)) 
             }
         }
@@ -78,6 +79,7 @@ fun StructuralSlider(
     leftLabel: String,
     rightLabel: String,
     value: Float,
+    enabled: Boolean = true,
     onValueChange: (Float) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -93,7 +95,8 @@ fun StructuralSlider(
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             valueRange = 0f..1f,
-            steps = 3 // 5 stops total
+            steps = 3, // 5 stops total
+            enabled = enabled
         )
         Row(modifier = Modifier.fillMaxWidth().offset(y = (-8).dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(leftLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -17,7 +17,8 @@ import com.n8rtz.winetracker.data.models.SensoryData
 fun NoseCard(
     sensoryData: SensoryData,
     onDataChange: (SensoryData) -> Unit,
-    onOpenAromaWheel: () -> Unit
+    onOpenAromaWheel: () -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -63,24 +64,27 @@ fun NoseCard(
                 onValueChange = { onDataChange(sensoryData.copy(noseIntensity = it)) },
                 valueRange = 0f..1f,
                 steps = 3, // Light, Medium-, Medium, Medium+, Pronounced
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled
             )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Light", style = MaterialTheme.typography.bodySmall)
                 Text("Pronounced", style = MaterialTheme.typography.bodySmall)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (enabled) {
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // Interactive Aroma Wheel Button
-            Button(
-                onClick = onOpenAromaWheel,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Icon(Icons.Default.DataExploration, contentDescription = "Aroma Wheel")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Open Aroma Wheel", fontWeight = FontWeight.Bold)
+                // Interactive Aroma Wheel Button
+                Button(
+                    onClick = onOpenAromaWheel,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.DataExploration, contentDescription = "Aroma Wheel")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Open Aroma Wheel", fontWeight = FontWeight.Bold)
+                }
             }
 
             // Selected Aromas
@@ -96,9 +100,11 @@ fun NoseCard(
                         InputChip(
                             selected = true,
                             onClick = { 
-                                val newAromas = sensoryData.aromas.toMutableList()
-                                newAromas.remove(aroma)
-                                onDataChange(sensoryData.copy(aromas = newAromas))
+                                if (enabled) {
+                                    val newAromas = sensoryData.aromas.toMutableList()
+                                    newAromas.remove(aroma)
+                                    onDataChange(sensoryData.copy(aromas = newAromas))
+                                }
                             },
                             label = { Text(aroma) }
                         )

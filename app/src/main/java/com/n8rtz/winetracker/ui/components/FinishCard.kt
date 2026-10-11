@@ -13,7 +13,8 @@ import com.n8rtz.winetracker.data.models.SensoryData
 @Composable
 fun FinishCard(
     sensoryData: SensoryData,
-    onDataChange: (SensoryData) -> Unit
+    onDataChange: (SensoryData) -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -59,7 +60,8 @@ fun FinishCard(
                 onValueChange = { onDataChange(sensoryData.copy(finishLength = it)) },
                 valueRange = 0f..1f,
                 steps = 3, // Short, Med-, Med, Med+, Long
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled
             )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Short", style = MaterialTheme.typography.bodySmall)

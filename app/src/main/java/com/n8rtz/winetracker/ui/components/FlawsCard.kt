@@ -13,7 +13,8 @@ import com.n8rtz.winetracker.data.models.SensoryData
 @Composable
 fun FlawsCard(
     sensoryData: SensoryData,
-    onDataChange: (SensoryData) -> Unit
+    onDataChange: (SensoryData) -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -59,7 +60,8 @@ fun FlawsCard(
                                         newFlaws.remove(flaw)
                                     }
                                     onDataChange(sensoryData.copy(flaws = newFlaws))
-                                }
+                                },
+                                enabled = enabled
                             )
                             Text(text = flaw, style = MaterialTheme.typography.bodyMedium)
                         }

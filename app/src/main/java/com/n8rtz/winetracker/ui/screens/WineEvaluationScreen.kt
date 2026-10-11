@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WineBar
 import androidx.compose.material3.*
@@ -55,6 +56,7 @@ fun WineEvaluationScreen(
     var notes by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
     var showAromaWheel by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(noteId == null) }
 
     LaunchedEffect(noteId) {
         if (noteId != null) {
@@ -74,52 +76,75 @@ fun WineEvaluationScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        text = if (existingNote != null) "Edit Evaluation" else if (selectedBottle == null) "Evaluate Wine" else "Evaluation",
+                        text = when {
+                            !isEditing && existingNote != null -> "Tasting Evaluation"
+                            isEditing && existingNote != null -> "Edit Evaluation"
+                            else -> "Evaluate Wine"
+                        },
                         fontWeight = FontWeight.Bold
                     ) 
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // Clear editor state when leaving
-                        tastingNoteViewModel.updateSensoryData { SensoryData() }
-                        onBack()
+                        if (isEditing && existingNote != null) {
+                            // Cancel editing — revert to view mode and reload saved data
+                            tastingNoteViewModel.loadNoteForEditing(existingNote!!.note.noteId) { loadedNote ->
+                                existingNote = loadedNote
+                                notes = loadedNote.note.notes ?: ""
+                            }
+                            isEditing = false
+                        } else {
+                            // Clear editor state when leaving
+                            tastingNoteViewModel.updateSensoryData { SensoryData() }
+                            onBack()
+                        }
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    TextButton(
-                        onClick = {
-                            val currentNote = existingNote
-                            val currentBottle = selectedBottle
-                            if (currentNote != null) {
-                                tastingNoteViewModel.updateExistingTastingNote(
-                                    noteId = currentNote.note.noteId,
-                                    definitionId = currentNote.definition.definitionId,
-                                    vintage = currentNote.note.vintage,
-                                    bottleId = currentNote.note.bottleId,
-                                    dateTasted = currentNote.note.dateTasted,
-                                    notes = notes.takeIf { it.isNotBlank() },
-                                    onSuccess = onSaveSuccess
-                                )
-                            } else if (currentBottle != null) {
-                                tastingNoteViewModel.saveTastingNote(
-                                    definitionId = currentBottle.definition.definitionId,
-                                    vintage = currentBottle.bottle.vintage,
-                                    bottleId = currentBottle.bottle.bottleId,
-                                    dateTasted = System.currentTimeMillis(),
-                                    notes = notes.takeIf { it.isNotBlank() }, 
-                                    onSuccess = onSaveSuccess
-                                )
-                            }
-                        },
-                        enabled = hasWineSelected
-                    ) {
-                        Text(
-                            text = "Save",
-                            color = if (hasWineSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                            fontWeight = FontWeight.Bold
-                        )
+                    if (isEditing) {
+                        TextButton(
+                            onClick = {
+                                val currentNote = existingNote
+                                val currentBottle = selectedBottle
+                                if (currentNote != null) {
+                                    tastingNoteViewModel.updateExistingTastingNote(
+                                        noteId = currentNote.note.noteId,
+                                        definitionId = currentNote.definition.definitionId,
+                                        vintage = currentNote.note.vintage,
+                                        bottleId = currentNote.note.bottleId,
+                                        dateTasted = currentNote.note.dateTasted,
+                                        notes = notes.takeIf { it.isNotBlank() },
+                                        onSuccess = {
+                                            isEditing = false
+                                            onSaveSuccess()
+                                        }
+                                    )
+                                } else if (currentBottle != null) {
+                                    tastingNoteViewModel.saveTastingNote(
+                                        definitionId = currentBottle.definition.definitionId,
+                                        vintage = currentBottle.bottle.vintage,
+                                        bottleId = currentBottle.bottle.bottleId,
+                                        dateTasted = System.currentTimeMillis(),
+                                        notes = notes.takeIf { it.isNotBlank() }, 
+                                        onSuccess = onSaveSuccess
+                                    )
+                                }
+                            },
+                            enabled = hasWineSelected
+                        ) {
+                            Text(
+                                text = "Save",
+                                color = if (hasWineSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    } else {
+                        // View mode — show edit pencil icon
+                        IconButton(onClick = { isEditing = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        }
                     }
                 }
             )
@@ -219,7 +244,7 @@ fun WineEvaluationScreen(
                                 )
                             }
                             
-                            if (existingNote == null) {
+                            if (existingNote == null && isEditing) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 AssistChip(
                                     onClick = { showWineSearch = true },
@@ -232,12 +257,12 @@ fun WineEvaluationScreen(
             }
 
             if (hasWineSelected) {
-                AppearanceCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } })
-                NoseCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, onOpenAromaWheel = { showAromaWheel = true })
-                PalateCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } })
-                FinishCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } })
-                FlawsCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } })
-                OverallCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, notes = notes, onNotesChange = { notes = it })
+                AppearanceCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, enabled = isEditing)
+                NoseCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, onOpenAromaWheel = { showAromaWheel = true }, enabled = isEditing)
+                PalateCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, enabled = isEditing)
+                FinishCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, enabled = isEditing)
+                FlawsCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, enabled = isEditing)
+                OverallCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, notes = notes, onNotesChange = { notes = it }, enabled = isEditing)
             }
         }
     }
