@@ -59,6 +59,13 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             }
     }
 
+    val ratingSortMap = remember(tastingHistory) {
+        tastingHistory
+            .filter { it.note.rating > 0.0 }
+            .groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
+            .mapValues { (_, notes) -> notes.map { it.note.rating }.average() }
+    }
+
     val notesMap = remember(tastingHistory) {
         tastingHistory
             .groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
@@ -74,7 +81,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         Triple(total, unique, value)
     }
 
-    val filteredInventory = remember(inventory, searchQuery, filterState) {
+    val filteredInventory = remember(inventory, searchQuery, filterState, ratingSortMap) {
         inventory.filter {
             val matchesSearch = it.definition.maker.contains(searchQuery, ignoreCase = true) ||
                     it.definition.name.contains(searchQuery, ignoreCase = true)
@@ -113,16 +120,31 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             matchesSearch && matchesType && matchesCountry && matchesRegion && matchesSubregion &&
                     matchesPrice && matchesDrinkingWindow && matchesDrinkingWindowRange && matchesVintage
         }.sortedWith { a, b ->
-            when (filterState.sortOrder) {
-                "Newest" -> (b.bottle.dateAdded ?: "").compareTo(a.bottle.dateAdded ?: "")
-                "Price (High)" -> (b.bottle.price ?: 0.0).compareTo(a.bottle.price ?: 0.0)
-                "Price (Low)" -> (a.bottle.price ?: 0.0).compareTo(b.bottle.price ?: 0.0)
-                "Drinking Window (Soonest)" -> (a.definition.drinkingWindowStart ?: Int.MAX_VALUE)
-                    .compareTo(b.definition.drinkingWindowStart ?: Int.MAX_VALUE)
-                "Drinking Window (Furthest)" -> (b.definition.drinkingWindowEnd ?: Int.MIN_VALUE)
-                    .compareTo(a.definition.drinkingWindowEnd ?: Int.MIN_VALUE)
-                else -> 0
+            val aRating = ratingSortMap[
+                a.definition.definitionId to com.n8rtz.winetracker.data.local.displayVintage(a.bottle.vintage)
+            ]
+            val bRating = ratingSortMap[
+                b.definition.definitionId to com.n8rtz.winetracker.data.local.displayVintage(b.bottle.vintage)
+            ]
+            val comparison = when (filterState.sortField) {
+                CellarSortField.QUANTITY -> compareSortValues(
+                    a.bottle.quantity, b.bottle.quantity, filterState.sortAscending
+                )
+                CellarSortField.DATE_ADDED -> compareSortValues(
+                    a.bottle.dateAdded, b.bottle.dateAdded, filterState.sortAscending
+                )
+                CellarSortField.RATING -> compareSortValues(aRating, bRating, filterState.sortAscending)
+                CellarSortField.PRICE -> compareSortValues(
+                    a.bottle.price, b.bottle.price, filterState.sortAscending
+                )
+                CellarSortField.DRINKING_WINDOW_SOONEST -> compareSortValues(
+                    a.definition.drinkingWindowStart, b.definition.drinkingWindowStart, ascending = true
+                )
+                CellarSortField.DRINKING_WINDOW_FURTHEST -> compareSortValues(
+                    a.definition.drinkingWindowEnd, b.definition.drinkingWindowEnd, ascending = false
+                )
             }
+            comparison
         }
     }
 
@@ -171,7 +193,8 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             ) {
                 val isFilterActive = filterState.types.isNotEmpty() ||
                         filterState.country != null || filterState.region != null || filterState.subregion != null ||
-                        filterState.priceRange != null || filterState.vintageRange != null ||
+                        filterState.priceRange != null || filterState.vintageRange != null || filterState.ratingRange != null ||
+                        filterState.sortField != CellarSortField.DATE_ADDED || filterState.sortAscending ||
                         filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
                 Icon(
                     Icons.Default.Tune, 
@@ -370,17 +393,49 @@ fun FilterSheet(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(
-                        "Newest", "Price (High)", "Price (Low)",
-                        "Drinking Window (Soonest)", "Drinking Window (Furthest)"
-                    ).forEach { option ->
+                        CellarSortField.QUANTITY to "Quantity",
+                        CellarSortField.DATE_ADDED to "Date Added",
+                        CellarSortField.RATING to "Rating",
+                        CellarSortField.PRICE to "Price"
+                    ).forEach { (field, label) ->
+                        val selected = state.sortField == field
+                        val ascending = selected && state.sortAscending
                         FilterChip(
-                            selected = state.sortOrder == option,
-                            onClick = { 
-                                val newState = state.copy(sortOrder = option)
+                            selected = selected,
+                            onClick = {
+                                val newState = state.copy(
+                                    sortField = field,
+                                    sortAscending = if (selected) !state.sortAscending else false
+                                )
                                 state = newState
                                 onApply(newState)
                             },
-                            label = { Text(option) },
+                            label = { Text(label) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (ascending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                    contentDescription = if (ascending) "Ascending" else "Descending"
+                                )
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF722F37),
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                    listOf(
+                        CellarSortField.DRINKING_WINDOW_SOONEST to "Drinking Window (Soonest)",
+                        CellarSortField.DRINKING_WINDOW_FURTHEST to "Drinking Window (Furthest)"
+                    ).forEach { (field, label) ->
+                        FilterChip(
+                            selected = state.sortField == field,
+                            onClick = {
+                                val newState = state.copy(sortField = field)
+                                state = newState
+                                onApply(newState)
+                            },
+                            label = { Text(label) },
                             shape = RoundedCornerShape(8.dp),
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(0xFF722F37),
@@ -389,6 +444,11 @@ fun FilterSheet(
                         )
                     }
                 }
+                Text(
+                    "Tap an active sort button again to reverse the order. Rating uses the average recorded score; unrated wines stay last.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
@@ -588,4 +648,16 @@ fun FilterSheet(
 
         }
     }
+}
+
+private fun <T : Comparable<T>> compareSortValues(
+    first: T?,
+    second: T?,
+    ascending: Boolean
+): Int = when {
+    first == null && second == null -> 0
+    first == null -> 1
+    second == null -> -1
+    ascending -> first.compareTo(second)
+    else -> second.compareTo(first)
 }

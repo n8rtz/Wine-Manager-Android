@@ -1,5 +1,6 @@
 ## [Unreleased]
 ### Added
+- **Cellar sorting controls:** Added arrow buttons for quantity, date added, average recorded rating, and price, each toggling between ascending and descending. Unrated wines remain last, and drinking-window sorting is retained.
 - **Event-based consumption history:** Added a `ConsumptionEvent` table and DAO/repository flows to record consumption date, vintage, quantity, price, source bottle, optional linked note, and an import key. New consumption writes the event and decrements inventory in one transaction; it does not create archived bottle rows that would conflict with the unique `(definitionId, vintage, status)` index.
 - **Exact consumption undo:** Undo now addresses the specific event ID, restores that event's quantity to its source or matching cellar row, removes the event, and removes only the note linked to that event.
 - **Consumption-date selection:** Added a date picker to the consume dialog. History-created notes inherit the event date when one exists; events and legacy rows without dates remain undated rather than receiving inferred historical dates.
