@@ -478,7 +478,7 @@ fun WineDetailScreen(
                                     Text("Recommended by ${note.recommendedBy}", style = MaterialTheme.typography.bodySmall)
                                 }
                                 note.reviewerRating?.let { reviewerRating ->
-                                    Text("Reviewer rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
+                                    Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }

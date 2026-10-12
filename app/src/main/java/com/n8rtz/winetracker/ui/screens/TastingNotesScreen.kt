@@ -263,7 +263,7 @@ fun CompactNoteItem(
                             )
                         }
                         item.note.reviewerRating?.let { reviewerRating ->
-                            Text("Reviewer rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
+                            Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

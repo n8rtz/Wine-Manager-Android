@@ -56,18 +56,12 @@ fun SensoryEvaluationFields(
         SensoryTraitControl("Tannins / grip", listOf("Silky", "Low", "Medium", "Grippy", "Harsh"), data.tannins) { onChange(data.copy(tannins = it)) },
         SensoryTraitControl("Body", listOf("Light", "Medium-minus", "Medium", "Medium-plus", "Full"), data.body) { onChange(data.copy(body = it)) },
         SensoryTraitControl("Balance", listOf("Disjointed", "Unbalanced", "Acceptable", "Well-balanced", "Seamless"), data.balance) { onChange(data.copy(balance = it)) },
-        SensoryTraitControl("Flavor intensity", listOf("Weak", "Light", "Moderate", "Pronounced", "Overwhelming"), data.intensity) { onChange(data.copy(intensity = it)) },
+        SensoryTraitControl("Concentration", listOf("Weak", "Light", "Moderate", "Pronounced", "Overwhelming"), data.intensity) { onChange(data.copy(intensity = it)) },
         SensoryTraitControl("Complexity", listOf("Simple", "Moderate", "Complex", "Highly complex"), data.complexity) { onChange(data.copy(complexity = it)) },
         SensoryTraitControl("Finish", listOf("Short", "Medium-minus", "Medium", "Long", "Lingering"), data.finish) { onChange(data.copy(finish = it)) },
         SensoryTraitControl("Quality", listOf("Poor", "Acceptable", "Good", "Very good", "Outstanding"), data.quality) { onChange(data.copy(quality = it)) }
     )
     traits.forEach { trait -> SensoryTraitSlider(trait) }
-
-    Spacer(Modifier.height(12.dp))
-    OverallScoreSlider(
-        score = data.overallScore.toFloat(),
-        onScoreChange = { onChange(data.copy(overallScore = it.roundToInt())) }
-    )
 
     Spacer(Modifier.height(12.dp))
     Text("Common faults", style = MaterialTheme.typography.titleSmall)
@@ -262,7 +256,7 @@ private fun gradientColorsFor(title: String): List<Color> = when (title) {
     "Tannins / grip" -> listOf(Color(0xFFF1D0D3), Color(0xFFA65E75), Color(0xFF532342))
     "Body" -> listOf(Color(0xFFF6DFC9), Color(0xFFC9826B), Color(0xFF722F37))
     "Balance" -> listOf(Color(0xFFFFF1B8), Color(0xFFD8867C), Color(0xFF722F37))
-    "Flavor intensity" -> listOf(Color(0xFFD7EFC5), Color(0xFF5F9F82), Color(0xFF4B1F78))
+    "Concentration" -> listOf(Color(0xFFD7EFC5), Color(0xFF5F9F82), Color(0xFF4B1F78))
     "Complexity" -> listOf(Color(0xFFFFE5A3), Color(0xFFBE77A1), Color(0xFF4B1F55))
     "Finish" -> listOf(Color(0xFFF6DFC9), Color(0xFFC77D67), Color(0xFF722F37))
     "Quality" -> listOf(Color(0xFFF7D7B8), Color(0xFFC75B6A), Color(0xFF722F37))

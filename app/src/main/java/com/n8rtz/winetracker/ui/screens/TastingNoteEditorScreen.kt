@@ -58,12 +58,14 @@ import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
+import com.n8rtz.winetracker.ui.components.WheelPicker
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
 import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun TastingNoteEditorScreen(
@@ -101,7 +103,7 @@ fun TastingNoteEditorScreen(
     var recommendedBy by remember { mutableStateOf("") }
     var reviewerMenuExpanded by remember { mutableStateOf(false) }
     var initialRating by remember { mutableStateOf("") }
-    var reviewerRating by remember { mutableStateOf("") }
+    var reviewerRating by remember { mutableStateOf(80) }
     var sensoryData by remember { mutableStateOf(SensoryData()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -122,7 +124,7 @@ fun TastingNoteEditorScreen(
                 rebuy = note.rebuy
                 recommendedBy = note.recommendedBy.orEmpty()
                 initialRating = note.initialRating?.toString().orEmpty()
-                reviewerRating = note.reviewerRating?.toString().orEmpty()
+                reviewerRating = note.reviewerRating?.coerceIn(50, 100) ?: 80
                 sensoryData = note.sensoryData ?: SensoryData()
             }
             loaded = true
@@ -178,14 +180,12 @@ fun TastingNoteEditorScreen(
     val formattedDate = remember(dateTasted) {
         SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(dateTasted))
     }
-    val reviewerRatingIsValid = reviewerRating.isBlank() ||
-        reviewerRating.toIntOrNull()?.let { it in 50..100 } == true
     val wineFieldsAreValid = when (entryMode) {
         TastingNoteEntryMode.CELLAR -> selectedDefinition != null && vintage.isNotBlank()
         TastingNoteEntryMode.MANUAL -> manualMaker.isNotBlank() &&
             manualWineName.isNotBlank() && manualVintage.isNotBlank()
     }
-    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected && reviewerRatingIsValid
+    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected
 
     if (!loaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -447,6 +447,7 @@ fun TastingNoteEditorScreen(
                 onScoreChange = {
                     rating = it
                     ratingSelected = true
+                    sensoryData = sensoryData.copy(overallScore = it.roundToInt().coerceIn(50, 100))
                 }
             )
             if (!ratingSelected) {
@@ -484,73 +485,74 @@ fun TastingNoteEditorScreen(
                 minLines = 4
             )
 
-            OutlinedTextField(
-                value = reviewerRating,
-                onValueChange = {
-                    reviewerRating = it.filter { character -> character.isDigit() }.take(3)
-                },
-                label = { Text("Reviewer rating (50–100)") },
-                isError = !reviewerRatingIsValid,
-                supportingText = {
-                    if (reviewerRating.isNotBlank() && !reviewerRatingIsValid) {
-                        Text("Enter a score from 50 to 100")
-                    } else {
-                        Text("Optional")
-                    }
-                },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-
-            ExposedDropdownMenuBox(
-                expanded = reviewerMenuExpanded,
-                onExpandedChange = { reviewerMenuExpanded = !reviewerMenuExpanded },
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = recommendedBy,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Recommended by") },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (recommendedBy.isNotBlank()) {
-                                IconButton(onClick = { recommendedBy = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear reviewer")
-                                }
-                            }
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = reviewerMenuExpanded)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(
-                        androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                        true
-                    ),
-                    singleLine = true
-                )
-                ExposedDropdownMenu(
+                ExposedDropdownMenuBox(
                     expanded = reviewerMenuExpanded,
-                    onDismissRequest = { reviewerMenuExpanded = false }
+                    onExpandedChange = { reviewerMenuExpanded = !reviewerMenuExpanded },
+                    modifier = Modifier.weight(2f)
                 ) {
-                    if (reviewerOptions.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text("Add reviewers in Settings") },
-                            enabled = false,
-                            onClick = {}
-                        )
-                    } else {
-                        reviewerOptions.forEach { reviewer ->
-                            DropdownMenuItem(
-                                text = { Text(reviewer) },
-                                onClick = {
-                                    recommendedBy = reviewer
-                                    reviewerMenuExpanded = false
+                    OutlinedTextField(
+                        value = recommendedBy,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Recommended by") },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (recommendedBy.isNotBlank()) {
+                                    IconButton(onClick = {
+                                        recommendedBy = ""
+                                        reviewerMenuExpanded = false
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear reviewer")
+                                    }
                                 }
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = reviewerMenuExpanded)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(
+                            androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            true
+                        ),
+                        singleLine = true
+                    )
+                    ExposedDropdownMenu(
+                        expanded = reviewerMenuExpanded,
+                        onDismissRequest = { reviewerMenuExpanded = false }
+                    ) {
+                        if (reviewerOptions.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("Add reviewers in Settings") },
+                                enabled = false,
+                                onClick = {}
                             )
+                        } else {
+                            reviewerOptions.forEach { reviewer ->
+                                DropdownMenuItem(
+                                    text = { Text(reviewer) },
+                                    onClick = {
+                                        recommendedBy = reviewer
+                                        reviewerRating = 80
+                                        reviewerMenuExpanded = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
+
+                WheelPicker(
+                    items = remember { (50..100).map { it.toString() } },
+                    selectedIndex = (reviewerRating - 50).coerceIn(0, 50),
+                    onSelectedChange = { reviewerRating = 50 + it },
+                    label = "Rating",
+                    itemHeight = 32.dp,
+                    visibleCount = 3,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -568,10 +570,12 @@ fun TastingNoteEditorScreen(
                         notes = notes.takeIf { it.isNotBlank() },
                         rebuy = rebuy,
                         recommendedBy = recommendedBy.takeIf { it.isNotBlank() },
-                        reviewerRating = reviewerRating.toIntOrNull()?.takeIf { it in 50..100 },
+                        reviewerRating = reviewerRating.takeIf {
+                            recommendedBy.isNotBlank() || existingNote?.reviewerRating != null
+                        },
                         initialRating = initialRating.toIntOrNull(),
                         bottleId = if (entryMode == TastingNoteEntryMode.CELLAR) existingNote?.bottleId else null,
-                        sensoryData = sensoryData,
+                        sensoryData = sensoryData.copy(overallScore = rating.roundToInt().coerceIn(50, 100)),
                         importKey = existingNote?.importKey
                     )
                     if (entryMode == TastingNoteEntryMode.CELLAR) {
