@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ScatterPlot
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ fun ProfileScreen(
     scannerViewModel: ScannerViewModel,
     tastingNoteViewModel: TastingNoteViewModel,
     onAppInfoClick: () -> Unit = {},
+    onParetoClick: () -> Unit = {},
     onImportComplete: () -> Unit
 ) {
     val importState by viewModel.importState
@@ -110,6 +112,16 @@ fun ProfileScreen(
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+
+                ListItem(
+                    headlineContent = { Text("Price vs. Rating") },
+                    supportingContent = { Text("Explore wine value with a Pareto frontier") },
+                    leadingContent = {
+                        Icon(Icons.Filled.ScatterPlot, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onParetoClick)
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // Import Data (JSON)
                 ListItem(

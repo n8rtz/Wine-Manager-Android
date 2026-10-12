@@ -53,6 +53,7 @@ import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.AppInfoScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
+import com.n8rtz.winetracker.ui.screens.ParetoScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
 import com.n8rtz.winetracker.ui.screens.TastingNoteEditorScreen
 import com.n8rtz.winetracker.ui.screens.WineDetailScreen
@@ -275,7 +276,7 @@ fun MainAppScaffold(
                     label = { Text("Rankings") }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "profile" || currentRoute == "app_info",
+                    selected = currentRoute == "profile" || currentRoute == "app_info" || currentRoute == "pareto",
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
@@ -323,7 +324,8 @@ fun MainAppScaffold(
                     viewModel = viewModel,
                     scannerViewModel = scannerViewModel,
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onAppInfoClick = { navController.navigate("app_info") }
+                    onAppInfoClick = { navController.navigate("app_info") },
+                    onParetoClick = { navController.navigate("pareto") }
                 ) {
                     navigateToTab(navController, "cellar")
                 }
@@ -331,6 +333,13 @@ fun MainAppScaffold(
             composable("app_info") {
                 AppInfoScreen(
                     database = viewModel.repository.database,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("pareto") {
+                ParetoScreen(
+                    wineViewModel = viewModel,
+                    tastingNoteViewModel = tastingNoteViewModel,
                     onBack = { navController.popBackStack() }
                 )
             }
