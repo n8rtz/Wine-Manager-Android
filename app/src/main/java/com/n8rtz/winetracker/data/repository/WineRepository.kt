@@ -174,11 +174,15 @@ class WineRepository(
         note: TastingNote,
         maker: String,
         name: String,
-        region: String?
+        country: String,
+        region: String?,
+        subregion: String?
     ): Long = database.withTransaction {
         val normalizedMaker = maker.trim()
         val normalizedName = name.trim()
+        val normalizedCountry = country.trim().takeIf { it.isNotEmpty() }
         val normalizedRegion = region?.trim()?.takeIf { it.isNotEmpty() }
+        val normalizedSubregion = subregion?.trim()?.takeIf { it.isNotEmpty() }
         val existingDefinition = wineDao.getDefinitionByDetails(normalizedMaker, normalizedName)
         val definition = existingDefinition ?: run {
             val definitionId = wineDao.insertDefinition(
@@ -186,23 +190,37 @@ class WineRepository(
                     maker = normalizedMaker,
                     name = normalizedName,
                     type = "Unknown",
-                    country = "Unknown",
-                    region = normalizedRegion
+                    country = normalizedCountry ?: "Unknown",
+                    region = normalizedRegion,
+                    subregion = normalizedSubregion
                 )
             )
             (if (definitionId > 0L) wineDao.getDefinitionById(definitionId) else null)
                 ?: wineDao.getDefinitionByDetails(normalizedMaker, normalizedName)
                 ?: error("Unable to create the manual wine entry.")
         }
-        val definitionWithRegion = if (definition.region.isNullOrBlank() && normalizedRegion != null) {
-            val updatedDefinition = definition.copy(region = normalizedRegion)
-            wineDao.updateDefinition(updatedDefinition)
-            updatedDefinition
-        } else {
-            definition
+        val definitionWithLocation = definition.copy(
+            country = if (definition.country.isBlank() || definition.country.equals("Unknown", ignoreCase = true)) {
+                normalizedCountry ?: definition.country
+            } else {
+                definition.country
+            },
+            region = if (definition.region.isNullOrBlank() || definition.region.orEmpty().equals("Unknown", ignoreCase = true)) {
+                normalizedRegion ?: definition.region
+            } else {
+                definition.region
+            },
+            subregion = if (definition.subregion.isNullOrBlank() || definition.subregion.orEmpty().equals("Unknown", ignoreCase = true)) {
+                normalizedSubregion ?: definition.subregion
+            } else {
+                definition.subregion
+            }
+        )
+        if (definitionWithLocation != definition) {
+            wineDao.updateDefinition(definitionWithLocation)
         }
         val manualNote = note.copy(
-            definitionId = definitionWithRegion.definitionId,
+            definitionId = definitionWithLocation.definitionId,
             vintage = normalizeVintage(note.vintage),
             bottleId = null
         )

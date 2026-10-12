@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -57,6 +58,7 @@ import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
+import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
@@ -85,7 +87,9 @@ fun TastingNoteEditorScreen(
     var manualMaker by remember(noteId) { mutableStateOf("") }
     var manualWineName by remember(noteId) { mutableStateOf("") }
     var manualVintage by remember(noteId) { mutableStateOf("") }
+    var manualCountry by remember(noteId) { mutableStateOf("") }
     var manualRegion by remember(noteId) { mutableStateOf("") }
+    var manualSubregion by remember(noteId) { mutableStateOf("") }
     var loaded by remember(noteId) { mutableStateOf(noteId == null) }
     var missingNote by remember(noteId) { mutableStateOf(false) }
     var existingNote by remember(noteId) { mutableStateOf<TastingNote?>(null) }
@@ -170,6 +174,45 @@ fun TastingNoteEditorScreen(
         (reviewerNames + listOfNotNull(recommendedBy.takeIf { it.isNotBlank() }))
             .distinctBy { it.lowercase(Locale.ROOT) }
             .sortedBy { it.lowercase(Locale.ROOT) }
+    }
+    val makerSuggestions = remember(definitions) {
+        distinctSuggestions(definitions.map { it.maker })
+    }
+    val wineNameSuggestions = remember(definitions, manualMaker) {
+        val definitionsForMaker = definitions.filter {
+            manualMaker.isBlank() || matchesSuggestion(it.maker, manualMaker)
+        }.ifEmpty { definitions }
+        distinctSuggestions(definitionsForMaker.map { it.name })
+    }
+    val countrySuggestions = remember(definitions) {
+        distinctSuggestions(WineRepository.locationData.keys + definitions.map { it.country })
+    }
+    val regionSuggestions = remember(definitions, manualCountry) {
+        val catalogRegions = WineRepository.locationData
+            .filterKeys { manualCountry.isBlank() || matchesSuggestion(it, manualCountry) }
+            .values
+            .flatMap { it.keys }
+        val knownRegions = definitions
+            .filter { manualCountry.isBlank() || matchesSuggestion(it.country, manualCountry) }
+            .mapNotNull { it.region }
+        distinctSuggestions(catalogRegions + knownRegions)
+    }
+    val subregionSuggestions = remember(definitions, manualCountry, manualRegion) {
+        val catalogSubregions = WineRepository.locationData
+            .filterKeys { manualCountry.isBlank() || matchesSuggestion(it, manualCountry) }
+            .values
+            .flatMap { regionMap ->
+                regionMap.filterKeys { manualRegion.isBlank() || matchesSuggestion(it, manualRegion) }
+                    .values
+                    .flatten()
+            }
+        val knownSubregions = definitions
+            .filter {
+                (manualCountry.isBlank() || matchesSuggestion(it.country, manualCountry)) &&
+                    (manualRegion.isBlank() || it.region?.let { region -> matchesSuggestion(region, manualRegion) } == true)
+            }
+            .mapNotNull { it.subregion }
+        distinctSuggestions(catalogSubregions + knownSubregions)
     }
 
     LaunchedEffect(selectedDefinition, vintage) {
@@ -265,7 +308,15 @@ fun TastingNoteEditorScreen(
                                 manualMaker = selectedDefinition.maker
                                 manualWineName = selectedDefinition.name
                                 manualVintage = vintage
-                                manualRegion = selectedDefinition.region.orEmpty()
+                                manualCountry = selectedDefinition.country.takeUnless {
+                                    it.isBlank() || it.equals("Unknown", ignoreCase = true)
+                                }.orEmpty()
+                                manualRegion = selectedDefinition.region?.takeUnless {
+                                    it.isBlank() || it.equals("Unknown", ignoreCase = true)
+                                }.orEmpty()
+                                manualSubregion = selectedDefinition.subregion?.takeUnless {
+                                    it.isBlank() || it.equals("Unknown", ignoreCase = true)
+                                }.orEmpty()
                             }
                             entryMode = TastingNoteEntryMode.MANUAL
                             wineMenuExpanded = false
@@ -384,37 +435,44 @@ fun TastingNoteEditorScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                OutlinedTextField(
+                AutocompleteTextField(
                     value = manualMaker,
                     onValueChange = { manualMaker = it },
-                    label = { Text("Wine maker") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    label = "Wine maker",
+                    suggestions = makerSuggestions
                 )
-                OutlinedTextField(
+                AutocompleteTextField(
                     value = manualWineName,
                     onValueChange = { manualWineName = it },
-                    label = { Text("Wine name") },
+                    label = "Wine name",
+                    suggestions = wineNameSuggestions
+                )
+                AutocompleteTextField(
+                    value = manualCountry,
+                    onValueChange = { manualCountry = it },
+                    label = "Country",
+                    suggestions = countrySuggestions
+                )
+                AutocompleteTextField(
+                    value = manualRegion,
+                    onValueChange = { manualRegion = it },
+                    label = "Region",
+                    suggestions = regionSuggestions
+                )
+                AutocompleteTextField(
+                    value = manualSubregion,
+                    onValueChange = { manualSubregion = it },
+                    label = "Subregion",
+                    suggestions = subregionSuggestions
+                )
+                OutlinedTextField(
+                    value = manualVintage,
+                    onValueChange = { manualVintage = it },
+                    label = { Text("Vintage") },
+                    placeholder = { Text("e.g. 2018 or NV") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = manualVintage,
-                        onValueChange = { manualVintage = it },
-                        label = { Text("Vintage") },
-                        placeholder = { Text("e.g. 2018 or NV") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = manualRegion,
-                        onValueChange = { manualRegion = it },
-                        label = { Text("Region (optional)") },
-                        modifier = Modifier.weight(1.5f),
-                        singleLine = true
-                    )
-                }
                 OutlinedTextField(
                     value = formattedDate,
                     onValueChange = {},
@@ -592,7 +650,9 @@ fun TastingNoteEditorScreen(
                             note = note.copy(definitionId = 0L, bottleId = null),
                             maker = manualMaker.trim(),
                             name = manualWineName.trim(),
-                            region = manualRegion.takeIf { it.isNotBlank() },
+                            country = manualCountry.trim(),
+                            region = manualRegion.trim().takeIf { it.isNotEmpty() },
+                            subregion = manualSubregion.trim().takeIf { it.isNotEmpty() },
                             onSaved = { onBack() }
                         )
                     }
@@ -642,6 +702,77 @@ fun TastingNoteEditorScreen(
         )
     }
 }
+
+@Composable
+private fun AutocompleteTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    suggestions: List<String>
+) {
+    var expanded by remember(label) { mutableStateOf(false) }
+    val matchingSuggestions = remember(value, suggestions) {
+        suggestions.filter { matchesSuggestion(it, value) }.take(6)
+    }
+    val menuExpanded = expanded && matchingSuggestions.isNotEmpty()
+
+    ExposedDropdownMenuBox(
+        expanded = menuExpanded,
+        onExpandedChange = { expanded = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {
+                onValueChange(it)
+                expanded = true
+            },
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuExpanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(
+                androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryEditable,
+                true
+            ),
+            singleLine = true
+        )
+        ExposedDropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 240.dp)
+        ) {
+            matchingSuggestions.forEach { suggestion ->
+                DropdownMenuItem(
+                    text = { Text(suggestion, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    onClick = {
+                        onValueChange(suggestion)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+private fun distinctSuggestions(values: Iterable<String>): List<String> =
+    values.asSequence()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && normalizeSuggestionValue(it).isNotEmpty() }
+        .distinctBy(::normalizeSuggestionValue)
+        .sortedBy { it.lowercase(Locale.ROOT) }
+        .toList()
+
+private fun matchesSuggestion(suggestion: String, query: String): Boolean {
+    if (query.isBlank()) return true
+    val normalizedQuery = normalizeSuggestionValue(query)
+    return if (normalizedQuery.isEmpty()) {
+        suggestion.contains(query.trim(), ignoreCase = true)
+    } else {
+        normalizeSuggestionValue(suggestion).contains(normalizedQuery)
+    }
+}
+
+private fun normalizeSuggestionValue(value: String): String =
+    value.lowercase(Locale.ROOT).filter { it.isLetterOrDigit() }
 
 private enum class TastingNoteEntryMode { CELLAR, MANUAL }
 

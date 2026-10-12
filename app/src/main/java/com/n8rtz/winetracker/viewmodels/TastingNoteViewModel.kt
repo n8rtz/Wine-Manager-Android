@@ -86,12 +86,14 @@ class TastingNoteViewModel(application: Application, private val repository: Win
         note: TastingNote,
         maker: String,
         name: String,
+        country: String,
         region: String?,
+        subregion: String?,
         onSaved: (Long) -> Unit
     ) {
         viewModelScope.launch {
             try {
-                val savedId = repository.saveManualTastingNote(note, maker, name, region)
+                val savedId = repository.saveManualTastingNote(note, maker, name, country, region, subregion)
                 if (savedId > 0L) onSaved(savedId)
             } catch (error: Exception) {
                 Log.e("TastingNoteViewModel", "Unable to save manual tasting note", error)
