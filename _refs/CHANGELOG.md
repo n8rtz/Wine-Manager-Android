@@ -21,6 +21,7 @@
 - **Date parsing:** Backup `Long` date fields accept epoch values plus strict slash dates with two- or four-digit years (including `1/1/2021`) and supported ISO forms. CSV date parsing requires full input consumption; incomplete or undated legacy rows are skipped rather than assigned guessed dates.
 
 ### Fixed
+- **Cellar filter navigation:** Scroll the wine list back to the top whenever filter, sort, or search criteria change.
 - **Windows KSP/Room build:** Use a newer SQLite JDBC native driver only on the Room processor classpath so query verification can load SQLite on Windows x86_64.
 - **Safe import behavior:** Removed partial, row-by-row JSON merge behavior. Invalid backups now fail validation before local data is changed, and a transaction rolls back a failed replacement.
 - **Historical-data integrity:** Migration and restore preserve nullable consumption dates; note-to-bottle vintage resolution remains tied to the referenced bottle rather than an unrelated wine/vintage heuristic.

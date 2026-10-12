@@ -4,6 +4,7 @@ package com.n8rtz.winetracker.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -38,6 +39,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     val cellarResetKey by viewModel.cellarResetKey.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
+    val cellarListState = rememberLazyListState()
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
@@ -148,6 +150,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         }
     }
 
+    LaunchedEffect(filterState, searchQuery) {
+        cellarListState.scrollToItem(0)
+    }
+
     val formattedDatesMap = remember(filteredInventory, dateFormat, parseFormat) {
         filteredInventory.associate { item ->
             val formatted = item.bottle.dateAdded?.let {
@@ -213,6 +219,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         )
 
         LazyColumn(
+            state = cellarListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
