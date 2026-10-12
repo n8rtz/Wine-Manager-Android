@@ -1,12 +1,6 @@
 package com.n8rtz.winetracker.ui.screens
 
 import android.Manifest
-import android.graphics.Bitmap
-import android.graphics.Matrix
-import android.util.Log
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,16 +13,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
@@ -40,11 +33,14 @@ fun AddWineScreen(
     scannerViewModel: ScannerViewModel,
     onWineAdded: () -> Unit
 ) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
-    val scannedResult by scannerViewModel.scannedResult.collectAsState()
+    val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
+    var cameraError by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(scannerViewModel) {
+        onDispose { scannerViewModel.cancelActiveLabelScan() }
+    }
     
     var maker by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
@@ -68,18 +64,50 @@ fun AddWineScreen(
         WineRepository.Companion.locationData[selectedCountry]?.get(selectedRegion)?.sorted() ?: emptyList()
     } else emptyList()
 
-    // Auto-fill form when scanner emits a result
-    LaunchedEffect(scannedResult) {
-        scannedResult?.let {
-            if (it.maker != null) maker = it.maker
-            if (it.name != null) name = it.name
-            if (it.vintage != null) vintage = it.vintage
-            scannerViewModel.clearScannedResult()
-        }
-    }
-
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val vintages = (currentYear downTo 1950).map { it.toString() } + listOf("NV")
+    val scanReview = labelScanState as? LabelScanState.Review
+
+    scanReview?.let { review ->
+        AlertDialog(
+            onDismissRequest = { scannerViewModel.dismissLabelScan(review.requestId) },
+            title = { Text("Review scanned label") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("These are suggestions. They will not be saved until you save the wine.")
+                    review.result.maker?.let { Text("Producer: $it") }
+                    review.result.name?.let { Text("Wine: $it") }
+                    review.result.vintage?.let { Text("Vintage: $it") }
+                    review.result.rawText?.let { rawText ->
+                        Text("Recognized text", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            rawText,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 5,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        review.result.maker?.takeIf(String::isNotBlank)?.let { maker = it }
+                        review.result.name?.takeIf(String::isNotBlank)?.let { name = it }
+                        review.result.vintage?.takeIf(String::isNotBlank)?.let { vintage = it }
+                        scannerViewModel.dismissLabelScan(review.requestId)
+                    }
+                ) {
+                    Text("Use Suggestions")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { scannerViewModel.dismissLabelScan(review.requestId) }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Add New Wine") }) }
@@ -93,54 +121,60 @@ fun AddWineScreen(
             // Camera Section
             if (cameraPermissionState.status.isGranted) {
                 Box(modifier = Modifier.height(250.dp).fillMaxWidth()) {
-                    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
-                    
-                    AndroidView(
-                        factory = { ctx ->
-                            val previewView = PreviewView(ctx)
-                            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                            cameraProviderFuture.addListener({
-                                val cameraProvider = cameraProviderFuture.get()
-                                val preview = Preview.Builder().build().also {
-                                    it.setSurfaceProvider(previewView.surfaceProvider)
-                                }
-                                imageCapture = ImageCapture.Builder().build()
-                                try {
-                                    cameraProvider.unbindAll()
-                                    cameraProvider.bindToLifecycle(
-                                        lifecycleOwner,
-                                        CameraSelector.DEFAULT_BACK_CAMERA,
-                                        preview,
-                                        imageCapture
-                                    )
-                                } catch (e: Exception) {
-                                    Log.e("Camera", "Use case binding failed", e)
-                                }
-                            }, ContextCompat.getMainExecutor(ctx))
-                            previewView
-                        },
+                    LabelScanCameraPreview(
+                        scannerViewModel = scannerViewModel,
+                        onCameraError = { cameraError = it },
                         modifier = Modifier.fillMaxSize()
                     )
 
+                    val canStartScan = cameraError == null &&
+                        (labelScanState is LabelScanState.Idle || labelScanState is LabelScanState.Error)
                     Button(
+                        enabled = canStartScan,
                         onClick = {
-                            val capture = imageCapture ?: return@Button
-                            capture.takePicture(
-                                ContextCompat.getMainExecutor(context),
-                                object : ImageCapture.OnImageCapturedCallback() {
-                                    override fun onCaptureSuccess(image: ImageProxy) {
-                                        val bitmap = image.toBitmap().rotate(image.imageInfo.rotationDegrees.toFloat())
-                                        scannerViewModel.onImageCaptured(bitmap)
-                                        image.close()
-                                    }
-                                }
-                            )
+                            cameraError = null
+                            scannerViewModel.requestLabelScan()
                         },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
                     ) {
                         Icon(Icons.Default.Camera, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Scan Label")
+                        Text(if (labelScanState is LabelScanState.Error) "Retry Scan" else "Read Label")
+                    }
+                }
+
+                when (val state = labelScanState) {
+                    is LabelScanState.WaitingForFrame -> Text(
+                        "Hold the label steady in the frame.",
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    is LabelScanState.Processing -> Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text("Reading label on this device…", style = MaterialTheme.typography.bodySmall)
+                    }
+                    is LabelScanState.FinishingCancelledScan -> Text(
+                        "Finishing the previous scan…",
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    is LabelScanState.Error -> Text(
+                        state.message,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    else -> cameraError?.let { message ->
+                        Text(
+                            message,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             } else {
@@ -485,10 +519,4 @@ fun AddWineScreen(
             }
         }
     }
-}
-
-// Helper to rotate bitmap
-fun Bitmap.rotate(degrees: Float): Bitmap {
-    val matrix = Matrix().apply { postRotate(degrees) }
-    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
 }

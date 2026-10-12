@@ -25,7 +25,9 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.image.resolveWineImageModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -184,6 +186,11 @@ fun ArchiveFilterSheetContent(
 fun RankedWineCard(item: TastingNoteWithDefinition) {
     val wine = item.definition
     val note = item.note
+    val context = LocalContext.current
+    val legacyImageUrl = wine.imageUrl.takeIf { item.imageAsset == null }
+    val imageModel = remember(context, legacyImageUrl, item.imageAsset?.relativePath) {
+        resolveWineImageModel(context, item.imageAsset?.relativePath, legacyImageUrl)
+    }
 
     val fallbackColor = when (wine.type.lowercase()) {
         "red"       -> Color(0xFFFFF5F5)   // Subtle blush
@@ -210,17 +217,17 @@ fun RankedWineCard(item: TastingNoteWithDefinition) {
                     .background(fallbackColor),
                 contentAlignment = Alignment.Center
             ) {
-                if (wine.imageUrl != null) {
+                if (imageModel != null) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(wine.imageUrl)
+                        model = ImageRequest.Builder(context)
+                            .data(imageModel)
                             .crossfade(true)
                             .memoryCachePolicy(CachePolicy.ENABLED)
-                            .diskCachePolicy(CachePolicy.ENABLED)
+                            .diskCachePolicy(if (imageModel is File) CachePolicy.DISABLED else CachePolicy.ENABLED)
                             .build(),
                         contentDescription = "Wine bottle",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
                 } else {
                     Icon(

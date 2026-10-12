@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.image.resolveWineImageModel
+import java.io.File
 
 @Composable
 fun WineCard(
@@ -31,6 +33,7 @@ fun WineCard(
     type: String,
     metadata: String,
     imageUrl: String? = null,
+    imageLocalPath: String? = null,
     rating: String? = null,
     isExpanded: Boolean? = null,
     expansionResetKey: Any? = Unit,
@@ -40,6 +43,10 @@ fun WineCard(
 ) {
     var internalExpanded by remember(expansionResetKey) { mutableStateOf(false) }
     val expanded = isExpanded ?: internalExpanded
+    val context = LocalContext.current
+    val imageModel = remember(context, imageLocalPath, imageUrl) {
+        resolveWineImageModel(context, imageLocalPath, imageUrl)
+    }
 
     val backgroundColor = when (type.lowercase()) {
         "red" -> Color(0xFFFFF5F5)
@@ -75,13 +82,13 @@ fun WineCard(
                             .background(backgroundColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (imageUrl != null) {
+                        if (imageModel != null) {
                             AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(imageUrl)
+                                model = ImageRequest.Builder(context)
+                                    .data(imageModel)
                                     .crossfade(true)
                                     .memoryCachePolicy(CachePolicy.ENABLED)
-                                    .diskCachePolicy(CachePolicy.ENABLED)
+                                    .diskCachePolicy(if (imageModel is File) CachePolicy.DISABLED else CachePolicy.ENABLED)
                                     .build(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,

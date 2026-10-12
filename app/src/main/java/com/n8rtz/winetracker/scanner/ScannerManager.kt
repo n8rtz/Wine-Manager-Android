@@ -7,62 +7,51 @@ import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.tasks.await
-
-data class ScannedWine(
-    val maker: String? = null,
-    val name: String? = null,
-    val vintage: String? = null
-)
+import kotlinx.coroutines.withContext
 
 class ScannerManager {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val labelParser = WineLabelParser()
 
-    suspend fun scanImage(bitmap: Bitmap): ScannedWine {
-        val image = InputImage.fromBitmap(bitmap, 0)
-        return processImage(image)
+    /** Legacy bitmap entry point retained for existing callers; the camera flow uses ImageAnalysis. */
+    suspend fun scanImage(bitmap: Bitmap): ScannedWine = try {
+        processImage(InputImage.fromBitmap(bitmap, 0))
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        ScannedWine()
     }
 
+    /**
+     * Processes one YUV ImageAnalysis frame directly, avoiding a full-resolution Bitmap copy.
+     * This method owns the proxy and closes it after ML Kit completes, including error paths.
+     */
     @OptIn(ExperimentalGetImage::class)
     suspend fun scanImageProxy(imageProxy: ImageProxy): ScannedWine {
-        val mediaImage = imageProxy.image
-        if (mediaImage != null) {
-            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-            return processImage(image)
+        try {
+            val mediaImage = imageProxy.image
+                ?: throw IllegalStateException("Camera frame did not contain an image")
+            val inputImage = InputImage.fromMediaImage(
+                mediaImage,
+                imageProxy.imageInfo.rotationDegrees
+            )
+            // Task.await can stop waiting on coroutine cancellation while ML Kit still reads the
+            // MediaImage. Wait for the task to settle before the finally block releases its proxy.
+            return withContext(NonCancellable) { processImage(inputImage) }
+        } finally {
+            imageProxy.close()
         }
-        return ScannedWine()
+    }
+
+    fun close() {
+        recognizer.close()
     }
 
     private suspend fun processImage(image: InputImage): ScannedWine {
-        return try {
-            val result = recognizer.process(image).await()
-            parseText(result.text)
-        } catch (e: Exception) {
-            ScannedWine()
-        }
-    }
-
-    private fun parseText(text: String): ScannedWine {
-        val lines = text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
-        
-        // Vintage: 4-digit year (1900-2099)
-        val vintageRegex = Regex("\\b(19|20)\\d{2}\\b")
-        val vintageMatch = vintageRegex.find(text)
-        val vintage = vintageMatch?.value
-
-        // Basic heuristic for Maker and Name:
-        // Usually, the Maker is one of the top-most lines and is prominent.
-        // The Name is often the rest of the descriptive text.
-        
-        val maker = lines.getOrNull(0)
-        val name = lines.filterIndexed { index, s -> 
-            index > 0 && s != vintage 
-        }.joinToString(" ")
-
-        return ScannedWine(
-            maker = maker,
-            name = name.takeIf { it.isNotEmpty() },
-            vintage = vintage
-        )
+        val result = recognizer.process(image).await()
+        return labelParser.parse(result.text)
     }
 }

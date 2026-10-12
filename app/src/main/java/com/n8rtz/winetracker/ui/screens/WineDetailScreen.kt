@@ -18,18 +18,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.image.resolveWineImageModel
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
 import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import java.util.Calendar
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +53,13 @@ fun WineDetailScreen(
             Text("Wine not found")
         }
         return
+    }
+
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val legacyImageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null }
+    val imageModel = remember(context, legacyImageUrl, item.imageAsset?.relativePath) {
+        resolveWineImageModel(context, item.imageAsset?.relativePath, legacyImageUrl)
     }
 
     val tastingNotes by remember(item.definition.definitionId, item.bottle.vintage) {
@@ -165,11 +176,13 @@ fun WineDetailScreen(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (editedWine.imageUrl != null) {
+                if (imageModel != null) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(editedWine.imageUrl)
+                        model = ImageRequest.Builder(context)
+                            .data(imageModel)
                             .crossfade(true)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .diskCachePolicy(if (imageModel is File) CachePolicy.DISABLED else CachePolicy.ENABLED)
                             .build(),
                         contentDescription = "Wine bottle",
                         modifier = Modifier.fillMaxSize(),
@@ -182,6 +195,40 @@ fun WineDetailScreen(
                         modifier = Modifier.size(80.dp),
                         tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     )
+                }
+            }
+
+            item.imageAsset?.let { asset ->
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = buildString {
+                            append("Image source: ${asset.sourceName}")
+                            asset.attribution?.takeIf { it.isNotBlank() }?.let { append(" · Contributor: $it") }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        "Open Food Facts listing: ${asset.productTitle}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    asset.license?.takeIf { it.isNotBlank() }?.let { license ->
+                        Text(license, style = MaterialTheme.typography.bodySmall)
+                    }
+                    asset.sourcePageUrl?.takeIf { it.isNotBlank() }?.let { sourcePage ->
+                        Text(
+                            text = "View Open Food Facts source",
+                            modifier = Modifier.clickable {
+                                runCatching { uriHandler.openUri(sourcePage) }
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 

@@ -20,3 +20,23 @@ This document defines the strict design system, information architecture, and co
 * **UI/Trigger:** Add a dedicated "Import History Log" button inside the **Profile menu** to initiate this process.
 * **Navigation/Location:** The imported data belongs on the **History screen**. This screen must be accessed via a button located in the **top right corner of the Tasting Notes screen**.
 * **Data Displayed:** The History UI must be formatted to show the **Date Consumed**, the **Wine Info**, and the **Quantity (qty)** based on the imported CSV rows.
+
+## 35. Wine Data Importer — High-Quality Bottle Images
+* **Goal:** Add high-quality stock images of wine bottles or labels for wines already represented in the app.
+* **Scope:** Find images for wines that appear in the **Cellar** or in **Tasting Notes**.
+* **Implementation:** Provide a wine image importer that locates suitable stock bottle or label images and associates them with the corresponding wine records so they can be shown throughout the app.
+
+## 36. Wine Scanner — Camera Label Recognition
+* **Goal:** Let users capture a wine label with their phone camera and use image recognition to identify the wine.
+* **UI/Trigger:** Make scanning available from both the **Add to Cellar** and **Add Tasting Note** forms.
+* **Implementation:** Use recognized label information to automatically fill the corresponding form fields, reducing manual entry.
+
+## 37. Pareto Plot — Selected-Wine Pop-up Card
+* **Interaction:** Tapping a dot on the Pareto chart must display a compact information card over the graph for the selected wine.
+* **Dismissal:** Tapping anywhere outside the card dismisses it.
+* **Details:** Show the selected wine’s identifying information and its plotted price/rating data.
+
+## 38. Pareto Plot — Best-Value Frontier Dashboard
+* **Placement:** Add a polished dashboard directly below the Pareto chart.
+* **Content:** Highlight the best-value wines leading the Pareto frontier.
+* **Categories:** Separate the featured wines into **Red** and **White** categories.

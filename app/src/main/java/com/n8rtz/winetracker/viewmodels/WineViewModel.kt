@@ -147,6 +147,7 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     fun resetDatabase(onComplete: () -> Unit = {}) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.clearAllTables()
+            runCatching { com.n8rtz.winetracker.image.WineImageFileStore(getApplication()).clearStoredImages() }
             withContext(Dispatchers.Main) {
                 resetCellarScreen()
                 onComplete()

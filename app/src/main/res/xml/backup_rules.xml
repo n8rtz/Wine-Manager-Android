@@ -6,8 +6,6 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Keep app-private image bytes out of cloud/device backups. Provenance lives in Room. -->
+    <exclude domain="file" path="wine-images/" />
 </full-backup-content>

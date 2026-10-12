@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -56,8 +58,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.n8rtz.winetracker.data.local.ConsumptionEventWithDefinition
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
@@ -132,6 +138,12 @@ fun ParetoScreen(
         if (visibleTypes == null) points else points.filter { it.type in visibleTypes!! }
     }
     val frontier = remember(visiblePoints) { paretoFrontier(visiblePoints) }
+    val redFrontier = remember(visiblePoints) {
+        paretoFrontier(visiblePoints.filter { it.type.equals("Red", ignoreCase = true) })
+    }
+    val whiteFrontier = remember(visiblePoints) {
+        paretoFrontier(visiblePoints.filter { it.type.equals("White", ignoreCase = true) })
+    }
     val frontierKeys = remember(frontier) { frontier.map { it.key }.toSet() }
     val hasTrendLine = remember(visiblePoints) { calculateTrend(visiblePoints) != null }
     val selectedPoint = visiblePoints.firstOrNull { it.key == selectedPointKey }
@@ -251,7 +263,8 @@ fun ParetoScreen(
                             ParetoScatterPlot(
                                 points = visiblePoints,
                                 frontier = frontier,
-                                selectedKey = selectedPointKey,
+                                selectedPoint = selectedPoint,
+                                selectedOnFrontier = selectedPoint?.let { it.key in frontierKeys } == true,
                                 onPointSelected = { selectedPointKey = it }
                             )
                             Text(
@@ -281,12 +294,10 @@ fun ParetoScreen(
                         }
                     }
 
-                    if (selectedPoint != null) {
-                        SelectedWineSummary(
-                            point = selectedPoint,
-                            isOnFrontier = selectedPoint.key in frontierKeys
-                        )
-                    }
+                    ParetoFrontierDashboard(
+                        redFrontier = redFrontier,
+                        whiteFrontier = whiteFrontier
+                    )
                 }
             }
 
@@ -318,7 +329,8 @@ private fun EmptyParetoState(title: String, message: String) {
 private fun ParetoScatterPlot(
     points: List<ParetoWinePoint>,
     frontier: List<ParetoWinePoint>,
-    selectedKey: WineVintageKey?,
+    selectedPoint: ParetoWinePoint?,
+    selectedOnFrontier: Boolean,
     onPointSelected: (WineVintageKey?) -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -347,178 +359,225 @@ private fun ParetoScatterPlot(
     val bottomInsetPx = with(density) { 34.dp.toPx() }
     val touchRadiusPx = with(density) { 24.dp.toPx() }
 
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(292.dp)
-            .pointerInput(points, scale, selectedKey) {
-                detectTapGestures { tap ->
-                    val canvasWidth = size.width.toFloat()
-                    val canvasHeight = size.height.toFloat()
-                    val nearest = points.minByOrNull { point ->
-                        val position = chartPointOffset(
-                            price = point.price,
-                            rating = point.averageRating,
-                            scale = scale,
-                            canvasWidth = canvasWidth,
-                            canvasHeight = canvasHeight,
-                            leftInset = leftInsetPx,
-                            rightInset = rightInsetPx,
-                            topInset = topInsetPx,
-                            bottomInset = bottomInsetPx
-                        )
-                        val dx = position.x - tap.x
-                        val dy = position.y - tap.y
-                        dx * dx + dy * dy
-                    }
-                    if (nearest == null) {
-                        onPointSelected(null)
-                    } else {
-                        val position = chartPointOffset(
-                            price = nearest.price,
-                            rating = nearest.averageRating,
-                            scale = scale,
-                            canvasWidth = canvasWidth,
-                            canvasHeight = canvasHeight,
-                            leftInset = leftInsetPx,
-                            rightInset = rightInsetPx,
-                            topInset = topInsetPx,
-                            bottomInset = bottomInsetPx
-                        )
-                        val dx = position.x - tap.x
-                        val dy = position.y - tap.y
-                        onPointSelected(if (dx * dx + dy * dy <= touchRadiusPx * touchRadiusPx) nearest.key else null)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth().height(292.dp)
+    ) {
+        val chartWidthPx = constraints.maxWidth.toFloat()
+        val chartHeightPx = constraints.maxHeight.toFloat()
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(points, scale, selectedPoint?.key) {
+                    detectTapGestures { tap ->
+                        val canvasWidth = size.width.toFloat()
+                        val canvasHeight = size.height.toFloat()
+                        val nearest = points.minByOrNull { point ->
+                            val position = chartPointOffset(
+                                price = point.price,
+                                rating = point.averageRating,
+                                scale = scale,
+                                canvasWidth = canvasWidth,
+                                canvasHeight = canvasHeight,
+                                leftInset = leftInsetPx,
+                                rightInset = rightInsetPx,
+                                topInset = topInsetPx,
+                                bottomInset = bottomInsetPx
+                            )
+                            val dx = position.x - tap.x
+                            val dy = position.y - tap.y
+                            dx * dx + dy * dy
+                        }
+                        if (nearest == null) {
+                            onPointSelected(null)
+                        } else {
+                            val position = chartPointOffset(
+                                price = nearest.price,
+                                rating = nearest.averageRating,
+                                scale = scale,
+                                canvasWidth = canvasWidth,
+                                canvasHeight = canvasHeight,
+                                leftInset = leftInsetPx,
+                                rightInset = rightInsetPx,
+                                topInset = topInsetPx,
+                                bottomInset = bottomInsetPx
+                            )
+                            val dx = position.x - tap.x
+                            val dy = position.y - tap.y
+                            onPointSelected(if (dx * dx + dy * dy <= touchRadiusPx * touchRadiusPx) nearest.key else null)
+                        }
                     }
                 }
-            }
-    ) {
-        val plotLeft = leftInsetPx
-        val plotRight = size.width - rightInsetPx
-        val plotTop = topInsetPx
-        val plotBottom = size.height - bottomInsetPx
-        val plotWidth = (plotRight - plotLeft).coerceAtLeast(1f)
-        val plotHeight = (plotBottom - plotTop).coerceAtLeast(1f)
-        val labelTextSize = 11.sp.toPx()
-        axisLabelPaint.textSize = labelTextSize
-        priceLabelPaint.textSize = labelTextSize
+        ) {
+            val plotLeft = leftInsetPx
+            val plotRight = size.width - rightInsetPx
+            val plotTop = topInsetPx
+            val plotBottom = size.height - bottomInsetPx
+            val plotWidth = (plotRight - plotLeft).coerceAtLeast(1f)
+            val plotHeight = (plotBottom - plotTop).coerceAtLeast(1f)
+            val labelTextSize = 11.sp.toPx()
+            axisLabelPaint.textSize = labelTextSize
+            priceLabelPaint.textSize = labelTextSize
 
-        val scoreTicks = (50..100 step 10).toList()
-        scoreTicks.forEach { score ->
-            val y = plotBottom - ((score - MIN_RATING) / (MAX_RATING - MIN_RATING)).toFloat() * plotHeight
-            drawLine(
-                color = gridColor,
-                start = Offset(plotLeft, y),
-                end = Offset(plotRight, y),
-                strokeWidth = 1.dp.toPx()
-            )
-        }
-        scale.ticks.forEach { tick ->
-            val x = plotLeft + scale.fraction(tick) * plotWidth
-            drawLine(
-                color = gridColor,
-                start = Offset(x, plotTop),
-                end = Offset(x, plotBottom),
-                strokeWidth = 1.dp.toPx()
-            )
-        }
-
-        if (trend != null) {
-            val trendStart = chartPointOffset(
-                price = exp(scale.minimumLogPrice),
-                rating = trend.ratingAt(scale.minimumLogPrice),
-                scale = scale,
-                canvasWidth = size.width,
-                canvasHeight = size.height,
-                leftInset = leftInsetPx,
-                rightInset = rightInsetPx,
-                topInset = topInsetPx,
-                bottomInset = bottomInsetPx
-            )
-            val trendEnd = chartPointOffset(
-                price = exp(scale.maximumLogPrice),
-                rating = trend.ratingAt(scale.maximumLogPrice),
-                scale = scale,
-                canvasWidth = size.width,
-                canvasHeight = size.height,
-                leftInset = leftInsetPx,
-                rightInset = rightInsetPx,
-                topInset = topInsetPx,
-                bottomInset = bottomInsetPx
-            )
-            drawLine(
-                color = TrendLineColor.copy(alpha = 0.85f),
-                start = trendStart,
-                end = trendEnd,
-                strokeWidth = 2.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx()))
-            )
-        }
-
-        val frontierPath = Path()
-        frontier.distinctBy { it.price to it.averageRating }.forEachIndexed { index, point ->
-            val position = chartPointOffset(
-                price = point.price,
-                rating = point.averageRating,
-                scale = scale,
-                canvasWidth = size.width,
-                canvasHeight = size.height,
-                leftInset = leftInsetPx,
-                rightInset = rightInsetPx,
-                topInset = topInsetPx,
-                bottomInset = bottomInsetPx
-            )
-            if (index == 0) frontierPath.moveTo(position.x, position.y) else frontierPath.lineTo(position.x, position.y)
-        }
-        if (frontier.distinctBy { it.price to it.averageRating }.size > 1) {
-            drawPath(
-                path = frontierPath,
-                color = ParetoGreen,
-                style = Stroke(width = 2.5.dp.toPx())
-            )
-        }
-
-        points.forEach { point ->
-            val position = chartPointOffset(
-                price = point.price,
-                rating = point.averageRating,
-                scale = scale,
-                canvasWidth = size.width,
-                canvasHeight = size.height,
-                leftInset = leftInsetPx,
-                rightInset = rightInsetPx,
-                topInset = topInsetPx,
-                bottomInset = bottomInsetPx
-            )
-            val pointColor = wineTypeColor(point.type)
-            val radius = 6.dp.toPx()
-            drawCircle(pointColor, radius = radius, center = position)
-            drawCircle(
-                color = wineTypeOutline(point.type),
-                radius = radius,
-                center = position,
-                style = Stroke(width = 1.25.dp.toPx())
-            )
-            if (point.key == selectedKey) {
-                drawCircle(
-                    color = colorScheme.primary,
-                    radius = 10.dp.toPx(),
-                    center = position,
-                    style = Stroke(width = 2.dp.toPx())
+            val scoreTicks = (50..100 step 10).toList()
+            scoreTicks.forEach { score ->
+                val y = plotBottom - ((score - MIN_RATING) / (MAX_RATING - MIN_RATING)).toFloat() * plotHeight
+                drawLine(
+                    color = gridColor,
+                    start = Offset(plotLeft, y),
+                    end = Offset(plotRight, y),
+                    strokeWidth = 1.dp.toPx()
                 )
             }
+            scale.ticks.forEach { tick ->
+                val x = plotLeft + scale.fraction(tick) * plotWidth
+                drawLine(
+                    color = gridColor,
+                    start = Offset(x, plotTop),
+                    end = Offset(x, plotBottom),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            if (trend != null) {
+                val trendStart = chartPointOffset(
+                    price = exp(scale.minimumLogPrice),
+                    rating = trend.ratingAt(scale.minimumLogPrice),
+                    scale = scale,
+                    canvasWidth = size.width,
+                    canvasHeight = size.height,
+                    leftInset = leftInsetPx,
+                    rightInset = rightInsetPx,
+                    topInset = topInsetPx,
+                    bottomInset = bottomInsetPx
+                )
+                val trendEnd = chartPointOffset(
+                    price = exp(scale.maximumLogPrice),
+                    rating = trend.ratingAt(scale.maximumLogPrice),
+                    scale = scale,
+                    canvasWidth = size.width,
+                    canvasHeight = size.height,
+                    leftInset = leftInsetPx,
+                    rightInset = rightInsetPx,
+                    topInset = topInsetPx,
+                    bottomInset = bottomInsetPx
+                )
+                drawLine(
+                    color = TrendLineColor.copy(alpha = 0.85f),
+                    start = trendStart,
+                    end = trendEnd,
+                    strokeWidth = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx()))
+                )
+            }
+
+            val frontierPath = Path()
+            frontier.distinctBy { it.price to it.averageRating }.forEachIndexed { index, point ->
+                val position = chartPointOffset(
+                    price = point.price,
+                    rating = point.averageRating,
+                    scale = scale,
+                    canvasWidth = size.width,
+                    canvasHeight = size.height,
+                    leftInset = leftInsetPx,
+                    rightInset = rightInsetPx,
+                    topInset = topInsetPx,
+                    bottomInset = bottomInsetPx
+                )
+                if (index == 0) frontierPath.moveTo(position.x, position.y) else frontierPath.lineTo(position.x, position.y)
+            }
+            if (frontier.distinctBy { it.price to it.averageRating }.size > 1) {
+                drawPath(
+                    path = frontierPath,
+                    color = ParetoGreen,
+                    style = Stroke(width = 2.5.dp.toPx())
+                )
+            }
+
+            points.forEach { point ->
+                val position = chartPointOffset(
+                    price = point.price,
+                    rating = point.averageRating,
+                    scale = scale,
+                    canvasWidth = size.width,
+                    canvasHeight = size.height,
+                    leftInset = leftInsetPx,
+                    rightInset = rightInsetPx,
+                    topInset = topInsetPx,
+                    bottomInset = bottomInsetPx
+                )
+                val pointColor = wineTypeColor(point.type)
+                val radius = 6.dp.toPx()
+                drawCircle(pointColor, radius = radius, center = position)
+                drawCircle(
+                    color = wineTypeOutline(point.type),
+                    radius = radius,
+                    center = position,
+                    style = Stroke(width = 1.25.dp.toPx())
+                )
+                if (point.key == selectedPoint?.key) {
+                    drawCircle(
+                        color = colorScheme.primary,
+                        radius = 10.dp.toPx(),
+                        center = position,
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                }
+            }
+
+            val nativeCanvas = drawContext.canvas.nativeCanvas
+            scoreTicks.forEach { score ->
+                val y = plotBottom - ((score - MIN_RATING) / (MAX_RATING - MIN_RATING)).toFloat() * plotHeight
+                nativeCanvas.drawText(score.toString(), plotLeft - 8.dp.toPx(), y + labelTextSize * 0.35f, axisLabelPaint)
+            }
+            scale.ticks.forEach { tick ->
+                val x = plotLeft + scale.fraction(tick) * plotWidth
+                val label = formatPrice(tick)
+                val labelWidth = priceLabelPaint.measureText(label)
+                val labelX = (x - labelWidth / 2f).coerceIn(plotLeft, (plotRight - labelWidth).coerceAtLeast(plotLeft))
+                nativeCanvas.drawText(label, labelX + labelWidth / 2f, size.height - 5.dp.toPx(), priceLabelPaint)
+            }
         }
 
-        val nativeCanvas = drawContext.canvas.nativeCanvas
-        scoreTicks.forEach { score ->
-            val y = plotBottom - ((score - MIN_RATING) / (MAX_RATING - MIN_RATING)).toFloat() * plotHeight
-            nativeCanvas.drawText(score.toString(), plotLeft - 8.dp.toPx(), y + labelTextSize * 0.35f, axisLabelPaint)
-        }
-        scale.ticks.forEach { tick ->
-            val x = plotLeft + scale.fraction(tick) * plotWidth
-            val label = formatPrice(tick)
-            val labelWidth = priceLabelPaint.measureText(label)
-            val labelX = (x - labelWidth / 2f).coerceIn(plotLeft, (plotRight - labelWidth).coerceAtLeast(plotLeft))
-            nativeCanvas.drawText(label, labelX + labelWidth / 2f, size.height - 5.dp.toPx(), priceLabelPaint)
+        selectedPoint?.let { point ->
+            val popupWidth = (maxWidth - 16.dp).coerceAtMost(280.dp)
+            val popupWidthPx = with(density) { popupWidth.toPx() }
+            val edgeMarginPx = with(density) { 8.dp.toPx() }
+            val estimatedPopupHeightPx = with(density) { 156.dp.toPx() }
+            val pointPosition = chartPointOffset(
+                price = point.price,
+                rating = point.averageRating,
+                scale = scale,
+                canvasWidth = chartWidthPx,
+                canvasHeight = chartHeightPx,
+                leftInset = leftInsetPx,
+                rightInset = rightInsetPx,
+                topInset = topInsetPx,
+                bottomInset = bottomInsetPx
+            )
+            val maxPopupLeft = (chartWidthPx - popupWidthPx - edgeMarginPx).coerceAtLeast(edgeMarginPx)
+            val popupLeft = (pointPosition.x - popupWidthPx / 2f)
+                .coerceIn(edgeMarginPx, maxPopupLeft)
+            val topAbovePoint = pointPosition.y - estimatedPopupHeightPx - edgeMarginPx
+            val desiredPopupTop = if (topAbovePoint >= edgeMarginPx) {
+                topAbovePoint
+            } else {
+                pointPosition.y + edgeMarginPx
+            }
+            val maxPopupTop = (chartHeightPx - estimatedPopupHeightPx - edgeMarginPx).coerceAtLeast(edgeMarginPx)
+            val popupTop = desiredPopupTop.coerceIn(edgeMarginPx, maxPopupTop)
+
+            Popup(
+                alignment = Alignment.TopStart,
+                offset = IntOffset(popupLeft.roundToInt(), popupTop.roundToInt()),
+                onDismissRequest = { onPointSelected(null) },
+                properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
+            ) {
+                SelectedWineSummary(
+                    point = point,
+                    isOnFrontier = selectedOnFrontier,
+                    modifier = Modifier.width(popupWidth)
+                )
+            }
         }
     }
 }
@@ -550,36 +609,185 @@ private fun ParetoLineLegend(color: Color, dashed: Boolean, label: String) {
 }
 
 @Composable
-private fun SelectedWineSummary(point: ParetoWinePoint, isOnFrontier: Boolean) {
-    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+private fun SelectedWineSummary(
+    point: ParetoWinePoint,
+    isOnFrontier: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            WineTypeSwatch(point.type, Modifier.size(16.dp))
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                WineTypeSwatch(point.type, Modifier.size(12.dp))
+                Text(point.type, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.weight(1f))
                 Text(
-                    "${point.maker} — ${point.name} (${point.vintage})",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    "Average ${formatRating(point.averageRating)} / 100 · ${formatPrice(point.price)} per bottle · ${point.tastingCount} tasting${if (point.tastingCount == 1) "" else "s"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (isOnFrontier) "Overall frontier" else "Trade-off",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isOnFrontier) ParetoGreen else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(Modifier.width(8.dp))
             Text(
-                if (isOnFrontier) "Frontier" else "Trade-off",
-                style = MaterialTheme.typography.labelMedium,
+                "${point.maker} — ${point.name}",
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = if (isOnFrontier) ParetoGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text("Vintage ${point.vintage}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("${formatRating(point.averageRating)} / 100", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text("${formatPrice(point.price)} / bottle", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            }
+            Text(
+                "Based on ${point.tastingCount} tasting${if (point.tastingCount == 1) "" else "s"}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
+
+@Composable
+private fun ParetoFrontierDashboard(
+    redFrontier: List<ParetoWinePoint>,
+    whiteFrontier: List<ParetoWinePoint>
+) {
+    val redLeaders = remember(redFrontier) { rankFrontierLeaders(redFrontier) }
+    val whiteLeaders = remember(whiteFrontier) { rankFrontierLeaders(whiteFrontier) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Red & White frontier leaders", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                "Top average-score-per-dollar picks from each type’s Pareto frontier.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                FrontierCategoryCard(
+                    type = "Red",
+                    frontier = redFrontier,
+                    leaders = redLeaders,
+                    modifier = Modifier.weight(1f)
+                )
+                FrontierCategoryCard(
+                    type = "White",
+                    frontier = whiteFrontier,
+                    leaders = whiteLeaders,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FrontierCategoryCard(
+    type: String,
+    frontier: List<ParetoWinePoint>,
+    leaders: List<ParetoWinePoint>,
+    modifier: Modifier = Modifier
+) {
+    val containerColor = if (type == "Red") {
+        WineRed.copy(alpha = 0.08f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainer
+    }
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(11.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                WineTypeSwatch(type, Modifier.size(12.dp))
+                Text(type, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "${frontier.size} frontier",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (leaders.isEmpty()) {
+                Text(
+                    "No priced, rated wines with the current filters.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                leaders.forEachIndexed { index, point ->
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            "${index + 1}. ${point.name} · ${point.vintage}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            point.maker,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(
+                                "${formatRating(point.averageRating)} / 100",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(formatPrice(point.price), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    if (index < leaders.lastIndex) {
+                        Spacer(Modifier.height(1.dp))
+                    }
+                }
+                if (frontier.size > leaders.size) {
+                    Text(
+                        "+${frontier.size - leaders.size} more on frontier",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun rankFrontierLeaders(frontier: List<ParetoWinePoint>): List<ParetoWinePoint> =
+    frontier.sortedWith(
+        compareByDescending<ParetoWinePoint> { it.averageRating / it.price }
+            .thenByDescending { it.averageRating }
+            .thenBy { it.price }
+            .thenBy { it.name.lowercase(Locale.ROOT) }
+    ).take(3)
 
 @Composable
 private fun paretoFilterChipColors() = FilterChipDefaults.filterChipColors(

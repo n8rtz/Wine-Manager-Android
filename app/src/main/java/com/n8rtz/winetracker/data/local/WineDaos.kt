@@ -14,15 +14,25 @@ import kotlinx.coroutines.flow.Flow
 data class WineBottleWithDefinition(
     @Embedded val bottle: WineBottle,
     @Relation(parentColumn = "definitionId", entityColumn = "definitionId")
-    val definition: WineDefinition
+    val definition: WineDefinition,
+    @Relation(parentColumn = "definitionId", entityColumn = "definitionId")
+    val imageAsset: WineImageAsset?
 )
 
 data class TastingNoteWithDefinition(
     @Embedded val note: TastingNote,
     @Relation(parentColumn = "definitionId", entityColumn = "definitionId")
     val definition: WineDefinition,
+    @Relation(parentColumn = "definitionId", entityColumn = "definitionId")
+    val imageAsset: WineImageAsset?,
     @Relation(parentColumn = "bottleId", entityColumn = "bottleId")
     val bottle: WineBottle?
+)
+
+data class WineImageAssetWithDefinition(
+    @Embedded val imageAsset: WineImageAsset,
+    @Relation(parentColumn = "definitionId", entityColumn = "definitionId")
+    val definition: WineDefinition
 )
 
 data class ConsumptionEventWithDefinition(
@@ -59,14 +69,73 @@ interface WineDao {
     @Query("DELETE FROM wine_definitions")
     suspend fun deleteAllDefinitions()
 
-    @Query("SELECT * FROM wine_definitions WHERE imageUrl IS NULL")
+    @Query("""
+        SELECT d.* FROM wine_definitions d
+        WHERE (
+            (d.imageUrl IS NULL OR TRIM(d.imageUrl) = '')
+            AND NOT EXISTS (
+                SELECT 1 FROM wine_image_assets a WHERE a.definitionId = d.definitionId
+            )
+        ) OR EXISTS (
+            SELECT 1 FROM wine_image_assets a
+            WHERE a.definitionId = d.definitionId AND a.relativePath IS NULL
+        )
+    """)
     fun getDefinitionsWithNoImage(): Flow<List<WineDefinition>>
 
     @Query("UPDATE wine_definitions SET imageUrl = :imageUrl WHERE definitionId = :definitionId")
     suspend fun updateImageUrl(definitionId: Long, imageUrl: String)
 
-    @Query("SELECT * FROM wine_definitions WHERE imageUrl IS NULL OR imageUrl = '' OR imageUrl = ' '")
+    @Query("""
+        SELECT d.* FROM wine_definitions d
+        WHERE (d.imageUrl IS NULL OR TRIM(d.imageUrl) = '')
+          AND NOT EXISTS (
+            SELECT 1 FROM wine_image_assets a WHERE a.definitionId = d.definitionId
+          )
+    """)
     suspend fun getAllWithoutImages(): List<WineDefinition>
+
+    @Query("""
+        SELECT d.* FROM wine_definitions d
+        WHERE (
+            (d.imageUrl IS NULL OR TRIM(d.imageUrl) = '')
+            AND NOT EXISTS (
+                SELECT 1 FROM wine_image_assets a WHERE a.definitionId = d.definitionId
+            )
+        ) OR EXISTS (
+            SELECT 1 FROM wine_image_assets a
+            WHERE a.definitionId = d.definitionId AND a.relativePath IS NULL
+        )
+    """)
+    suspend fun getAllMissingOfflineImages(): List<WineDefinition>
+}
+
+@Dao
+interface WineImageAssetDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(asset: WineImageAsset)
+
+    @Query("SELECT * FROM wine_image_assets WHERE definitionId = :definitionId LIMIT 1")
+    suspend fun getByDefinitionId(definitionId: Long): WineImageAsset?
+
+    @Query("SELECT * FROM wine_image_assets")
+    suspend fun getAllOnce(): List<WineImageAsset>
+
+    @Transaction
+    @Query("SELECT * FROM wine_image_assets WHERE relativePath IS NOT NULL ORDER BY importedAt DESC, definitionId")
+    fun observeStoredWithDefinitions(): Flow<List<WineImageAssetWithDefinition>>
+
+    @Query("UPDATE wine_image_assets SET relativePath = NULL WHERE definitionId = :definitionId AND relativePath = :expectedRelativePath")
+    suspend fun clearRelativePathIfMatches(definitionId: Long, expectedRelativePath: String): Int
+
+    @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM wine_image_assets WHERE relativePath IS NOT NULL")
+    suspend fun getStoredBytes(): Long
+
+    @Query("SELECT COUNT(*) FROM wine_image_assets WHERE relativePath = :relativePath")
+    suspend fun countReferences(relativePath: String): Int
+
+    @Query("DELETE FROM wine_image_assets")
+    suspend fun deleteAll()
 }
 
 @Dao

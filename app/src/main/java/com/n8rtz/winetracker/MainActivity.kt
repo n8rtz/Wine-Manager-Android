@@ -64,6 +64,7 @@ import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.RankingsViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
+import com.n8rtz.winetracker.viewmodels.WineImageImportViewModel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -93,7 +94,8 @@ class MainActivity : ComponentActivity() {
             com.n8rtz.winetracker.data.local.MIGRATION_16_17,
             com.n8rtz.winetracker.data.local.MIGRATION_17_18,
             com.n8rtz.winetracker.data.local.MIGRATION_18_19,
-            com.n8rtz.winetracker.data.local.MIGRATION_19_20
+            com.n8rtz.winetracker.data.local.MIGRATION_19_20,
+            com.n8rtz.winetracker.data.local.MIGRATION_20_21
         )
         // Ensure migrations don't block the main thread if possible (though they often do on first access)
         .build()
@@ -150,6 +152,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val wineImageImportViewModel: WineImageImportViewModel by viewModels {
+        object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                Log.d("WineTracker", "MainActivity: Creating WineImageImportViewModel")
+                return WineImageImportViewModel(this@MainActivity.application, repository) as T
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("WineTracker", "MainActivity: onCreate started")
@@ -169,7 +181,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             WineTrackerTheme {
                 val navController = rememberNavController()
-                MainAppScaffold(navController, wineViewModel, tastingNoteViewModel, rankingsViewModel, scannerViewModel)
+                MainAppScaffold(
+                    navController,
+                    wineViewModel,
+                    tastingNoteViewModel,
+                    rankingsViewModel,
+                    scannerViewModel,
+                    wineImageImportViewModel
+                )
             }
         }
     }
@@ -182,7 +201,8 @@ fun MainAppScaffold(
     viewModel: WineViewModel,
     tastingNoteViewModel: TastingNoteViewModel,
     rankingsViewModel: RankingsViewModel,
-    scannerViewModel: ScannerViewModel
+    scannerViewModel: ScannerViewModel,
+    wineImageImportViewModel: WineImageImportViewModel
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -322,7 +342,7 @@ fun MainAppScaffold(
             composable("profile") {
                 ProfileScreen(
                     viewModel = viewModel,
-                    scannerViewModel = scannerViewModel,
+                    wineImageImportViewModel = wineImageImportViewModel,
                     tastingNoteViewModel = tastingNoteViewModel,
                     onAppInfoClick = { navController.navigate("app_info") },
                     onParetoClick = { navController.navigate("pareto") }

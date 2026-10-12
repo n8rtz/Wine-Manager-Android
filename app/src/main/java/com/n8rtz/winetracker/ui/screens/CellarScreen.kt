@@ -240,7 +240,8 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                     },
                     type = item.definition.type,
                     metadata = "Qty: ${item.bottle.quantity}",
-                    imageUrl = item.definition.imageUrl,
+                    imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
+                    imageLocalPath = item.imageAsset?.relativePath,
                     rating = ratingStr,
                     expansionResetKey = cellarResetKey,
                     details = {

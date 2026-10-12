@@ -10,6 +10,7 @@ import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.ConsumptionEvent
 import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.normalizeVintage
+import com.n8rtz.winetracker.image.WineImageFileStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
@@ -63,6 +64,7 @@ class DataImporter(
         val notes = source.notes
         val ratings = source.ratings
         val eventsFromBackup = source.consumptionEvents
+        val imageAssets = source.imageAssets.orEmpty()
 
         require(definitions.map { it.definitionId }.distinct().size == definitions.size) {
             "The backup contains duplicate wine definition IDs."
@@ -74,6 +76,22 @@ class DataImporter(
             "The backup contains duplicate wine definitions."
         }
         val definitionIds = definitions.mapTo(mutableSetOf()) { it.definitionId }
+        require(imageAssets.map { it.definitionId }.distinct().size == imageAssets.size) {
+            "The backup contains duplicate wine-image metadata rows."
+        }
+        require(imageAssets.all { asset ->
+            asset.definitionId in definitionIds &&
+                asset.sourceName == OPEN_FOOD_FACTS_SOURCE &&
+                asset.productTitle.isNotBlank() &&
+                isOpenFoodFactsUrl(asset.sourceUrl) &&
+                (asset.sourcePageUrl == null || isOpenFoodFactsUrl(asset.sourcePageUrl)) &&
+                asset.kind in setOf("BOTTLE", "LABEL") &&
+                asset.width > 0 && asset.height > 0 &&
+                asset.sizeBytes in 1..MAX_IMAGE_BYTES &&
+                runCatching { asset.sha256.matches(Regex("[0-9a-fA-F]{64}")) }.getOrDefault(false)
+        }) {
+            "The backup contains invalid or unsupported wine-image provenance metadata."
+        }
         require(sourceBottles.map { it.bottleId }.distinct().size == sourceBottles.size) {
             "The backup contains duplicate bottle IDs."
         }
@@ -153,14 +171,31 @@ class DataImporter(
             database.ratingDao().deleteAllRatings()
             database.tastingNoteDao().deleteAllNotes()
             database.inventoryDao().deleteAllBottles()
+            database.wineImageAssetDao().deleteAll()
             database.wineDao().deleteAllDefinitions()
 
             if (definitions.isNotEmpty()) database.wineDao().insertDefinitions(definitions)
+            val imageAssetDao = database.wineImageAssetDao()
+            imageAssets.forEach { asset -> imageAssetDao.upsert(asset.copy(relativePath = null)) }
             if (activeBottles.isNotEmpty()) database.inventoryDao().insertBottles(activeBottles)
             if (restoredNotes.isNotEmpty()) database.tastingNoteDao().insertNotes(restoredNotes)
             if (ratings.isNotEmpty()) database.ratingDao().insertRatings(ratings)
             if (restoredEvents.isNotEmpty()) database.consumptionEventDao().insertEvents(restoredEvents)
         }
+        // Backups carry provenance and source URLs, not app-private bytes or paths.
+        runCatching { WineImageFileStore(context).clearStoredImages() }
     }
 
+    private fun isOpenFoodFactsUrl(value: String): Boolean = runCatching {
+        val uri = java.net.URI(value)
+        val host = uri.host?.lowercase(Locale.ROOT) ?: return@runCatching false
+        uri.scheme.equals("https", ignoreCase = true) &&
+            uri.userInfo == null && (uri.port == -1 || uri.port == 443) &&
+            (host == "openfoodfacts.org" || host.endsWith(".openfoodfacts.org"))
+    }.getOrDefault(false)
+
+    private companion object {
+        const val OPEN_FOOD_FACTS_SOURCE = "Open Food Facts"
+        const val MAX_IMAGE_BYTES = 500L * 1024L
+    }
 }

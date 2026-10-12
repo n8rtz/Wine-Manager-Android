@@ -111,6 +111,38 @@ data class WineDefinition(
     val drinkingWindowEnd: Int? = null
 )
 
+/** Provenance for the one approved, offline image associated with a wine definition. */
+@Entity(
+    tableName = "wine_image_assets",
+    foreignKeys = [
+        ForeignKey(
+            entity = WineDefinition::class,
+            parentColumns = ["definitionId"],
+            childColumns = ["definitionId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class WineImageAsset(
+    @PrimaryKey val definitionId: Long,
+    /** Relative to filesDir; null when restored from a backup that does not include image bytes. */
+    val relativePath: String?,
+    val sourceName: String,
+    val providerAssetId: String?,
+    val productTitle: String,
+    val sourceUrl: String,
+    val sourcePageUrl: String?,
+    val attribution: String?,
+    val license: String?,
+    /** User-confirmed display classification: BOTTLE or LABEL. */
+    val kind: String,
+    val width: Int,
+    val height: Int,
+    val sizeBytes: Long,
+    val sha256: String,
+    val importedAt: Long
+)
+
 // 2. THE INVENTORY (Specific bottles/vintages)
 @Entity(
     tableName = "wine_bottles",
@@ -223,13 +255,14 @@ data class ConsumptionEvent(
 )
 
 @Database(
-    entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class, ConsumptionEvent::class],
-    version = 20,
+    entities = [WineDefinition::class, WineImageAsset::class, WineBottle::class, TastingNote::class, Rating::class, ConsumptionEvent::class],
+    version = 21,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class WineDatabase : RoomDatabase() {
     abstract fun wineDao(): WineDao
+    abstract fun wineImageAssetDao(): WineImageAssetDao
     abstract fun inventoryDao(): InventoryDao
     abstract fun tastingNoteDao(): TastingNoteDao
     abstract fun ratingDao(): RatingDao
@@ -517,6 +550,32 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE tasting_notes ADD COLUMN valueScore INTEGER")
         db.execSQL("ALTER TABLE tasting_notes ADD COLUMN price REAL")
+    }
+}
+
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `wine_image_assets` (
+                `definitionId` INTEGER NOT NULL,
+                `relativePath` TEXT,
+                `sourceName` TEXT NOT NULL,
+                `providerAssetId` TEXT,
+                `productTitle` TEXT NOT NULL,
+                `sourceUrl` TEXT NOT NULL,
+                `sourcePageUrl` TEXT,
+                `attribution` TEXT,
+                `license` TEXT,
+                `kind` TEXT NOT NULL,
+                `width` INTEGER NOT NULL,
+                `height` INTEGER NOT NULL,
+                `sizeBytes` INTEGER NOT NULL,
+                `sha256` TEXT NOT NULL,
+                `importedAt` INTEGER NOT NULL,
+                PRIMARY KEY(`definitionId`),
+                FOREIGN KEY(`definitionId`) REFERENCES `wine_definitions`(`definitionId`) ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+        """.trimIndent())
     }
 }
 

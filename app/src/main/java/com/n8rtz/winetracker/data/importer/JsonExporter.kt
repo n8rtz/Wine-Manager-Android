@@ -16,7 +16,8 @@ object JsonExporter {
                 bottles = db.inventoryDao().getAllBottlesOnce(),
                 notes = db.tastingNoteDao().getAllNotesOnce(),
                 ratings = db.ratingDao().getAllRatingsOnce(),
-                consumptionEvents = db.consumptionEventDao().getAllEventsOnce()
+                consumptionEvents = db.consumptionEventDao().getAllEventsOnce(),
+                imageAssets = db.wineImageAssetDao().getAllOnce().map { it.copy(relativePath = null) }
             )
         }
 

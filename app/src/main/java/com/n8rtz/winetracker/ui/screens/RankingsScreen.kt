@@ -117,7 +117,8 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                         },
                         type = item.definition.type,
                         metadata = displayItem.priceStr,
-                        imageUrl = item.definition.imageUrl,
+                        imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
+                        imageLocalPath = item.imageAsset?.relativePath,
                         rating = item.note.rating.toInt().toString(),
                         details = {
                             Column {
