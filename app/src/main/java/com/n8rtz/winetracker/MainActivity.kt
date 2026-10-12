@@ -208,8 +208,12 @@ fun MainAppScaffold(
                         if (currentRoute == "cellar") {
                             viewModel.resetCellarScreen()
                         } else {
-                            if (currentRoute == "add_wine") {
-                                navController.popBackStack("cellar", inclusive = false)
+                            if (currentRoute == "add_wine" || currentRoute?.startsWith("note_editor/") == true) {
+                                // Return directly to the cellar when leaving an editor flow, even if the note
+                                // was opened from another tab or a wine detail screen.
+                                if (!navController.popBackStack("cellar", inclusive = false)) {
+                                    navigateToTab(navController, "cellar")
+                                }
                             } else {
                                 navigateToTab(navController, "cellar")
                             }

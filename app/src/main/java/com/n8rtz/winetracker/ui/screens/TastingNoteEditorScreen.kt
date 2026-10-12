@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -39,6 +40,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -446,44 +449,67 @@ fun TastingNoteEditorScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                AutocompleteTextField(
-                    value = manualMaker,
-                    onValueChange = { manualMaker = it },
-                    label = "Wine maker",
-                    suggestions = makerSuggestions
-                )
-                AutocompleteTextField(
-                    value = manualWineName,
-                    onValueChange = { manualWineName = it },
-                    label = "Wine name",
-                    suggestions = wineNameSuggestions
-                )
-                AutocompleteTextField(
-                    value = manualCountry,
-                    onValueChange = { manualCountry = it },
-                    label = "Country",
-                    suggestions = countrySuggestions
-                )
-                AutocompleteTextField(
-                    value = manualRegion,
-                    onValueChange = { manualRegion = it },
-                    label = "Region",
-                    suggestions = regionSuggestions
-                )
-                AutocompleteTextField(
-                    value = manualSubregion,
-                    onValueChange = { manualSubregion = it },
-                    label = "Subregion",
-                    suggestions = subregionSuggestions
-                )
-                OutlinedTextField(
-                    value = manualVintage,
-                    onValueChange = { manualVintage = it },
-                    label = { Text("Vintage") },
-                    placeholder = { Text("e.g. 2018 or NV") },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AutocompleteTextField(
+                        value = manualMaker,
+                        onValueChange = { manualMaker = it },
+                        label = "Wine maker",
+                        suggestions = makerSuggestions,
+                        modifier = Modifier.weight(1f)
+                    )
+                    AutocompleteTextField(
+                        value = manualWineName,
+                        onValueChange = { manualWineName = it },
+                        label = "Wine name",
+                        suggestions = wineNameSuggestions,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AutocompleteTextField(
+                        value = manualCountry,
+                        onValueChange = { manualCountry = it },
+                        label = "Country",
+                        suggestions = countrySuggestions,
+                        modifier = Modifier.weight(1f)
+                    )
+                    AutocompleteTextField(
+                        value = manualRegion,
+                        onValueChange = { manualRegion = it },
+                        label = "Region",
+                        suggestions = regionSuggestions,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AutocompleteTextField(
+                        value = manualSubregion,
+                        onValueChange = { manualSubregion = it },
+                        label = "Subregion",
+                        suggestions = subregionSuggestions,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = manualVintage,
+                        onValueChange = { manualVintage = it },
+                        label = { Text("Vintage") },
+                        placeholder = { Text("e.g. 2018 or NV") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
                 OutlinedTextField(
                     value = manualPrice,
                     onValueChange = { manualPrice = it },
@@ -552,21 +578,6 @@ fun TastingNoteEditorScreen(
                 )
             }
 
-            Text(
-                if (valueScoreSelected) "Value: $valueScore / 10" else "Value: Not rated",
-                style = MaterialTheme.typography.titleSmall
-            )
-            Slider(
-                value = valueScore.toFloat(),
-                onValueChange = {
-                    valueScore = it.roundToInt().coerceIn(1, 10)
-                    valueScoreSelected = true
-                },
-                valueRange = 1f..10f,
-                steps = 8,
-                modifier = Modifier.fillMaxWidth()
-            )
-
             FilterChip(
                 selected = rebuy,
                 onClick = { rebuy = !rebuy },
@@ -585,6 +596,55 @@ fun TastingNoteEditorScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 4
             )
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Value",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                if (valueScoreSelected) valueScore.toString() else "—",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text("/10", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                Slider(
+                    value = valueScore.toFloat(),
+                    onValueChange = {
+                        valueScore = it.roundToInt().coerceIn(1, 10)
+                        valueScoreSelected = true
+                    },
+                    valueRange = 1f..10f,
+                    steps = 8,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        activeTickColor = MaterialTheme.colorScheme.onPrimary,
+                        inactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                    )
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -754,7 +814,8 @@ private fun AutocompleteTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    suggestions: List<String>
+    suggestions: List<String>,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember(label) { mutableStateOf(false) }
     val matchingSuggestions = remember(value, suggestions) {
@@ -765,7 +826,7 @@ private fun AutocompleteTextField(
     ExposedDropdownMenuBox(
         expanded = menuExpanded,
         onExpandedChange = { expanded = it },
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
             value = value,
