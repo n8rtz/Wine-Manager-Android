@@ -51,7 +51,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingNote
+import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
+import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
@@ -77,6 +79,9 @@ fun TastingNoteEditorScreen(
     var existingNote by remember(noteId) { mutableStateOf<TastingNote?>(null) }
 
     var selectedDefinitionId by remember(noteId, presetDefinitionId) { mutableStateOf(presetDefinitionId) }
+    var selectedCountry by remember(noteId, presetDefinitionId) { mutableStateOf<String?>(null) }
+    var selectedRegion by remember(noteId, presetDefinitionId) { mutableStateOf<String?>(null) }
+    var selectedSubregion by remember(noteId, presetDefinitionId) { mutableStateOf<String?>(null) }
     var wineSearch by remember { mutableStateOf("") }
     var wineMenuExpanded by remember { mutableStateOf(false) }
     var vintage by remember(noteId, presetVintage) { mutableStateOf(presetVintage ?: "NV") }
@@ -117,6 +122,7 @@ fun TastingNoteEditorScreen(
         }
     }
 
+    val locationData = remember(definitions) { buildWineLocationData(definitions) }
     val selectedDefinition = definitions.firstOrNull { it.definitionId == selectedDefinitionId }
     LaunchedEffect(selectedDefinition) {
         selectedDefinition?.let { definition ->
@@ -174,6 +180,33 @@ fun TastingNoteEditorScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text("Browse wines by location", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            LocationWheelPicker(
+                locationData = locationData,
+                selectedCountry = selectedCountry,
+                selectedRegion = selectedRegion,
+                selectedSubregion = selectedSubregion,
+                onLocationChange = { country, region, subregion ->
+                    selectedCountry = country
+                    selectedRegion = region
+                    selectedSubregion = subregion
+                    val currentSelection = definitions.firstOrNull { it.definitionId == selectedDefinitionId }
+                    if (currentSelection != null && !matchesWineLocation(
+                            currentSelection, country, region, subregion
+                        )
+                    ) {
+                        selectedDefinitionId = null
+                        wineSearch = ""
+                        wineMenuExpanded = false
+                    }
+                }
+            )
+            Text(
+                "Narrow the catalog with the wheels, then select a wine below.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             ExposedDropdownMenuBox(
                 expanded = wineMenuExpanded,
                 onExpandedChange = { wineMenuExpanded = !wineMenuExpanded },
@@ -196,7 +229,11 @@ fun TastingNoteEditorScreen(
                 )
                 val matchingDefinitions = definitions.filter { definition ->
                     val query = wineSearch.trim()
-                    query.isBlank() || "${definition.maker} ${definition.name}".contains(query, ignoreCase = true)
+                    val matchesQuery = query.isBlank() ||
+                        "${definition.maker} ${definition.name}".contains(query, ignoreCase = true)
+                    matchesQuery && matchesWineLocation(
+                        definition, selectedCountry, selectedRegion, selectedSubregion
+                    )
                 }.take(30)
                 ExposedDropdownMenu(
                     expanded = wineMenuExpanded && matchingDefinitions.isNotEmpty(),
@@ -375,6 +412,43 @@ fun TastingNoteEditorScreen(
         )
     }
 }
+
+private const val UNSPECIFIED_WINE_LOCATION = "Unspecified"
+
+private fun optionalWineLocationLabel(value: String?): String? {
+    val trimmed = value?.trim().orEmpty()
+    if (trimmed.isBlank() || trimmed.equals("null", ignoreCase = true)) return null
+    return trimmed.lowercase(Locale.getDefault())
+        .split(" ")
+        .filter { it.isNotEmpty() }
+        .joinToString(" ") { word ->
+            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        }
+}
+
+private fun wineLocationLabel(value: String?): String =
+    optionalWineLocationLabel(value) ?: UNSPECIFIED_WINE_LOCATION
+
+private fun buildWineLocationData(
+    definitions: List<WineDefinition>
+): Map<String, Map<String, List<String>>> = definitions
+    .groupBy { wineLocationLabel(it.country) }
+    .mapValues { (_, countryDefinitions) ->
+        countryDefinitions
+            .groupBy { wineLocationLabel(it.region) }
+            .mapValues { (_, regionDefinitions) ->
+                regionDefinitions.mapNotNull { optionalWineLocationLabel(it.subregion) }.distinct().sorted()
+            }
+    }
+
+private fun matchesWineLocation(
+    definition: WineDefinition,
+    country: String?,
+    region: String?,
+    subregion: String?
+): Boolean = (country == null || wineLocationLabel(definition.country) == country) &&
+    (region == null || wineLocationLabel(definition.region) == region) &&
+    (subregion == null || optionalWineLocationLabel(definition.subregion) == subregion)
 
 private fun normalizeVintageInput(value: String): String {
     val trimmed = value.trim()
