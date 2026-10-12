@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.GsonConverterFactory
+import retrofit2.converter.gson.GsonConverterFactory
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.WineImageAssetWithDefinition
 import com.n8rtz.winetracker.data.repository.OfflineImageRemovalResult
