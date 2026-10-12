@@ -172,7 +172,7 @@ object CsvImportHelper {
         return row.getOrNull(index).orEmpty().trim()
     }
 
-    private fun loadDefinitionIndex(database: WineDatabase): MutableMap<String, WineDefinition> =
+    private suspend fun loadDefinitionIndex(database: WineDatabase): MutableMap<String, WineDefinition> =
         database.wineDao().getAllDefinitionsOnce().associateByTo(mutableMapOf()) {
             definitionKey(it.maker, it.name)
         }
