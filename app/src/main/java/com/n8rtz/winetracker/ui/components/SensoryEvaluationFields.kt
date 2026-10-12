@@ -8,23 +8,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.SensoryData
 import kotlin.math.roundToInt
@@ -55,15 +61,13 @@ fun SensoryEvaluationFields(
     )
     traits.forEach { trait -> SensoryTraitSlider(trait) }
 
-    Text("Overall score: ${data.overallScore}", style = MaterialTheme.typography.titleSmall)
-    Slider(
-        value = data.overallScore.toFloat(),
-        onValueChange = { onChange(data.copy(overallScore = it.roundToInt())) },
-        valueRange = 50f..100f,
-        steps = 49,
-        colors = SliderDefaults.colors(activeTrackColor = MaterialTheme.colorScheme.primary)
+    Spacer(Modifier.height(12.dp))
+    OverallScoreSlider(
+        score = data.overallScore.toFloat(),
+        onScoreChange = { onChange(data.copy(overallScore = it.roundToInt())) }
     )
 
+    Spacer(Modifier.height(12.dp))
     Text("Common faults", style = MaterialTheme.typography.titleSmall)
     val flaws = listOf("Cork taint (TCA)", "Oxidation", "Volatile acidity", "Brettanomyces", "Reduction / sulfur", "Heat damage")
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -77,6 +81,128 @@ fun SensoryEvaluationFields(
                 },
                 label = { Text(flaw) }
             )
+        }
+    }
+}
+
+private data class OverallScoreBand(val label: String, val color: Color)
+
+private val overallScoreMarkers = listOf(50, 60, 70, 80, 90, 100)
+private val overallScoreGradient = listOf(
+    Color(0xFFB94F57),
+    Color(0xFFD47941),
+    Color(0xFFD3A33D),
+    Color(0xFF9A9A42),
+    Color(0xFF5F9259),
+    Color(0xFF347A59)
+)
+
+private fun overallScoreBand(score: Int): OverallScoreBand = when {
+    score >= 95 -> OverallScoreBand("Outstanding", Color(0xFF27664A))
+    score >= 90 -> OverallScoreBand("Excellent", Color(0xFF3E7448))
+    score >= 80 -> OverallScoreBand("Very good", Color(0xFF5C773A))
+    score >= 70 -> OverallScoreBand("Good", Color(0xFF8A6B1E))
+    score >= 60 -> OverallScoreBand("Fair", Color(0xFFA85F31))
+    else -> OverallScoreBand("Poor", Color(0xFFA9444D))
+}
+
+@Composable
+fun OverallScoreSlider(score: Float, onScoreChange: (Float) -> Unit) {
+    val sliderScore = score.coerceIn(50f, 100f)
+    val displayedScore = sliderScore.roundToInt()
+    val band = overallScoreBand(displayedScore)
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Overall score",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    band.label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = band.color,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = band.color.copy(alpha = 0.13f),
+                contentColor = band.color
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        displayedScore.toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text("/100", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+        Box(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val trackHeight = 8.dp.toPx()
+                val inset = 10.dp.toPx()
+                val trackWidth = (size.width - inset * 2).coerceAtLeast(0f)
+                val top = (size.height - trackHeight) / 2f
+                val radius = CornerRadius(trackHeight / 2f, trackHeight / 2f)
+                drawRoundRect(
+                    brush = Brush.horizontalGradient(overallScoreGradient),
+                    topLeft = Offset(inset, top),
+                    size = Size(trackWidth, trackHeight),
+                    cornerRadius = radius
+                )
+                overallScoreMarkers.forEach { marker ->
+                    val fraction = (marker - 50) / 50f
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.95f),
+                        radius = 1.5.dp.toPx(),
+                        center = Offset(inset + trackWidth * fraction, top + trackHeight / 2f)
+                    )
+                }
+            }
+            Slider(
+                value = sliderScore,
+                onValueChange = { onScoreChange(it.coerceIn(50f, 100f)) },
+                valueRange = 50f..100f,
+                steps = 49,
+                modifier = Modifier.fillMaxWidth(),
+                colors = SliderDefaults.colors(
+                    thumbColor = band.color,
+                    activeTrackColor = Color.Transparent,
+                    activeTickColor = Color.Transparent,
+                    inactiveTrackColor = Color.Transparent,
+                    inactiveTickColor = Color.Transparent
+                )
+            )
+        }
+
+        Spacer(Modifier.height(2.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            overallScoreMarkers.forEach { marker ->
+                Text(
+                    text = marker.toString(),
+                    modifier = Modifier.width(24.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

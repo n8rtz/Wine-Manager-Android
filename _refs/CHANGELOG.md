@@ -14,6 +14,7 @@
 - **Coverage and documentation:** Added tests for NV normalization and date-picker round-tripping across a daylight-saving boundary; updated the architecture and this changelog.
 
 ### Changed
+- **Tasting score slider:** Added a color-graded 50–100 scale, decade markers, a prominent score badge, and a live quality descriptor to make the selected score easier to interpret.
 - **JSON backup/restore:** Exports now include ratings and consumption events, use UTF-8, and read a consistent database snapshot. Restore replaces all app data only after explicit confirmation, validates references and duplicate IDs/keys before deletion, and applies the replacement in one transaction. Wine, bottle, note, and rating IDs are retained; consumption-event IDs are regenerated. Older backups without event/rating collections remain supported, and their archived rows are converted to events.
 - **Vintage normalization and lookup:** Standardized blank, `null`, `NV`, and `(NV)` aliases for display, grouping, imports, rankings, and DAO lookups. Price and cellar queries prefer an exact vintage match before falling back to an NV alias.
 - **History presentation:** The History screen now renders consumption events (including event quantity and optional rating/note indicator) instead of treating archived inventory rows as the history source. Colors follow the Material theme for dark mode.

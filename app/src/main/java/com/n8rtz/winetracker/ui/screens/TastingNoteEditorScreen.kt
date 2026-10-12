@@ -33,8 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -54,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.displayVintage
+import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
 import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
@@ -61,7 +60,6 @@ import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.roundToInt
 
 @Composable
 fun TastingNoteEditorScreen(
@@ -262,16 +260,9 @@ fun TastingNoteEditorScreen(
                 Text("Record an overall rating")
             }
             if (includeRating) {
-                Text("Overall score: ${rating.roundToInt()}", style = MaterialTheme.typography.titleSmall)
-                Slider(
-                    value = rating,
-                    onValueChange = { rating = it },
-                    valueRange = 50f..100f,
-                    steps = 49,
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary
-                    )
+                OverallScoreSlider(
+                    score = rating,
+                    onScoreChange = { rating = it }
                 )
             }
 
