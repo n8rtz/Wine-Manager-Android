@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -75,8 +76,13 @@ fun TastingNoteEditorScreen(
     onBack: () -> Unit
 ) {
     val definitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
-    val wineVintages by viewModel.wineVintages.collectAsState()
+    val cellarVintages by viewModel.cellarVintages.collectAsState()
     val reviewerNames by viewModel.reviewerNames.collectAsState()
+    var entryMode by remember(noteId) { mutableStateOf(TastingNoteEntryMode.CELLAR) }
+    var manualMaker by remember(noteId) { mutableStateOf("") }
+    var manualWineName by remember(noteId) { mutableStateOf("") }
+    var manualVintage by remember(noteId) { mutableStateOf("") }
+    var manualRegion by remember(noteId) { mutableStateOf("") }
     var loaded by remember(noteId) { mutableStateOf(noteId == null) }
     var missingNote by remember(noteId) { mutableStateOf(false) }
     var existingNote by remember(noteId) { mutableStateOf<TastingNote?>(null) }
@@ -124,9 +130,20 @@ fun TastingNoteEditorScreen(
     }
 
     val selectedDefinition = definitions.firstOrNull { it.definitionId == selectedDefinitionId }
-    val availableWineChoices = remember(definitions, wineVintages) {
+    val availableWineChoices = remember(
+        definitions,
+        cellarVintages,
+        presetDefinitionId,
+        presetVintage,
+        selectedDefinitionId,
+        vintage
+    ) {
         definitions.flatMap { definition ->
-            val knownVintages = wineVintages[definition.definitionId].orEmpty().ifEmpty { listOf("NV") }
+            val routeVintages = buildList {
+                if (definition.definitionId == presetDefinitionId) add(presetVintage ?: "NV")
+                if (definition.definitionId == selectedDefinitionId) add(vintage)
+            }.map { displayVintage(it) }
+            val knownVintages = (cellarVintages[definition.definitionId].orEmpty() + routeVintages).distinct()
             knownVintages.map { knownVintage -> WineVintageChoice(definition, knownVintage) }
         }.sortedWith(
             compareBy<WineVintageChoice> { it.definition.maker.lowercase(Locale.ROOT) }
@@ -163,8 +180,12 @@ fun TastingNoteEditorScreen(
     }
     val reviewerRatingIsValid = reviewerRating.isBlank() ||
         reviewerRating.toIntOrNull()?.let { it in 50..100 } == true
-    val canSave = loaded && !missingNote && selectedDefinition != null && vintage.isNotBlank() &&
-        ratingSelected && reviewerRatingIsValid
+    val wineFieldsAreValid = when (entryMode) {
+        TastingNoteEntryMode.CELLAR -> selectedDefinition != null && vintage.isNotBlank()
+        TastingNoteEntryMode.MANUAL -> manualMaker.isNotBlank() &&
+            manualWineName.isNotBlank() && manualVintage.isNotBlank()
+    }
+    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected && reviewerRatingIsValid
 
     if (!loaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -209,81 +230,188 @@ fun TastingNoteEditorScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ExposedDropdownMenuBox(
-                expanded = wineMenuExpanded,
-                onExpandedChange = { wineMenuExpanded = !wineMenuExpanded },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = wineSearch,
-                    onValueChange = {
-                        wineSearch = it
-                        selectedDefinitionId = null
-                        wineMenuExpanded = true
-                    },
-                    label = { Text("Wine") },
-                    placeholder = { Text("Search producer or wine") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (wineSearch.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    wineSearch = ""
-                                    selectedDefinitionId = null
-                                    wineMenuExpanded = true
-                                }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear wine search")
-                                }
-                            }
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = wineMenuExpanded)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(
-                        androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryEditable,
-                        true
-                    ),
-                    singleLine = true
-                )
-                ExposedDropdownMenu(
-                    expanded = wineMenuExpanded,
-                    onDismissRequest = { wineMenuExpanded = false }
+            if (noteId == null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (matchingWineChoices.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text("No matching wines") },
-                            enabled = false,
-                            onClick = {}
+                    Button(
+                        onClick = {
+                            entryMode = TastingNoteEntryMode.CELLAR
+                            wineMenuExpanded = false
+                        },
+                        modifier = Modifier.weight(1f).height(40.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (entryMode == TastingNoteEntryMode.CELLAR) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            contentColor = if (entryMode == TastingNoteEntryMode.CELLAR) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
-                    } else {
-                        matchingWineChoices.forEach { choice ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        formatWineChoice(choice.definition, choice.vintage),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                onClick = {
-                                    selectedDefinitionId = choice.definition.definitionId
-                                    vintage = choice.vintage
-                                    wineSearch = formatWineChoice(choice.definition, choice.vintage)
-                                    wineMenuExpanded = false
-                                }
-                            )
-                        }
+                    ) {
+                        Text("Cellar")
+                    }
+                    Button(
+                        onClick = {
+                            if (manualMaker.isBlank() && manualWineName.isBlank() && selectedDefinition != null) {
+                                manualMaker = selectedDefinition.maker
+                                manualWineName = selectedDefinition.name
+                                manualVintage = vintage
+                                manualRegion = selectedDefinition.region.orEmpty()
+                            }
+                            entryMode = TastingNoteEntryMode.MANUAL
+                            wineMenuExpanded = false
+                        },
+                        modifier = Modifier.weight(1f).height(40.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (entryMode == TastingNoteEntryMode.MANUAL) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            contentColor = if (entryMode == TastingNoteEntryMode.MANUAL) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    ) {
+                        Text("Manual")
                     }
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (entryMode == TastingNoteEntryMode.CELLAR) {
+                ExposedDropdownMenuBox(
+                    expanded = wineMenuExpanded,
+                    onExpandedChange = { wineMenuExpanded = !wineMenuExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = wineSearch,
+                        onValueChange = {
+                            wineSearch = it
+                            selectedDefinitionId = null
+                            wineMenuExpanded = true
+                        },
+                        label = { Text("Wine") },
+                        placeholder = { Text("Search producer or wine") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (wineSearch.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        wineSearch = ""
+                                        selectedDefinitionId = null
+                                        wineMenuExpanded = true
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear wine search")
+                                    }
+                                }
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = wineMenuExpanded)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(
+                            androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryEditable,
+                            true
+                        ),
+                        singleLine = true
+                    )
+                    ExposedDropdownMenu(
+                        expanded = wineMenuExpanded,
+                        onDismissRequest = { wineMenuExpanded = false }
+                    ) {
+                        if (matchingWineChoices.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No matching wines") },
+                                enabled = false,
+                                onClick = {}
+                            )
+                        } else {
+                            matchingWineChoices.forEach { choice ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            formatWineChoice(choice.definition, choice.vintage),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    onClick = {
+                                        selectedDefinitionId = choice.definition.definitionId
+                                        vintage = choice.vintage
+                                        wineSearch = formatWineChoice(choice.definition, choice.vintage)
+                                        wineMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = vintage,
+                        onValueChange = { vintage = it },
+                        label = { Text("Vintage") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = formattedDate,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Date tasted") },
+                        trailingIcon = {
+                            IconButton(onClick = { showDatePicker = true }) {
+                                Icon(Icons.Default.CalendarMonth, contentDescription = "Choose date")
+                            }
+                        },
+                        modifier = Modifier.weight(1.3f)
+                    )
+                }
+            } else {
+                Text(
+                    "Manual entry saves a tasting note only; it does not add a bottle to your cellar.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 OutlinedTextField(
-                    value = vintage,
-                    onValueChange = { vintage = it },
-                    label = { Text("Vintage") },
-                    modifier = Modifier.weight(1f),
+                    value = manualMaker,
+                    onValueChange = { manualMaker = it },
+                    label = { Text("Wine maker") },
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+                OutlinedTextField(
+                    value = manualWineName,
+                    onValueChange = { manualWineName = it },
+                    label = { Text("Wine name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = manualVintage,
+                        onValueChange = { manualVintage = it },
+                        label = { Text("Vintage") },
+                        placeholder = { Text("e.g. 2018 or NV") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = manualRegion,
+                        onValueChange = { manualRegion = it },
+                        label = { Text("Region (optional)") },
+                        modifier = Modifier.weight(1.5f),
+                        singleLine = true
+                    )
+                }
                 OutlinedTextField(
                     value = formattedDate,
                     onValueChange = {},
@@ -294,11 +422,11 @@ fun TastingNoteEditorScreen(
                             Icon(Icons.Default.CalendarMonth, contentDescription = "Choose date")
                         }
                     },
-                    modifier = Modifier.weight(1.3f)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            if (selectedDefinition != null) {
+            if (entryMode == TastingNoteEntryMode.CELLAR && selectedDefinition != null) {
                 Text(
                     text = "${selectedDefinition.maker} - ${selectedDefinition.name} (${displayVintage(vintage)})",
                     style = MaterialTheme.typography.titleMedium,
@@ -428,11 +556,13 @@ fun TastingNoteEditorScreen(
             Spacer(Modifier.height(8.dp))
             Button(
                 onClick = {
-                    val definition = selectedDefinition ?: return@Button
+                    val definition = selectedDefinition
                     val note = TastingNote(
                         noteId = existingNote?.noteId ?: 0L,
-                        definitionId = definition.definitionId,
-                        vintage = normalizeVintageInput(vintage),
+                        definitionId = definition?.definitionId ?: 0L,
+                        vintage = normalizeVintageInput(
+                            if (entryMode == TastingNoteEntryMode.CELLAR) vintage else manualVintage
+                        ),
                         dateTasted = dateTasted,
                         rating = rating.toDouble(),
                         notes = notes.takeIf { it.isNotBlank() },
@@ -440,11 +570,25 @@ fun TastingNoteEditorScreen(
                         recommendedBy = recommendedBy.takeIf { it.isNotBlank() },
                         reviewerRating = reviewerRating.toIntOrNull()?.takeIf { it in 50..100 },
                         initialRating = initialRating.toIntOrNull(),
-                        bottleId = existingNote?.bottleId,
+                        bottleId = if (entryMode == TastingNoteEntryMode.CELLAR) existingNote?.bottleId else null,
                         sensoryData = sensoryData,
                         importKey = existingNote?.importKey
                     )
-                    viewModel.saveTastingNote(note, linkedEventId) { onBack() }
+                    if (entryMode == TastingNoteEntryMode.CELLAR) {
+                        val cellarDefinition = definition ?: return@Button
+                        viewModel.saveTastingNote(
+                            note.copy(definitionId = cellarDefinition.definitionId),
+                            linkedEventId
+                        ) { onBack() }
+                    } else {
+                        viewModel.saveManualTastingNote(
+                            note = note.copy(definitionId = 0L, bottleId = null),
+                            maker = manualMaker.trim(),
+                            name = manualWineName.trim(),
+                            region = manualRegion.takeIf { it.isNotBlank() },
+                            onSaved = { onBack() }
+                        )
+                    }
                 },
                 enabled = canSave,
                 modifier = Modifier.fillMaxWidth()
@@ -491,6 +635,8 @@ fun TastingNoteEditorScreen(
         )
     }
 }
+
+private enum class TastingNoteEntryMode { CELLAR, MANUAL }
 
 private data class WineVintageChoice(
     val definition: WineDefinition,

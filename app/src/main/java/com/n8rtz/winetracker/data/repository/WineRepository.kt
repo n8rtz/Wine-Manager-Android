@@ -170,6 +170,51 @@ class WineRepository(
         savedId
     }
 
+    suspend fun saveManualTastingNote(
+        note: TastingNote,
+        maker: String,
+        name: String,
+        region: String?
+    ): Long = database.withTransaction {
+        val normalizedMaker = maker.trim()
+        val normalizedName = name.trim()
+        val normalizedRegion = region?.trim()?.takeIf { it.isNotEmpty() }
+        val existingDefinition = wineDao.getDefinitionByDetails(normalizedMaker, normalizedName)
+        val definition = existingDefinition ?: run {
+            val definitionId = wineDao.insertDefinition(
+                WineDefinition(
+                    maker = normalizedMaker,
+                    name = normalizedName,
+                    type = "Unknown",
+                    country = "Unknown",
+                    region = normalizedRegion
+                )
+            )
+            (if (definitionId > 0L) wineDao.getDefinitionById(definitionId) else null)
+                ?: wineDao.getDefinitionByDetails(normalizedMaker, normalizedName)
+                ?: error("Unable to create the manual wine entry.")
+        }
+        val definitionWithRegion = if (definition.region.isNullOrBlank() && normalizedRegion != null) {
+            val updatedDefinition = definition.copy(region = normalizedRegion)
+            wineDao.updateDefinition(updatedDefinition)
+            updatedDefinition
+        } else {
+            definition
+        }
+        val manualNote = note.copy(
+            definitionId = definitionWithRegion.definitionId,
+            vintage = normalizeVintage(note.vintage),
+            bottleId = null
+        )
+
+        if (manualNote.noteId == 0L) {
+            tastingNoteDao.insertNote(manualNote)
+        } else {
+            tastingNoteDao.updateNote(manualNote)
+            manualNote.noteId
+        }
+    }
+
     suspend fun deleteTastingNote(noteId: Long) {
         database.withTransaction {
             database.consumptionEventDao().clearNoteReference(noteId)

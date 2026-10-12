@@ -205,18 +205,27 @@ fun OverallScoreSlider(
             val markerTrackWidth = (maxWidth - overallScoreSliderInset * 2).coerceAtLeast(0.dp)
             overallScoreMarkers.forEach { marker ->
                 val fraction = (marker - 50) / 50f
+                val labelX = when (marker) {
+                    overallScoreMarkers.first() -> overallScoreSliderInset
+                    overallScoreMarkers.last() ->
+                        overallScoreSliderInset + markerTrackWidth - overallScoreMarkerLabelWidth
+                    else -> overallScoreSliderInset + markerTrackWidth * fraction -
+                        overallScoreMarkerLabelWidth / 2f
+                }
+                val labelAlignment = when (marker) {
+                    overallScoreMarkers.first() -> TextAlign.Start
+                    overallScoreMarkers.last() -> TextAlign.End
+                    else -> TextAlign.Center
+                }
                 Text(
                     text = marker.toString(),
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .offset(
-                            x = overallScoreSliderInset + markerTrackWidth * fraction -
-                                overallScoreMarkerLabelWidth / 2f
-                        )
+                        .offset(x = labelX)
                         .width(overallScoreMarkerLabelWidth),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
+                    textAlign = labelAlignment,
                     maxLines = 1
                 )
             }

@@ -22,34 +22,23 @@ class TastingNoteViewModel(application: Application, private val repository: Win
     val tastingNotes = repository.tastingHistory
     val allDefinitions = repository.allDefinitions
 
-    val wineVintages: StateFlow<Map<Long, List<String>>> = combine(
-        repository.activeInventory,
-        repository.archivedInventory,
-        repository.tastingHistory,
-        repository.consumptionHistory
-    ) { active, archived, notes, events ->
-        val vintagesByDefinition = mutableMapOf<Long, MutableSet<String>>()
-        fun addVintage(definitionId: Long, vintage: String) {
-            vintagesByDefinition.getOrPut(definitionId) { linkedSetOf() }
-                .add(displayVintage(vintage))
+    val cellarVintages: StateFlow<Map<Long, List<String>>> = repository.activeInventory
+        .map { inventory ->
+            inventory.groupBy { it.bottle.definitionId }.mapValues { (_, bottles) ->
+                bottles.map { displayVintage(it.bottle.vintage) }
+                    .distinct()
+                    .sortedWith(
+                        compareByDescending<String> { it.toIntOrNull() ?: Int.MIN_VALUE }
+                            .thenBy { it }
+                    )
+            }
         }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap()
+        )
 
-        active.forEach { addVintage(it.bottle.definitionId, it.bottle.vintage) }
-        archived.forEach { addVintage(it.bottle.definitionId, it.bottle.vintage) }
-        notes.forEach { addVintage(it.note.definitionId, it.note.vintage) }
-        events.forEach { addVintage(it.event.definitionId, it.event.vintage) }
-
-        vintagesByDefinition.mapValues { (_, vintages) ->
-            vintages.sortedWith(
-                compareByDescending<String> { it.toIntOrNull() ?: Int.MIN_VALUE }
-                    .thenBy { it }
-            )
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyMap()
-    )
 
     private val reviewerPreferences = application.getSharedPreferences(
         REVIEWER_PREFERENCES_FILE,
@@ -89,6 +78,23 @@ class TastingNoteViewModel(application: Application, private val repository: Win
                 if (savedId > 0L) onSaved(savedId)
             } catch (error: Exception) {
                 Log.e("TastingNoteViewModel", "Unable to save tasting note", error)
+            }
+        }
+    }
+
+    fun saveManualTastingNote(
+        note: TastingNote,
+        maker: String,
+        name: String,
+        region: String?,
+        onSaved: (Long) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val savedId = repository.saveManualTastingNote(note, maker, name, region)
+                if (savedId > 0L) onSaved(savedId)
+            } catch (error: Exception) {
+                Log.e("TastingNoteViewModel", "Unable to save manual tasting note", error)
             }
         }
     }
