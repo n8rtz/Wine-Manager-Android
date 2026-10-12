@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(
     viewModel: WineViewModel,
     scannerViewModel: ScannerViewModel,
+    onAppInfoClick: () -> Unit = {},
     onImportComplete: () -> Unit
 ) {
     val importState by viewModel.importState
@@ -206,6 +208,15 @@ fun ProfileScreen(
                         .clickable(enabled = imageImportProgress == null) {
                             scannerViewModel.startImageImport()
                         }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                ListItem(
+                    headlineContent = { Text("App Information") },
+                    supportingContent = { Text("App version, database version, and build branch") },
+                    leadingContent = {
+                        Icon(Icons.Filled.Info, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onAppInfoClick)
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }

@@ -42,6 +42,7 @@ com.n8rtz.winetracker/
     │   ├── HistoryScreen.kt           # Consumption-event history, note links, chronological list
     │   ├── TastingNotesScreen.kt      # Tasting note repository + search + filters
     │   ├── TastingNoteEditorScreen.kt # Add/edit notes and AWS-inspired sensory evaluation
+    │   ├── AppInfoScreen.kt          # Installed app, database schema, and build branch details
     │   ├── RankingsScreen.kt          # Sorted by 100-point rating + search + filters
     │   ├── RankingsFilterState.kt     # Data class for rankings filtering
     │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns

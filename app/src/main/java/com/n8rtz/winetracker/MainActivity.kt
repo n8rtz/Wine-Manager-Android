@@ -50,6 +50,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
+import com.n8rtz.winetracker.ui.screens.AppInfoScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
@@ -264,7 +265,7 @@ fun MainAppScaffold(
                     label = { Text("Rankings") }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "profile",
+                    selected = currentRoute == "profile" || currentRoute == "app_info",
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
@@ -312,9 +313,19 @@ fun MainAppScaffold(
                 }
             }
             composable("profile") {
-                ProfileScreen(viewModel = viewModel, scannerViewModel = scannerViewModel) {
+                ProfileScreen(
+                    viewModel = viewModel,
+                    scannerViewModel = scannerViewModel,
+                    onAppInfoClick = { navController.navigate("app_info") }
+                ) {
                     navigateToTab(navController, "cellar")
                 }
+            }
+            composable("app_info") {
+                AppInfoScreen(
+                    database = viewModel.repository.database,
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("add_wine") {
                 AddWineScreen(viewModel, scannerViewModel) {

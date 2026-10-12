@@ -9,6 +9,7 @@
 - **Drinking windows:** Added optional start/end years to wine definitions, four-digit year validation in add/edit forms, display on wine details, cellar year-range and Ready Now / Too Early / Past Peak filters, and soonest/furthest sorting.
 - **Legacy CSV import:** Added separate Profile actions for the legacy tasting-notes and consumption-history CSV formats. Imports support quoted fields, use explicit producer/name data or a single exact catalog match, report imported/already-present/skipped counts, and use stable unique import keys for repeat-import idempotency. Undated, incomplete, or ambiguous rows are skipped rather than assigned guessed dates or wine identities.
 - **Schema migration 16→17:** Added drinking-window columns, tasting-note sensory/import metadata, and indexed `consumption_events`. Archived legacy bottles become events while retaining nullable consumption dates; a tasting note is linked only when exactly one note references that bottle. A zero legacy remaining-quantity value is represented as at least one consumed item.
+- **App information screen:** Added a Settings/Profile destination showing installed app version and version code, the actual SQLite schema version, application ID, and the Git branch captured at build time (with safe fallbacks when branch metadata is unavailable).
 - **Coverage and documentation:** Added tests for NV normalization and date-picker round-tripping across a daylight-saving boundary; updated the architecture and this changelog.
 
 ### Changed

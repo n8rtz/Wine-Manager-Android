@@ -5,6 +5,29 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val buildBranchName = runCatching {
+    val process = ProcessBuilder("git", "branch", "--show-current")
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+    val branch = process.inputStream.bufferedReader().use { it.readText().trim() }
+    if (process.waitFor() == 0) branch.takeIf { it.isNotBlank() } else null
+}.getOrNull()
+    ?: System.getenv("BUILD_BRANCH")?.takeIf { it.isNotBlank() }
+    ?: runCatching {
+        val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        val commit = process.inputStream.bufferedReader().use { it.readText().trim() }
+        if (process.waitFor() == 0) commit.takeIf { it.isNotBlank() } else null
+    }.getOrNull()?.let { "detached@$it" }
+    ?: "unknown"
+
+val escapedBuildBranch = buildBranchName
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
+
 android {
     namespace = "com.n8rtz.winetracker"
     compileSdk = 36
@@ -15,6 +38,7 @@ android {
         targetSdk = 36
         versionCode = 55
         versionName = "0.5.5"
+        buildConfigField("String", "BUILD_BRANCH", "\"$escapedBuildBranch\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
