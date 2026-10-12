@@ -22,6 +22,9 @@
 - **Tasting-note form:** Overall rating and sensory controls are always shown and saved; removed the rating checkbox and sensory-evaluation add/label UI. Unrated legacy notes require choosing a score before saving.
 - **Cellar note selection:** Removed the redundant vintage field because each cellar wine choice includes its vintage; the selected active cellar bottle’s price is shown and recorded on new notes.
 - **Value and manual price:** Added a discrete 1–10 Value slider (new notes start at 5; legacy notes remain unrated until changed) and an optional manual-tasting price field; these are saved per note and shown in note details.
+- **Tasting-note editor layout:** Moved the wine-themed Value slider to the end of the form, immediately above Recommended by. Arranged manual maker/name, country/region, and subregion/vintage fields in two columns while retaining full-width price and date controls.
+- **Sensory slider labels:** Placed each slider’s two endpoint descriptions directly below its title and above the track, aligned with the scale ends for clarity.
+- **History navigation:** Promoted Consumption History from a Notes app-bar icon to a dedicated bottom-navigation tab. Moved the Add Wine/Add Note menu to a bottom-end floating action button to make room while keeping those actions accessible.
 - **Initial rating input:** Removed the Initial Rating field from the editor while preserving existing legacy values when notes are edited.
 - **Sensory evaluation labels:** Renamed “Flavor intensity” to “Concentration” and removed its duplicate overall-score slider, leaving the top overall-score slider as the only one.
 - **Reviewer controls:** Put “Recommended by” and “Rating” side by side, with the reviewer dropdown using two-thirds of the row and a 50–100 scroll wheel defaulting to 80 after reviewer selection.
@@ -35,6 +38,7 @@
 
 ### Fixed
 - **Cellar filter navigation:** Scroll the wine list back to the top whenever filter, sort, or search criteria change.
+- **Cellar navigation from Add Note:** Selecting the Cellar bottom-navigation tab from a tasting-note editor now returns directly to the cellar, with a navigation fallback if the cellar route is not on the active stack.
 - **Windows KSP/Room build:** Use a newer SQLite JDBC native driver only on the Room processor classpath so query verification can load SQLite on Windows x86_64.
 - **Safe import behavior:** Removed partial, row-by-row JSON merge behavior. Invalid backups now fail validation before local data is changed, and a transaction rolls back a failed replacement.
 - **Historical-data integrity:** Migration and restore preserve nullable consumption dates; note-to-bottle vintage resolution remains tied to the referenced bottle rather than an unrelated wine/vintage heuristic.
