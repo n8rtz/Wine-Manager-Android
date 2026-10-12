@@ -41,7 +41,7 @@ fun TastingNotesScreen(
     val history by tastingNoteViewModel.tastingNotes.collectAsState(initial = emptyList())
     
     val historyByVintage = remember(history) {
-        history.groupBy { it.note.definitionId to it.note.vintage }
+        history.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
     }
     
     val ratingsMap = remember(historyByVintage) {
@@ -66,7 +66,7 @@ fun TastingNotesScreen(
             val matchesSearch = searchQuery.isBlank() ||
                     item.definition.maker.contains(searchQuery, ignoreCase = true) ||
                     item.definition.name.contains(searchQuery, ignoreCase = true) ||
-                    item.note.vintage.contains(searchQuery)
+                    com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage).contains(searchQuery, ignoreCase = true)
 
             val matchesType = filterState.types.isEmpty() || item.definition.type in filterState.types
             
@@ -76,7 +76,7 @@ fun TastingNotesScreen(
                 else -> true
             }
 
-            val price = prices[Pair(item.note.definitionId, item.note.vintage)]
+            val price = prices[Pair(item.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage))]
             val matchesPrice = filterState.priceRange?.let { range ->
                 price != null && price.toFloat() in range
             } ?: true
@@ -88,8 +88,8 @@ fun TastingNotesScreen(
             matchesSearch && matchesType && matchesStatus && matchesPrice &&
                     matchesCountry && matchesRegion && matchesSubregion
         }.sortedWith { a, b ->
-            val priceA = prices[Pair(a.note.definitionId, a.note.vintage)] ?: 0.0
-            val priceB = prices[Pair(b.note.definitionId, b.note.vintage)] ?: 0.0
+            val priceA = prices[Pair(a.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(a.note.vintage))] ?: 0.0
+            val priceB = prices[Pair(b.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(b.note.vintage))] ?: 0.0
             when (filterState.sortOrder) {
                 "Newest" -> compareByDescending<TastingNoteWithDefinition> { it.note.dateTasted }.thenByDescending { it.note.noteId }.compare(a, b)
                 "Price (High)" -> priceB.compareTo(priceA)
@@ -100,7 +100,7 @@ fun TastingNotesScreen(
     }
 
     val groupedHistory = remember(filteredHistory) {
-        filteredHistory.groupBy { it.note.definitionId to it.note.vintage }
+        filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .values.toList()
     }
 
@@ -151,9 +151,9 @@ fun TastingNotesScreen(
                     onClick = { showFilterSheet = true },
                     colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    val isFilterActive = filterState.types.isNotEmpty() || 
-                            filterState.status != "All" || 
-                            filterState.country != null || 
+                    val isFilterActive = filterState.types.isNotEmpty() ||
+                            filterState.status != "All" ||
+                            filterState.country != null || filterState.region != null || filterState.subregion != null ||
                             filterState.priceRange != null
                     Icon(
                         Icons.Default.Tune, 
@@ -177,9 +177,11 @@ fun TastingNotesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(groupedHistory, key = { group -> "${group.first().note.definitionId}_${group.first().note.vintage}" }) { group ->
+                    items(groupedHistory, key = { group ->
+                        "${group.first().note.definitionId}_${com.n8rtz.winetracker.data.local.displayVintage(group.first().note.vintage)}"
+                    }) { group ->
                         val firstItem = group.first()
-                        val groupKey = firstItem.note.definitionId to firstItem.note.vintage
+                        val groupKey = firstItem.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)
                         CompactNoteItem(
                             group = group,
                             expanded = expandedGroupKey == groupKey,
@@ -188,6 +190,7 @@ fun TastingNotesScreen(
                             onExpandToggle = {
                                 expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
                             },
+                            price = prices[groupKey],
                             onNoteClick = onNoteClick
                         )
                     }
@@ -204,7 +207,8 @@ fun TastingNotesScreen(
                 onDismiss = { showFilterSheet = false },
                 onApply = { newState ->
                     tastingNoteViewModel.updateFilterState(newState)
-                }
+                },
+                onClearAll = { searchQuery = "" }
             )
         }
     }
@@ -216,14 +220,14 @@ fun CompactNoteItem(
     expanded: Boolean,
     rating: String?,
     listDateFormat: java.text.SimpleDateFormat,
+    price: Double?,
     onExpandToggle: () -> Unit,
     onNoteClick: (Long) -> Unit
 ) {
     val firstItem = group.first()
     com.n8rtz.winetracker.ui.components.WineCard(
         title = run {
-            val vintage = firstItem.note.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
-            "${firstItem.definition.maker} - ${firstItem.definition.name} ($vintage)"
+            "${firstItem.definition.maker} - ${firstItem.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)})"
         },
         subtitle = run {
             val validSub = firstItem.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
@@ -232,11 +236,7 @@ fun CompactNoteItem(
             listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
         },
         type = firstItem.definition.type,
-        metadata = run {
-            val latestWithPrice = group.sortedByDescending { it.note.dateTasted }.firstOrNull { (it.bottle?.price ?: 0.0) > 0.0 }
-            val price = latestWithPrice?.bottle?.price
-            if (price != null && price > 0.0) "$${"%.2f".format(price)}" else ""
-        },
+        metadata = if (price != null && price > 0.0) "$${"%.2f".format(price)}" else "",
         imageUrl = firstItem.definition.imageUrl,
         rating = rating,
         isExpanded = expanded,
@@ -270,7 +270,8 @@ fun TastingNotesFilterSheet(
     locationData: Map<String, Map<String, List<String>>>,
     maxPrice: Float,
     onDismiss: () -> Unit,
-    onApply: (TastingNotesFilterState) -> Unit
+    onApply: (TastingNotesFilterState) -> Unit,
+    onClearAll: () -> Unit = {}
 ) {
     var state by remember { mutableStateOf(currentState) }
     val effectiveMaxPrice = maxPrice.coerceAtLeast(100f)
@@ -309,6 +310,7 @@ fun TastingNotesFilterSheet(
                                 priceMinText = ""
                                 priceMaxText = ""
                                 onApply(cleared)
+                                onClearAll()
                             }
                         ) {
                             Text("Clear All")

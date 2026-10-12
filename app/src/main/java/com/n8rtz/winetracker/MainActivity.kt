@@ -2,6 +2,7 @@
 package com.n8rtz.winetracker
 
 import android.os.Bundle
+import android.net.Uri
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -52,6 +53,7 @@ import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
+import com.n8rtz.winetracker.ui.screens.TastingNoteEditorScreen
 import com.n8rtz.winetracker.ui.screens.WineDetailScreen
 import com.n8rtz.winetracker.ui.screens.CellarScreen
 import com.n8rtz.winetracker.ui.screens.RankingsScreen
@@ -85,7 +87,8 @@ class MainActivity : ComponentActivity() {
             com.n8rtz.winetracker.data.local.MIGRATION_12_13,
             com.n8rtz.winetracker.data.local.MIGRATION_13_14,
             com.n8rtz.winetracker.data.local.MIGRATION_14_15,
-            com.n8rtz.winetracker.data.local.MIGRATION_15_16
+            com.n8rtz.winetracker.data.local.MIGRATION_15_16,
+            com.n8rtz.winetracker.data.local.MIGRATION_16_17
         )
         // Ensure migrations don't block the main thread if possible (though they often do on first access)
         .build()
@@ -198,10 +201,15 @@ fun MainAppScaffold(
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Cellar clicked")
                         isMenuExpanded = false
-                        if (currentRoute == "add_wine") {
-                            navController.popBackStack("cellar", inclusive = false)
+                        if (currentRoute == "cellar") {
+                            viewModel.resetCellarScreen()
                         } else {
-                            navigateToTab(navController, "cellar") 
+                            if (currentRoute == "add_wine") {
+                                navController.popBackStack("cellar", inclusive = false)
+                            } else {
+                                navigateToTab(navController, "cellar")
+                            }
+                            viewModel.resetCellarScreen()
                         }
                     },
                     icon = { Icon(Icons.Default.WineBar, "Cellar") },
@@ -281,7 +289,7 @@ fun MainAppScaffold(
             composable("notes") {
                 TastingNotesScreen(
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onNoteClick = { /* Handle note click */ },
+                    onNoteClick = { noteId -> navController.navigate("note_editor/edit/$noteId") },
                     onNavigateToHistory = {
                         Log.d("WineTracker", "MainActivity: Navigating to History")
                         navController.navigate("history")
@@ -292,8 +300,15 @@ fun MainAppScaffold(
                 RankingsScreen(rankingsViewModel)
             }
             composable("history") {
-                // Shared WineViewModel passed correctly to HistoryScreen
-                HistoryScreen(viewModel)
+                HistoryScreen(viewModel) { noteId, eventId, definitionId, vintage, consumedAt ->
+                    if (noteId != null) {
+                        navController.navigate("note_editor/edit/$noteId")
+                    } else {
+                        navController.navigate(
+                            "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}&eventId=$eventId&dateTasted=${consumedAt ?: -1L}"
+                        )
+                    }
+                }
             }
             composable("profile") {
                 ProfileScreen(viewModel = viewModel, scannerViewModel = scannerViewModel) {
@@ -306,6 +321,41 @@ fun MainAppScaffold(
                 }
             }
             composable(
+                route = "note_editor/create?definitionId={definitionId}&vintage={vintage}&eventId={eventId}&dateTasted={dateTasted}",
+                arguments = listOf(
+                    navArgument("definitionId") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("vintage") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("eventId") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("dateTasted") { type = NavType.LongType; defaultValue = -1L }
+                )
+            ) { backStackEntry ->
+                val definitionId = backStackEntry.arguments?.getLong("definitionId")?.takeIf { it > 0L }
+                val vintage = backStackEntry.arguments?.getString("vintage")?.takeIf { it.isNotBlank() }
+                val linkedEventId = backStackEntry.arguments?.getLong("eventId")?.takeIf { it > 0L }
+                val dateTasted = backStackEntry.arguments?.getLong("dateTasted")?.takeIf { it > 0L }
+                TastingNoteEditorScreen(
+                    viewModel = tastingNoteViewModel,
+                    presetDefinitionId = definitionId,
+                    presetVintage = vintage,
+                    presetDateTasted = dateTasted,
+                    linkedEventId = linkedEventId,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = "note_editor/edit/{noteId}",
+                arguments = listOf(navArgument("noteId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val noteId = backStackEntry.arguments?.getLong("noteId")
+                if (noteId != null) {
+                    TastingNoteEditorScreen(
+                        viewModel = tastingNoteViewModel,
+                        noteId = noteId,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+            composable(
                 route = "detail/{bottleId}",
                 arguments = listOf(navArgument("bottleId") { type = NavType.LongType })
             ) { backStackEntry ->
@@ -315,7 +365,13 @@ fun MainAppScaffold(
                         bottleId = bottleId,
                         viewModel = viewModel,
                         onBack = { navController.popBackStack() },
-                        onConsumed = { message, bid ->
+                        onAddNote = { definitionId, vintage ->
+                            navController.navigate(
+                                "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}"
+                            )
+                        },
+                        onEditNote = { noteId -> navController.navigate("note_editor/edit/$noteId") },
+                        onConsumed = { message, eventId ->
                             scope.launch {
                                 val result = snackbarHostState.showSnackbar(
                                     message = message,
@@ -323,7 +379,7 @@ fun MainAppScaffold(
                                     duration = SnackbarDuration.Short
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.undoConsumeBottle(bid)
+                                    viewModel.undoConsumeBottle(eventId)
                                 }
                             }
                         }
@@ -397,7 +453,7 @@ fun MainAppScaffold(
                         onClick = {
                             Log.d("WineTracker", "Popup: Add Note clicked")
                             isMenuExpanded = false
-                            navController.navigate("notes")
+                            navController.navigate("note_editor/create")
                         }
                     )
                 }

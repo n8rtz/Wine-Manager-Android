@@ -33,11 +33,12 @@ fun WineCard(
     imageUrl: String? = null,
     rating: String? = null,
     isExpanded: Boolean? = null,
+    expansionResetKey: Any? = Unit,
     details: @Composable (() -> Unit)? = null,
     dateAdded: String? = null,
     onClick: () -> Unit
 ) {
-    var internalExpanded by remember { mutableStateOf(false) }
+    var internalExpanded by remember(expansionResetKey) { mutableStateOf(false) }
     val expanded = isExpanded ?: internalExpanded
 
     val backgroundColor = when (type.lowercase()) {

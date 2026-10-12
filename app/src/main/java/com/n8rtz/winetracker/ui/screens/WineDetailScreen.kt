@@ -2,6 +2,7 @@ package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +26,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
+import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import java.util.Calendar
 
@@ -34,7 +37,9 @@ fun WineDetailScreen(
     bottleId: Long,
     viewModel: WineViewModel,
     onBack: () -> Unit,
-    onConsumed: (String, Long) -> Unit
+    onConsumed: (String, Long) -> Unit,
+    onAddNote: (Long, String) -> Unit,
+    onEditNote: (Long) -> Unit
 ) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val item = remember(inventory, bottleId) { inventory.find { it.bottle.bottleId == bottleId } }
@@ -45,6 +50,10 @@ fun WineDetailScreen(
         }
         return
     }
+
+    val tastingNotes by remember(item.definition.definitionId, item.bottle.vintage) {
+        viewModel.tastingNotesForWine(item.definition.definitionId, item.bottle.vintage)
+    }.collectAsState(initial = emptyList())
 
     var editedWine by remember(item.definition) { mutableStateOf(item.definition) }
     var editedBottle by remember(item.bottle) { mutableStateOf(item.bottle) }
@@ -57,6 +66,12 @@ fun WineDetailScreen(
     var type by remember(editedWine.type) { mutableStateOf(editedWine.type) }
     var quantity by remember(editedBottle.quantity) { mutableStateOf(editedBottle.quantity.toString()) }
     var price by remember(editedBottle.price) { mutableStateOf(editedBottle.price?.toString() ?: "") }
+    var drinkingWindowStart by remember(editedWine.drinkingWindowStart) {
+        mutableStateOf(editedWine.drinkingWindowStart?.toString() ?: "")
+    }
+    var drinkingWindowEnd by remember(editedWine.drinkingWindowEnd) {
+        mutableStateOf(editedWine.drinkingWindowEnd?.toString() ?: "")
+    }
 
     var selectedCountry by remember(editedWine.country) { mutableStateOf(editedWine.country) }
     var selectedRegion by remember(editedWine.region) { mutableStateOf(editedWine.region ?: "") }
@@ -75,6 +90,7 @@ fun WineDetailScreen(
 
     var showConsumeDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
+    var drinkingWindowError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -91,8 +107,21 @@ fun WineDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { 
+                    IconButton(onClick = {
                         if (isEditing) {
+                            val startYear = drinkingWindowStart.toIntOrNull()
+                            val endYear = drinkingWindowEnd.toIntOrNull()
+                            val yearsAreComplete = (drinkingWindowStart.isBlank() || drinkingWindowStart.length == 4) &&
+                                    (drinkingWindowEnd.isBlank() || drinkingWindowEnd.length == 4)
+                            if (!yearsAreComplete) {
+                                drinkingWindowError = "Enter each drinking-window year as four digits."
+                                return@IconButton
+                            }
+                            if (startYear != null && endYear != null && startYear > endYear) {
+                                drinkingWindowError = "Start year must be no later than the end year."
+                                return@IconButton
+                            }
+                            drinkingWindowError = null
                             viewModel.updateWine(
                                 editedWine.copy(
                                     maker = maker,
@@ -100,7 +129,9 @@ fun WineDetailScreen(
                                     type = type,
                                     country = selectedCountry,
                                     region = selectedRegion.takeIf { it.isNotBlank() },
-                                    subregion = selectedAppellation.takeIf { it.isNotBlank() }
+                                    subregion = selectedAppellation.takeIf { it.isNotBlank() },
+                                    drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
+                                    drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
                                 ),
                                 editedBottle.copy(
                                     vintage = vintage,
@@ -362,6 +393,34 @@ fun WineDetailScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                     }
+                    Text("Drinking Window (Optional)", style = MaterialTheme.typography.titleSmall)
+                    drinkingWindowError?.let { message ->
+                        Text(message, color = MaterialTheme.colorScheme.error)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = drinkingWindowStart,
+                            onValueChange = {
+                                drinkingWindowStart = it.filter { character -> character.isDigit() }.take(4)
+                                drinkingWindowError = null
+                            },
+                            label = { Text("Start year") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = drinkingWindowEnd,
+                            onValueChange = {
+                                drinkingWindowEnd = it.filter { character -> character.isDigit() }.take(4)
+                                drinkingWindowError = null
+                            },
+                            label = { Text("End year") },
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
                 }
             } else {
                 Text(
@@ -370,7 +429,7 @@ fun WineDetailScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = bottle.vintage,
+                    text = com.n8rtz.winetracker.data.local.displayVintage(bottle.vintage),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
@@ -387,6 +446,49 @@ fun WineDetailScreen(
                 DetailRow(Icons.Default.Category, "Type", editedWine.type)
                 DetailRow(Icons.Default.Inventory, "In Cellar", "${bottle.quantity} ${bottle.qtyType ?: "Bottles"}")
                 DetailRow(Icons.Default.AttachMoney, "Purchase Price", "$${"%.2f".format(bottle.price ?: 0.0)}")
+                val windowStart = editedWine.drinkingWindowStart
+                val windowEnd = editedWine.drinkingWindowEnd
+                DetailRow(
+                    Icons.Default.Schedule,
+                    "Drinking Window",
+                    if (windowStart == null && windowEnd == null) "Not set" else "${windowStart ?: "Any time"} – ${windowEnd ?: "No end year"}"
+                )
+                Spacer(Modifier.height(16.dp))
+                Text("Tasting Notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                if (tastingNotes.isEmpty()) {
+                    Text("No notes for this wine yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    tastingNotes.forEach { note ->
+                        val noteDate = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+                            .format(java.util.Date(note.dateTasted))
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().clickable { onEditNote(note.noteId) },
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                val score = note.rating.takeIf { it > 0.0 }?.toInt()?.let { "$it points" } ?: "Unrated"
+                                Text("$noteDate · $score", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = note.notes?.takeIf { it.isNotBlank() } ?: "No written notes",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 3
+                                )
+                                if (!note.recommendedBy.isNullOrBlank()) {
+                                    Text("Recommended by ${note.recommendedBy}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+                OutlinedButton(
+                    onClick = { onAddNote(editedWine.definitionId, bottle.vintage) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.NoteAdd, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add Tasting Note")
+                }
             }
 
             Spacer(Modifier.weight(1f))
@@ -408,11 +510,18 @@ fun WineDetailScreen(
         if (showConsumeDialog) {
             ConsumeDialog(
                 onDismiss = { showConsumeDialog = false },
-                onConfirm = { rating, notes, rebuy ->
-                    viewModel.consumeBottle(bottle.bottleId, rating, notes, rebuy)
-                    onConsumed("Consumed 1 bottle of ${editedWine.name}", bottle.bottleId)
+                onConfirm = { rating, notes, rebuy, consumptionDate ->
                     showConsumeDialog = false
-                    onBack()
+                    viewModel.consumeBottle(
+                        bottleId = bottle.bottleId,
+                        rating = rating,
+                        notes = notes,
+                        rebuy = rebuy,
+                        consumptionDate = consumptionDate
+                    ) { eventId ->
+                        onConsumed("Consumed 1 bottle of ${editedWine.name}", eventId)
+                        onBack()
+                    }
                 }
             )
         }
@@ -434,41 +543,69 @@ fun DetailRow(icon: ImageVector, label: String, value: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConsumeDialog(
     onDismiss: () -> Unit,
-    onConfirm: (Double?, String?, Boolean) -> Unit
+    onConfirm: (Double?, String?, Boolean, Long) -> Unit
 ) {
     var rating by remember { mutableStateOf(90f) }
     var notes by remember { mutableStateOf("") }
     var rebuy by remember { mutableStateOf(false) }
+    var includeTastingNote by remember { mutableStateOf(true) }
+    var consumptionDate by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val formattedDate = remember(consumptionDate) {
+        java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+            .format(java.util.Date(consumptionDate))
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Log Consumption") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Rate this bottle (100-pt scale): ${rating.toInt()}")
-                Slider(
-                    value = rating,
-                    onValueChange = { rating = it },
-                    valueRange = 70f..100f,
-                    steps = 30
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Tasting Notes") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Consumption date", style = MaterialTheme.typography.titleSmall)
+                OutlinedButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(formattedDate)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = rebuy, onCheckedChange = { rebuy = it })
-                    Text("Mark as Rebuy?")
+                    Checkbox(checked = includeTastingNote, onCheckedChange = { includeTastingNote = it })
+                    Text("Add a tasting note")
+                }
+                if (includeTastingNote) {
+                    Text("Rate this bottle (100-point scale): ${rating.toInt()}")
+                    Slider(
+                        value = rating,
+                        onValueChange = { rating = it },
+                        valueRange = 50f..100f,
+                        steps = 49
+                    )
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Tasting Notes") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = rebuy, onCheckedChange = { rebuy = it })
+                        Text("Would buy again")
+                    }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(rating.toDouble(), notes, rebuy) }) {
+            Button(onClick = {
+                onConfirm(
+                    rating.takeIf { includeTastingNote }?.toDouble(),
+                    notes.takeIf { includeTastingNote },
+                    rebuy && includeTastingNote,
+                    consumptionDate
+                )
+            }) {
                 Text("Confirm")
             }
         },
@@ -476,4 +613,24 @@ fun ConsumeDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+
+    if (showDatePicker) {
+        val datePickerState = androidx.compose.material3.rememberDatePickerState(
+            initialSelectedDateMillis = timestampToDatePickerMillis(consumptionDate)
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { consumptionDate = datePickerMillisToTimestamp(it) }
+                    showDatePicker = false
+                }) { Text("Done") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }

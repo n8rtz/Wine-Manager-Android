@@ -48,10 +48,12 @@ fun AddWineScreen(
     
     var maker by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var vintage by remember { mutableStateOf("") }
+    var vintage by remember { mutableStateOf("NV") }
     var type by remember { mutableStateOf("Red") }
     var quantity by remember { mutableStateOf("1") }
     var price by remember { mutableStateOf("") }
+    var drinkingWindowStart by remember { mutableStateOf("") }
+    var drinkingWindowEnd by remember { mutableStateOf("") }
 
     // Cascading Location State
     var selectedCountry by remember { mutableStateOf("") }
@@ -425,7 +427,40 @@ fun AddWineScreen(
                     OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Price") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 }
 
+                Text("Drinking Window (Optional)", style = MaterialTheme.typography.titleSmall)
+                val startYear = drinkingWindowStart.toIntOrNull()
+                val endYear = drinkingWindowEnd.toIntOrNull()
+                val yearsAreComplete = (drinkingWindowStart.isBlank() || drinkingWindowStart.length == 4) &&
+                        (drinkingWindowEnd.isBlank() || drinkingWindowEnd.length == 4)
+                val isWindowValid = yearsAreComplete && (startYear == null || endYear == null || startYear <= endYear)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = drinkingWindowStart,
+                        onValueChange = { drinkingWindowStart = it.filter { character -> character.isDigit() }.take(4) },
+                        label = { Text("Start year") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = drinkingWindowEnd,
+                        onValueChange = { drinkingWindowEnd = it.filter { character -> character.isDigit() }.take(4) },
+                        label = { Text("End year") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                }
+
+                if (!isWindowValid) {
+                    Text(
+                        if (!yearsAreComplete) "Enter each drinking-window year as four digits."
+                        else "Start year must be no later than the end year.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
                 Button(
+                    enabled = isWindowValid,
                     onClick = {
                         viewModel.addWine(
                             maker = maker,
@@ -436,7 +471,9 @@ fun AddWineScreen(
                             region = selectedRegion.takeIf { it.isNotEmpty() },
                             subregion = selectedAppellation.takeIf { it.isNotEmpty() },
                             quantity = quantity.toIntOrNull() ?: 1,
-                            price = price.toDoubleOrNull()
+                            price = price.toDoubleOrNull(),
+                            drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
+                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
                         )
                         onWineAdded()
                     },

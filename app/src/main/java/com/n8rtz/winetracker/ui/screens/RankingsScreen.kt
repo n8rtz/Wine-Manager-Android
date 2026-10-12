@@ -107,8 +107,7 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                     val item = displayItem.item
                     WineCard(
                         title = run {
-                            val vintage = item.note.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
-                            "${item.definition.maker} - ${item.definition.name} ($vintage)"
+                            "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage)})"
                         },
                         subtitle = run {
                             val validSub = item.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }

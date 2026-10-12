@@ -2,200 +2,164 @@ package com.n8rtz.winetracker.data.importer
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.room.withTransaction
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonParseException
+import com.google.gson.JsonDeserializer
+import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.ConsumptionEvent
 import com.n8rtz.winetracker.data.local.WineDatabase
-import com.n8rtz.winetracker.data.local.WineDefinition
-import com.n8rtz.winetracker.data.local.WineBottle
-import com.n8rtz.winetracker.data.local.TastingNote
+import com.n8rtz.winetracker.data.local.normalizeVintage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
+import java.text.ParsePosition
+import java.text.SimpleDateFormat
+import java.util.Locale
 
+/** Restores a complete JSON backup atomically; callers must ask before replacing local data. */
 class DataImporter(
     private val context: Context,
     private val database: WineDatabase
 ) {
     suspend fun standardImport(uri: Uri) = withContext(Dispatchers.IO) {
-        val contentResolver = context.contentResolver
-        contentResolver.openInputStream(uri)?.use { inputStream ->
-            InputStreamReader(inputStream).use { reader ->
-                
-                Log.d("WineTracker", "Starting standard JSON import")
-                
-                val gson = com.google.gson.GsonBuilder()
-                    .registerTypeAdapter(Long::class.java, com.google.gson.JsonDeserializer { json, _, _ ->
-                        try {
-                            json.asLong
-                        } catch (e: Exception) {
-                            try {
-                                val dateStr = json.asString
-                                val format = java.text.SimpleDateFormat("M/d/yyyy", java.util.Locale.US)
-                                format.parse(dateStr)?.time ?: 0L
-                            } catch (e2: Exception) {
-                                0L
-                            }
-                        }
-                    })
-                    .create()
-                    
-                val backupData = try {
-                    gson.fromJson(reader, BackupData::class.java)
-                } catch (e: Exception) {
-                    Log.e("DataImporter", "Error parsing JSON backup", e)
-                    return@use
-                }
-                
-                if (backupData == null) {
-                    Log.e("DataImporter", "Parsed BackupData was null")
-                    return@use
-                }
-
-                val wineDao = database.wineDao()
-                val inventoryDao = database.inventoryDao()
-                val tastingNoteDao = database.tastingNoteDao()
-                
-                val idMapping = mutableMapOf<Long, Long>()
-                
-                var definitionCount = 0
-                var bottleCount = 0
-                var noteCount = 0
-
-                // Pre-process: build lookup maps from backup data for cross-referencing
-                // Map of old bottleId -> bottle data (for vintage resolution during note import)
-                val bottlesByOldId = mutableMapOf<Long, WineBottle>()
-                backupData.bottles.forEach { bottle ->
-                    bottlesByOldId[bottle.bottleId] = bottle
-                }
-                Log.d("WineTracker", "Built bottle lookup with ${bottlesByOldId.size} entries")
-
-                // Map of old definitionId -> latest dateTasted (from notes)
-                val latestDateByOldDefId = mutableMapOf<Long, Long>()
-                backupData.notes.forEach { note ->
-                    if (note.dateTasted > 0) {
-                        val existing = latestDateByOldDefId[note.definitionId]
-                        if (existing == null || note.dateTasted > existing) {
-                            latestDateByOldDefId[note.definitionId] = note.dateTasted
-                        }
-                    }
-                }
-                Log.d("WineTracker", "Built dateTasted lookup with ${latestDateByOldDefId.size} entries")
-                // Mapping of old bottleId -> new bottleId for tasting note linking
-                val bottleIdMapping = mutableMapOf<Long, Long>()
-
-                database.withTransaction {
-                    // 1. Process Definitions using old IDs to build mapping
-                    backupData.definitions.forEach { oldDef ->
-                        try {
-                            val maker = oldDef.maker.takeIf { it.isNotBlank() } ?: "Unknown"
-                            val name = oldDef.name.takeIf { it.isNotBlank() } ?: "Unknown"
-                            val type = oldDef.type.takeIf { it.isNotBlank() } ?: "Unknown"
-                            val country = oldDef.country.takeIf { it.isNotBlank() } ?: "Unknown"
-
-                            val existing = wineDao.getDefinitionByDetails(maker, name)
-                            if (existing != null) {
-                                idMapping[oldDef.definitionId] = existing.definitionId
-                                Log.d("WineTracker", "Def mapping (Existing): ${oldDef.definitionId} -> ${existing.definitionId}")
-                            } else {
-                                val newDef = WineDefinition(
-                                    maker = maker,
-                                    name = name,
-                                    type = type,
-                                    country = country,
-                                    region = oldDef.region,
-                                    subregion = oldDef.subregion,
-                                    imageUrl = oldDef.imageUrl
-                                )
-                                val newId = wineDao.insertDefinition(newDef)
-                                idMapping[oldDef.definitionId] = newId
-                                definitionCount++
-                                Log.d("WineTracker", "Def mapping (New): ${oldDef.definitionId} -> $newId")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("DataImporter", "Error importing definition: ${oldDef.name}", e)
-                        }
-                    }
-
-                    // 2. Process Bottles — backfill dateConsumed from notes if missing
-                    backupData.bottles.forEach { oldBottle ->
-                        try {
-                            val mappedDefId = idMapping[oldBottle.definitionId]
-                            if (mappedDefId == null) {
-                                Log.e("WineTracker", "No mapping for DefID: ${oldBottle.definitionId} in Bottle ${oldBottle.bottleId}")
-                                return@forEach
-                            }
-
-                            // If ARCHIVED and no dateConsumed, use latest dateTasted from notes
-                            val resolvedDateConsumed = oldBottle.dateConsumed
-                                ?: if (oldBottle.status == com.n8rtz.winetracker.data.local.BottleStatus.ARCHIVED) {
-                                    latestDateByOldDefId[oldBottle.definitionId]
-                                } else null
-
-                            val newBottle = WineBottle(
-                                definitionId = mappedDefId,
-                                vintage = oldBottle.vintage?.takeIf { it.isNotBlank() } ?: "NV",
-                                quantity = oldBottle.quantity,
-                                price = oldBottle.price,
-                                qtyType = oldBottle.qtyType,
-                                location = oldBottle.location,
-                                status = oldBottle.status,
-                                dateAdded = oldBottle.dateAdded?.takeIf { it.isNotBlank() } 
-                                    ?: java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date()),
-                                dateConsumed = resolvedDateConsumed
-                            )
-                            val newBottleId = inventoryDao.insertBottle(newBottle)
-                            bottleIdMapping[oldBottle.bottleId] = newBottleId
-                            bottleCount++
-                            Log.d("WineTracker", "Bottle mapping: ${oldBottle.bottleId} -> $newBottleId (vintage=${oldBottle.vintage})")
-                            if (resolvedDateConsumed != null && oldBottle.dateConsumed == null) {
-                                Log.d("WineTracker", "Backfilled dateConsumed for bottle ${oldBottle.bottleId} -> $resolvedDateConsumed")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("DataImporter", "Error importing bottle", e)
-                        }
-                    }
-
-                    // 3. Process Tasting Notes — derive vintage from linked bottle
-                    backupData.notes.forEach { oldNote ->
-                        try {
-                            val mappedDefId = idMapping[oldNote.definitionId]
-                            if (mappedDefId == null) {
-                                Log.e("WineTracker", "No mapping for DefID: ${oldNote.definitionId} in Note ${oldNote.noteId}")
-                                return@forEach
-                            }
-                            
-                            // Resolve bottleId mapping and derive vintage from the actual bottle
-                            val mappedBottleId = oldNote.bottleId?.let { bottleIdMapping[it] }
-                            val resolvedVintage = if (oldNote.bottleId != null) {
-                                // Get vintage from the original bottle data (source of truth)
-                                bottlesByOldId[oldNote.bottleId]?.vintage?.takeIf { it.isNotBlank() }
-                                    ?: oldNote.vintage?.takeIf { it.isNotBlank() }
-                                    ?: "NV"
-                            } else {
-                                // No bottle link — trust the note's own vintage
-                                oldNote.vintage?.takeIf { it.isNotBlank() } ?: "NV"
-                            }
-
-                            val newNote = TastingNote(
-                                definitionId = mappedDefId,
-                                vintage = resolvedVintage,
-                                dateTasted = oldNote.dateTasted.takeIf { it > 0 } ?: System.currentTimeMillis(),
-                                rating = oldNote.rating,
-                                notes = oldNote.notes,
-                                rebuy = oldNote.rebuy,
-                                bottleId = mappedBottleId
-                            )
-                            tastingNoteDao.insertNote(newNote)
-                            noteCount++
-                            Log.d("WineTracker", "Note imported: id=${oldNote.noteId}, vintage=$resolvedVintage, bottleId=${oldNote.bottleId}->${mappedBottleId}")
-                        } catch (e: Exception) {
-                            Log.e("DataImporter", "Error importing note", e)
-                        }
-                    }
-                }
-                Log.d("WineTracker", "Import finished. Imported $definitionCount definitions, $bottleCount bottles, $noteCount notes")
+        val backup = context.contentResolver.openInputStream(uri)?.use { input ->
+            InputStreamReader(input, Charsets.UTF_8).use { reader ->
+                backupGson().fromJson(reader, BackupData::class.java)
             }
+        } ?: throw IllegalArgumentException("The selected file could not be opened.")
+
+        requireNotNull(backup) { "The selected file is not a Wine Manager JSON backup." }
+        restoreBackup(backup)
+    }
+
+    private fun backupGson() = GsonBuilder()
+        .registerTypeAdapter(java.lang.Long::class.java, longDateDeserializer())
+        .registerTypeAdapter(java.lang.Long.TYPE, longDateDeserializer())
+        .create()
+
+    private fun longDateDeserializer() = JsonDeserializer<Long> { json, _, _ ->
+        if (json == null || json.isJsonNull) return@JsonDeserializer null
+        val primitive = json.asJsonPrimitive
+        if (primitive.isNumber) return@JsonDeserializer primitive.asLong
+
+        val value = primitive.asString.trim()
+        val slashDate = Regex("^\\d{1,2}/\\d{1,2}/(\\d{2}|\\d{4})$").matchEntire(value)
+        val formats = buildList {
+            if (slashDate != null) add(if (slashDate.groupValues[1].length == 2) "M/d/yy" else "M/d/yyyy")
+            addAll(listOf("yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.SSSX", "yyyy-MM-dd'T'HH:mm:ssX"))
+        }
+        val parsed = formats.firstNotNullOfOrNull { pattern ->
+            val parser = SimpleDateFormat(pattern, Locale.US).apply { isLenient = false }
+            val position = ParsePosition(0)
+            parser.parse(value, position)?.takeIf { position.index == value.length }
+        }
+        parsed?.time ?: throw JsonParseException("Unrecognized date value '$value'.")
+    }
+
+    private suspend fun restoreBackup(source: BackupData) {
+        val definitions = source.definitions
+        val sourceBottles = source.bottles
+        val notes = source.notes
+        val ratings = source.ratings
+        val eventsFromBackup = source.consumptionEvents
+
+        require(definitions.map { it.definitionId }.distinct().size == definitions.size) {
+            "The backup contains duplicate wine definition IDs."
+        }
+        require(definitions.all { it.definitionId > 0L && it.maker.isNotBlank() && it.name.isNotBlank() }) {
+            "The backup contains a wine without a valid ID, producer, or name."
+        }
+        require(definitions.map { it.maker.trim().lowercase() to it.name.trim().lowercase() }.distinct().size == definitions.size) {
+            "The backup contains duplicate wine definitions."
+        }
+        val definitionIds = definitions.mapTo(mutableSetOf()) { it.definitionId }
+        require(sourceBottles.map { it.bottleId }.distinct().size == sourceBottles.size) {
+            "The backup contains duplicate bottle IDs."
+        }
+        require(sourceBottles.all {
+            it.bottleId > 0L && it.definitionId in definitionIds &&
+                (it.status == BottleStatus.IN_CELLAR || it.status == BottleStatus.ARCHIVED)
+        }) {
+            "The backup contains a bottle with a missing wine or valid inventory status."
+        }
+        require(notes.map { it.noteId }.distinct().size == notes.size) {
+            "The backup contains duplicate tasting-note IDs."
+        }
+        require(notes.mapNotNull { it.importKey }.distinct().size == notes.count { it.importKey != null }) {
+            "The backup contains duplicate tasting-note import keys."
+        }
+        require(ratings.map { it.id }.distinct().size == ratings.size) {
+            "The backup contains duplicate rating IDs."
+        }
+        require(eventsFromBackup.mapNotNull { it.importKey }.distinct().size == eventsFromBackup.count { it.importKey != null }) {
+            "The backup contains duplicate consumption-event import keys."
+        }
+        require(notes.all { it.noteId > 0L && it.definitionId in definitionIds && it.dateTasted > 0L }) {
+            "A tasting note is missing its wine, ID, or recorded date. The existing database was not changed."
+        }
+        require(ratings.all { it.wineId in definitionIds }) {
+            "The backup contains a rating without a matching wine definition."
+        }
+        require(eventsFromBackup.all { it.definitionId in definitionIds && it.quantity > 0 }) {
+            "The backup contains a consumption event with invalid wine or quantity data."
+        }
+
+        // A pre-event backup can contain multiple archived rows for the same wine/vintage.
+        // Convert each archived row into a history event instead of violating the inventory
+        // uniqueness index or dropping additional consumption records.
+        val notesByBottleId = notes.filter { it.bottleId != null }.groupBy { it.bottleId }
+        val archivedBottlesAlreadyRepresented = eventsFromBackup.mapNotNull { it.bottleId }.toSet()
+        val legacyArchiveEvents = sourceBottles
+            .filter { it.status == BottleStatus.ARCHIVED && it.bottleId !in archivedBottlesAlreadyRepresented }
+            .map { archivedBottle ->
+                val linkedNotes = notesByBottleId[archivedBottle.bottleId].orEmpty()
+                ConsumptionEvent(
+                    definitionId = archivedBottle.definitionId,
+                    bottleId = archivedBottle.bottleId,
+                    vintage = normalizeVintage(archivedBottle.vintage),
+                    consumedAt = archivedBottle.dateConsumed,
+                    // Archived legacy rows represent at least one consumed item; zero was remaining stock.
+                    quantity = archivedBottle.quantity.coerceAtLeast(1),
+                    price = archivedBottle.price,
+                    noteId = linkedNotes.singleOrNull()?.noteId,
+                    importKey = "json-archived-bottle:${archivedBottle.bottleId}"
+                )
+            }
+        val activeBottles = sourceBottles
+            .filter { it.status == BottleStatus.IN_CELLAR }
+            .map { it.copy(vintage = normalizeVintage(it.vintage)) }
+        require(activeBottles.map { Triple(it.definitionId, it.vintage, it.status) }.distinct().size == activeBottles.size) {
+            "The backup contains duplicate active cellar rows for the same wine and vintage."
+        }
+        val restoredNotes = notes.map { oldNote ->
+            val directBottleVintage = oldNote.bottleId?.let { bottleId ->
+                sourceBottles.firstOrNull { it.bottleId == bottleId }?.vintage
+            }
+            oldNote.copy(
+                vintage = normalizeVintage(oldNote.vintage?.takeIf { it.isNotBlank() } ?: directBottleVintage)
+            )
+        }
+        val restoredEvents = (eventsFromBackup + legacyArchiveEvents).map { event ->
+            event.copy(eventId = 0L, vintage = normalizeVintage(event.vintage))
+        }
+        require(restoredEvents.mapNotNull { it.importKey }.distinct().size == restoredEvents.count { it.importKey != null }) {
+            "The backup contains a consumption-event key that conflicts with a legacy archived bottle."
+        }
+
+        database.withTransaction {
+            database.consumptionEventDao().deleteAllEvents()
+            database.ratingDao().deleteAllRatings()
+            database.tastingNoteDao().deleteAllNotes()
+            database.inventoryDao().deleteAllBottles()
+            database.wineDao().deleteAllDefinitions()
+
+            if (definitions.isNotEmpty()) database.wineDao().insertDefinitions(definitions)
+            if (activeBottles.isNotEmpty()) database.inventoryDao().insertBottles(activeBottles)
+            if (restoredNotes.isNotEmpty()) database.tastingNoteDao().insertNotes(restoredNotes)
+            if (ratings.isNotEmpty()) database.ratingDao().insertRatings(ratings)
+            if (restoredEvents.isNotEmpty()) database.consumptionEventDao().insertEvents(restoredEvents)
         }
     }
+
 }

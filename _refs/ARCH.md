@@ -39,8 +39,9 @@ com.n8rtz.winetracker/
 │    ├── screens/
     │   ├── CellarScreen.kt            # Active inventory + dashboard header + search
     │   ├── CellarFilterState.kt       # Data class for cellar filtering
-    │   ├── HistoryScreen.kt           # Consumed wines chronological (compact ListItems)
+    │   ├── HistoryScreen.kt           # Consumption-event history, note links, chronological list
     │   ├── TastingNotesScreen.kt      # Tasting note repository + search + filters
+    │   ├── TastingNoteEditorScreen.kt # Add/edit notes and AWS-inspired sensory evaluation
     │   ├── RankingsScreen.kt          # Sorted by 100-point rating + search + filters
     │   ├── RankingsFilterState.kt     # Data class for rankings filtering
     │   ├── AddWineScreen.kt           # Manual entry form + cascading dropdowns
@@ -48,16 +49,18 @@ com.n8rtz.winetracker/
        └── components/
         ├── WineCard.kt                # Color-coded card for Cellar and Rankings (Supports Expansion)
         ├── HistoryWineCard.kt         # Compact list item for History screen
+        ├── SensoryEvaluationFields.kt # Ombre sensory sliders and common-fault controls
         ├── AnalyticsCard.kt           # Dashboard metrics cards (Total Bottles, Value, etc.)
         ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
         ├── WheelPicker.kt             # Birthday-style scroll picker + LocationWheelPicker
         ├── ConsumeConfirmDialog.kt    # Date picker for confirmation
-        └── LocationWheelPicker.kt     # Scrollable dial-like selectors for location
+        ├── LocationWheelPicker.kt     # Scrollable dial-like selectors for location
+        └── DatePickerUtils.kt         # Local-date / Material DatePicker UTC-midnight conversions
 │
 ├── data/
 │   ├── local/
-│   │   ├── WineDatabase.kt            # Room database definition + migrations
-│   │   └── WineDaos.kt                # All DAO interfaces (single file)
+│   │   ├── WineDatabase.kt            # Room entities, converters, and schema migrations
+│   │   └── WineDaos.kt                # All DAO interfaces, including consumption-event queries
 │   │
 │   ├── models/
 │   │   ├── WineDefinition.kt          # Catalog: Maker, Name, Type, Country, Region
@@ -67,14 +70,14 @@ com.n8rtz.winetracker/
 │   │   └── LocationData.kt            # Cascading dropdown data
 │   │
 │   ├── repository/
-│   │   └── WineRepository.kt          # Single source of truth for all data access
+│   │   └── WineRepository.kt          # Single source of truth; inventory and event transactions
 │   │
 │   └── importer/
 │       ├── DataImporter.kt            # JSON import logic + relational mapping
 │       ├── JsonExporter.kt            # JSON export logic using Gson
 │       ├── BackupData.kt              # Backup model for JSON serialization
 │       ├── CsvExporter.kt             # (Deprecated) CSV export logic
-│       ├── CsvImportHelper.kt         # CSV parsing utilities
+│       ├── CsvImportHelper.kt         # Legacy tasting-note and consumption CSV importers
 │       └── InventoryExporter.kt       # Exporter for cellar inventory
 │
 ├── scanner/
@@ -90,7 +93,7 @@ com.n8rtz.winetracker/
 │
 └── viewmodels/
     ├── WineViewModel.kt               # Core ViewModel: Cellar, History, Import/Export
-    ├── TastingNoteViewModel.kt        # Note editor state, save logic
+    ├── TastingNoteViewModel.kt        # Note editor state, save/delete and event-note linking
     ├── RankingsViewModel.kt           # Rankings filtering, sorting, price lookups
     └── ScannerViewModel.kt            # Camera OCR scanning, batch image import via OpenFoodFacts
 
@@ -123,4 +126,10 @@ WineDatabase (Room) ← SQLite
 - **ID Mapping is mandatory:** When importing relational data, always maintain mapping dictionaries (`idMapping` for definitions, `bottleIdMapping` for bottles) to translate old auto-generated IDs to new ones. Never assume IDs persist across export/import cycles.
 - **Never use fallback vintage lookups:** A note's vintage must come from its directly linked bottle (via `bottleId`), not from a random bottle under the same definition. The `vintageByOldDefId` pattern was banned after [Bug-016] caused silent vintage corruption for horizontal tastings.
 - **Bottle is the source of truth for vintage:** `WineBottle.vintage` is authoritative. `TastingNote.vintage` is a copy derived from the linked bottle at creation time or import time.
-- **Test with horizontal tastings:** Any changes to the import pipeline must be validated against the scenario of multiple vintages of the same wine consumed on the same day (identical timestamps, same `definitionId`, different vintages).
+- **Test with horizontal tastings:** Any changes to the import pipeline must be validated against the scenario of multiple vintages of the same wine consumed on the same day (identical timestamps, same `definitionId`, different vintages).
+
+## 6. Consumption & Vintage Integrity
+- `ConsumptionEvent` is the source of truth for consumption history. Consuming a bottle decrements the active inventory row and inserts one event in the same transaction; undo targets that exact event ID. Do not create per-consumption archived `WineBottle` rows because the bottle table has a unique `(definitionId, vintage, status)` index.
+- Migration 16→17 converts legacy archived bottle rows to events while preserving nullable `dateConsumed` as-is. It does not infer dates from tasting notes or add historical timestamps.
+- Add Note is a tasting-note-only operation; it does not decrement cellar inventory. Notes created from an event are linked to that specific event.
+- Normalize non-vintage aliases (`NV`, `(NV)`, and blank legacy values) for display, import, grouping, and lookup. Do not infer a missing vintage from an unrelated bottle.

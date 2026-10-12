@@ -1,91 +1,100 @@
 package com.n8rtz.winetracker.ui.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun HistoryWineCard(
     maker: String,
     name: String,
     vintage: String,
-    date: String, // Focus: "MMM dd, yyyy"
+    date: String,
     quantity: Int,
-    rating: String? = null
+    rating: String? = null,
+    hasNote: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 16.dp),
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Box {
-            Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    // Emphasis: The Date is now the primary header for the record
-                    Text(
-                        text = date.uppercase(),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            letterSpacing = 1.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Color(0xFF722F37) // Bordeaux Red
-                    )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    // Wine Identity: "Maker - Name (Vintage)"
-                    Text(
-                        text = "$maker - $name ($vintage)",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF1C1C1E)
-                    )
-                }
-
-                // High-density status/quantity badge
-                Surface(
-                    color = if (quantity == 0) Color(0xFF722F37).copy(alpha = 0.1f) else Color(0xFFF8F9FA),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = if (quantity == 0) "CONSUMED" else "QTY: $quantity",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = if (quantity == 0) Color(0xFF722F37) else Color(0xFF1C1C1E)
-                    )
-                }
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "$maker - $name ($vintage)",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
 
-            // Rating Badge in Bottom Right
+            if (hasNote) {
+                Icon(
+                    imageVector = Icons.Default.Description,
+                    contentDescription = "Tasting note available",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                shape = RoundedCornerShape(6.dp)
+            ) {
+                Text(
+                    text = "QTY: $quantity",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
             if (rating != null) {
+                Spacer(Modifier.width(8.dp))
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(4.dp),
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
                         text = rating,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

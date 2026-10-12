@@ -1,3 +1,30 @@
+## [Unreleased]
+### Added
+- **Event-based consumption history:** Added a `ConsumptionEvent` table and DAO/repository flows to record consumption date, vintage, quantity, price, source bottle, optional linked note, and an import key. New consumption writes the event and decrements inventory in one transaction; it does not create archived bottle rows that would conflict with the unique `(definitionId, vintage, status)` index.
+- **Exact consumption undo:** Undo now addresses the specific event ID, restores that event's quantity to its source or matching cellar row, removes the event, and removes only the note linked to that event.
+- **Consumption-date selection:** Added a date picker to the consume dialog. History-created notes inherit the event date when one exists; events and legacy rows without dates remain undated rather than receiving inferred historical dates.
+- **Tasting-note editor:** Added standalone Add Note and add/edit screens with wine and vintage selection, a tasted-date picker, optional overall rating, written notes, rebuy recommendation, recommended-by and initial-rating metadata, and delete confirmation. The free-text notes field is placed after the structured fields.
+- **Event-to-note linking:** History cards can open an existing linked note or create a note linked to that exact event. Saving the note and attaching it to the event is transactional; deleting a note clears its event reference without deleting consumption history.
+- **Sensory evaluation:** Added persisted sweetness, aroma, acidity, tannin, body, balance, intensity, complexity, finish, quality, overall-score, and common-fault controls, with descriptor labels and ombre slider tracks.
+- **Drinking windows:** Added optional start/end years to wine definitions, four-digit year validation in add/edit forms, display on wine details, cellar year-range and Ready Now / Too Early / Past Peak filters, and soonest/furthest sorting.
+- **Legacy CSV import:** Added separate Profile actions for the legacy tasting-notes and consumption-history CSV formats. Imports support quoted fields, use explicit producer/name data or a single exact catalog match, report imported/already-present/skipped counts, and use stable unique import keys for repeat-import idempotency. Undated, incomplete, or ambiguous rows are skipped rather than assigned guessed dates or wine identities.
+- **Schema migration 16→17:** Added drinking-window columns, tasting-note sensory/import metadata, and indexed `consumption_events`. Archived legacy bottles become events while retaining nullable consumption dates; a tasting note is linked only when exactly one note references that bottle. A zero legacy remaining-quantity value is represented as at least one consumed item.
+- **Coverage and documentation:** Added tests for NV normalization and date-picker round-tripping across a daylight-saving boundary; updated the architecture and this changelog.
+
+### Changed
+- **JSON backup/restore:** Exports now include ratings and consumption events, use UTF-8, and read a consistent database snapshot. Restore replaces all app data only after explicit confirmation, validates references and duplicate IDs/keys before deletion, and applies the replacement in one transaction. Wine, bottle, note, and rating IDs are retained; consumption-event IDs are regenerated. Older backups without event/rating collections remain supported, and their archived rows are converted to events.
+- **Vintage normalization and lookup:** Standardized blank, `null`, `NV`, and `(NV)` aliases for display, grouping, imports, rankings, and DAO lookups. Price and cellar queries prefer an exact vintage match before falling back to an NV alias.
+- **History presentation:** The History screen now renders consumption events (including event quantity and optional rating/note indicator) instead of treating archived inventory rows as the history source. Colors follow the Material theme for dark mode.
+- **Cellar filter reset:** Filter-sheet Clear All also clears search. Reselecting the Cellar tab resets filters, search, and expanded wine cards.
+- **Date parsing:** Backup `Long` date fields accept epoch values plus strict slash dates with two- or four-digit years (including `1/1/2021`) and supported ISO forms. CSV date parsing requires full input consumption; incomplete or undated legacy rows are skipped rather than assigned guessed dates.
+
+### Fixed
+- **Safe import behavior:** Removed partial, row-by-row JSON merge behavior. Invalid backups now fail validation before local data is changed, and a transaction rolls back a failed replacement.
+- **Historical-data integrity:** Migration and restore preserve nullable consumption dates; note-to-bottle vintage resolution remains tied to the referenced bottle rather than an unrelated wine/vintage heuristic.
+- **Note display and metadata:** Unrated notes display as “Unrated” rather than “0 points”; note edits preserve existing IDs, bottle links, import keys, recommendation fields, and sensory data.
+- **Date-picker timezone handling:** Added UTC-midnight/local-date conversion so the selected calendar day round-trips correctly across daylight-saving changes.
+- **Permissions:** Declared the INTERNET and CAMERA permissions required by network image lookup and camera scanning.
+
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.5.5] - 2026-03-16

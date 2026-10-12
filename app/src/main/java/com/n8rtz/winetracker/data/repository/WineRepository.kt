@@ -2,8 +2,11 @@ package com.n8rtz.winetracker.data.repository
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
 import com.n8rtz.winetracker.network.WineImageFetcher
 import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.ConsumptionEvent
+import com.n8rtz.winetracker.data.local.ConsumptionEventWithDefinition
 import com.n8rtz.winetracker.data.local.InventoryDao
 import com.n8rtz.winetracker.data.local.RatingDao
 import com.n8rtz.winetracker.data.local.TastingNote
@@ -14,6 +17,7 @@ import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDao
 import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.normalizeVintage
 import kotlinx.coroutines.flow.Flow
 
 class WineRepository(
@@ -27,6 +31,7 @@ class WineRepository(
     val activeInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getActiveInventory()
     val archivedInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getArchivedBottles()
     val tastingHistory: Flow<List<TastingNoteWithDefinition>> = tastingNoteDao.getTastingHistory()
+    val consumptionHistory: Flow<List<ConsumptionEventWithDefinition>> = database.consumptionEventDao().getConsumptionHistory()
     val allDefinitions: Flow<List<WineDefinition>> = wineDao.getAllDefinitions()
 
     companion object {
@@ -69,12 +74,18 @@ class WineRepository(
         region: String?,
         subregion: String?,
         quantity: Int,
-        price: Double?
+        price: Double?,
+        drinkingWindowStart: Int? = null,
+        drinkingWindowEnd: Int? = null
     ) {
+        require(drinkingWindowStart == null || drinkingWindowEnd == null || drinkingWindowStart <= drinkingWindowEnd) {
+            "Drinking window start year cannot be later than its end year."
+        }
+        val normalizedVintage = normalizeVintage(vintage)
         val existingDefinition = wineDao.getDefinitionByDetails(maker, name)
 
         val imageUrl = if (existingDefinition?.imageUrl == null) {
-            imageFetcher.fetchImageUrl(maker, name, vintage)
+            imageFetcher.fetchImageUrl(maker, name, normalizedVintage)
         } else {
             existingDefinition.imageUrl
         }
@@ -88,7 +99,9 @@ class WineRepository(
                     country = country,
                     region = region,
                     subregion = subregion,
-                    imageUrl = imageUrl
+                    imageUrl = imageUrl,
+                    drinkingWindowStart = drinkingWindowStart,
+                    drinkingWindowEnd = drinkingWindowEnd
                 )
             )
         } else {
@@ -98,13 +111,15 @@ class WineRepository(
                     country = country,
                     region = region,
                     subregion = subregion,
-                    imageUrl = imageUrl ?: existingDefinition.imageUrl
+                    imageUrl = imageUrl ?: existingDefinition.imageUrl,
+                    drinkingWindowStart = drinkingWindowStart ?: existingDefinition.drinkingWindowStart,
+                    drinkingWindowEnd = drinkingWindowEnd ?: existingDefinition.drinkingWindowEnd
                 )
             )
             existingDefinition.definitionId
         }
 
-        val existingBottle = inventoryDao.getBottleInCellar(definitionId, vintage)
+        val existingBottle = inventoryDao.getBottleInCellar(definitionId, normalizedVintage)
         if (existingBottle != null) {
             inventoryDao.updateBottle(
                 existingBottle.copy(quantity = existingBottle.quantity + quantity)
@@ -113,7 +128,7 @@ class WineRepository(
             inventoryDao.insertBottle(
                 WineBottle(
                     definitionId = definitionId,
-                    vintage = vintage,
+                    vintage = normalizedVintage,
                     quantity = quantity,
                     price = price,
                     qtyType = "Bottle",
@@ -129,8 +144,37 @@ class WineRepository(
     }
 
     suspend fun updateWine(definition: WineDefinition, bottle: WineBottle) {
-        wineDao.updateDefinition(definition)
-        inventoryDao.updateBottle(bottle)
+        database.withTransaction {
+            wineDao.updateDefinition(definition)
+            inventoryDao.updateBottle(bottle)
+        }
+    }
+
+    fun getTastingNotesForWine(definitionId: Long, vintage: String): Flow<List<TastingNote>> =
+        tastingNoteDao.getTastingNotesForWine(definitionId, vintage)
+
+    suspend fun getTastingNoteById(noteId: Long): TastingNote? = tastingNoteDao.getNoteById(noteId)
+
+    suspend fun saveTastingNote(note: TastingNote, linkedEventId: Long? = null): Long = database.withTransaction {
+        val savedId = if (note.noteId == 0L) {
+            tastingNoteDao.insertNote(note)
+        } else {
+            tastingNoteDao.updateNote(note)
+            note.noteId
+        }
+        if (savedId > 0L && linkedEventId != null) {
+            check(database.consumptionEventDao().attachNote(linkedEventId, savedId) == 1) {
+                "The consumption event no longer exists."
+            }
+        }
+        savedId
+    }
+
+    suspend fun deleteTastingNote(noteId: Long) {
+        database.withTransaction {
+            database.consumptionEventDao().clearNoteReference(noteId)
+            tastingNoteDao.deleteNoteById(noteId)
+        }
     }
 
     suspend fun getAllPricesForDefinitions(definitionIds: List<Long>): List<com.n8rtz.winetracker.data.local.PriceLookupResult> {
@@ -147,49 +191,88 @@ class WineRepository(
         notes: String?,
         rebuy: Boolean,
         consumptionDate: Long = System.currentTimeMillis()
-    ) {
-        val bottle = inventoryDao.getBottleById(bottleId) ?: return
-
-        if (bottle.quantity > 1) {
-            inventoryDao.updateBottle(bottle.copy(quantity = bottle.quantity - 1))
-        } else {
-            inventoryDao.updateBottle(
-                bottle.copy(
-                    quantity = 0, 
-                    status = BottleStatus.ARCHIVED,
-                    dateConsumed = consumptionDate
-                )
-            )
+    ): Long = database.withTransaction {
+        val bottle = inventoryDao.getBottleById(bottleId) ?: return@withTransaction 0L
+        if (bottle.status != BottleStatus.IN_CELLAR || bottle.quantity <= 0) {
+            return@withTransaction 0L
         }
 
-        if (rating != null) {
+        val noteId = if (rating != null || !notes.isNullOrBlank() || rebuy) {
             tastingNoteDao.insertNote(
                 TastingNote(
                     definitionId = bottle.definitionId,
                     vintage = bottle.vintage,
                     dateTasted = consumptionDate,
-                    rating = rating,
-                    notes = notes,
+                    rating = rating ?: 0.0,
+                    notes = notes?.takeIf { it.isNotBlank() },
                     rebuy = rebuy,
-                    initialRating = rating.toInt(),
+                    initialRating = rating?.toInt(),
                     bottleId = bottleId
                 )
-            )
-        }
-    }
+            ).takeIf { it > 0L }
+        } else null
 
-    suspend fun undoConsumeBottle(bottleId: Long, removeLastNote: Boolean) {
-        val bottle = inventoryDao.getBottleById(bottleId) ?: return
-
-        inventoryDao.updateBottle(
-            bottle.copy(
-                quantity = bottle.quantity + 1,
-                status = BottleStatus.IN_CELLAR
+        val eventId = database.consumptionEventDao().insertEvent(
+            ConsumptionEvent(
+                definitionId = bottle.definitionId,
+                bottleId = bottleId,
+                vintage = bottle.vintage,
+                consumedAt = consumptionDate,
+                quantity = 1,
+                price = bottle.price,
+                noteId = noteId
             )
         )
 
-        if (removeLastNote) {
-            tastingNoteDao.deleteLastNoteForWine(bottle.definitionId, bottle.vintage)
+        // Keep the unique (definitionId, vintage, status) inventory row in the cellar.
+        // A zero quantity row is hidden from active inventory and can be reused when restocked.
+        inventoryDao.updateBottle(
+            bottle.copy(
+                quantity = bottle.quantity - 1,
+                status = BottleStatus.IN_CELLAR,
+                dateConsumed = null
+            )
+        )
+        eventId
+    }
+
+    suspend fun undoConsumeBottle(eventId: Long) {
+        database.withTransaction {
+            val event = database.consumptionEventDao().getEventById(eventId) ?: return@withTransaction
+            val bottle = event.bottleId?.let { inventoryDao.getBottleById(it) }
+            if (bottle != null) {
+                inventoryDao.updateBottle(
+                    bottle.copy(
+                        quantity = bottle.quantity + event.quantity,
+                        status = BottleStatus.IN_CELLAR,
+                        dateConsumed = null
+                    )
+                )
+            } else {
+                val matchingCellarRow = inventoryDao.getBottleInCellar(event.definitionId, event.vintage)
+                if (matchingCellarRow != null) {
+                    inventoryDao.updateBottle(
+                        matchingCellarRow.copy(quantity = matchingCellarRow.quantity + event.quantity)
+                    )
+                } else {
+                    // Restore this exact event's one-bottle contribution if its original cellar row
+                    // was explicitly removed after the consumption.
+                    inventoryDao.insertBottle(
+                        WineBottle(
+                            bottleId = event.bottleId ?: 0L,
+                            definitionId = event.definitionId,
+                            vintage = event.vintage,
+                            quantity = event.quantity,
+                            price = event.price,
+                            qtyType = "Bottle",
+                            location = null,
+                            status = BottleStatus.IN_CELLAR
+                        )
+                    )
+                }
+            }
+            event.noteId?.let { tastingNoteDao.deleteNoteById(it) }
+            database.consumptionEventDao().deleteEventById(eventId)
         }
     }
 
@@ -197,7 +280,7 @@ class WineRepository(
         inventoryDao.deleteBottle(bottleId)
     }
 
-    fun clearAllTables() {
+    suspend fun clearAllTables() {
         database.clearAllTables()
     }
 }

@@ -9,5 +9,7 @@ data class CellarFilterState(
     val types: Set<String> = emptySet(),
     val country: String? = null,
     val region: String? = null,
-    val subregion: String? = null
+    val subregion: String? = null,
+    val drinkingWindowFilter: String = "Any",
+    val drinkingWindowRange: ClosedFloatingPointRange<Float>? = null
 )

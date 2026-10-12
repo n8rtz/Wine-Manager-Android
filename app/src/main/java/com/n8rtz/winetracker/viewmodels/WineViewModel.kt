@@ -10,11 +10,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.importer.DataImporter
 import com.n8rtz.winetracker.data.importer.JsonExporter
+import com.n8rtz.winetracker.data.importer.CsvImportHelper
+import com.n8rtz.winetracker.data.importer.LegacyCsvImportType
 import com.n8rtz.winetracker.data.local.MIGRATION_5_6
 import com.n8rtz.winetracker.data.local.MIGRATION_6_7
 import com.n8rtz.winetracker.scanner.ScannedWine
 import com.n8rtz.winetracker.scanner.ScannerManager
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.data.local.ConsumptionEventWithDefinition
+import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDefinition
@@ -48,7 +52,7 @@ import com.n8rtz.winetracker.ui.screens.RankingsFilterState
 sealed class RestoreImportState {
     object Idle : RestoreImportState()
     object Loading : RestoreImportState()
-    object Success : RestoreImportState()
+    data class Success(val message: String, val restoredBackup: Boolean = false) : RestoreImportState()
     data class Error(val message: String) : RestoreImportState()
 }
 
@@ -62,6 +66,13 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
 
     private val _filterState = MutableStateFlow(CellarFilterState())
     val filterState: StateFlow<CellarFilterState> = _filterState.asStateFlow()
+    private val _cellarResetKey = MutableStateFlow(0)
+    val cellarResetKey: StateFlow<Int> = _cellarResetKey.asStateFlow()
+
+    fun resetCellarScreen() {
+        _filterState.value = CellarFilterState()
+        _cellarResetKey.value += 1
+    }
 
     fun updateFilterState(newState: CellarFilterState) {
         _filterState.value = newState
@@ -76,7 +87,11 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     val activeInventory: Flow<List<WineBottleWithDefinition>> = repository.activeInventory
     val archivedInventory: Flow<List<WineBottleWithDefinition>> = repository.archivedInventory
     val tastingHistory: Flow<List<TastingNoteWithDefinition>> = repository.tastingHistory
+    val consumptionHistory: Flow<List<ConsumptionEventWithDefinition>> = repository.consumptionHistory
     val allDefinitions: Flow<List<WineDefinition>> = repository.allDefinitions
+
+    fun tastingNotesForWine(definitionId: Long, vintage: String): Flow<List<TastingNote>> =
+        repository.getTastingNotesForWine(definitionId, vintage)
     
     private fun String.normalizeLocation(): String {
         return this.trim()
@@ -129,8 +144,15 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         importState.value = RestoreImportState.Idle
     }
 
-    // Existing methods...
-    fun resetDatabase() { viewModelScope.launch(Dispatchers.IO) { repository.clearAllTables() } }
+    fun resetDatabase(onComplete: () -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearAllTables()
+            withContext(Dispatchers.Main) {
+                resetCellarScreen()
+                onComplete()
+            }
+        }
+    }
     fun deleteWine(bottleId: Long) { viewModelScope.launch { repository.deleteWine(bottleId) } }
     
     fun importJsonFile(uri: Uri) {
@@ -139,10 +161,35 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
             try {
                 val importer = DataImporter(getApplication(), repository.database)
                 importer.standardImport(uri)
-                importState.value = RestoreImportState.Success
+                resetCellarScreen()
+                importState.value = RestoreImportState.Success(
+                    message = "Backup restored. Existing app data was replaced.",
+                    restoredBackup = true
+                )
             } catch (e: Exception) {
                 Log.e("WineViewModel", "JSON import failed", e)
                 importState.value = RestoreImportState.Error(e.message ?: "Import failed")
+            }
+        }
+    }
+
+    fun importLegacyCsv(uri: Uri, type: LegacyCsvImportType) {
+        viewModelScope.launch(Dispatchers.IO) {
+            importState.value = RestoreImportState.Loading
+            try {
+                val result = when (type) {
+                    LegacyCsvImportType.TASTING_NOTES ->
+                        CsvImportHelper.importTastingNotes(getApplication(), repository.database, uri)
+                    LegacyCsvImportType.CONSUMPTION_HISTORY ->
+                        CsvImportHelper.importConsumptionHistory(getApplication(), repository.database, uri)
+                }
+                importState.value = RestoreImportState.Success(
+                    "Imported ${result.imported}; ${result.alreadyPresent} already present; " +
+                        "${result.skippedInvalid} incomplete row(s) skipped."
+                )
+            } catch (e: Exception) {
+                Log.e("WineViewModel", "Legacy CSV import failed", e)
+                importState.value = RestoreImportState.Error(e.message ?: "CSV import failed")
             }
         }
     }
@@ -160,14 +207,48 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
             }
         }
     }
-    fun addWine(maker: String, name: String, vintage: String, type: String, country: String, region: String?, subregion: String?, quantity: Int, price: Double?) { viewModelScope.launch { repository.addWine(maker, name, vintage, type, country, region, subregion, quantity, price) } }
+    fun addWine(
+        maker: String,
+        name: String,
+        vintage: String,
+        type: String,
+        country: String,
+        region: String?,
+        subregion: String?,
+        quantity: Int,
+        price: Double?,
+        drinkingWindowStart: Int? = null,
+        drinkingWindowEnd: Int? = null
+    ) {
+        viewModelScope.launch {
+            repository.addWine(
+                maker, name, vintage, type, country, region, subregion, quantity, price,
+                drinkingWindowStart, drinkingWindowEnd
+            )
+        }
+    }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }
     fun updateWine(definition: WineDefinition, bottle: WineBottle) { viewModelScope.launch { repository.updateWine(definition, bottle) } }
     
     // Removed direct inventoryDao accessor to enforce Repository pattern
 
-    fun consumeBottle(bottleId: Long, rating: Double? = null, notes: String? = null, rebuy: Boolean = false) { viewModelScope.launch { repository.consumeBottle(bottleId, rating, notes, rebuy) } }
-    fun undoConsumeBottle(bottleId: Long, removeLastNote: Boolean = true) { viewModelScope.launch { repository.undoConsumeBottle(bottleId, removeLastNote) } }
+    fun consumeBottle(
+        bottleId: Long,
+        rating: Double?,
+        notes: String?,
+        rebuy: Boolean,
+        consumptionDate: Long,
+        onComplete: (Long) -> Unit
+    ) {
+        viewModelScope.launch {
+            val eventId = repository.consumeBottle(bottleId, rating, notes, rebuy, consumptionDate)
+            if (eventId > 0L) onComplete(eventId)
+        }
+    }
+
+    fun undoConsumeBottle(eventId: Long) {
+        viewModelScope.launch(Dispatchers.IO) { repository.undoConsumeBottle(eventId) }
+    }
 }
 
 

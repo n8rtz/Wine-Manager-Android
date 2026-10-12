@@ -6,6 +6,8 @@ import com.n8rtz.winetracker.data.repository.WineRepository
 
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.TastingNote
+import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.ui.screens.TastingNotesFilterState
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,6 +19,34 @@ import android.util.Log
 class TastingNoteViewModel(application: Application, private val repository: WineRepository) : AndroidViewModel(application) {
 
     val tastingNotes = repository.tastingHistory
+    val allDefinitions = repository.allDefinitions
+
+    suspend fun getTastingNoteById(noteId: Long): TastingNote? = repository.getTastingNoteById(noteId)
+
+    fun saveTastingNote(note: TastingNote, onSaved: (Long) -> Unit) =
+        saveTastingNote(note, linkedEventId = null, onSaved = onSaved)
+
+    fun saveTastingNote(note: TastingNote, linkedEventId: Long?, onSaved: (Long) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val savedId = repository.saveTastingNote(note, linkedEventId)
+                if (savedId > 0L) onSaved(savedId)
+            } catch (error: Exception) {
+                Log.e("TastingNoteViewModel", "Unable to save tasting note", error)
+            }
+        }
+    }
+
+    fun deleteTastingNote(noteId: Long, onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.deleteTastingNote(noteId)
+                onDeleted()
+            } catch (error: Exception) {
+                Log.e("TastingNoteViewModel", "Unable to delete tasting note", error)
+            }
+        }
+    }
 
     private val _filterState = MutableStateFlow(TastingNotesFilterState())
     val filterState: StateFlow<TastingNotesFilterState> = _filterState.asStateFlow()
@@ -74,11 +104,13 @@ class TastingNoteViewModel(application: Application, private val repository: Win
             
             history.forEach { item ->
                 val defId = item.note.definitionId
-                val vintage = item.note.vintage
+                val vintage = displayVintage(item.note.vintage)
                 val key = Pair(defId, vintage)
                 if (priceMap.containsKey(key)) return@forEach
 
-                val specificBottles = allBottles.filter { it.definitionId == defId && it.vintage == vintage }
+                val specificBottles = allBottles.filter {
+                    it.definitionId == defId && displayVintage(it.vintage) == vintage
+                }.sortedByDescending { it.vintage == vintage }
                 var price = specificBottles.firstOrNull { it.status == BottleStatus.IN_CELLAR && (it.price ?: 0.0) > 0.0 }?.price
                 if (price == null || price <= 0.0) {
                     price = specificBottles.firstOrNull { (it.price ?: 0.0) > 0.0 }?.price

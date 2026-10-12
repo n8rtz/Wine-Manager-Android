@@ -35,16 +35,22 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
     val cellarLocationData by viewModel.cellarLocationData.collectAsState()
+    val cellarResetKey by viewModel.cellarResetKey.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
 
+    LaunchedEffect(cellarResetKey) {
+        searchQuery = ""
+        showFilterSheet = false
+    }
+
     val ratingsMap = remember(tastingHistory) {
         tastingHistory
             .filter { it.note.rating > 0 }
-            .groupBy { it.note.definitionId to it.note.vintage }
+            .groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .mapValues { (_, notes) ->
                 val ratings = notes.map { it.note.rating }
                 val min = ratings.minOrNull()?.toInt() ?: 0
@@ -55,7 +61,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
 
     val notesMap = remember(tastingHistory) {
         tastingHistory
-            .groupBy { it.note.definitionId to it.note.vintage }
+            .groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .mapValues { (_, notes) ->
                 notes.sortedByDescending { it.note.dateTasted }
             }
@@ -84,12 +90,37 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                 price.toFloat() in range
             } ?: true
 
-            matchesSearch && matchesType && matchesCountry && matchesRegion && matchesSubregion && matchesPrice
+            val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+            val windowStart = it.definition.drinkingWindowStart
+            val windowEnd = it.definition.drinkingWindowEnd
+            val hasWindow = windowStart != null || windowEnd != null
+            val matchesDrinkingWindow = when (filterState.drinkingWindowFilter) {
+                "Ready Now" -> hasWindow && (windowStart == null || currentYear >= windowStart) &&
+                        (windowEnd == null || currentYear <= windowEnd)
+                "Too Early" -> windowStart != null && currentYear < windowStart
+                "Past Peak" -> windowEnd != null && currentYear > windowEnd
+                else -> true
+            }
+            val matchesDrinkingWindowRange = filterState.drinkingWindowRange?.let { range ->
+                hasWindow && (windowStart ?: Int.MIN_VALUE) <= range.endInclusive.toInt() &&
+                        (windowEnd ?: Int.MAX_VALUE) >= range.start.toInt()
+            } ?: true
+            val vintageYear = it.bottle.vintage.toIntOrNull()
+            val matchesVintage = filterState.vintageRange?.let { range ->
+                vintageYear != null && vintageYear.toFloat() in range
+            } ?: true
+
+            matchesSearch && matchesType && matchesCountry && matchesRegion && matchesSubregion &&
+                    matchesPrice && matchesDrinkingWindow && matchesDrinkingWindowRange && matchesVintage
         }.sortedWith { a, b ->
             when (filterState.sortOrder) {
                 "Newest" -> (b.bottle.dateAdded ?: "").compareTo(a.bottle.dateAdded ?: "")
                 "Price (High)" -> (b.bottle.price ?: 0.0).compareTo(a.bottle.price ?: 0.0)
                 "Price (Low)" -> (a.bottle.price ?: 0.0).compareTo(b.bottle.price ?: 0.0)
+                "Drinking Window (Soonest)" -> (a.definition.drinkingWindowStart ?: Int.MAX_VALUE)
+                    .compareTo(b.definition.drinkingWindowStart ?: Int.MAX_VALUE)
+                "Drinking Window (Furthest)" -> (b.definition.drinkingWindowEnd ?: Int.MIN_VALUE)
+                    .compareTo(a.definition.drinkingWindowEnd ?: Int.MIN_VALUE)
                 else -> 0
             }
         }
@@ -138,9 +169,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                 onClick = { showFilterSheet = true },
                 colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                val isFilterActive = filterState.types.isNotEmpty() || 
-                        filterState.country != null || 
-                        filterState.priceRange != null
+                val isFilterActive = filterState.types.isNotEmpty() ||
+                        filterState.country != null || filterState.region != null || filterState.subregion != null ||
+                        filterState.priceRange != null || filterState.vintageRange != null ||
+                        filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
                 Icon(
                     Icons.Default.Tune, 
                     "Filter & Sort",
@@ -163,15 +195,13 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(filteredInventory, key = { it.bottle.bottleId }) { item ->
-                val ratingStr = ratingsMap[item.definition.definitionId to item.bottle.vintage]
-                val itemNotes = notesMap[item.definition.definitionId to item.bottle.vintage] ?: emptyList()
+                val displayVintage = com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)
+                val ratingStr = ratingsMap[item.definition.definitionId to displayVintage]
+                val itemNotes = notesMap[item.definition.definitionId to displayVintage] ?: emptyList()
                 val formattedAddedDate = formattedDatesMap[item.bottle.bottleId]
 
                 WineCard(
-                    title = run {
-                        val vintage = item.bottle.vintage.takeIf { it.isNotBlank() && it.lowercase() != "null" } ?: "NV"
-                        "${item.definition.maker} - ${item.definition.name} ($vintage)"
-                    },
+                    title = "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)})",
                     subtitle = run {
                         val validSub = item.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
                         val validRegion = item.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
@@ -182,6 +212,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                     metadata = "Qty: ${item.bottle.quantity}",
                     imageUrl = item.definition.imageUrl,
                     rating = ratingStr,
+                    expansionResetKey = cellarResetKey,
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (formattedAddedDate != null) {
@@ -241,7 +272,8 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             onDismiss = { showFilterSheet = false },
             onApply = { newState ->
                 viewModel.updateFilterState(newState)
-            }
+            },
+            onClearAll = { searchQuery = "" }
         )
     }
 }
@@ -253,7 +285,8 @@ fun FilterSheet(
     locationData: Map<String, Map<String, List<String>>>,
     maxPrice: Float,
     onDismiss: () -> Unit,
-    onApply: (CellarFilterState) -> Unit
+    onApply: (CellarFilterState) -> Unit,
+    onClearAll: () -> Unit = {}
 ) {
     var state by remember { mutableStateOf(currentState) }
     val effectiveMaxPrice = maxPrice.coerceAtLeast(100f)
@@ -263,6 +296,29 @@ fun FilterSheet(
     }
     var priceMaxText by remember {
         mutableStateOf(state.priceRange?.endInclusive?.toInt()?.toString() ?: "")
+    }
+    var windowMinText by remember {
+        mutableStateOf(currentState.drinkingWindowRange?.start?.toInt()?.toString() ?: "")
+    }
+    var windowMaxText by remember {
+        mutableStateOf(currentState.drinkingWindowRange?.endInclusive?.toInt()?.toString() ?: "")
+    }
+    val windowRangeBounds = 1900f..(Calendar.getInstance().get(Calendar.YEAR) + 40).toFloat()
+
+    fun applyWindowRange(minText: String, maxText: String) {
+        if (minText.isBlank() && maxText.isBlank()) {
+            val newState = state.copy(drinkingWindowRange = null)
+            state = newState
+            onApply(newState)
+            return
+        }
+        val min = minText.toFloatOrNull() ?: windowRangeBounds.start
+        val max = maxText.toFloatOrNull() ?: windowRangeBounds.endInclusive
+        if (min <= max) {
+            val newState = state.copy(drinkingWindowRange = min.coerceIn(windowRangeBounds)..max.coerceIn(windowRangeBounds))
+            state = newState
+            onApply(newState)
+        }
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -291,7 +347,10 @@ fun FilterSheet(
                                 state = cleared
                                 priceMinText = ""
                                 priceMaxText = ""
+                                windowMinText = ""
+                                windowMaxText = ""
                                 onApply(cleared)
+                                onClearAll()
                             }
                         ) {
                             Text("Clear All")
@@ -310,7 +369,10 @@ fun FilterSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("Newest", "Price (High)", "Price (Low)").forEach { option ->
+                    listOf(
+                        "Newest", "Price (High)", "Price (Low)",
+                        "Drinking Window (Soonest)", "Drinking Window (Furthest)"
+                    ).forEach { option ->
                         FilterChip(
                             selected = state.sortOrder == option,
                             onClick = { 
@@ -355,6 +417,75 @@ fun FilterSheet(
                             )
                         )
                     }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Text("Drinking Window", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Any", "Ready Now", "Too Early", "Past Peak").forEach { option ->
+                        FilterChip(
+                            selected = state.drinkingWindowFilter == option,
+                            onClick = {
+                                val newState = state.copy(drinkingWindowFilter = option)
+                                state = newState
+                                onApply(newState)
+                            },
+                            label = { Text(option) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFF722F37),
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+                Text("Drinking Window Years", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                val selectedWindowRange = state.drinkingWindowRange ?: windowRangeBounds
+                RangeSlider(
+                    value = selectedWindowRange.start.coerceIn(windowRangeBounds)..selectedWindowRange.endInclusive.coerceIn(windowRangeBounds),
+                    onValueChange = { range ->
+                        val newState = state.copy(drinkingWindowRange = range)
+                        state = newState
+                        windowMinText = range.start.toInt().toString()
+                        windowMaxText = range.endInclusive.toInt().toString()
+                        onApply(newState)
+                    },
+                    valueRange = windowRangeBounds,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color(0xFF722F37),
+                        activeTrackColor = Color(0xFF722F37)
+                    )
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = windowMinText,
+                        onValueChange = { text ->
+                            windowMinText = text.filter { it.isDigit() }.take(4)
+                            applyWindowRange(windowMinText, windowMaxText)
+                        },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Start year") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = windowMaxText,
+                        onValueChange = { text ->
+                            windowMaxText = text.filter { it.isDigit() }.take(4)
+                            applyWindowRange(windowMinText, windowMaxText)
+                        },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("End year") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))

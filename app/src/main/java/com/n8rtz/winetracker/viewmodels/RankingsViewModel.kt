@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.local.BottleStatus
+import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.RankingsFilterState
 import kotlinx.coroutines.flow.*
@@ -75,11 +76,13 @@ class RankingsViewModel(application: Application, val repository: WineRepository
             
             history.forEach { item ->
                 val defId = item.note.definitionId
-                val vintage = item.note.vintage
+                val vintage = displayVintage(item.note.vintage)
                 val key = Pair(defId, vintage)
                 if (priceMap.containsKey(key)) return@forEach
 
-                val specificBottles = allBottles.filter { it.definitionId == defId && it.vintage == vintage }
+                val specificBottles = allBottles.filter {
+                    it.definitionId == defId && displayVintage(it.vintage) == vintage
+                }.sortedByDescending { it.vintage == vintage }
                 var price = specificBottles.firstOrNull { it.status == BottleStatus.IN_CELLAR && (it.price ?: 0.0) > 0.0 }?.price
                 if (price == null || price <= 0.0) {
                     price = specificBottles.firstOrNull { (it.price ?: 0.0) > 0.0 }?.price
@@ -116,7 +119,7 @@ class RankingsViewModel(application: Application, val repository: WineRepository
                 val matchesSearch = query.isBlank() ||
                         item.definition.maker.contains(query, ignoreCase = true) ||
                         item.definition.name.contains(query, ignoreCase = true) ||
-                        item.note.vintage.contains(query)
+                        displayVintage(item.note.vintage).contains(query, ignoreCase = true)
 
                 val matchesType = filter.types.isEmpty() ||
                         item.definition.type in filter.types
@@ -125,7 +128,7 @@ class RankingsViewModel(application: Application, val repository: WineRepository
                     item.note.rating.toFloat() in range
                 } ?: true
 
-                val price = prices[Pair(item.note.definitionId, item.note.vintage)]
+                val price = prices[Pair(item.note.definitionId, displayVintage(item.note.vintage))]
                 val matchesPrice = filter.priceRange?.let { range ->
                     price != null && price.toFloat() in range
                 } ?: true
@@ -146,8 +149,8 @@ class RankingsViewModel(application: Application, val repository: WineRepository
                         matchesCountry && matchesRegion && matchesSubregion
             }
             .sortedWith { a, b ->
-                val priceA = prices[Pair(a.note.definitionId, a.note.vintage)] ?: 0.0
-                val priceB = prices[Pair(b.note.definitionId, b.note.vintage)] ?: 0.0
+                val priceA = prices[Pair(a.note.definitionId, displayVintage(a.note.vintage))] ?: 0.0
+                val priceB = prices[Pair(b.note.definitionId, displayVintage(b.note.vintage))] ?: 0.0
                 when (filter.sortOrder) {
                     "Rating (High)" -> b.note.rating.compareTo(a.note.rating)
                     "Rating (Low)" -> a.note.rating.compareTo(b.note.rating)
@@ -157,7 +160,7 @@ class RankingsViewModel(application: Application, val repository: WineRepository
                 }
             }
             .map { item ->
-                val price = prices[Pair(item.note.definitionId, item.note.vintage)]
+                val price = prices[Pair(item.note.definitionId, displayVintage(item.note.vintage))]
                 val priceStr = if (price != null && price > 0.0) "$${"%.2f".format(price)}" else ""
                 val dateStr = dateFormat.format(Date(item.note.dateTasted))
                 RankedWineDisplay(item, priceStr, dateStr)

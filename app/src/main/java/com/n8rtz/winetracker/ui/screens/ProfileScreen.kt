@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,23 +38,35 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showResetDialog by remember { mutableStateOf(false) }
+    var showRestoreConfirmation by remember { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
     
     val bordeauxRed = Color(0xFF722F37)
 
     val importJsonLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        uri?.let { selectedUri ->
-            viewModel.importJsonFile(selectedUri)
+        uri?.let {
+            pendingRestoreUri = it
+            showRestoreConfirmation = true
         }
     }
+
+    val importLegacyNotesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? -> uri?.let { viewModel.importLegacyCsv(it, com.n8rtz.winetracker.data.importer.LegacyCsvImportType.TASTING_NOTES) } }
+
+    val importLegacyHistoryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? -> uri?.let { viewModel.importLegacyCsv(it, com.n8rtz.winetracker.data.importer.LegacyCsvImportType.CONSUMPTION_HISTORY) } }
 
     LaunchedEffect(importState) {
         when (importState) {
             is RestoreImportState.Success -> {
-                snackbarHostState.showSnackbar("Database restored successfully.")
+                val success = importState as RestoreImportState.Success
+                snackbarHostState.showSnackbar(success.message)
                 viewModel.resetImportState()
-                onImportComplete()
+                if (success.restoredBackup) onImportComplete()
             }
             is RestoreImportState.Error -> {
                 snackbarHostState.showSnackbar("Error: ${(importState as RestoreImportState.Error).message}")
@@ -100,8 +113,32 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            importJsonLauncher.launch("*/*")
+                            importJsonLauncher.launch(arrayOf("application/json", "text/*"))
                         }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Import Legacy Tasting Notes (CSV)") },
+                    supportingContent = { Text("Adds dated notes; unrated rows are kept, and rows without a date or exact wine match are skipped.") },
+                    leadingContent = {
+                        Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        importLegacyNotesLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel"))
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                ListItem(
+                    headlineContent = { Text("Import Legacy History Log (CSV)") },
+                    supportingContent = { Text("Adds dated consumption events; rows without a usable date or wine are skipped.") },
+                    leadingContent = {
+                        Icon(Icons.Filled.History, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        importLegacyHistoryLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel"))
+                    }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -179,6 +216,32 @@ fun ProfileScreen(
         }
     }
 
+    if (showRestoreConfirmation) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestoreConfirmation = false
+                pendingRestoreUri = null
+            },
+            title = { Text("Replace app data?") },
+            text = {
+                Text("Restoring this JSON backup replaces all current wines, cellar inventory, tasting notes, ratings, and consumption history. This cannot be undone. Continue only if this is the backup you want to restore.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRestoreUri?.let(viewModel::importJsonFile)
+                    showRestoreConfirmation = false
+                    pendingRestoreUri = null
+                }) { Text("Replace and restore", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showRestoreConfirmation = false
+                    pendingRestoreUri = null
+                }) { Text("Cancel") }
+            }
+        )
+    }
+
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -187,9 +250,8 @@ fun ProfileScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        coroutineScope.launch {
-                            viewModel.resetDatabase()
-                            snackbarHostState.showSnackbar("Database cleared.")
+                        viewModel.resetDatabase {
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Database cleared.") }
                         }
                         showResetDialog = false
                     }
