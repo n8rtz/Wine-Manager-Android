@@ -164,6 +164,7 @@ data class TastingNote(
     val notes: String?,
     val rebuy: Boolean = false,
     val recommendedBy: String? = null,
+    val reviewerRating: Int? = null,
     val initialRating: Int? = null,
     val bottleId: Long? = null,
     val sensoryData: SensoryData? = null,
@@ -221,7 +222,7 @@ data class ConsumptionEvent(
 
 @Database(
     entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class, ConsumptionEvent::class],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -501,6 +502,12 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
             FROM wine_bottles b
             WHERE b.status = 'ARCHIVED'
         """)
+    }
+}
+
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasting_notes ADD COLUMN reviewerRating INTEGER")
     }
 }
 

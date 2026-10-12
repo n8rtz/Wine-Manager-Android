@@ -1,6 +1,7 @@
 package com.n8rtz.winetracker.viewmodels
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import com.n8rtz.winetracker.data.repository.WineRepository
 
@@ -12,14 +13,69 @@ import com.n8rtz.winetracker.ui.screens.TastingNotesFilterState
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import android.util.Log
+import java.util.Locale
 
-// TastingNoteViewModel is now a lean wrapper providing read-only access to tasting notes.
-// It no longer manages database instances or import operations.
-// It receives a shared repository instance injected from the MainActivity factory.
+// Exposes tasting-note, wine-vintage, and reviewer-setting state while delegating note
+// persistence to the shared repository provided by MainActivity.
 class TastingNoteViewModel(application: Application, private val repository: WineRepository) : AndroidViewModel(application) {
 
     val tastingNotes = repository.tastingHistory
     val allDefinitions = repository.allDefinitions
+
+    val wineVintages: StateFlow<Map<Long, List<String>>> = combine(
+        repository.activeInventory,
+        repository.archivedInventory,
+        repository.tastingHistory,
+        repository.consumptionHistory
+    ) { active, archived, notes, events ->
+        val vintagesByDefinition = mutableMapOf<Long, MutableSet<String>>()
+        fun addVintage(definitionId: Long, vintage: String) {
+            vintagesByDefinition.getOrPut(definitionId) { linkedSetOf() }
+                .add(displayVintage(vintage))
+        }
+
+        active.forEach { addVintage(it.bottle.definitionId, it.bottle.vintage) }
+        archived.forEach { addVintage(it.bottle.definitionId, it.bottle.vintage) }
+        notes.forEach { addVintage(it.note.definitionId, it.note.vintage) }
+        events.forEach { addVintage(it.event.definitionId, it.event.vintage) }
+
+        vintagesByDefinition.mapValues { (_, vintages) ->
+            vintages.sortedWith(
+                compareByDescending<String> { it.toIntOrNull() ?: Int.MIN_VALUE }
+                    .thenBy { it }
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyMap()
+    )
+
+    private val reviewerPreferences = application.getSharedPreferences(
+        REVIEWER_PREFERENCES_FILE,
+        Context.MODE_PRIVATE
+    )
+    private val _reviewerNames = MutableStateFlow(loadReviewerNames())
+    val reviewerNames: StateFlow<List<String>> = _reviewerNames.asStateFlow()
+
+    fun updateReviewerNames(names: List<String>) {
+        val cleanedNames = normalizeReviewerNames(names)
+        reviewerPreferences.edit()
+            .putStringSet(REVIEWER_NAMES_KEY, cleanedNames.toSet())
+            .apply()
+        _reviewerNames.value = cleanedNames
+    }
+
+    private fun loadReviewerNames(): List<String> {
+        val savedNames = reviewerPreferences.getStringSet(REVIEWER_NAMES_KEY, null)
+        return normalizeReviewerNames(savedNames?.toList() ?: DEFAULT_REVIEWER_NAMES)
+    }
+
+    private fun normalizeReviewerNames(names: Iterable<String>): List<String> = names
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinctBy { it.lowercase(Locale.ROOT) }
+        .sortedBy { it.lowercase(Locale.ROOT) }
 
     suspend fun getTastingNoteById(noteId: Long): TastingNote? = repository.getTastingNoteById(noteId)
 
@@ -130,4 +186,18 @@ class TastingNoteViewModel(application: Application, private val repository: Win
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyMap()
         )
+
+    private companion object {
+        const val REVIEWER_PREFERENCES_FILE = "wine_manager_settings"
+        const val REVIEWER_NAMES_KEY = "wine_reviewer_names"
+        val DEFAULT_REVIEWER_NAMES = listOf(
+            "Decanter",
+            "James Suckling",
+            "Jancis Robinson",
+            "Vinous",
+            "Wine Advocate",
+            "Wine Enthusiast",
+            "Wine Spectator"
+        )
+    }
 }

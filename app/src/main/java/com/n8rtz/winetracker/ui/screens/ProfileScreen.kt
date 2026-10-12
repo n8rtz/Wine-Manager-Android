@@ -5,6 +5,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteForever
@@ -12,15 +14,16 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.viewmodels.RestoreImportState
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
+import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import kotlinx.coroutines.launch
 
@@ -29,6 +32,7 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(
     viewModel: WineViewModel,
     scannerViewModel: ScannerViewModel,
+    tastingNoteViewModel: TastingNoteViewModel,
     onAppInfoClick: () -> Unit = {},
     onImportComplete: () -> Unit
 ) {
@@ -36,12 +40,16 @@ fun ProfileScreen(
     
     val imageImportStatus = scannerViewModel.imageImportStatus
     val imageImportProgress = scannerViewModel.imageImportProgress
+    val reviewerNames by tastingNoteViewModel.reviewerNames.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var showResetDialog by remember { mutableStateOf(false) }
     var showRestoreConfirmation by remember { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var showReviewerSettings by remember { mutableStateOf(false) }
+    var reviewerDraft by remember { mutableStateOf(emptyList<String>()) }
+    var newReviewer by remember { mutableStateOf("") }
     
     val bordeauxRed = Color(0xFF722F37)
 
@@ -93,6 +101,7 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
                 
@@ -211,6 +220,21 @@ fun ProfileScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 ListItem(
+                    headlineContent = { Text("Wine reviewers") },
+                    supportingContent = {
+                        Text("${reviewerNames.size} choices for the tasting-note reviewer dropdown")
+                    },
+                    leadingContent = {
+                        Icon(Icons.Filled.Star, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        reviewerDraft = reviewerNames
+                        newReviewer = ""
+                        showReviewerSettings = true
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                ListItem(
                     headlineContent = { Text("App Information") },
                     supportingContent = { Text("App version, database version, and build branch") },
                     leadingContent = {
@@ -225,6 +249,69 @@ fun ProfileScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
+    }
+
+    if (showReviewerSettings) {
+        AlertDialog(
+            onDismissRequest = { showReviewerSettings = false },
+            title = { Text("Wine reviewers") },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Edit the choices shown in the Recommended by dropdown.")
+                    reviewerDraft.forEachIndexed { index, reviewer ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(
+                                value = reviewer,
+                                onValueChange = { updatedName ->
+                                    reviewerDraft = reviewerDraft.toMutableList().also {
+                                        it[index] = updatedName
+                                    }
+                                },
+                                label = { Text("Reviewer ${index + 1}") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            IconButton(onClick = {
+                                reviewerDraft = reviewerDraft.filterIndexed { itemIndex, _ -> itemIndex != index }
+                            }) {
+                                Icon(Icons.Filled.DeleteForever, contentDescription = "Remove reviewer")
+                            }
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newReviewer,
+                            onValueChange = { newReviewer = it },
+                            label = { Text("Add reviewer") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        TextButton(
+                            enabled = newReviewer.isNotBlank(),
+                            onClick = {
+                                val name = newReviewer.trim()
+                                if (name.isNotEmpty()) reviewerDraft = reviewerDraft + name
+                                newReviewer = ""
+                            }
+                        ) {
+                            Text("Add")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    tastingNoteViewModel.updateReviewerNames(reviewerDraft)
+                    showReviewerSettings = false
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReviewerSettings = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (showRestoreConfirmation) {

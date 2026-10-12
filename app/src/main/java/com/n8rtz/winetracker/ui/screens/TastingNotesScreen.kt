@@ -256,6 +256,15 @@ fun CompactNoteItem(
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (item.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                         )
+                        if (!item.note.recommendedBy.isNullOrBlank()) {
+                            Text(
+                                "Recommended by ${item.note.recommendedBy}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        item.note.reviewerRating?.let { reviewerRating ->
+                            Text("Reviewer rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
