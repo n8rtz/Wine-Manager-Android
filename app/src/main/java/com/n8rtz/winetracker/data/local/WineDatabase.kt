@@ -54,7 +54,42 @@ class Converters {
 
     @TypeConverter
     fun toSensoryData(value: String?): SensoryData? = value?.takeIf { it.isNotBlank() }
-        ?.let { Gson().fromJson(it, SensoryData::class.java) }
+        ?.let { json ->
+            runCatching {
+                Gson().fromJson(json, SensoryData::class.java)
+            }.getOrElse {
+                // If stored json belongs to the float-based sensory model, parse gracefully
+                runCatching {
+                    val obj = org.json.JSONObject(json)
+                    fun getIntFromNumber(key: String, default: Int): Int {
+                        if (!obj.has(key)) return default
+                        val doubleVal = obj.optDouble(key, default.toDouble())
+                        return if (doubleVal <= 1.0) (doubleVal * 4.0).toInt().coerceIn(0, 4) else doubleVal.toInt()
+                    }
+                    val flawsList = mutableListOf<String>()
+                    val flawsArr = obj.optJSONArray("flaws")
+                    if (flawsArr != null) {
+                        for (i in 0 until flawsArr.length()) {
+                            flawsList.add(flawsArr.optString(i))
+                        }
+                    }
+                    SensoryData(
+                        sweetness = getIntFromNumber("sweetness", 1),
+                        aroma = getIntFromNumber("aroma", getIntFromNumber("noseIntensity", 2)),
+                        acidity = getIntFromNumber("acidity", 2),
+                        tannins = getIntFromNumber("tannins", getIntFromNumber("tannin", 2)),
+                        body = getIntFromNumber("body", 2),
+                        balance = getIntFromNumber("balance", 2),
+                        intensity = getIntFromNumber("intensity", 2),
+                        complexity = getIntFromNumber("complexity", getIntFromNumber("noseComplexity", 1)),
+                        finish = getIntFromNumber("finish", getIntFromNumber("finishLength", 2)),
+                        quality = getIntFromNumber("quality", 2),
+                        overallScore = obj.optInt("overallScore", 75),
+                        flaws = flawsList
+                    )
+                }.getOrNull()
+            }
+        }
 }
 
 // 1. THE WINE CATALOG (Static metadata)
@@ -186,7 +221,7 @@ data class ConsumptionEvent(
 
 @Database(
     entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class, ConsumptionEvent::class],
-    version = 17,
+    version = 18,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -419,9 +454,14 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
 
 val MIGRATION_16_17 = object : Migration(16, 17) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasting_notes ADD COLUMN sensoryData TEXT DEFAULT NULL")
+    }
+}
+
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE wine_definitions ADD COLUMN drinkingWindowStart INTEGER")
         db.execSQL("ALTER TABLE wine_definitions ADD COLUMN drinkingWindowEnd INTEGER")
-        db.execSQL("ALTER TABLE tasting_notes ADD COLUMN sensoryData TEXT")
         db.execSQL("ALTER TABLE tasting_notes ADD COLUMN importKey TEXT")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tasting_notes_importKey ON tasting_notes(importKey)")
         db.execSQL("""
