@@ -57,11 +57,10 @@ fun FinishCard(
             Text("Finish Length", style = MaterialTheme.typography.labelMedium)
             Slider(
                 value = sensoryData.finishLength ?: 0.5f,
-                onValueChange = { onDataChange(sensoryData.copy(finishLength = it)) },
+                onValueChange = { if (enabled) onDataChange(sensoryData.copy(finishLength = it)) },
                 valueRange = 0f..1f,
                 steps = 3, // Short, Med-, Med, Med+, Long
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled
+                modifier = Modifier.fillMaxWidth()
             )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Short", style = MaterialTheme.typography.bodySmall)

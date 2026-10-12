@@ -92,11 +92,10 @@ fun StructuralSlider(
         }
         Slider(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { if (enabled) onValueChange(it) },
             modifier = Modifier.fillMaxWidth(),
             valueRange = 0f..1f,
-            steps = 3, // 5 stops total
-            enabled = enabled
+            steps = 3 // 5 stops total
         )
         Row(modifier = Modifier.fillMaxWidth().offset(y = (-8).dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(leftLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

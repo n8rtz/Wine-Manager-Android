@@ -53,15 +53,16 @@ fun FlawsCard(
                             Checkbox(
                                 checked = sensoryData.flaws.contains(flaw),
                                 onCheckedChange = { checked ->
-                                    val newFlaws = sensoryData.flaws.toMutableList()
-                                    if (checked) {
-                                        newFlaws.add(flaw)
-                                    } else {
-                                        newFlaws.remove(flaw)
+                                    if (enabled) {
+                                        val newFlaws = sensoryData.flaws.toMutableList()
+                                        if (checked) {
+                                            newFlaws.add(flaw)
+                                        } else {
+                                            newFlaws.remove(flaw)
+                                        }
+                                        onDataChange(sensoryData.copy(flaws = newFlaws))
                                     }
-                                    onDataChange(sensoryData.copy(flaws = newFlaws))
-                                },
-                                enabled = enabled
+                                }
                             )
                             Text(text = flaw, style = MaterialTheme.typography.bodyMedium)
                         }

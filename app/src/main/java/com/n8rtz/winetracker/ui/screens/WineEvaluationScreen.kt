@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WineBar
@@ -57,6 +58,7 @@ fun WineEvaluationScreen(
     val scrollState = rememberScrollState()
     var showAromaWheel by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(noteId == null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
         if (noteId != null) {
@@ -263,6 +265,28 @@ fun WineEvaluationScreen(
                 FinishCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, enabled = isEditing)
                 FlawsCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, enabled = isEditing)
                 OverallCard(sensoryData = sensoryData, onDataChange = { tastingNoteViewModel.updateSensoryData { _ -> it } }, notes = notes, onNotesChange = { notes = it }, enabled = isEditing)
+
+                // Delete button — only when editing an existing note
+                if (isEditing && existingNote != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                            brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.error)
+                        )
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Delete Note", fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
         }
     }
@@ -281,6 +305,36 @@ fun WineEvaluationScreen(
                 tastingNoteViewModel.updateSensoryData { it.copy(aromas = updatedAromas) }
             },
             onClose = { showAromaWheel = false }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Note") },
+            text = { Text("Are you sure you want to delete this tasting note? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        val currentNote = existingNote
+                        if (currentNote != null) {
+                            tastingNoteViewModel.deleteTastingNote(currentNote.note.noteId) {
+                                onBack()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 

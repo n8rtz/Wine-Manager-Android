@@ -61,11 +61,10 @@ fun NoseCard(
             Text("Intensity", style = MaterialTheme.typography.labelMedium)
             Slider(
                 value = sensoryData.noseIntensity ?: 0.5f,
-                onValueChange = { onDataChange(sensoryData.copy(noseIntensity = it)) },
+                onValueChange = { if (enabled) onDataChange(sensoryData.copy(noseIntensity = it)) },
                 valueRange = 0f..1f,
                 steps = 3, // Light, Medium-, Medium, Medium+, Pronounced
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled
+                modifier = Modifier.fillMaxWidth()
             )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Light", style = MaterialTheme.typography.bodySmall)

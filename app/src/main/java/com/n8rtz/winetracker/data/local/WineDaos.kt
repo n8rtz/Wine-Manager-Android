@@ -143,6 +143,9 @@ interface TastingNoteDao {
     @Query("SELECT * FROM tasting_notes WHERE noteId = :noteId LIMIT 1")
     suspend fun getNoteWithDefinitionById(noteId: Long): TastingNoteWithDefinition?
 
+    @Query("DELETE FROM tasting_notes WHERE noteId = :noteId")
+    suspend fun deleteNoteById(noteId: Long)
+
     @Query("SELECT * FROM tasting_notes")
     suspend fun getAllNotesOnce(): List<TastingNote>
 }

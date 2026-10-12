@@ -104,6 +104,15 @@ class TastingNoteViewModel(application: Application, private val repository: Win
         }
     }
 
+    fun deleteTastingNote(noteId: Long, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            repository.deleteTastingNote(noteId)
+            Log.d("WineTracker", "Deleted tasting note id=$noteId")
+            _editorSensoryData.value = SensoryData()
+            onSuccess()
+        }
+    }
+
     private fun String.normalizeLocation(): String {
         return this.trim()
             .lowercase()

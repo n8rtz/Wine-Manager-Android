@@ -240,7 +240,7 @@ fun CompactNoteItem(
             if (price != null && price > 0.0) "$${"%.2f".format(price)}" else ""
         },
         imageUrl = firstItem.definition.imageUrl,
-        rating = rating,
+        rating = if (expanded) null else rating,
         isExpanded = expanded,
         onClick = onExpandToggle,
         details = {

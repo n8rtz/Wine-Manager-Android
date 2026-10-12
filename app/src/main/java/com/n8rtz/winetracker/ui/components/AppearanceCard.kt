@@ -64,11 +64,10 @@ fun AppearanceCard(
                     FilterChip(
                         selected = selected,
                         onClick = { 
-                            onDataChange(sensoryData.copy(colorType = type, colorHue = null, intensity = 0.5f)) 
+                            if (enabled) onDataChange(sensoryData.copy(colorType = type, colorHue = null, intensity = 0.5f)) 
                         },
                         label = { Text(type) },
-                        modifier = Modifier.weight(1f),
-                        enabled = enabled
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -102,10 +101,9 @@ fun AppearanceCard(
                     val selected = sensoryData.clarity == clarity
                     FilterChip(
                         selected = selected,
-                        onClick = { onDataChange(sensoryData.copy(clarity = clarity)) },
+                        onClick = { if (enabled) onDataChange(sensoryData.copy(clarity = clarity)) },
                         label = { Text(clarity) },
-                        modifier = Modifier.weight(1f),
-                        enabled = enabled
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }

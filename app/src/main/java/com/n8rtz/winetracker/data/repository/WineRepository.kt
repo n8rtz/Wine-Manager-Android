@@ -136,6 +136,10 @@ class WineRepository(
         return tastingNoteDao.getNoteWithDefinitionById(noteId)
     }
 
+    suspend fun deleteTastingNote(noteId: Long) {
+        tastingNoteDao.deleteNoteById(noteId)
+    }
+
     suspend fun getAllPricesForDefinitions(definitionIds: List<Long>): List<com.n8rtz.winetracker.data.local.PriceLookupResult> {
         return inventoryDao.getAllPricesForDefinitions(definitionIds)
     }
