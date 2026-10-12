@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
@@ -35,8 +34,7 @@ import java.util.Locale
 @Composable
 fun TastingNotesScreen(
     tastingNoteViewModel: TastingNoteViewModel = viewModel(),
-    onNoteClick: (Long) -> Unit,
-    onNavigateToHistory: () -> Unit
+    onNoteClick: (Long) -> Unit
 ) {
     val history by tastingNoteViewModel.tastingNotes.collectAsState(initial = emptyList())
     
@@ -109,12 +107,7 @@ fun TastingNotesScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Tasting Notes") },
-                actions = {
-                    IconButton(onClick = onNavigateToHistory) {
-                        Icon(Icons.Default.History, contentDescription = "View History")
-                    }
-                }
+                title = { Text("Tasting Notes") }
             )
         }
     ) { padding ->

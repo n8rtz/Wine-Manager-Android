@@ -194,6 +194,27 @@ fun MainAppScaffold(
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            floatingActionButton = {
+                Surface(
+                    onClick = { isMenuExpanded = !isMenuExpanded },
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    modifier = Modifier.size(56.dp),
+                    shadowElevation = 4.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = if (isMenuExpanded) "Close Menu" else "Add",
+                            modifier = Modifier
+                                .size(32.dp)
+                                .graphicsLayer { rotationZ = fabRotation }
+                        )
+                    }
+                }
+            },
+            floatingActionButtonPosition = FabPosition.End,
             bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -224,42 +245,25 @@ fun MainAppScaffold(
                     label = { Text("Cellar") }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "notes" || currentRoute == "history",
+                    selected = currentRoute == "notes",
                     onClick = {
                         Log.d("WineTracker", "BottomBar: Notes clicked")
                         isMenuExpanded = false
-                        if (currentRoute == "history") {
-                            navController.popBackStack("notes", inclusive = false)
-                        } else {
-                            navigateToTab(navController, "notes")
-                        }
+                        navigateToTab(navController, "notes")
                     },
                     icon = { Icon(Icons.Default.Description, "Notes") },
                     label = { Text("Notes") }
                 )
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Surface(
-                        onClick = { isMenuExpanded = !isMenuExpanded },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White,
-                        modifier = Modifier.size(56.dp),
-                        shadowElevation = 4.dp
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = if (isMenuExpanded) "Close Menu" else "Add",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .graphicsLayer { rotationZ = fabRotation }
-                            )
-                        }
-                    }
-                }
+                NavigationBarItem(
+                    selected = currentRoute == "history",
+                    onClick = {
+                        Log.d("WineTracker", "BottomBar: History clicked")
+                        isMenuExpanded = false
+                        navigateToTab(navController, "history")
+                    },
+                    icon = { Icon(Icons.Default.History, contentDescription = "Consumption History") },
+                    label = { Text("History") }
+                )
                 NavigationBarItem(
                     selected = currentRoute == "rankings",
                     onClick = { 
@@ -297,11 +301,7 @@ fun MainAppScaffold(
             composable("notes") {
                 TastingNotesScreen(
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onNoteClick = { noteId -> navController.navigate("note_editor/edit/$noteId") },
-                    onNavigateToHistory = {
-                        Log.d("WineTracker", "MainActivity: Navigating to History")
-                        navController.navigate("history")
-                    }
+                    onNoteClick = { noteId -> navController.navigate("note_editor/edit/$noteId") }
                 )
             }
             composable("rankings") {
@@ -440,8 +440,8 @@ fun MainAppScaffold(
         modifier = Modifier.fillMaxSize()
     ) {
         Box(
-            modifier = Modifier.fillMaxSize().padding(bottom = 96.dp), // Position above BottomBar
-            contentAlignment = Alignment.BottomCenter
+            modifier = Modifier.fillMaxSize().padding(bottom = 96.dp, end = 16.dp), // Position above the bottom bar and add button
+            contentAlignment = Alignment.BottomEnd
         ) {
             Surface(
                 modifier = Modifier
@@ -531,19 +531,16 @@ private fun navigateToTab(navController: androidx.navigation.NavHostController, 
     Log.d("WineTracker", "navigateToTab: target=$route")
     val currentRoute = navController.currentBackStackEntry?.destination?.route
 
-    // Ensure we don't save transient "add_wine" or "history" sub-screens on the tab backstack 
-    // when switching to a different tab.
-    if (currentRoute == "history" && route != "notes") {
-        navController.popBackStack("notes", inclusive = false)
-    }
-    if (currentRoute == "add_wine" && route != "cellar") {
-        navController.popBackStack("cellar", inclusive = false)
+    // Selecting the History tab from a note opened there should return to its root screen.
+    if (route == "history" && currentRoute != "history" &&
+        navController.popBackStack("history", inclusive = false)
+    ) {
+        return
     }
 
-    // If we're on history and navigating to another tab, remove history from the back stack
-    // so that when returning to the "notes" tab, it defaults to the main notes screen.
-    if (navController.currentBackStackEntry?.destination?.route == "history" && route != "notes") {
-        navController.popBackStack("notes", inclusive = false)
+    // Do not preserve the transient add-wine form when switching to another tab.
+    if (currentRoute == "add_wine" && route != "cellar") {
+        navController.popBackStack("cellar", inclusive = false)
     }
     navController.navigate(route) {
         popUpTo(navController.graph.findStartDestination().id) {
