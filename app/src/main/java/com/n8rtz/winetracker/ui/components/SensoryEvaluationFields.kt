@@ -5,6 +5,7 @@ package com.n8rtz.winetracker.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,6 +89,8 @@ fun SensoryEvaluationFields(
 
 private data class OverallScoreBand(val label: String, val color: Color)
 
+private val overallScoreSliderInset = 10.dp
+private val overallScoreMarkerLabelWidth = 24.dp
 private val overallScoreMarkers = listOf(50, 60, 70, 80, 90, 100)
 private val overallScoreGradient = listOf(
     Color(0xFFB94F57),
@@ -161,7 +165,7 @@ fun OverallScoreSlider(
         Box(modifier = Modifier.fillMaxWidth().height(48.dp)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val trackHeight = 8.dp.toPx()
-                val inset = 10.dp.toPx()
+                val inset = overallScoreSliderInset.toPx()
                 val trackWidth = (size.width - inset * 2).coerceAtLeast(0f)
                 val top = (size.height - trackHeight) / 2f
                 val radius = CornerRadius(trackHeight / 2f, trackHeight / 2f)
@@ -197,17 +201,23 @@ fun OverallScoreSlider(
         }
 
         Spacer(Modifier.height(2.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(18.dp)) {
+            val markerTrackWidth = (maxWidth - overallScoreSliderInset * 2).coerceAtLeast(0.dp)
             overallScoreMarkers.forEach { marker ->
+                val fraction = (marker - 50) / 50f
                 Text(
                     text = marker.toString(),
-                    modifier = Modifier.width(24.dp),
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(
+                            x = overallScoreSliderInset + markerTrackWidth * fraction -
+                                overallScoreMarkerLabelWidth / 2f
+                        )
+                        .width(overallScoreMarkerLabelWidth),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
                 )
             }
         }
