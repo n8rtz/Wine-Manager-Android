@@ -91,7 +91,8 @@ class MainActivity : ComponentActivity() {
             com.n8rtz.winetracker.data.local.MIGRATION_15_16,
             com.n8rtz.winetracker.data.local.MIGRATION_16_17,
             com.n8rtz.winetracker.data.local.MIGRATION_17_18,
-            com.n8rtz.winetracker.data.local.MIGRATION_18_19
+            com.n8rtz.winetracker.data.local.MIGRATION_18_19,
+            com.n8rtz.winetracker.data.local.MIGRATION_19_20
         )
         // Ensure migrations don't block the main thread if possible (though they often do on first access)
         .build()

@@ -39,6 +39,19 @@ class TastingNoteViewModel(application: Application, private val repository: Win
             initialValue = emptyMap()
         )
 
+    val cellarPrices: StateFlow<Map<Pair<Long, String>, Double?>> = repository.activeInventory
+        .map { inventory ->
+            inventory.groupBy { it.bottle.definitionId to displayVintage(it.bottle.vintage) }
+                .mapValues { (key, bottles) ->
+                    bottles.firstOrNull { it.bottle.vintage == key.second }?.bottle?.price
+                        ?: bottles.firstOrNull()?.bottle?.price
+                }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap()
+        )
 
     private val reviewerPreferences = application.getSharedPreferences(
         REVIEWER_PREFERENCES_FILE,

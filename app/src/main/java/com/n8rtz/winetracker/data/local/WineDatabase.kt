@@ -161,6 +161,8 @@ data class TastingNote(
     val vintage: String,
     val dateTasted: Long,
     val rating: Double,
+    val valueScore: Int? = null,
+    val price: Double? = null,
     val notes: String?,
     val rebuy: Boolean = false,
     val recommendedBy: String? = null,
@@ -222,7 +224,7 @@ data class ConsumptionEvent(
 
 @Database(
     entities = [WineDefinition::class, WineBottle::class, TastingNote::class, Rating::class, ConsumptionEvent::class],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -508,6 +510,13 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
 val MIGRATION_18_19 = object : Migration(18, 19) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE tasting_notes ADD COLUMN reviewerRating INTEGER")
+    }
+}
+
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasting_notes ADD COLUMN valueScore INTEGER")
+        db.execSQL("ALTER TABLE tasting_notes ADD COLUMN price REAL")
     }
 }
 

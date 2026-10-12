@@ -480,6 +480,12 @@ fun WineDetailScreen(
                                 note.reviewerRating?.let { reviewerRating ->
                                     Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
                                 }
+                                note.valueScore?.let { valueScore ->
+                                    Text("Value: $valueScore/10", style = MaterialTheme.typography.bodySmall)
+                                }
+                                note.price?.let { notePrice ->
+                                    Text("Price: $${"%.2f".format(notePrice)}", style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
                     }

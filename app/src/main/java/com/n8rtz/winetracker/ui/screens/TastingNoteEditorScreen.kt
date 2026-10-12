@@ -38,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -82,11 +83,13 @@ fun TastingNoteEditorScreen(
 ) {
     val definitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
     val cellarVintages by viewModel.cellarVintages.collectAsState()
+    val cellarPrices by viewModel.cellarPrices.collectAsState()
     val reviewerNames by viewModel.reviewerNames.collectAsState()
     var entryMode by remember(noteId) { mutableStateOf(TastingNoteEntryMode.CELLAR) }
     var manualMaker by remember(noteId) { mutableStateOf("") }
     var manualWineName by remember(noteId) { mutableStateOf("") }
     var manualVintage by remember(noteId) { mutableStateOf("") }
+    var manualPrice by remember(noteId) { mutableStateOf("") }
     var manualCountry by remember(noteId) { mutableStateOf("") }
     var manualRegion by remember(noteId) { mutableStateOf("") }
     var manualSubregion by remember(noteId) { mutableStateOf("") }
@@ -107,8 +110,9 @@ fun TastingNoteEditorScreen(
     var rebuy by remember { mutableStateOf(false) }
     var recommendedBy by remember { mutableStateOf("") }
     var reviewerMenuExpanded by remember { mutableStateOf(false) }
-    var initialRating by remember { mutableStateOf("") }
     var reviewerRating by remember { mutableStateOf(80) }
+    var valueScore by remember(noteId) { mutableStateOf(5) }
+    var valueScoreSelected by remember(noteId) { mutableStateOf(noteId == null) }
     var sensoryData by remember { mutableStateOf(SensoryData()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -128,8 +132,10 @@ fun TastingNoteEditorScreen(
                 notes = note.notes.orEmpty()
                 rebuy = note.rebuy
                 recommendedBy = note.recommendedBy.orEmpty()
-                initialRating = note.initialRating?.toString().orEmpty()
                 reviewerRating = note.reviewerRating?.coerceIn(50, 100) ?: 80
+                valueScore = note.valueScore?.coerceIn(1, 10) ?: 5
+                valueScoreSelected = note.valueScore != null
+                manualPrice = note.price?.toString().orEmpty()
                 sensoryData = note.sensoryData ?: SensoryData()
             }
             loaded = true
@@ -137,6 +143,20 @@ fun TastingNoteEditorScreen(
     }
 
     val selectedDefinition = definitions.firstOrNull { it.definitionId == selectedDefinitionId }
+    val selectedCellarPrice = selectedDefinitionId?.let { definitionId ->
+        cellarPrices[definitionId to displayVintage(vintage)]
+    }
+    val selectedCellarPriceText = if (selectedCellarPrice != null) {
+        "$${"%.2f".format(selectedCellarPrice)}"
+    } else {
+        "Not recorded"
+    }
+    val manualPriceValue = manualPrice.trim()
+        .takeIf { it.isNotEmpty() }
+        ?.toDoubleOrNull()
+        ?.takeIf { it.isFinite() && it >= 0.0 }
+    val manualPriceIsValid = entryMode != TastingNoteEntryMode.MANUAL ||
+        manualPrice.isBlank() || manualPriceValue != null
     val availableWineChoices = remember(
         definitions,
         cellarVintages,
@@ -229,7 +249,7 @@ fun TastingNoteEditorScreen(
         TastingNoteEntryMode.MANUAL -> manualMaker.isNotBlank() &&
             manualWineName.isNotBlank() && manualVintage.isNotBlank()
     }
-    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected
+    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected && manualPriceIsValid
 
     if (!loaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -408,27 +428,18 @@ fun TastingNoteEditorScreen(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = vintage,
-                        onValueChange = { vintage = it },
-                        label = { Text("Vintage") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = formattedDate,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Date tasted") },
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.CalendarMonth, contentDescription = "Choose date")
-                            }
-                        },
-                        modifier = Modifier.weight(1.3f)
-                    )
-                }
+                OutlinedTextField(
+                    value = formattedDate,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Date tasted") },
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Choose date")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             } else {
                 Text(
                     "Manual entry saves a tasting note only; it does not add a bottle to your cellar.",
@@ -474,6 +485,23 @@ fun TastingNoteEditorScreen(
                     singleLine = true
                 )
                 OutlinedTextField(
+                    value = manualPrice,
+                    onValueChange = { manualPrice = it },
+                    label = { Text("Price (optional)") },
+                    placeholder = { Text("e.g. 24.99") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = !manualPriceIsValid,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                if (!manualPriceIsValid) {
+                    Text(
+                        "Enter a valid non-negative price.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                OutlinedTextField(
                     value = formattedDate,
                     onValueChange = {},
                     readOnly = true,
@@ -500,6 +528,11 @@ fun TastingNoteEditorScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(
+                    text = "Price: $selectedCellarPriceText",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             OverallScoreSlider(
@@ -519,14 +552,21 @@ fun TastingNoteEditorScreen(
                 )
             }
 
-            OutlinedTextField(
-                value = initialRating,
-                onValueChange = { initialRating = it.filter { character -> character.isDigit() }.take(3) },
-                label = { Text("Initial rating") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
+            Text(
+                if (valueScoreSelected) "Value: $valueScore / 10" else "Value: Not rated",
+                style = MaterialTheme.typography.titleSmall
             )
+            Slider(
+                value = valueScore.toFloat(),
+                onValueChange = {
+                    valueScore = it.roundToInt().coerceIn(1, 10)
+                    valueScoreSelected = true
+                },
+                valueRange = 1f..10f,
+                steps = 8,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             FilterChip(
                 selected = rebuy,
                 onClick = { rebuy = !rebuy },
@@ -628,13 +668,19 @@ fun TastingNoteEditorScreen(
                         ),
                         dateTasted = dateTasted,
                         rating = rating.toDouble(),
+                        valueScore = valueScore.takeIf { valueScoreSelected } ?: existingNote?.valueScore,
+                        price = when {
+                            entryMode == TastingNoteEntryMode.MANUAL -> manualPriceValue
+                            existingNote != null -> existingNote?.price
+                            else -> selectedCellarPrice
+                        },
                         notes = notes.takeIf { it.isNotBlank() },
                         rebuy = rebuy,
                         recommendedBy = recommendedBy.takeIf { it.isNotBlank() },
                         reviewerRating = reviewerRating.takeIf {
                             recommendedBy.isNotBlank() || existingNote?.reviewerRating != null
                         },
-                        initialRating = initialRating.toIntOrNull(),
+                        initialRating = existingNote?.initialRating,
                         bottleId = if (entryMode == TastingNoteEntryMode.CELLAR) existingNote?.bottleId else null,
                         sensoryData = sensoryData.copy(overallScore = rating.roundToInt().coerceIn(50, 100)),
                         importKey = existingNote?.importKey

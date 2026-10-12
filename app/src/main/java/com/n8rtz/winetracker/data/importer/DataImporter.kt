@@ -137,7 +137,8 @@ class DataImporter(
                 sourceBottles.firstOrNull { it.bottleId == bottleId }?.vintage
             }
             oldNote.copy(
-                vintage = normalizeVintage(oldNote.vintage?.takeIf { it.isNotBlank() } ?: directBottleVintage)
+                vintage = normalizeVintage(oldNote.vintage?.takeIf { it.isNotBlank() } ?: directBottleVintage),
+                valueScore = oldNote.valueScore?.takeIf { it in 1..10 }
             )
         }
         val restoredEvents = (eventsFromBackup + legacyArchiveEvents).map { event ->

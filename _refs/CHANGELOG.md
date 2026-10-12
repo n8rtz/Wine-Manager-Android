@@ -8,6 +8,7 @@
 - **Manual tasting notes:** Added editable maker, wine name, country, region, subregion, and vintage fields for restaurant and other non-cellar tastings. Maker, name, and location fields accept free text with case- and spacing-insensitive suggestions from saved wine definitions and the wine-location catalog. Manual notes create or reuse only the wine definition needed by the note; they do not create cellar bottle/inventory rows.
 - **Reviewer choices and scores:** Added an editable reviewer list in the Utility Hub/Settings and a saved reviewer-rating field on tasting notes. Reviewer names persist locally, with common critics/publications provided as initial choices.
 - **Schema migration 18→19:** Added nullable `reviewerRating` storage to tasting notes without changing existing note ratings or history.
+- **Schema migration 19→20:** Added nullable 1–10 `valueScore` and optional per-note price storage; legacy notes remain unrated for Value until set.
 - **Event-to-note linking:** History cards can open an existing linked note or create a note linked to that exact event. Saving the note and attaching it to the event is transactional; deleting a note clears its event reference without deleting consumption history.
 - **Sensory evaluation:** Added persisted sweetness, aroma, acidity, tannin, body, balance, intensity, complexity, finish, quality, overall-score, and common-fault controls, with descriptor labels and ombre slider tracks.
 - **Drinking windows:** Added optional start/end years to wine definitions, four-digit year validation in add/edit forms, display on wine details, cellar year-range and Ready Now / Too Early / Past Peak filters, and soonest/furthest sorting.
@@ -19,6 +20,9 @@
 ### Changed
 - **Tasting score slider:** Added a color-graded 50–100 scale and badge with the requested bands: 50–59 Unacceptable, 60–69 Below Average, 70–79 Average, 80–85 Good, 86–89 Very Good, 90–93 Excellent, 94–97 Outstanding, and 98–100 Extraordinary. Kept the 50 and 100 endpoint labels inside the colored track.
 - **Tasting-note form:** Overall rating and sensory controls are always shown and saved; removed the rating checkbox and sensory-evaluation add/label UI. Unrated legacy notes require choosing a score before saving.
+- **Cellar note selection:** Removed the redundant vintage field because each cellar wine choice includes its vintage; the selected active cellar bottle’s price is shown and recorded on new notes.
+- **Value and manual price:** Added a discrete 1–10 Value slider (new notes start at 5; legacy notes remain unrated until changed) and an optional manual-tasting price field; these are saved per note and shown in note details.
+- **Initial rating input:** Removed the Initial Rating field from the editor while preserving existing legacy values when notes are edited.
 - **Sensory evaluation labels:** Renamed “Flavor intensity” to “Concentration” and removed its duplicate overall-score slider, leaving the top overall-score slider as the only one.
 - **Reviewer controls:** Put “Recommended by” and “Rating” side by side, with the reviewer dropdown using two-thirds of the row and a 50–100 scroll wheel defaulting to 80 after reviewer selection.
 - **Tasting-note editor header:** Centered the title while keeping the back arrow on the left, and removed duplicate top system-inset spacing from the nested screen scaffold.

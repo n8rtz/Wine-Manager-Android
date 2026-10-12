@@ -265,6 +265,12 @@ fun CompactNoteItem(
                         item.note.reviewerRating?.let { reviewerRating ->
                             Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
                         }
+                        item.note.valueScore?.let { valueScore ->
+                            Text("Value: $valueScore/10", style = MaterialTheme.typography.bodySmall)
+                        }
+                        item.note.price?.let { notePrice ->
+                            Text("Price: $${"%.2f".format(notePrice)}", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
