@@ -93,7 +93,12 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
+    // Room's query verifier uses host SQLite during KSP. Replace Room's older driver
+    // with a recent artifact that includes the Windows x86_64 native library.
+    ksp(libs.room.compiler) {
+        exclude(group = "org.xerial", module = "sqlite-jdbc")
+    }
+    ksp(libs.sqlite.jdbc)
 
     // Image Loading
     implementation(libs.coil.compose)
