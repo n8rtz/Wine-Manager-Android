@@ -98,19 +98,26 @@ private val overallScoreGradient = listOf(
 )
 
 private fun overallScoreBand(score: Int): OverallScoreBand = when {
-    score >= 95 -> OverallScoreBand("Outstanding", Color(0xFF27664A))
+    score >= 98 -> OverallScoreBand("Extraordinary", Color(0xFF27664A))
+    score >= 94 -> OverallScoreBand("Outstanding", Color(0xFF347A59))
     score >= 90 -> OverallScoreBand("Excellent", Color(0xFF3E7448))
-    score >= 80 -> OverallScoreBand("Very good", Color(0xFF5C773A))
-    score >= 70 -> OverallScoreBand("Good", Color(0xFF8A6B1E))
-    score >= 60 -> OverallScoreBand("Fair", Color(0xFFA85F31))
-    else -> OverallScoreBand("Poor", Color(0xFFA9444D))
+    score >= 86 -> OverallScoreBand("Very Good", Color(0xFF5C773A))
+    score >= 80 -> OverallScoreBand("Good", Color(0xFF6E7028))
+    score >= 70 -> OverallScoreBand("Average", Color(0xFF8A6B1E))
+    score >= 60 -> OverallScoreBand("Below Average", Color(0xFFA85F31))
+    else -> OverallScoreBand("Unacceptable", Color(0xFFA9444D))
 }
 
 @Composable
-fun OverallScoreSlider(score: Float, onScoreChange: (Float) -> Unit) {
+fun OverallScoreSlider(
+    score: Float,
+    scoreSelected: Boolean = true,
+    onScoreChange: (Float) -> Unit
+) {
     val sliderScore = score.coerceIn(50f, 100f)
     val displayedScore = sliderScore.roundToInt()
     val band = overallScoreBand(displayedScore)
+    val indicatorColor = if (scoreSelected) band.color else MaterialTheme.colorScheme.primary
 
     Column {
         Row(
@@ -124,16 +131,16 @@ fun OverallScoreSlider(score: Float, onScoreChange: (Float) -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    band.label,
+                    if (scoreSelected) band.label else "Choose a score",
                     style = MaterialTheme.typography.bodySmall,
-                    color = band.color,
+                    color = if (scoreSelected) band.color else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
                 )
             }
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = band.color.copy(alpha = 0.13f),
-                contentColor = band.color
+                color = indicatorColor.copy(alpha = 0.13f),
+                contentColor = indicatorColor
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -141,7 +148,7 @@ fun OverallScoreSlider(score: Float, onScoreChange: (Float) -> Unit) {
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
-                        displayedScore.toString(),
+                        if (scoreSelected) displayedScore.toString() else "—",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -180,7 +187,7 @@ fun OverallScoreSlider(score: Float, onScoreChange: (Float) -> Unit) {
                 steps = 49,
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = band.color,
+                    thumbColor = indicatorColor,
                     activeTrackColor = Color.Transparent,
                     activeTickColor = Color.Transparent,
                     inactiveTrackColor = Color.Transparent,

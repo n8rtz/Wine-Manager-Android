@@ -14,7 +14,8 @@
 - **Coverage and documentation:** Added tests for NV normalization and date-picker round-tripping across a daylight-saving boundary; updated the architecture and this changelog.
 
 ### Changed
-- **Tasting score slider:** Added a color-graded 50–100 scale, decade markers, a prominent score badge, and a live quality descriptor to make the selected score easier to interpret.
+- **Tasting score slider:** Added a color-graded 50–100 scale and badge with the requested bands: 50–59 Unacceptable, 60–69 Below Average, 70–79 Average, 80–85 Good, 86–89 Very Good, 90–93 Excellent, 94–97 Outstanding, and 98–100 Extraordinary.
+- **Tasting-note form:** Overall rating and sensory controls are always shown and saved; removed the rating checkbox and sensory-evaluation add/label UI. Unrated legacy notes require choosing a score before saving.
 - **Tasting note wine browsing:** Added the Cellar's cascading Country/Region/Subregion wheels to narrow the wine catalog in Add/Edit Tasting Note.
 - **JSON backup/restore:** Exports now include ratings and consumption events, use UTF-8, and read a consistent database snapshot. Restore replaces all app data only after explicit confirmation, validates references and duplicate IDs/keys before deletion, and applies the replacement in one transaction. Wine, bottle, note, and rating IDs are retained; consumption-event IDs are regenerated. Older backups without event/rating collections remain supported, and their archived rows are converted to events.
 - **Vintage normalization and lookup:** Standardized blank, `null`, `NV`, and `(NV)` aliases for display, grouping, imports, rankings, and DAO lookups. Price and cellar queries prefer an exact vintage match before falling back to an NV alias.

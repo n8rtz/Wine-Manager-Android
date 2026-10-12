@@ -89,12 +89,11 @@ fun TastingNoteEditorScreen(
         mutableStateOf(presetDateTasted ?: System.currentTimeMillis())
     }
     var rating by remember { mutableStateOf(88f) }
-    var includeRating by remember(noteId) { mutableStateOf(true) }
+    var ratingSelected by remember(noteId) { mutableStateOf(noteId == null) }
     var notes by remember { mutableStateOf("") }
     var rebuy by remember { mutableStateOf(false) }
     var recommendedBy by remember { mutableStateOf("") }
     var initialRating by remember { mutableStateOf("") }
-    var hasSensoryEvaluation by remember { mutableStateOf(false) }
     var sensoryData by remember { mutableStateOf(SensoryData()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -109,14 +108,13 @@ fun TastingNoteEditorScreen(
                 selectedDefinitionId = note.definitionId
                 vintage = note.vintage
                 dateTasted = note.dateTasted
-                includeRating = note.rating > 0.0
                 rating = note.rating.toFloat().takeIf { it > 0f }?.coerceIn(50f, 100f) ?: 88f
+                ratingSelected = note.rating > 0.0
                 notes = note.notes.orEmpty()
                 rebuy = note.rebuy
                 recommendedBy = note.recommendedBy.orEmpty()
                 initialRating = note.initialRating?.toString().orEmpty()
                 sensoryData = note.sensoryData ?: SensoryData()
-                hasSensoryEvaluation = note.sensoryData != null
             }
             loaded = true
         }
@@ -135,7 +133,7 @@ fun TastingNoteEditorScreen(
     val formattedDate = remember(dateTasted) {
         SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(dateTasted))
     }
-    val canSave = loaded && !missingNote && selectedDefinition != null && vintage.isNotBlank()
+    val canSave = loaded && !missingNote && selectedDefinition != null && vintage.isNotBlank() && ratingSelected
 
     if (!loaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -289,17 +287,19 @@ fun TastingNoteEditorScreen(
                 )
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.Checkbox(
-                    checked = includeRating,
-                    onCheckedChange = { includeRating = it }
-                )
-                Text("Record an overall rating")
-            }
-            if (includeRating) {
-                OverallScoreSlider(
-                    score = rating,
-                    onScoreChange = { rating = it }
+            OverallScoreSlider(
+                score = rating,
+                scoreSelected = ratingSelected,
+                onScoreChange = {
+                    rating = it
+                    ratingSelected = true
+                }
+            )
+            if (!ratingSelected) {
+                Text(
+                    "Choose an overall score to save this note.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
 
@@ -326,18 +326,10 @@ fun TastingNoteEditorScreen(
                 label = { Text(if (rebuy) "Would buy again" else "Recommend / rebuy") }
             )
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Professional sensory evaluation", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                TextButton(onClick = { hasSensoryEvaluation = !hasSensoryEvaluation }) {
-                    Text(if (hasSensoryEvaluation) "Hide" else "Add")
-                }
-            }
-            if (hasSensoryEvaluation) {
-                SensoryEvaluationFields(
-                    data = sensoryData,
-                    onChange = { sensoryData = it }
-                )
-            }
+            SensoryEvaluationFields(
+                data = sensoryData,
+                onChange = { sensoryData = it }
+            )
 
             OutlinedTextField(
                 value = notes,
@@ -356,13 +348,13 @@ fun TastingNoteEditorScreen(
                         definitionId = definition.definitionId,
                         vintage = normalizeVintageInput(vintage),
                         dateTasted = dateTasted,
-                        rating = if (includeRating) rating.toDouble() else 0.0,
+                        rating = rating.toDouble(),
                         notes = notes.takeIf { it.isNotBlank() },
                         rebuy = rebuy,
                         recommendedBy = recommendedBy.takeIf { it.isNotBlank() },
                         initialRating = initialRating.toIntOrNull(),
                         bottleId = existingNote?.bottleId,
-                        sensoryData = sensoryData.takeIf { hasSensoryEvaluation },
+                        sensoryData = sensoryData,
                         importKey = existingNote?.importKey
                     )
                     viewModel.saveTastingNote(note, linkedEventId) { onBack() }
