@@ -49,6 +49,52 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun bodegasPrefixIdentifiesTheProducerInsteadOfAnUnrelatedCellarProducer() {
+        val frenchCellarWine = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Domaine des Cèdres",
+            name = "Les Cèdres du Nord",
+            type = "Red",
+            country = "France",
+            region = "Bordeaux"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(listOf(frenchCellarWine), emptyMap())
+        val result = parser.parse(
+            "BODEGAS SIERRA CANTABRIA, S.A.\nRIOJA\nTEMPRANILLO\n2019",
+            dictionary
+        )
+
+        assertEquals("Bodegas Sierra Cantabria", result.maker)
+        assertEquals("Spain", result.country)
+        assertEquals("Rioja", result.region)
+    }
+
+    @Test
+    fun recognizesBodegasWhenTheProducerNameIsOnTheNextOcrLine() {
+        val result = parser.parse("BODEGAS\nMUGA\nRIOJA\n2018")
+
+        assertEquals("Bodegas Muga", result.maker)
+        assertEquals("Spain", result.country)
+        assertEquals("Rioja", result.region)
+    }
+
+    @Test
+    fun explicitRiojaContextRejectsAnIncompatibleFrenchCellarWineGuess() {
+        val frenchCellarWine = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Domaine des Cèdres",
+            name = "Les Cèdres du Nord",
+            type = "Red",
+            country = "France",
+            region = "Bordeaux"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(listOf(frenchCellarWine), emptyMap())
+        val result = parser.parse("RIOJA\nLES CEDRES DU NORD\n2019", dictionary)
+
+        assertNull(result.maker)
+        assertEquals("Spain", result.country)
+        assertEquals("Rioja", result.region)
+    }
+
+    @Test
     fun correctsKirklandBrunelloLabelUsingWineVocabulary() {
         val rawText = "KIRKLAND BRUNELLO DIMONTALCINU ORGNE CONTROLLAA 2021"
         val result = parser.parse(rawText)

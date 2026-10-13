@@ -102,21 +102,50 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
         .filter { it.kind == WineTermKind.PRODUCER }
         .map { entry ->
             (listOf(entry.canonical) + entry.aliases)
-                .map { normalizedKey(it) }
+                .map(::producerIdentityKey)
                 .filter(String::isNotEmpty)
                 .toSet()
         }
 
     fun producerNamesEquivalent(first: String, second: String): Boolean {
-        val firstKey = normalizedKey(canonicalProducerName(first) ?: first)
-        val secondKey = normalizedKey(canonicalProducerName(second) ?: second)
+        val firstKey = producerIdentityKey(first)
+        val secondKey = producerIdentityKey(second)
         return firstKey == secondKey || producerFormSets.any { forms ->
             firstKey in forms && secondKey in forms
         }
     }
 
-    /** Hard compatibility only for appellations with a defining grape, not broad regions. */
+    private fun producerIdentityKey(value: String): String {
+        val key = normalizedKey(canonicalProducerName(value) ?: value)
+        return when {
+            key.startsWith("bodegas") && key.length > "bodegas".length -> key.removePrefix("bodegas")
+            key.startsWith("bodega") && key.length > "bodega".length -> key.removePrefix("bodega")
+            else -> key
+        }
+    }
+
+    /**
+     * A recognized origin should rule out incompatible cellar-history guesses. Defining grape
+     * rules remain a separate, stricter check for appellations such as Brunello and Chablis.
+     */
     fun isCompatibleWithWineContext(context: WineLexiconEntry, wineTerm: WineLexiconEntry): Boolean {
+        val contextCountry = context.country?.let(::normalizedKey)
+        val termCountry = wineTerm.country?.let(::normalizedKey)
+        if (contextCountry != null && termCountry != null && contextCountry != termCountry) return false
+
+        if (
+            wineTerm.kind in setOf(WineTermKind.WINE_NAME, WineTermKind.PRODUCER) &&
+            context.kind in setOf(
+                WineTermKind.APPELLATION,
+                WineTermKind.SUBREGION,
+                WineTermKind.REGION
+            )
+        ) {
+            val contextRegion = context.region?.let(::normalizedKey)
+            val termRegion = wineTerm.region?.let(::normalizedKey)
+            if (contextRegion != null && termRegion != null && contextRegion != termRegion) return false
+        }
+
         if (
             !context.grapesAreDefining ||
             (wineTerm.kind != WineTermKind.GRAPE && wineTerm.kind != WineTermKind.WINE_NAME)
@@ -247,6 +276,11 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
                     if (distance > maxEdits) continue
                     val similarity = 1.0 - distance.toDouble() / maxOf(combinedKey.length, candidate.key.length)
                     if (distance > 0 && similarity < MIN_FUZZY_SIMILARITY) continue
+                    // Personal cellar entries are useful only for near-exact matches; otherwise a
+                    // familiar producer or cuvée can override unrelated label text.
+                    val isCellarIdentity = candidate.entry.sourceWeight < CURATED_SOURCE_WEIGHT &&
+                        candidate.entry.kind in setOf(WineTermKind.PRODUCER, WineTermKind.WINE_NAME)
+                    if (isCellarIdentity && similarity < MIN_CELLAR_TERM_SIMILARITY) continue
 
                     val match = CandidateMatch(
                         candidate = candidate,
@@ -362,6 +396,8 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
     }
 
     companion object {
+        internal const val MIN_CELLAR_TERM_SIMILARITY = 0.90
+        private const val CURATED_SOURCE_WEIGHT = 30
         private const val MIN_TERM_LENGTH = 3
         private const val MAX_PHRASE_TOKENS = 7
         private const val MIN_FUZZY_SIMILARITY = 0.82
@@ -534,6 +570,22 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             val distinctMakers = definitions
                 .mapNotNull { canonicalProducerName(it.maker) }
                 .distinctBy { normalizedKey(it) }
+            val producerGeography = definitions
+                .mapNotNull { definition ->
+                    val producerKey = canonicalProducerName(definition.maker)
+                        ?.let(::normalizedKey)
+                        ?: return@mapNotNull null
+                    producerKey to (
+                        canonicalWineCountry(definition.country)
+                            to definition.region?.trim()?.takeIf(String::isNotEmpty)
+                        )
+                }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { (_, locations) ->
+                    val countries = locations.mapNotNull { it.first }.distinctBy(::normalizedKey)
+                    val regions = locations.mapNotNull { it.second }.distinctBy(::normalizedKey)
+                    countries.singleOrNull() to regions.singleOrNull()
+                }
             val uniqueFirstWords = distinctMakers
                 .groupBy { normalizedKey(it.substringBefore(' ')) }
                 .filter { (firstWord, makers) -> firstWord.length >= 5 && makers.size == 1 }
@@ -585,10 +637,13 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
                     .takeIf { normalizedKey(it) in uniqueFirstWords }
                     ?.let { listOf(it) }
                     .orEmpty()
+                val (country, region) = producerGeography[normalizedKey(maker)] ?: (null to null)
                 entries += WineLexiconEntry(
                     canonical = maker,
                     kind = WineTermKind.PRODUCER,
                     aliases = makerAliases,
+                    country = country,
+                    region = region,
                     sourceWeight = 20
                 )
             }

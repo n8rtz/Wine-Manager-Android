@@ -21,10 +21,21 @@ data class ScannedWine(
 
 /** Pure parser so label-text behavior can be tested without CameraX or ML Kit. */
 internal class WineLabelParser {
+    private data class ExplicitProducerCue(val maker: String, val lineIndexes: Set<Int>)
+    private data class VisibleTextLine(val lineIndex: Int, val text: String)
+
     private val vintageRegex = Regex("\\b(19|20)\\d{2}\\b")
     private val wineYearTokenRegex = Regex("(?:19|20)\\d{2}")
     private val whitespaceRegex = Regex("\\s+")
     private val wordRegex = Regex("[\\p{L}\\p{M}]+")
+    private val bodegaCueLineRegex = Regex(
+        """^\s*(Bodegas?)\b\s*[:–—-]?\s*(.*?)\s*$""",
+        RegexOption.IGNORE_CASE
+    )
+    private val producerLegalSuffixRegex = Regex(
+        """(?i)(?:[\s,]+(?:S\.?\s*A\.?(?:\s*U\.?)?|S\.?\s*L\.?(?:\s*U\.?)?|L\.?\s*L\.?\s*C\.?))+$"""
+    )
+    private val spanishProducerParticlesRegex = Regex("\\b(De|Del|La|Las|Los|Y|E|Da|Do|Dos)\\b")
     private val uppercaseTerms = setOf(
         "AOC", "AOP", "AVA", "DOC", "DOCA", "DOCG", "DOP", "IGP", "IGT",
         "NV", "VDN", "VDP", "VDF", "VDQS", "VS", "VSOP", "XO",
@@ -38,7 +49,7 @@ internal class WineLabelParser {
         val correction = dictionary.correct(text)
         val matches = correction.matches
         val vintage = vintageRegex.find(text)?.value
-        val producerMatch = bestMatch(matches.filter { it.entry.kind == WineTermKind.PRODUCER })
+        val producerCue = explicitBodegaProducer(text)
         val matchedPlace = bestMatch(
             matches.filter {
                 it.entry.kind in setOf(
@@ -51,22 +62,39 @@ internal class WineLabelParser {
             prioritizeSpecificPlaces = true
         )
         val geographicContext = matchedPlace?.entry
-        val cellarWineNameMatches = matches.filter { it.entry.kind == WineTermKind.WINE_NAME }
+        val producerMatches = matches.filter { match ->
+            match.entry.kind == WineTermKind.PRODUCER &&
+                isStrongCellarMatch(match) &&
+                (producerCue == null || dictionary.producerNamesEquivalent(
+                    producerCue.maker,
+                    match.entry.canonical
+                )) &&
+                (geographicContext == null || dictionary.isCompatibleWithWineContext(
+                    geographicContext,
+                    match.entry
+                ))
+        }
+        val producerMatch = bestMatch(producerMatches)
+        val cellarWineNameMatches = matches.filter {
+            it.entry.kind == WineTermKind.WINE_NAME && isStrongCellarMatch(it)
+        }
             .filter { match ->
                 geographicContext == null || dictionary.isCompatibleWithWineContext(geographicContext, match.entry)
             }
-        val wineNameMatch = if (producerMatch == null) {
-            bestMatch(cellarWineNameMatches)
-        } else {
-            bestMatch(
-                cellarWineNameMatches.filter { match ->
-                    match.entry.maker == null || dictionary.producerNamesEquivalent(
+            .filter { match ->
+                when {
+                    producerCue != null -> match.entry.maker != null && dictionary.producerNamesEquivalent(
+                        match.entry.maker,
+                        producerCue.maker
+                    )
+                    producerMatch != null -> match.entry.maker == null || dictionary.producerNamesEquivalent(
                         match.entry.maker,
                         producerMatch.entry.canonical
                     )
+                    else -> true
                 }
-            )
-        }
+            }
+        val wineNameMatch = bestMatch(cellarWineNameMatches)
         val namedTermMatch = matches
             .filter { match ->
                 when (match.entry.kind) {
@@ -82,10 +110,13 @@ internal class WineLabelParser {
         val preferredNameMatch = listOfNotNull(wineNameMatch, namedTermMatch)
             .filter { it.similarity >= MIN_SUGGESTED_NAME_SIMILARITY }
             .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
-        // Reject cellar wines from a different maker and wine terms that contradict a defining appellation.
+        // An explicit Spanish winery cue beats unrelated fuzzy cellar matches.
         val nameMatch = preferredNameMatch
         val matchedMaker = WineReferenceDictionary.canonicalProducerName(
-            producerMatch?.entry?.canonical ?: wineNameMatch?.entry?.maker
+            when {
+                producerCue != null -> producerMatch?.entry?.canonical ?: producerCue.maker
+                else -> producerMatch?.entry?.canonical ?: wineNameMatch?.entry?.maker
+            }
         )
         val metadataMatch = preferredNameMatch
         val country = metadataMatch?.entry?.country
@@ -109,6 +140,8 @@ internal class WineLabelParser {
             )
 
         val visibleLines = visibleTextLines(correction, vintage)
+            .filterNot { producerCue?.lineIndexes?.contains(it.lineIndex) == true }
+            .map { it.text }
         val fallbackMaker = matchedMaker ?: visibleLines.firstOrNull()
         val fallbackName = nameMatch?.entry?.canonical ?: when {
             matchedMaker != null -> visibleLines.joinToString(" ").takeIf(String::isNotBlank)
@@ -128,6 +161,43 @@ internal class WineLabelParser {
             type = wineType
         )
     }
+
+    private fun explicitBodegaProducer(text: String): ExplicitProducerCue? {
+        val lines = text.lineSequence().toList()
+        lines.forEachIndexed { lineIndex, line ->
+            val cue = bodegaCueLineRegex.matchEntire(line) ?: return@forEachIndexed
+            val marker = if (cue.groupValues[1].equals("Bodega", ignoreCase = true)) "Bodega" else "Bodegas"
+            var producerName = cue.groupValues[2].trim()
+            val producerLineIndexes = mutableSetOf(lineIndex)
+            if (producerName.isBlank()) {
+                val nextLineIndex = (lineIndex + 1 until lines.size)
+                    .firstOrNull { lines[it].isNotBlank() }
+                    ?: return@forEachIndexed
+                val nextLine = lines[nextLineIndex].trim()
+                if (vintageRegex.matches(nextLine)) return@forEachIndexed
+                producerName = nextLine
+                producerLineIndexes += nextLineIndex
+            }
+            producerName = producerLegalSuffixRegex.replace(producerName, "")
+                .trim()
+                .trimEnd(',', '.', ';', ':', '-', '–', '—')
+                .trim()
+            if (producerName.isBlank()) return@forEachIndexed
+
+            val displayName = normalizeExplicitProducerName("$marker $producerName")
+            return ExplicitProducerCue(displayName, producerLineIndexes)
+        }
+        return null
+    }
+
+    private fun normalizeExplicitProducerName(value: String): String {
+        val normalized = normalizeDisplayCase(value)
+        return spanishProducerParticlesRegex.replace(normalized) { it.value.lowercase(Locale.ROOT) }
+    }
+
+    private fun isStrongCellarMatch(match: WineLexiconMatch): Boolean =
+        match.entry.sourceWeight >= CURATED_SOURCE_WEIGHT ||
+            match.similarity >= WineReferenceDictionary.MIN_CELLAR_TERM_SIMILARITY
 
     private fun nameSuggestionScore(
         match: WineLexiconMatch,
@@ -183,7 +253,7 @@ internal class WineLabelParser {
     private fun visibleTextLines(
         correction: WineDictionaryCorrection,
         vintage: String?
-    ): List<String> {
+    ): List<VisibleTextLine> {
         val hiddenTokens = mutableSetOf<Int>()
         correction.matches.forEach { match ->
             (match.startToken until match.endTokenExclusive).forEach(hiddenTokens::add)
@@ -197,11 +267,13 @@ internal class WineLabelParser {
             .filterNot { it.index in hiddenTokens }
             .groupBy { it.value.lineIndex }
             .toSortedMap()
-            .values
-            .map { lineTokens ->
-                normalizeDisplayCase(lineTokens.joinToString(" ") { it.value.text })
+            .map { (lineIndex, lineTokens) ->
+                VisibleTextLine(
+                    lineIndex = lineIndex,
+                    text = normalizeDisplayCase(lineTokens.joinToString(" ") { it.value.text })
+                )
             }
-            .filter(String::isNotBlank)
+            .filter { it.text.isNotBlank() }
     }
 
     private fun supportedWineType(value: String?): String? = when (
@@ -231,5 +303,6 @@ internal class WineLabelParser {
 
     private companion object {
         const val MIN_SUGGESTED_NAME_SIMILARITY = 0.84
+        const val CURATED_SOURCE_WEIGHT = 30
     }
 }
