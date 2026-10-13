@@ -95,6 +95,30 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun extractsProducerAndRiojaMetadataFromOlarraGranReservaLabelText() {
+        val result = parser.parse(
+            "RECIENTE\nGRAN RESERVA\nBODEGAS OLARRA\nRIOJA\n" +
+                "DENOMINACION DE ORIGEN CALIFICADA\n2019"
+        )
+
+        assertEquals("Bodegas Olarra", result.maker)
+        assertEquals("2019", result.vintage)
+        assertEquals("Spain", result.country)
+        assertEquals("Rioja", result.region)
+    }
+
+    @Test
+    fun readsMerlotAndCaliforniaFromBlackstoneLabelText() {
+        val result = parser.parse("BLACKSTONE\nWINERY\nMERLOT\nCALIFORNIA")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertEquals("Merlot", result.name)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
     fun correctsKirklandBrunelloLabelUsingWineVocabulary() {
         val rawText = "KIRKLAND BRUNELLO DIMONTALCINU ORGNE CONTROLLAA 2021"
         val result = parser.parse(rawText)

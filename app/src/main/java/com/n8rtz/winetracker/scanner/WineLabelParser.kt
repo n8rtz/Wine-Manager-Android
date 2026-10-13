@@ -36,6 +36,8 @@ internal class WineLabelParser {
         """(?i)(?:[\s,]+(?:S\.?\s*A\.?(?:\s*U\.?)?|S\.?\s*L\.?(?:\s*U\.?)?|L\.?\s*L\.?\s*C\.?))+$"""
     )
     private val spanishProducerParticlesRegex = Regex("\\b(De|Del|La|Las|Los|Y|E|Da|Do|Dos)\\b")
+    private val producerDescriptorSeparatorRegex = Regex("[^\\p{L}\\p{N}]+")
+    private val producerDescriptorLines = setOf("cellar", "cellars", "estate", "vineyard", "vineyards", "wines", "winery")
     private val uppercaseTerms = setOf(
         "AOC", "AOP", "AVA", "DOC", "DOCA", "DOCG", "DOP", "IGP", "IGT",
         "NV", "VDN", "VDP", "VDF", "VDQS", "VS", "VSOP", "XO",
@@ -142,7 +144,7 @@ internal class WineLabelParser {
         val visibleLines = visibleTextLines(correction, vintage)
             .filterNot { producerCue?.lineIndexes?.contains(it.lineIndex) == true }
             .map { it.text }
-        val fallbackMaker = matchedMaker ?: visibleLines.firstOrNull()
+        val fallbackMaker = matchedMaker ?: guessMakerFromLeadingLines(visibleLines)
         val fallbackName = nameMatch?.entry?.canonical ?: when {
             matchedMaker != null -> visibleLines.joinToString(" ").takeIf(String::isNotBlank)
             visibleLines.size > 1 -> visibleLines.drop(1).joinToString(" ").takeIf(String::isNotBlank)
@@ -160,6 +162,15 @@ internal class WineLabelParser {
             subregion = subregion,
             type = wineType
         )
+    }
+
+    private fun guessMakerFromLeadingLines(lines: List<String>): String? {
+        val firstLine = lines.firstOrNull() ?: return null
+        val secondLine = lines.getOrNull(1) ?: return firstLine
+        val descriptor = secondLine.lowercase(Locale.ROOT)
+            .replace(producerDescriptorSeparatorRegex, " ")
+            .trim()
+        return if (descriptor in producerDescriptorLines) "$firstLine $secondLine" else firstLine
     }
 
     private fun explicitBodegaProducer(text: String): ExplicitProducerCue? {

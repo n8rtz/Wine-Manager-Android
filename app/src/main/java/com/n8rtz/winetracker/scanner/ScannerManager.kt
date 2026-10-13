@@ -39,7 +39,7 @@ class ScannerManager(context: Context) {
         val inputImage = InputImage.fromFilePath(appContext, Uri.fromFile(file))
         return withContext(NonCancellable) {
             val fullFrameResult = recognizer.process(inputImage).await()
-            val fullFrameHypothesis = fullFrameResult.toHypothesis(isFullFrame = true)
+            val fullFrameHypothesis = fullFrameResult.toHypothesis()
             val enhancedBitmap = try {
                 withContext(Dispatchers.IO) { LabelImageEnhancer.createEnhancedLabelCrop(file) }
             } catch (cancelled: CancellationException) {
@@ -52,7 +52,7 @@ class ScannerManager(context: Context) {
             val enhancedHypothesis = enhancedBitmap?.let { bitmap ->
                 try {
                     recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
-                        .toHypothesis(isFullFrame = false)
+                        .toHypothesis()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -61,7 +61,7 @@ class ScannerManager(context: Context) {
                 } finally {
                     bitmap.recycle()
                 }
-            } ?: LabelOcrHypothesis(text = "", isFullFrame = false)
+            } ?: LabelOcrHypothesis(text = "")
 
             val bestHypothesis = LabelOcrHypothesisSelector.choose(
                 fullFrame = fullFrameHypothesis,
@@ -77,10 +77,7 @@ class ScannerManager(context: Context) {
         recognizer.close()
     }
 
-    private fun Text.toHypothesis(isFullFrame: Boolean): LabelOcrHypothesis = LabelOcrHypothesis(
-        text = text,
-        isFullFrame = isFullFrame
-    )
+    private fun Text.toHypothesis(): LabelOcrHypothesis = LabelOcrHypothesis(text)
 
     private suspend fun processImage(
         image: InputImage,

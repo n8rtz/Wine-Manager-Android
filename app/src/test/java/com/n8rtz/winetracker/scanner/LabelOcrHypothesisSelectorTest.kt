@@ -9,11 +9,8 @@ class LabelOcrHypothesisSelectorTest {
 
     @Test
     fun keepsTheFullFrameWhenTheEnhancedCropOffersNoImprovement() {
-        val fullFrame = LabelOcrHypothesis(
-            text = "Bodegas Muga\nRioja\n2019",
-            isFullFrame = true
-        )
-        val enhancedCrop = fullFrame.copy(isFullFrame = false)
+        val fullFrame = LabelOcrHypothesis(text = "Bodegas Muga\nRioja\n2019")
+        val enhancedCrop = fullFrame
 
         val selected = LabelOcrHypothesisSelector.choose(fullFrame, enhancedCrop, parser, dictionary)
 
@@ -22,14 +19,18 @@ class LabelOcrHypothesisSelectorTest {
 
     @Test
     fun choosesAClearerWineRelevantEnhancedCropOverWeakFullFrameText() {
-        val fullFrame = LabelOcrHypothesis(
-            text = "Bodegas Muqa\nRloja\n2O19",
-            isFullFrame = true
-        )
-        val enhancedCrop = LabelOcrHypothesis(
-            text = "BODEGAS MUGA\nRIOJA\nTEMPRANILLO\n2019",
-            isFullFrame = false
-        )
+        val fullFrame = LabelOcrHypothesis("Bodegas Muqa\nRloja\n2O19")
+        val enhancedCrop = LabelOcrHypothesis("BODEGAS MUGA\nRIOJA\nTEMPRANILLO\n2019")
+
+        val selected = LabelOcrHypothesisSelector.choose(fullFrame, enhancedCrop, parser, dictionary)
+
+        assertEquals(enhancedCrop, selected)
+    }
+
+    @Test
+    fun selectsEnhancedPassWhenItRecoversTheDecorativeMerlotWord() {
+        val fullFrame = LabelOcrHypothesis("BLACKSTONE\nWINERY\nMERL0T\nCALIFORNIA")
+        val enhancedCrop = LabelOcrHypothesis("BLACKSTONE\nWINERY\nMERLOT\nCALIFORNIA")
 
         val selected = LabelOcrHypothesisSelector.choose(fullFrame, enhancedCrop, parser, dictionary)
 
@@ -38,8 +39,8 @@ class LabelOcrHypothesisSelectorTest {
 
     @Test
     fun fallsBackToFullFrameWhenTheEnhancedCropIsBlank() {
-        val fullFrame = LabelOcrHypothesis("Rioja 2019", true)
-        val enhancedCrop = LabelOcrHypothesis("  ", false)
+        val fullFrame = LabelOcrHypothesis("Rioja 2019")
+        val enhancedCrop = LabelOcrHypothesis("  ")
 
         val selected = LabelOcrHypothesisSelector.choose(fullFrame, enhancedCrop, parser, dictionary)
 

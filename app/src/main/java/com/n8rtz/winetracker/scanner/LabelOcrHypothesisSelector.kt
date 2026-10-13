@@ -2,16 +2,12 @@ package com.n8rtz.winetracker.scanner
 
 import java.util.Locale
 
-internal data class LabelOcrHypothesis(
-    val text: String,
-    val isFullFrame: Boolean
-)
+internal data class LabelOcrHypothesis(val text: String)
 
 /** Prefers a legible, wine-relevant OCR result without letting cellar history dominate the choice. */
 internal object LabelOcrHypothesisSelector {
     private val wordRegex = Regex("[\\p{L}\\p{N}]+")
-    private const val FULL_FRAME_BONUS = 0.35
-    private const val ENHANCED_RESULT_MARGIN = 0.20
+    private const val ENHANCED_RESULT_MARGIN = 0.0
 
     fun choose(
         fullFrame: LabelOcrHypothesis,
@@ -62,14 +58,11 @@ internal object LabelOcrHypothesisSelector {
                 line.trimStart().startsWith("Bodega", ignoreCase = true)
             }
         ) 0.30 else 0.0
-        val frameBonus = if (candidate.isFullFrame) FULL_FRAME_BONUS else 0.0
-
         return lexicalEvidence +
             metadataEvidence +
             wordCount * 0.035 +
             lineCount * 0.035 +
-            bodegaCueBonus +
-            frameBonus
+            bodegaCueBonus
     }
 
     private const val CELLAR_ENTRY_SOURCE_WEIGHT = 20
