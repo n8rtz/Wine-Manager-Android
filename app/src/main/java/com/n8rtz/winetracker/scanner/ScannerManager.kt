@@ -19,7 +19,7 @@ class ScannerManager(context: Context) {
 
     /** Legacy bitmap entry point retained for existing callers. */
     suspend fun scanImage(bitmap: Bitmap): ScannedWine = try {
-        processImage(InputImage.fromBitmap(bitmap, 0))
+        processImage(InputImage.fromBitmap(bitmap, 0), WineReferenceDictionary.builtIn())
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (_: Exception) {
@@ -30,17 +30,22 @@ class ScannerManager(context: Context) {
      * Runs OCR on the full-resolution still photo saved by CameraX. Keep the photo alive until
      * ML Kit has finished reading it, even if the UI stops waiting for the result.
      */
-    suspend fun scanImage(file: File): ScannedWine {
+    suspend fun scanImage(file: File): ScannedWine = scanImage(file, WineReferenceDictionary.builtIn())
+
+    internal suspend fun scanImage(file: File, dictionary: WineReferenceDictionary): ScannedWine {
         val inputImage = InputImage.fromFilePath(appContext, Uri.fromFile(file))
-        return withContext(NonCancellable) { processImage(inputImage) }
+        return withContext(NonCancellable) { processImage(inputImage, dictionary) }
     }
 
     fun close() {
         recognizer.close()
     }
 
-    private suspend fun processImage(image: InputImage): ScannedWine {
+    private suspend fun processImage(
+        image: InputImage,
+        dictionary: WineReferenceDictionary
+    ): ScannedWine {
         val result = recognizer.process(image).await()
-        return labelParser.parse(result.text)
+        return labelParser.parse(result.text, dictionary)
     }
 }

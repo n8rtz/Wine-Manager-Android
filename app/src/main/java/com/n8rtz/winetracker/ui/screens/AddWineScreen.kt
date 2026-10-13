@@ -84,12 +84,31 @@ fun AddWineScreen(
     var selectedRegion by remember { mutableStateOf("") }
     var selectedAppellation by remember { mutableStateOf("") }
 
-    val availableCountries = WineRepository.Companion.locationData.keys.toList().sorted()
+    val availableCountries = (
+        WineRepository.Companion.locationData.keys +
+            allDefinitions.mapNotNull { it.country.trim().takeIf(String::isNotEmpty) } +
+            listOfNotNull(selectedCountry.takeIf(String::isNotEmpty))
+        ).distinct().sorted()
     val availableRegions = if (selectedCountry.isNotEmpty()) {
-        WineRepository.Companion.locationData[selectedCountry]?.keys?.toList()?.sorted() ?: emptyList()
+        (
+            WineRepository.Companion.locationData[selectedCountry]?.keys.orEmpty() +
+                allDefinitions
+                    .filter { it.country.trim().equals(selectedCountry, ignoreCase = true) }
+                    .mapNotNull { it.region?.trim()?.takeIf(String::isNotEmpty) } +
+                listOfNotNull(selectedRegion.takeIf(String::isNotEmpty))
+            ).distinct().sorted()
     } else emptyList()
     val availableAppellations = if (selectedCountry.isNotEmpty() && selectedRegion.isNotEmpty()) {
-        WineRepository.Companion.locationData[selectedCountry]?.get(selectedRegion)?.sorted() ?: emptyList()
+        (
+            WineRepository.Companion.locationData[selectedCountry]?.get(selectedRegion).orEmpty() +
+                allDefinitions
+                    .filter {
+                        it.country.trim().equals(selectedCountry, ignoreCase = true) &&
+                            it.region?.trim().equals(selectedRegion, ignoreCase = true)
+                    }
+                    .mapNotNull { it.subregion?.trim()?.takeIf(String::isNotEmpty) } +
+                listOfNotNull(selectedAppellation.takeIf(String::isNotEmpty))
+            ).distinct().sorted()
     } else emptyList()
 
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
@@ -481,13 +500,34 @@ fun AddWineScreen(
             onDismissRequest = { scannerViewModel.dismissLabelScan(review.requestId) },
             title = { Text("Review scanned label") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text("These are suggestions. They will not be saved until you save the wine.")
                     review.result.maker?.let { Text("Producer: $it") }
                     review.result.name?.let { Text("Wine: $it") }
                     review.result.vintage?.let { Text("Vintage: $it") }
+                    review.result.type?.let { Text("Type: $it") }
+                    val origin = listOfNotNull(
+                        review.result.country,
+                        review.result.region,
+                        review.result.subregion
+                    ).distinct().joinToString(" · ")
+                    if (origin.isNotBlank()) Text("Origin: $origin")
+                    review.result.correctedText
+                        ?.takeIf { it.isNotBlank() && it != review.result.rawText }
+                        ?.let { corrected ->
+                            Text("Wine dictionary correction", style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                corrected,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     review.result.rawText?.let { rawText ->
-                        Text("Recognized text", style = MaterialTheme.typography.labelLarge)
+                        Text("Original OCR text", style = MaterialTheme.typography.labelLarge)
                         Text(
                             rawText,
                             style = MaterialTheme.typography.bodySmall,
@@ -503,6 +543,10 @@ fun AddWineScreen(
                         review.result.maker?.takeIf(String::isNotBlank)?.let { maker = it }
                         review.result.name?.takeIf(String::isNotBlank)?.let { name = it }
                         review.result.vintage?.takeIf(String::isNotBlank)?.let { vintage = it }
+                        review.result.type?.takeIf(String::isNotBlank)?.let { type = it }
+                        review.result.country?.takeIf(String::isNotBlank)?.let { selectedCountry = it }
+                        review.result.region?.takeIf(String::isNotBlank)?.let { selectedRegion = it }
+                        review.result.subregion?.takeIf(String::isNotBlank)?.let { selectedAppellation = it }
                         scannerViewModel.dismissLabelScan(review.requestId)
                         showLabelCamera = false
                     }

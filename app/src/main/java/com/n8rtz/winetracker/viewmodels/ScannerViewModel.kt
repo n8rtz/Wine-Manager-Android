@@ -14,6 +14,7 @@ import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.ScannerManager
 import com.n8rtz.winetracker.scanner.ScannedWine
+import com.n8rtz.winetracker.scanner.WineReferenceDictionary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -110,7 +111,18 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val result = scannerManager.scanImage(photoFile)
+                val dictionary = try {
+                    WineReferenceDictionary.forCellar(
+                        definitions = repository.database.wineDao().getAllDefinitionsOnce(),
+                        locationData = WineRepository.locationData
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Log.w("ScannerViewModel", "Could not load cellar vocabulary; using the built-in wine dictionary", error)
+                    WineReferenceDictionary.builtIn()
+                }
+                val result = scannerManager.scanImage(photoFile, dictionary)
                 finishScan(requestId, result, null)
             } catch (cancelled: CancellationException) {
                 finishScan(requestId, null, null)
