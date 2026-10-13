@@ -1,6 +1,11 @@
 package com.n8rtz.winetracker.ui.screens
 
 import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,17 +13,21 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
@@ -26,17 +35,36 @@ import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
 
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWineScreen(
     viewModel: WineViewModel,
     scannerViewModel: ScannerViewModel,
     onWineAdded: () -> Unit
 ) {
-    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val context = LocalContext.current
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
+    var cameraPermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var showLabelCamera by remember { mutableStateOf(false) }
+    var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        cameraPermissionGranted = granted
+        if (granted) {
+            cameraError = null
+            showLabelCamera = true
+        } else {
+            cameraError = "Camera permission is needed to scan a wine label. You can still enter the wine manually."
+        }
+    }
 
     DisposableEffect(scannerViewModel) {
         onDispose { scannerViewModel.cancelActiveLabelScan() }
@@ -66,49 +94,6 @@ fun AddWineScreen(
 
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val vintages = (currentYear downTo 1950).map { it.toString() } + listOf("NV")
-    val scanReview = labelScanState as? LabelScanState.Review
-
-    scanReview?.let { review ->
-        AlertDialog(
-            onDismissRequest = { scannerViewModel.dismissLabelScan(review.requestId) },
-            title = { Text("Review scanned label") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("These are suggestions. They will not be saved until you save the wine.")
-                    review.result.maker?.let { Text("Producer: $it") }
-                    review.result.name?.let { Text("Wine: $it") }
-                    review.result.vintage?.let { Text("Vintage: $it") }
-                    review.result.rawText?.let { rawText ->
-                        Text("Recognized text", style = MaterialTheme.typography.labelLarge)
-                        Text(
-                            rawText,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 5,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        review.result.maker?.takeIf(String::isNotBlank)?.let { maker = it }
-                        review.result.name?.takeIf(String::isNotBlank)?.let { name = it }
-                        review.result.vintage?.takeIf(String::isNotBlank)?.let { vintage = it }
-                        scannerViewModel.dismissLabelScan(review.requestId)
-                    }
-                ) {
-                    Text("Use Suggestions")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { scannerViewModel.dismissLabelScan(review.requestId) }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
     Scaffold(
         topBar = { TopAppBar(title = { Text("Add New Wine") }) }
     ) { padding ->
@@ -118,79 +103,32 @@ fun AddWineScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Camera Section
-            if (cameraPermissionState.status.isGranted) {
-                Box(modifier = Modifier.height(250.dp).fillMaxWidth()) {
-                    LabelScanCameraPreview(
-                        scannerViewModel = scannerViewModel,
-                        onCameraError = { cameraError = it },
-                        modifier = Modifier.fillMaxSize()
-                    )
-
-                    val canStartScan = cameraError == null &&
-                        (labelScanState is LabelScanState.Idle || labelScanState is LabelScanState.Error)
-                    Button(
-                        enabled = canStartScan,
-                        onClick = {
-                            cameraError = null
-                            scannerViewModel.requestLabelScan()
-                        },
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
-                    ) {
-                        Icon(Icons.Default.Camera, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (labelScanState is LabelScanState.Error) "Retry Scan" else "Read Label")
-                    }
+            // Form Section
+            Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        cameraError = null
+                        if (cameraPermissionGranted) {
+                            showLabelCamera = true
+                        } else {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Camera, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Scan label with camera")
                 }
-
-                when (val state = labelScanState) {
-                    is LabelScanState.WaitingForFrame -> Text(
-                        "Hold the label steady in the frame.",
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    is LabelScanState.Processing -> Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Text("Reading label on this device…", style = MaterialTheme.typography.bodySmall)
-                    }
-                    is LabelScanState.FinishingCancelledScan -> Text(
-                        "Finishing the previous scan…",
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    is LabelScanState.Error -> Text(
-                        state.message,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                cameraError?.let { message ->
+                    Text(
+                        message,
+                        modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
-                    else -> cameraError?.let { message ->
-                        Text(
-                            message,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
                 }
-            } else {
-                Box(
-                    modifier = Modifier.height(200.dp).fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
-                        Text("Enable Camera to Scan")
-                    }
-                }
-            }
 
-            // Form Section
-            Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                
                 // Autocomplete Producer Search
                 var producerSearchExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -518,5 +456,210 @@ fun AddWineScreen(
                 }
             }
         }
+    }
+
+    if (showLabelCamera) {
+        LabelScanCameraDialog(
+            scannerViewModel = scannerViewModel,
+            cameraReady = cameraReady,
+            cameraError = cameraError,
+            onCameraError = { cameraError = it },
+            onCameraReadyChanged = { ready ->
+                cameraReady = ready
+                if (ready) cameraError = null
+            },
+            onDismiss = {
+                scannerViewModel.cancelActiveLabelScan()
+                showLabelCamera = false
+                cameraReady = false
+            }
+        )
+    }
+
+    (labelScanState as? LabelScanState.Review)?.let { review ->
+        AlertDialog(
+            onDismissRequest = { scannerViewModel.dismissLabelScan(review.requestId) },
+            title = { Text("Review scanned label") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("These are suggestions. They will not be saved until you save the wine.")
+                    review.result.maker?.let { Text("Producer: $it") }
+                    review.result.name?.let { Text("Wine: $it") }
+                    review.result.vintage?.let { Text("Vintage: $it") }
+                    review.result.rawText?.let { rawText ->
+                        Text("Recognized text", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            rawText,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 5,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        review.result.maker?.takeIf(String::isNotBlank)?.let { maker = it }
+                        review.result.name?.takeIf(String::isNotBlank)?.let { name = it }
+                        review.result.vintage?.takeIf(String::isNotBlank)?.let { vintage = it }
+                        scannerViewModel.dismissLabelScan(review.requestId)
+                        showLabelCamera = false
+                    }
+                ) {
+                    Text("Use Suggestions")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { scannerViewModel.dismissLabelScan(review.requestId) }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun LabelScanCameraDialog(
+    scannerViewModel: ScannerViewModel,
+    cameraReady: Boolean,
+    cameraError: String?,
+    onCameraError: (String) -> Unit,
+    onCameraReadyChanged: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val scanState by scannerViewModel.labelScanState.collectAsState()
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                LabelScanCameraPreview(
+                    scannerViewModel = scannerViewModel,
+                    onCameraError = onCameraError,
+                    onCameraReadyChanged = onCameraReadyChanged,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp)
+                        .height(240.dp)
+                        .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
+                )
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.55f))
+                        .statusBarsPadding()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, contentDescription = "Close scanner", tint = Color.White)
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("Scan wine label", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                            Text(
+                                "Fit the label in the frame, then take a photo.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.68f))
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    when {
+                        cameraError != null -> Text(
+                            cameraError,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        scanState is LabelScanState.Error -> Text(
+                            (scanState as LabelScanState.Error).message,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        scanState is LabelScanState.FinishingCancelledScan -> Text(
+                            "Finishing the previous scan…",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        !cameraReady -> Text(
+                            "Starting camera…",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    when (scanState) {
+                        LabelScanState.Idle, is LabelScanState.Error -> Button(
+                            enabled = cameraReady && cameraError == null,
+                            onClick = { scannerViewModel.requestLabelScan() },
+                            modifier = Modifier.fillMaxWidth().height(56.dp)
+                        ) {
+                            Icon(Icons.Default.Camera, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (scanState is LabelScanState.Error) "Try Again" else "Take Label Photo")
+                        }
+                        is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
+                        is LabelScanState.Processing -> LabelScanProgress("Reading the photo carefully… This may take a few seconds.")
+                        is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
+                        is LabelScanState.Review -> Text(
+                            "Scan complete. Review the suggestions.",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Text(
+                        "Hold the phone steady and make sure the label is in focus.",
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LabelScanProgress(message: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(20.dp),
+            strokeWidth = 2.dp,
+            color = Color.White
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(message, color = Color.White, style = MaterialTheme.typography.bodyMedium)
     }
 }

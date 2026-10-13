@@ -1,9 +1,9 @@
 package com.n8rtz.winetracker.ui.components
 
 import android.content.Context
-import android.util.Size
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -22,58 +23,67 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.io.File
 
-/** CameraX preview plus a YUV ImageAnalysis stream; OCR itself is requested one frame at a time. */
+/** CameraX preview used only in the explicit, full-screen label scanner. */
 @Composable
 fun LabelScanCameraPreview(
     scannerViewModel: ScannerViewModel,
     onCameraError: (String) -> Unit,
+    onCameraReadyChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val latestOnCameraError = rememberUpdatedState(onCameraError)
+    val latestOnCameraReadyChanged = rememberUpdatedState(onCameraReadyChanged)
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
-    val analyzerEnabled = labelScanState is LabelScanState.WaitingForFrame
-    val analyzerExecutor = remember { Executors.newSingleThreadExecutor() }
     val bindingState = remember { mutableStateOf<CameraUseCaseBinding?>(null) }
+    var cameraReady by remember { mutableStateOf(false) }
 
-    LaunchedEffect(bindingState.value, analyzerEnabled) {
-        bindingState.value?.setAnalyzerEnabled(analyzerEnabled)
+    LaunchedEffect(bindingState.value, cameraReady, labelScanState) {
+        val captureRequest = labelScanState as? LabelScanState.CapturingPhoto
+        if (cameraReady && captureRequest != null) {
+            bindingState.value?.takePicture(captureRequest.requestId)
+        }
     }
 
-    DisposableEffect(analyzerExecutor, lifecycleOwner, scannerViewModel) {
+    DisposableEffect(lifecycleOwner, scannerViewModel) {
         onDispose {
             scannerViewModel.cancelActiveLabelScan()
             bindingState.value?.close()
-            analyzerExecutor.shutdown()
+            cameraReady = false
+            latestOnCameraReadyChanged.value(false)
         }
     }
 
     AndroidView(
         factory = { viewContext ->
-            val previewView = PreviewView(viewContext)
+            val previewView = PreviewView(viewContext).apply {
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
-            val analysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                // 720p keeps the OCR input modest; verify label legibility on physical devices.
-                .setTargetResolution(Size(1280, 720))
+            val imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setJpegQuality(100)
                 .build()
             CameraUseCaseBinding(
+                context = viewContext.applicationContext,
                 preview = preview,
-                analysis = analysis,
-                analyzerExecutor = analyzerExecutor,
-                analyzer = scannerViewModel::onAnalysisFrame,
-                onError = { latestOnCameraError.value(it) }
-            )
-                .also { binding ->
-                    bindingState.value = binding
-                    binding.bind(viewContext, lifecycleOwner)
+                imageCapture = imageCapture,
+                onPhotoCaptured = scannerViewModel::onLabelPhotoCaptured,
+                onCaptureFailed = scannerViewModel::onLabelCaptureFailed,
+                onCameraError = { latestOnCameraError.value(it) },
+                onCameraReadyChanged = { ready ->
+                    cameraReady = ready
+                    latestOnCameraReadyChanged.value(ready)
                 }
+            ).also { binding ->
+                bindingState.value = binding
+                binding.bind(viewContext, lifecycleOwner)
+            }
             previewView
         },
         modifier = modifier
@@ -81,27 +91,23 @@ fun LabelScanCameraPreview(
 }
 
 private class CameraUseCaseBinding(
+    private val context: Context,
     private val preview: Preview,
-    private val analysis: ImageAnalysis,
-    private val analyzerExecutor: ExecutorService,
-    private val analyzer: ImageAnalysis.Analyzer,
-    private val onError: (String) -> Unit
+    private val imageCapture: ImageCapture,
+    private val onPhotoCaptured: (Long, File) -> Unit,
+    private val onCaptureFailed: (Long, Throwable) -> Unit,
+    private val onCameraError: (String) -> Unit,
+    private val onCameraReadyChanged: (Boolean) -> Unit
 ) {
     @Volatile
     private var closed = false
     private var cameraProvider: ProcessCameraProvider? = null
+    private var cameraReady = false
+    private var captureInProgress = false
+    private var lastCaptureRequestId: Long? = null
 
-    fun setAnalyzerEnabled(enabled: Boolean) {
-        if (closed) return
-        if (enabled) {
-            analysis.setAnalyzer(analyzerExecutor, analyzer)
-        } else {
-            analysis.clearAnalyzer()
-        }
-    }
-
-    fun bind(context: Context, lifecycleOwner: androidx.lifecycle.LifecycleOwner) {
-        val providerFuture = ProcessCameraProvider.getInstance(context)
+    fun bind(viewContext: Context, lifecycleOwner: androidx.lifecycle.LifecycleOwner) {
+        val providerFuture = ProcessCameraProvider.getInstance(viewContext)
         providerFuture.addListener({
             if (closed) return@addListener
             try {
@@ -111,20 +117,68 @@ private class CameraUseCaseBinding(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
-                    analysis
+                    imageCapture
                 )
                 cameraProvider = provider
+                cameraReady = true
+                onCameraReadyChanged(true)
             } catch (_: Exception) {
-                if (!closed) onError("Camera could not be started. You can still enter the wine manually.")
+                if (!closed) {
+                    onCameraReadyChanged(false)
+                    onCameraError("Camera could not be started. You can still enter the wine manually.")
+                }
             }
-        }, ContextCompat.getMainExecutor(context))
+        }, ContextCompat.getMainExecutor(viewContext))
+    }
+
+    fun takePicture(requestId: Long) {
+        if (closed || lastCaptureRequestId == requestId) return
+        if (!cameraReady || captureInProgress) {
+            onCaptureFailed(requestId, IllegalStateException("Camera is not ready to take a photo"))
+            return
+        }
+
+        lastCaptureRequestId = requestId
+        captureInProgress = true
+        val photoFile = try {
+            File.createTempFile("wine-label-", ".jpg", context.cacheDir)
+        } catch (error: Exception) {
+            captureInProgress = false
+            onCaptureFailed(requestId, error)
+            return
+        }
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+        try {
+            imageCapture.takePicture(
+                outputOptions,
+                ContextCompat.getMainExecutor(context),
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        captureInProgress = false
+                        onPhotoCaptured(requestId, photoFile)
+                    }
+
+                    override fun onError(exception: ImageCaptureException) {
+                        captureInProgress = false
+                        photoFile.delete()
+                        onCaptureFailed(requestId, exception)
+                    }
+                }
+            )
+        } catch (error: Exception) {
+            captureInProgress = false
+            photoFile.delete()
+            onCaptureFailed(requestId, error)
+        }
     }
 
     fun close() {
         closed = true
-        analysis.clearAnalyzer()
+        cameraReady = false
+        onCameraReadyChanged(false)
         cameraProvider?.let { provider ->
-            runCatching { provider.unbind(preview, analysis) }
+            runCatching { provider.unbind(preview, imageCapture) }
         }
         cameraProvider = null
     }

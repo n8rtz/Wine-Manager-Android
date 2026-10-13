@@ -2,7 +2,7 @@ package com.n8rtz.winetracker.scanner
 
 sealed interface LabelScanState {
     data object Idle : LabelScanState
-    data class WaitingForFrame(val requestId: Long) : LabelScanState
+    data class CapturingPhoto(val requestId: Long) : LabelScanState
     data class Processing(val requestId: Long) : LabelScanState
     data class Review(val requestId: Long, val result: ScannedWine) : LabelScanState
     data class Error(val requestId: Long, val message: String) : LabelScanState

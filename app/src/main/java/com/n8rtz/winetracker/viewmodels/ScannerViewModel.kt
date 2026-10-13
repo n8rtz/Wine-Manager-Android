@@ -3,7 +3,6 @@ package com.n8rtz.winetracker.viewmodels
 import android.app.Application
 import android.graphics.Bitmap
 import android.util.Log
-import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,18 +12,18 @@ import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.WineImageBatchProcessor
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import com.n8rtz.winetracker.scanner.LabelScanState
-import com.n8rtz.winetracker.scanner.OneShotScanGate
 import com.n8rtz.winetracker.scanner.ScannerManager
 import com.n8rtz.winetracker.scanner.ScannedWine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.atomic.AtomicBoolean
+import java.io.File
 
 class ScannerViewModel(application: Application, val repository: WineRepository) : AndroidViewModel(application) {
     private val db = repository.database
@@ -32,10 +31,9 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     // Retain lazy initialization so image imports do not create an unused recognizer.
     private val scannerManagerDelegate = lazy {
         Log.d("WineTracker", "ScannerViewModel: Initializing ScannerManager (lazy)")
-        ScannerManager()
+        ScannerManager(application)
     }
     private val scannerManager by scannerManagerDelegate
-    private val scanGate = OneShotScanGate()
     private val scanStateLock = Any()
     private var nextScanRequestId = 0L
 
@@ -70,6 +68,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     private val _labelScanState = MutableStateFlow<LabelScanState>(LabelScanState.Idle)
     val labelScanState: StateFlow<LabelScanState> = _labelScanState.asStateFlow()
 
+    /** Starts a user-requested still photo capture; no OCR runs on the live preview. */
     fun requestLabelScan(): Boolean = synchronized(scanStateLock) {
         val current = _labelScanState.value
         if (current !is LabelScanState.Idle && current !is LabelScanState.Error) {
@@ -77,20 +76,15 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         }
 
         val requestId = ++nextScanRequestId
-        if (!scanGate.request(requestId)) return@synchronized false
-        _labelScanState.value = LabelScanState.WaitingForFrame(requestId)
-
+        _labelScanState.value = LabelScanState.CapturingPhoto(requestId)
         viewModelScope.launch {
-            kotlinx.coroutines.delay(SCAN_FRAME_TIMEOUT_MS)
+            delay(PHOTO_CAPTURE_TIMEOUT_MS)
             synchronized(scanStateLock) {
                 val state = _labelScanState.value
-                if (state is LabelScanState.WaitingForFrame &&
-                    state.requestId == requestId &&
-                    scanGate.cancel(requestId)
-                ) {
+                if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
                     _labelScanState.value = LabelScanState.Error(
                         requestId,
-                        "Camera did not provide a frame. Try scanning again."
+                        "The photo took too long to capture. Try again."
                     )
                 }
             }
@@ -98,59 +92,61 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         true
     }
 
-    /** Called for every ImageAnalysis frame; only a requested frame is handed to ML Kit. */
-    fun onAnalysisFrame(imageProxy: ImageProxy) {
-        val requestId = synchronized(scanStateLock) {
-            val claimedId = scanGate.claimNextFrame()
-            if (claimedId == null) {
-                imageProxy.close()
-                return
-            }
-
+    /** Called by CameraX only after the full-resolution still photo has been saved. */
+    fun onLabelPhotoCaptured(requestId: Long, photoFile: File) {
+        val accepted = synchronized(scanStateLock) {
             val state = _labelScanState.value
-            if (state !is LabelScanState.WaitingForFrame || state.requestId != claimedId) {
-                scanGate.finish(claimedId)
-                if (state is LabelScanState.FinishingCancelledScan && state.requestId == claimedId) {
-                    _labelScanState.value = LabelScanState.Idle
-                }
-                imageProxy.close()
-                return
+            if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
+                _labelScanState.value = LabelScanState.Processing(requestId)
+                true
+            } else {
+                false
             }
-
-            _labelScanState.value = LabelScanState.Processing(claimedId)
-            claimedId
+        }
+        if (!accepted) {
+            photoFile.delete()
+            return
         }
 
-        val ownershipTransferred = AtomicBoolean(false)
-        val job = viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                val manager = scannerManager
-                ownershipTransferred.set(true)
-                val result = manager.scanImageProxy(imageProxy)
+                val result = scannerManager.scanImage(photoFile)
                 finishScan(requestId, result, null)
             } catch (cancelled: CancellationException) {
                 finishScan(requestId, null, null)
                 throw cancelled
             } catch (error: Exception) {
-                Log.w("ScannerViewModel", "On-device label OCR failed", error)
+                Log.w("ScannerViewModel", "On-device still-photo OCR failed", error)
                 finishScan(requestId, null, error)
+            } finally {
+                if (photoFile.exists() && !photoFile.delete()) {
+                    Log.w("ScannerViewModel", "Could not delete temporary label photo")
+                }
             }
         }
-        job.invokeOnCompletion {
-            // If the ViewModel was cleared before the coroutine started, ScannerManager never owned it.
-            if (!ownershipTransferred.get()) imageProxy.close()
+    }
+
+    fun onLabelCaptureFailed(requestId: Long, error: Throwable) {
+        Log.w("ScannerViewModel", "Could not capture wine label photo", error)
+        synchronized(scanStateLock) {
+            val state = _labelScanState.value
+            if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
+                _labelScanState.value = LabelScanState.Error(
+                    requestId,
+                    "Could not take the photo. Check the label is in view and try again."
+                )
+            }
         }
     }
 
     private fun finishScan(requestId: Long, result: ScannedWine?, error: Exception?) {
         synchronized(scanStateLock) {
-            val mayPublish = scanGate.finish(requestId)
             when (val current = _labelScanState.value) {
-                is LabelScanState.Processing -> if (current.requestId == requestId && mayPublish) {
+                is LabelScanState.Processing -> if (current.requestId == requestId) {
                     _labelScanState.value = when {
                         error != null -> LabelScanState.Error(
                             requestId,
-                            "Could not read this label. Try better light, hold it steady, or enter details manually."
+                            "Could not read this photo. Try better light, hold the label steady, or enter details manually."
                         )
                         result?.hasSuggestions == true -> LabelScanState.Review(requestId, result)
                         else -> LabelScanState.Error(
@@ -170,10 +166,10 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     fun dismissLabelScan(requestId: Long) {
         synchronized(scanStateLock) {
             when (val current = _labelScanState.value) {
-                is LabelScanState.WaitingForFrame -> if (current.requestId == requestId && scanGate.cancel(requestId)) {
+                is LabelScanState.CapturingPhoto -> if (current.requestId == requestId) {
                     _labelScanState.value = LabelScanState.Idle
                 }
-                is LabelScanState.Processing -> if (current.requestId == requestId && scanGate.cancel(requestId)) {
+                is LabelScanState.Processing -> if (current.requestId == requestId) {
                     _labelScanState.value = LabelScanState.FinishingCancelledScan(requestId)
                 }
                 is LabelScanState.Review -> if (current.requestId == requestId) {
@@ -189,7 +185,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
 
     fun cancelActiveLabelScan() {
         val requestId = when (val current = _labelScanState.value) {
-            is LabelScanState.WaitingForFrame -> current.requestId
+            is LabelScanState.CapturingPhoto -> current.requestId
             is LabelScanState.Processing -> current.requestId
             is LabelScanState.Review -> current.requestId
             is LabelScanState.Error -> current.requestId
@@ -223,6 +219,6 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     }
 
     private companion object {
-        const val SCAN_FRAME_TIMEOUT_MS = 8_000L
+        const val PHOTO_CAPTURE_TIMEOUT_MS = 20_000L
     }
 }

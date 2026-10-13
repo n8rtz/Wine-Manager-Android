@@ -37,4 +37,14 @@ class WineLabelParserTest {
         assertEquals("Reserve Cabernet", result.name)
         assertNull(result.vintage)
     }
+
+    @Test
+    fun normalizesInconsistentOcrCaseAndPreservesWineAbbreviations() {
+        val rawText = "dOmAiNe dE lA rOmAnÉe-cOnTi\nrEsErVe cAbErNeT aOc\n2019"
+        val result = parser.parse(rawText)
+
+        assertEquals("Domaine De La Romanée-Conti", result.maker)
+        assertEquals("Reserve Cabernet AOC", result.name)
+        assertEquals(rawText, result.rawText)
+    }
 }
