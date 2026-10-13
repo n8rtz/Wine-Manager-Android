@@ -98,7 +98,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         val accepted = synchronized(scanStateLock) {
             val state = _labelScanState.value
             if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
-                _labelScanState.value = LabelScanState.Processing(requestId)
+                _labelScanState.value = LabelScanState.Processing(requestId, photoFile.absolutePath)
                 true
             } else {
                 false

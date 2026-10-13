@@ -1,12 +1,16 @@
 package com.n8rtz.winetracker.ui.components
 
 import android.content.Context
+import android.view.View
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -17,10 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.AsyncImage
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.io.File
@@ -57,37 +64,54 @@ fun LabelScanCameraPreview(
         }
     }
 
-    AndroidView(
-        factory = { viewContext ->
-            val previewView = PreviewView(viewContext).apply {
-                scaleType = PreviewView.ScaleType.FILL_CENTER
-            }
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-            val imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                .setJpegQuality(100)
-                .build()
-            CameraUseCaseBinding(
-                context = viewContext.applicationContext,
-                preview = preview,
-                imageCapture = imageCapture,
-                onPhotoCaptured = scannerViewModel::onLabelPhotoCaptured,
-                onCaptureFailed = scannerViewModel::onLabelCaptureFailed,
-                onCameraError = { latestOnCameraError.value(it) },
-                onCameraReadyChanged = { ready ->
-                    cameraReady = ready
-                    latestOnCameraReadyChanged.value(ready)
+    val capturedPhotoPath = (labelScanState as? LabelScanState.Processing)?.photoPath
+
+    Box(modifier = modifier.background(Color.Black)) {
+        AndroidView(
+            factory = { viewContext ->
+                val previewView = PreviewView(viewContext).apply {
+                    scaleType = PreviewView.ScaleType.FILL_CENTER
                 }
-            ).also { binding ->
-                bindingState.value = binding
-                binding.bind(viewContext, lifecycleOwner)
-            }
-            previewView
-        },
-        modifier = modifier
-    )
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+                val imageCapture = ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .setJpegQuality(100)
+                    .build()
+                CameraUseCaseBinding(
+                    context = viewContext.applicationContext,
+                    preview = preview,
+                    imageCapture = imageCapture,
+                    onPhotoCaptured = scannerViewModel::onLabelPhotoCaptured,
+                    onCaptureFailed = scannerViewModel::onLabelCaptureFailed,
+                    onCameraError = { latestOnCameraError.value(it) },
+                    onCameraReadyChanged = { ready ->
+                        cameraReady = ready
+                        latestOnCameraReadyChanged.value(ready)
+                    }
+                ).also { binding ->
+                    bindingState.value = binding
+                    binding.bind(viewContext, lifecycleOwner)
+                }
+                previewView
+            },
+            update = { previewView ->
+                previewView.visibility =
+                    if (capturedPhotoPath == null) View.VISIBLE else View.INVISIBLE
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        if (capturedPhotoPath != null) {
+            AsyncImage(
+                model = File(capturedPhotoPath),
+                contentDescription = "Captured wine label",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
 }
 
 private class CameraUseCaseBinding(
