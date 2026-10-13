@@ -68,6 +68,160 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun completesTheBrunelloPrefixAndRejectsAnIncompatibleGrape() {
+        val result = parser.parse("BRUNELLO DI RIESLING")
+
+        assertEquals("Brunello di Montalcino", result.name)
+        assertEquals("Italy", result.country)
+        assertEquals("Tuscany", result.region)
+        assertEquals("Red", result.type)
+        assertEquals("Brunello di Montalcino Riesling", result.correctedText)
+    }
+
+    @Test
+    fun regionalContextFavorsTheGrapeTypicalOfThatRegion() {
+        val result = parser.parse("MOSEL RIESLING")
+
+        assertEquals("Riesling", result.name)
+        assertEquals("Germany", result.country)
+        assertEquals("Mosel", result.region)
+        assertEquals("White", result.type)
+    }
+
+    @Test
+    fun recognizesCaliforniaAsAUnitedStatesRegionNotACountry() {
+        val result = parser.parse("CALIFORNIA")
+
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+    }
+
+    @Test
+    fun completesNapaToNapaValleyWithItsCountryAndRegion() {
+        val result = parser.parse("NAPA VALLY")
+
+        assertEquals("Napa Valley", result.name)
+        assertEquals("Napa Valley", result.correctedText)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+        assertEquals("Napa Valley", result.subregion)
+        assertNull(result.type)
+    }
+
+    @Test
+    fun prefersFullCanonicalWineAndProducerOverShortCellarAliases() {
+        val definitions = listOf(
+            com.n8rtz.winetracker.data.local.WineDefinition(
+                maker = "Kirkland",
+                name = "Brunello",
+                type = "Red",
+                country = "Italy",
+                region = "Tuscana",
+                subregion = "Brunello"
+            ),
+            com.n8rtz.winetracker.data.local.WineDefinition(
+                maker = "Kirkland Signature",
+                name = "Brunello di Montalcino",
+                type = "Red",
+                country = "Italy",
+                region = "Tuscany",
+                subregion = "Brunello di Montalcino"
+            )
+        )
+        val locations = mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        val dictionary = WineReferenceDictionary.forCellar(definitions, locations)
+        val rawText = "KIRKLAND\nBRUNELLO\nbMONTALCINO\nORGNE CONTROLLAA\n2021"
+        val result = parser.parse(rawText, dictionary)
+
+        assertEquals("Kirkland Signature", result.maker)
+        assertEquals("Brunello di Montalcino", result.name)
+        assertEquals("Italy", result.country)
+        assertEquals("Tuscany", result.region)
+        assertEquals("Brunello di Montalcino", result.subregion)
+        assertEquals("Red", result.type)
+        assertEquals(
+            "Kirkland Signature\nBrunello di Montalcino\nOrigine Controllata\n2021",
+            result.correctedText
+        )
+        assertEquals("Tuscany", parser.parse("TUSCANA", dictionary).region)
+        val shortLabel = parser.parse("KIRKLAND BRUNELLO", dictionary)
+        assertEquals("Kirkland Signature", shortLabel.maker)
+        assertEquals("Brunello", shortLabel.name)
+    }
+
+    @Test
+    fun prefersAnAppellationOverACompetingCellarWineName() {
+        val definition = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Kirkland Signature",
+            name = "E Parantita",
+            type = "Red",
+            country = "Italy",
+            region = "Tuscany",
+            subregion = "Brunello di Montalcino"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(definition),
+            mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        )
+        val result = parser.parse(
+            "KIRKLAND\nE PARANTITA\nBRUNELLO DI MONTALCINO\n2021",
+            dictionary
+        )
+
+        assertEquals("Kirkland Signature", result.maker)
+        assertEquals("Brunello di Montalcino", result.name)
+    }
+
+    @Test
+    fun keepsDetectedAppellationAheadOfUnrecognizedOcrNoise() {
+        val definitions = listOf(
+            com.n8rtz.winetracker.data.local.WineDefinition(
+                maker = "Kirkland Signature",
+                name = "Pinot Noir",
+                type = "Red",
+                country = "California",
+                region = "North Coast",
+                subregion = "Napa Valley"
+            ),
+            com.n8rtz.winetracker.data.local.WineDefinition(
+                maker = "Other Producer",
+                name = "Brunello di Montalcino",
+                type = "Red",
+                country = "Italy",
+                region = "Tuscana",
+                subregion = "Brunello"
+            )
+        )
+        val locations = mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        val dictionary = WineReferenceDictionary.forCellar(definitions, locations)
+        val result = parser.parse(
+            "KIRKLAND\nBRUNELLO DI MONTALCINO\nORGUE CONUOLATA\n2021",
+            dictionary
+        )
+
+        assertEquals("Kirkland Signature", result.maker)
+        assertEquals("Brunello di Montalcino", result.name)
+        assertEquals("ORGUE CONUOLATA", result.correctedText?.lineSequence()?.drop(2)?.first())
+    }
+
+    @Test
+    fun defaultsCellarProducerKirklandToKirklandSignature() {
+        val definition = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Kirkland",
+            name = "Pinot Noir",
+            type = "Red",
+            country = "California",
+            region = "North Coast",
+            subregion = "Napa Valley"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(listOf(definition), emptyMap())
+        val result = parser.parse("KIRKLAND", dictionary)
+
+        assertEquals("Kirkland Signature", result.maker)
+        assertEquals("Kirkland Signature", result.correctedText)
+    }
+
+    @Test
     fun usesAnUnambiguousCellarProducerPrefixAsAnAlias() {
         val definition = com.n8rtz.winetracker.data.local.WineDefinition(
             maker = "Silver Crane Estate",
@@ -126,7 +280,7 @@ class WineLabelParserTest {
 
         assertEquals("Silver Crane Estate", result.maker)
         assertEquals("Cabernet Franc", result.name)
-        assertEquals("California", result.country)
+        assertEquals("United States", result.country)
         assertEquals("North Coast", result.region)
         assertEquals("Napa Valley", result.subregion)
     }

@@ -39,28 +39,6 @@ internal class WineLabelParser {
         val matches = correction.matches
         val vintage = vintageRegex.find(text)?.value
         val producerMatch = bestMatch(matches.filter { it.entry.kind == WineTermKind.PRODUCER })
-        val cellarWineNameMatches = matches.filter { it.entry.kind == WineTermKind.WINE_NAME }
-        val wineNameMatch = if (producerMatch == null) {
-            bestMatch(cellarWineNameMatches)
-        } else {
-            bestMatch(
-                cellarWineNameMatches.filter { match ->
-                    match.entry.maker == null || match.entry.maker.equals(producerMatch.entry.canonical, ignoreCase = true)
-                }
-            )
-        }
-        val namedTermMatch = bestMatch(
-            matches.filter { match ->
-                when (match.entry.kind) {
-                    WineTermKind.APPELLATION, WineTermKind.GRAPE, WineTermKind.WINE_STYLE -> match.entry.useAsName
-                    else -> false
-                }
-            }
-        )
-        val nameMatch = wineNameMatch ?: namedTermMatch
-        val matchedMaker = producerMatch?.entry?.canonical
-            ?: wineNameMatch?.entry?.maker
-
         val matchedPlace = bestMatch(
             matches.filter {
                 it.entry.kind in setOf(
@@ -72,18 +50,56 @@ internal class WineLabelParser {
             },
             prioritizeSpecificPlaces = true
         )
-        val country = nameMatch?.entry?.country
+        val geographicContext = matchedPlace?.entry
+        val cellarWineNameMatches = matches.filter { it.entry.kind == WineTermKind.WINE_NAME }
+            .filter { match ->
+                geographicContext == null || dictionary.isCompatibleWithWineContext(geographicContext, match.entry)
+            }
+        val wineNameMatch = if (producerMatch == null) {
+            bestMatch(cellarWineNameMatches)
+        } else {
+            bestMatch(
+                cellarWineNameMatches.filter { match ->
+                    match.entry.maker == null || dictionary.producerNamesEquivalent(
+                        match.entry.maker,
+                        producerMatch.entry.canonical
+                    )
+                }
+            )
+        }
+        val namedTermMatch = matches
+            .filter { match ->
+                when (match.entry.kind) {
+                    WineTermKind.APPELLATION, WineTermKind.GRAPE, WineTermKind.WINE_STYLE,
+                    WineTermKind.SUBREGION -> match.entry.useAsName
+                    else -> false
+                }
+            }
+            .filter { match ->
+                geographicContext == null || dictionary.isCompatibleWithWineContext(geographicContext, match.entry)
+            }
+            .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
+        val preferredNameMatch = listOfNotNull(wineNameMatch, namedTermMatch)
+            .filter { it.similarity >= MIN_SUGGESTED_NAME_SIMILARITY }
+            .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
+        // Reject cellar wines from a different maker and wine terms that contradict a defining appellation.
+        val nameMatch = preferredNameMatch
+        val matchedMaker = WineReferenceDictionary.canonicalProducerName(
+            producerMatch?.entry?.canonical ?: wineNameMatch?.entry?.maker
+        )
+        val metadataMatch = preferredNameMatch
+        val country = metadataMatch?.entry?.country
             ?: matchedPlace?.entry?.country
             ?: bestMatch(matches.filter { it.entry.kind == WineTermKind.COUNTRY })?.entry?.canonical
-        val region = nameMatch?.entry?.region
+        val region = metadataMatch?.entry?.region
             ?: matchedPlace?.entry?.region
             ?: bestMatch(matches.filter { it.entry.kind == WineTermKind.REGION })?.entry?.canonical
-        val subregion = nameMatch?.entry?.subregion
+        val subregion = metadataMatch?.entry?.subregion
             ?: matchedPlace?.entry?.subregion
             ?: matchedPlace
                 ?.takeIf { it.entry.kind == WineTermKind.APPELLATION || it.entry.kind == WineTermKind.SUBREGION }
                 ?.entry?.canonical
-        val wineType = supportedWineType(nameMatch?.entry?.wineType)
+        val wineType = supportedWineType(metadataMatch?.entry?.wineType)
             ?: supportedWineType(matchedPlace?.entry?.wineType)
             ?: supportedWineType(
                 bestMatch(matches.filter {
@@ -111,6 +127,30 @@ internal class WineLabelParser {
             subregion = subregion,
             type = wineType
         )
+    }
+
+    private fun nameSuggestionScore(
+        match: WineLexiconMatch,
+        geographicContext: WineLexiconEntry?,
+        dictionary: WineReferenceDictionary
+    ): Double {
+        val tokenSpan = match.endTokenExclusive - match.startToken
+        val phraseBonus = if (tokenSpan > 1 && match.similarity >= 0.90) {
+            0.12 * (tokenSpan - 1).coerceAtMost(2)
+        } else {
+            0.0
+        }
+        val wineTermBonus = when (match.entry.kind) {
+            WineTermKind.APPELLATION -> 0.18
+            WineTermKind.GRAPE -> 0.15
+            WineTermKind.WINE_STYLE -> 0.13
+            WineTermKind.WINE_NAME -> 0.08
+            WineTermKind.SUBREGION -> 0.04
+            else -> 0.0
+        }
+        val sourceBonus = match.entry.sourceWeight.coerceIn(0, 30) / 1_000.0
+        val geographyBonus = dictionary.grapeContextBonus(geographicContext, match.entry)
+        return match.similarity + phraseBonus + wineTermBonus + sourceBonus + geographyBonus
     }
 
     private fun bestMatch(
@@ -187,5 +227,9 @@ internal class WineLabelParser {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val MIN_SUGGESTED_NAME_SIMILARITY = 0.84
     }
 }
