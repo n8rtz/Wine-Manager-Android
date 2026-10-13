@@ -3,10 +3,13 @@ package com.n8rtz.winetracker.scanner
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Log
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -27,19 +30,57 @@ class ScannerManager(context: Context) {
     }
 
     /**
-     * Runs OCR on the full-resolution still photo saved by CameraX. Keep the photo alive until
-     * ML Kit has finished reading it, even if the UI stops waiting for the result.
+     * Runs ML Kit on the full-resolution still and an enhanced, zoomed label crop. Keep the photo
+     * alive until both passes finish, even if the UI stops waiting for the result.
      */
     suspend fun scanImage(file: File): ScannedWine = scanImage(file, WineReferenceDictionary.builtIn())
 
     internal suspend fun scanImage(file: File, dictionary: WineReferenceDictionary): ScannedWine {
         val inputImage = InputImage.fromFilePath(appContext, Uri.fromFile(file))
-        return withContext(NonCancellable) { processImage(inputImage, dictionary) }
+        return withContext(NonCancellable) {
+            val fullFrameResult = recognizer.process(inputImage).await()
+            val fullFrameHypothesis = fullFrameResult.toHypothesis(isFullFrame = true)
+            val enhancedBitmap = try {
+                withContext(Dispatchers.IO) { LabelImageEnhancer.createEnhancedLabelCrop(file) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.w(TAG, "Could not prepare the enhanced label crop; using the full photo OCR", error)
+                null
+            }
+
+            val enhancedHypothesis = enhancedBitmap?.let { bitmap ->
+                try {
+                    recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
+                        .toHypothesis(isFullFrame = false)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Log.w(TAG, "Enhanced label OCR failed; using the full photo OCR", error)
+                    null
+                } finally {
+                    bitmap.recycle()
+                }
+            } ?: LabelOcrHypothesis(text = "", isFullFrame = false)
+
+            val bestHypothesis = LabelOcrHypothesisSelector.choose(
+                fullFrame = fullFrameHypothesis,
+                enhancedCrop = enhancedHypothesis,
+                parser = labelParser,
+                dictionary = dictionary
+            )
+            labelParser.parse(bestHypothesis.text, dictionary)
+        }
     }
 
     fun close() {
         recognizer.close()
     }
+
+    private fun Text.toHypothesis(isFullFrame: Boolean): LabelOcrHypothesis = LabelOcrHypothesis(
+        text = text,
+        isFullFrame = isFullFrame
+    )
 
     private suspend fun processImage(
         image: InputImage,
@@ -47,5 +88,9 @@ class ScannerManager(context: Context) {
     ): ScannedWine {
         val result = recognizer.process(image).await()
         return labelParser.parse(result.text, dictionary)
+    }
+
+    private companion object {
+        const val TAG = "ScannerManager"
     }
 }

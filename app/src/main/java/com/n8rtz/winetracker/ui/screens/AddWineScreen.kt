@@ -670,7 +670,7 @@ private fun LabelScanCameraDialog(
                             Text(if (scanState is LabelScanState.Error) "Try Again" else "Take Label Photo")
                         }
                         is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
-                        is LabelScanState.Processing -> LabelScanProgress("Reading the photo carefully… This may take a few seconds.")
+                        is LabelScanState.Processing -> LabelScanProgress("Enhancing the label and reading the photo… This may take a few seconds.")
                         is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
                         is LabelScanState.Review -> Text(
                             "Scan complete. Review the suggestions.",
