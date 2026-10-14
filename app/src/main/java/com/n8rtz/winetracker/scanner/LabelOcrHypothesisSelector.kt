@@ -18,12 +18,13 @@ internal object LabelOcrHypothesisSelector {
         if (fullFrame.text.isBlank()) return enhancedCrop
         if (enhancedCrop.text.isBlank()) return fullFrame
 
-        val fullFrameScore = score(fullFrame, parser, dictionary)
-        val enhancedScore = score(enhancedCrop, parser, dictionary)
+        val fullFrameScore = evidenceScore(fullFrame, parser, dictionary)
+        val enhancedScore = evidenceScore(enhancedCrop, parser, dictionary)
         return if (enhancedScore > fullFrameScore + ENHANCED_RESULT_MARGIN) enhancedCrop else fullFrame
     }
 
-    private fun score(
+    /** How much wine evidence one OCR reading carries; also ranks passes for the consensus merge. */
+    internal fun evidenceScore(
         candidate: LabelOcrHypothesis,
         parser: WineLabelParser,
         dictionary: WineReferenceDictionary

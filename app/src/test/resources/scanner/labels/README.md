@@ -42,5 +42,12 @@ The image regression test scans every JPEG, logs each result under the `LabelOcr
 tag, and asserts the reviewed fields for the single-bottle photos (Olarra, Blackstone, Zinfandel,
 Penfolds, Basalu, Juan Gil, Enclave, Kirkland Pinot Noir, Los Haroldos, Los Riscos, Kirkland
 Malbec). When an assertion fails, its message carries the raw OCR text, so the difference is either
-ML Kit's reading or this app's parsing of it. These instrumented assertions require a device; they
-have not been executed in the assistant's sandbox, which has no Android SDK or emulator.
+ML Kit's reading or this app's parsing of it. The reviewed fixtures are also scanned a second time
+and must produce identical suggestions, so an unstable scan (the classic "it works sometimes")
+fails the test.
+
+Each scan merges its two OCR passes line by line (`LabelOcrConsensus`) and logs
+`agreement`, `supported=<corroborated lines>/<total>` and `needsReview` under the `ScannerManager`
+tag: the full frame usually keeps the printed lines while the enhanced crop reads the decorative
+words the full frame drops. These instrumented assertions require a device; they have not been
+executed in the assistant's sandbox, which has no Android SDK or emulator.

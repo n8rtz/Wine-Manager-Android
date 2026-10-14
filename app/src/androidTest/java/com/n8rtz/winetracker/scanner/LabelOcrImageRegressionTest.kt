@@ -51,8 +51,10 @@ class LabelOcrImageRegressionTest {
             assertTrue("Missing reviewed fixture ${expectation.fixture}", expectation.fixture in fixtureNames)
         }
 
+        val reviewedNames = REVIEWED_LABELS.map(LabelExpectation::fixture).toSet()
         val scanner = ScannerManager(appContext)
         val results = mutableMapOf<String, ScannedWine>()
+        val repeatResults = mutableMapOf<String, ScannedWine>()
         val tempDirectory = File(appContext.cacheDir, "wine-label-ocr-fixtures").apply {
             check(mkdirs() || isDirectory) { "Could not create $absolutePath" }
         }
@@ -71,6 +73,11 @@ class LabelOcrImageRegressionTest {
                         result.rawText.isNullOrBlank()
                     )
                     results[fixtureName] = result
+                    // Scanning the same photo twice must give the same suggestions: unstable output
+                    // is what users notice as "it works sometimes".
+                    if (fixtureName in reviewedNames) {
+                        repeatResults[fixtureName] = scanner.scanImage(fixtureFile)
+                    }
                     Log.i(
                         TAG,
                         "$fixtureName: maker=${result.maker}, name=${result.name}, " +
@@ -85,6 +92,18 @@ class LabelOcrImageRegressionTest {
         } finally {
             scanner.close()
             tempDirectory.delete()
+        }
+
+        reviewedNames.forEach { fixtureName ->
+            val first = results.getValue(fixtureName)
+            val second = repeatResults.getValue(fixtureName)
+            assertEquals(
+                "Repeated scan of $fixtureName changed its suggestions " +
+                    "(first raw=${first.rawText?.replace('\n', '|')}, " +
+                    "second raw=${second.rawText?.replace('\n', '|')})",
+                first.suggestionFields(),
+                second.suggestionFields()
+            )
         }
 
         REVIEWED_LABELS.forEach { expectation ->
@@ -107,6 +126,9 @@ class LabelOcrImageRegressionTest {
             assertField("type", expectation.type, result.type)
         }
     }
+
+    private fun ScannedWine.suggestionFields(): List<String?> =
+        listOf(maker, name, vintage, country, region, subregion, type)
 
     private companion object {
         const val TAG = "LabelOcrImageTest"

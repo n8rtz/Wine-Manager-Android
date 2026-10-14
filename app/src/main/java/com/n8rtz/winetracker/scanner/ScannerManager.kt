@@ -63,13 +63,28 @@ class ScannerManager(context: Context) {
                 }
             } ?: LabelOcrHypothesis(text = "")
 
-            val bestHypothesis = LabelOcrHypothesisSelector.choose(
-                fullFrame = fullFrameHypothesis,
-                enhancedCrop = enhancedHypothesis,
+            // Merge the passes line by line: the full frame keeps the printed lines, the crop
+            // usually reads the decorative words the full frame drops.
+            val passes = listOf(fullFrameHypothesis, enhancedHypothesis)
+            val consensus = LabelOcrConsensus.merge(
+                hypotheses = passes,
                 parser = labelParser,
                 dictionary = dictionary
+            ) ?: return@withContext ScannedWine()
+            val wine = labelParser.parse(consensus.text, dictionary)
+            val assessment = LabelScanAssessment.assess(
+                consensus = consensus,
+                perPassResults = passes.filter { it.text.isNotBlank() }
+                    .map { labelParser.parse(it.text, dictionary) },
+                mergedResult = wine
             )
-            labelParser.parse(bestHypothesis.text, dictionary)
+            Log.i(
+                TAG,
+                "Label scan agreement=${"%.2f".format(assessment.agreement)} " +
+                    "supported=${consensus.supportedLines}/${consensus.totalLines} " +
+                    "needsReview=${assessment.needsReview} contradictions=${assessment.contradictions}"
+            )
+            wine
         }
     }
 
