@@ -14,7 +14,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,11 +27,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.animateFloatAsState
@@ -51,6 +54,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.ui.components.BottomBarLabelSizing
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.AppInfoScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
@@ -198,25 +202,63 @@ class MainActivity : ComponentActivity() {
 
 
 /**
- * A bottom-navigation label.
+ * The bottom bar's destinations, in order. The texts are shared with the size measurement below, so
+ * what the bar draws and what it measures to fit can never drift apart.
+ */
+private const val BOTTOM_BAR_LABEL_CELLAR = "Cellar"
+private const val BOTTOM_BAR_LABEL_NOTES = "Notes"
+private const val BOTTOM_BAR_LABEL_HISTORY = "History"
+private const val BOTTOM_BAR_LABEL_RANKINGS = "Rankings"
+private const val BOTTOM_BAR_LABEL_PROFILE = "Profile"
+
+private val BOTTOM_BAR_LABELS = listOf(
+    BOTTOM_BAR_LABEL_CELLAR,
+    BOTTOM_BAR_LABEL_NOTES,
+    BOTTOM_BAR_LABEL_HISTORY,
+    BOTTOM_BAR_LABEL_RANKINGS,
+    BOTTOM_BAR_LABEL_PROFILE
+)
+
+/**
+ * The one font size all five labels are drawn at, chosen from the item width the bar actually laid out.
  *
- * The bar splits its width evenly between five destinations. At a large system text size a longer
- * word like "Rankings" stops fitting its share, and [Text] answers that by wrapping to a second
- * line — which also grows the bar. One line that shrinks to fit keeps the wording and the bar height
- * the same whatever the device's text size is set to, and on the default text size the label is
- * already at the 12sp cap, so nothing shrinks at all.
+ * Each half of this is a fix for a way the row used to go wrong: the widest label is measured rather
+ * than guessed at, so the size is right on any device and at any system text size; and the size is
+ * taken from that widest label for all five, so the row reads level instead of shrinking only the long
+ * word. The measured width is taken when the bar is drawn at Material's own label size, which is 12sp,
+ * so on the default text size this returns exactly that and nothing changes.
  */
 @Composable
-private fun BottomBarLabel(text: String) {
+private fun rememberUniformBottomBarLabelSize(itemWidthPx: Int): TextUnit {
+    val measurer = rememberTextMeasurer()
+    val labelStyle = MaterialTheme.typography.labelMedium.copy(
+        fontSize = BottomBarLabelSizing.MAX_FONT_SIZE_SP.sp
+    )
+    val widestLabelWidthPx = remember(measurer, labelStyle) {
+        BOTTOM_BAR_LABELS
+            .maxOf { label -> measurer.measure(label, labelStyle).size.width }
+            .toFloat()
+    }
+    // A couple of dp of slack: text measurement rounds, and overrunning the item would clip a label.
+    val safetyMarginPx = with(LocalDensity.current) { 2.dp.toPx() }
+    val availableWidthPx = (itemWidthPx - safetyMarginPx).coerceAtLeast(1f)
+    return BottomBarLabelSizing.uniformFontSizeSp(widestLabelWidthPx, availableWidthPx).sp
+}
+
+/**
+ * A bottom-navigation label, always one line at the size the whole row shares.
+ *
+ * One line keeps the bar's height fixed, and the shared size keeps the row even; if a label somehow
+ * cannot fit even at the floor size it clips with an ellipsis rather than wrapping onto a second row
+ * and growing the bar.
+ */
+@Composable
+private fun BottomBarLabel(text: String, fontSize: TextUnit) {
     Text(
         text = text,
+        fontSize = fontSize,
         maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        autoSize = TextAutoSize.StepBased(
-            minFontSize = 8.sp,
-            maxFontSize = 12.sp,
-            stepSize = 0.5.sp
-        )
+        overflow = TextOverflow.Ellipsis
     )
 }
 
@@ -262,6 +304,11 @@ fun MainAppScaffold(
             },
             floatingActionButtonPosition = FabPosition.End,
             bottomBar = {
+            // Every item is given an equal share of the bar, so one item's width is every item's
+            // width: measuring the first one is enough to size the whole row's labels.
+            var bottomBarItemWidthPx by remember { mutableIntStateOf(0) }
+            val bottomBarLabelSize = rememberUniformBottomBarLabelSize(bottomBarItemWidthPx)
+
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp
@@ -271,6 +318,7 @@ fun MainAppScaffold(
                 // on 3-button navigation, where the inset is tallest.
             ) {
                 NavigationBarItem(
+                    modifier = Modifier.onSizeChanged { bottomBarItemWidthPx = it.width },
                     selected = currentRoute == "cellar" || currentRoute == "add_wine",
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Cellar clicked")
@@ -291,7 +339,7 @@ fun MainAppScaffold(
                         }
                     },
                     icon = { Icon(Icons.Default.WineBar, "Cellar") },
-                    label = { BottomBarLabel("Cellar") }
+                    label = { BottomBarLabel(BOTTOM_BAR_LABEL_CELLAR, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "notes",
@@ -301,7 +349,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "notes")
                     },
                     icon = { Icon(Icons.Default.Description, "Notes") },
-                    label = { BottomBarLabel("Notes") }
+                    label = { BottomBarLabel(BOTTOM_BAR_LABEL_NOTES, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "history",
@@ -311,7 +359,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "history")
                     },
                     icon = { Icon(Icons.Default.History, contentDescription = "Consumption History") },
-                    label = { BottomBarLabel("History") }
+                    label = { BottomBarLabel(BOTTOM_BAR_LABEL_HISTORY, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "rankings",
@@ -321,7 +369,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "rankings") 
                     },
                     icon = { Icon(Icons.Default.Star, "Rankings") },
-                    label = { BottomBarLabel("Rankings") }
+                    label = { BottomBarLabel(BOTTOM_BAR_LABEL_RANKINGS, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "profile" || currentRoute == "app_info" || currentRoute == "pareto",
@@ -331,7 +379,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "profile") 
                     },
                     icon = { Icon(Icons.Default.Person, "Profile") },
-                    label = { BottomBarLabel("Profile") }
+                    label = { BottomBarLabel(BOTTOM_BAR_LABEL_PROFILE, bottomBarLabelSize) }
                 )
             }
         },
