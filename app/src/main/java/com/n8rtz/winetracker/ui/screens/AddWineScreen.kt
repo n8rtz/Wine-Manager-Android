@@ -30,6 +30,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
@@ -591,12 +592,15 @@ private fun LabelScanCameraDialog(
                     modifier = Modifier.fillMaxSize()
                 )
 
+                // A bottle label is portrait, so the guide is portrait too: the old full-width box
+                // was wider than any label and told the user to frame something no bottle matches.
+                // WineLabelFraming holds the shape and the guarantee that whatever the user fits
+                // inside it is inside every crop the scanner reads.
                 Box(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .fillMaxWidth()
-                        .padding(horizontal = 28.dp)
-                        .height(240.dp)
+                        .fillMaxHeight(WineLabelFraming.GUIDE_HEIGHT_FRACTION)
+                        .aspectRatio(WineLabelFraming.ASPECT_RATIO)
                         .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
                 )
 
