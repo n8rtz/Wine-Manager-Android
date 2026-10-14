@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class LabelScanLadderTest {
@@ -94,4 +95,62 @@ class LabelScanLadderTest {
         assertTrue("tighter crop", hard.widthFraction < gentle.widthFraction)
         assertTrue("tighter crop", hard.heightFraction < gentle.heightFraction)
     }
+
+    @Test
+    fun theFirstEscalationIsTheCloseUpCropOfTheWholeLabel() {
+        val weak = report("LOREM IPSUM\nDOLOR SIT", "LOREM IPSUM")
+
+        val plan = requireNotNull(LabelScanLadder.planFor(1, weak, identityResolved = false))
+
+        assertTrue(plan is LabelPassPlan.FullView)
+        assertEquals(LabelCropRecipe.ENHANCED, (plan as LabelPassPlan.FullView).recipe)
+        assertEquals(LabelOcrHypothesis.Role.FULL_VIEW, plan.role)
+        assertEquals("ENHANCED", plan.logLabel)
+        assertTrue("the plan says why the pass is worth running", plan.reason.isNotBlank())
+    }
+
+    @Test
+    fun aContestedReadingZoomsTheLineInPlaceInsteadOfTheWholeLabel() {
+        val contradictory = report("BODEGAS OLARRA\nRIOJA\n2019", "BODEGAS OLARRA\nRIOJA\n2023")
+        val region = LabelBox(100, 200, 400, 260)
+
+        val plan = requireNotNull(
+            LabelScanLadder.planFor(2, contradictory, identityResolved = false, zoomRegion = region)
+        )
+
+        assertTrue(plan is LabelPassPlan.FieldZoom)
+        plan as LabelPassPlan.FieldZoom
+        assertEquals(region, plan.region)
+        assertEquals(LabelOcrHypothesis.Role.TARGETED, plan.role)
+        assertEquals("FIELD_ZOOM", plan.logLabel)
+    }
+
+    @Test
+    fun withoutALocatedLineTheLastPassIsTheHardContrastCrop() {
+        val weak = report("LOREM IPSUM\nDOLOR SIT", "LOREM IPSUM")
+
+        val plan = requireNotNull(LabelScanLadder.planFor(2, weak, identityResolved = false, zoomRegion = null))
+
+        assertEquals(LabelCropRecipe.HIGH_CONTRAST, (plan as LabelPassPlan.FullView).recipe)
+        assertTrue(plan.reason.isNotBlank())
+    }
+
+    @Test
+    fun aBlurryPhotoHasNothingToGainFromAnotherPass() {
+        val weak = report("LOREM IPSUM\nDOLOR SIT", "LOREM IPSUM")
+        val blurred = CaptureQuality(CaptureQuality.Verdict.BLURRY, 120f, 40f, 0f, 240, 320)
+
+        assertFalse(LabelScanLadder.shouldEscalate(1, weak, identityResolved = false, quality = blurred))
+        assertNull(LabelScanLadder.planFor(1, weak, identityResolved = false, quality = blurred))
+    }
+
+    @Test
+    fun aDarkPhotoStillEscalatesBecauseContrastIsWhatHelps() {
+        val weak = report("LOREM IPSUM\nDOLOR SIT", "LOREM IPSUM")
+        val dark = CaptureQuality(CaptureQuality.Verdict.TOO_DARK, 30f, 40f, 0f, 240, 320)
+
+        assertTrue(LabelScanLadder.shouldEscalate(1, weak, identityResolved = false, quality = dark))
+        assertNotNull(LabelScanLadder.planFor(1, weak, identityResolved = false, quality = dark))
+    }
+
 }

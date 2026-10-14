@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -86,7 +87,8 @@ class LabelOcrImageRegressionTest {
                             "vintage=${result.vintage}, country=${result.country}, " +
                             "region=${result.region}, subregion=${result.subregion}, " +
                             "type=${result.type}, barcode=${result.barcode}, " +
-                            "agreement=${result.agreement}, needsReview=${result.needsReview}; " +
+                            "agreement=${result.agreement}, needsReview=${result.needsReview}, " +
+                            "captureQuality=${result.captureQuality}; " +
                             "raw=${result.rawText?.replace('\n', '|')}"
                     )
                 } finally {
@@ -121,6 +123,12 @@ class LabelOcrImageRegressionTest {
                     )
                 }
             }
+            // The reference photos are sharp and properly exposed: flagging one would mean the
+            // capture-quality gate is asking users for retakes they do not need.
+            assertNull(
+                "${expectation.fixture} was reported as a bad capture: ${result.captureQuality}",
+                result.captureQuality
+            )
             assertField("maker", expectation.maker, result.maker)
             assertField("name", expectation.name, result.name)
             assertField("vintage", expectation.vintage, result.vintage)

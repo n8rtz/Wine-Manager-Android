@@ -66,7 +66,12 @@ internal object LabelOcrConsensus {
         val clusters = clusterLines(passes)
         val supported = clusters.filter { distinctSources(it) > 1 }
 
-        val primaryIndex = rankedIndexes.first { passes[it].isNotEmpty() }
+        // Only a whole-label pass may define the reading order: a field zoom saw a few magnified
+        // lines, so letting it lead the merge would collapse the label to those lines.
+        val orderDefining = rankedIndexes.filter { index ->
+            hypotheses[index].role == LabelOcrHypothesis.Role.FULL_VIEW
+        }
+        val primaryIndex = (orderDefining.ifEmpty { rankedIndexes }).first { passes[it].isNotEmpty() }
         if (supported.isEmpty()) {
             // No line was read twice: keep today's single-pass decision rather than inventing a
             // label by mixing two unrelated readings.
@@ -84,7 +89,7 @@ internal object LabelOcrConsensus {
             )
         }
 
-        val mergedLines = mergeLines(passes, clusters, primaryIndex, rankedIndexes, dictionary)
+        val mergedLines = mergeLines(passes, hypotheses, clusters, primaryIndex, rankedIndexes, dictionary)
         val primaryLines = passes[primaryIndex]
         val supportedPrimaryLines = primaryLines.count { line ->
             supported.any { cluster -> cluster.members.any { it.line == line } }
@@ -112,6 +117,7 @@ internal object LabelOcrConsensus {
 
     private fun mergeLines(
         passes: List<List<String>>,
+        hypotheses: List<LabelOcrHypothesis>,
         clusters: List<Cluster>,
         primaryIndex: Int,
         rankedIndexes: List<Int>,
@@ -139,7 +145,11 @@ internal object LabelOcrConsensus {
                             dictionary.correct(source.line).correctedText.equals(source.line, ignoreCase = true)
                         }
                     }
-                        .thenBy { it.hypothesisIndex != rankedIndexes.first() }
+                        // A magnified re-read of the line is better evidence than a wider view of it.
+                        .thenByDescending { source: LineSource ->
+                            hypotheses[source.hypothesisIndex].role == LabelOcrHypothesis.Role.TARGETED
+                        }
+                        .thenBy { it.hypothesisIndex != primaryIndex }
                         .thenByDescending { it.line.length }
                 )
                 .first()

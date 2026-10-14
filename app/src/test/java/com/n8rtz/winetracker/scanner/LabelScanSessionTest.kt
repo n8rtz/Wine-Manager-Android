@@ -13,6 +13,10 @@ import org.junit.Test
 class LabelScanSessionTest {
     private fun session() = LabelScanSession(WineReferenceDictionary.builtIn())
 
+    /** The centre crop the session would read next, or null when it is finished or zooming instead. */
+    private fun LabelScanSession.nextRecipe(identityResolved: Boolean): LabelCropRecipe? =
+        (nextPassPlan(identityResolved = identityResolved) as? LabelPassPlan.FullView)?.recipe
+
     @Test
     fun rescuesTheCalligraphicWordFromTheCloseUpCrop() {
         val session = session()
@@ -135,4 +139,99 @@ class LabelScanSessionTest {
         assertTrue(summary.contains("needsReview=false"))
         assertTrue(summary.contains("agreement=1.00") || summary.contains("agreement="))
     }
+
+    @Test
+    fun theScanLogNamesEveryViewItRead() {
+        val session = session()
+        session.addPass(LabelOcrHypothesis("BLACKSTONE\nWINERY\nCALIFORNIA"), viewLabel = "frame")
+        session.addPass(
+            LabelOcrHypothesis("BLACKSTONE\nWINERY\nMerlot\nCALIFORNIA"),
+            viewLabel = "ENHANCED"
+        )
+
+        val outcome = session.finish(barcode = null, identity = null)
+        val summary = outcome.summary(barcode = null, identity = null)
+
+        assertEquals(listOf("frame", "ENHANCED"), outcome.views)
+        assertTrue(summary.contains("views=frame,ENHANCED"))
+        assertTrue("a scan that was not measured says so", summary.contains("quality=not assessed"))
+    }
+
+    @Test
+    fun aBlurryPhotoStopsTheLadderAndSaysSoOnTheResult() {
+        val session = session()
+        session.addPass(LabelOcrHypothesis("BLACKSTONE\nWINERY\nMERLOT\nCALIFORNIA"))
+        val blurred = CaptureQuality(CaptureQuality.Verdict.BLURRY, 110f, 90f, 0f, 240, 320)
+
+        assertNull(
+            "another pass cannot add detail to a soft photo",
+            session.nextPassPlan(identityResolved = false, quality = blurred)
+        )
+
+        val outcome = session.finish(barcode = null, identity = null, quality = blurred)
+
+        assertEquals("blurry", outcome.wine.captureQuality)
+        assertTrue("a blurred reading is only a guess", outcome.wine.needsReview)
+        assertTrue(outcome.summary(null, null).contains("quality=blurry"))
+    }
+
+    @Test
+    fun aCleanPhotoLeavesTheCaptureQualityEmpty() {
+        val session = session()
+        session.addPass(LabelOcrHypothesis("BLACKSTONE\nWINERY\nMERLOT\nCALIFORNIA"))
+        val clean = CaptureQuality(CaptureQuality.Verdict.OK, 120f, 4_000f, 0f, 240, 320)
+
+        val outcome = session.finish(barcode = null, identity = null, quality = clean)
+
+        assertNull(outcome.wine.captureQuality)
+        assertFalse(outcome.wine.needsReview)
+    }
+
+    @Test
+    fun aContestedNameIsReReadInPlaceOnTheLastPass() {
+        val session = session()
+        val mapping = LabelCropMapping.forRecipe(1_000, 800, LabelCropRecipe.ENHANCED)
+        session.addPass(
+            LabelOcrHypothesis("BLACKSTONE\nWINERY\nCALIFORNIA\n2019"),
+            viewLabel = "frame"
+        )
+        // The crop reads the calligraphic name, and disagrees with the frame about the vintage.
+        session.addPass(
+            LabelOcrHypothesis(
+                text = "BLACKSTONE\nWINERY\nMerlot\nCALIFORNIA\n2023",
+                lines = listOf(
+                    LabelOcrLine("BLACKSTONE", LabelBox(10, 20, 300, 70)),
+                    LabelOcrLine("WINERY", LabelBox(10, 80, 200, 130)),
+                    LabelOcrLine("Merlot", LabelBox(10, 140, 260, 190)),
+                    LabelOcrLine("CALIFORNIA", LabelBox(10, 200, 340, 250))
+                )
+            ),
+            mapping = mapping,
+            viewLabel = "ENHANCED"
+        )
+
+        val plan = session.nextPassPlan(identityResolved = false)
+
+        assertTrue("the contested name is re-read where it sits", plan is LabelPassPlan.FieldZoom)
+        plan as LabelPassPlan.FieldZoom
+        val nameOnPhoto = mapping.toSource(LabelBox(10, 140, 260, 190))
+        assertTrue(plan.region.contains(nameOnPhoto))
+        assertEquals(LabelOcrHypothesis.Role.TARGETED, plan.role)
+    }
+
+    @Test
+    fun aPassWithoutBoxesCannotBeZoomedInto() {
+        val session = session()
+        session.addPass(LabelOcrHypothesis("BLACKSTONE\nWINERY\nCALIFORNIA\n2019"))
+        session.addPass(LabelOcrHypothesis("BLACKSTONE\nWINERY\nMerlot\nCALIFORNIA\n2023"))
+
+        val plan = session.nextPassPlan(identityResolved = false)
+
+        assertEquals(
+            "no geometry means the hard-contrast crop, not a zoom",
+            LabelCropRecipe.HIGH_CONTRAST,
+            (plan as LabelPassPlan.FullView).recipe
+        )
+    }
+
 }

@@ -18,7 +18,12 @@ data class ScannedWine(
     /** Share of the winning OCR pass's lines a second pass also read; null when only one pass ran. */
     val agreement: Double? = null,
     /** True when the passes disagreed, nothing was recognised, or a barcode could not be resolved. */
-    val needsReview: Boolean = true
+    val needsReview: Boolean = true,
+    /**
+     * What was wrong with the photo itself, when anything was: "blurry", "too_dark" or "glare".
+     * Null when the photo was clean or could not be measured, so the UI can offer a retake.
+     */
+    val captureQuality: String? = null
 ) {
     val hasSuggestions: Boolean
         get() = !maker.isNullOrBlank() || !name.isNullOrBlank() || !vintage.isNullOrBlank() ||

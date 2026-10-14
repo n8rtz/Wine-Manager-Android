@@ -2,8 +2,6 @@ package com.n8rtz.winetracker.scanner
 
 import java.util.Locale
 
-internal data class LabelOcrHypothesis(val text: String)
-
 /** Prefers a legible, wine-relevant OCR result without letting cellar history dominate the choice. */
 internal object LabelOcrHypothesisSelector {
     private val wordRegex = Regex("[\\p{L}\\p{N}]+")

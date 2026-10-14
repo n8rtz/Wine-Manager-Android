@@ -38,56 +38,65 @@ class ScannerManager internal constructor(
     }
 
     /**
-     * Scans a captured still: reads the barcode, then OCRs the photo one pass at a time, escalating
-     * to stronger crop recipes while the reading stays contradicted or unrecognised. Each pass is
-     * merged with the ones before it, and a resolved barcode stops the escalation early. Keep the
-     * photo alive until every pass finishes, even if the UI stops waiting for the result.
+     * Scans a captured still: measures the photo, reads the barcode, then OCRs the photo one view at a
+     * time. Each view is merged with the ones before it, escalation follows what the reading still
+     * lacks (a blurry photo stops it, a resolved barcode ends it), and the whole decision trail goes
+     * to Logcat. Keep the photo alive until every pass finishes, even if the UI stops waiting.
      */
     suspend fun scanImage(file: File): ScannedWine = scanImage(file, WineReferenceDictionary.builtIn())
 
     internal suspend fun scanImage(file: File, dictionary: WineReferenceDictionary): ScannedWine {
         val inputImage = InputImage.fromFilePath(appContext, Uri.fromFile(file))
         return withContext(NonCancellable) {
+            // Measure before OCR: a soft photo changes what the ladder should even attempt.
+            val quality = withContext(Dispatchers.IO) { ImageQualityAnalyzer.assess(file) }
             val session = LabelScanSession(dictionary)
-            session.addPass(recognizer.process(inputImage).await().toHypothesis())
+            session.addPass(
+                hypothesis = recognizer.process(inputImage).await().toHypothesis(LabelOcrHypothesis.Role.FULL_VIEW),
+                viewLabel = FRAME_VIEW
+            )
+
             // A barcode names a bottle exactly, so try it before spending time on more OCR passes.
             // Most front-label photos contain none, in which case nothing is looked up.
             val barcode = barcodeReader.read(inputImage)
             val identity = barcode?.let { code -> identityResolver?.resolve(code) }
 
             while (true) {
-                val recipe = session.nextRecipe(identityResolved = identity != null) ?: break
-                val hypothesis = readLabelCrop(file, recipe) ?: break
-                session.addPass(hypothesis)
+                val plan = session.nextPassPlan(identityResolved = identity != null, quality = quality) ?: break
+                val read = readView(file, plan) ?: break
+                session.addPass(read.hypothesis, read.mapping, plan.logLabel)
             }
 
-            val outcome = session.finish(barcode = barcode, identity = identity)
+            val outcome = session.finish(barcode = barcode, identity = identity, quality = quality)
             Log.i(TAG, outcome.summary(barcode, identity))
             outcome.wine
         }
     }
 
-    /** One escalation step: Ocr the photo again through a stronger crop recipe. */
-    private suspend fun readLabelCrop(file: File, recipe: LabelCropRecipe): LabelOcrHypothesis? {
-        val bitmap = prepareCrop(file, recipe) ?: return null
+    private class ReadView(val hypothesis: LabelOcrHypothesis, val mapping: LabelCropMapping)
+
+    /** One escalation step: prepare the view the plan asks for and OCR it. */
+    private suspend fun readView(file: File, plan: LabelPassPlan): ReadView? {
+        val prepared = prepareView(file, plan) ?: return null
         return try {
-            recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().toHypothesis()
+            val text = recognizer.process(InputImage.fromBitmap(prepared.bitmap, 0)).await()
+            ReadView(text.toHypothesis(plan.role), prepared.mapping)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            Log.w(TAG, "${recipe.name} label crop OCR failed; keeping the passes already read", error)
+            Log.w(TAG, "${plan.logLabel} label pass failed; keeping the views already read", error)
             null
         } finally {
-            bitmap.recycle()
+            prepared.bitmap.recycle()
         }
     }
 
-    private suspend fun prepareCrop(file: File, recipe: LabelCropRecipe): Bitmap? = try {
-        withContext(Dispatchers.IO) { LabelImageEnhancer.createLabelCrop(file, recipe) }
+    private suspend fun prepareView(file: File, plan: LabelPassPlan): LabelImageEnhancer.PreparedView? = try {
+        withContext(Dispatchers.IO) { LabelImageEnhancer.createView(file, plan) }
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (error: Exception) {
-        Log.w(TAG, "Could not prepare the ${recipe.name} label crop", error)
+        Log.w(TAG, "Could not prepare the ${plan.logLabel} view of the label", error)
         null
     }
 
@@ -96,7 +105,23 @@ class ScannerManager internal constructor(
         barcodeReader.close()
     }
 
-    private fun Text.toHypothesis(): LabelOcrHypothesis = LabelOcrHypothesis(text)
+    /**
+     * Keeps each line's box and the block it belongs to, so a contested field can be zoomed into
+     * rather than guessed at again.
+     */
+    private fun Text.toHypothesis(role: LabelOcrHypothesis.Role): LabelOcrHypothesis {
+        val lines = mutableListOf<LabelOcrLine>()
+        textBlocks.forEachIndexed { blockIndex, block ->
+            block.lines.forEach { line ->
+                lines += LabelOcrLine(
+                    text = line.text,
+                    box = line.boundingBox?.let { rect -> LabelBox(rect.left, rect.top, rect.right, rect.bottom) },
+                    blockIndex = blockIndex
+                )
+            }
+        }
+        return LabelOcrHypothesis(text = text, lines = lines, role = role)
+    }
 
     private suspend fun processImage(
         image: InputImage,
@@ -108,5 +133,6 @@ class ScannerManager internal constructor(
 
     private companion object {
         const val TAG = "ScannerManager"
+        const val FRAME_VIEW = "frame"
     }
 }

@@ -138,4 +138,19 @@ class LabelOcrConsensusTest {
         assertEquals("2019", wine.vintage)
         assertEquals("Rioja", wine.region)
     }
+
+    @Test
+    fun aTargetedZoomCorrectsALineWithoutTakingOverTheLabel() {
+        val fullView = LabelOcrHypothesis("BLACKSTONE\nWINERY\nMERL0T\nCALIFORNIA")
+        val zoom = LabelOcrHypothesis("MERLOT", role = LabelOcrHypothesis.Role.TARGETED)
+
+        val merged = requireNotNull(LabelOcrConsensus.merge(listOf(fullView, zoom), parser, dictionary))
+
+        assertTrue("the whole-label pass still says what the label reads", merged.text.startsWith("BLACKSTONE"))
+        assertTrue("the magnified re-read wins the contested line", merged.text.contains("MERLOT"))
+        assertFalse("and the misread spelling is gone", merged.text.contains("MERL0T"))
+        assertEquals("every line the full view read survives", 4, merged.text.lines().size)
+        assertEquals("only the line both passes read counts as supported", 1, merged.supportedLines)
+    }
+
 }

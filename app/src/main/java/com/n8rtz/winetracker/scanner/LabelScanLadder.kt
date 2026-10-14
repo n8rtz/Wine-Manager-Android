@@ -41,19 +41,61 @@ internal object LabelScanLadder {
 
     val CROP_RECIPES = listOf(LabelCropRecipe.ENHANCED, LabelCropRecipe.HIGH_CONTRAST)
 
+    /**
+     * How a field zoom magnifies the line it was pointed at. The crop is small, so the scale limit is
+     * generous; the contrast stays mild because the crop has already been contrast-pushed.
+     */
+    val ZOOM_SETTINGS = LabelZoomSettings(targetEdge = 1_600, maxUpscale = 3.2f, contrast = 1.15f)
+
     /** Recipe for the pass after [passesRun] completed passes, or null when the ladder is spent. */
     fun recipeFor(passesRun: Int): LabelCropRecipe? = CROP_RECIPES.getOrNull(passesRun - 1)
 
     fun shouldEscalate(
         passesRun: Int,
         assessment: LabelScanAssessment.Report,
-        identityResolved: Boolean
+        identityResolved: Boolean,
+        quality: CaptureQuality? = null
     ): Boolean {
         if (passesRun >= MAX_OCR_PASSES) return false
+        // A photo too blurry to resolve the label has no detail left for another pass to find, so the
+        // only useful answer is a retake. Dark or washed-out photos do escalate: contrast helps there.
+        if (quality?.verdict == CaptureQuality.Verdict.BLURRY) return false
         // A barcode already named the bottle exactly; the full-frame reading is enough for the
         // vintage and region, so keep the scan fast.
         if (identityResolved) return false
         if (passesRun < ALWAYS_RUN_PASSES) return true
         return assessment.needsReview
+    }
+
+    /**
+     * The next view to read, or null when this scan is finished escalating.
+     *
+     * Once the always-run passes are done there is one step left, and it is spent where it helps most:
+     * on re-reading the contested field in place when the passes disagree about the text, otherwise on
+     * the hard-contrast full view that rescues dark or glare-washed labels.
+     */
+    fun planFor(
+        passesRun: Int,
+        assessment: LabelScanAssessment.Report,
+        identityResolved: Boolean,
+        quality: CaptureQuality? = null,
+        zoomRegion: LabelBox? = null
+    ): LabelPassPlan? {
+        if (!shouldEscalate(passesRun, assessment, identityResolved, quality)) return null
+        val recipe = recipeFor(passesRun) ?: return null
+        if (passesRun >= ALWAYS_RUN_PASSES && zoomRegion != null && assessment.contradictions.isNotEmpty()) {
+            return LabelPassPlan.FieldZoom(
+                region = zoomRegion,
+                settings = ZOOM_SETTINGS,
+                reason = "the passes disagreed, so re-read the line in place"
+            )
+        }
+        return LabelPassPlan.FullView(
+            recipe = recipe,
+            reason = when (recipe) {
+                LabelCropRecipe.ENHANCED -> "the close-up crop recovers words the full frame drops"
+                LabelCropRecipe.HIGH_CONTRAST -> "the hard-contrast crop rescues dark or glare-washed text"
+            }
+        )
     }
 }

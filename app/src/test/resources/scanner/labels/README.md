@@ -51,6 +51,13 @@ sandbox, which has no Android SDK or emulator.
 
 ## How a scan decides (implemented)
 
+0. **The photo is measured first.** `CaptureQualityAssessor` judges the still on a 320px grid before
+   any OCR runs: a photo that is too soft, too dark or washed out by glare is reported on the result
+   (`ScannedWine.captureQuality`) and flagged for review, because no amount of re-reading invents
+   detail that was never captured. Only gross problems trip it: all thirteen reference photos measure
+   `ok`, a slight overexposure still measures `ok`, and blur is only reported once the label's print
+   has genuinely smeared. A blurry photo stops the pass ladder after the first pass; dark or
+   glare-washed photos escalate, since contrast is what rescues them.
 1. **Barcode first.** `LabelBarcodeReader` decodes an EAN-8/13 or UPC-A/E off the same still image,
    and only codes whose GS1 check digit is consistent are used (`Gtin`). `LabelIdentityResolver`
    looks the code up in Open Food Facts (`api/v2/product/{barcode}.json`) and caches every hit in
@@ -60,13 +67,18 @@ sandbox, which has no Android SDK or emulator.
    disagreement, a different producer or vintage is, and a visible barcode that could not be
    resolved always marks the scan for review. Front labels carry no barcode, so the fixture photos
    only exercise the (harmless) decode attempt; the result is logged, not asserted.
-2. **OCR passes, escalated only when needed.** Pass one is the full frame, pass two the enhanced
-   centre crop, and pass three the tighter, hard-contrast crop (`LabelScanLadder`). Another pass
-   runs only while the reading is contradicted or unrecognised, never past three passes, and never
-   once a barcode has named the bottle.
+2. **OCR passes, escalated only when needed.** Pass one is the full frame and pass two the enhanced
+   centre crop: the crop always runs, because it is the pass that reads calligraphic words the full
+   frame drops. The third and last pass is chosen by what is still wrong (`LabelScanLadder`): when
+   the passes disagree about a field, the line it was read from is located through the recognizer's
+   own line boxes and re-read magnified (`LabelFieldGeometry` → a targeted field zoom that may only
+   correct that line, never reorder the label); otherwise the tighter hard-contrast crop runs to
+   rescue dark or glare-washed text. Never past three passes, and never once a barcode has named the
+   bottle.
 3. **Every pass is merged, not discarded.** `LabelOcrConsensus` merges line by line: the full frame
    usually keeps the printed lines while the enhanced crop reads the decorative words the full
    frame drops. Each scan logs `passes`, `barcode`, `identity`, `agreement`,
-   `supported=<corroborated lines>/<total>`, `needsReview` and `contradictions` under the
-   `ScannerManager` tag, and `ScannedWine.barcode/agreement/needsReview` carry the same signal to
-   the UI so a low-confidence scan can be highlighted instead of silently trusted.
+   `supported=<corroborated lines>/<total>`, `needsReview`, `quality` and `contradictions` under the
+   `ScannerManager` tag, plus `views=` naming every view it read and why. `ScannedWine.barcode`,
+   `agreement`, `needsReview` and `captureQuality` carry the same signal to the UI, so a
+   low-confidence scan can be highlighted — or sent back for a retake — instead of silently trusted.
