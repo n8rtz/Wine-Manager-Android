@@ -127,8 +127,9 @@ internal class WineLabelParser {
                 geographicContext == null || dictionary.isCompatibleWithWineContext(geographicContext, match.entry)
             }
             .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
+        // Every match here already passed the corrector's fuzzy gate, so the name agrees with the
+        // corrected text the user is shown (a one-letter slip in "Merlot" is corrected, and named).
         val preferredNameMatch = listOfNotNull(wineNameMatch, namedTermMatch)
-            .filter { it.similarity >= MIN_SUGGESTED_NAME_SIMILARITY }
             .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
         // An explicit Spanish winery cue beats unrelated fuzzy cellar matches.
         val nameMatch = preferredNameMatch
@@ -166,8 +167,8 @@ internal class WineLabelParser {
         )
         val fallbackMaker = matchedMaker ?: guessMakerFromLeadingLines(visibleLines)
         val fallbackName = nameMatch?.entry?.canonical ?: when {
-            matchedMaker != null -> visibleLines.joinToString(" ").takeIf(String::isNotBlank)
-            visibleLines.size > 1 -> visibleLines.drop(1).joinToString(" ").takeIf(String::isNotBlank)
+            matchedMaker != null -> leftoverNameText(visibleLines, matchedMaker)
+            visibleLines.size > 1 -> leftoverNameText(visibleLines.drop(1), maker = null)
             else -> null
         }
 
@@ -339,6 +340,26 @@ internal class WineLabelParser {
             .filter { it.text.isNotBlank() }
     }
 
+    /**
+     * Text left over after the recognised terms are removed. It is only a guess at the cuvée, so
+     * OCR debris is dropped rather than suggested: fragments under three letters ("Wi", "N" from a
+     * split "WINERY") and words that echo the matched producer ("LAOKSTONE" beside "Blackstone").
+     * An empty result is better than a name that is visibly wrong.
+     */
+    private fun leftoverNameText(lines: List<String>, maker: String?): String? {
+        val makerWords = maker?.let { wordRegex.findAll(it).map { word -> word.value }.toList() }.orEmpty()
+        return lines
+            .flatMap { line -> wordRegex.findAll(line).map { it.value }.toList() }
+            .filter { it.length >= MIN_NAME_WORD_LETTERS }
+            .filterNot { word ->
+                makerWords.any { makerWord ->
+                    WineReferenceDictionary.termSimilarity(word, makerWord) >= MIN_MAKER_ECHO_SIMILARITY
+                }
+            }
+            .joinToString(" ")
+            .takeIf(String::isNotBlank)
+    }
+
     private fun supportedWineType(value: String?): String? = when (
         value?.trim()?.lowercase(Locale.ROOT)?.replace(" ", "")
     ) {
@@ -365,7 +386,8 @@ internal class WineLabelParser {
     }
 
     private companion object {
-        const val MIN_SUGGESTED_NAME_SIMILARITY = 0.84
+        const val MIN_NAME_WORD_LETTERS = 3
+        const val MIN_MAKER_ECHO_SIMILARITY = 0.75
         const val CURATED_SOURCE_WEIGHT = 30
     }
 }

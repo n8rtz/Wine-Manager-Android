@@ -275,7 +275,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
                     val distance = levenshteinDistance(combinedKey, candidate.key, maxEdits)
                     if (distance > maxEdits) continue
                     val similarity = 1.0 - distance.toDouble() / maxOf(combinedKey.length, candidate.key.length)
-                    if (distance > 0 && similarity < MIN_FUZZY_SIMILARITY) continue
+                    if (!acceptsFuzzyMatch(distance, similarity, candidate.key.length)) continue
                     // Personal cellar entries are useful only for near-exact matches; otherwise a
                     // familiar producer or cuvée can override unrelated label text.
                     val isCellarIdentity = candidate.entry.sourceWeight < CURATED_SOURCE_WEIGHT &&
@@ -401,6 +401,12 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
         private const val MIN_TERM_LENGTH = 3
         private const val MAX_PHRASE_TOKENS = 7
         private const val MIN_FUZZY_SIMILARITY = 0.82
+        /**
+         * Two OCR slips in a long word ("LAOKSTONE" for "BLACKSTONE", similarity 0.80) are a normal
+         * misread, and the edit cap already allows two edits up to 12 letters, so a term of this length
+         * may take two edits even though its similarity falls just below the general bar.
+         */
+        private const val LONG_TERM_LENGTH_FOR_TWO_EDITS = 10
         private const val MIN_PHRASE_MATCH_SIMILARITY = 0.90
         private const val PHRASE_MATCH_BONUS = 0.12
         private const val MAX_PHRASE_BONUS_SPAN = 3
@@ -934,6 +940,20 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             "rose", "rosewine" -> "Rose"
             "sauternes", "icewine", "tokajiaszu", "port", "sherry", "madeira", "marsala", "vinsanto" -> "Dessert"
             else -> null
+        }
+
+        /** The single fuzzy-match gate: the corrector and the name suggestion both use it. */
+        internal fun acceptsFuzzyMatch(distance: Int, similarity: Double, candidateLength: Int): Boolean =
+            distance == 0 || similarity >= MIN_FUZZY_SIMILARITY ||
+                (distance == 2 && candidateLength >= LONG_TERM_LENGTH_FOR_TWO_EDITS)
+
+        /** Similarity of two words after the same accent/case/punctuation folding used for matching. */
+        internal fun termSimilarity(left: String, right: String): Double {
+            val leftKey = normalizedKey(left)
+            val rightKey = normalizedKey(right)
+            val longest = maxOf(leftKey.length, rightKey.length)
+            if (longest == 0) return 0.0
+            return 1.0 - levenshteinDistance(leftKey, rightKey, longest).toDouble() / longest
         }
 
         private fun maximumEditDistance(length: Int): Int = when {

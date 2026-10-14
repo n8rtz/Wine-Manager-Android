@@ -119,6 +119,39 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun aOneLetterSlipInTheVarietalIsCorrectedAndNamedTheSameWay() {
+        // Phone scan of a Blackstone Merlot: "Mertot" is corrected in the text, so it must also be
+        // the suggested name. Before, the name used a stricter threshold and came out empty.
+        val result = parser.parse("BLACKSTONE\nWINERY\nMertot\nCALIFORNIA")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertEquals("Merlot", result.name)
+        assertEquals("California", result.region)
+    }
+
+    @Test
+    fun aMisreadProducerWordStillResolvesToTheProducerWhenTheLabelIsLong() {
+        // "LAOKSTONE" is two OCR slips from "BLACKSTONE" in a ten-letter word; that is a normal misread.
+        val result = parser.parse("LAOKSTONE\nWi N\nMerlot\nCALIFORNIA")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertEquals("Merlot", result.name)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+    }
+
+    @Test
+    fun ocrDebrisIsNotSuggestedAsTheWineName() {
+        // With no varietal readable, "Wi N" (a split WINERY) and the misread producer must not
+        // become the wine name ("Laokstone Wi N" was shown on a real scan). No name beats a wrong one.
+        val result = parser.parse("LAOKSTONE\nWi N\nCALIFORNIA\nALC 13.5% BY VOL")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertNull(result.name)
+        assertEquals("California", result.region)
+    }
+
+    @Test
     fun correctsKirklandBrunelloLabelUsingWineVocabulary() {
         val rawText = "KIRKLAND BRUNELLO DIMONTALCINU ORGNE CONTROLLAA 2021"
         val result = parser.parse(rawText)
