@@ -12,11 +12,18 @@ data class ScannedWine(
     val country: String? = null,
     val region: String? = null,
     val subregion: String? = null,
-    val type: String? = null
+    val type: String? = null,
+    /** Barcode read from the photo, whether or not a registry lookup resolved it. */
+    val barcode: String? = null,
+    /** Share of the winning OCR pass's lines a second pass also read; null when only one pass ran. */
+    val agreement: Double? = null,
+    /** True when the passes disagreed, nothing was recognised, or a barcode could not be resolved. */
+    val needsReview: Boolean = true
 ) {
     val hasSuggestions: Boolean
         get() = !maker.isNullOrBlank() || !name.isNullOrBlank() || !vintage.isNullOrBlank() ||
-            !country.isNullOrBlank() || !region.isNullOrBlank() || !subregion.isNullOrBlank() || !type.isNullOrBlank()
+            !country.isNullOrBlank() || !region.isNullOrBlank() || !subregion.isNullOrBlank() ||
+            !type.isNullOrBlank() || !barcode.isNullOrBlank()
 }
 
 /** Pure parser so label-text behavior can be tested without CameraX or ML Kit. */
