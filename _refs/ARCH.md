@@ -50,7 +50,9 @@ com.n8rtz.winetracker/
        └── components/
         ├── WineCard.kt                # Color-coded card for Cellar and Rankings (Supports Expansion)
         ├── HistoryWineCard.kt         # Compact list item for History screen
-        ├── SensoryEvaluationFields.kt # Ombre sensory sliders and common-fault controls
+        ├── SensoryEvaluationFields.kt # Ombre sensory sliders, aroma descriptors, and common-fault controls
+        ├── AromaWheelDialog.kt        # Drill-down radial aroma wheel + list mode + editor chips section
+        ├── AromaWheelGeometry.kt      # Pure JVM wheel angle/segment/ARGB-shading math
         ├── AnalyticsCard.kt           # Dashboard metrics cards (Total Bottles, Value, etc.)
         ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
         ├── WheelPicker.kt             # Birthday-style scroll picker + LocationWheelPicker
@@ -62,6 +64,9 @@ com.n8rtz.winetracker/
 │   ├── local/
 │   │   ├── WineDatabase.kt            # Room entities, converters, and schema migrations
 │   │   └── WineDaos.kt                # All DAO interfaces, including consumption-event queries
+│   │
+│   ├── aroma/
+│   │   └── AromaTaxonomy.kt           # Versioned Wine Folly-based descriptor tree + selection helpers
 │   │
 │   ├── models/
 │   │   ├── WineDefinition.kt          # Catalog: Maker, Name, Type, Country, Region

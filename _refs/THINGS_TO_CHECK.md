@@ -1,6 +1,6 @@
 # Things to Check
 
-> **Scope/status:** These are future verification steps, not test results. Android Studio build, unit tests, and device/emulator checks have not yet been run. The implemented major flows covered here are camera OCR on **Add Wine**, the reviewed Open Food Facts image importer, **Manage Offline Images**, and the **Price vs. Rating** Pareto screen. The Aroma Wheel and Wine Resources are planning briefs only; there are no implemented screens to verify yet. Camera OCR is intentionally not part of **Add Note**.
+> **Scope/status:** These are future verification steps, not test results. Android Studio build, unit tests, and device/emulator checks have not yet been run. The implemented major flows covered here are camera OCR on **Add Wine**, the reviewed Open Food Facts image importer, **Manage Offline Images**, and the **Price vs. Rating** Pareto screen. The **Aroma Wheel** now has an implemented drill-down picker (see the aroma wheel checklist below); **Wine Resources** remains a planning brief only. Camera OCR is intentionally not part of **Add Note**.
 
 ## One-time Android Studio setup and test launch
 
@@ -138,3 +138,17 @@
 - [ ] If a deletion failure can be induced safely on the disposable emulator, expect **The offline copy was unlinked, but storage cleanup will retry deleting its file.**; the Room path must remain cleared, the file must not be re-associated, and reopening the manager/app must recover without a crash. If the operation reports an error, confirm the stale path is still not restored. Do not induce filesystem faults on a personal device.
 - [ ] Run the complete `WineImageImportRepositoryTest` connected instrumentation class. It checks: path-only clearing and preservation of source/provenance plus inventory, tasting-note, and consumption history; protection of a file still referenced by another asset; the management-list projection; refreshed stored-byte totals; repeated/idempotent removal; and a stale removal request that must not clear/delete a newer image. It also checks a removed path remains eligible for a fresh reviewed candidate search.
 - [ ] Keep the Open Food Facts source/contributor metadata visible for attribution. The offline manager removes only a selected confirmed local copy; it is not a bulk delete, source-history delete, or automatic storage eviction.
+
+## Aroma wheel — tasting-note editor
+
+1. [ ] Open **Add Note** (or edit an existing note) and confirm a new **Aroma descriptors** section appears between the sensory sliders and **Common faults**, with the empty-state hint and a **Browse wheel** button.
+2. [ ] Open the wheel: verify the first ring shows the four branches (Primary, Secondary, Tertiary, Faults & Other) with readable labels and the hub shows the selected count.
+3. [ ] Tap a branch to drill in, then a family, then descriptors; verify selected leaves show a check mark and white border, and families containing selections show a small dot marker when you back out.
+4. [ ] Use the center hub and breadcrumb links to navigate up; verify selections survive drilling in and out and across branches.
+5. [ ] Toggle to list view: verify the same selections appear checked, search filters by descriptor name across branches, and toggling in either mode is reflected in the other plus in the header count.
+6. [ ] Tap **Done**: verify chips appear in the editor, each chip removes its descriptor, **Clear** empties the selection, and saving a note persists it (reopen the editor to confirm restore).
+7. [ ] Verify the wine's detail screen shows the saved aromas as small chips on the affected note cards, including after app restart.
+8. [ ] Delete a note with aromas and confirm no other notes or inventory rows are affected; run a JSON backup + restore and confirm aromas round-trip.
+9. [ ] Check the wheel and list at font scales 1.0 and 2.0, in light and dark themes; labels should stay readable and chips should not overflow their rows.
+10. [ ] With TalkBack on, verify the list mode announces descriptor names and checked state, and the wheel exposes a content description pointing to list view.
+11. [ ] Confirm the unit tests for the taxonomy, wheel geometry, and sensory JSON converter pass (`./gradlew :app:testDebugUnitTest`).

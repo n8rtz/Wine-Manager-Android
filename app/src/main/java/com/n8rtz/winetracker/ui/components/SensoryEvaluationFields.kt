@@ -65,6 +65,12 @@ fun SensoryEvaluationFields(
     traits.forEach { trait -> SensoryTraitSlider(trait) }
 
     Spacer(Modifier.height(12.dp))
+    AromaDescriptorSection(
+        selectedIds = data.aromas,
+        onChange = { updated -> onChange(data.copy(aromas = updated)) }
+    )
+
+    Spacer(Modifier.height(12.dp))
     Text("Common faults", style = MaterialTheme.typography.titleSmall)
     val flaws = listOf("Cork taint (TCA)", "Oxidation", "Volatile acidity", "Brettanomyces", "Reduction / sulfur", "Heat damage")
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
