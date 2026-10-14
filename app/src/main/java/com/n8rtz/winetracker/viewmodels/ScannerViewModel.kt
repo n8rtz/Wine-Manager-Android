@@ -3,6 +3,11 @@ package com.n8rtz.winetracker.viewmodels
 import android.app.Application
 import android.graphics.Bitmap
 import android.util.Log
+import android.os.SystemClock
+import com.yourapp.wine.capture.ScanReport
+import com.yourapp.wine.capture.WineScannerServices
+import com.yourapp.wine.ocr.ScanDeadline
+import kotlinx.coroutines.Job
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,12 +16,9 @@ import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.WineImageBatchProcessor
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
-import com.n8rtz.winetracker.scanner.BarcodeIdentityCache
-import com.n8rtz.winetracker.scanner.LabelIdentityResolver
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.ScannerManager
 import com.n8rtz.winetracker.scanner.ScannedWine
-import com.n8rtz.winetracker.scanner.WineReferenceDictionary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -34,18 +36,13 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     // Retain lazy initialization so image imports do not create an unused recognizer.
     private val scannerManagerDelegate = lazy {
         Log.d("WineTracker", "ScannerViewModel: Initializing ScannerManager (lazy)")
-        ScannerManager(
-            application,
-            // Barcode lookups are cached on disk, so re-scanning a bottle works without a network.
-            identityResolver = LabelIdentityResolver(
-                api = api,
-                cache = BarcodeIdentityCache(File(application.filesDir, "scanner/barcode-identities.txt"))
-            )
-        )
+        // Compatibility bitmap callers are offline too; no barcode registry is injected.
+        ScannerManager(application)
     }
     private val scannerManager by scannerManagerDelegate
     private val scanStateLock = Any()
     private var nextScanRequestId = 0L
+    private var labelScanJob: Job? = null
 
     // Image Pipeline
     private val retrofit by lazy {
@@ -86,7 +83,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         }
 
         val requestId = ++nextScanRequestId
-        _labelScanState.value = LabelScanState.CapturingPhoto(requestId)
+        _labelScanState.value = LabelScanState.CapturingPhoto(requestId, SystemClock.elapsedRealtime())
         viewModelScope.launch {
             delay(PHOTO_CAPTURE_TIMEOUT_MS)
             synchronized(scanStateLock) {
@@ -104,46 +101,52 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
 
     /** Called by CameraX only after the full-resolution still photo has been saved. */
     fun onLabelPhotoCaptured(requestId: Long, photoFile: File) {
-        val accepted = synchronized(scanStateLock) {
+        val acceptedShutterMs = synchronized(scanStateLock) {
             val state = _labelScanState.value
             if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
-                _labelScanState.value = LabelScanState.Processing(requestId, photoFile.absolutePath)
-                true
+                _labelScanState.value = LabelScanState.Processing(requestId, photoFile.absolutePath, state.shutterMs)
+                state.shutterMs
             } else {
-                false
+                null
             }
         }
-        if (!accepted) {
+        if (acceptedShutterMs == null) {
             photoFile.delete()
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        val shutterMs = acceptedShutterMs
+        labelScanJob = viewModelScope.launch(Dispatchers.Default) {
             try {
-                val dictionary = try {
-                    WineReferenceDictionary.forCellar(
-                        definitions = repository.database.wineDao().getAllDefinitionsOnce(),
-                        locationData = WineRepository.locationData
-                    )
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    Log.w("ScannerViewModel", "Could not load cellar vocabulary; using the built-in wine dictionary", error)
-                    WineReferenceDictionary.builtIn()
-                }
-                val result = scannerManager.scanImage(photoFile, dictionary)
+                val deadline = ScanDeadline(shutterMs + ScanDeadline.BUDGET_MS)
+                val scanner = deadline.run { WineScannerServices.get(getApplication()) }
+                val result = scanner?.scan(photoFile, shutterMs) ?: ScanReport.red(
+                    "Time budget reached while starting the scanner — retake or enter manually",
+                    SystemClock.elapsedRealtime() - shutterMs, deadlineCancelled = true)
                 finishScan(requestId, result, null)
             } catch (cancelled: CancellationException) {
                 finishScan(requestId, null, null)
                 throw cancelled
             } catch (error: Exception) {
-                Log.w("ScannerViewModel", "On-device still-photo OCR failed", error)
+                Log.w("ScannerViewModel", "Offline label scan failed", error)
                 finishScan(requestId, null, error)
+            } catch (error: LinkageError) {
+                Log.e("ScannerViewModel", "OpenCV/native build unavailable", error)
+                finishScan(requestId, null, IllegalStateException("Native scanner unavailable", error))
+            } catch (error: OutOfMemoryError) {
+                Log.e("ScannerViewModel", "Scanner initialization memory pressure", error)
+                finishScan(requestId, ScanReport.red("Memory pressure — enter manually or retake"), null)
             } finally {
-                if (photoFile.exists() && !photoFile.delete()) {
-                    Log.w("ScannerViewModel", "Could not delete temporary label photo")
-                }
+                if (photoFile.exists() && !photoFile.delete()) Log.w("ScannerViewModel", "Could not delete temporary label JPEG")
             }
+        }
+    }
+
+    /** No coordinates: warm the app-scoped KB/recognizer on Default while the camera opens. */
+    fun warmLabelScanner() {
+        viewModelScope.launch(Dispatchers.Default) {
+            runCatching { WineScannerServices.get(getApplication()) }
+                .onFailure { Log.w("ScannerViewModel", "Scanner prewarm unavailable", it) }
         }
     }
 
@@ -160,16 +163,14 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         }
     }
 
-    private fun finishScan(requestId: Long, result: ScannedWine?, error: Exception?) {
+    private fun finishScan(requestId: Long, result: ScanReport?, error: Exception?) {
         synchronized(scanStateLock) {
             when (val current = _labelScanState.value) {
                 is LabelScanState.Processing -> if (current.requestId == requestId) {
                     _labelScanState.value = when {
-                        error != null -> LabelScanState.Error(
-                            requestId,
-                            "Could not read this photo. Try better light, hold the label steady, or enter details manually."
-                        )
-                        result?.hasSuggestions == true -> LabelScanState.Review(requestId, result)
+                        error != null -> LabelScanState.Review(requestId, ScanReport.red(
+                            "Could not read this photo — retake or enter details manually"))
+                        result != null -> LabelScanState.Review(requestId, result)
                         else -> LabelScanState.Error(
                             requestId,
                             "No readable wine details were found. Try again or enter them manually."
@@ -192,6 +193,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
                 }
                 is LabelScanState.Processing -> if (current.requestId == requestId) {
                     _labelScanState.value = LabelScanState.FinishingCancelledScan(requestId)
+                    labelScanJob?.cancel()
                 }
                 is LabelScanState.Review -> if (current.requestId == requestId) {
                     _labelScanState.value = LabelScanState.Idle
@@ -240,6 +242,6 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     }
 
     private companion object {
-        const val PHOTO_CAPTURE_TIMEOUT_MS = 20_000L
+        const val PHOTO_CAPTURE_TIMEOUT_MS = 8_000L
     }
 }

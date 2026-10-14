@@ -34,10 +34,11 @@ android {
 
     defaultConfig {
         applicationId = "com.n8rtz.winetracker"
-        minSdk = 33
-        targetSdk = 36
+        minSdk = 26
+        targetSdk = 35
         versionCode = 55
         versionName = "0.5.5"
+        ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "BUILD_BRANCH", "\"$escapedBuildBranch\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -45,7 +46,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -63,6 +65,9 @@ android {
 
     // Reuse the full-resolution OCR fixtures in instrumented tests without duplicating them.
     sourceSets.getByName("androidTest").assets.srcDir("src/test/resources")
+    sourceSets.getByName("androidTest").assets.srcDir("../testdata")
+    sourceSets.getByName("test").resources.srcDir("../testdata")
+    testOptions { unitTests.isIncludeAndroidResources = true }
 }
 
 dependencies {
@@ -86,7 +91,13 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     
-    // ML Kit
+    // Source-built OpenCV core/imgproc + the genuine upstream Java JNI bridge (arm64 only).
+    implementation(project(":opencv-minimal"))
+    implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.sqlite.bundled)
+    implementation(libs.kotlinx.coroutines.core)
+
+    // Bundled Latin model: inference never needs a network or a Play Services model download.
     implementation(libs.mlkit.text.recognition)
     implementation(libs.mlkit.barcode.scanning)
     implementation(libs.kotlinx.coroutines.play.services)
@@ -113,6 +124,15 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+// Deliberately separate from debug builds: size acceptance must use a shrunk arm64 release APK.
+tasks.register<Exec>("checkArm64ApkBudget") {
+    dependsOn("assembleRelease")
+    commandLine(providers.gradleProperty("pythonExecutable").getOrElse("python3"), rootProject.file("tools/check-apk-budget.py"),
+        layout.buildDirectory.file("outputs/apk/release/app-release-unsigned.apk").get().asFile)
 }
