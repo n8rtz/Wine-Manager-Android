@@ -26,6 +26,9 @@ internal class WineLabelParser {
 
     private val vintageRegex = Regex("\\b(19|20)\\d{2}\\b")
     private val wineYearTokenRegex = Regex("(?:19|20)\\d{2}")
+    private val cellarTriviaCueRegex = Regex(
+        """(?i)\b(?:established|founded|fondee|fonde|fondée|fondé|since|depuis|vintage)\b"""
+    )
     private val whitespaceRegex = Regex("\\s+")
     private val wordRegex = Regex("[\\p{L}\\p{M}]+")
     private val bodegaCueLineRegex = Regex(
@@ -50,7 +53,7 @@ internal class WineLabelParser {
     ): ScannedWine {
         val correction = dictionary.correct(text)
         val matches = correction.matches
-        val vintage = vintageRegex.find(text)?.value
+        val vintage = selectVintage(correction, matches)
         val producerCue = explicitBodegaProducer(text)
         val matchedPlace = bestMatch(
             matches.filter {
@@ -162,6 +165,30 @@ internal class WineLabelParser {
             subregion = subregion,
             type = wineType
         )
+    }
+
+    /**
+     * Picks the vintage of the scanned bottle. A group photo contains several vintages, and words
+     * such as "ESTABLISHED 1844" or "FIRST VINTAGE 1996" carry cellar trivia rather than the vintage,
+     * so year tokens that a recognised wine term absorbed, or that share a line with a
+     * founding/vintage cue, are skipped first.
+     */
+    private fun selectVintage(
+        correction: WineDictionaryCorrection,
+        matches: List<WineLexiconMatch>
+    ): String? {
+        val yearTokens = correction.tokens.withIndex().filter { wineYearTokenRegex.matches(it.value.text) }
+        if (yearTokens.isEmpty()) return null
+
+        val notAbsorbedByAWineTerm = yearTokens.filterNot { (index, _) ->
+            matches.any { match -> match.startToken <= index && index < match.endTokenExclusive }
+        }
+        val outsideCellarTrivia = notAbsorbedByAWineTerm.filterNot { (_, token) ->
+            val line = correction.correctedText.lineSequence().elementAtOrNull(token.lineIndex)
+            line != null && cellarTriviaCueRegex.containsMatchIn(line)
+        }
+        val preferred = outsideCellarTrivia.ifEmpty { notAbsorbedByAWineTerm.ifEmpty { yearTokens } }
+        return preferred.first().value.text
     }
 
     private fun guessMakerFromLeadingLines(lines: List<String>): String? {

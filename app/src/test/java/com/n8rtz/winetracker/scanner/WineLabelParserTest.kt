@@ -403,6 +403,91 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun readsADecorativeVarietyAndItsAppellationFromAnOldVineLabel() {
+        val result = parser.parse("OZV\nOLD VINE\nZINFANDEL\nESTATE GROWN\nLODI\nV. 2022")
+
+        // The label's own spelling is the grape's canonical American name; Primitivo stays a synonym.
+        assertEquals("Zinfandel", result.name)
+        assertEquals("2022", result.vintage)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+        assertEquals("Lodi", result.subregion)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
+    fun ignoresFoundingYearsWhenChoosingTheVintage() {
+        val result = parser.parse(
+            "Penfolds\nKOONUNGA HILL\nSHIRAZ CABERNET\n" +
+                "FIRST VINTAGE 1996\nTWENTY WINES SOUTH AUSTRALIA\nESTABLISHED 1844\n2019"
+        )
+
+        // 1996 and 1844 are cellar trivia; the bottle is the 2019 vintage.
+        assertEquals("2019", result.vintage)
+        assertEquals("Penfolds", result.maker)
+        assertEquals("Shiraz Cabernet", result.name)
+        assertEquals("Australia", result.country)
+        assertEquals("South Australia", result.region)
+        assertEquals("Red", result.type)
+        // A year introduced by "vintage" is still the vintage when the label offers no other year.
+        assertEquals("2019", parser.parse("ESTATE WINE\nVINTAGE 2019").vintage)
+    }
+
+    @Test
+    fun readsASpanishDenominacionDeOrigenAndItsProvince() {
+        val result = parser.parse(
+            "Juan Gil\nJUMILLA\nGIL\nDENOMINACION DE ORIGEN PROTEGIDA\n2020"
+        )
+
+        assertEquals("Juan Gil", result.maker)
+        assertEquals("2020", result.vintage)
+        assertEquals("Spain", result.country)
+        assertEquals("Murcia", result.region)
+        assertEquals("Jumilla", result.subregion)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
+    fun keepsAMultiWordProducerNameFromTheLabel() {
+        val result = parser.parse(
+            "CONDE\nDE BASALU\nCrianza\n2021\n10 MESES EN BARRICA\nRIOJA\n" +
+                "DENOMINACION DE ORIGEN CALIFICADA"
+        )
+
+        assertEquals("Conde de Basalu", result.maker)
+        assertEquals("2021", result.vintage)
+        assertEquals("Spain", result.country)
+        assertEquals("Rioja", result.region)
+    }
+
+    @Test
+    fun prefersTheVillagesAppellationOverItsParentRegion() {
+        val result = parser.parse(
+            "LA RESERVE\nDE\nL'ENCLAVE\nFONDEE EN 1317\nCOTES DU RHONE VILLAGES\n" +
+                "APPELLATION D'ORIGINE PROTEGEE\n2022\nVIGNERONS DE L'ENCLAVE"
+        )
+
+        assertEquals("Côtes du Rhône Villages", result.name)
+        assertEquals("France", result.country)
+        assertEquals("Rhone", result.region)
+        assertEquals("Côtes du Rhône Villages", result.subregion)
+        assertEquals("2022", result.vintage)
+    }
+
+    @Test
+    fun resolvesTheSpanishNameOfAnArgentineSubregion() {
+        val result = parser.parse(
+            "LOS HAROLDOS\nRESERVA\n2020\nMALBEC\nVALLE DE UCO\nMENDOZA ARGENTINA"
+        )
+
+        assertEquals("Los Haroldos", result.maker)
+        assertEquals("2020", result.vintage)
+        assertEquals("Argentina", result.country)
+        assertEquals("Mendoza", result.region)
+        assertEquals("Uco Valley", result.subregion)
+    }
+
+    @Test
     fun learnsHistoricalProducersAndWinesFromAllDefinitions() {
         val cellarDefinition = com.n8rtz.winetracker.data.local.WineDefinition(
             definitionId = 42,

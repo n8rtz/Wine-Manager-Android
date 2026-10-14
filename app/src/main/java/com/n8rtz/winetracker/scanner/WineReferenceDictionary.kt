@@ -930,6 +930,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
 
         private fun styleType(style: String): String? = when (normalizedKey(style)) {
             "champagne", "prosecco", "cava", "cremant", "franciacorta", "sekt", "sparkling" -> "Sparkling"
+            "shirazcabernet" -> "Red"
             "rose", "rosewine" -> "Rose"
             "sauternes", "icewine", "tokajiaszu", "port", "sherry", "madeira", "marsala", "vinsanto" -> "Dessert"
             else -> null
@@ -1034,7 +1035,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Pinot Noir|Pinot Nero;Spätburgunder;Spatburgunder
             Plavac Mali
             Poulsard|Ploussard
-            Primitivo|Zinfandel
+            Zinfandel|Primitivo
             Refosco dal Peduncolo Rosso|Refosco
             Rondinella
             Sagrantino
@@ -1287,6 +1288,9 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Crémant d'Alsace
             Crémant de Loire
             Crémant de Limoux
+            Gran Reserva
+            Crianza
+            Shiraz Cabernet|Cabernet Shiraz;Shiraz Cabernet Sauvignon
             Brut Nature
             Blanc de Blancs
             Blanc de Noirs
@@ -1373,6 +1377,12 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Santa Rita|Santa Rita Estates
             Viña Concha y Toro|Vina Concha y Toro
             Bodega Catena Zapata
+            Blackstone Winery|Blackstone
+            Bodegas Olarra|Olarra
+            Conde de Basalu
+            Los Haroldos
+            Los Riscos
+            Juan Gil
         """
 
         private val LABEL_MARKERS = """
@@ -1385,6 +1395,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Denominação de Origem Controlada|Denominacao de Origem Controlada
             Indicazione Geografica Tipica|I.G.T.;IGT
             Denominazione di Origine Protetta|DOP;PDO;Denominação de Origem Protegida;Protected Designation of Origin
+            Meses en Barrica|Meses de Barrica
             Protected Geographical Indication|Indicación Geográfica Protegida;Indication Géographique Protégée;IGP;PGI
             American Viticultural Area|AVA
             Vin de Qualité Supérieure|VDQS
@@ -1454,6 +1465,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Morgon|France|Beaujolais|Morgon|Red
             Fleurie|France|Beaujolais|Fleurie|Red
             Côtes du Rhône|France|Rhone|Côtes du Rhône|Red|Cotes du Rhone
+            Côtes du Rhône Villages|France|Rhone|Côtes du Rhône Villages|Red|Cotes du Rhone Villages
             Bandol|France|Provence|Bandol|Red
             Muscadet|France|Loire|Muscadet|White
             Rioja|Spain|Rioja|Rioja|Red
@@ -1466,6 +1478,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Jerez-Xérès-Sherry|Spain|Andalusia|Jerez-Xérès-Sherry|Dessert|Jerez;Xeres;Sherry
             Penedès|Spain|Catalonia|Penedès|White|Penedes
             Navarra|Spain|Navarra|Navarra|Red
+            Jumilla|Spain|Murcia|Jumilla|Red
             Ribera del Guadiana|Spain|Extremadura|Ribera del Guadiana|Red
             Douro|Portugal|Douro|Douro|Red
             Porto|Portugal|Douro|Porto|Dessert|Port
@@ -1509,8 +1522,10 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Colchagua Valley|Chile|Central Valley|Colchagua Valley|Red
             Maipo Valley|Chile|Central Valley|Maipo Valley|Red
             Casablanca Valley|Chile|Aconcagua|Casablanca Valley|White
-            Uco Valley|Argentina|Mendoza|Uco Valley|Red
+            Uco Valley|Argentina|Mendoza|Uco Valley|Red|Valle de Uco
             Mendoza|Argentina|Mendoza|Mendoza|Red
+            Lodi|United States|California|Lodi|-
+            Sonoma County|United States|California|Sonoma County|-
         """
     }
 }
