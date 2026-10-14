@@ -60,6 +60,9 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Reuse the full-resolution OCR fixtures in instrumented tests without duplicating them.
+    sourceSets.getByName("androidTest").assets.srcDir("src/test/resources")
 }
 
 dependencies {
