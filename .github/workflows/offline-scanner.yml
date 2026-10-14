@@ -6,44 +6,59 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: offline-scanner-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-and-unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
-      - name: Install SDK and minimal native toolchain
-        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
+      - name: Guard local recognition against recurring wine-network calls
+        run: python3 tools/check-offline-recognition-boundary.py
+      - name: Check production import SQL on host SQLite FTS5
+        run: python3 tools/check-kb-import-sql.py
+      - name: Use the hosted runner's genuine Android SDK
+        shell: bash
+        run: |
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$sdk" || ! -x "$sdk/cmdline-tools/latest/bin/sdkmanager" ]]; then
+            echo '::error::Hosted runner Android SDK is missing; no substitute SDK is permitted.'
+            exit 1
+          fi
+          export ANDROID_HOME="$sdk" ANDROID_SDK_ROOT="$sdk"
+          echo "ANDROID_HOME=$sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$sdk" >> "$GITHUB_ENV"
+          echo "$sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          bash tools/run-ci-check.sh 'Android SDK license acceptance' bash -c 'yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Install pinned SDK and minimal native toolchain
+        run: bash tools/run-ci-check.sh 'Android SDK/NDK installation' sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
       - name: Cache reproducible OpenCV source and arm64 outputs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             opencv-minimal/build/vendor
             opencv-minimal/build/native
             opencv-minimal/build/generated
           key: opencv-4.12.0-ndk28.2-${{ runner.os }}-${{ hashFiles('tools/build-opencv-minimal.py', 'opencv-minimal/build.gradle.kts') }}
-      - name: Guard local recognition against recurring wine-network calls
-        run: python3 tools/check-offline-recognition-boundary.py
-      - name: Check production import SQL on host SQLite FTS5
-        run: python3 tools/check-kb-import-sql.py
       - name: Compile real Android app
-        run: ./gradlew --no-daemon :app:assembleDebug
+        run: bash tools/run-ci-check.sh 'Android debug compilation' ./gradlew --no-daemon --console=plain --stacktrace :app:assembleDebug
       - name: Scanner Robolectric and deadline tests
-        run: ./gradlew --no-daemon :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
+        run: bash tools/run-ci-check.sh 'Scanner Robolectric tests' ./gradlew --no-daemon --console=plain --stacktrace :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
       - name: Measure arm64 release APK budget
-        run: ./gradlew --no-daemon :app:checkArm64ApkBudget
+        run: bash tools/run-ci-check.sh 'Arm64 release APK budget' ./gradlew --no-daemon --console=plain --stacktrace :app:checkArm64ApkBudget
       - name: Upload test results and release APK
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: scanner-check-results
           if-no-files-found: ignore
