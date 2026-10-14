@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
@@ -195,6 +197,29 @@ class MainActivity : ComponentActivity() {
 }
 
 
+/**
+ * A bottom-navigation label.
+ *
+ * The bar splits its width evenly between five destinations. At a large system text size a longer
+ * word like "Rankings" stops fitting its share, and [Text] answers that by wrapping to a second
+ * line — which also grows the bar. One line that shrinks to fit keeps the wording and the bar height
+ * the same whatever the device's text size is set to, and on the default text size the label is
+ * already at the 12sp cap, so nothing shrinks at all.
+ */
+@Composable
+private fun BottomBarLabel(text: String) {
+    Text(
+        text = text,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        autoSize = TextAutoSize.StepBased(
+            minFontSize = 8.sp,
+            maxFontSize = 12.sp,
+            stepSize = 0.5.sp
+        )
+    )
+}
+
 @Composable
 fun MainAppScaffold(
     navController: androidx.navigation.NavHostController, 
@@ -266,7 +291,7 @@ fun MainAppScaffold(
                         }
                     },
                     icon = { Icon(Icons.Default.WineBar, "Cellar") },
-                    label = { Text("Cellar") }
+                    label = { BottomBarLabel("Cellar") }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "notes",
@@ -276,7 +301,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "notes")
                     },
                     icon = { Icon(Icons.Default.Description, "Notes") },
-                    label = { Text("Notes") }
+                    label = { BottomBarLabel("Notes") }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "history",
@@ -286,7 +311,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "history")
                     },
                     icon = { Icon(Icons.Default.History, contentDescription = "Consumption History") },
-                    label = { Text("History") }
+                    label = { BottomBarLabel("History") }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "rankings",
@@ -296,7 +321,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "rankings") 
                     },
                     icon = { Icon(Icons.Default.Star, "Rankings") },
-                    label = { Text("Rankings") }
+                    label = { BottomBarLabel("Rankings") }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "profile" || currentRoute == "app_info" || currentRoute == "pareto",
@@ -306,7 +331,7 @@ fun MainAppScaffold(
                         navigateToTab(navController, "profile") 
                     },
                     icon = { Icon(Icons.Default.Person, "Profile") },
-                    label = { Text("Profile") }
+                    label = { BottomBarLabel("Profile") }
                 )
             }
         },
