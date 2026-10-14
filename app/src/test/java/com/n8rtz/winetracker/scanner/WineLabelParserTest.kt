@@ -335,6 +335,74 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun repairsACellarRegionSpellingToTheCanonicalLocationRegion() {
+        val definition = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Kirkland",
+            name = "Brunello",
+            type = "Red",
+            country = "Italy",
+            region = "Tuscana",
+            subregion = "Brunello"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(definition),
+            mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        )
+        val result = parser.parse("TUSCANA", dictionary)
+
+        assertEquals("Italy", result.country)
+        assertEquals("Tuscany", result.region)
+        // The location-data spelling wins the correction, and the cellar typing stays an alias.
+        assertEquals("Tuscany", result.correctedText)
+        assertEquals("Tuscany", parser.parse("TOSCANA", dictionary).region)
+    }
+
+    @Test
+    fun recognizesNativeLanguageRegionSpellingsFromLocationData() {
+        val definition = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Cantina Example",
+            name = "Barolo",
+            type = "Red",
+            country = "Italy",
+            region = "Piemonte",
+            subregion = "Barolo"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(definition),
+            mapOf("Italy" to mapOf("Piedmont" to listOf("Barolo")))
+        )
+        val result = parser.parse("PIEMONTE", dictionary)
+
+        assertEquals("Italy", result.country)
+        assertEquals("Piedmont", result.region)
+    }
+
+    @Test
+    fun keepsCuratedMetadataWhenCellarHistoryDescribesTheSameRegion() {
+        val cellarWine = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Kirkland Signature",
+            name = "Brunello di Montalcino",
+            type = "Red",
+            country = "Italy",
+            region = "Tuscana",
+            subregion = "Brunello di Montalcino"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(cellarWine),
+            mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        )
+        val result = parser.parse("KIRKLAND\nBRUNELLO DI MONTALCINO\n2019", dictionary)
+
+        // Curated region spelling, subregion and varietal context survive the cellar duplicate.
+        assertEquals("Kirkland Signature", result.maker)
+        assertEquals("Brunello di Montalcino", result.name)
+        assertEquals("Italy", result.country)
+        assertEquals("Tuscany", result.region)
+        assertEquals("Brunello di Montalcino", result.subregion)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
     fun learnsHistoricalProducersAndWinesFromAllDefinitions() {
         val cellarDefinition = com.n8rtz.winetracker.data.local.WineDefinition(
             definitionId = 42,

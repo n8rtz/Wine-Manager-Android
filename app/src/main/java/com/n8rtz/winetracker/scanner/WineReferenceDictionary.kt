@@ -649,6 +649,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             }
 
             definitions.forEach { definition ->
+                val definitionCountry = canonicalWineCountry(definition.country)
                 definition.type.trim().takeIf(String::isNotEmpty)?.let { type ->
                     entries += WineLexiconEntry(
                         canonical = type,
@@ -673,39 +674,35 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
                     )
                 }
                 definition.region?.trim()?.takeIf(String::isNotEmpty)?.let { region ->
+                    // A personal spelling such as "Tuscana" must stay a recognised alias instead of
+                    // becoming a second region that can outrank the canonical location-data entry.
+                    val canonicalRegionName = canonicalRegion(region, definitionCountry, locationData) ?: region
                     entries += WineLexiconEntry(
-                        canonical = region,
+                        canonical = canonicalRegionName,
                         kind = WineTermKind.REGION,
-                        country = canonicalWineCountry(definition.country),
-                        region = region,
+                        aliases = cellarRegionAliases(region, canonicalRegionName),
+                        country = definitionCountry,
+                        region = canonicalRegionName,
                         sourceWeight = 20,
-                        associatedGrapes = grapesForGeography(definition.country, region, null)
+                        associatedGrapes = grapesForGeography(definitionCountry, canonicalRegionName, null)
                     )
                 }
                 definition.subregion?.trim()?.takeIf(String::isNotEmpty)?.let { subregion ->
+                    val canonicalRegionName = canonicalRegion(definition.region, definitionCountry, locationData)
                     entries += WineLexiconEntry(
                         canonical = subregion,
                         kind = WineTermKind.SUBREGION,
-                        country = canonicalWineCountry(definition.country),
-                        region = definition.region,
+                        country = definitionCountry,
+                        region = canonicalRegionName,
                         subregion = subregion,
                         sourceWeight = 20,
                         useAsName = normalizedKey(subregion) in knownAppellationKeys,
-                        associatedGrapes = grapesForGeography(definition.country, definition.region, subregion)
+                        associatedGrapes = grapesForGeography(definitionCountry, canonicalRegionName, subregion)
                     )
                 }
             }
 
-            return WineReferenceDictionary(entries.distinctBy { entry ->
-                listOf(
-                    entry.kind.name,
-                    normalizedKey(entry.canonical),
-                    entry.country.orEmpty(),
-                    entry.region.orEmpty(),
-                    entry.subregion.orEmpty(),
-                    entry.maker.orEmpty()
-                ).joinToString("|")
-            })
+            return WineReferenceDictionary(mergeDuplicateEntries(entries))
         }
 
         private fun grapeEntries(): List<WineLexiconEntry> = buildList {
@@ -847,11 +844,26 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             WineLexiconEntry("Dessert", WineTermKind.WINE_TYPE, aliases = listOf("Dessert Wine", "Sweet Wine"), wineType = "Dessert")
         )
 
+        /** Native-language spellings that appear on labels next to the English region name. */
         private fun locationAliases(location: String): List<String> = when (normalizedKey(location)) {
             "tuscany" -> listOf("Toscana", "Tuscana")
+            "piedmont" -> listOf("Piemonte")
+            "sicily" -> listOf("Sicilia")
+            "burgundy" -> listOf("Bourgogne")
             else -> emptyList()
         }
 
+        /** Keeps the spelling a cellar used as an alias whenever it differs from the canonical region. */
+        private fun cellarRegionAliases(spelling: String, canonical: String?): List<String> = listOfNotNull(
+            spelling.trim().takeIf(String::isNotEmpty)?.takeIf {
+                canonical == null || normalizedKey(it) != normalizedKey(canonical)
+            }
+        )
+
+        /**
+         * Location data is the source of truth for region spelling. Compare countries through their
+         * canonical form so that a definition stored as "USA" still resolves "Toscana" to "Tuscany".
+         */
         private fun canonicalRegion(
             value: String?,
             country: String?,
@@ -859,13 +871,61 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
         ): String? {
             val region = value?.trim()?.takeIf(String::isNotEmpty) ?: return null
             val regionKey = normalizedKey(region)
+            val canonicalCountry = country?.let(::canonicalWineCountry)?.takeIf(String::isNotBlank)
             val regions = locationData
-                .filterKeys { country.isNullOrBlank() || it.equals(country, ignoreCase = true) }
+                .filterKeys { canonicalCountry == null || canonicalWineCountry(it).equals(canonicalCountry, ignoreCase = true) }
                 .values
                 .flatMap { it.keys }
             return regions.firstOrNull { candidate ->
                 normalizedKey(candidate) == regionKey || locationAliases(candidate).any { normalizedKey(it) == regionKey }
             } ?: region
+        }
+
+        private fun entryIdentityKey(entry: WineLexiconEntry): String = listOf(
+            entry.kind.name,
+            normalizedKey(entry.canonical),
+            entry.country.orEmpty(),
+            entry.region.orEmpty(),
+            entry.subregion.orEmpty(),
+            entry.maker.orEmpty()
+        ).joinToString("|")
+
+        /**
+         * Curated terminology, location data, and personal cellar history often describe the same
+         * wine term. Merging them into one entry keeps the strongest source weight, every alias, and
+         * the regional grape context, so a lower-weight duplicate can no longer hide curated data.
+         */
+        private fun mergeDuplicateEntries(entries: List<WineLexiconEntry>): List<WineLexiconEntry> {
+            val merged = LinkedHashMap<String, WineLexiconEntry>()
+            entries.forEach { entry ->
+                val identity = entryIdentityKey(entry)
+                val existing = merged[identity]
+                if (existing == null) {
+                    merged[identity] = entry
+                    return@forEach
+                }
+                val winner = if (existing.sourceWeight >= entry.sourceWeight) existing else entry
+                val loser = if (winner === existing) entry else existing
+                merged[identity] = WineLexiconEntry(
+                    canonical = winner.canonical,
+                    kind = winner.kind,
+                    aliases = (winner.aliases + loser.aliases + listOf(winner.canonical, loser.canonical))
+                        .map(String::trim)
+                        .filter(String::isNotEmpty)
+                        .distinctBy(::normalizedKey)
+                        .filterNot { normalizedKey(it) == normalizedKey(winner.canonical) },
+                    country = winner.country ?: loser.country,
+                    region = winner.region ?: loser.region,
+                    subregion = winner.subregion ?: loser.subregion,
+                    wineType = winner.wineType ?: loser.wineType,
+                    maker = winner.maker ?: loser.maker,
+                    sourceWeight = maxOf(existing.sourceWeight, entry.sourceWeight),
+                    useAsName = existing.useAsName || entry.useAsName,
+                    associatedGrapes = winner.associatedGrapes.ifEmpty { loser.associatedGrapes },
+                    grapesAreDefining = existing.grapesAreDefining || entry.grapesAreDefining
+                )
+            }
+            return merged.values.toList()
         }
 
         private fun styleType(style: String): String? = when (normalizedKey(style)) {
