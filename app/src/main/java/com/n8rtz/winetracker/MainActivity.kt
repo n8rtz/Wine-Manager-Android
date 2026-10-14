@@ -239,8 +239,11 @@ fun MainAppScaffold(
             bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 0.dp,
-                modifier = Modifier.height(80.dp)
+                tonalElevation = 0.dp
+                // Deliberately no fixed height. NavigationBar sizes its Surface as 80.dp of icons
+                // and labels plus the system navigation-bar inset below them. Forcing a total height
+                // of 80.dp made the inset eat into that content, which sliced off the labels — worst
+                // on 3-button navigation, where the inset is tallest.
             ) {
                 NavigationBarItem(
                     selected = currentRoute == "cellar" || currentRoute == "add_wine",
