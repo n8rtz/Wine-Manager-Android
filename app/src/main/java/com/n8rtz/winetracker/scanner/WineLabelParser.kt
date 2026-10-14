@@ -33,6 +33,9 @@ internal class WineLabelParser {
 
     private val vintageRegex = Regex("\\b(19|20)\\d{2}\\b")
     private val wineYearTokenRegex = Regex("(?:19|20)\\d{2}")
+    private val packagingNoiseLineRegex = Regex(
+        """(?i)\b\d+(?:[.,]\d+)?\s?%|\balc\b|by vol|contains sulfites?|\b\d+\s?(?:ml|cl|oz|l)\b"""
+    )
     private val cellarTriviaCueRegex = Regex(
         """(?i)\b(?:established|founded|fondee|fonde|fondée|fondé|since|depuis|vintage)\b"""
     )
@@ -151,9 +154,11 @@ internal class WineLabelParser {
                 })?.entry?.wineType
             )
 
-        val visibleLines = visibleTextLines(correction, vintage)
-            .filterNot { producerCue?.lineIndexes?.contains(it.lineIndex) == true }
-            .map { it.text }
+        val visibleLines = withoutPackagingNoise(
+            visibleTextLines(correction, vintage)
+                .filterNot { producerCue?.lineIndexes?.contains(it.lineIndex) == true }
+                .map { it.text }
+        )
         val fallbackMaker = matchedMaker ?: guessMakerFromLeadingLines(visibleLines)
         val fallbackName = nameMatch?.entry?.canonical ?: when {
             matchedMaker != null -> visibleLines.joinToString(" ").takeIf(String::isNotBlank)
@@ -197,6 +202,14 @@ internal class WineLabelParser {
         val preferred = outsideCellarTrivia.ifEmpty { notAbsorbedByAWineTerm.ifEmpty { yearTokens } }
         return preferred.first().value.text
     }
+
+    /**
+     * Packaging lines ("ALC 13.5% BY VOL", "750 ml", "contains sulfites") are never the wine name or
+     * the producer, and they sit under the real label text, so they are dropped before the fallback
+     * name is assembled from whatever is left.
+     */
+    private fun withoutPackagingNoise(lines: List<String>): List<String> =
+        lines.filterNot { packagingNoiseLineRegex.containsMatchIn(it) }
 
     private fun guessMakerFromLeadingLines(lines: List<String>): String? {
         val firstLine = lines.firstOrNull() ?: return null

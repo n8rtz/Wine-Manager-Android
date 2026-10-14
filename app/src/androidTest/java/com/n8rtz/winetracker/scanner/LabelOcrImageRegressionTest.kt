@@ -51,6 +51,8 @@ class LabelOcrImageRegressionTest {
             assertTrue("Missing reviewed fixture ${expectation.fixture}", expectation.fixture in fixtureNames)
         }
 
+        // Front labels carry no retail barcode, so the barcode path is exercised (decode attempt +
+        // no lookup) but never asserted; the values are logged for inspection.
         val reviewedNames = REVIEWED_LABELS.map(LabelExpectation::fixture).toSet()
         val scanner = ScannerManager(appContext)
         val results = mutableMapOf<String, ScannedWine>()
@@ -83,7 +85,9 @@ class LabelOcrImageRegressionTest {
                         "$fixtureName: maker=${result.maker}, name=${result.name}, " +
                             "vintage=${result.vintage}, country=${result.country}, " +
                             "region=${result.region}, subregion=${result.subregion}, " +
-                            "type=${result.type}; raw=${result.rawText?.replace('\n', '|')}"
+                            "type=${result.type}, barcode=${result.barcode}, " +
+                            "agreement=${result.agreement}, needsReview=${result.needsReview}; " +
+                            "raw=${result.rawText?.replace('\n', '|')}"
                     )
                 } finally {
                     fixtureFile.delete()

@@ -25,13 +25,16 @@ class LabelScanLadderTest {
     }
 
     @Test
-    fun aConfidentReadingDoesNotBuyAnotherPass() {
+    fun aConfidentReadingStillGetsTheCloseUpCropButNotAThirdPass() {
         val solid = report(
             "BODEGAS OLARRA\nGRAN RESERVA\nRIOJA\n2019",
             "BODEGAS OLARRA\nGRAN RESERVA\nRIOJA\n2019"
         )
 
         assertFalse(solid.needsReview)
+        // The crop pass always runs: it is the pass that reads calligraphic words the full frame drops.
+        assertTrue(LabelScanLadder.shouldEscalate(1, solid, identityResolved = false))
+        // Nothing further once both have agreed, though.
         assertFalse(LabelScanLadder.shouldEscalate(2, solid, identityResolved = false))
     }
 
@@ -75,6 +78,10 @@ class LabelScanLadderTest {
         assertFalse(
             "an exact barcode identity is worth more than another OCR pass",
             LabelScanLadder.shouldEscalate(1, weak, identityResolved = true)
+        )
+        assertFalse(
+            "and it stays stopped on later passes",
+            LabelScanLadder.shouldEscalate(2, weak, identityResolved = true)
         )
     }
 

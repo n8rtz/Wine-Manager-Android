@@ -46,8 +46,27 @@ ML Kit's reading or this app's parsing of it. The reviewed fixtures are also sca
 and must produce identical suggestions, so an unstable scan (the classic "it works sometimes")
 fails the test.
 
-Each scan merges its two OCR passes line by line (`LabelOcrConsensus`) and logs
-`agreement`, `supported=<corroborated lines>/<total>` and `needsReview` under the `ScannerManager`
-tag: the full frame usually keeps the printed lines while the enhanced crop reads the decorative
-words the full frame drops. These instrumented assertions require a device; they have not been
-executed in the assistant's sandbox, which has no Android SDK or emulator.
+These instrumented assertions require a device; they have not been executed in the assistant's
+sandbox, which has no Android SDK or emulator.
+
+## How a scan decides (implemented)
+
+1. **Barcode first.** `LabelBarcodeReader` decodes an EAN-8/13 or UPC-A/E off the same still image,
+   and only codes whose GS1 check digit is consistent are used (`Gtin`). `LabelIdentityResolver`
+   looks the code up in Open Food Facts (`api/v2/product/{barcode}.json`) and caches every hit in
+   `filesDir/scanner/barcode-identities.txt`, so re-scanning a bottle is instant and works offline.
+   A registry hit owns the producer and the cuvée; the photo keeps the bottle-specific vintage,
+   country, region and type (`WineIdentityMerge`). A shortened brand or an OCR slip is not a
+   disagreement, a different producer or vintage is, and a visible barcode that could not be
+   resolved always marks the scan for review. Front labels carry no barcode, so the fixture photos
+   only exercise the (harmless) decode attempt; the result is logged, not asserted.
+2. **OCR passes, escalated only when needed.** Pass one is the full frame, pass two the enhanced
+   centre crop, and pass three the tighter, hard-contrast crop (`LabelScanLadder`). Another pass
+   runs only while the reading is contradicted or unrecognised, never past three passes, and never
+   once a barcode has named the bottle.
+3. **Every pass is merged, not discarded.** `LabelOcrConsensus` merges line by line: the full frame
+   usually keeps the printed lines while the enhanced crop reads the decorative words the full
+   frame drops. Each scan logs `passes`, `barcode`, `identity`, `agreement`,
+   `supported=<corroborated lines>/<total>`, `needsReview` and `contradictions` under the
+   `ScannerManager` tag, and `ScannedWine.barcode/agreement/needsReview` carry the same signal to
+   the UI so a low-confidence scan can be highlighted instead of silently trusted.

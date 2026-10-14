@@ -11,16 +11,15 @@ import android.media.ExifInterface
 import java.io.File
 import kotlin.math.roundToInt
 
-/** Builds a close, grayscale, higher-contrast view of the label for a second OCR pass. */
+/**
+ * Builds a close, grayscale, higher-contrast view of the label for one OCR pass. Which crop and how
+ * hard the contrast pushes are described by a [LabelCropRecipe], so the escalation ladder can ask
+ * for a different view of the same photo without changing any of this code.
+ */
 internal object LabelImageEnhancer {
     private const val MAX_DECODE_EDGE = 2_400
-    private const val TARGET_CROP_EDGE = 2_800
-    private const val MAX_UPSCALE = 1.6f
-    private const val CROP_WIDTH_FRACTION = 0.84f
-    private const val CROP_HEIGHT_FRACTION = 0.66f
-    private const val CONTRAST = 1.25f
 
-    fun createEnhancedLabelCrop(file: File): Bitmap? {
+    fun createLabelCrop(file: File, recipe: LabelCropRecipe = LabelCropRecipe.ENHANCED): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
@@ -43,16 +42,16 @@ internal object LabelImageEnhancer {
             if (oriented !== bitmap) bitmap.recycle()
             bitmap = oriented
 
-            val cropWidth = (bitmap.width * CROP_WIDTH_FRACTION).roundToInt().coerceAtLeast(1)
-            val cropHeight = (bitmap.height * CROP_HEIGHT_FRACTION).roundToInt().coerceAtLeast(1)
+            val cropWidth = (bitmap.width * recipe.widthFraction).roundToInt().coerceAtLeast(1)
+            val cropHeight = (bitmap.height * recipe.heightFraction).roundToInt().coerceAtLeast(1)
             val cropLeft = (bitmap.width - cropWidth) / 2
             val cropTop = (bitmap.height - cropHeight) / 2
             val cropped = Bitmap.createBitmap(bitmap, cropLeft, cropTop, cropWidth, cropHeight)
             if (cropped !== bitmap) bitmap.recycle()
             bitmap = cropped
 
-            val scale = (TARGET_CROP_EDGE.toFloat() / maxOf(bitmap.width, bitmap.height))
-                .coerceIn(1f, MAX_UPSCALE)
+            val scale = (recipe.targetEdge.toFloat() / maxOf(bitmap.width, bitmap.height))
+                .coerceIn(1f, recipe.maxUpscale)
             if (scale > 1.01f) {
                 val scaled = Bitmap.createScaledBitmap(
                     bitmap,
@@ -65,10 +64,10 @@ internal object LabelImageEnhancer {
             }
 
             val enhanced = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-            val offset = -(0.5f * CONTRAST - 0.5f) * 255f
-            val luminanceRed = 0.299f * CONTRAST
-            val luminanceGreen = 0.587f * CONTRAST
-            val luminanceBlue = 0.114f * CONTRAST
+            val offset = -(0.5f * recipe.contrast - 0.5f) * 255f
+            val luminanceRed = 0.299f * recipe.contrast
+            val luminanceGreen = 0.587f * recipe.contrast
+            val luminanceBlue = 0.114f * recipe.contrast
             val colorMatrix = ColorMatrix(
                 floatArrayOf(
                     luminanceRed, luminanceGreen, luminanceBlue, 0f, offset,

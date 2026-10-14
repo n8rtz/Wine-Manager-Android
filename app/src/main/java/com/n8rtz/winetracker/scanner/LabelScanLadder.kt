@@ -32,6 +32,13 @@ internal object LabelScanLadder {
     /** OCR passes per scan, full frame included, to keep latency, heat and battery bounded. */
     const val MAX_OCR_PASSES = 3
 
+    /**
+     * Passes that run whether or not the first one looked convincing. The close-up crop is the pass
+     * that recovers decorative words (the calligraphic "Merlot") that the full frame drops, so it is
+     * not left to the confidence of the full-frame reading.
+     */
+    const val ALWAYS_RUN_PASSES = 2
+
     val CROP_RECIPES = listOf(LabelCropRecipe.ENHANCED, LabelCropRecipe.HIGH_CONTRAST)
 
     /** Recipe for the pass after [passesRun] completed passes, or null when the ladder is spent. */
@@ -43,9 +50,10 @@ internal object LabelScanLadder {
         identityResolved: Boolean
     ): Boolean {
         if (passesRun >= MAX_OCR_PASSES) return false
-        // A barcode already named the bottle; further OCR can only add optional fields, and the
-        // user is waiting.
+        // A barcode already named the bottle exactly; the full-frame reading is enough for the
+        // vintage and region, so keep the scan fast.
         if (identityResolved) return false
+        if (passesRun < ALWAYS_RUN_PASSES) return true
         return assessment.needsReview
     }
 }

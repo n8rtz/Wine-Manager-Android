@@ -416,6 +416,18 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun neverUsesAlcoholAndVolumeTextAsTheWineName() {
+        val result = parser.parse("BLACKSTONE\nWINERY\nCALIFORNIA\nALC 13.5% BY VOL\n750 ML")
+
+        assertEquals("Blackstone Winery", result.maker)
+        // Nothing on this label carries the cuvée, so no name is suggested rather than "Alc 13 5 By
+        // Vol 750 Ml". Region text is not a wine name.
+        assertNull(result.name)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+    }
+
+    @Test
     fun ignoresFoundingYearsWhenChoosingTheVintage() {
         val result = parser.parse(
             "Penfolds\nKOONUNGA HILL\nSHIRAZ CABERNET\n" +
