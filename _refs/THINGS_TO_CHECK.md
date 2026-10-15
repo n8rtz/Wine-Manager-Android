@@ -1,6 +1,6 @@
 # Things to Check
 
-> **Scope/status:** These are future verification steps, not test results. Android Studio build, unit tests, and device/emulator checks have not yet been run. The implemented major flows covered here are camera OCR on **Add Wine**, the reviewed Open Food Facts image importer, **Manage Offline Images**, and the **Price vs. Rating** Pareto screen. The Aroma Wheel and Wine Resources are planning briefs only; there are no implemented screens to verify yet. Camera OCR is intentionally not part of **Add Note**.
+> **Scope/status:** These are future verification steps, not test results. Android Studio build, unit tests, and device/emulator checks have not yet been run. The implemented major flows covered here are camera OCR on **Add Wine**, the reviewed Open Food Facts image importer, **Manage Offline Images**, and the **Price vs. Rating** Pareto screen. The **Aroma Wheel** now has an implemented drill-down picker (see the aroma wheel checklist below); **Wine Resources** remains a planning brief only. Camera OCR is intentionally not part of **Add Note**.
 
 ## One-time Android Studio setup and test launch
 
@@ -138,3 +138,20 @@
 - [ ] If a deletion failure can be induced safely on the disposable emulator, expect **The offline copy was unlinked, but storage cleanup will retry deleting its file.**; the Room path must remain cleared, the file must not be re-associated, and reopening the manager/app must recover without a crash. If the operation reports an error, confirm the stale path is still not restored. Do not induce filesystem faults on a personal device.
 - [ ] Run the complete `WineImageImportRepositoryTest` connected instrumentation class. It checks: path-only clearing and preservation of source/provenance plus inventory, tasting-note, and consumption history; protection of a file still referenced by another asset; the management-list projection; refreshed stored-byte totals; repeated/idempotent removal; and a stale removal request that must not clear/delete a newer image. It also checks a removed path remains eligible for a fresh reviewed candidate search.
 - [ ] Keep the Open Food Facts source/contributor metadata visible for attribution. The offline manager removes only a selected confirmed local copy; it is not a bulk delete, source-history delete, or automatic storage eviction.
+
+## Aroma wheel — tasting-note editor
+
+1. [ ] Open **Add Note** (or edit an existing note) and confirm the **Aroma descriptors** section appears between the sensory sliders and **Common faults**, with the empty-state hint and a **Browse wheel** button.
+2. [ ] Open the wheel: the full concentric wheel should fit the screen, showing the family ring (Primary / Secondary / Tertiary / Faults), the 19 coloured group sectors, the descriptor ring, and the outer repeating band labels.
+3. [ ] Pinch to zoom (anchored under the fingers) and drag to pan; verify the view clamps so the wheel cannot be lost off-screen, and tapping the centre badge resets the view.
+4. [ ] Tap a family, group, or outer-band label: the view animates to that sector; tapping the same label again zooms back out. Zoom animations should respect the system "remove animations" setting.
+5. [ ] At the overview zoom, tap a small descriptor: the first tap should zoom to its group, and the next tap selects it. Zoomed in, a single tap should toggle directly.
+6. [ ] Select several descriptors across families: each fills with a deep version of its group colour and its label turns white and bold, clearly distinct from its pale neighbours, and the header count updates. Try a 25th selection to confirm the limit notice appears.
+7. [ ] Toggle to list view: verify the same selections are checked, group rows show counts, searching (including synonyms like "cassis", "petrol", "jalapeno") returns scored results with path labels, and toggling in either mode is reflected in the other.
+8. [ ] Tap **Done**: verify group-coloured chips appear on the aroma wheel card under the overall score (blank card before choosing), each chip removes its descriptor, and saving a note persists the selection (reopen the editor to confirm restore, including after app restart).
+9. [ ] On the card, long-press a chip and drag it across a neighbour: it should lift (scale + shadow) and chips should swap as it crosses their midpoints. Arrange three aromas most-to-least prevalent, save, and verify the order holds on the note card in wine details and after reopening the editor.
+9. [ ] Verify the wine's detail screen shows the saved aromas as small group-tinted chips on the affected note cards.
+10. [ ] Delete a note with aromas and confirm no other notes or inventory rows are affected; run a JSON backup + restore and confirm aromas round-trip.
+11. [ ] Check the wheel and list at font scales 1.0 and 2.0, in light and dark themes, and on a small/low-end device if available: labels should stay readable, gestures smooth, and chips should not overflow their rows (the reference README specifically flags Brettanomyces, Secondary, and Tertiary cells as the tightest fits).
+12. [ ] With TalkBack on, verify the canvas announces the selected count with Zoom in / Zoom out / Show whole wheel custom actions, and the list mode announces descriptor names, path labels, and checked state.
+13. [ ] Confirm the unit tests for the aroma wheel taxonomy, layout, hit-testing, and the sensory JSON converter pass (`./gradlew :app:testDebugUnitTest`).

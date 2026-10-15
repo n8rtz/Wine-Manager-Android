@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,6 +46,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldLabelPosition
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -58,11 +61,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.n8rtz.winetracker.aromawheel.AromaSelection
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.ui.components.AromaWheelDialog
+import com.n8rtz.winetracker.ui.components.AromaWheelLauncherCard
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
@@ -118,6 +124,7 @@ fun TastingNoteEditorScreen(
     var valueScoreSelected by remember(noteId) { mutableStateOf(noteId == null) }
     var sensoryData by remember { mutableStateOf(SensoryData()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showAromaWheel by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
@@ -139,7 +146,11 @@ fun TastingNoteEditorScreen(
                 valueScore = note.valueScore?.coerceIn(1, 10) ?: 5
                 valueScoreSelected = note.valueScore != null
                 manualPrice = note.price?.toString().orEmpty()
-                sensoryData = note.sensoryData ?: SensoryData()
+                // Normalize the stored selection so retired/unknown ids never render as chips.
+                val loadedSensory = note.sensoryData ?: SensoryData()
+                sensoryData = loadedSensory.copy(
+                    aromas = AromaSelection.normalize(loadedSensory.aromas).ids
+                )
             }
             loaded = true
         }
@@ -578,10 +589,16 @@ fun TastingNoteEditorScreen(
                 )
             }
 
-            FilterChip(
-                selected = rebuy,
-                onClick = { rebuy = !rebuy },
-                label = { Text(if (rebuy) "Would buy again" else "Recommend / rebuy") }
+            AromaWheelLauncherCard(
+                selectedIds = sensoryData.aromas,
+                onClick = { showAromaWheel = true },
+                onReorder = { ordered ->
+                    sensoryData = sensoryData.copy(aromas = ordered)
+                },
+                onRemove = { id ->
+                    sensoryData = sensoryData.copy(aromas = sensoryData.aromas - id)
+                },
+                modifier = Modifier.fillMaxWidth()
             )
 
             SensoryEvaluationFields(
@@ -646,6 +663,12 @@ fun TastingNoteEditorScreen(
                 )
             }
 
+            FilterChip(
+                selected = rebuy,
+                onClick = { rebuy = !rebuy },
+                label = { Text(if (rebuy) "Would buy again" else "Recommend / rebuy") }
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -656,10 +679,15 @@ fun TastingNoteEditorScreen(
                     onExpandedChange = { reviewerMenuExpanded = !reviewerMenuExpanded },
                     modifier = Modifier.weight(2f)
                 ) {
+                    // This read-only field mirrors the selected reviewer. Keep
+                    // its label raised even before the first dropdown interaction.
+                    val reviewerFieldState = remember(recommendedBy) {
+                        TextFieldState(initialText = recommendedBy)
+                    }
                     OutlinedTextField(
-                        value = recommendedBy,
-                        onValueChange = {},
+                        state = reviewerFieldState,
                         readOnly = true,
+                        labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true),
                         label = { Text("Recommended by") },
                         trailingIcon = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -678,7 +706,7 @@ fun TastingNoteEditorScreen(
                             androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable,
                             true
                         ),
-                        singleLine = true
+                        lineLimits = TextFieldLineLimits.SingleLine
                     )
                     ExposedDropdownMenu(
                         expanded = reviewerMenuExpanded,
@@ -789,6 +817,17 @@ fun TastingNoteEditorScreen(
         ) {
             DatePicker(state = pickerState)
         }
+    }
+
+    if (showAromaWheel) {
+        AromaWheelDialog(
+            initiallySelectedIds = sensoryData.aromas,
+            onConfirm = { selected ->
+                sensoryData = sensoryData.copy(aromas = selected)
+                showAromaWheel = false
+            },
+            onDismiss = { showAromaWheel = false }
+        )
     }
 
     if (showDeleteConfirmation && noteId != null) {

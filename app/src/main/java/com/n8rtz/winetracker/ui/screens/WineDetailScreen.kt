@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
+import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.resolveWineImageModel
@@ -521,6 +523,33 @@ fun WineDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 3
                                 )
+                                val noteAromas = note.sensoryData?.aromas.orEmpty()
+                                if (noteAromas.isNotEmpty()) {
+                                    androidx.compose.foundation.layout.FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp),
+                                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        noteAromas.forEach { aromaId ->
+                                            val aromaInfo = AromaTaxonomy.describe(aromaId)
+                                            Surface(
+                                                shape = RoundedCornerShape(50),
+                                                color = androidx.compose.ui.graphics.Color(
+                                                    AromaWheelTheme.groupColor(aromaInfo.groupId)
+                                                ).copy(alpha = 0.16f),
+                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                            ) {
+                                                Text(
+                                                    text = aromaInfo.label,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                                 if (!note.recommendedBy.isNullOrBlank()) {
                                     Text("Recommended by ${note.recommendedBy}", style = MaterialTheme.typography.bodySmall)
                                 }

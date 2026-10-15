@@ -181,3 +181,29 @@
 * **Date Logged:** 2026-03-14
 * **Date & time Fixed:** 2026-03-14 22:15
 * **Summary of fix:** Migrated the entire backup/restore system to JSON format using Gson to eliminate data misalignment caused by missing or optional columns in legacy CSV backups.
+
+### Aroma launcher wrapping and score endpoint alignment
+* **Date logged/fixed:** 2026-10-15
+* **Fix:** Replaced the launcher’s scrolling chip strip with a wrapping FlowRow, with two-dimensional long-press reordering. Score track, markers, labels, and explicit thumb now share the same inset; font-scaled label space prevents the 100 label from clipping.
+* **Verification:** Device check pending: reorder across rows; select 50 and 100; check large-font labels.
+
+### Overall score thumb stuck after endpoint alignment change
+* **Date logged/fixed:** 2026-10-15
+* **Cause:** The custom slider's empty track slot measured to zero width, collapsing the thumb's travel range.
+* **Fix:** Supply a full-width, invisible 8.dp-high Spacer as the track. Keep the existing Canvas gradient and shared thumb/label insets.
+* **Verification:** No other empty slider track slots found. Device verification pending: drag from 50 through 75 to 100 and tap both endpoints.
+
+### Duplicate aroma editor below sensory sliders
+* **Date logged/fixed:** 2026-10-15
+* **Cause:** The original AromaDescriptorSection was still rendered after the Quality slider, duplicating the launcher card and squeezing its heading into a narrow column.
+* **Fix:** Removed that section's invocation and extra spacer from SensoryEvaluationFields. The upper aroma wheel launcher and its wrapping, reorderable chips remain unchanged; Common faults now follows the sensory sliders directly.
+* **Verification:** Confirmed there are no remaining AromaDescriptorSection call sites. Device verification pending.
+
+### Default wine reviewer list update
+* **Date changed:** 2026-10-15
+* **Change:** Removed Vinous and Jancis Robinson from the defaults; added Peter Koff, Konstantin Baum, and Costco Wine Blog. Saved custom reviewer lists and existing tasting notes remain unchanged.
+
+### Recommended by label changes position on first interaction
+* **Date changed:** 2026-10-15
+* **Fix:** Use the state-based outlined field with an attached, always-minimized label, so “Recommended by” starts and stays raised even when empty. The read-only display state follows reviewer selection and clearing without forcing focus or opening the menu.
+* **Verification:** Checked label-position and single-line APIs against Material 3 source. Device check pending: initial empty field, open/dismiss, select, and clear.

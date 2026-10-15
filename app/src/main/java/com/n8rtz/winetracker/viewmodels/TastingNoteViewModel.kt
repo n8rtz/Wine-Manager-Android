@@ -212,10 +212,11 @@ class TastingNoteViewModel(application: Application, private val repository: Win
         const val REVIEWER_PREFERENCES_FILE = "wine_manager_settings"
         const val REVIEWER_NAMES_KEY = "wine_reviewer_names"
         val DEFAULT_REVIEWER_NAMES = listOf(
+            "Costco Wine Blog",
             "Decanter",
             "James Suckling",
-            "Jancis Robinson",
-            "Vinous",
+            "Konstantin Baum",
+            "Peter Koff",
             "Wine Advocate",
             "Wine Enthusiast",
             "Wine Spectator"
