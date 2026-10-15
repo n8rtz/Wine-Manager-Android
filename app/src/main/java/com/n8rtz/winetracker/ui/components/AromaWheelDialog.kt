@@ -29,7 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List as ListIcon
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DonutLarge
 import androidx.compose.material.icons.filled.ExpandLess
@@ -251,7 +251,7 @@ fun AromaWheelDialog(
                         }
                     ) {
                         Icon(
-                            if (showListMode) Icons.Default.DonutLarge else ListIcon,
+                            if (showListMode) Icons.Default.DonutLarge else Icons.AutoMirrored.Filled.List,
                             contentDescription = null
                         )
                     }
