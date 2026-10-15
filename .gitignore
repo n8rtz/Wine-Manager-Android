@@ -9,6 +9,9 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+
+# Local JVM harness for the scanner logic tests (see .ocr-harness/README.md)
+.ocr-harness/
 /captures
 .externalNativeBuild
 .cxx

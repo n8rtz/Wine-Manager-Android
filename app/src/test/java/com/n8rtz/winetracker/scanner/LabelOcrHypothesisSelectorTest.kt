@@ -38,6 +38,17 @@ class LabelOcrHypothesisSelectorTest {
     }
 
     @Test
+    fun keepsTheCleanerCropWhenTheFullFrameDropsADecorativeVariety() {
+        // Mirrors the Blackstone photo, where the calligraphic "Merlot" survives only in the crop.
+        val fullFrame = LabelOcrHypothesis("BLACKSTONE\nWINERY\nCALIFORNIA\nALC 13.5% BY VOL")
+        val enhancedCrop = LabelOcrHypothesis("BLACKSTONE\nWINERY\nMerlot\nCALIFORNIA\nALC 13.5% BY VOL")
+
+        val selected = LabelOcrHypothesisSelector.choose(fullFrame, enhancedCrop, parser, dictionary)
+
+        assertEquals(enhancedCrop, selected)
+    }
+
+    @Test
     fun fallsBackToFullFrameWhenTheEnhancedCropIsBlank() {
         val fullFrame = LabelOcrHypothesis("Rioja 2019")
         val enhancedCrop = LabelOcrHypothesis("  ")

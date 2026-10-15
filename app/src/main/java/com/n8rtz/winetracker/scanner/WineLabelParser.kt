@@ -12,11 +12,23 @@ data class ScannedWine(
     val country: String? = null,
     val region: String? = null,
     val subregion: String? = null,
-    val type: String? = null
+    val type: String? = null,
+    /** Barcode read from the photo, whether or not a registry lookup resolved it. */
+    val barcode: String? = null,
+    /** Share of the winning OCR pass's lines a second pass also read; null when only one pass ran. */
+    val agreement: Double? = null,
+    /** True when the passes disagreed, nothing was recognised, or a barcode could not be resolved. */
+    val needsReview: Boolean = true,
+    /**
+     * What was wrong with the photo itself, when anything was: "blurry", "too_dark" or "glare".
+     * Null when the photo was clean or could not be measured, so the UI can offer a retake.
+     */
+    val captureQuality: String? = null
 ) {
     val hasSuggestions: Boolean
         get() = !maker.isNullOrBlank() || !name.isNullOrBlank() || !vintage.isNullOrBlank() ||
-            !country.isNullOrBlank() || !region.isNullOrBlank() || !subregion.isNullOrBlank() || !type.isNullOrBlank()
+            !country.isNullOrBlank() || !region.isNullOrBlank() || !subregion.isNullOrBlank() ||
+            !type.isNullOrBlank() || !barcode.isNullOrBlank()
 }
 
 /** Pure parser so label-text behavior can be tested without CameraX or ML Kit. */
@@ -26,6 +38,12 @@ internal class WineLabelParser {
 
     private val vintageRegex = Regex("\\b(19|20)\\d{2}\\b")
     private val wineYearTokenRegex = Regex("(?:19|20)\\d{2}")
+    private val packagingNoiseLineRegex = Regex(
+        """(?i)\b\d+(?:[.,]\d+)?\s?%|\balc\b|by vol|contains sulfites?|\b\d+\s?(?:ml|cl|oz|l)\b"""
+    )
+    private val cellarTriviaCueRegex = Regex(
+        """(?i)\b(?:established|founded|fondee|fonde|fondée|fondé|since|depuis|vintage)\b"""
+    )
     private val whitespaceRegex = Regex("\\s+")
     private val wordRegex = Regex("[\\p{L}\\p{M}]+")
     private val bodegaCueLineRegex = Regex(
@@ -50,7 +68,7 @@ internal class WineLabelParser {
     ): ScannedWine {
         val correction = dictionary.correct(text)
         val matches = correction.matches
-        val vintage = vintageRegex.find(text)?.value
+        val vintage = selectVintage(correction, matches)
         val producerCue = explicitBodegaProducer(text)
         val matchedPlace = bestMatch(
             matches.filter {
@@ -109,8 +127,9 @@ internal class WineLabelParser {
                 geographicContext == null || dictionary.isCompatibleWithWineContext(geographicContext, match.entry)
             }
             .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
+        // Every match here already passed the corrector's fuzzy gate, so the name agrees with the
+        // corrected text the user is shown (a one-letter slip in "Merlot" is corrected, and named).
         val preferredNameMatch = listOfNotNull(wineNameMatch, namedTermMatch)
-            .filter { it.similarity >= MIN_SUGGESTED_NAME_SIMILARITY }
             .maxByOrNull { nameSuggestionScore(it, geographicContext, dictionary) }
         // An explicit Spanish winery cue beats unrelated fuzzy cellar matches.
         val nameMatch = preferredNameMatch
@@ -141,13 +160,15 @@ internal class WineLabelParser {
                 })?.entry?.wineType
             )
 
-        val visibleLines = visibleTextLines(correction, vintage)
-            .filterNot { producerCue?.lineIndexes?.contains(it.lineIndex) == true }
-            .map { it.text }
+        val visibleLines = withoutPackagingNoise(
+            visibleTextLines(correction, vintage)
+                .filterNot { producerCue?.lineIndexes?.contains(it.lineIndex) == true }
+                .map { it.text }
+        )
         val fallbackMaker = matchedMaker ?: guessMakerFromLeadingLines(visibleLines)
         val fallbackName = nameMatch?.entry?.canonical ?: when {
-            matchedMaker != null -> visibleLines.joinToString(" ").takeIf(String::isNotBlank)
-            visibleLines.size > 1 -> visibleLines.drop(1).joinToString(" ").takeIf(String::isNotBlank)
+            matchedMaker != null -> leftoverNameText(visibleLines, matchedMaker)
+            visibleLines.size > 1 -> leftoverNameText(visibleLines.drop(1), maker = null)
             else -> null
         }
 
@@ -163,6 +184,38 @@ internal class WineLabelParser {
             type = wineType
         )
     }
+
+    /**
+     * Picks the vintage of the scanned bottle. A group photo contains several vintages, and words
+     * such as "ESTABLISHED 1844" or "FIRST VINTAGE 1996" carry cellar trivia rather than the vintage,
+     * so year tokens that a recognised wine term absorbed, or that share a line with a
+     * founding/vintage cue, are skipped first.
+     */
+    private fun selectVintage(
+        correction: WineDictionaryCorrection,
+        matches: List<WineLexiconMatch>
+    ): String? {
+        val yearTokens = correction.tokens.withIndex().filter { wineYearTokenRegex.matches(it.value.text) }
+        if (yearTokens.isEmpty()) return null
+
+        val notAbsorbedByAWineTerm = yearTokens.filterNot { (index, _) ->
+            matches.any { match -> match.startToken <= index && index < match.endTokenExclusive }
+        }
+        val outsideCellarTrivia = notAbsorbedByAWineTerm.filterNot { (_, token) ->
+            val line = correction.correctedText.lineSequence().elementAtOrNull(token.lineIndex)
+            line != null && cellarTriviaCueRegex.containsMatchIn(line)
+        }
+        val preferred = outsideCellarTrivia.ifEmpty { notAbsorbedByAWineTerm.ifEmpty { yearTokens } }
+        return preferred.first().value.text
+    }
+
+    /**
+     * Packaging lines ("ALC 13.5% BY VOL", "750 ml", "contains sulfites") are never the wine name or
+     * the producer, and they sit under the real label text, so they are dropped before the fallback
+     * name is assembled from whatever is left.
+     */
+    private fun withoutPackagingNoise(lines: List<String>): List<String> =
+        lines.filterNot { packagingNoiseLineRegex.containsMatchIn(it) }
 
     private fun guessMakerFromLeadingLines(lines: List<String>): String? {
         val firstLine = lines.firstOrNull() ?: return null
@@ -287,6 +340,26 @@ internal class WineLabelParser {
             .filter { it.text.isNotBlank() }
     }
 
+    /**
+     * Text left over after the recognised terms are removed. It is only a guess at the cuvée, so
+     * OCR debris is dropped rather than suggested: fragments under three letters ("Wi", "N" from a
+     * split "WINERY") and words that echo the matched producer ("LAOKSTONE" beside "Blackstone").
+     * An empty result is better than a name that is visibly wrong.
+     */
+    private fun leftoverNameText(lines: List<String>, maker: String?): String? {
+        val makerWords = maker?.let { wordRegex.findAll(it).map { word -> word.value }.toList() }.orEmpty()
+        return lines
+            .flatMap { line -> wordRegex.findAll(line).map { it.value }.toList() }
+            .filter { it.length >= MIN_NAME_WORD_LETTERS }
+            .filterNot { word ->
+                makerWords.any { makerWord ->
+                    WineReferenceDictionary.termSimilarity(word, makerWord) >= MIN_MAKER_ECHO_SIMILARITY
+                }
+            }
+            .joinToString(" ")
+            .takeIf(String::isNotBlank)
+    }
+
     private fun supportedWineType(value: String?): String? = when (
         value?.trim()?.lowercase(Locale.ROOT)?.replace(" ", "")
     ) {
@@ -313,7 +386,8 @@ internal class WineLabelParser {
     }
 
     private companion object {
-        const val MIN_SUGGESTED_NAME_SIMILARITY = 0.84
+        const val MIN_NAME_WORD_LETTERS = 3
+        const val MIN_MAKER_ECHO_SIMILARITY = 0.75
         const val CURATED_SOURCE_WEIGHT = 30
     }
 }

@@ -119,6 +119,39 @@ class WineLabelParserTest {
     }
 
     @Test
+    fun aOneLetterSlipInTheVarietalIsCorrectedAndNamedTheSameWay() {
+        // Phone scan of a Blackstone Merlot: "Mertot" is corrected in the text, so it must also be
+        // the suggested name. Before, the name used a stricter threshold and came out empty.
+        val result = parser.parse("BLACKSTONE\nWINERY\nMertot\nCALIFORNIA")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertEquals("Merlot", result.name)
+        assertEquals("California", result.region)
+    }
+
+    @Test
+    fun aMisreadProducerWordStillResolvesToTheProducerWhenTheLabelIsLong() {
+        // "LAOKSTONE" is two OCR slips from "BLACKSTONE" in a ten-letter word; that is a normal misread.
+        val result = parser.parse("LAOKSTONE\nWi N\nMerlot\nCALIFORNIA")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertEquals("Merlot", result.name)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+    }
+
+    @Test
+    fun ocrDebrisIsNotSuggestedAsTheWineName() {
+        // With no varietal readable, "Wi N" (a split WINERY) and the misread producer must not
+        // become the wine name ("Laokstone Wi N" was shown on a real scan). No name beats a wrong one.
+        val result = parser.parse("LAOKSTONE\nWi N\nCALIFORNIA\nALC 13.5% BY VOL")
+
+        assertEquals("Blackstone Winery", result.maker)
+        assertNull(result.name)
+        assertEquals("California", result.region)
+    }
+
+    @Test
     fun correctsKirklandBrunelloLabelUsingWineVocabulary() {
         val rawText = "KIRKLAND BRUNELLO DIMONTALCINU ORGNE CONTROLLAA 2021"
         val result = parser.parse(rawText)
@@ -332,6 +365,171 @@ class WineLabelParserTest {
         assertNull(result.country)
         assertNull(result.region)
         assertNull(result.type)
+    }
+
+    @Test
+    fun repairsACellarRegionSpellingToTheCanonicalLocationRegion() {
+        val definition = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Kirkland",
+            name = "Brunello",
+            type = "Red",
+            country = "Italy",
+            region = "Tuscana",
+            subregion = "Brunello"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(definition),
+            mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        )
+        val result = parser.parse("TUSCANA", dictionary)
+
+        assertEquals("Italy", result.country)
+        assertEquals("Tuscany", result.region)
+        // The location-data spelling wins the correction, and the cellar typing stays an alias.
+        assertEquals("Tuscany", result.correctedText)
+        assertEquals("Tuscany", parser.parse("TOSCANA", dictionary).region)
+    }
+
+    @Test
+    fun recognizesNativeLanguageRegionSpellingsFromLocationData() {
+        val definition = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Cantina Example",
+            name = "Barolo",
+            type = "Red",
+            country = "Italy",
+            region = "Piemonte",
+            subregion = "Barolo"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(definition),
+            mapOf("Italy" to mapOf("Piedmont" to listOf("Barolo")))
+        )
+        val result = parser.parse("PIEMONTE", dictionary)
+
+        assertEquals("Italy", result.country)
+        assertEquals("Piedmont", result.region)
+    }
+
+    @Test
+    fun keepsCuratedMetadataWhenCellarHistoryDescribesTheSameRegion() {
+        val cellarWine = com.n8rtz.winetracker.data.local.WineDefinition(
+            maker = "Kirkland Signature",
+            name = "Brunello di Montalcino",
+            type = "Red",
+            country = "Italy",
+            region = "Tuscana",
+            subregion = "Brunello di Montalcino"
+        )
+        val dictionary = WineReferenceDictionary.forCellar(
+            listOf(cellarWine),
+            mapOf("Italy" to mapOf("Tuscany" to listOf("Brunello di Montalcino")))
+        )
+        val result = parser.parse("KIRKLAND\nBRUNELLO DI MONTALCINO\n2019", dictionary)
+
+        // Curated region spelling, subregion and varietal context survive the cellar duplicate.
+        assertEquals("Kirkland Signature", result.maker)
+        assertEquals("Brunello di Montalcino", result.name)
+        assertEquals("Italy", result.country)
+        assertEquals("Tuscany", result.region)
+        assertEquals("Brunello di Montalcino", result.subregion)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
+    fun readsADecorativeVarietyAndItsAppellationFromAnOldVineLabel() {
+        val result = parser.parse("OZV\nOLD VINE\nZINFANDEL\nESTATE GROWN\nLODI\nV. 2022")
+
+        // The label's own spelling is the grape's canonical American name; Primitivo stays a synonym.
+        assertEquals("Zinfandel", result.name)
+        assertEquals("2022", result.vintage)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+        assertEquals("Lodi", result.subregion)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
+    fun neverUsesAlcoholAndVolumeTextAsTheWineName() {
+        val result = parser.parse("BLACKSTONE\nWINERY\nCALIFORNIA\nALC 13.5% BY VOL\n750 ML")
+
+        assertEquals("Blackstone Winery", result.maker)
+        // Nothing on this label carries the cuvée, so no name is suggested rather than "Alc 13 5 By
+        // Vol 750 Ml". Region text is not a wine name.
+        assertNull(result.name)
+        assertEquals("United States", result.country)
+        assertEquals("California", result.region)
+    }
+
+    @Test
+    fun ignoresFoundingYearsWhenChoosingTheVintage() {
+        val result = parser.parse(
+            "Penfolds\nKOONUNGA HILL\nSHIRAZ CABERNET\n" +
+                "FIRST VINTAGE 1996\nTWENTY WINES SOUTH AUSTRALIA\nESTABLISHED 1844\n2019"
+        )
+
+        // 1996 and 1844 are cellar trivia; the bottle is the 2019 vintage.
+        assertEquals("2019", result.vintage)
+        assertEquals("Penfolds", result.maker)
+        assertEquals("Shiraz Cabernet", result.name)
+        assertEquals("Australia", result.country)
+        assertEquals("South Australia", result.region)
+        assertEquals("Red", result.type)
+        // A year introduced by "vintage" is still the vintage when the label offers no other year.
+        assertEquals("2019", parser.parse("ESTATE WINE\nVINTAGE 2019").vintage)
+    }
+
+    @Test
+    fun readsASpanishDenominacionDeOrigenAndItsProvince() {
+        val result = parser.parse(
+            "Juan Gil\nJUMILLA\nGIL\nDENOMINACION DE ORIGEN PROTEGIDA\n2020"
+        )
+
+        assertEquals("Juan Gil", result.maker)
+        assertEquals("2020", result.vintage)
+        assertEquals("Spain", result.country)
+        assertEquals("Murcia", result.region)
+        assertEquals("Jumilla", result.subregion)
+        assertEquals("Red", result.type)
+    }
+
+    @Test
+    fun keepsAMultiWordProducerNameFromTheLabel() {
+        val result = parser.parse(
+            "CONDE\nDE BASALU\nCrianza\n2021\n10 MESES EN BARRICA\nRIOJA\n" +
+                "DENOMINACION DE ORIGEN CALIFICADA"
+        )
+
+        assertEquals("Conde de Basalu", result.maker)
+        assertEquals("2021", result.vintage)
+        assertEquals("Spain", result.country)
+        assertEquals("Rioja", result.region)
+    }
+
+    @Test
+    fun prefersTheVillagesAppellationOverItsParentRegion() {
+        val result = parser.parse(
+            "LA RESERVE\nDE\nL'ENCLAVE\nFONDEE EN 1317\nCOTES DU RHONE VILLAGES\n" +
+                "APPELLATION D'ORIGINE PROTEGEE\n2022\nVIGNERONS DE L'ENCLAVE"
+        )
+
+        assertEquals("Côtes du Rhône Villages", result.name)
+        assertEquals("France", result.country)
+        assertEquals("Rhone", result.region)
+        assertEquals("Côtes du Rhône Villages", result.subregion)
+        assertEquals("2022", result.vintage)
+    }
+
+    @Test
+    fun resolvesTheSpanishNameOfAnArgentineSubregion() {
+        val result = parser.parse(
+            "LOS HAROLDOS\nRESERVA\n2020\nMALBEC\nVALLE DE UCO\nMENDOZA ARGENTINA"
+        )
+
+        assertEquals("Los Haroldos", result.maker)
+        assertEquals("2020", result.vintage)
+        assertEquals("Argentina", result.country)
+        assertEquals("Mendoza", result.region)
+        assertEquals("Uco Valley", result.subregion)
     }
 
     @Test

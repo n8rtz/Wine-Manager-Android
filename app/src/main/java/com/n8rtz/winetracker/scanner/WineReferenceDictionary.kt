@@ -275,7 +275,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
                     val distance = levenshteinDistance(combinedKey, candidate.key, maxEdits)
                     if (distance > maxEdits) continue
                     val similarity = 1.0 - distance.toDouble() / maxOf(combinedKey.length, candidate.key.length)
-                    if (distance > 0 && similarity < MIN_FUZZY_SIMILARITY) continue
+                    if (!acceptsFuzzyMatch(distance, similarity, candidate.key.length)) continue
                     // Personal cellar entries are useful only for near-exact matches; otherwise a
                     // familiar producer or cuvée can override unrelated label text.
                     val isCellarIdentity = candidate.entry.sourceWeight < CURATED_SOURCE_WEIGHT &&
@@ -401,6 +401,12 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
         private const val MIN_TERM_LENGTH = 3
         private const val MAX_PHRASE_TOKENS = 7
         private const val MIN_FUZZY_SIMILARITY = 0.82
+        /**
+         * Two OCR slips in a long word ("LAOKSTONE" for "BLACKSTONE", similarity 0.80) are a normal
+         * misread, and the edit cap already allows two edits up to 12 letters, so a term of this length
+         * may take two edits even though its similarity falls just below the general bar.
+         */
+        private const val LONG_TERM_LENGTH_FOR_TWO_EDITS = 10
         private const val MIN_PHRASE_MATCH_SIMILARITY = 0.90
         private const val PHRASE_MATCH_BONUS = 0.12
         private const val MAX_PHRASE_BONUS_SPAN = 3
@@ -649,6 +655,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             }
 
             definitions.forEach { definition ->
+                val definitionCountry = canonicalWineCountry(definition.country)
                 definition.type.trim().takeIf(String::isNotEmpty)?.let { type ->
                     entries += WineLexiconEntry(
                         canonical = type,
@@ -673,39 +680,35 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
                     )
                 }
                 definition.region?.trim()?.takeIf(String::isNotEmpty)?.let { region ->
+                    // A personal spelling such as "Tuscana" must stay a recognised alias instead of
+                    // becoming a second region that can outrank the canonical location-data entry.
+                    val canonicalRegionName = canonicalRegion(region, definitionCountry, locationData) ?: region
                     entries += WineLexiconEntry(
-                        canonical = region,
+                        canonical = canonicalRegionName,
                         kind = WineTermKind.REGION,
-                        country = canonicalWineCountry(definition.country),
-                        region = region,
+                        aliases = cellarRegionAliases(region, canonicalRegionName),
+                        country = definitionCountry,
+                        region = canonicalRegionName,
                         sourceWeight = 20,
-                        associatedGrapes = grapesForGeography(definition.country, region, null)
+                        associatedGrapes = grapesForGeography(definitionCountry, canonicalRegionName, null)
                     )
                 }
                 definition.subregion?.trim()?.takeIf(String::isNotEmpty)?.let { subregion ->
+                    val canonicalRegionName = canonicalRegion(definition.region, definitionCountry, locationData)
                     entries += WineLexiconEntry(
                         canonical = subregion,
                         kind = WineTermKind.SUBREGION,
-                        country = canonicalWineCountry(definition.country),
-                        region = definition.region,
+                        country = definitionCountry,
+                        region = canonicalRegionName,
                         subregion = subregion,
                         sourceWeight = 20,
                         useAsName = normalizedKey(subregion) in knownAppellationKeys,
-                        associatedGrapes = grapesForGeography(definition.country, definition.region, subregion)
+                        associatedGrapes = grapesForGeography(definitionCountry, canonicalRegionName, subregion)
                     )
                 }
             }
 
-            return WineReferenceDictionary(entries.distinctBy { entry ->
-                listOf(
-                    entry.kind.name,
-                    normalizedKey(entry.canonical),
-                    entry.country.orEmpty(),
-                    entry.region.orEmpty(),
-                    entry.subregion.orEmpty(),
-                    entry.maker.orEmpty()
-                ).joinToString("|")
-            })
+            return WineReferenceDictionary(mergeDuplicateEntries(entries))
         }
 
         private fun grapeEntries(): List<WineLexiconEntry> = buildList {
@@ -847,11 +850,26 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             WineLexiconEntry("Dessert", WineTermKind.WINE_TYPE, aliases = listOf("Dessert Wine", "Sweet Wine"), wineType = "Dessert")
         )
 
+        /** Native-language spellings that appear on labels next to the English region name. */
         private fun locationAliases(location: String): List<String> = when (normalizedKey(location)) {
             "tuscany" -> listOf("Toscana", "Tuscana")
+            "piedmont" -> listOf("Piemonte")
+            "sicily" -> listOf("Sicilia")
+            "burgundy" -> listOf("Bourgogne")
             else -> emptyList()
         }
 
+        /** Keeps the spelling a cellar used as an alias whenever it differs from the canonical region. */
+        private fun cellarRegionAliases(spelling: String, canonical: String?): List<String> = listOfNotNull(
+            spelling.trim().takeIf(String::isNotEmpty)?.takeIf {
+                canonical == null || normalizedKey(it) != normalizedKey(canonical)
+            }
+        )
+
+        /**
+         * Location data is the source of truth for region spelling. Compare countries through their
+         * canonical form so that a definition stored as "USA" still resolves "Toscana" to "Tuscany".
+         */
         private fun canonicalRegion(
             value: String?,
             country: String?,
@@ -859,8 +877,9 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
         ): String? {
             val region = value?.trim()?.takeIf(String::isNotEmpty) ?: return null
             val regionKey = normalizedKey(region)
+            val canonicalCountry = country?.let(::canonicalWineCountry)?.takeIf(String::isNotBlank)
             val regions = locationData
-                .filterKeys { country.isNullOrBlank() || it.equals(country, ignoreCase = true) }
+                .filterKeys { canonicalCountry == null || canonicalWineCountry(it).equals(canonicalCountry, ignoreCase = true) }
                 .values
                 .flatMap { it.keys }
             return regions.firstOrNull { candidate ->
@@ -868,11 +887,73 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             } ?: region
         }
 
+        private fun entryIdentityKey(entry: WineLexiconEntry): String = listOf(
+            entry.kind.name,
+            normalizedKey(entry.canonical),
+            entry.country.orEmpty(),
+            entry.region.orEmpty(),
+            entry.subregion.orEmpty(),
+            entry.maker.orEmpty()
+        ).joinToString("|")
+
+        /**
+         * Curated terminology, location data, and personal cellar history often describe the same
+         * wine term. Merging them into one entry keeps the strongest source weight, every alias, and
+         * the regional grape context, so a lower-weight duplicate can no longer hide curated data.
+         */
+        private fun mergeDuplicateEntries(entries: List<WineLexiconEntry>): List<WineLexiconEntry> {
+            val merged = LinkedHashMap<String, WineLexiconEntry>()
+            entries.forEach { entry ->
+                val identity = entryIdentityKey(entry)
+                val existing = merged[identity]
+                if (existing == null) {
+                    merged[identity] = entry
+                    return@forEach
+                }
+                val winner = if (existing.sourceWeight >= entry.sourceWeight) existing else entry
+                val loser = if (winner === existing) entry else existing
+                merged[identity] = WineLexiconEntry(
+                    canonical = winner.canonical,
+                    kind = winner.kind,
+                    aliases = (winner.aliases + loser.aliases + listOf(winner.canonical, loser.canonical))
+                        .map(String::trim)
+                        .filter(String::isNotEmpty)
+                        .distinctBy(::normalizedKey)
+                        .filterNot { normalizedKey(it) == normalizedKey(winner.canonical) },
+                    country = winner.country ?: loser.country,
+                    region = winner.region ?: loser.region,
+                    subregion = winner.subregion ?: loser.subregion,
+                    wineType = winner.wineType ?: loser.wineType,
+                    maker = winner.maker ?: loser.maker,
+                    sourceWeight = maxOf(existing.sourceWeight, entry.sourceWeight),
+                    useAsName = existing.useAsName || entry.useAsName,
+                    associatedGrapes = winner.associatedGrapes.ifEmpty { loser.associatedGrapes },
+                    grapesAreDefining = existing.grapesAreDefining || entry.grapesAreDefining
+                )
+            }
+            return merged.values.toList()
+        }
+
         private fun styleType(style: String): String? = when (normalizedKey(style)) {
             "champagne", "prosecco", "cava", "cremant", "franciacorta", "sekt", "sparkling" -> "Sparkling"
+            "shirazcabernet" -> "Red"
             "rose", "rosewine" -> "Rose"
             "sauternes", "icewine", "tokajiaszu", "port", "sherry", "madeira", "marsala", "vinsanto" -> "Dessert"
             else -> null
+        }
+
+        /** The single fuzzy-match gate: the corrector and the name suggestion both use it. */
+        internal fun acceptsFuzzyMatch(distance: Int, similarity: Double, candidateLength: Int): Boolean =
+            distance == 0 || similarity >= MIN_FUZZY_SIMILARITY ||
+                (distance == 2 && candidateLength >= LONG_TERM_LENGTH_FOR_TWO_EDITS)
+
+        /** Similarity of two words after the same accent/case/punctuation folding used for matching. */
+        internal fun termSimilarity(left: String, right: String): Double {
+            val leftKey = normalizedKey(left)
+            val rightKey = normalizedKey(right)
+            val longest = maxOf(leftKey.length, rightKey.length)
+            if (longest == 0) return 0.0
+            return 1.0 - levenshteinDistance(leftKey, rightKey, longest).toDouble() / longest
         }
 
         private fun maximumEditDistance(length: Int): Int = when {
@@ -974,7 +1055,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Pinot Noir|Pinot Nero;Spätburgunder;Spatburgunder
             Plavac Mali
             Poulsard|Ploussard
-            Primitivo|Zinfandel
+            Zinfandel|Primitivo
             Refosco dal Peduncolo Rosso|Refosco
             Rondinella
             Sagrantino
@@ -1227,6 +1308,9 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Crémant d'Alsace
             Crémant de Loire
             Crémant de Limoux
+            Gran Reserva
+            Crianza
+            Shiraz Cabernet|Cabernet Shiraz;Shiraz Cabernet Sauvignon
             Brut Nature
             Blanc de Blancs
             Blanc de Noirs
@@ -1313,6 +1397,12 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Santa Rita|Santa Rita Estates
             Viña Concha y Toro|Vina Concha y Toro
             Bodega Catena Zapata
+            Blackstone Winery|Blackstone
+            Bodegas Olarra|Olarra
+            Conde de Basalu
+            Los Haroldos
+            Los Riscos
+            Juan Gil
         """
 
         private val LABEL_MARKERS = """
@@ -1325,6 +1415,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Denominação de Origem Controlada|Denominacao de Origem Controlada
             Indicazione Geografica Tipica|I.G.T.;IGT
             Denominazione di Origine Protetta|DOP;PDO;Denominação de Origem Protegida;Protected Designation of Origin
+            Meses en Barrica|Meses de Barrica
             Protected Geographical Indication|Indicación Geográfica Protegida;Indication Géographique Protégée;IGP;PGI
             American Viticultural Area|AVA
             Vin de Qualité Supérieure|VDQS
@@ -1394,6 +1485,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Morgon|France|Beaujolais|Morgon|Red
             Fleurie|France|Beaujolais|Fleurie|Red
             Côtes du Rhône|France|Rhone|Côtes du Rhône|Red|Cotes du Rhone
+            Côtes du Rhône Villages|France|Rhone|Côtes du Rhône Villages|Red|Cotes du Rhone Villages
             Bandol|France|Provence|Bandol|Red
             Muscadet|France|Loire|Muscadet|White
             Rioja|Spain|Rioja|Rioja|Red
@@ -1406,6 +1498,7 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Jerez-Xérès-Sherry|Spain|Andalusia|Jerez-Xérès-Sherry|Dessert|Jerez;Xeres;Sherry
             Penedès|Spain|Catalonia|Penedès|White|Penedes
             Navarra|Spain|Navarra|Navarra|Red
+            Jumilla|Spain|Murcia|Jumilla|Red
             Ribera del Guadiana|Spain|Extremadura|Ribera del Guadiana|Red
             Douro|Portugal|Douro|Douro|Red
             Porto|Portugal|Douro|Porto|Dessert|Port
@@ -1449,8 +1542,10 @@ internal class WineReferenceDictionary private constructor(entries: List<WineLex
             Colchagua Valley|Chile|Central Valley|Colchagua Valley|Red
             Maipo Valley|Chile|Central Valley|Maipo Valley|Red
             Casablanca Valley|Chile|Aconcagua|Casablanca Valley|White
-            Uco Valley|Argentina|Mendoza|Uco Valley|Red
+            Uco Valley|Argentina|Mendoza|Uco Valley|Red|Valle de Uco
             Mendoza|Argentina|Mendoza|Mendoza|Red
+            Lodi|United States|California|Lodi|-
+            Sonoma County|United States|California|Sonoma County|-
         """
     }
 }

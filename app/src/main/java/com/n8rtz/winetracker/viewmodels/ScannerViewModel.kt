@@ -11,6 +11,8 @@ import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.WineImageBatchProcessor
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
+import com.n8rtz.winetracker.scanner.BarcodeIdentityCache
+import com.n8rtz.winetracker.scanner.LabelIdentityResolver
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.ScannerManager
 import com.n8rtz.winetracker.scanner.ScannedWine
@@ -32,7 +34,14 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     // Retain lazy initialization so image imports do not create an unused recognizer.
     private val scannerManagerDelegate = lazy {
         Log.d("WineTracker", "ScannerViewModel: Initializing ScannerManager (lazy)")
-        ScannerManager(application)
+        ScannerManager(
+            application,
+            // Barcode lookups are cached on disk, so re-scanning a bottle works without a network.
+            identityResolver = LabelIdentityResolver(
+                api = api,
+                cache = BarcodeIdentityCache(File(application.filesDir, "scanner/barcode-identities.txt"))
+            )
+        )
     }
     private val scannerManager by scannerManagerDelegate
     private val scanStateLock = Any()

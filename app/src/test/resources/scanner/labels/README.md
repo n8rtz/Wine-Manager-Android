@@ -1,19 +1,84 @@
 # Label OCR image fixtures
 
-This directory contains 13 original, full-resolution user-supplied JPEGs (about 45 MB total) for reference and regression testing of wine-label recognition. The photos are preserved at their uploaded filenames; the three specifically discussed are:
+This directory contains 13 original, full-resolution user-supplied JPEGs (about 45 MB total) for
+reference and regression testing of wine-label recognition. They are evaluation data, not training
+data: the app uses ML Kit's pre-trained text recognizer and never fine-tunes it from these photos.
+The practical tuning loop is to review the per-image OCR output, add verified label terms/aliases to
+the wine dictionary, adjust crop/selection logic, then rerun the image test. Real model tuning would
+mean replacing ML Kit with a trainable OCR engine plus a far larger annotated data set.
 
-- `IMG20261013001626.jpg` — Reciente Gran Reserva, Bodegas Olarra, Rioja, 2019.
-- `IMG20261013001611.jpg` — Blackstone Winery, Merlot, California; “Merlot” is in a calligraphic font.
-- `IMG20261011143217.jpg` — group photo including the Olarra Rioja and Kirkland bottles.
+## What each photo shows (read from the images, not from OCR)
 
-The other ten images are retained under their uploaded date-based or UUID-based filenames. Decode images one at a time in tests to avoid loading the full-resolution set into memory simultaneously.
+| Fixture | Label |
+| --- | --- |
+| `IMG20261013001626.jpg` | Reciente Gran Reserva, Bodegas Olarra, Rioja, 2019 (Decanter 95) |
+| `IMG20261013001611.jpg` | Blackstone Winery Merlot, California (calligraphic "Merlot") |
+| `IMG20261011143217.jpg` | Group shot: Kirkland Côtes du Rhône Villages 2023, Olarra Reciente Gran Reserva 2019, Kirkland Brunello di Montalcino 2021 |
+| `0ff8abd6-2410-4787-b8e2-096072e180f0.jpg` | Juan Gil, Jumilla, 2020 (EXIF orientation 6: rotated until EXIF is honored) |
+| `1e51ac9e-8c20-418e-9ef7-0dd488a52995.jpg` | La Réserve de l'Enclave, Côtes du Rhône Villages, 2022 |
+| `216503e7-7a55-4d88-835c-e2efbd2092c1.jpg` | Kirkland Signature Pinot Noir, Russian River Valley / Sonoma County, 2024 |
+| `547348d6-2386-420d-9e01-40083844a424.jpg` | OZV Old Vine Zinfandel, Estate Grown, Lodi, 2022 (calligraphic "Zinfandel") |
+| `5e548cb5-4106-4c44-9944-470fcc5d10b8.jpg` | Group shot: Kirkland Prosecco Rosé D.O.C., Kirkland Châteauneuf-du-Pape "Cuvée du Terroir des Papes" 2023, Kirkland Napa Valley Cabernet Sauvignon 2021 |
+| `98c91789-1fe5-427c-9daf-8df4eda28eda.jpg` | Penfolds Koonunga Hill Shiraz Cabernet, South Australia, 2019 (EXIF orientation 6) |
+| `IMG20250509232919.jpg` | Los Haroldos Reserva Malbec, Valle de Uco, Mendoza, 2020 |
+| `IMG20250810211557.jpg` | Los Riscos Chardonnay, Chile |
+| `IMG20260309213552.jpg` | Group shot: Kirkland Signature Malbec 2022/2023/2024, Mendoza, Argentina |
+| `IMG20260609104335.jpg` | Conde de Basalu Crianza, 12 meses en barrica, Rioja, 2021 |
+
+Decode images one at a time in tests to avoid loading the full-resolution set into memory
+simultaneously. The group shots contain several bottles, so their suggestions depend on which label
+ML Kit reads first; scan one bottle at a time for a trustworthy result.
 
 ## Running the tests
 
 - Parser, selector, and other JVM tests: `./gradlew :app:testDebugUnitTest`
-- Real ML Kit image pipeline on a connected Android device/emulator: `./gradlew :app:connectedDebugAndroidTest`
-- To run only the image regression test, add `-Pandroid.testInstrumentationRunnerArguments.class=com.n8rtz.winetracker.scanner.LabelOcrImageRegressionTest`.
+- Real ML Kit image pipeline on a connected API 33+ device/emulator: single line, e.g.
+  `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.n8rtz.winetracker.scanner.LabelOcrImageRegressionTest"`
+  (On Windows with PowerShell, keep the whole command on one line: a trailing `\` is parsed as a
+  separate Gradle task and then PowerShell treats the `-P...` argument as its own command. Use the
+  PowerShell backtick for continuation instead.)
 
-The image regression test scans every JPEG, logs each OCR/parser result under the `LabelOcrImageTest` Logcat tag, and asserts the known Olarra Rioja and Blackstone Merlot results. It requires JDK 17, Android SDK platform 36, and an API 33+ device or emulator. These commands have not yet been run in this workspace because Java/Android tooling is unavailable here.
+The image regression test scans every JPEG, logs each result under the `LabelOcrImageTest` Logcat
+tag, and asserts the reviewed fields for the single-bottle photos (Olarra, Blackstone, Zinfandel,
+Penfolds, Basalu, Juan Gil, Enclave, Kirkland Pinot Noir, Los Haroldos, Los Riscos, Kirkland
+Malbec). When an assertion fails, its message carries the raw OCR text, so the difference is either
+ML Kit's reading or this app's parsing of it. The reviewed fixtures are also scanned a second time
+and must produce identical suggestions, so an unstable scan (the classic "it works sometimes")
+fails the test.
 
-These fixtures are for evaluation/regression, not model training: the app uses ML Kit’s pre-trained text-recognition model and does not fine-tune it from sample photos. The practical tuning loop is to review the per-image OCR output, add verified label terms/aliases to the wine dictionary, adjust crop/selection logic, then rerun the image test. Actual model fine-tuning would require replacing ML Kit with a trainable OCR model and collecting substantially more labeled text/box data.
+These instrumented assertions require a device; they have not been executed in the assistant's
+sandbox, which has no Android SDK or emulator.
+
+## How a scan decides (implemented)
+
+0. **The photo is measured first.** `CaptureQualityAssessor` judges the still on a 320px grid before
+   any OCR runs: a photo that is too soft, too dark or washed out by glare is reported on the result
+   (`ScannedWine.captureQuality`) and flagged for review, because no amount of re-reading invents
+   detail that was never captured. Only gross problems trip it: all thirteen reference photos measure
+   `ok`, a slight overexposure still measures `ok`, and blur is only reported once the label's print
+   has genuinely smeared. A blurry photo stops the pass ladder after the first pass; dark or
+   glare-washed photos escalate, since contrast is what rescues them.
+1. **Barcode first.** `LabelBarcodeReader` decodes an EAN-8/13 or UPC-A/E off the same still image,
+   and only codes whose GS1 check digit is consistent are used (`Gtin`). `LabelIdentityResolver`
+   looks the code up in Open Food Facts (`api/v2/product/{barcode}.json`) and caches every hit in
+   `filesDir/scanner/barcode-identities.txt`, so re-scanning a bottle is instant and works offline.
+   A registry hit owns the producer and the cuvée; the photo keeps the bottle-specific vintage,
+   country, region and type (`WineIdentityMerge`). A shortened brand or an OCR slip is not a
+   disagreement, a different producer or vintage is, and a visible barcode that could not be
+   resolved always marks the scan for review. Front labels carry no barcode, so the fixture photos
+   only exercise the (harmless) decode attempt; the result is logged, not asserted.
+2. **OCR passes, escalated only when needed.** Pass one is the full frame and pass two the enhanced
+   centre crop: the crop always runs, because it is the pass that reads calligraphic words the full
+   frame drops. The third and last pass is chosen by what is still wrong (`LabelScanLadder`): when
+   the passes disagree about a field, the line it was read from is located through the recognizer's
+   own line boxes and re-read magnified (`LabelFieldGeometry` → a targeted field zoom that may only
+   correct that line, never reorder the label); otherwise the tighter hard-contrast crop runs to
+   rescue dark or glare-washed text. Never past three passes, and never once a barcode has named the
+   bottle.
+3. **Every pass is merged, not discarded.** `LabelOcrConsensus` merges line by line: the full frame
+   usually keeps the printed lines while the enhanced crop reads the decorative words the full
+   frame drops. Each scan logs `passes`, `barcode`, `identity`, `agreement`,
+   `supported=<corroborated lines>/<total>`, `needsReview`, `quality` and `contradictions` under the
+   `ScannerManager` tag, plus `views=` naming every view it read and why. `ScannedWine.barcode`,
+   `agreement`, `needsReview` and `captureQuality` carry the same signal to the UI, so a
+   low-confidence scan can be highlighted — or sent back for a retake — instead of silently trusted.
