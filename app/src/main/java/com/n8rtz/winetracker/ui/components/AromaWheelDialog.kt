@@ -283,7 +283,11 @@ fun AromaWheelDialog(
                         )
                     } else {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            val selectedSet = remember(selected) { selected.toSet() }
+                            // Read the list contents directly (not as a remember key): SnapshotStateList uses
+// identity equals, so remember(selected) would cache the initial set forever and the
+// wheel would never redraw its selection outlines. Reading it here subscribes this
+// scope to list changes, so a new Set is produced on every selection change.
+val selectedSet: Set<String> = selected.toSet()
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
