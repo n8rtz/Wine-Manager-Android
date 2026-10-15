@@ -24,8 +24,12 @@ def escape(value):
 
 title = escape(sys.argv[1]).replace(':', '%3A').replace(',', '%2C')
 lines = Path(sys.argv[2]).read_text(errors='replace').splitlines()
-diagnostics = [line for line in lines if re.search(r'^e:| error:|^Caused by:|^\* What went wrong|^A problem|^Could not|^> ', line)]
-tail = '\n'.join(diagnostics[:30] + lines[-20:])[-6000:]
+context = []
+for index, line in enumerate(lines):
+    if line.startswith(('* What went wrong', '* Where:', 'Script compilation error')):
+        context.extend(lines[index:index + 25])
+diagnostics = [line for line in lines if re.search(r'^e:| error:|^Caused by:|^A problem|^Could not', line)]
+tail = '\n'.join(context[:60] + diagnostics[:25] + lines[-12:])[:6000]
 print(f'::error title={title}::{escape(tail or "Command failed without output; inspect the CI step")}', flush=True)
 PY
     fi

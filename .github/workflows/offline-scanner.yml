@@ -51,11 +51,13 @@ jobs:
             opencv-minimal/build/generated
           key: opencv-4.12.0-ndk28.2-${{ runner.os }}-${{ hashFiles('tools/build-opencv-minimal.py', 'opencv-minimal/build.gradle.kts') }}
       - name: Compile real Android app
-        run: bash tools/run-ci-check.sh 'Android debug compilation' ./gradlew --no-daemon --console=plain --stacktrace :app:assembleDebug
+        run: bash tools/run-ci-check.sh 'Android debug compilation' ./gradlew --no-daemon --console=plain :app:assembleDebug
+      - name: Compile instrumented scanner tests (device execution is separate)
+        run: bash tools/run-ci-check.sh 'Android instrumentation test compilation' ./gradlew --no-daemon --console=plain :app:assembleDebugAndroidTest
       - name: Scanner Robolectric and deadline tests
-        run: bash tools/run-ci-check.sh 'Scanner Robolectric tests' ./gradlew --no-daemon --console=plain --stacktrace :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
+        run: bash tools/run-ci-check.sh 'Scanner Robolectric tests' ./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
       - name: Measure arm64 release APK budget
-        run: bash tools/run-ci-check.sh 'Arm64 release APK budget' ./gradlew --no-daemon --console=plain --stacktrace :app:checkArm64ApkBudget
+        run: bash tools/run-ci-check.sh 'Arm64 release APK budget' ./gradlew --no-daemon --console=plain :app:checkArm64ApkBudget
       - name: Upload test results and release APK
         if: always()
         uses: actions/upload-artifact@v5
