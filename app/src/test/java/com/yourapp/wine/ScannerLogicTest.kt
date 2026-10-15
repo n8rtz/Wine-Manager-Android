@@ -18,6 +18,8 @@ class ScannerLogicTest {
     @Test fun editedGreenAndOneTapYellow() = LogicChecks.formPolicy()
     @Test fun nestedGeographyAndDifferentBranchConflicts() = LogicChecks.nestedGeographyUsesSpecificPlaceWithoutFalseConflict()
     @Test fun rejectedRetakeDoesNotSaveStaleAutomaticFields() = LogicChecks.rejectedRetakeClearsOnlyAutomaticSuggestions()
+    @Test fun invalidAndZeroScoresNeverBecomeIndependentSupport() = LogicChecks.zeroAndInvalidConfidenceNeverManufactureSupport()
+    @Test fun failedCaptureHasSixRedStatesAndShutterTiming() = LogicChecks.rejectedCapturesEnterRedReviewWithShutterTiming()
     @Test fun estimatedScoresCannotCreateGreen() = LogicChecks.estimatedScoresNeverPromoteWeakMeasurements()
     @Test fun allFillStatesAndUnknownBoutique() = LogicChecks.fillStates()
 }

@@ -221,4 +221,35 @@ object LogicChecks {
         check(independent.single().hasReliableSupport)
     }
 
+    fun zeroAndInvalidConfidenceNeverManufactureSupport() {
+        val merger = TokenMerger()
+        val paddle = token("Chateau Margaux", .74f, "paddle")
+        val zero = token("Chateau Margaux", 0f)
+        check(merger.merge(listOf(paddle, zero)).isEmpty())
+        check(merger.merge(listOf(paddle.copy(score = .76f), zero)).single().hasReliableSupport)
+        val estimated = zero.copy(score = .65f, variantId = "V1", scoreIsEstimated = true)
+        val partial = FillEngine(FixtureKnowledgeBase()).fill(listOf(paddle, zero, estimated), 2026)
+        check(partial.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
+        for (invalid in listOf(-.1f, 1.1f, Float.NaN, Float.POSITIVE_INFINITY)) {
+            check(merger.merge(listOf(token("Chateau Margaux", invalid))).isEmpty())
+            val mapper = com.yourapp.wine.geom.CoordMapper(com.yourapp.wine.geom.Matrix3.scale(1.0, 1.0), 2, 2, 2, 2)
+            val raw = RawToken("2018", invalid, listOf(PointF(0f, 0f), PointF(2f, 0f), PointF(2f, 2f), PointF(0f, 2f)), "paddle", "V0")
+            check(mapper.toOriginal(raw) == null)
+        }
+    }
+
+    fun rejectedCapturesEnterRedReviewWithShutterTiming() {
+        val capture = com.n8rtz.winetracker.scanner.LabelScanState.CapturingPhoto(42, 1000)
+        for (review in listOf(capture.rejected("Camera unavailable", 1100),
+                capture.rejected("Capture deadline", 9000, deadlineCancelled = true))) {
+            check(review.requestId == 42L)
+            check(review.result.fill.fields.size == 6)
+            check(review.result.fill.fields.values.all { it.state == UiState.RED && it.value.isBlank() })
+            check(review.result.tokens.isEmpty() && review.result.workingBitmapsAfter == 0)
+        }
+        val timedOut = capture.rejected("Capture deadline", 9000, deadlineCancelled = true)
+        check(timedOut.result.elapsedMs == 8000L && timedOut.result.deadlineCancelled)
+        check(capture.rejected("Camera unavailable", 1100).result.elapsedMs == 100L)
+    }
+
 }

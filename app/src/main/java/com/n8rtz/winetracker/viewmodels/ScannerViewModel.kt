@@ -89,10 +89,8 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
             synchronized(scanStateLock) {
                 val state = _labelScanState.value
                 if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
-                    _labelScanState.value = LabelScanState.Error(
-                        requestId,
-                        "The photo took too long to capture. Try again."
-                    )
+                    _labelScanState.value = state.rejected("The photo took too long — retake or enter details manually",
+                        SystemClock.elapsedRealtime(), deadlineCancelled = true)
                 }
             }
         }
@@ -150,15 +148,14 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         }
     }
 
+    /** No image coordinates: a failed still capture enters six-field RED review instead of retaining stale auto-fill. */
     fun onLabelCaptureFailed(requestId: Long, error: Throwable) {
         Log.w("ScannerViewModel", "Could not capture wine label photo", error)
         synchronized(scanStateLock) {
             val state = _labelScanState.value
             if (state is LabelScanState.CapturingPhoto && state.requestId == requestId) {
-                _labelScanState.value = LabelScanState.Error(
-                    requestId,
-                    "Could not take the photo. Check the label is in view and try again."
-                )
+                _labelScanState.value = state.rejected("Could not take the photo — retake or enter details manually",
+                    SystemClock.elapsedRealtime())
             }
         }
     }

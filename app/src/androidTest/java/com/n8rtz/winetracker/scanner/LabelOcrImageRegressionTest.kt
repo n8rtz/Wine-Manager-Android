@@ -76,7 +76,7 @@ class LabelOcrImageRegressionTest {
                     val legacy = result.toLegacyWine()
                     if (result.tokens.isEmpty()) {
                         assertTrue("$fixtureName rejected without a retake/manual hint", !result.fill.overallHint.isNullOrBlank())
-                        assertFalse("RED capture must not fill legacy fields", legacy.hasSuggestions())
+                        assertFalse("RED capture must not fill legacy fields", legacy.hasSuggestions)
                     }
                     result.tokens.forEach { token ->
                         assertEquals(4, token.polyOrig.size)

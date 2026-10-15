@@ -42,8 +42,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v5
       - name: Install pinned SDK and minimal native toolchain
         run: bash tools/run-ci-check.sh 'Android SDK/NDK installation' sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
-      - name: Cache reproducible OpenCV source and arm64 outputs
-        uses: actions/cache@v5
+      - name: Restore reproducible OpenCV source and arm64 outputs
+        id: opencv-cache
+        uses: actions/cache/restore@v5
         with:
           path: |
             opencv-minimal/build/vendor
@@ -52,6 +53,15 @@ jobs:
           key: opencv-4.12.0-ndk28.2-${{ runner.os }}-${{ hashFiles('tools/build-opencv-minimal.py', 'opencv-minimal/build.gradle.kts') }}
       - name: Compile real Android app
         run: bash tools/run-ci-check.sh 'Android debug compilation' ./gradlew --no-daemon --console=plain :app:assembleDebug
+      - name: Cache the completed native build before later tests
+        if: steps.opencv-cache.outputs.cache-hit != 'true' && hashFiles('opencv-minimal/build/generated/opencv/jniLibs/arm64-v8a/libopencv_java4.so') != ''
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            opencv-minimal/build/vendor
+            opencv-minimal/build/native
+            opencv-minimal/build/generated
+          key: ${{ steps.opencv-cache.outputs.cache-primary-key }}
       - name: Compile instrumented scanner tests (device execution is separate)
         run: bash tools/run-ci-check.sh 'Android instrumentation test compilation' ./gradlew --no-daemon --console=plain :app:assembleDebugAndroidTest
       - name: Scanner Robolectric and deadline tests
@@ -67,4 +77,6 @@ jobs:
           path: |
             app/build/reports/tests/
             app/build/test-results/
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
             app/build/outputs/apk/release/*.apk

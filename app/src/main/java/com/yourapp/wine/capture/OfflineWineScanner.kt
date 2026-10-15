@@ -1,6 +1,7 @@
 package com.yourapp.wine.capture
 
 import android.os.SystemClock
+import android.os.Debug
 import android.util.Log
 import com.yourapp.wine.fill.ConfidenceContext
 import com.yourapp.wine.fill.ResilientFillEngine
@@ -142,7 +143,7 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
                     reason = candidate.reason + "; deadline reached during postprocessing — confirm") else candidate
             }, overallHint = "Time budget reached — confirm partial results or retake")
         }
-        Log.d("WineScanner", "scan ms=$elapsed tokens=${records.size} peakBitmaps=${workspace.peakCount} alive=${workspace.aliveCount} deadlineCancelled=$deadlineCancelled heap=${Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()}")
+        Log.d("WineScanner", "scan ms=$elapsed tokens=${records.size} peakBitmaps=${workspace.peakCount} alive=${workspace.aliveCount} deadlineCancelled=$deadlineCancelled javaHeap=${Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()} nativeHeap=${Debug.getNativeHeapAllocatedSize()}")
         fill.fields.values.forEach { Log.d("WineScanner", "${it.field} ${it.state}: ${it.reason}") }
         ScanReport(fill, records.toList(), originalW, originalH, rectW, rectH, quad, homography?.values,
             timings.toList(), elapsed, deadlineCancelled, workspace.peakCount, workspace.aliveCount)

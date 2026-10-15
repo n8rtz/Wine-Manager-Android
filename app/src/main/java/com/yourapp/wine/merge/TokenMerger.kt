@@ -7,7 +7,7 @@ import java.text.Normalizer
 class TokenMerger {
     /** Union-find over normalized rectified boxes; original spellings and capture boxes are retained. */
     fun merge(records: List<TokenRecord>): List<MergedToken> {
-        val tokens = records.filter { it.textNorm.isNotBlank() && it.score.isFinite() &&
+        val tokens = records.filter { it.textNorm.isNotBlank() && it.score.isFinite() && it.score in 0f..1f &&
             it.bboxRect.width() > 0f && it.bboxRect.height() > 0f }
         val parent = IntArray(tokens.size) { it }
         val rank = IntArray(tokens.size)
@@ -38,7 +38,8 @@ class TokenMerger {
         return tokens.indices.groupBy { root(it) }.values.mapNotNull { indexes ->
             val members = indexes.map { tokens[it] }
             val engineMax = members.groupBy { it.engineId }
-                .mapValues { (_, reads) -> reads.maxOf { it.score.coerceIn(0f, 1f) } }
+                .mapValues { (_, reads) -> reads.maxOf { it.score } }.filterValues { it > 0f }
+            if (engineMax.isEmpty()) return@mapNotNull null // genuine zero is not independent corroboration
             // A repeated read by one engine is still a singleton, not independent corroboration.
             if (engineMax.size == 1) {
                 val threshold = if (engineMax.keys.single().startsWith("paddle")) 0.75f else 0.60f

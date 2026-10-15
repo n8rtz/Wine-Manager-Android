@@ -6,7 +6,7 @@ import android.graphics.RectF
 /** One token per OCR line, in rectified pixels (working pixels only for the explicitly mapped quad probe). */
 data class RawToken(
     val text: String,
-    val score: Float,
+    val score: Float, // probability in [0,1]; invalid engine outputs are rejected, never clipped into confidence.
     val polygon: List<PointF>,
     val engineId: String,
     val variantId: String,
@@ -17,7 +17,7 @@ data class RawToken(
 data class TokenRecord(
     val textRaw: String,
     val textNorm: String,
-    val score: Float,
+    val score: Float, // probability in [0,1]; invalid engine outputs are rejected, never clipped into confidence.
     val bboxOrig: RectF,
     val bboxRect: RectF,
     val polyOrig: List<PointF>,
@@ -35,8 +35,9 @@ data class MergedToken(
 ) {
     /** No coordinates: estimated scores may retain editable evidence, never create validated support. */
     val hasReliableSupport: Boolean get() {
-        val actual = members.filterNot { it.scoreIsEstimated }.groupBy { it.engineId }
-            .mapValues { (_, reads) -> reads.maxOf { it.score.coerceIn(0f, 1f) } }
+        val actual = members.filter { !it.scoreIsEstimated && it.score.isFinite() && it.score > 0f && it.score <= 1f }
+            .groupBy { it.engineId }
+            .mapValues { (_, reads) -> reads.maxOf { it.score } }
         if (actual.isEmpty()) return false
         if (actual.size == 1) return actual.values.single() >=
             if (actual.keys.single().startsWith("paddle")) .75f else .60f
