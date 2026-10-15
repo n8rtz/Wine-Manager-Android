@@ -198,3 +198,7 @@
 * **Cause:** The original AromaDescriptorSection was still rendered after the Quality slider, duplicating the launcher card and squeezing its heading into a narrow column.
 * **Fix:** Removed that section's invocation and extra spacer from SensoryEvaluationFields. The upper aroma wheel launcher and its wrapping, reorderable chips remain unchanged; Common faults now follows the sensory sliders directly.
 * **Verification:** Confirmed there are no remaining AromaDescriptorSection call sites. Device verification pending.
+
+### Default wine reviewer list update
+* **Date changed:** 2026-10-15
+* **Change:** Removed Vinous and Jancis Robinson from the defaults; added Peter Koff, Konstantin Baum, and Costco Wine Blog. Saved custom reviewer lists and existing tasting notes remain unchanged.
