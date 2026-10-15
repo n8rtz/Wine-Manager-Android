@@ -51,6 +51,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.runtime.key
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -147,29 +152,19 @@ fun AromaWheelLauncherCard(
     }
 }
 
-/** Drag bookkeeping for [ReorderableAromaChipRow]; survives recomposition. */
+/** Drag positions are in the wrapping container's coordinates, not a single row. */
 private class AromaChipDragState {
-    var index by mutableStateOf(-1)
-    var offsetPx by mutableFloatStateOf(0f)
-    val widths = mutableMapOf<Int, Int>()
-
-    fun start(at: Int) {
-        index = at
-        offsetPx = 0f
-    }
+    var id by mutableStateOf<String?>(null)
+    var position by mutableStateOf(Offset.Zero)
+    val bounds = mutableStateMapOf<String, Rect>()
 
     fun end() {
-        index = -1
-        offsetPx = 0f
+        id = null
+        position = Offset.Zero
     }
 }
 
-/**
- * Horizontally scrollable row of removable aroma chips with long-press drag
- * reordering: the pressed chip lifts and follows the finger, and chips swap
- * whenever it crosses a neighbour's midpoint. The resulting order is reported
- * through [onReorder] after each swap; [onRemove] fires from a chip's ✕.
- */
+/** Wrapping removable chips; long-press and drag across rows to reorder. */
 @Composable
 fun ReorderableAromaChipRow(
     ids: List<String>,
@@ -177,57 +172,69 @@ fun ReorderableAromaChipRow(
     onRemove: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val listState = rememberLazyListState()
     val drag = remember { AromaChipDragState() }
-    // Latest-state holders so an in-progress drag survives list swaps and
-    // callback identity changes without restarting the pointerInput below.
     val currentIds by rememberUpdatedState(ids)
     val currentOnReorder by rememberUpdatedState(onReorder)
-    LazyRow(
-        state = listState,
+    FlowRow(
         modifier = modifier.semantics {
             contentDescription =
                 "Selected aromas. Long-press a chip and drag to arrange them by prevalence."
         },
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        itemsIndexed(currentIds, key = { _, id -> id }) { index, id ->
-            val info = AromaTaxonomy.describe(id)
-            val currentIndex by rememberUpdatedState(index)
-            val dragging = drag.index == index
-            AromaChipPill(
-                label = info.label,
-                groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                dragging = dragging,
-                dragOffsetPx = if (dragging) drag.offsetPx else 0f,
-                onRemove = { onRemove(id) },
-                modifier = Modifier
-                    .onSizeChanged { drag.widths[index] = it.width }
-                    .pointerInput(Unit) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = { drag.start(currentIndex) },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                if (drag.index < 0) return@detectDragGesturesAfterLongPress
-                                val proposed = drag.offsetPx + amount.x
-                                val (target, adjusted) = aromaChipDragTarget(
-                                    drag.index, proposed, currentIds.size
-                                ) { drag.widths[it] ?: 0 }
-                                if (target != drag.index) {
-                                    val moved = currentIds.toMutableList().apply {
-                                        add(target, removeAt(drag.index))
+        ids.forEach { id ->
+            key(id) {
+                val info = AromaTaxonomy.describe(id)
+                val dragging = drag.id == id
+                val offset = if (dragging) {
+                    drag.position - (drag.bounds[id]?.center ?: drag.position)
+                } else Offset.Zero
+                AromaChipPill(
+                    label = info.label,
+                    groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                    dragging = dragging,
+                    dragOffsetPx = offset.x,
+                    dragOffsetYPx = offset.y,
+                    onRemove = { onRemove(id) },
+                    modifier = Modifier
+                        .onGloballyPositioned { coordinates ->
+                            val origin = coordinates.positionInParent()
+                            drag.bounds[id] = Rect(
+                                origin.x, origin.y,
+                                origin.x + coordinates.size.width,
+                                origin.y + coordinates.size.height
+                            )
+                        }
+                        .pointerInput(id) {
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = {
+                                    drag.id = id
+                                    drag.position = drag.bounds[id]?.center ?: Offset.Zero
+                                    Log.d("WineTracker", "Started wrapping aroma chip drag: $id")
+                                },
+                                onDrag = { change, amount ->
+                                    change.consume()
+                                    if (drag.id != id) return@detectDragGesturesAfterLongPress
+                                    drag.position += amount
+                                    val targetId = currentIds.firstOrNull { candidate ->
+                                        candidate != id && drag.bounds[candidate]?.contains(drag.position) == true
                                     }
-                                    currentOnReorder(moved)
-                                    drag.index = target
-                                }
-                                drag.offsetPx = adjusted
-                            },
-                            onDragEnd = { drag.end() },
-                            onDragCancel = { drag.end() }
-                        )
-                    }
-            )
+                                    val from = currentIds.indexOf(id)
+                                    val target = currentIds.indexOf(targetId)
+                                    if (from >= 0 && target >= 0) {
+                                        currentOnReorder(currentIds.toMutableList().apply {
+                                            add(target, removeAt(from))
+                                        })
+                                        Log.d("WineTracker", "Reordered aroma chip $from -> $target")
+                                    }
+                                },
+                                onDragEnd = { drag.end() },
+                                onDragCancel = { drag.end() }
+                            )
+                        }
+                )
+            }
         }
     }
 }
@@ -243,7 +250,8 @@ private fun AromaChipPill(
     dragging: Boolean,
     dragOffsetPx: Float,
     onRemove: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dragOffsetYPx: Float = 0f
 ) {
     Surface(
         shape = RoundedCornerShape(50),
@@ -254,6 +262,7 @@ private fun AromaChipPill(
             .zIndex(if (dragging) 1f else 0f)
             .graphicsLayer {
                 translationX = dragOffsetPx
+                translationY = dragOffsetYPx
                 val lift = if (dragging) 1.05f else 1f
                 scaleX = lift
                 scaleY = lift

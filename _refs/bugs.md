@@ -181,3 +181,8 @@
 * **Date Logged:** 2026-03-14
 * **Date & time Fixed:** 2026-03-14 22:15
 * **Summary of fix:** Migrated the entire backup/restore system to JSON format using Gson to eliminate data misalignment caused by missing or optional columns in legacy CSV backups.
+
+### Aroma launcher wrapping and score endpoint alignment
+* **Date logged/fixed:** 2026-10-15
+* **Fix:** Replaced the launcher’s scrolling chip strip with a wrapping FlowRow, with two-dimensional long-press reordering. Score track, markers, labels, and explicit thumb now share the same inset; font-scaled label space prevents the 100 label from clipping.
+* **Verification:** Device check pending: reorder across rows; select 50 and 100; check large-font labels.
