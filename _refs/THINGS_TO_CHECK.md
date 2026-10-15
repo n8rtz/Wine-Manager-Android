@@ -146,7 +146,7 @@
 3. [ ] Pinch to zoom (anchored under the fingers) and drag to pan; verify the view clamps so the wheel cannot be lost off-screen, and tapping the centre badge resets the view.
 4. [ ] Tap a family, group, or outer-band label: the view animates to that sector; tapping the same label again zooms back out. Zoom animations should respect the system "remove animations" setting.
 5. [ ] At the overview zoom, tap a small descriptor: the first tap should zoom to its group, and the next tap selects it. Zoomed in, a single tap should toggle directly.
-6. [ ] Select several descriptors across families: each shows a dark outline following the cell perimeter plus bold label text, and the header count updates. Try a 25th selection to confirm the limit notice appears.
+6. [ ] Select several descriptors across families: each fills with a deep version of its group colour and its label turns white and bold, clearly distinct from its pale neighbours, and the header count updates. Try a 25th selection to confirm the limit notice appears.
 7. [ ] Toggle to list view: verify the same selections are checked, group rows show counts, searching (including synonyms like "cassis", "petrol", "jalapeno") returns scored results with path labels, and toggling in either mode is reflected in the other.
 8. [ ] Tap **Done**: verify group-coloured chips appear in the editor, each chip removes its descriptor, **Clear** empties the selection, and saving a note persists it (reopen the editor to confirm restore, including after app restart).
 9. [ ] Verify the wine's detail screen shows the saved aromas as small group-tinted chips on the affected note cards.

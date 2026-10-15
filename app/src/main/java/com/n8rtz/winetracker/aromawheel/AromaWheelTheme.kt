@@ -27,8 +27,20 @@ object AromaWheelTheme {
     val ring1Ink = c(0xFF33405F)
     val ring1Swatch = c(0xFF8F9CBD)
     val separator = c(0xFFF7F7F8)
-    /** Selected-cell outline and selected label colour. */
-    val outline = c(0xFF0B1220)
+    /**
+     * Fill for a selected descriptor cell: a deep variant of the group colour, clearly
+     * distinct from the pale tint of unselected neighbours. [white] is the label colour on it.
+     */
+    fun selectedFill(theme: GroupTheme): Int = darken(theme.main, 0.38f)
+
+    /** Blends an ARGB int toward black by [fraction] (0..1). */
+    private fun darken(argb: Int, fraction: Float): Int {
+        val f = fraction.coerceIn(0f, 1f)
+        fun channel(shift: Int): Int =
+            (((argb ushr shift) and 0xFF).toFloat() * (1f - f)).toInt().coerceIn(0, 255)
+        val a = (argb ushr 24) and 0xFF
+        return (a shl 24) or (channel(16) shl 16) or (channel(8) shl 8) or channel(0)
+    }
     val centerRed = c(0xFFB8262E)
     val white = c(0xFFFFFFFF)
     val backgroundInner = c(0xFFECECEE)

@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
@@ -64,7 +63,8 @@ import kotlin.math.pow
  *
  * Gestures: pinch to zoom, drag to pan (both at once), tap a family / group / outer-band label to zoom to that
  * sector (tap it again to zoom back out), tap the centre badge to reset, tap a descriptor to toggle it.
- * A selected descriptor is marked by an outline that follows the cell's exact perimeter and nothing else.
+ * A selected descriptor fills with a deep variant of its group colour and its label turns
+ * white and bold, so it stands out from the pale tint of its neighbours without any outline.
  *
  * The wheel is stateless about the selection: it only reports taps through [onToggle]. Apply the change with
  * [AromaSelection.toggle] (which enforces the max and rejects unknown ids) or your own rule.
@@ -94,7 +94,6 @@ fun AromaWheel(
         controller.onToggle = onToggle
         controller.minTouchPx = with(density) { MIN_TOUCH_CELL_DP.dp.toPx() }
     }
-    val outlinePx = with(density) { OUTLINE_DP.dp.toPx() }
 
     val description = "Aroma wheel. ${selectedIds.size} descriptors selected. Pinch to zoom, drag to pan."
 
@@ -136,7 +135,7 @@ fun AromaWheel(
                 scale(v.k, v.k, pivot = Offset.Zero)
                 translate(-v.cx, -v.cy)
             }) {
-                drawWheel(selectedIds, v, outlinePx, paints)
+                drawWheel(selectedIds, v, paints)
             }
         }
 
@@ -152,7 +151,6 @@ fun AromaWheel(
 }
 
 private const val MIN_TOUCH_CELL_DP = 20
-private const val OUTLINE_DP = 4
 
 /* ------------------------------------------------------------------------------------------------ */
 /* View state + gesture logic                                                                         */
@@ -291,7 +289,7 @@ internal class WheelPaints(base: Typeface?) {
 private val SEPARATOR_STROKE = Stroke(width = 1.6f, join = StrokeJoin.Round)
 private val LEAF_EDGE_STROKE = Stroke(width = 0.8f, join = StrokeJoin.Round)
 
-private fun DrawScope.drawWheel(selected: Set<String>, view: WheelView, outlinePx: Float, p: WheelPaints) {
+private fun DrawScope.drawWheel(selected: Set<String>, view: WheelView, p: WheelPaints) {
     val nc = drawContext.canvas.nativeCanvas
     val G = WheelGraphics
     val sep = Color(AromaWheelTheme.separator)
@@ -318,11 +316,14 @@ private fun DrawScope.drawWheel(selected: Set<String>, view: WheelView, outlineP
     for ((gi, group) in AromaTaxonomy.groups.withIndex()) {
         val th = AromaWheelTheme.forGroup(group.id)!!
         val tint = Color(th.tint)
+        val selectedFill = Color(AromaWheelTheme.selectedFill(th))
         for (c in G.ring3ByGroup[gi]) {
             if (!visible(c.cx, c.cy)) continue
-            drawPath(c.path, tint)
-            drawPath(c.path, tint, style = LEAF_EDGE_STROKE)
-            drawLeafLabel(nc, p, c, WheelLayout.labelPlan("r3", c.node.id), c.node.label, c.node.id in selected, th.ink)
+            val isSelected = c.node.id in selected
+            val fill = if (isSelected) selectedFill else tint
+            drawPath(c.path, fill)
+            drawPath(c.path, fill, style = LEAF_EDGE_STROKE)
+            drawLeafLabel(nc, p, c, WheelLayout.labelPlan("r3", c.node.id), c.node.label, isSelected, th.ink)
         }
         drawPath(G.groupOutlines[gi], sep, style = SEPARATOR_STROKE)
     }
@@ -337,15 +338,6 @@ private fun DrawScope.drawWheel(selected: Set<String>, view: WheelView, outlineP
 
     drawCenterBadge(nc, p)
 
-    // Selection = ONE shape: the cell's own perimeter. The stroke is centred on the edge and clipped to the cell,
-    // so only the inner half shows; its width is divided by the zoom so it stays crisp at any scale.
-    val outline = Color(AromaWheelTheme.outline)
-    for (id in selected) {
-        val c = G.leafCellById[id] ?: continue
-        clipPath(c.path) {
-            drawPath(c.path, outline, style = Stroke(width = outlinePx / view.k, join = StrokeJoin.Round))
-        }
-    }
 }
 
 private fun mid(span: Span) = span.mid
@@ -396,7 +388,7 @@ private fun drawLeafLabel(
     val left = WheelLayout.isLeftHalf(m)
     val at = WheelLayout.pt(WheelRadii.RING3.outer - 7f, m)
     val paint = p.text
-    paint.color = if (isSelected) AromaWheelTheme.outline else ink
+    paint.color = if (isSelected) AromaWheelTheme.white else ink
     paint.textSize = plan?.size ?: 9f
     paint.letterSpacing = 0f
     paint.typeface = if (isSelected) p.bold else p.regular
