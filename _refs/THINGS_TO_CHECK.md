@@ -141,14 +141,16 @@
 
 ## Aroma wheel — tasting-note editor
 
-1. [ ] Open **Add Note** (or edit an existing note) and confirm a new **Aroma descriptors** section appears between the sensory sliders and **Common faults**, with the empty-state hint and a **Browse wheel** button.
-2. [ ] Open the wheel: verify the first ring shows the four branches (Primary, Secondary, Tertiary, Faults & Other) with readable labels and the hub shows the selected count.
-3. [ ] Tap a branch to drill in, then a family, then descriptors; verify selected leaves show a check mark and white border, and families containing selections show a small dot marker when you back out.
-4. [ ] Use the center hub and breadcrumb links to navigate up; verify selections survive drilling in and out and across branches.
-5. [ ] Toggle to list view: verify the same selections appear checked, search filters by descriptor name across branches, and toggling in either mode is reflected in the other plus in the header count.
-6. [ ] Tap **Done**: verify chips appear in the editor, each chip removes its descriptor, **Clear** empties the selection, and saving a note persists it (reopen the editor to confirm restore).
-7. [ ] Verify the wine's detail screen shows the saved aromas as small chips on the affected note cards, including after app restart.
-8. [ ] Delete a note with aromas and confirm no other notes or inventory rows are affected; run a JSON backup + restore and confirm aromas round-trip.
-9. [ ] Check the wheel and list at font scales 1.0 and 2.0, in light and dark themes; labels should stay readable and chips should not overflow their rows.
-10. [ ] With TalkBack on, verify the list mode announces descriptor names and checked state, and the wheel exposes a content description pointing to list view.
-11. [ ] Confirm the unit tests for the taxonomy, wheel geometry, and sensory JSON converter pass (`./gradlew :app:testDebugUnitTest`).
+1. [ ] Open **Add Note** (or edit an existing note) and confirm the **Aroma descriptors** section appears between the sensory sliders and **Common faults**, with the empty-state hint and a **Browse wheel** button.
+2. [ ] Open the wheel: the full concentric wheel should fit the screen, showing the family ring (Primary / Secondary / Tertiary / Faults), the 19 coloured group sectors, the descriptor ring, and the outer repeating band labels.
+3. [ ] Pinch to zoom (anchored under the fingers) and drag to pan; verify the view clamps so the wheel cannot be lost off-screen, and tapping the centre badge resets the view.
+4. [ ] Tap a family, group, or outer-band label: the view animates to that sector; tapping the same label again zooms back out. Zoom animations should respect the system "remove animations" setting.
+5. [ ] At the overview zoom, tap a small descriptor: the first tap should zoom to its group, and the next tap selects it. Zoomed in, a single tap should toggle directly.
+6. [ ] Select several descriptors across families: each shows a dark outline following the cell perimeter plus bold label text, and the header count updates. Try a 25th selection to confirm the limit notice appears.
+7. [ ] Toggle to list view: verify the same selections are checked, group rows show counts, searching (including synonyms like "cassis", "petrol", "jalapeno") returns scored results with path labels, and toggling in either mode is reflected in the other.
+8. [ ] Tap **Done**: verify group-coloured chips appear in the editor, each chip removes its descriptor, **Clear** empties the selection, and saving a note persists it (reopen the editor to confirm restore, including after app restart).
+9. [ ] Verify the wine's detail screen shows the saved aromas as small group-tinted chips on the affected note cards.
+10. [ ] Delete a note with aromas and confirm no other notes or inventory rows are affected; run a JSON backup + restore and confirm aromas round-trip.
+11. [ ] Check the wheel and list at font scales 1.0 and 2.0, in light and dark themes, and on a small/low-end device if available: labels should stay readable, gestures smooth, and chips should not overflow their rows (the reference README specifically flags Brettanomyces, Secondary, and Tertiary cells as the tightest fits).
+12. [ ] With TalkBack on, verify the canvas announces the selected count with Zoom in / Zoom out / Show whole wheel custom actions, and the list mode announces descriptor names, path labels, and checked state.
+13. [ ] Confirm the unit tests for the aroma wheel taxonomy, layout, hit-testing, and the sensory JSON converter pass (`./gradlew :app:testDebugUnitTest`).

@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.n8rtz.winetracker.aromawheel.AromaSelection
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineDefinition
@@ -139,7 +140,11 @@ fun TastingNoteEditorScreen(
                 valueScore = note.valueScore?.coerceIn(1, 10) ?: 5
                 valueScoreSelected = note.valueScore != null
                 manualPrice = note.price?.toString().orEmpty()
-                sensoryData = note.sensoryData ?: SensoryData()
+                // Normalize the stored selection so retired/unknown ids never render as chips.
+                val loadedSensory = note.sensoryData ?: SensoryData()
+                sensoryData = loadedSensory.copy(
+                    aromas = AromaSelection.normalize(loadedSensory.aromas).ids
+                )
             }
             loaded = true
         }

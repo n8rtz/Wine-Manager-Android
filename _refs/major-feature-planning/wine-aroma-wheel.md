@@ -4,18 +4,28 @@
 
 Give tasters a visual way to explore and record aroma descriptors on a tasting note, without replacing the app's written notes or existing sensory controls.
 
-## Status: agreed design (2026-10)
+## Status: implemented (2026-10, revised after verified reference drop)
 
-The original brief left the presentation, vocabulary, and display surface open. After review, the following decisions are locked:
+The original brief left the presentation, vocabulary, and display surface open. After the first
+(drill-down) implementation, a verified reference implementation of a **zoomable full concentric
+wheel** (web prototype + Android port, produced externally and reviewed for parity: 116/116
+descriptor IDs, labels, and group order identical) was supplied and adopted as the source of truth
+for the wheel UI and vocabulary. The current implementation:
 
-| Decision | Choice |
+| Decision | Final |
 | --- | --- |
-| Presentation | **Drill-down radial wheel** — one ring of large labeled sectors at a time (branch → family → descriptor). Not a full concentric multi-ring wheel; those fail on label fit and touch precision at phone sizes. |
-| Vocabulary | **Wine Folly's published "Updated Wine Flavor Wheel with 100+ Flavors"** (https://winefolly.com/tips/wine-aroma-wheel-100-flavors/), restructured as 4 branches → 19 families → 112 leaf descriptors. Attribution required (see below). |
-| Selection | Multi-select across branches. Selected descriptor **IDs** are held in the editor draft and committed by the existing Save action. |
-| Storage | `SensoryData.aromas: List<String>` — stable hierarchical descriptor IDs serialized inside the existing JSON TypeConverter. No Room migration; old JSON parses with an empty list. |
-| Display | Aroma chips in the note editor's sensory section, plus read-only chips on the note cards in `WineDetailScreen`. Filtering notes by aroma is explicitly future scope. |
-| Accessibility | The radial view is visual/touch; a **list mode** inside the same dialog exposes the identical taxonomy and selection contract for TalkBack, small screens, and large font scales. |
+| Presentation | **Zoomable concentric wheel** — family ring → group ring → descriptor ring + repeating outer band. Pinch to zoom (anchored under fingers), drag to pan, tap a family/group/band label to zoom to that sector (tap again to zoom out), tap the centre to reset, tap a descriptor to toggle. Descriptors narrower than 20dp at the current zoom require a second tap to select (mis-tap protection). Selection = an outline clipped to the cell perimeter. |
+| Vocabulary | 4 families → 19 groups → **116 descriptors**, supplied by the product owner and following the classic primary/secondary/tertiary/faults wheel model popularised by Wine Folly; colours and layout are original to the project. Synonym-supported offline search included. |
+| IDs | `fam_<key>` / `grp_<code>` / `<groupCode>_<key>` (e.g. `cit_lemon`), frozen, never derived from labels; a retired-ID mechanism (`AromaTaxonomy.retired`, currently empty) plus `describe()` keep old notes displaying after vocabulary changes; `TAXONOMY_VERSION` gates compatibility. |
+| Selection | Multi-select, **max 24**, dedupe, unknown IDs rejected on add but never dropped from storage (`AromaSelection.toggle/normalize`). |
+| Storage | `SensoryData.aromas: List<String>` of stable IDs inside the existing JSON TypeConverter. No Room migration; JSON backup/restore carries it. The editor normalizes stored IDs on load. |
+| Display | Aroma chips (group-coloured) in the note editor's sensory section and on note cards in `WineDetailScreen`. Filtering notes by aroma remains future scope. |
+| Accessibility | The canvas exposes a description plus custom Zoom in / Zoom out / Show whole wheel actions; a **list + search mode** in the same dialog exposes the identical taxonomy and selection contract for TalkBack, small screens, and large fonts. |
+
+Package layout: the wheel lives in `com.n8rtz.winetracker.aromawheel` (ported from the verified
+`com.example.aromawheel` reference; pure-Kotlin taxonomy/layout/theme + Compose `AromaWheel`
+composable + 16 JVM tests). `ui/components/AromaWheelDialog.kt` hosts it in a full-screen dialog
+with header, notice banner, chips, list mode, and attribution caption.
 
 ## Architecture work breakdown
 

@@ -32,9 +32,9 @@ class SensoryDataAromasConverterTest {
             overallScore = 91,
             flaws = listOf("Cork taint (TCA)"),
             aromas = listOf(
-                "primary/red-fruit/cherry",
-                "tertiary/oak-aging/vanilla",
-                "primary/spice/black-pepper"
+                "red_cherry",
+                "oak_vanilla",
+                "spi_black_pepper"
             )
         )
         val restored = converters.toSensoryData(converters.fromSensoryData(original))
@@ -74,11 +74,11 @@ class SensoryDataAromasConverterTest {
         val json = """
             {"sweetness":2,"aroma":3,"acidity":2,"tannins":2,"body":2,"balance":2,
              "intensity":2,"complexity":2,"finish":2,"quality":2,"overallScore":85,
-             "noseIntensity":3,"aromas":["primary/citrus/lemon"],"retiredField":true}
+             "noseIntensity":3,"aromas":["cit_lemon"],"retiredField":true}
         """.trimIndent()
         val parsed = converters.toSensoryData(json)
         assertNotNull(parsed)
-        assertEquals(listOf("primary/citrus/lemon"), parsed!!.aromas)
+        assertEquals(listOf("cit_lemon"), parsed!!.aromas)
         assertEquals(3, parsed.aroma)
     }
 

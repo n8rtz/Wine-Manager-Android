@@ -51,8 +51,7 @@ com.n8rtz.winetracker/
         ├── WineCard.kt                # Color-coded card for Cellar and Rankings (Supports Expansion)
         ├── HistoryWineCard.kt         # Compact list item for History screen
         ├── SensoryEvaluationFields.kt # Ombre sensory sliders, aroma descriptors, and common-fault controls
-        ├── AromaWheelDialog.kt        # Drill-down radial aroma wheel + list mode + editor chips section
-        ├── AromaWheelGeometry.kt      # Pure JVM wheel angle/segment/ARGB-shading math
+        ├── AromaWheelDialog.kt        # Full-screen aroma wheel dialog: zoomable wheel host, list+search mode, chips
         ├── AnalyticsCard.kt           # Dashboard metrics cards (Total Bottles, Value, etc.)
         ├── EmptyState.kt              # "Your Cellar is Empty" placeholder
         ├── WheelPicker.kt             # Birthday-style scroll picker + LocationWheelPicker
@@ -60,13 +59,17 @@ com.n8rtz.winetracker/
         ├── LocationWheelPicker.kt     # Scrollable dial-like selectors for location
         └── DatePickerUtils.kt         # Local-date / Material DatePicker UTC-midnight conversions
 │
+├── aromawheel/                        # Self-contained zoomable aroma wheel (ported from verified reference)
+│   ├── AromaTaxonomy.kt               # Versioned 116-descriptor vocabulary (fam_/grp_/leaf IDs), search, selection rules
+│   ├── AromaWheelTheme.kt             # Per-group colours + ring/band labels (sampled from reference wheel)
+│   ├── AromaWheelLayout.kt            # Ring radii, sector spans, hit-testing, label planning (pure Kotlin)
+│   ├── AromaWheelGraphics.kt          # Canvas paths + curved-text baselines, built once and reused
+│   └── AromaWheel.kt                  # Composable: pinch/pan gestures, sector zoom, tap-to-select, accessibility
+│
 ├── data/
 │   ├── local/
 │   │   ├── WineDatabase.kt            # Room entities, converters, and schema migrations
 │   │   └── WineDaos.kt                # All DAO interfaces, including consumption-event queries
-│   │
-│   ├── aroma/
-│   │   └── AromaTaxonomy.kt           # Versioned Wine Folly-based descriptor tree + selection helpers
 │   │
 │   ├── models/
 │   │   ├── WineDefinition.kt          # Catalog: Maker, Name, Type, Country, Region
