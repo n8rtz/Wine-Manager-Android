@@ -4,6 +4,7 @@ package com.n8rtz.winetracker.ui.components
 
 import android.util.Log
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DonutLarge
@@ -56,6 +58,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -66,11 +71,112 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.n8rtz.winetracker.aromawheel.AromaSelection
 import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
+import com.n8rtz.winetracker.aromawheel.WheelLayout
 import com.n8rtz.winetracker.aromawheel.AromaWheel
 import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 import com.n8rtz.winetracker.aromawheel.MAX_SELECTED_DESCRIPTORS
 import com.n8rtz.winetracker.aromawheel.TaxNode
 import kotlinx.coroutines.delay
+
+/**
+ * Tasting-note launcher for the aroma wheel: a summary card with a live
+ * [AromaWheelGlyph] preview (tagged groups light up in their group colour), the
+ * current selection summary, and a chevron. Opens [AromaWheelDialog] via [onClick].
+ */
+@Composable
+fun AromaWheelLauncherCard(
+    selectedIds: List<String>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val orderedLabels = remember(selectedIds) {
+        AromaTaxonomy.sortByTaxonomy(selectedIds).map { AromaTaxonomy.describe(it).label }
+    }
+    val subtitle = when {
+        orderedLabels.isEmpty() -> "Tag the aromas you find in the glass"
+        orderedLabels.size == 1 -> orderedLabels[0]
+        orderedLabels.size == 2 -> orderedLabels.joinToString(", ")
+        else -> "${orderedLabels[0]}, ${orderedLabels[1]} +${orderedLabels.size - 2} more"
+    }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+            .clickable(onClickLabel = "Open the aroma wheel", onClick = onClick)
+            .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AromaWheelGlyph(
+                selectedIds = selectedIds.toSet(),
+                modifier = Modifier
+                    .size(44.dp)
+                    .semantics { contentDescription = "Aroma wheel selection overview" }
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Aroma wheel",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * Miniature aroma wheel: one arc per group in the theme's real group colours.
+ * Groups containing selected descriptors are fully saturated; the rest stay
+ * neutral, so the glyph previews at a glance which parts of the wheel are
+ * already tagged. A centre dot finishes the wheel look.
+ */
+@Composable
+fun AromaWheelGlyph(
+    selectedIds: Set<String>,
+    modifier: Modifier = Modifier
+) {
+    val inactive = MaterialTheme.colorScheme.surfaceVariant
+    Canvas(modifier = modifier) {
+        val r = size.minDimension / 2f
+        val strokeWidth = r * 0.34f
+        val midRadius = r * 0.78f
+        val insetBy = (r - midRadius - strokeWidth / 2f).coerceAtLeast(0f)
+        inset(insetBy, insetBy, insetBy, insetBy) {
+            AromaTaxonomy.groups.forEach { group ->
+                val span = WheelLayout.spanOf(group.id)
+                val active = AromaTaxonomy.countSelectedUnder(group, selectedIds) > 0
+                drawArc(
+                    color = if (active) {
+                        Color(AromaWheelTheme.groupColor(group.id))
+                    } else {
+                        inactive
+                    },
+                    startAngle = span.a0 - 90f + 0.8f,
+                    sweepAngle = (span.sweep - 1.6f).coerceAtLeast(0.5f),
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
+                )
+            }
+        }
+        drawCircle(
+            color = Color(AromaWheelTheme.centerRed),
+            radius = r * 0.13f
+        )
+    }
+}
 
 /**
  * "Aroma descriptors" entry point shown in the tasting-note editor's sensory
