@@ -592,12 +592,6 @@ fun TastingNoteEditorScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            FilterChip(
-                selected = rebuy,
-                onClick = { rebuy = !rebuy },
-                label = { Text(if (rebuy) "Would buy again" else "Recommend / rebuy") }
-            )
-
             SensoryEvaluationFields(
                 data = sensoryData,
                 onChange = { sensoryData = it }
@@ -659,6 +653,12 @@ fun TastingNoteEditorScreen(
                     )
                 )
             }
+
+            FilterChip(
+                selected = rebuy,
+                onClick = { rebuy = !rebuy },
+                label = { Text(if (rebuy) "Would buy again" else "Recommend / rebuy") }
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
