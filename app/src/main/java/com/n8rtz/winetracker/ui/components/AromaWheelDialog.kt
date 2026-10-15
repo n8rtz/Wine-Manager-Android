@@ -437,8 +437,7 @@ private fun SelectedAromasOverlay(
             .heightIn(max = 148.dp)
             .verticalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.Top
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         orderedIds.forEach { id ->
             val info = AromaTaxonomy.describe(id)
