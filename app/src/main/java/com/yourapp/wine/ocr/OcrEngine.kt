@@ -2,6 +2,9 @@ package com.yourapp.wine.ocr
 
 import android.graphics.Bitmap
 
+/** Pixel-space declaration: only a geometrically rectified label may be sent to optional line-crop engines. */
+enum class OcrInputKind { RECTIFIED_LABEL, WORKING_LOCALIZATION, FULL_FRAME_FALLBACK }
+
 /** Implementations must return/cancel without borrowing the bitmap after the suspending call ends. */
 interface OcrEngine : AutoCloseable {
     val id: String

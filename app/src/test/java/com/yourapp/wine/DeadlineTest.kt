@@ -13,6 +13,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26], manifest = Config.NONE)
 class DeadlineTest {
+    @Test fun optionalEnginesOnlyReadRectifiedLabels() = EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
+
     @Test fun sleepingEngineIsCancelledAndCompletedEvidenceIsKept() = runBlocking {
         var wasCancelled = false
         val fast = object : OcrEngine {

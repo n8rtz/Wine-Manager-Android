@@ -17,12 +17,15 @@ data class OcrBatch(val tokens: List<RawToken>, val timings: List<EngineTiming>,
 class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (EngineTiming) -> Unit = { timing ->
     Log.d("WineScanner", "engine=${timing.engineId} variant=${timing.variantId} ms=${timing.ms} tokens=${timing.tokenCount} deadlineCancelled=${timing.deadlineCancelled} ${timing.detail.orEmpty()}")
 }, private val onTiming: (EngineTiming) -> Unit = {}) {
-    /** Sequential engines on at most three rectified variants; completed tokens are published before later timeout. */
+    /** Reads the declared label/working/fallback pixel space; optional engines never receive a full scene. */
     suspend fun run(variants: List<OcrVariant>, deadline: ScanDeadline,
                     reuseMlkitV0: List<RawToken>? = null,
-                    onTokens: (List<RawToken>) -> Unit = {}): OcrBatch {
+                    onTokens: (List<RawToken>) -> Unit = {},
+                    inputKind: OcrInputKind = OcrInputKind.RECTIFIED_LABEL): OcrBatch {
         require(variants.size <= 3)
+        val eligible = engines.filter { it.available && (inputKind == OcrInputKind.RECTIFIED_LABEL || it.id == "mlkit") }
         val tokens = mutableListOf<RawToken>(); val timings = mutableListOf<EngineTiming>()
+        if (eligible.isEmpty()) return OcrBatch(tokens, timings, deadline.expired)
         var cancelled = false
         variantLoop@ for (variant in variants) {
             currentCoroutineContext().ensureActive()
@@ -30,7 +33,7 @@ class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (Engine
             if (!variant.enabled(tokens)) continue
             val bitmap = variant.prepare()
             try {
-                for (engine in engines.filter { it.available }) {
+                for (engine in eligible) {
                     if (deadline.expired) { cancelled = true; break@variantLoop }
                     val start = SystemClock.elapsedRealtime()
                     var detail: String? = null

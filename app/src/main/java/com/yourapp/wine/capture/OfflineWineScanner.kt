@@ -63,7 +63,7 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
                             val cheap = OcrEnsemble(engines.filter { it.id == "mlkit" }, onTiming = { timings += it })
                                 .run(listOf(OcrVariant("probe", { working }, {})),
                                     ScanDeadline(minOf(deadline.expiresAtMs, SystemClock.elapsedRealtime() + 1500)),
-                                    onTokens = { completedProbe += it })
+                                    onTokens = { completedProbe += it }, inputKind = OcrInputKind.WORKING_LOCALIZATION)
                             if (!cheap.deadlineCancelled) probe = cheap.tokens
                             quad = TextHullQuadDetector().detect(cheap.tokens, geom)
                         }
@@ -83,7 +83,8 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
                             originalH.toDouble() / geom.workH)
                         val reuse = if (quad == null) probe?.map { it.copy(polygon = it.polygon.map(workToRect::map), variantId = "V0") } else null
                         val batch = ensemble.run(Preprocess().variants(rectified.bitmap, workspace), deadline, reuseMlkitV0 = reuse,
-                            onTokens = { raw -> records += raw.mapNotNull(mapper::toOriginal) })
+                            onTokens = { raw -> records += raw.mapNotNull(mapper::toOriginal) },
+                            inputKind = if (quad != null) OcrInputKind.RECTIFIED_LABEL else OcrInputKind.FULL_FRAME_FALLBACK)
                         deadlineCancelled = deadlineCancelled || batch.deadlineCancelled
                     } finally {
                         // Close BEFORE releasing the app-scoped scan permit: parallel callers must

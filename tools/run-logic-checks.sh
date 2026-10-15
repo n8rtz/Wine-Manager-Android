@@ -30,7 +30,7 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     "$root/ocr/OcrEngine.kt" "$root/ocr/OcrEnsemble.kt" "$root/ocr/ScanDeadline.kt" "$root/ocr/NativeEngineGate.kt"
     "$root/capture/BitmapWorkspace.kt" "$root/kb/OpenWinesAdapter.kt" "$root/kb/KnowledgeRecord.kt"
     "$root/kb/CsvKnowledgeRecords.kt" "$root/kb/JsonKnowledgeRecords.kt" "$root/kb/ImportReaders.kt"
-    app/src/test/java/com/yourapp/wine/LogicChecks.kt
+    app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
     tools/logic-checks/AndroidGeometry.kt tools/logic-checks/AndroidClock.kt tools/logic-checks/AndroidLog.kt
     tools/logic-checks/HostBitmap.kt tools/logic-checks/DeadlineChecks.kt tools/logic-checks/ImportChecks.kt tools/logic-checks/Main.kt
     .ocr-harness/checks/GeneratedFixtureChecks.kt)

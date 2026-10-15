@@ -12,10 +12,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    // AGP9 rejects Provider entries in SourceSet; preBuild explicitly wires the generator dependency below.
     sourceSets.getByName("main") {
-        java.srcDir(layout.buildDirectory.dir("generated/opencv/java"))
-        jniLibs.srcDir(layout.buildDirectory.dir("generated/opencv/jniLibs"))
-        resources.srcDir(layout.buildDirectory.dir("generated/opencv/resources"))
+        java.srcDir(layout.buildDirectory.dir("generated/opencv/java").get().asFile)
+        jniLibs.srcDir(layout.buildDirectory.dir("generated/opencv/jniLibs").get().asFile)
+        resources.srcDir(layout.buildDirectory.dir("generated/opencv/resources").get().asFile)
     }
 }
 

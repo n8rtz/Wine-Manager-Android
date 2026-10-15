@@ -13,6 +13,8 @@ fun main() {
         test(); println("PASS: $name")
     }
     GeneratedFixtureChecks.run()
+    com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
+    println("PASS: optional engines never receive localization/full-scene fallback pixels")
     deadlineChecks()
     bitmapOwnershipChecks()
     csvImportChecks()
