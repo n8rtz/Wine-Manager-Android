@@ -1,7 +1,12 @@
 [versions]
-agp = "9.1.1"
-kotlin = "2.2.10"
-ksp = "2.3.2"
+# AGP and Kotlin match the toolchain bundled with Code on the Go (AGP 9.3.1, Kotlin 2.3.21,
+# Gradle 9.6.1). Its on-device offline Maven repository is built for those versions; with other
+# AGP/Kotlin versions the build can fail with "Could not find <x>.jar ... localMvnRepository".
+agp = "9.3.1"
+kotlin = "2.3.21"
+# KSP before 2.3.6 doesn't recognise built-in Kotlin in newer AGP 9 releases;
+# 2.3.12 is compiled against AGP 9.3.
+ksp = "2.3.12"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
