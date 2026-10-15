@@ -90,11 +90,28 @@ The app is minSdk26 / targetSdk35 / compileSdk36, arm64-v8a only. Compile SDK is
 
 `opencv-minimal` builds genuine pinned OpenCV **4.12.0** from the official source archive. SHA-256: `44c106d5bb47efec04e531fd93008b3fcd1d27138985c5baf4eafac0e1ec9e9d`. `tools/build-opencv-minimal.py` enables only `core,imgproc,java` with static selected modules, and packages generated core/imgproc Java + the upstream bitmap Utils JNI subset. No monolithic opencv-world/AAR, imgcodecs/DNN, fake JNI or generated model weights. The first native build downloads source from GitHub and may take several minutes; generated/downloaded files stay under ignored build directories. Upstream license is packaged with generated Java resources.
 
-Release shrinking is enabled, with JNI/Gson compatibility rules. `checkArm64ApkBudget` builds the actual release APK, checks only arm64 native libraries, reports packed/installed code+libs and total APK size, and fails ≥40MiB. **No APK has been built/measured here**. Optional real OCR/NER assets + SQLite logical pages must remain strictly below 80MiB; no downloader is supplied.
+Release shrinking is enabled, with JNI/Gson compatibility rules. `checkArm64ApkBudget` builds the actual release APK, checks only arm64 native libraries, reports packed/installed code+libs and total APK size, and fails ≥40MiB. **Genuine CI measured 24.51 MiB total, 22.20 MiB packed code+libs and 24.66 MiB installed code+libs**, with only arm64 native libraries. Optional real OCR/NER assets + SQLite logical pages must remain strictly below 80MiB; no downloader is supplied.
 
-CI `.github/workflows/offline-scanner.yml` installs the real SDK/NDK/CMake, compiles, runs scanner Robolectric tests and checks the measured release APK. CI has been authored, not executed in this workspace. Instrumentation needs an ARM64 device/system image; do not install this arm64-only APK on an x86-only emulator.
+CI `.github/workflows/offline-scanner.yml` installs the real SDK/NDK/CMake, compiles, runs scanner Robolectric tests and checks the measured release APK. It completed successfully on a real hosted Android toolchain in [run 38661171436](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/38661171436) for source commit `4161b128ae58792dc891d15c3f75aa9a87ebe651` (23m44s). Debug and instrumented test APKs, shrunk unsigned release APK and test reports are available in the `scanner-check-results` artifact; no generated binaries are committed. Instrumentation needs an ARM64 device/system image; do not install this arm64-only APK on an x86-only emulator.
 
 ## Tests and validation ledger
+
+### Executed on the genuine hosted Android toolchain
+
+[Successful CI run 38661171436](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/38661171436) validates source commit `4161b12` on Ubuntu24.04, Java21, SDK36, NDK28.2.13676358 and CMake3.22.1, using the real declared dependencies and source-built OpenCV4.12 core/imgproc/java:
+
+```sh
+./gradlew --no-daemon --console=plain :app:assembleDebug
+./gradlew --no-daemon --console=plain :app:assembleDebugAndroidTest
+./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
+./gradlew --no-daemon --console=plain :app:checkArm64ApkBudget
+```
+
+All four commands passed. This includes full Compose/CameraX/ViewModel integration compilation, genuine SDK dependency signatures, arm64 JNI build/link/packaging, release shrinking and size checks. Scanner Robolectric tests passed: `ScannerLogicTest`, `GeometryTest`, `FixtureFieldsTest`, `DeadlineTest`, `BitmapWorkspaceTest`, `OptionalEngineTest`, `OpenWinesAdapterTest` (including real Android JSON parsing). The boundary guard and production SQL/host FTS5 checks passed in CI too.
+
+Measured release APK: **24.51 MiB total**, **22.20 MiB packed code+libs**, **24.66 MiB installed code+libs**, **arm64-v8a only**. The inventory/network feature unit sources also compile, but the CI unit-test filter executes the scanner suite, not every existing app test.
+
+Compilation/packaging is not native execution on Android. CI does **not** prove ML Kit image accuracy, device FTS5 integration, perspective-warp/native memory behavior, camera/lifecycle correctness on OEM devices or the physical 8000ms bound. Those require the device commands and checklist below.
 
 ### Executed in the restricted sandbox
 
@@ -112,15 +129,14 @@ The Kotlin harness compiles **production logic/CSV/Reader guards** with real Kot
 
 **2 host SQLite groups passed:** `check-kb-import-sql.py` executes the production schema/staging/transfer/FTS SQL with Python's real SQLite/FTS5, tests arbitrary parent/alias ordering, and verifies atomic data+FTS rollback on invalid foreign keys. This validates SQL semantics on **host SQLite**, not the bundled Android driver/JNI. It needs Python with SQLite/FTS5 and leaves no database artifact.
 
-A separate limited Kotlin backend type-check succeeded with a real Android35 API jar and genuine generated OpenCV Java APIs, but **ML Kit/Tasks/SQLite/Exif were validation-only stand-ins**. It excluded Compose/camera/VM integration and is **not an Android build or dependency-signature verification**. These disposable harness inputs are ignored, not packaged or committed.
+An earlier limited Kotlin backend type-check succeeded with a real Android35 API jar and genuine generated OpenCV Java APIs, but **ML Kit/Tasks/SQLite/Exif were validation-only stand-ins**. It excluded Compose/camera/VM integration and is **not an Android build or dependency-signature verification**. These disposable harness inputs are ignored, not packaged or committed. The genuine Gradle CI above now supersedes this limited check for compile/dependency evidence.
 
 `check-offline-recognition-boundary.py` guards project-owned recognition modules/facade and five ViewModel scan entry points against HTTP/wine-network dependencies. Normal Android/Google APIs and the explicit image-import feature remain allowed. This is a source regression guard, not instrumentation or a claim that SDKs never perform their own ordinary network activity.
 
 `git diff --check` also passes.
 
-### Authored, not executed here
+### Instrumentation compiled, device execution pending
 
-- Robolectric: `ScannerLogicTest`, `GeometryTest`, `FixtureFieldsTest`, `DeadlineTest`, `BitmapWorkspaceTest`, `OptionalEngineTest`, `OpenWinesAdapterTest` (real Android JSON parsing, malformed/oversized input and CSV edge cases).
 - `OfflineScannerDeviceTest`: real ML Kit/warp on three printed labels, inverse/bbox/variant/budget checks, and a warmed 20-scan Java/native heap-growth/ownership check.
 - `SqliteKnowledgeBaseDeviceTest`: genuine bundled FTS5, streamed CSV/JSON import, late-schema/duplicate/FK/hierarchy rollback, caller stream ownership and temporary-file cleanup.
 - Existing 13-photo `LabelOcrImageRegressionTest`: GREEN values must agree with reviewed truth; unknown YELLOW and rejected RED are explicit, rather than requiring the tiny fixture KB to know all brands. Strict synthetic/device tests separately guard against an all-RED no-op pipeline.
@@ -139,12 +155,12 @@ Also perform **20 actual CameraX shutter captures**, not just file scans. Record
 
 ### Phase checkpoint status
 
-| Phase | Source / limited validation | Android checkpoint |
+| Phase | Source / logic validation | Android checkpoint |
 | --- | --- | --- |
-| 0 contracts/fixture/logic | implemented; host logic/fixture assertions pass | blocked before configuration |
-| 1 camera/ML Kit/review | implemented | build/device pending |
-| 2 quad/warp/variants/overlay | implemented; inverse algebra passes | native/20 captures pending |
-| 3 merger/extractor/FTS/hierarchy | implemented; pure logic passes | genuine SQLite/device OCR pending |
-| 4 optional Paddle | honest presence/bridge interface; no weights/bridge supplied | ML Kit-only default; native Paddle intentionally unavailable |
+| 0 contracts/fixture/logic | implemented; host and genuine Robolectric assertions pass | genuine Android compilation passed |
+| 1 camera/ML Kit/review | implemented; six-field/rejection/confirmation policy tests pass | app + instrumented test APKs compile; device capture/OCR pending |
+| 2 quad/warp/variants/overlay | implemented; inverse algebra passes | genuine arm64 OpenCV JNI builds/packages; runtime warp/20 captures pending |
+| 3 merger/extractor/FTS/hierarchy | implemented; genuine Robolectric fixtures/Android JSON and host FTS5 pass | genuine bundled SQLite/device image OCR pending |
+| 4 optional Paddle | honest presence/bridge interface; missing-assets/rectified-only policy tests pass | ML Kit-only default; native Paddle intentionally unavailable |
 
-Gradle checkpoint attempts fail downloading Gradle9.3.1 (`SSLHandshakeException` / unexpected TLS EOF from services.gradle.org), before project configuration. No SDK/NDK/emulator is available in this sandbox. Do not describe the phases as Android-compiled, Robolectric-run, APK-under-budget, or 20-capture/OOM accepted until the real commands above succeed.
+Earlier **local** Gradle9.3.1 wrapper attempts failed with TLS EOF before configuration. Hosted CI resolved the real dependencies and now passes debug, instrumented-test compilation, scanner Robolectric and release budget checks. There is still no SDK/NDK/emulator/device available locally; do not describe 20-camera-capture/OOM, device OCR or physical latency as accepted until the device commands above succeed.

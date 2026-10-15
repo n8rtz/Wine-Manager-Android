@@ -8,4 +8,4 @@ Android wine-cellar manager (`com.n8rtz.winetracker`). The Add Wine camera scann
 
 See [offline scanner architecture, build and tests](docs/offline-scanner.md) and [KB import / optional model formats](docs/offline-scanner-data.md).
 
-**Validation status:** host logic checks pass. A complete Android/native build, device OCR, APK-size measurement and 20-capture heap acceptance have not been run in the restricted development sandbox. The Gradle distribution download fails TLS before configuration; see the test guide for reproducible Android checks and CI.
+**Validation status:** [Genuine Android CI passed](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/38661171436) for source commit `4161b12`: debug app and instrumented test APKs compile, scanner Robolectric tests pass, and the shrunk arm64 release APK measures **24.51 MiB** (packed code + libraries **22.20 MiB**, below 40 MiB). The local harness also passes 28 logic groups and two host SQLite/FTS5 groups. Real-device OCR, physical shutter→review timing, and 20-camera-capture heap/OOM acceptance remain unverified. See the test guide for those remaining checks.
