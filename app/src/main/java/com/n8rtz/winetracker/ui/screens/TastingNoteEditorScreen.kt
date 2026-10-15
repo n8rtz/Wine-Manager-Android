@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,10 +24,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DonutLarge
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -64,6 +68,7 @@ import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.ui.components.AromaWheelDialog
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
@@ -119,6 +124,7 @@ fun TastingNoteEditorScreen(
     var valueScoreSelected by remember(noteId) { mutableStateOf(noteId == null) }
     var sensoryData by remember { mutableStateOf(SensoryData()) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showAromaWheel by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
@@ -583,6 +589,27 @@ fun TastingNoteEditorScreen(
                 )
             }
 
+            OutlinedButton(
+                onClick = { showAromaWheel = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+            ) {
+                Icon(
+                    Icons.Default.DonutLarge,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (sensoryData.aromas.isEmpty()) {
+                        "Browse the aroma wheel"
+                    } else {
+                        "Aroma wheel - ${sensoryData.aromas.size} selected"
+                    }
+                )
+            }
+
             FilterChip(
                 selected = rebuy,
                 onClick = { rebuy = !rebuy },
@@ -794,6 +821,17 @@ fun TastingNoteEditorScreen(
         ) {
             DatePicker(state = pickerState)
         }
+    }
+
+    if (showAromaWheel) {
+        AromaWheelDialog(
+            initiallySelectedIds = sensoryData.aromas,
+            onConfirm = { selected ->
+                sensoryData = sensoryData.copy(aromas = selected)
+                showAromaWheel = false
+            },
+            onDismiss = { showAromaWheel = false }
+        )
     }
 
     if (showDeleteConfirmation && noteId != null) {
