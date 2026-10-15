@@ -192,3 +192,9 @@
 * **Cause:** The custom slider's empty track slot measured to zero width, collapsing the thumb's travel range.
 * **Fix:** Supply a full-width, invisible 8.dp-high Spacer as the track. Keep the existing Canvas gradient and shared thumb/label insets.
 * **Verification:** No other empty slider track slots found. Device verification pending: drag from 50 through 75 to 100 and tap both endpoints.
+
+### Duplicate aroma editor below sensory sliders
+* **Date logged/fixed:** 2026-10-15
+* **Cause:** The original AromaDescriptorSection was still rendered after the Quality slider, duplicating the launcher card and squeezing its heading into a narrow column.
+* **Fix:** Removed that section's invocation and extra spacer from SensoryEvaluationFields. The upper aroma wheel launcher and its wrapping, reorderable chips remain unchanged; Common faults now follows the sensory sliders directly.
+* **Verification:** Confirmed there are no remaining AromaDescriptorSection call sites. Device verification pending.
