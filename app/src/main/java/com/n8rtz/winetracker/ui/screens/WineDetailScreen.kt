@@ -719,6 +719,3 @@ fun ConsumeDialog(
         }
     }
 }
- }
-    }
-}
