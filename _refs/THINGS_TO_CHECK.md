@@ -5,7 +5,7 @@
 ## One-time Android Studio setup and test launch
 
 1. [ ] In Android Studio, choose **File → Open…** and select the repository root (the folder containing `settings.gradle.kts`). Wait for Gradle sync to finish; resolve any SDK/license prompts rather than dismissing them.
-2. [ ] Open **File → Settings → Build, Execution, Deployment → Build Tools → Gradle** (on macOS, **Android Studio → Settings…**). Set **Gradle JDK** to Android Studio's bundled JDK 17 or newer; this project uses AGP 9.1.1.
+2. [ ] Open **File → Settings → Build, Execution, Deployment → Build Tools → Gradle** (on macOS, **Android Studio → Settings…**). Set **Gradle JDK** to Android Studio's bundled JDK 17 or newer; this project uses AGP 9.3.1 (matching the Code on the Go on-device IDE), which needs Android Studio Quail 2 (2026.1.2) or newer and Gradle 9.5.0 or newer (the wrapper uses 9.6.1).
 3. [ ] Open **Tools → SDK Manager** and install Android SDK Platform 36 when prompted (the app compiles against API 36). The app's minimum supported device API is 33.
 4. [ ] Open **Tools → Device Manager → Create Device**, choose a Pixel profile, download/start an API 33-or-newer system image, and wait for the emulator to finish booting. A physical Android device is preferable for autofocus/camera checks. If using an emulator for OCR, configure its back-camera input (for example, the host webcam).
 5. [ ] Select the **app** run configuration and the booted device in the toolbar, then click **Run ▶**. Confirm the app opens on **Cellar**. Use a disposable emulator/install for any step that writes data; do not clear or alter a personal cellar.
