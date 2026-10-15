@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -324,10 +324,15 @@ private fun SelectedAromasOverlay(
     modifier: Modifier = Modifier
 ) {
     val orderedIds = remember(selectedIds) { AromaTaxonomy.sortByTaxonomy(selectedIds) }
-    Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
+    // Wraps into rows so nothing is pushed off-screen; capped at roughly three rows and
+    // scrollable beyond that so a very large selection can never cover the whole wheel.
+    FlowRow(
+        modifier = modifier
+            .heightIn(max = 148.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.Top
     ) {
         orderedIds.forEach { id ->
             val info = AromaTaxonomy.describe(id)
