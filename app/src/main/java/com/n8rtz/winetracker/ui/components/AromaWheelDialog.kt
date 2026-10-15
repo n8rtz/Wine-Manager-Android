@@ -21,9 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -282,39 +282,32 @@ fun AromaWheelDialog(
                             onToggleLeaf = { id -> applyToggle(id) }
                         )
                     } else {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            // Read the list contents directly (not as a remember key): SnapshotStateList uses
-// identity equals, so remember(selected) would cache the initial set forever and the
-// wheel would never redraw its selection outlines. Reading it here subscribes this
-// scope to list changes, so a new Set is produced on every selection change.
-val selectedSet: Set<String> = selected.toSet()
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                            ) {
-                                AromaWheel(
-                                    selectedIds = selectedSet,
-                                    onToggle = { id -> applyToggle(id) },
-                                    modifier = Modifier.fillMaxSize()
+                        // Read the list contents directly (not as a remember key): SnapshotStateList uses
+                        // identity equals, so remember(selected) would cache the initial set forever and
+                        // the wheel would never redraw its selection. Reading it here subscribes this
+                        // scope to list changes, so a new Set is produced on every selection change.
+                        val selectedSet: Set<String> = selected.toSet()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            AromaWheel(
+                                selectedIds = selectedSet,
+                                onToggle = { id -> applyToggle(id) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            if (selected.isNotEmpty()) {
+                                SelectedAromasOverlay(
+                                    selectedIds = selected.toList(),
+                                    onRemove = { id -> applyToggle(id) },
+                                    onClear = { selected.clear() },
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp)
                                 )
                             }
-                            SelectionChipsRow(
-                                selectedIds = selected.toList(),
-                                onRemove = { id -> applyToggle(id) },
-                                onClear = { selected.clear() }
-                            )
-                            Text(
-                                "Vocabulary follows the classic primary / secondary / " +
-                                    "tertiary / faults aroma-wheel model " +
-                                    "(popularised by Wine Folly).",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 6.dp)
-                            )
                         }
                     }
                 }
@@ -324,60 +317,67 @@ val selectedSet: Set<String> = selected.toSet()
 }
 
 @Composable
-private fun SelectionChipsRow(
+private fun SelectedAromasOverlay(
     selectedIds: List<String>,
     onRemove: (String) -> Unit,
-    onClear: () -> Unit
+    onClear: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    if (selectedIds.isEmpty()) return
     val orderedIds = remember(selectedIds) { AromaTaxonomy.sortByTaxonomy(selectedIds) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Selected aromas (${selectedIds.size})",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(onClick = onClear, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                Text("Clear all")
+        orderedIds.forEach { id ->
+            val info = AromaTaxonomy.describe(id)
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shadowElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(9.dp)
+                            .clip(CircleShape)
+                            .background(Color(AromaWheelTheme.groupColor(info.groupId)))
+                    )
+                    Text(
+                        info.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(start = 6.dp)
+                    )
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Remove ${info.label}",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .clip(CircleShape)
+                            .clickable { onRemove(id) }
+                            .padding(3.dp)
+                            .size(14.dp)
+                    )
+                }
             }
         }
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 120.dp)
-                .verticalScroll(rememberScrollState())
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            contentColor = MaterialTheme.colorScheme.primary,
+            shadowElevation = 2.dp,
+            modifier = Modifier.clickable(onClick = onClear)
         ) {
-            orderedIds.forEach { id ->
-                val info = AromaTaxonomy.describe(id)
-                FilterChip(
-                    selected = true,
-                    onClick = { onRemove(id) },
-                    label = { Text(info.label) },
-                    leadingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .clip(CircleShape)
-                                .background(Color(AromaWheelTheme.groupColor(info.groupId)))
-                        )
-                    },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Remove ${info.label}",
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                )
-            }
+            Text(
+                "Clear all",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+            )
         }
     }
 }
