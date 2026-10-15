@@ -186,3 +186,9 @@
 * **Date logged/fixed:** 2026-10-15
 * **Fix:** Replaced the launcher’s scrolling chip strip with a wrapping FlowRow, with two-dimensional long-press reordering. Score track, markers, labels, and explicit thumb now share the same inset; font-scaled label space prevents the 100 label from clipping.
 * **Verification:** Device check pending: reorder across rows; select 50 and 100; check large-font labels.
+
+### Overall score thumb stuck after endpoint alignment change
+* **Date logged/fixed:** 2026-10-15
+* **Cause:** The custom slider's empty track slot measured to zero width, collapsing the thumb's travel range.
+* **Fix:** Supply a full-width, invisible 8.dp-high Spacer as the track. Keep the existing Canvas gradient and shared thumb/label insets.
+* **Verification:** No other empty slider track slots found. Device verification pending: drag from 50 through 75 to 100 and tap both endpoints.

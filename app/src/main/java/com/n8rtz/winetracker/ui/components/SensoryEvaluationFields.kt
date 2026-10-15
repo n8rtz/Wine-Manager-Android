@@ -205,7 +205,12 @@ fun OverallScoreSlider(
                             .background(indicatorColor, RoundedCornerShape(2.dp)))
                     }
                 },
-                track = {},
+                // The track must occupy the available width even though the
+                // gradient is drawn by the Canvas behind it. An empty slot
+                // collapses the measured travel range and pins the thumb.
+                track = {
+                    Spacer(Modifier.fillMaxWidth().height(8.dp))
+                },
                 colors = SliderDefaults.colors(
                     thumbColor = indicatorColor,
                     activeTrackColor = Color.Transparent,
