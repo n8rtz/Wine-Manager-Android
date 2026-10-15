@@ -399,6 +399,7 @@ private fun AromaListContent(
                 .padding(horizontal = 16.dp, vertical = 4.dp)
         )
         val trimmedQuery = query.trim()
+        val hits = remember(trimmedQuery) { AromaTaxonomy.search(trimmedQuery) }
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -499,7 +500,6 @@ private fun AromaListContent(
                     }
                 }
             } else {
-                val hits = remember(trimmedQuery) { AromaTaxonomy.search(trimmedQuery) }
                 if (hits.isEmpty()) {
                     item(key = "no-results") {
                         Text(
