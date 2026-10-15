@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,6 +46,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldLabelPosition
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -676,10 +679,15 @@ fun TastingNoteEditorScreen(
                     onExpandedChange = { reviewerMenuExpanded = !reviewerMenuExpanded },
                     modifier = Modifier.weight(2f)
                 ) {
+                    // This read-only field mirrors the selected reviewer. Keep
+                    // its label raised even before the first dropdown interaction.
+                    val reviewerFieldState = remember(recommendedBy) {
+                        TextFieldState(initialText = recommendedBy)
+                    }
                     OutlinedTextField(
-                        value = recommendedBy,
-                        onValueChange = {},
+                        state = reviewerFieldState,
                         readOnly = true,
+                        labelPosition = TextFieldLabelPosition.Attached(alwaysMinimize = true),
                         label = { Text("Recommended by") },
                         trailingIcon = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -698,7 +706,7 @@ fun TastingNoteEditorScreen(
                             androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable,
                             true
                         ),
-                        singleLine = true
+                        lineLimits = TextFieldLineLimits.SingleLine
                     )
                     ExposedDropdownMenu(
                         expanded = reviewerMenuExpanded,

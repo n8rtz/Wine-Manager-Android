@@ -202,3 +202,8 @@
 ### Default wine reviewer list update
 * **Date changed:** 2026-10-15
 * **Change:** Removed Vinous and Jancis Robinson from the defaults; added Peter Koff, Konstantin Baum, and Costco Wine Blog. Saved custom reviewer lists and existing tasting notes remain unchanged.
+
+### Recommended by label changes position on first interaction
+* **Date changed:** 2026-10-15
+* **Fix:** Use the state-based outlined field with an attached, always-minimized label, so “Recommended by” starts and stays raised even when empty. The read-only display state follows reviewer selection and clearing without forcing focus or opening the menu.
+* **Verification:** Checked label-position and single-line APIs against Material 3 source. Device check pending: initial empty field, open/dismiss, select, and clear.
