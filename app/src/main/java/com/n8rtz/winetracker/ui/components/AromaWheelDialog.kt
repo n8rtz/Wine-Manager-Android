@@ -5,6 +5,7 @@ package com.n8rtz.winetracker.ui.components
 import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -23,7 +25,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,16 +56,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.inset
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +78,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import com.n8rtz.winetracker.aromawheel.AromaSelection
 import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
 import com.n8rtz.winetracker.aromawheel.WheelLayout
@@ -80,24 +90,20 @@ import kotlinx.coroutines.delay
 
 /**
  * Tasting-note launcher for the aroma wheel: a summary card with a live
- * [AromaWheelGlyph] preview (tagged groups light up in their group colour), the
- * current selection summary, and a chevron. Opens [AromaWheelDialog] via [onClick].
+ * [AromaWheelGlyph] preview (tagged groups light up in their group colour),
+ * a chevron into the full wheel, and — once aromas are chosen — the selected
+ * aromas as chips in [ReorderableAromaChipRow]. Chip order is meaningful
+ * (most to least prevalent): long-press and drag to arrange it; it is stored
+ * as-is on the note. Blank (title row only) until aromas are chosen.
  */
 @Composable
 fun AromaWheelLauncherCard(
     selectedIds: List<String>,
     onClick: () -> Unit,
+    onReorder: (List<String>) -> Unit,
+    onRemove: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val orderedLabels = remember(selectedIds) {
-        AromaTaxonomy.sortByTaxonomy(selectedIds).map { AromaTaxonomy.describe(it).label }
-    }
-    val subtitle = when {
-        orderedLabels.isEmpty() -> "Tag the aromas you find in the glass"
-        orderedLabels.size == 1 -> orderedLabels[0]
-        orderedLabels.size == 2 -> orderedLabels.joinToString(", ")
-        else -> "${orderedLabels[0]}, ${orderedLabels[1]} +${orderedLabels.size - 2} more"
-    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -105,33 +111,178 @@ fun AromaWheelLauncherCard(
             .clickable(onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AromaWheelGlyph(
-                selectedIds = selectedIds.toSet(),
-                modifier = Modifier
-                    .size(44.dp)
-                    .semantics { contentDescription = "Aroma wheel selection overview" }
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AromaWheelGlyph(
+                    selectedIds = selectedIds.toSet(),
+                    modifier = Modifier
+                        .size(44.dp)
+                        .semantics { contentDescription = "Aroma wheel selection overview" }
+                )
+                Spacer(Modifier.width(12.dp))
                 Text(
                     "Aroma wheel",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            if (selectedIds.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                ReorderableAromaChipRow(
+                    ids = selectedIds,
+                    onReorder = onReorder,
+                    onRemove = onRemove,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+/** Drag bookkeeping for [ReorderableAromaChipRow]; survives recomposition. */
+private class AromaChipDragState {
+    var index by mutableStateOf(-1)
+    var offsetPx by mutableFloatStateOf(0f)
+    val widths = mutableMapOf<Int, Int>()
+
+    fun start(at: Int) {
+        index = at
+        offsetPx = 0f
+    }
+
+    fun end() {
+        index = -1
+        offsetPx = 0f
+    }
+}
+
+/**
+ * Horizontally scrollable row of removable aroma chips with long-press drag
+ * reordering: the pressed chip lifts and follows the finger, and chips swap
+ * whenever it crosses a neighbour's midpoint. The resulting order is reported
+ * through [onReorder] after each swap; [onRemove] fires from a chip's ✕.
+ */
+@Composable
+fun ReorderableAromaChipRow(
+    ids: List<String>,
+    onReorder: (List<String>) -> Unit,
+    onRemove: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val listState = rememberLazyListState()
+    val drag = remember { AromaChipDragState() }
+    // Latest-state holders so an in-progress drag survives list swaps and
+    // callback identity changes without restarting the pointerInput below.
+    val currentIds by rememberUpdatedState(ids)
+    val currentOnReorder by rememberUpdatedState(onReorder)
+    LazyRow(
+        state = listState,
+        modifier = modifier.semantics {
+            contentDescription =
+                "Selected aromas. Long-press a chip and drag to arrange them by prevalence."
+        },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        itemsIndexed(currentIds, key = { _, id -> id }) { index, id ->
+            val info = AromaTaxonomy.describe(id)
+            val currentIndex by rememberUpdatedState(index)
+            val dragging = drag.index == index
+            AromaChipPill(
+                label = info.label,
+                groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                dragging = dragging,
+                dragOffsetPx = if (dragging) drag.offsetPx else 0f,
+                onRemove = { onRemove(id) },
+                modifier = Modifier
+                    .onSizeChanged { drag.widths[index] = it.width }
+                    .pointerInput(Unit) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { drag.start(currentIndex) },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                if (drag.index < 0) return@detectDragGesturesAfterLongPress
+                                val proposed = drag.offsetPx + amount.x
+                                val (target, adjusted) = aromaChipDragTarget(
+                                    drag.index, proposed, currentIds.size
+                                ) { drag.widths[it] ?: 0 }
+                                if (target != drag.index) {
+                                    val moved = currentIds.toMutableList().apply {
+                                        add(target, removeAt(drag.index))
+                                    }
+                                    currentOnReorder(moved)
+                                    drag.index = target
+                                }
+                                drag.offsetPx = adjusted
+                            },
+                            onDragEnd = { drag.end() },
+                            onDragCancel = { drag.end() }
+                        )
+                    }
+            )
+        }
+    }
+}
+
+/**
+ * One aroma pill: group-coloured dot, label, and a ✕ remove affordance.
+ * While [dragging], it lifts (scale + shadow) and follows [dragOffsetPx].
+ */
+@Composable
+private fun AromaChipPill(
+    label: String,
+    groupColor: Color,
+    dragging: Boolean,
+    dragOffsetPx: Float,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shadowElevation = if (dragging) 6.dp else 2.dp,
+        modifier = modifier
+            .zIndex(if (dragging) 1f else 0f)
+            .graphicsLayer {
+                translationX = dragOffsetPx
+                val lift = if (dragging) 1.05f else 1f
+                scaleX = lift
+                scaleY = lift
+            }
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(9.dp)
+                    .clip(CircleShape)
+                    .background(groupColor)
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(start = 6.dp)
+            )
             Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Icons.Default.Close,
+                contentDescription = "Remove $label",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 2.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onRemove)
+                    .padding(3.dp)
+                    .size(14.dp)
             )
         }
     }
@@ -189,7 +340,6 @@ fun AromaDescriptorSection(
     onChange: (List<String>) -> Unit
 ) {
     var showWheel by remember { mutableStateOf(false) }
-    val orderedIds = remember(selectedIds) { AromaTaxonomy.sortByTaxonomy(selectedIds) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -223,7 +373,7 @@ fun AromaDescriptorSection(
                 Text("Browse wheel")
             }
         }
-        if (orderedIds.isEmpty()) {
+        if (selectedIds.isEmpty()) {
             Text(
                 "Tag aromas such as cherry, vanilla, or citrus from the aroma wheel.",
                 style = MaterialTheme.typography.bodySmall,
@@ -234,7 +384,7 @@ fun AromaDescriptorSection(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                orderedIds.forEach { id ->
+                selectedIds.forEach { id ->
                     val info = AromaTaxonomy.describe(id)
                     FilterChip(
                         selected = true,
@@ -429,7 +579,7 @@ private fun SelectedAromasOverlay(
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val orderedIds = remember(selectedIds) { AromaTaxonomy.sortByTaxonomy(selectedIds) }
+    val orderedIds = selectedIds
     // Wraps into rows so nothing is pushed off-screen; capped at roughly three rows and
     // scrollable beyond that so a very large selection can never cover the whole wheel.
     FlowRow(
@@ -441,40 +591,13 @@ private fun SelectedAromasOverlay(
     ) {
         orderedIds.forEach { id ->
             val info = AromaTaxonomy.describe(id)
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                shadowElevation = 2.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(9.dp)
-                            .clip(CircleShape)
-                            .background(Color(AromaWheelTheme.groupColor(info.groupId)))
-                    )
-                    Text(
-                        info.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(start = 6.dp)
-                    )
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Remove ${info.label}",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .padding(start = 2.dp)
-                            .clip(CircleShape)
-                            .clickable { onRemove(id) }
-                            .padding(3.dp)
-                            .size(14.dp)
-                    )
-                }
-            }
+            AromaChipPill(
+                label = info.label,
+                groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                dragging = false,
+                dragOffsetPx = 0f,
+                onRemove = { onRemove(id) }
+            )
         }
         Surface(
             shape = RoundedCornerShape(50),

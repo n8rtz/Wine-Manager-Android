@@ -589,6 +589,12 @@ fun TastingNoteEditorScreen(
             AromaWheelLauncherCard(
                 selectedIds = sensoryData.aromas,
                 onClick = { showAromaWheel = true },
+                onReorder = { ordered ->
+                    sensoryData = sensoryData.copy(aromas = ordered)
+                },
+                onRemove = { id ->
+                    sensoryData = sensoryData.copy(aromas = sensoryData.aromas - id)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 

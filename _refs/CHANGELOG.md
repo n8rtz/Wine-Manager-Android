@@ -20,7 +20,7 @@
 - **Coverage and documentation:** Added tests for NV normalization and date-picker round-tripping across a daylight-saving boundary; updated the architecture and this changelog.
 
 ### Changed
-- **Aroma wheel launcher:** Replaced the plain outlined button under the overall score with a summary card: a live mini aroma-wheel glyph whose group arcs light up as you tag descriptors, the current selection as text, and a chevron into the full wheel.
+- **Aroma wheel launcher:** Replaced the plain outlined button under the overall score with a summary card: a live mini aroma-wheel glyph whose group arcs light up as you tag descriptors, a chevron into the full wheel, and the selected aromas as chips on the card itself (blank until aromas are chosen). Chips support long-press drag reordering, and their order is meaningful — most to least prevalent — and is preserved on the saved note, in wine details, and across the wheel overlay and editor chips (taxonomy re-sorting removed).
 - **Tasting score slider:** Added a color-graded 50–100 scale and badge with the requested bands: 50–59 Unacceptable, 60–69 Below Average, 70–79 Average, 80–85 Good, 86–89 Very Good, 90–93 Excellent, 94–97 Outstanding, and 98–100 Extraordinary. Kept the 50 and 100 endpoint labels inside the colored track.
 - **Tasting-note form:** Overall rating and sensory controls are always shown and saved; removed the rating checkbox and sensory-evaluation add/label UI. Unrated legacy notes require choosing a score before saving.
 - **Cellar note selection:** Removed the redundant vintage field because each cellar wine choice includes its vintage; the selected active cellar bottle’s price is shown and recorded on new notes.

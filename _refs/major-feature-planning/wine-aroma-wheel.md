@@ -19,7 +19,7 @@ for the wheel UI and vocabulary. The current implementation:
 | IDs | `fam_<key>` / `grp_<code>` / `<groupCode>_<key>` (e.g. `cit_lemon`), frozen, never derived from labels; a retired-ID mechanism (`AromaTaxonomy.retired`, currently empty) plus `describe()` keep old notes displaying after vocabulary changes; `TAXONOMY_VERSION` gates compatibility. |
 | Selection | Multi-select, **max 24**, dedupe, unknown IDs rejected on add but never dropped from storage (`AromaSelection.toggle/normalize`). |
 | Storage | `SensoryData.aromas: List<String>` of stable IDs inside the existing JSON TypeConverter. No Room migration; JSON backup/restore carries it. The editor normalizes stored IDs on load. |
-| Display | Aroma chips (group-coloured) in the note editor's sensory section and on note cards in `WineDetailScreen`. Filtering notes by aroma remains future scope. |
+| Display | Aroma chips (group-coloured) on the launcher card under the overall score — drag to arrange most-to-least prevalent; that order persists on the note, in wine details, and in every chip surface. Filtering notes by aroma remains future scope. |
 | Accessibility | The canvas exposes a description plus custom Zoom in / Zoom out / Show whole wheel actions; a **list + search mode** in the same dialog exposes the identical taxonomy and selection contract for TalkBack, small screens, and large fonts. |
 
 Package layout: the wheel lives in `com.n8rtz.winetracker.aromawheel` (ported from the verified
