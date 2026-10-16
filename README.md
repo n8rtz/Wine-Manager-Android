@@ -2,7 +2,7 @@
 
 A personal wine cellar app for Android. It tracks what is in the cellar, what has been drunk, and what you thought of it. All data stays on the device in a local database; there is no account and no server.
 
-> **Private project, no licence.** Package `com.n8rtz.winetracker`, current version 0.5.5.
+> **Private project, no licence.** Package `com.n8rtz.winetracker`, current version 0.5.6.
 
 ## What it does
 
@@ -70,4 +70,4 @@ All in `_refs/`:
 
 ## Status
 
-The code is feature-complete for 0.5.5 plus unreleased work, but a recent cleanup and the newest features have **not yet been compiled or run on a device**. `THINGS_TO_CHECK.md` is the test plan.
+Version 0.5.6 was built and unit-tested by the owner before release; the on-device checks in `THINGS_TO_CHECK.md` are still the test plan and have not all been ticked.
