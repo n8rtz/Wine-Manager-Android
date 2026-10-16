@@ -114,7 +114,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 1. [ ] Open a wine from **Cellar** (for example Thanisch Riesling 2016). Tap **+ → Add Note**. The editor opens with that wine and vintage already chosen.
 2. [ ] Do the same from a non-vintage wine: the vintage shows NV.
 3. [ ] Save the note: it appears under that wine in **Tasting Notes**.
-4. [ ] From **Cellar**, **Rankings** or **Tasting Notes** (not a wine detail), tap **+ → Add Note**: the editor starts blank, as before.
+4. [ ] From **Cellar**, **Rankings** or **History** (not a wine detail), tap **+ → Add Note**: the editor starts blank, as before.
+5. [ ] On the **Tasting Notes** tab, tap **+**: the Add Tasting Note page opens straight away, with no submenu. Back returns to Tasting Notes. On Cellar the **+** still opens the submenu.
 
 ### Keeping your data between test installs
 

@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Date parsing:** Backup `Long` date fields accept epoch values plus strict slash dates with two- or four-digit years (including `1/1/2021`) and supported ISO forms. CSV date parsing requires full input consumption; incomplete or undated legacy rows are skipped rather than assigned guessed dates.
 
 ### Fixed
+- **+ button on Tasting Notes:** on the Tasting Notes tab, **+** now opens the Add Tasting Note page directly instead of the Add Wine / Add Note submenu. Every other screen keeps the submenu.
 - **Add Note from a wine's detail screen:** tapping **+ → Add Note** while viewing a wine now opens the note editor already set to that wine and vintage (the in-page Add Note button already did). From any other screen the editor still starts blank.
 - **Rankings list stays scrolled after re-sorting:** changing the sort, a filter or the search on **Rankings** now returns the list to the top. Only Cellar had this behaviour before; Rankings never did. Tasting Notes has the same gap and is not changed yet.
 - **Aroma launcher layout (Bug-022):** The launcher's chip strip now wraps (FlowRow) with two-dimensional long-press reordering; the score track, markers, labels and thumb share one inset and font-scaled label space so the 100 label no longer clips. *Device check pending.*
