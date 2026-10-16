@@ -711,6 +711,8 @@ private fun navigateToTab(navController: androidx.navigation.NavHostController, 
             saveState = true
         }
         launchSingleTop = true
-        restoreState = true
+        // The Profile tab always opens its standard root page. Restoring saved state would bring back
+        // whichever Settings / App Information / Price vs. Rating screen was open when the user left.
+        restoreState = route != "profile"
     }
 }

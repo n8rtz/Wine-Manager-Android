@@ -107,6 +107,15 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 3. [ ] Repeat with **Rating (High)**, a type or price filter, and by typing in the search box. Each time the list returns to the top.
 4. [ ] Open a wine's notes or detail from Rankings and go back: the list should not jump (it only resets when the list contents change).
 
+### Profile tab returns to the Profile page
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings → App Information**. Tap the **Cellar** tab, then the **Profile** tab. You see the standard Profile page (Price vs. Rating, Wine reviewers, Settings), not App Information.
+2. [ ] Repeat from **Profile → Settings** (stop there), and from **Profile → Price vs. Rating**, leaving via **Notes**, **History** and **Rankings**.
+3. [ ] From Settings, tap **Profile** directly: it still goes to the Profile page (unchanged).
+4. [ ] The other tabs still remember where you were: scroll Cellar, go to Rankings and back, and Cellar is as you left it.
+
 ### Add Note from Wine Detail
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
