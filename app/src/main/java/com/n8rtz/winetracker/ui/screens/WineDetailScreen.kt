@@ -522,7 +522,10 @@ fun WineDetailScreen(
                     "Drinking Window",
                     when {
                         windowStart != null || windowEnd != null -> "${windowStart ?: "Any time"} – ${windowEnd ?: "No end year"}"
-                        estimatedWindow != null -> "Est. ${estimatedWindow.startYear} – ${estimatedWindow.endYear} (${estimatedWindow.note})"
+                        estimatedWindow != null -> buildString {
+                            append("Est. ${estimatedWindow.startYear} – ${estimatedWindow.endYear}")
+                            estimatedWindow.note?.let { append(" ($it)") }
+                        }
                         else -> "Not set"
                     }
                 )

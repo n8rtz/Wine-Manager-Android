@@ -41,9 +41,12 @@ data class EstimatedWindow(
     val profileId: String,
     val reviewed: Boolean
 ) {
-    /** Short reason shown next to the years. */
-    val note: String
-        get() = if (level == MatchLevel.TYPE) "Estimate by type" else "Estimate: $label"
+    /**
+     * Text shown after the years. Only the weak case needs a warning: a type-only estimate says so.
+     * A specific match shows just the years; [label] (which may name a grape) is for logs and tests.
+     */
+    val note: String?
+        get() = if (level == MatchLevel.TYPE) "Estimate by type" else null
 }
 
 /**

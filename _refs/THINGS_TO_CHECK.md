@@ -87,12 +87,12 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 **What it is.** When a wine has no drinking window typed in, Wine Detail shows a computed “Est.” line from a draft ageing table (61 rules, each with a source note, all unreviewed). It is display-only: nothing is saved, and Ready Now / Too Early / Past Peak do not use it. The dev seed has no windows, so every in-date wine should show one.
 
 1. [ ] `./gradlew :app:testDebugUnitTest` passes, including `DrinkingWindowEstimatorTest` (the `drinkingwindow` package and this test class were compiled with a standalone Kotlin 2.4.21 compiler and the 15 tests passed with a stand-in runner, 2026-10-16; the Detail screen edit and the Gradle build itself were not run, so report any failure with its name).
-2. [ ] Open **Kirkland Signature Cotes Du Rhone Villages 2024**. Drinking Window reads **Est. 2026 – 2030 (Estimate: Côtes du Rhône Villages)**.
+2. [ ] Open **Kirkland Signature Cotes Du Rhone Villages 2024**. Drinking Window reads just **Est. 2026 – 2030**, with no wine, grape or appellation name after it.
 3. [ ] Open **Kirkland Signature Vacqueyras 2023** (Est. 2026 – 2033) and **Chateauneuf-du-Pape 2023** (Est. 2028 – 2038). Same region field, three different windows.
 4. [ ] Open **Kirkland Signature Rioja Reserva** (Est. 2024 – 2032 for the 2020) and **Castillo D Logrono Rioja 2019** (Est. 2020 – 2022): a plain Rioja is shorter than a Reserva.
 5. [ ] Open **Kirkland Signature Pauillac Bordeaux 2023** (Est. 2029 – 2038) and a **Bordeaux Superieur 2023** (Est. 2025 – 2030).
 6. [ ] Open **Thanisch Riesling Spatlese 2016** (Est. 2021 – 2031): not “past peak” as the old type-only idea would have said.
-7. [ ] Open a wine the table does not know (for example **Penfold's Max's Cab 2022**, or **Marani Kindzmarauli 2022**). The line ends **(Estimate by type)**.
+7. [ ] Open a wine the table does not know (for example **Penfold's Max's Cab 2022**, or **Marani Kindzmarauli 2022**). The line ends **(Estimate by type)**, the only case that carries a note.
 8. [ ] Open a **non-vintage** wine: the row says **Not set** (no estimate).
 9. [ ] Tap **Edit** on a wine, type a start and an end year and **Save**: the row now shows your years with no “Est.”. Clear both fields and save: the estimate returns.
 10. [ ] In **Cellar**, the filters and sorts Ready Now / Too Early / Past Peak still behave as before: a wine with no typed window is not placed in any of them because of its estimate.

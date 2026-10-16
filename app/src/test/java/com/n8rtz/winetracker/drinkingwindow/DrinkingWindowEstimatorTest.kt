@@ -140,7 +140,8 @@ class DrinkingWindowEstimatorTest {
     @Test
     fun specificNote_namesTheRule() {
         val w = estimate(name = "Chateauneuf du Pape", vintage = "2020")!!
-        assertEquals("Estimate: Châteauneuf-du-Pape red", w.note)
+        assertEquals("Châteauneuf-du-Pape red", w.label)
+        assertNull(w.note) // a specific match shows just the years
         assertEquals(false, w.reviewed)
     }
 
