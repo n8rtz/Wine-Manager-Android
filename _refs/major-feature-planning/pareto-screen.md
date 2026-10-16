@@ -4,7 +4,7 @@
 
 Help a user compare a wine's recorded average tasting score against its available bottle price, find efficient price/rating trade-offs, and inspect the wine represented by a chart point.
 
-**Related backlog:** `_refs/wishes-v2.md`, items 37–38.
+**Related backlog:** `_refs/ARCHIVE.md`, W-048 and W-049 (formerly wishes-v2 items 37–38; completed).
 
 ## Architecture-Level Work Breakdown Structure — 1.0
 
@@ -107,6 +107,8 @@ The screen is reachable from the Profile area for now; its eventual main-navigat
 - Is average-rating-per-price the desired dashboard ranking, or should the dashboard show the complete frontier without collapsing it to a ranked list?
 - Should dashboard leader counts or price-source explanations be expandable, especially when several records contribute to a median?
 - Keep the Profile entry until a separate navigation decision is made; do not relocate it as part of this feature plan.
+
+**Resolved 2026-10-16 (owner):** keep the average-score-per-dollar ranking and the Profile entry exactly as built; revisit only after the device check. The expandable-detail question is left open.
 
 ## Acceptance checks
 

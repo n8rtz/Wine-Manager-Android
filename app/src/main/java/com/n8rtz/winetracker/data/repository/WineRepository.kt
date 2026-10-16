@@ -3,7 +3,6 @@ package com.n8rtz.winetracker.data.repository
 import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
-import com.n8rtz.winetracker.network.WineImageFetcher
 import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.ConsumptionEvent
 import com.n8rtz.winetracker.data.local.ConsumptionEventWithDefinition
@@ -27,7 +26,6 @@ class WineRepository(
     private val ratingDao: RatingDao,
     val database: WineDatabase
 ) {
-    private val imageFetcher = WineImageFetcher()
     val activeInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getActiveInventory()
     val archivedInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getArchivedBottles()
     val tastingHistory: Flow<List<TastingNoteWithDefinition>> = tastingNoteDao.getTastingHistory()
@@ -84,11 +82,8 @@ class WineRepository(
         val normalizedVintage = normalizeVintage(vintage)
         val existingDefinition = wineDao.getDefinitionByDetails(maker, name)
 
-        val imageUrl = if (existingDefinition?.imageUrl == null) {
-            imageFetcher.fetchImageUrl(maker, name, normalizedVintage)
-        } else {
-            existingDefinition.imageUrl
-        }
+        // No automatic image lookup: images come from the reviewed Open Food Facts import (Profile).
+        val imageUrl = existingDefinition?.imageUrl
 
         val definitionId = if (existingDefinition == null) {
             wineDao.insertDefinition(
@@ -244,9 +239,6 @@ class WineRepository(
         return inventoryDao.getAllPricesForDefinitions(definitionIds)
     }
 
-    suspend fun getAllWithoutImages(): List<WineDefinition> {
-        return wineDao.getAllWithoutImages()
-    }
 
     suspend fun consumeBottle(
         bottleId: Long,

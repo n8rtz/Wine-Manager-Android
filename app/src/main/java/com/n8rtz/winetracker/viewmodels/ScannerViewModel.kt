@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.repository.WineRepository
-import com.n8rtz.winetracker.image.WineImageBatchProcessor
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import com.n8rtz.winetracker.scanner.BarcodeIdentityCache
 import com.n8rtz.winetracker.scanner.LabelIdentityResolver
@@ -61,17 +60,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         retrofit.create(OpenFoodFactsApi::class.java) 
     }
     
-    private val batchProcessor by lazy { 
-        Log.d("WineTracker", "ScannerViewModel: Initializing BatchProcessor (lazy)")
-        WineImageBatchProcessor(api, db.wineDao(), getApplication()) 
-    }
-
     // UI States
-    var imageImportProgress by mutableStateOf<Float?>(null)
-        private set
-    var imageImportStatus by mutableStateOf("")
-        private set
-
     private val _scannedResult = MutableStateFlow<ScannedWine?>(null)
     val scannedResult: StateFlow<ScannedWine?> = _scannedResult.asStateFlow()
 
@@ -213,22 +202,6 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
             is LabelScanState.FinishingCancelledScan, LabelScanState.Idle -> null
         }
         requestId?.let(::dismissLabelScan)
-    }
-
-    fun startImageImport() {
-        viewModelScope.launch {
-            val winesToProcess = repository.getAllWithoutImages()
-            if (winesToProcess.isEmpty()) return@launch
-
-            batchProcessor.processImport(winesToProcess) { done, total ->
-                imageImportProgress = done.toFloat() / total
-                imageImportStatus = "Finding images... $done/$total"
-            }
-            imageImportStatus = "Done!"
-            kotlinx.coroutines.delay(2000)
-            imageImportProgress = null
-            imageImportStatus = ""
-        }
     }
 
     fun clearScannedResult() { _scannedResult.value = null }

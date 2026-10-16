@@ -28,6 +28,23 @@ val escapedBuildBranch = buildBranchName
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 
+// Identifies exactly which build is installed (shown in Settings > App Information), so a wireless-debugging
+// install can be matched to the source it came from even when there are many iterations between commits.
+fun gitOutput(vararg args: String): String? = runCatching {
+    val process = ProcessBuilder("git", *args)
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+    val output = process.inputStream.bufferedReader().use { it.readText().trim() }
+    if (process.waitFor() == 0) output else null
+}.getOrNull()
+
+val buildCommit = gitOutput("rev-parse", "--short", "HEAD")?.takeIf { it.isNotBlank() } ?: "unknown"
+// True when the working tree has uncommitted changes (the commit hash alone then does not identify the build).
+// The tracked .idea/ folder is ignored here because Android Studio rewrites those files on its own.
+val buildDirty = gitOutput("status", "--porcelain", "--", ".", ":(exclude).idea")?.isNotBlank() == true
+val buildTimeMillis = System.currentTimeMillis()
+
 android {
     namespace = "com.n8rtz.winetracker"
     compileSdk = 36
@@ -39,6 +56,9 @@ android {
         versionCode = 55
         versionName = "0.5.5"
         buildConfigField("String", "BUILD_BRANCH", "\"$escapedBuildBranch\"")
+        buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
+        buildConfigField("boolean", "BUILD_DIRTY", buildDirty.toString())
+        buildConfigField("long", "BUILD_TIME_MILLIS", "${buildTimeMillis}L")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

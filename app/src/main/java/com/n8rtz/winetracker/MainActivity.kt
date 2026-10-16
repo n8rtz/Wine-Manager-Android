@@ -58,7 +58,9 @@ import com.n8rtz.winetracker.ui.components.BottomBarLabelSizing
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.AppInfoScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
+import com.n8rtz.winetracker.data.importer.DevSeedRestorer
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
+import com.n8rtz.winetracker.ui.screens.ProfileSection
 import com.n8rtz.winetracker.ui.screens.ParetoScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
 import com.n8rtz.winetracker.ui.screens.TastingNoteEditorScreen
@@ -181,6 +183,18 @@ class MainActivity : ComponentActivity() {
                 Log.d("WineTracker", "MainActivity: Background migration check complete")
             } catch (e: Exception) {
                 Log.e("WineTracker", "MainActivity: Error during background migration", e)
+            }
+
+            // Debug builds only: restore the developer's bundled backup into an empty database (see DevSeedRestorer).
+            val seedMessage = when (val result = DevSeedRestorer(applicationContext, database).restoreIfNeeded()) {
+                is DevSeedRestorer.Result.Restored -> "Dev seed restored: ${result.definitions} wines, ${result.notes} notes"
+                is DevSeedRestorer.Result.Failed -> "Dev seed restore failed: ${result.message}"
+                else -> null
+            }
+            if (seedMessage != null) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(applicationContext, seedMessage, android.widget.Toast.LENGTH_LONG).show()
+                }
             }
         }
 
@@ -372,7 +386,7 @@ fun MainAppScaffold(
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_RANKINGS, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "profile" || currentRoute == "app_info" || currentRoute == "pareto",
+                    selected = currentRoute == "profile" || currentRoute == "settings" || currentRoute == "app_info" || currentRoute == "pareto",
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
@@ -420,8 +434,20 @@ fun MainAppScaffold(
                     viewModel = viewModel,
                     wineImageImportViewModel = wineImageImportViewModel,
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onAppInfoClick = { navController.navigate("app_info") },
+                    onSettingsClick = { navController.navigate("settings") },
                     onParetoClick = { navController.navigate("pareto") }
+                ) {
+                    navigateToTab(navController, "cellar")
+                }
+            }
+            composable("settings") {
+                ProfileScreen(
+                    viewModel = viewModel,
+                    wineImageImportViewModel = wineImageImportViewModel,
+                    tastingNoteViewModel = tastingNoteViewModel,
+                    section = ProfileSection.SETTINGS,
+                    onBack = { navController.popBackStack() },
+                    onAppInfoClick = { navController.navigate("app_info") }
                 ) {
                     navigateToTab(navController, "cellar")
                 }
@@ -639,6 +665,13 @@ private fun navigateToTab(navController: androidx.navigation.NavHostController, 
     // Selecting the History tab from a note opened there should return to its root screen.
     if (route == "history" && currentRoute != "history" &&
         navController.popBackStack("history", inclusive = false)
+    ) {
+        return
+    }
+
+    // Selecting the Profile tab from Settings, App Information or Price vs. Rating returns to the Profile root.
+    if (route == "profile" && currentRoute != "profile" &&
+        navController.popBackStack("profile", inclusive = false)
     ) {
         return
     }

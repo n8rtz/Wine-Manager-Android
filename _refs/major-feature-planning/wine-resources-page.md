@@ -119,6 +119,8 @@ The entry point (for example, Profile/Utility Hub or a dedicated destination) is
 - Should resources launch as a Profile destination, a searchable library, or contextual links from wine/note screens?
 - Who reviews and updates content, and how should corrections be handled?
 
+**Resolved 2026-10-16 (owner):** the page launches as a destination on the **Profile** tab. Coverage, data sources and content ownership are still open (see `BACKLOG.md` W-052 Phase 0).
+
 ## Acceptance checks
 
 - Users can reach both an interactive map and a non-map region list; selecting a region opens clearly sourced information.
