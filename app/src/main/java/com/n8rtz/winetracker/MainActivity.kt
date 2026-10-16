@@ -300,7 +300,16 @@ fun MainAppScaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
                 Surface(
-                    onClick = { isMenuExpanded = !isMenuExpanded },
+                    onClick = {
+                        if (currentRoute == "notes") {
+                            // On Tasting Notes the only sensible add is a note: skip the submenu.
+                            Log.d("WineTracker", "FAB: Tasting Notes, opening Add Note directly")
+                            isMenuExpanded = false
+                            navController.navigate("note_editor/create")
+                        } else {
+                            isMenuExpanded = !isMenuExpanded
+                        }
+                    },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
