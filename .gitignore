@@ -10,9 +10,10 @@
 .DS_Store
 /build
 
-# Local JVM harness for the scanner logic tests (see .ocr-harness/README.md)
-.ocr-harness/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio project files are per-machine; do not track them
+/.idea/

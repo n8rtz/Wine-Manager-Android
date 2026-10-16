@@ -4,7 +4,9 @@
 
 Let a user scan a wine bottle label from the Add to Cellar or Add Tasting Note flow, extract likely wine details, and use those details to prefill the active form for review.
 
-**Related backlog:** `_refs/wishes-v2.md`, item 36.
+**Related backlog:** `_refs/ARCHIVE.md`, W-047 (declined; formerly wishes-v2 item 36).
+
+> **Scope decision (2026-10-15):** Scanning is **Add Wine only**. Scanning on Add Tasting Note (W-047) and saving the user's scan photo as a wine image (W-021) were declined — see `ARCHIVE.md` Part D. Treat the Add Tasting Note sections below (4.1.1.1, 4.4.2, the Add Note flow and tests) as out of scope.
 
 ## Architecture-Level Work Breakdown Structure — 4.0
 
@@ -179,7 +181,7 @@ Evaluate producer/maker, wine name, vintage, country, region, and grape/type whe
 ## Privacy and technical planning
 
 - Prefer on-device processing for an initial implementation if it meets accuracy and device-support needs. If a service would upload images, decide the provider, disclosure, consent, retention, and failure behavior before implementation.
-- Existing `_refs/PLAN.md` mentions CameraX and ML Kit text recognition as a prior proposal. Revalidate versions, capabilities, and privacy implications; this is not a final technology decision.
+- The retired `PLAN.md` (see `_refs/ARCHIVE.md`, Part C) mentioned CameraX and ML Kit text recognition as a prior proposal. Revalidate versions, capabilities, and privacy implications; this is not a final technology decision.
 - Keep capture, recognition, catalog matching, and form-prefill responsibilities separable so the UI can show partial results and support manual correction.
 - Handle rotation, low light, glare, multiple labels/text blocks, no match, and network/service failure without losing the user's form draft.
 
@@ -196,6 +198,8 @@ Evaluate producer/maker, wine name, vintage, country, region, and grape/type whe
 - Which fields can be matched safely and how should confidence be communicated?
 - Should a user be able to retry with another image or manually crop/retake the label?
 - Which minimum Android versions and device capabilities are supported?
+
+**Resolved 2026-10-16 (owner):** OCR plus an Open Food Facts barcode lookup, always with review-before-fill; no paid recognition provider. Retry is the **Try Again** button; manual crop/retake is revisited only if device testing shows it is needed. Scanning is on **Add Wine** only (the Add Note scan was declined, see `ARCHIVE.md` Part D), so the “both flows” wording in the acceptance checks below is superseded. The minimum Android version is the app's (API 33).
 
 ## Acceptance checks
 

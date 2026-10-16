@@ -58,7 +58,9 @@ import com.n8rtz.winetracker.ui.components.BottomBarLabelSizing
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.AppInfoScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
+import com.n8rtz.winetracker.data.importer.DevSeedRestorer
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
+import com.n8rtz.winetracker.ui.screens.ProfileSection
 import com.n8rtz.winetracker.ui.screens.ParetoScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
 import com.n8rtz.winetracker.ui.screens.TastingNoteEditorScreen
@@ -182,6 +184,18 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 Log.e("WineTracker", "MainActivity: Error during background migration", e)
             }
+
+            // Debug builds only: restore the developer's bundled backup into an empty database (see DevSeedRestorer).
+            val seedMessage = when (val result = DevSeedRestorer(applicationContext, database).restoreIfNeeded()) {
+                is DevSeedRestorer.Result.Restored -> "Dev seed restored: ${result.definitions} wines, ${result.notes} notes"
+                is DevSeedRestorer.Result.Failed -> "Dev seed restore failed: ${result.message}"
+                else -> null
+            }
+            if (seedMessage != null) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(applicationContext, seedMessage, android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
         }
 
         setContent {
@@ -277,6 +291,8 @@ fun MainAppScaffold(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var isMenuExpanded by remember { mutableStateOf(false) }
+    // Used only so "Add Note" from a wine's detail screen can prefill that wine.
+    val activeInventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val fabRotation by animateFloatAsState(targetValue = if (isMenuExpanded) 45f else 0f, label = "fabRotation")
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -284,7 +300,16 @@ fun MainAppScaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
                 Surface(
-                    onClick = { isMenuExpanded = !isMenuExpanded },
+                    onClick = {
+                        if (currentRoute == "notes") {
+                            // On Tasting Notes the only sensible add is a note: skip the submenu.
+                            Log.d("WineTracker", "FAB: Tasting Notes, opening Add Note directly")
+                            isMenuExpanded = false
+                            navController.navigate("note_editor/create")
+                        } else {
+                            isMenuExpanded = !isMenuExpanded
+                        }
+                    },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
@@ -372,7 +397,7 @@ fun MainAppScaffold(
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_RANKINGS, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "profile" || currentRoute == "app_info" || currentRoute == "pareto",
+                    selected = currentRoute == "profile" || currentRoute == "settings" || currentRoute == "app_info" || currentRoute == "pareto",
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
@@ -420,8 +445,20 @@ fun MainAppScaffold(
                     viewModel = viewModel,
                     wineImageImportViewModel = wineImageImportViewModel,
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onAppInfoClick = { navController.navigate("app_info") },
+                    onSettingsClick = { navController.navigate("settings") },
                     onParetoClick = { navController.navigate("pareto") }
+                ) {
+                    navigateToTab(navController, "cellar")
+                }
+            }
+            composable("settings") {
+                ProfileScreen(
+                    viewModel = viewModel,
+                    wineImageImportViewModel = wineImageImportViewModel,
+                    tastingNoteViewModel = tastingNoteViewModel,
+                    section = ProfileSection.SETTINGS,
+                    onBack = { navController.popBackStack() },
+                    onAppInfoClick = { navController.navigate("app_info") }
                 ) {
                     navigateToTab(navController, "cellar")
                 }
@@ -577,7 +614,22 @@ fun MainAppScaffold(
                         onClick = {
                             Log.d("WineTracker", "Popup: Add Note clicked")
                             isMenuExpanded = false
-                            navController.navigate("note_editor/create")
+                            // From a wine's detail screen, start the note on that wine and vintage.
+                            val detailBottleId = if (currentRoute == "detail/{bottleId}") {
+                                navBackStackEntry?.arguments?.getLong("bottleId")
+                            } else null
+                            val detailBottle = detailBottleId?.let { id ->
+                                activeInventory.find { it.bottle.bottleId == id }
+                            }
+                            Log.d("WineTracker", "Popup: Add Note from detail bottleId=$detailBottleId found=${detailBottle != null}")
+                            if (detailBottle != null) {
+                                navController.navigate(
+                                    "note_editor/create?definitionId=${detailBottle.definition.definitionId}" +
+                                        "&vintage=${Uri.encode(detailBottle.bottle.vintage)}"
+                                )
+                            } else {
+                                navController.navigate("note_editor/create")
+                            }
                         }
                     )
                 }
@@ -643,6 +695,13 @@ private fun navigateToTab(navController: androidx.navigation.NavHostController, 
         return
     }
 
+    // Selecting the Profile tab from Settings, App Information or Price vs. Rating returns to the Profile root.
+    if (route == "profile" && currentRoute != "profile" &&
+        navController.popBackStack("profile", inclusive = false)
+    ) {
+        return
+    }
+
     // Do not preserve the transient add-wine form when switching to another tab.
     if (currentRoute == "add_wine" && route != "cellar") {
         navController.popBackStack("cellar", inclusive = false)
@@ -652,6 +711,8 @@ private fun navigateToTab(navController: androidx.navigation.NavHostController, 
             saveState = true
         }
         launchSingleTop = true
-        restoreState = true
+        // The Profile tab always opens its standard root page. Restoring saved state would bring back
+        // whichever Settings / App Information / Price vs. Rating screen was open when the user left.
+        restoreState = route != "profile"
     }
 }

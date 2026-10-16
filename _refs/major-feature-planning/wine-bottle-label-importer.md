@@ -208,7 +208,7 @@ Do not put private API keys in the Android APK. If a future provider requires a 
 ## Remaining decisions / release gates
 
 - Open Food Facts is the selected source; proper permission is assumed per the user's direction. Preserve source/contributor provenance and required attribution. License metadata remains optional when the provider supplies it.
-- Profile now provides the reviewed batch queue. Per-wine detail search/replace remains a possible later iteration.
+- Profile now provides the reviewed batch queue. Per-wine detail search/replace was declined (2026-10-15); images stay managed from Profile.
 - The MVP uses one definition-level image, shared across its vintages. A known vintage-specific label should be skipped unless the data model is explicitly expanded.
 - The configurable 256 MiB soft budget is implemented with a 64–1,024 MiB user range; validate the default on real devices and tune after measuring.
 - JSON backups retain Open Food Facts source/provenance metadata but do not include compressed image bytes or relative local paths. Restore nulls local paths and clears app-private files; provenance-bearing assets do not automatically fetch remote source images. They become eligible for Profile's reviewed missing-image search, where a new offline copy again requires explicit approval.

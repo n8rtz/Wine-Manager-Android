@@ -70,7 +70,7 @@ with header, notice banner, chips, list mode, and attribution caption.
 
 - Filtering the tasting-notes list by aroma.
 - Taxonomy localization/synonyms; vocabulary growth beyond the Wine Folly set.
-- Exporting aromas in CSV (JSON backup already includes them).
+- ~~Exporting aromas in CSV~~ — declined (no CSV export; JSON backup already includes aromas).
 
 ## Acceptance checks
 

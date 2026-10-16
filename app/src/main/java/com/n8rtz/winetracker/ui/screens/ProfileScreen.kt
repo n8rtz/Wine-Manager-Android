@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.WineBar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ScatterPlot
 import androidx.compose.material3.*
@@ -49,12 +52,18 @@ import java.text.DateFormat
 import java.util.Date
 import kotlin.math.roundToInt
 
+/** Which of the two Profile-tab screens [ProfileScreen] shows. They share one state/dialog host. */
+enum class ProfileSection { HOME, SETTINGS }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: WineViewModel,
     wineImageImportViewModel: WineImageImportViewModel,
     tastingNoteViewModel: TastingNoteViewModel,
+    section: ProfileSection = ProfileSection.HOME,
+    onSettingsClick: () -> Unit = {},
+    onBack: () -> Unit = {},
     onAppInfoClick: () -> Unit = {},
     onParetoClick: () -> Unit = {},
     onImportComplete: () -> Unit
@@ -128,6 +137,18 @@ fun ProfileScreen(
     }
     
     Scaffold(
+        topBar = {
+            if (section == ProfileSection.SETTINGS) {
+                TopAppBar(
+                    title = { Text("Settings") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -138,176 +159,209 @@ fun ProfileScreen(
                     .padding(16.dp)
             ) {
                 
-                Text(
-                    text = "Utility Hub",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                if (section == ProfileSection.HOME) {
+                    Text(
+                        text = "Profile",
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
 
-                ListItem(
-                    headlineContent = { Text("Price vs. Rating") },
-                    supportingContent = { Text("Explore wine value with a Pareto frontier") },
-                    leadingContent = {
-                        Icon(Icons.Filled.ScatterPlot, contentDescription = null, tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onParetoClick)
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    ListItem(
+                        headlineContent = { Text("Price vs. Rating") },
+                        supportingContent = { Text("Explore wine value with a Pareto frontier") },
+                        leadingContent = {
+                            Icon(Icons.Filled.ScatterPlot, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onParetoClick)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // Import Data (JSON)
-                ListItem(
-                    headlineContent = { Text("Import Data (JSON)") },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Filled.Upload,
-                            contentDescription = "Import Data",
-                            tint = bordeauxRed
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            importJsonLauncher.launch(arrayOf("application/json", "text/*"))
+                    ListItem(
+                        headlineContent = { Text("Wine reviewers") },
+                        supportingContent = {
+                            Text("${reviewerNames.size} choices for the tasting-note reviewer dropdown")
+                        },
+                        leadingContent = {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            reviewerDraft = reviewerNames
+                            newReviewer = ""
+                            showReviewerSettings = true
                         }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    ListItem(
+                        headlineContent = { Text("Settings") },
+                        supportingContent = { Text("Backup and restore, legacy imports, wine images, app information") },
+                        leadingContent = {
+                            Icon(Icons.Filled.Settings, contentDescription = null, tint = bordeauxRed)
+                        },
+                        trailingContent = {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onSettingsClick)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                } else {
+                    Text(
+                        text = "Backup & data",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = bordeauxRed,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    // Import Data (JSON)
+                    ListItem(
+                        headlineContent = { Text("Import Data (JSON)") },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Filled.Upload,
+                                contentDescription = "Import Data",
+                                tint = bordeauxRed
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                importJsonLauncher.launch(arrayOf("application/json", "text/*"))
+                            }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                ListItem(
-                    headlineContent = { Text("Import Legacy Tasting Notes (CSV)") },
-                    supportingContent = { Text("Adds dated notes; unrated rows are kept, and rows without a date or exact wine match are skipped.") },
-                    leadingContent = {
-                        Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        importLegacyNotesLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel"))
-                    }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                ListItem(
-                    headlineContent = { Text("Import Legacy History Log (CSV)") },
-                    supportingContent = { Text("Adds dated consumption events; rows without a usable date or wine are skipped.") },
-                    leadingContent = {
-                        Icon(Icons.Filled.History, contentDescription = null, tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        importLegacyHistoryLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel"))
-                    }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                // Export Data
-                ListItem(
-                    headlineContent = { Text("Export Data") },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Filled.Download,
-                            contentDescription = "Export Data",
-                            tint = bordeauxRed
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.prepareExport(exportJsonLauncher)
+                    ListItem(
+                        headlineContent = { Text("Import Legacy Tasting Notes (CSV)") },
+                        supportingContent = { Text("Adds dated notes; unrated rows are kept, and rows without a date or exact wine match are skipped.") },
+                        leadingContent = {
+                            Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            importLegacyNotesLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel"))
                         }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // Reset Database
-                ListItem(
-                    headlineContent = { Text("Reset Database") },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Filled.DeleteForever,
-                            contentDescription = "Reset Database",
-                            tint = bordeauxRed
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showResetDialog = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                // Candidate search is user-driven; only per-image approval writes a durable file.
-                ListItem(
-                    headlineContent = { Text("Review Missing Images (Open Food Facts)") },
-                    supportingContent = {
-                        Text(
-                            when (val state = imageImportState) {
-                                WineImageImportState.LoadingQueue -> "Preparing the review queue…"
-                                is WineImageImportState.Searching -> "Searching ${state.position}/${state.total}: ${state.wine.maker} — ${state.wine.name}"
-                                is WineImageImportState.Reviewing -> "Review ${state.position}/${state.total}: confirm the wine and label before choosing an image."
-                                is WineImageImportState.Preparing -> "Preparing a compressed offline copy…"
-                                is WineImageImportState.Saving -> "Saving approved image ${state.position}/${state.total}…"
-                                is WineImageImportState.SearchError -> "Search failed for ${state.wine.name}. Retry or skip."
-                                is WineImageImportState.ImportError -> "Could not save ${state.wine.name}. Retry or skip."
-                                is WineImageImportState.BatchBudgetWarning -> "Review queue is ready; estimated size is above the soft budget."
-                                is WineImageImportState.ImageBudgetWarning -> "This image would exceed the soft storage budget."
-                                is WineImageImportState.Finished -> if (state.imported == 0 && state.skipped == 0 && state.failed == 0) {
-                                    "No wines currently need an image."
-                                } else {
-                                    "Last batch: ${state.imported} imported, ${state.skipped} skipped, ${state.failed} failed."
-                                }
-                                WineImageImportState.Idle -> "Searches Open Food Facts with wine identity/location only. Preview first; only approved images are compressed and saved offline."
-                            },
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    },
-                    leadingContent = {
-                        Icon(Icons.Filled.Download, contentDescription = "Review wine image candidates", tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable(
-                        enabled = imageImportState is WineImageImportState.Idle || imageImportState is WineImageImportState.Finished
-                    ) { wineImageImportViewModel.startImport() }
-                )
-                ListItem(
-                    headlineContent = { Text("Offline wine image storage") },
-                    supportingContent = {
-                        Text(
-                            "${formatMiB(storageStatus.usedBytes)} MiB used · " +
-                                "${formatMiB(storageStatus.softBudgetBytes)} MiB soft budget"
-                        )
-                    },
-                    leadingContent = {
-                        Icon(Icons.Filled.Download, contentDescription = null, tint = bordeauxRed)
-                    },
-                    trailingContent = {
-                        Column(horizontalAlignment = Alignment.End) {
-                            TextButton(onClick = { showOfflineImageManager = true }) { Text("Manage") }
-                            TextButton(onClick = {
-                                storageBudgetMiB = storageStatus.softBudgetBytes / (1024f * 1024f)
-                                showStorageBudgetDialog = true
-                            }) { Text("Change") }
+                    ListItem(
+                        headlineContent = { Text("Import Legacy History Log (CSV)") },
+                        supportingContent = { Text("Adds dated consumption events; rows without a usable date or wine are skipped.") },
+                        leadingContent = {
+                            Icon(Icons.Filled.History, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            importLegacyHistoryLauncher.launch(arrayOf("text/*", "application/vnd.ms-excel"))
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                ListItem(
-                    headlineContent = { Text("Wine reviewers") },
-                    supportingContent = {
-                        Text("${reviewerNames.size} choices for the tasting-note reviewer dropdown")
-                    },
-                    leadingContent = {
-                        Icon(Icons.Filled.Star, contentDescription = null, tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        reviewerDraft = reviewerNames
-                        newReviewer = ""
-                        showReviewerSettings = true
-                    }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                ListItem(
-                    headlineContent = { Text("App Information") },
-                    supportingContent = { Text("App version, database version, and build branch") },
-                    leadingContent = {
-                        Icon(Icons.Filled.Info, contentDescription = null, tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onAppInfoClick)
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // Export Data
+                    ListItem(
+                        headlineContent = { Text("Export Data") },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Filled.Download,
+                                contentDescription = "Export Data",
+                                tint = bordeauxRed
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.prepareExport(exportJsonLauncher)
+                            }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // Reset Database
+                    ListItem(
+                        headlineContent = { Text("Reset Database") },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Filled.DeleteForever,
+                                contentDescription = "Reset Database",
+                                tint = bordeauxRed
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showResetDialog = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = "Wine images",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = bordeauxRed,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    // Candidate search is user-driven; only per-image approval writes a durable file.
+                    ListItem(
+                        headlineContent = { Text("Review Missing Images (Open Food Facts)") },
+                        supportingContent = {
+                            Text(
+                                when (val state = imageImportState) {
+                                    WineImageImportState.LoadingQueue -> "Preparing the review queue…"
+                                    is WineImageImportState.Searching -> "Searching ${state.position}/${state.total}: ${state.wine.maker} — ${state.wine.name}"
+                                    is WineImageImportState.Reviewing -> "Review ${state.position}/${state.total}: confirm the wine and label before choosing an image."
+                                    is WineImageImportState.Preparing -> "Preparing a compressed offline copy…"
+                                    is WineImageImportState.Saving -> "Saving approved image ${state.position}/${state.total}…"
+                                    is WineImageImportState.SearchError -> "Search failed for ${state.wine.name}. Retry or skip."
+                                    is WineImageImportState.ImportError -> "Could not save ${state.wine.name}. Retry or skip."
+                                    is WineImageImportState.BatchBudgetWarning -> "Review queue is ready; estimated size is above the soft budget."
+                                    is WineImageImportState.ImageBudgetWarning -> "This image would exceed the soft storage budget."
+                                    is WineImageImportState.Finished -> if (state.imported == 0 && state.skipped == 0 && state.failed == 0) {
+                                        "No wines currently need an image."
+                                    } else {
+                                        "Last batch: ${state.imported} imported, ${state.skipped} skipped, ${state.failed} failed."
+                                    }
+                                    WineImageImportState.Idle -> "Searches Open Food Facts with wine identity/location only. Preview first; only approved images are compressed and saved offline."
+                                },
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        leadingContent = {
+                            Icon(Icons.Filled.Download, contentDescription = "Review wine image candidates", tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(
+                            enabled = imageImportState is WineImageImportState.Idle || imageImportState is WineImageImportState.Finished
+                        ) { wineImageImportViewModel.startImport() }
+                    )
+                    ListItem(
+                        headlineContent = { Text("Offline wine image storage") },
+                        supportingContent = {
+                            Text(
+                                "${formatMiB(storageStatus.usedBytes)} MiB used · " +
+                                    "${formatMiB(storageStatus.softBudgetBytes)} MiB soft budget"
+                            )
+                        },
+                        leadingContent = {
+                            Icon(Icons.Filled.Download, contentDescription = null, tint = bordeauxRed)
+                        },
+                        trailingContent = {
+                            Column(horizontalAlignment = Alignment.End) {
+                                TextButton(onClick = { showOfflineImageManager = true }) { Text("Manage") }
+                                TextButton(onClick = {
+                                    storageBudgetMiB = storageStatus.softBudgetBytes / (1024f * 1024f)
+                                    showStorageBudgetDialog = true
+                                }) { Text("Change") }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = "About",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = bordeauxRed,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    ListItem(
+                        headlineContent = { Text("App Information") },
+                        supportingContent = { Text("App version, database version, and build branch") },
+                        leadingContent = {
+                            Icon(Icons.Filled.Info, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onAppInfoClick)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
             }
             
             if (importState is RestoreImportState.Loading) {

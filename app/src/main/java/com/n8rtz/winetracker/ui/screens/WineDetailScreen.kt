@@ -29,6 +29,8 @@ import coil.request.ImageRequest
 import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
 import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 import com.n8rtz.winetracker.data.local.WineBottle
+import com.n8rtz.winetracker.drinkingwindow.DrinkingWindowEstimator
+import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.resolveWineImageModel
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
@@ -497,10 +499,35 @@ fun WineDetailScreen(
                 DetailRow(Icons.Default.AttachMoney, "Purchase Price", "$${"%.2f".format(bottle.price ?: 0.0)}")
                 val windowStart = editedWine.drinkingWindowStart
                 val windowEnd = editedWine.drinkingWindowEnd
+                // W-050 Phase 1: display-only estimate, shown only while the owner has entered no window.
+                // It is never saved and never feeds the Cellar filters or sorts.
+                val estimatedWindow = remember(editedWine, bottle.vintage) {
+                    if (windowStart != null || windowEnd != null) null
+                    else DrinkingWindowEstimator.estimate(
+                        WineDescription(
+                            type = editedWine.type,
+                            country = editedWine.country,
+                            region = editedWine.region,
+                            subregion = editedWine.subregion,
+                            maker = editedWine.maker,
+                            name = editedWine.name,
+                            vintage = bottle.vintage
+                        )
+                    )?.also {
+                        android.util.Log.d("DrinkingWindow", "wine=${editedWine.definitionId} profile=${it.profileId} ${it.startYear}-${it.endYear} level=${it.level}")
+                    }
+                }
                 DetailRow(
                     Icons.Default.Schedule,
                     "Drinking Window",
-                    if (windowStart == null && windowEnd == null) "Not set" else "${windowStart ?: "Any time"} – ${windowEnd ?: "No end year"}"
+                    when {
+                        windowStart != null || windowEnd != null -> "${windowStart ?: "Any time"} – ${windowEnd ?: "No end year"}"
+                        estimatedWindow != null -> buildString {
+                            append("Est. ${estimatedWindow.startYear} – ${estimatedWindow.endYear}")
+                            estimatedWindow.note?.let { append(" ($it)") }
+                        }
+                        else -> "Not set"
+                    }
                 )
                 Spacer(Modifier.height(16.dp))
                 Text("Tasting Notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
