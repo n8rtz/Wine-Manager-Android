@@ -117,6 +117,20 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 4. [ ] From **Cellar**, **Rankings** or **History** (not a wine detail), tap **+ → Add Note**: the editor starts blank, as before.
 5. [ ] On the **Tasting Notes** tab, tap **+**: the Add Tasting Note page opens straight away, with no submenu. Back returns to Tasting Notes. On Cellar the **+** still opens the submenu.
 
+### History: restore to cellar and delete log entry
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+Use a throwaway install or the debug seed, not data you can't replace.
+
+1. [ ] Open **History**. Each entry shows a **⋮** at its right edge. Tapping the card itself still opens its note as before.
+2. [ ] Note one wine's quantity in **Cellar**, then consume one bottle from its detail screen (**Mark as Consumed**, add a rating or note) so a History entry appears.
+3. [ ] On that entry tap **⋮ → Restore to cellar → Restore**. The entry disappears, the wine's cellar quantity goes back up by one, and the tasting note (if you wrote one) is still in **Tasting Notes**.
+4. [ ] Consume a bottle again, then **⋮ → Delete log entry → Delete**. The entry disappears, the cellar quantity does **not** change, and the note is still in **Tasting Notes**.
+5. [ ] Tap **Cancel** in either dialog: nothing changes.
+6. [ ] Restore an old entry that has no date (“Date not recorded”): it still restores. If the wine's cellar row was deleted earlier, the wine reappears in the cellar.
+7. [ ] Right after consuming, tap the snackbar **UNDO**: it still restores the bottle and removes the note that consume created (unchanged behaviour).
+
 ### Keeping your data between test installs
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*

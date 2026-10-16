@@ -291,7 +291,13 @@ class WineRepository(
         eventId
     }
 
-    suspend fun undoConsumeBottle(eventId: Long) {
+    /**
+     * Puts a consumed bottle back and removes its history entry.
+     * [keepNote] = false (the snackbar UNDO right after consuming) also deletes the tasting note that
+     * consuming created. History's "Restore to cellar" passes true so a note the owner may have written
+     * or edited since is never deleted along with the log entry.
+     */
+    suspend fun undoConsumeBottle(eventId: Long, keepNote: Boolean = false) {
         database.withTransaction {
             val event = database.consumptionEventDao().getEventById(eventId) ?: return@withTransaction
             val bottle = event.bottleId?.let { inventoryDao.getBottleById(it) }
@@ -326,9 +332,14 @@ class WineRepository(
                     )
                 }
             }
-            event.noteId?.let { tastingNoteDao.deleteNoteById(it) }
+            if (!keepNote) event.noteId?.let { tastingNoteDao.deleteNoteById(it) }
             database.consumptionEventDao().deleteEventById(eventId)
         }
+    }
+
+    /** Removes one history entry only. The cellar is not changed and any tasting note is kept. */
+    suspend fun deleteConsumptionEvent(eventId: Long) {
+        database.consumptionEventDao().deleteEventById(eventId)
     }
 
     suspend fun deleteWine(bottleId: Long) {

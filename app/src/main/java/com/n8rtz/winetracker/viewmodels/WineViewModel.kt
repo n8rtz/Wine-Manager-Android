@@ -249,6 +249,18 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     fun undoConsumeBottle(eventId: Long) {
         viewModelScope.launch(Dispatchers.IO) { repository.undoConsumeBottle(eventId) }
     }
+
+    /** History: put the bottle back in the cellar and drop the log entry; the tasting note stays. */
+    fun restoreConsumptionToCellar(eventId: Long) {
+        Log.d("WineTracker", "History: restore event $eventId to cellar")
+        viewModelScope.launch(Dispatchers.IO) { repository.undoConsumeBottle(eventId, keepNote = true) }
+    }
+
+    /** History: delete the log entry only; the cellar and any tasting note are untouched. */
+    fun deleteConsumptionLog(eventId: Long) {
+        Log.d("WineTracker", "History: delete event $eventId")
+        viewModelScope.launch(Dispatchers.IO) { repository.deleteConsumptionEvent(eventId) }
+    }
 }
 
 
