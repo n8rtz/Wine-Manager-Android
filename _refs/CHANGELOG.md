@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Date parsing:** Backup `Long` date fields accept epoch values plus strict slash dates with two- or four-digit years (including `1/1/2021`) and supported ISO forms. CSV date parsing requires full input consumption; incomplete or undated legacy rows are skipped rather than assigned guessed dates.
 
 ### Fixed
+- **Rankings list stays scrolled after re-sorting:** changing the sort, a filter or the search on **Rankings** now returns the list to the top. Only Cellar had this behaviour before; Rankings never did. Tasting Notes has the same gap and is not changed yet.
 - **Aroma launcher layout (Bug-022):** The launcher's chip strip now wraps (FlowRow) with two-dimensional long-press reordering; the score track, markers, labels and thumb share one inset and font-scaled label space so the 100 label no longer clips. *Device check pending.*
 - **Overall-score thumb stuck (Bug-023):** The custom slider's empty track slot collapsed the thumb's travel range; it now supplies a full-width invisible track spacer. *Device check pending.*
 - **Duplicate aroma editor (Bug-024):** Removed the leftover aroma-descriptor section rendered below the sensory sliders so only the launcher card remains. *Device check pending.*

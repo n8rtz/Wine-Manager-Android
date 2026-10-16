@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,6 +41,14 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
     val rankingsPrices by viewModel.rankingsPrices.collectAsState()
     val searchQuery by viewModel.rankingsSearchQuery.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
+    val rankingsListState = rememberLazyListState()
+
+    // Back to the top whenever the ranked list changes (new sort, filter or search). The list is built
+    // asynchronously in the ViewModel, so this keys on the list itself: scrolling when the filter state
+    // changes would run before the re-sorted list arrives, and the keyed rows would keep the old row in view.
+    LaunchedEffect(rankedWines) {
+        rankingsListState.scrollToItem(0)
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
         Text(
@@ -100,6 +109,7 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
             EmptyState(Icons.Default.EmojiEvents, "No Ranked Wines", "Rate a wine to see it here")
         } else {
             LazyColumn(
+                state = rankingsListState,
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
