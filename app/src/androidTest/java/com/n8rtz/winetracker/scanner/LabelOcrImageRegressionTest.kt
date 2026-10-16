@@ -116,11 +116,22 @@ class LabelOcrImageRegressionTest {
 
         REVIEWED_LABELS.forEach { expectation ->
             val result = results.getValue(expectation.fixture)
+            val readable = com.yourapp.wine.merge.TokenMerger().merge(result.tokens)
             fun assertField(field: FieldId, expected: String?) {
                 val actual = result.fill.fields.getValue(field)
                 if (expected != null && actual.state == UiState.GREEN) {
                     assertEquals("${expectation.fixture} confidently wrong $field: ${actual.reason}",
                         TextNorm.normalize(expected), TextNorm.normalize(actual.value))
+                }
+                // Unknown wineries are legitimately YELLOW, but that must not conceal swapped
+                // producer/cuvee fields when the retained OCR actually read the reviewed identity.
+                if (expected != null && field in setOf(FieldId.PRODUCER, FieldId.WINE_NAME)) {
+                    val phrase = Regex("(?<![\\p{L}\\p{N}])${Regex.escape(TextNorm.normalize(expected))}(?![\\p{L}\\p{N}])")
+                    if (readable.any { phrase.containsMatchIn(TextNorm.normalize(it.canonical)) }) {
+                        assertFalse("${expectation.fixture} discarded readable $field: ${actual.reason}", actual.state == UiState.RED)
+                        assertEquals("${expectation.fixture} misassigned readable $field: ${actual.reason}",
+                            TextNorm.normalize(expected), TextNorm.normalize(actual.value))
+                    }
                 }
             }
             assertField(FieldId.PRODUCER, expectation.maker)

@@ -10,6 +10,8 @@ import sys
 import tarfile
 import urllib.request
 
+from android_native_toolchain import ToolchainSetupError, ensure_native_toolchain
+
 VERSION = "4.12.0"
 SHA256 = "44c106d5bb47efec04e531fd93008b3fcd1d27138985c5baf4eafac0e1ec9e9d"
 URL = f"https://codeload.github.com/opencv/opencv/tar.gz/refs/tags/{VERSION}"
@@ -18,15 +20,25 @@ URL = f"https://codeload.github.com/opencv/opencv/tar.gz/refs/tags/{VERSION}"
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--sdk", type=Path, required=True)
-    p.add_argument("--ndk", type=Path, required=True)
-    p.add_argument("--build", type=Path, required=True)
+    p.add_argument("--ndk", type=Path, help="Optional explicit path to the pinned NDK")
+    p.add_argument("--build", type=Path)
+    p.add_argument("--prepare-only", action="store_true", help="Check/install native build tools without building OpenCV")
+    p.add_argument("--install-missing", action="store_true", help="Install missing desktop pins via the real SDK manager; licenses must be accepted")
     args = p.parse_args()
-    sdk, ndk, build = args.sdk.resolve(), args.ndk.resolve(), args.build.resolve()
-    cmake = sdk / "cmake/3.22.1/bin" / ("cmake.exe" if os.name == "nt" else "cmake")
-    ninja = cmake.with_name("ninja.exe" if os.name == "nt" else "ninja")
+    if sys.version_info < (3, 9):
+        p.exit(2, "Python >=3.9 is required.\n")
+    if not args.prepare_only and args.build is None:
+        p.error("--build is required unless --prepare-only is supplied")
+    try:
+        tools = ensure_native_toolchain(args.sdk, args.ndk, install_missing=args.install_missing)
+    except ToolchainSetupError as error:
+        p.exit(2, f"{error}\n")
+    if args.prepare_only:
+        print(f"Android native toolchain ready: NDK={tools.ndk}; CMake={tools.cmake}")
+        return
+    sdk, ndk, build = tools.sdk, tools.ndk, args.build.resolve()
+    cmake, ninja = tools.cmake, tools.ninja
     toolchain = ndk / "build/cmake/android.toolchain.cmake"
-    if not cmake.is_file() or not ninja.is_file() or not toolchain.is_file():
-        sys.exit("Install SDK CMake 3.22.1 and NDK 28.2.13676358 (see docs/offline-scanner.md).")
     vendor = build / "vendor"
     vendor.mkdir(parents=True, exist_ok=True)
     archive = vendor / f"opencv-{VERSION}.tar.gz"

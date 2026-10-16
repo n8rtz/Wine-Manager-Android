@@ -12,6 +12,15 @@ fun main() {
         "estimated vs measured confidence" to LogicChecks::estimatedScoresNeverPromoteWeakMeasurements, "zero/invalid confidence cannot create support" to LogicChecks::zeroAndInvalidConfidenceNeverManufactureSupport, "capture rejection enters six-field RED review" to LogicChecks::rejectedCapturesEnterRedReviewWithShutterTiming).forEach { (name, test) ->
         test(); println("PASS: $name")
     }
+    listOf("producer cue beats prominent varietal/cuvee" to LogicChecks::producerCuesBeatProminentVarietalAndCuveeText,
+        "wrapped producer marker keeps its nearby brand" to LogicChecks::wrappedProducerMarkersKeepTheirNearbyBrand,
+        "FTS shortlist never renames unknown winery" to LogicChecks::ftsShortlistDoesNotRenameAnUnknownWinery,
+        "wine descriptions and bare markers are not producers" to LogicChecks::wineDescriptionsAndBareMarkersAreNotProducers,
+        "prominent brand is not replaced by production footer" to LogicChecks::prominentBrandIsNotReplacedWithItsProductionFooter,
+        "location-only reading never invents a wine identity" to LogicChecks::locationOnlyReadingDoesNotInventWineIdentity,
+        "producer marker requires nearby aligned text" to LogicChecks::producerMarkersDoNotBorrowDistantOrUnrelatedText).forEach { (name, test) ->
+        test(); println("PASS: $name")
+    }
     GeneratedFixtureChecks.run()
     com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
     println("PASS: optional engines never receive localization/full-scene fallback pixels")

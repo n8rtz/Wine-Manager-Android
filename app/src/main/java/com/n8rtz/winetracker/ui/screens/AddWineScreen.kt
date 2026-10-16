@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,7 +41,7 @@ import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanFormState
 import com.yourapp.wine.ui.ScanFieldStatus
-import com.yourapp.wine.ui.ScanDebugOverlay
+import com.yourapp.wine.ui.ScanReviewHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +51,8 @@ fun AddWineScreen(
     onWineAdded: () -> Unit
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
     var cameraPermissionGranted by remember {
@@ -93,6 +96,7 @@ fun AddWineScreen(
 
     var scanForm by remember { mutableStateOf(ScanFormState()) }
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
+    var lastScanId by remember { mutableStateOf(0L) }
     val retake: () -> Unit = {
         cameraError = null
         if (cameraPermissionGranted) showLabelCamera = true
@@ -103,7 +107,13 @@ fun AddWineScreen(
             onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake)
     }
     LaunchedEffect(showLabelCamera) {
-        if (showLabelCamera) scannerViewModel.warmLabelScanner()
+        if (showLabelCamera) {
+            focusManager.clearFocus()
+            scannerViewModel.warmLabelScanner()
+        }
+    }
+    LaunchedEffect(lastScanId) {
+        if (lastScanId != 0L) formScrollState.scrollTo(0)
     }
     LaunchedEffect((labelScanState as? LabelScanState.Review)?.requestId) {
         val review = labelScanState as? LabelScanState.Review ?: return@LaunchedEffect
@@ -117,6 +127,7 @@ fun AddWineScreen(
         selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
         selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
         lastScanReport = review.result
+        lastScanId = review.requestId
         showLabelCamera = false
         scannerViewModel.dismissLabelScan(review.requestId)
     }
@@ -157,7 +168,7 @@ fun AddWineScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(formScrollState)
         ) {
             // Form Section
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -185,18 +196,13 @@ fun AddWineScreen(
                     )
                 }
 
-                lastScanReport?.fill?.overallHint?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-                if (scanForm.hasPendingConfirmation) {
-                    Text("Confirm the yellow fields before saving. Unknown producers can still be saved.",
-                        style = MaterialTheme.typography.bodySmall)
-                }
-                if (BuildConfig.DEBUG && lastScanReport != null) {
-                    Text("Debug · original-frame boxes / independent engine votes", style = MaterialTheme.typography.labelMedium)
-                    ScanDebugOverlay(lastScanReport!!)
+                lastScanReport?.let { report ->
+                    ScanReviewHeader(report = report, form = scanForm, scanId = lastScanId,
+                        allowDiagnostics = BuildConfig.DEBUG, onRetake = retake)
                 }
                 fieldStatus(FieldId.PRODUCER)
                 // Autocomplete Producer Search
-                var producerSearchExpanded by remember { mutableStateOf(false) }
+                var producerSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = producerSearchExpanded,
                     onExpandedChange = { producerSearchExpanded = !producerSearchExpanded },
@@ -244,7 +250,7 @@ fun AddWineScreen(
 
                 fieldStatus(FieldId.WINE_NAME)
                 // Autocomplete Wine Name Search
-                var nameSearchExpanded by remember { mutableStateOf(false) }
+                var nameSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = nameSearchExpanded,
                     onExpandedChange = { nameSearchExpanded = !nameSearchExpanded },
@@ -303,7 +309,7 @@ fun AddWineScreen(
                 fieldStatus(FieldId.VINTAGE)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Vintage Dropdown
-                    var vintageExpanded by remember { mutableStateOf(false) }
+                    var vintageExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = vintageExpanded,
                         onExpandedChange = { vintageExpanded = !vintageExpanded },
@@ -336,7 +342,7 @@ fun AddWineScreen(
                     }
                     
                     // Simple Type Dropdown
-                    var typeExpanded by remember { mutableStateOf(false) }
+                    var typeExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = typeExpanded,
                         onExpandedChange = { typeExpanded = !typeExpanded },
@@ -369,7 +375,7 @@ fun AddWineScreen(
                 
                 fieldStatus(FieldId.COUNTRY)
                 // Country Dropdown
-                var countryExpanded by remember { mutableStateOf(false) }
+                var countryExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = countryExpanded,
                     onExpandedChange = { countryExpanded = !countryExpanded },
@@ -408,7 +414,7 @@ fun AddWineScreen(
                 // Region stays visible and editable even when the fixture gazetteer has no suggestions.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     fieldStatus(FieldId.REGION)
-                    var regionExpanded by remember { mutableStateOf(false) }
+                    var regionExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = regionExpanded,
                         onExpandedChange = { regionExpanded = !regionExpanded },
@@ -447,7 +453,7 @@ fun AddWineScreen(
                 // Subregion stays visible and editable for boutique/unknown wines.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     fieldStatus(FieldId.SUBREGION)
-                    var appellationExpanded by remember { mutableStateOf(false) }
+                    var appellationExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = appellationExpanded,
                         onExpandedChange = { appellationExpanded = !appellationExpanded },

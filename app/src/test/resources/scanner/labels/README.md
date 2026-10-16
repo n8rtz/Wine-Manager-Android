@@ -31,54 +31,41 @@ ML Kit reads first; scan one bottle at a time for a trustworthy result.
 
 ## Running the tests
 
-- Parser, selector, and other JVM tests: `./gradlew :app:testDebugUnitTest`
-- Real ML Kit image pipeline on a connected API 33+ device/emulator: single line, e.g.
+- Extraction/form logic and Compose review tests: `./gradlew :app:testDebugUnitTest --tests 'com.yourapp.wine.*'`
+- Real local ML Kit image pipeline on a connected **arm64** device/emulator, single line:
   `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.n8rtz.winetracker.scanner.LabelOcrImageRegressionTest"`
-  (On Windows with PowerShell, keep the whole command on one line: a trailing `\` is parsed as a
-  separate Gradle task and then PowerShell treats the `-P...` argument as its own command. Use the
-  PowerShell backtick for continuation instead.)
+  On Windows PowerShell use `.\gradlew.bat`. Do not paste a Unix trailing `\` into PowerShell; keep the command on one line.
 
-The image regression test scans every JPEG, logs each result under the `LabelOcrImageTest` Logcat
-tag, and asserts the reviewed fields for the single-bottle photos (Olarra, Blackstone, Zinfandel,
-Penfolds, Basalu, Juan Gil, Enclave, Kirkland Pinot Noir, Los Haroldos, Los Riscos, Kirkland
-Malbec). When an assertion fails, its message carries the raw OCR text, so the difference is either
-ML Kit's reading or this app's parsing of it. The reviewed fixtures are also scanned a second time
-and must produce identical suggestions, so an unstable scan (the classic "it works sometimes")
-fails the test.
+The device test scans every JPEG and logs field states, timings and raw OCR under `LabelOcrImageTest`.
+It checks bitmap ownership, coordinate bounds, nonempty coverage, stability of validated fields, and
+reviewed GREEN values. If the retained OCR directly reads a reviewed producer/wine name, that value
+must not be discarded or misassigned merely because it is YELLOW. Unknown producers are legitimate
+OCR-only YELLOW; the small bundled KB is not expected to validate every photographed winery. The
+three printed fixtures separately exercise six known GREEN fields and the native memory loop.
 
-These instrumented assertions require a device; they have not been executed in the assistant's
-sandbox, which has no Android SDK or emulator.
+These instrumented assertions require a real arm64 Android runtime. They have not been executed in
+the assistant's sandbox; host expected-token tests are not evidence of pixel-level OCR accuracy.
 
-## How a scan decides (implemented)
+## Current scanner flow
 
-0. **The photo is measured first.** `CaptureQualityAssessor` judges the still on a 320px grid before
-   any OCR runs: a photo that is too soft, too dark or washed out by glare is reported on the result
-   (`ScannedWine.captureQuality`) and flagged for review, because no amount of re-reading invents
-   detail that was never captured. Only gross problems trip it: all thirteen reference photos measure
-   `ok`, a slight overexposure still measures `ok`, and blur is only reported once the label's print
-   has genuinely smeared. A blurry photo stops the pass ladder after the first pass; dark or
-   glare-washed photos escalate, since contrast is what rescues them.
-1. **Barcode first.** `LabelBarcodeReader` decodes an EAN-8/13 or UPC-A/E off the same still image,
-   and only codes whose GS1 check digit is consistent are used (`Gtin`). `LabelIdentityResolver`
-   looks the code up in Open Food Facts (`api/v2/product/{barcode}.json`) and caches every hit in
-   `filesDir/scanner/barcode-identities.txt`, so re-scanning a bottle is instant and works offline.
-   A registry hit owns the producer and the cuvée; the photo keeps the bottle-specific vintage,
-   country, region and type (`WineIdentityMerge`). A shortened brand or an OCR slip is not a
-   disagreement, a different producer or vintage is, and a visible barcode that could not be
-   resolved always marks the scan for review. Front labels carry no barcode, so the fixture photos
-   only exercise the (harmless) decode attempt; the result is logged, not asserted.
-2. **OCR passes, escalated only when needed.** Pass one is the full frame and pass two the enhanced
-   centre crop: the crop always runs, because it is the pass that reads calligraphic words the full
-   frame drops. The third and last pass is chosen by what is still wrong (`LabelScanLadder`): when
-   the passes disagree about a field, the line it was read from is located through the recognizer's
-   own line boxes and re-read magnified (`LabelFieldGeometry` → a targeted field zoom that may only
-   correct that line, never reorder the label); otherwise the tighter hard-contrast crop runs to
-   rescue dark or glare-washed text. Never past three passes, and never once a barcode has named the
-   bottle.
-3. **Every pass is merged, not discarded.** `LabelOcrConsensus` merges line by line: the full frame
-   usually keeps the printed lines while the enhanced crop reads the decorative words the full
-   frame drops. Each scan logs `passes`, `barcode`, `identity`, `agreement`,
-   `supported=<corroborated lines>/<total>`, `needsReview`, `quality` and `contradictions` under the
-   `ScannerManager` tag, plus `views=` naming every view it read and why. `ScannedWine.barcode`,
-   `agreement`, `needsReview` and `captureQuality` carry the same signal to the UI, so a
-   low-confidence scan can be highlighted — or sent back for a retake — instead of silently trusted.
+`AddWineScreen` uses the offline `OfflineWineScanner` path, not the retired barcode/network/crop
+ladder. The original photographed JPEG is EXIF-upright and bounded to a 1920px working edge. A quality
+check and geometric label detector precede a cheap ML Kit text-hull localization fallback. The
+rectified label is read sequentially as original and enhanced variants under the shutter's shared
+8000ms deadline, with at most two working Bitmaps. Evidence is inverse-mapped to original capture
+coordinates as well as rectified-label coordinates before merging and local field extraction.
+
+No wine-database API runs during recognition. Old barcode/network helpers and parser tests remain
+in the repository for their existing callers, but are not injected into this scanner. Ordinary
+Android/Google dependencies and the separate explicit image-import feature remain supported.
+
+Producer-language cues and nearby marker/name lines help separate wineries from large cuvee names
+or varietals. A full-text shortlist alone may not replace a readable unknown winery with a familiar
+producer. The name, vintage and geographic hierarchy are reviewed independently: GREEN validates,
+YELLOW requires one-tap confirmation, RED fills nothing. Retakes preserve manual edits.
+
+After scanning, the camera closes back to the normal Add Wine form. Debug builds offer **Show scan
+details** explicitly; they no longer automatically display a large technical wireframe above the
+fields. The review UI has eight authored Compose/Robolectric tests; executing those requires the full
+Android Gradle test environment. Physical ML Kit accuracy, 8000ms timing and 20 actual camera captures
+remain separate device acceptance checks; see `docs/offline-scanner.md`.

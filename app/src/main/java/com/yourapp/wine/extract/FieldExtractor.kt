@@ -18,6 +18,7 @@ data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, 
 class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: VintageExtractor = VintageExtractor(),
                      private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb)) {
     private val gazetteer = PlaceGazetteer(kb)
+    private val producerLines = ProducerLineSelector()
     init { gazetteer.matches("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
     fun extract(lines: List<LabelLine>, currentYear: Int): ExtractionResult {
@@ -49,23 +50,19 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         } }.toSet()
         val identityLines = lines.filter { it !in placeLines }.mapNotNull { line ->
             val cleaned = MetadataRules.identityText(line.text)
-            if (MetadataRules.isIdentity(cleaned)) line.copy(text = cleaned) else null
+            if (MetadataRules.isIdentity(cleaned) && !producerLines.isAdministrative(cleaned)) line.copy(text = cleaned) else null
         }
-        val genericProducerWords = setOf("chateau", "domaine", "winery", "wines", "bodega", "bodegas", "estate", "vineyards")
-        fun usefulFtsHit(query: String, hit: com.yourapp.wine.kb.ProducerHit): Boolean {
-            if (hit.editDistance != null) return true
-            val distinctWords = TextNorm.normalize(query).split(' ').filter { it.length >= 3 && it !in genericProducerWords }
-            return hit.matchedNorm.split(' ').any { term -> term in distinctWords }
+        val producerCandidates = producerLines.candidates(identityLines)
+        // FTS is a shortlist, not evidence that an unknown winery is a familiar producer.
+        // Require a bounded full-name match here; an exact whole-label phrase can still match below.
+        val knownLines = (identityLines + producerCandidates).distinct().flatMap { line ->
+            kb.findProducer(line.text).filter { hit -> hit.editDistance?.let { it in 0..2 } == true }.take(3).map { hit ->
+                hit to FieldCandidate(FieldId.PRODUCER, hit.producer.name,
+                    if (hit.editDistance == 0 && line.vote >= 0.6f) UiState.GREEN else UiState.YELLOW,
+                    if (hit.editDistance == 0) "Normalized exact producer in local KB"
+                    else "Producer fuzzy edit distance ${hit.editDistance}; confirm", line.tokens)
+            }
         }
-        val knownLines = identityLines.flatMap { line -> kb.findProducer(line.text).filter { usefulFtsHit(line.text, it) }.take(3).map { hit ->
-            hit to FieldCandidate(FieldId.PRODUCER, hit.producer.name,
-                if (hit.editDistance == 0 && line.vote >= 0.6f) UiState.GREEN else UiState.YELLOW,
-                when (hit.editDistance) {
-                    0 -> "Normalized exact producer in local KB"
-                    1, 2 -> "Producer fuzzy edit distance ${hit.editDistance}; confirm"
-                    else -> "FTS-only producer shortlist; confirm identity"
-                }, line.tokens)
-        } }
         // Whole-label fallback can recover a producer split across lines or sharing a line with a year.
         val normalizedWhole = TextNorm.normalize(whole)
         val knownWhole = kb.findProducer(whole).mapNotNull { hit ->
@@ -84,8 +81,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             result[FieldId.PRODUCER] = known.filter { it.first.editDistance == bestDistance }.map { it.second }
                 .distinctBy { TextNorm.normalize(it.value) }
         } else {
-            val unknown = identityLines.sortedWith(compareByDescending<LabelLine> { it.bboxRect.height() }
-                .thenByDescending { it.vote }).firstOrNull()
+            val unknown = producerLines.unknown(producerCandidates)
             if (unknown != null) result[FieldId.PRODUCER] = listOf(FieldCandidate(FieldId.PRODUCER, unknown.text,
                 UiState.YELLOW, "OCR-only producer; boutique/unknown wines are allowed", unknown.tokens))
         }
@@ -93,6 +89,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val selectedProducer = result[FieldId.PRODUCER]?.firstOrNull()?.value
         val producerSpellings = known.firstOrNull()?.first?.producer?.let { listOf(it.name) + it.aliases } ?: listOfNotNull(selectedProducer)
         val wines = identityLines.mapNotNull { line ->
+            if (producerLines.isMarker(line.text)) return@mapNotNull null
             var distinctive = line.text
             producerSpellings.sortedByDescending { it.length }.forEach { producerName ->
                 distinctive = removeNormalizedPhrase(distinctive, producerName)
@@ -110,7 +107,9 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 if (hit == null) "Distinctive OCR-only wine name; confirm" else "Known cuvée for selected producer (edit ${hit.editDistance})",
                 line.tokens)
         }.sortedWith(compareBy<FieldCandidate> { if (it.state == UiState.GREEN) 0 else 1 }
-            .thenByDescending { vote(it.sources) }.thenByDescending { it.sources.maxOfOrNull { t -> t.bboxRect.height() } ?: 0f })
+            .thenBy { if (producerLines.isWineDescription(it.value)) 1 else 0 }
+            .thenByDescending { (vote(it.sources) * 1000).toInt() }
+            .thenByDescending { it.sources.maxOfOrNull { t -> t.bboxRect.height() } ?: 0f })
         result[FieldId.WINE_NAME] = wines.take(1)
         return ExtractionResult(result, claims)
     }

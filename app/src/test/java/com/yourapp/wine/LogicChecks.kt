@@ -191,6 +191,94 @@ object LogicChecks {
         check(estimated.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
     }
 
+    fun producerCuesBeatProminentVarietalAndCuveeText() {
+        val fill = FillEngine(FixtureKnowledgeBase())
+        val olarra = fill.fill(listOf(token("Reciente", y = .10f, h = .13f),
+            token("Gran Reserva", y = .30f, h = .05f), token("Bodegas Olarra", y = .43f, h = .05f),
+            token("Rioja", y = .60f), token("2019", y = .80f)), 2026)
+        check(olarra.fields.getValue(FieldId.PRODUCER).value == "Bodegas Olarra") { olarra.fields }
+        check(olarra.fields.getValue(FieldId.WINE_NAME).value == "Reciente") { olarra.fields }
+        check(olarra.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
+        val boutique = fill.fill(listOf(token("Domaine Petit Nuage", y = .1f, h = .05f),
+            token("Pinot Noir", y = .4f, h = .16f)), 2026)
+        check(boutique.fields.getValue(FieldId.PRODUCER).value == "Domaine Petit Nuage") { boutique.fields }
+        check(boutique.fields.getValue(FieldId.WINE_NAME).value == "Pinot Noir") { boutique.fields }
+    }
+
+    fun wrappedProducerMarkersKeepTheirNearbyBrand() {
+        val fill = FillEngine(FixtureKnowledgeBase())
+        val blackstone = fill.fill(listOf(token("Blackstone", y = .10f, h = .09f),
+            token("WINERY", y = .21f, h = .025f, x = .22f, w = .35f),
+            token("Merlot", y = .48f, h = .14f), token("California", y = .70f)), 2026)
+        check(blackstone.fields.getValue(FieldId.PRODUCER).value == "Blackstone WINERY") { blackstone.fields }
+        check(blackstone.fields.getValue(FieldId.WINE_NAME).value == "Merlot") { blackstone.fields }
+        check(blackstone.fields.getValue(FieldId.PRODUCER).sources.size == 2)
+        check(blackstone.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
+        val split = fill.fill(listOf(token("Bodegas", y = .35f, h = .03f),
+            token("Olarra", y = .40f, h = .06f), token("Reciente", y = .10f, h = .13f)), 2026)
+        check(split.fields.getValue(FieldId.PRODUCER).value == "Bodegas Olarra") { split.fields }
+        check(split.fields.getValue(FieldId.WINE_NAME).value == "Reciente") { split.fields }
+    }
+
+    fun ftsShortlistDoesNotRenameAnUnknownWinery() {
+        val result = FillEngine(FixtureKnowledgeBase()).fill(listOf(token("Robert Fields Winery", y = .1f),
+            token("Cabernet Sauvignon", y = .4f, h = .12f), token("2019", y = .8f)), 2026)
+        check(result.fields.getValue(FieldId.PRODUCER).value == "Robert Fields Winery") { result.fields }
+        check(result.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
+        check(result.fields.getValue(FieldId.WINE_NAME).value == "Cabernet Sauvignon")
+    }
+
+    fun wineDescriptionsAndBareMarkersAreNotProducers() {
+        val fill = FillEngine(FixtureKnowledgeBase())
+        for (description in listOf("Merlot", "Reserve Cabernet Sauvignon", "Old Vine Zinfandel", "Gran Reserva")) {
+            val result = fill.fill(listOf(token(description), token("2019", y = .7f)), 2026)
+            check(result.fields.getValue(FieldId.PRODUCER).state == UiState.RED) { result.fields }
+            check(result.fields.getValue(FieldId.WINE_NAME).value == description) { result.fields }
+        }
+        for (marker in listOf("Winery", "W I N E R Y", "Winery®", "Winery.")) {
+            val markers = fill.fill(listOf(token(marker), token("Estate Grown", y = .3f),
+                token("2019", y = .7f)), 2026)
+            check(markers.fields.getValue(FieldId.PRODUCER).state == UiState.RED) { markers.fields }
+            check(markers.fields.getValue(FieldId.WINE_NAME).state == UiState.RED) { markers.fields }
+        }
+        val numberedName = fill.fill(listOf(token("Winery 7")), 2026)
+        check(numberedName.fields.getValue(FieldId.PRODUCER).value == "Winery 7")
+    }
+
+    fun prominentBrandIsNotReplacedWithItsProductionFooter() {
+        val result = FillEngine(FixtureKnowledgeBase()).fill(listOf(token("Penfolds", y = .1f, h = .12f),
+            token("Koonunga Hill", y = .35f, h = .08f), token("Shiraz Cabernet", y = .5f, h = .04f),
+            token("Penfolds wines South Australia", y = .65f, h = .025f), token("2019", y = .85f)), 2026)
+        check(result.fields.getValue(FieldId.PRODUCER).value == "Penfolds") { result.fields }
+        check(result.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
+        check(result.fields.getValue(FieldId.WINE_NAME).value == "Koonunga Hill") { result.fields }
+    }
+
+    fun producerMarkersDoNotBorrowDistantOrUnrelatedText() {
+        val result = FillEngine(FixtureKnowledgeBase()).fill(listOf(token("Bodegas", x = .05f, y = .1f, w = .2f, h = .03f),
+            token("Petit Nuage", x = .60f, y = .65f, w = .35f, h = .09f)), 2026)
+        check(result.fields.getValue(FieldId.PRODUCER).value == "Petit Nuage") { result.fields }
+        check(result.fields.getValue(FieldId.PRODUCER).sources.size == 1)
+    }
+
+    fun locationOnlyReadingDoesNotInventWineIdentity() {
+        val location = token("CALIFORNIA", score = .84f, y = .7f)
+        // A hypothetical below-threshold identity must not silently become a producer/name.
+        val readings = listOf(token("EXAMPLE WINERY", score = .45f), location)
+        check(TokenMerger().merge(readings).single().canonical == "CALIFORNIA")
+        val result = FillEngine(FixtureKnowledgeBase()).fill(readings, 2026, ConfidenceContext(labelFound = false))
+        for (field in listOf(FieldId.PRODUCER, FieldId.WINE_NAME)) {
+            check(result.fields.getValue(field).state == UiState.RED)
+            check(result.fields.getValue(field).value.isBlank())
+        }
+        check(result.fields.getValue(FieldId.COUNTRY).value == "United States")
+        check(result.fields.getValue(FieldId.REGION).value == "California")
+        check(result.fields.getValue(FieldId.REGION).state == UiState.YELLOW)
+        val form = com.yourapp.wine.ui.ScanFormState().apply(result, FieldId.entries.associateWith { "" })
+        check(form.hasPendingConfirmation)
+        check(form.fields.getValue(FieldId.PRODUCER).value.isBlank())
+    }
+
     fun indexFailurePreservesPartial() {
         val broken = object : com.yourapp.wine.kb.WineKnowledgeBase {
             override fun places() = FixtureKnowledgeBase().places()

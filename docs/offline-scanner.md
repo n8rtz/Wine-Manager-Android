@@ -65,26 +65,78 @@ Closing/leaving the camera or backgrounding its lifecycle cancels the scan. Heav
 
 ### Six field review states
 
+A completed scan closes the camera and returns to the **same Add Wine form**, scrolled to its review summary. It does not navigate to a separate result screen. The keyboard loses focus when the camera opens, and stale autocomplete menus close when a new scan is applied. The summary shows how many fields were read, pending confirmations, and a retake action. Debug wireframes/timings/reasons are hidden by default, opened only with **Show scan details**, and reset on each capture request (even an identical retake). They are never offered in release builds. Per-field explanations are limited to two visible lines so they cannot push the form far down the screen. A location/year-only reading explicitly says the producer and wine name were not read; geographic metadata is not presented as successful wine identification. Status text and confirm/retake controls use light/dark semantic foregrounds instead of dark red on a dark background. Opt-in diagnostics show up to 50 mapped readings and their measured/estimated scores before the confidence filter, so a single retained overlay box cannot be confused with the complete OCR output.
+
 - **GREEN**: locally validated exact identity/hierarchy or unambiguous valid vintage; auto-fill.
-- **YELLOW**: unknown boutique, fuzzy/FTS-only match, conflicting reads/hierarchy, weak score/exposure, no quad, or partial/deadline; fill editable text and require a one-tap confirmation per field before Save.
+- **YELLOW**: unknown boutique, fuzzy/OCR-only match, conflicting reads/hierarchy, weak score/exposure, no quad, or partial/deadline; fill editable text and require a one-tap confirmation per field before Save.
 - **RED**: no acceptable value or rejected capture; no incoming fill, retake/manual entry.
 
 Alcohol/volume/barcodes cannot become producer/name. A contradictory country is retained for review, not silently replaced by an invented “correct” country. Country/region/subregion follow KB parent IDs. The deepest explicit origin wins (Oakville within Napa Valley), and ancestor/descendant claims are compatible; sibling/different branches, ambiguous same-name places and wrong geographic levels cannot be GREEN. Extractor/validator share cached ID/name hierarchy indexes rather than rebuilding a KB-sized map for every claim. A local-index failure retains weak readings using the explicitly small real fixture, never invents world coverage.
 
+Producer selection uses literal label-language cues, not the largest printed word alone. Nearby aligned marker/name lines (for example `Blackstone` + `WINERY`) can be joined with both sources preserved; a distant marker cannot borrow unrelated text. Varietals, generic reserve/style text and bare winery markers cannot become unknown producers. Repeated brand text can disambiguate a production/origin footer from the prominent brand. FTS supplies a shortlist: it may not rename an unknown winery merely because one word overlaps a known producer. A bounded name match or an exact whole-label producer phrase is required; unsupported identities remain OCR-only YELLOW. These are extraction heuristics, not new OCR weights or claims of worldwide KB coverage.
+
 User-edited values survive retakes (including equivalent edits of GREEN values). A capture failure/timeout also enters an explicit six-field RED review. A RED field on a new capture clears its previous **unedited automatic** suggestion, rather than leaving stale text savable as a new reading; manually edited values remain protected. Editing/keeping a country, region or producer that differs from a new scan downgrades related GREEN name/origin fields for confirmation rather than combining an old country with a falsely GREEN new region. Unknown producers remain savable after confirmation/manual entry. Wine type remains a manual form field, outside this six-field scanner.
 
-## Build on an Android development machine
+## Build on a desktop Android development machine
 
-Requirements: full JDK 17 or 21 (not a runtime-only wheel), Python ≥3.9, Android SDK/command-line tools, SDK platform/build-tools 36, NDK **28.2.13676358**, CMake **3.22.1**, and internet for normal build dependencies. Set `ANDROID_HOME`/`ANDROID_SDK_ROOT` or `local.properties` normally.
+Requirements: full JDK 17 or 21 (not a runtime-only wheel), Python ≥3.9, Android SDK with Command-line Tools (latest), SDK platform/build-tools 36, and internet for normal build dependencies. Set `ANDROID_HOME`/`ANDROID_SDK_ROOT` or `sdk.dir` in `local.properties` normally.
+
+The custom OpenCV build uses pinned **NDK 28.2.13676358** and SDK **CMake 3.22.1** (including Ninja). `:opencv-minimal:prepareOpenCvToolchain` runs before `buildOpenCv`, verifies the installed package versions/files, and prefers the current Android CLI (falling back to the legacy Java SDK manager) to install only missing packages into the selected SDK. It does not silently accept licenses. Android Studio's selected Gradle JDK is passed to the child tools; Windows defaults to `python`, other hosts to `python3`.
+
+### Fix “NDK is not installed”
+
+These instructions are for desktop hosts (Windows/macOS/Linux). Native source builds on an Android phone have not been validated; the setup helper will not download incompatible desktop SDK executables onto a phone.
+
+In **Android Studio → Tools → SDK Manager → SDK Tools**, enable **Show Package Details**, then install:
+
+- **NDK (Side by side) → 28.2.13676358**
+- **CMake → 3.22.1**
+- **Android SDK Command-line Tools (latest)** (for automatic missing-package setup)
+
+Accept the SDK licenses when prompted, then rebuild. Having a different NDK version installed does not satisfy this pin. The setup error prints the exact SDK root it checked, which must match Android Studio / `local.properties`.
+
+Current command-line tools may redirect `sdkmanager` to the new Android CLI. Use its `--sdk` option and **slash-separated package paths** (`ndk/28.2.13676358`, not separate `ndk` and version arguments). Do not pass `ndk@28.2.13676358`: the side-by-side NDK version is part of the package path. See the official [install](https://developer.android.com/tools/agents/android-cli/commands/sdk_install) and [package path](https://developer.android.com/tools/agents/android-cli/commands/sdk_list) references. Do not use `--force` to replace an unrelated NDK30 installation.
+
+Accept any required licenses in SDK Manager, then use the setup task or install the exact package paths directly. On Linux/macOS with `ANDROID_HOME` set:
 
 ```sh
-sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
+"$ANDROID_HOME/cmdline-tools/latest/bin/android" --sdk="$ANDROID_HOME" --no-metrics sdk install \
+  'platforms/android-36' 'build-tools/36.0.0' 'ndk/28.2.13676358' 'cmake/3.22.1'
+./gradlew :opencv-minimal:prepareOpenCvToolchain
 ./gradlew --no-daemon :app:assembleDebug
 ./gradlew --no-daemon :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
 ./gradlew --no-daemon :app:checkArm64ApkBudget
 ```
 
-On Windows use `gradlew.bat` and, if necessary, `-PpythonExecutable=python` for the Python tooling.
+On Windows PowerShell, from the project directory (change `$sdk` if `local.properties` selects another SDK):
+
+```powershell
+$sdk = "$env:LOCALAPPDATA\Android\Sdk"
+$android = Get-ChildItem "$sdk\cmdline-tools" -Filter 'android*' -Recurse -File |
+    Where-Object { $_.Name -in @('android.exe', 'android.bat', 'android.cmd', 'android') } |
+    Sort-Object @{Expression = { $_.Extension -ne '.exe' }} |
+    Select-Object -First 1 -ExpandProperty FullName
+if (!$android) { throw 'Android CLI launcher not found; use Android Studio SDK Manager.' }
+& $android "--sdk=$sdk" --no-metrics sdk install 'ndk/28.2.13676358' 'cmake/3.22.1'
+if ($LASTEXITCODE -ne 0) { throw 'SDK installation failed; do not rebuild yet.' }
+if (!(Test-Path "$sdk\ndk\28.2.13676358\build\cmake\android.toolchain.cmake")) {
+    throw 'Required NDK is still missing; do not rebuild yet.'
+}
+if (!(Test-Path "$sdk\cmake\3.22.1\bin\cmake.exe")) {
+    throw 'Required SDK CMake is still missing; do not rebuild yet.'
+}
+.\gradlew.bat :app:assembleDebug -PpythonExecutable=python
+```
+
+For older Java-only SDK tools, legacy `sdkmanager --sdk_root=<SDK> --licenses` and semicolon package IDs remain supported by the helper. The current Android CLI is invoked directly, not through the deprecated redirect, and metrics are disabled for that build-time invocation. No `android init` or agent skill installation is needed to compile this app.
+
+On Windows use `gradlew.bat`; choose a different Python executable with `-PpythonExecutable=python` (or a full executable path). For an already provisioned/offline SDK, `-PopencvInstallMissingSdk=false` verifies the pins without attempting any SDK installation. The setup-only task never downloads OpenCV source or compiles it. CMake/NDK provisioning is a build-time operation, not an app runtime download or wine lookup.
+
+The old custom Exec task queried `sdkComponents.ndkDirectory.get()` before preparing its prerequisites. Unlike AGP's own native-build tasks, this could throw **“NDK is not installed”** without bootstrapping anything. It now resolves the SDK first, prepares the real pinned packages, and passes the explicit side-by-side NDK path to the builder. Missing command-line tools, unaccepted licenses, failed downloads and incomplete installs produce SDK Manager / `sdkmanager` instructions instead of that provider stack trace.
+
+### Library source-set class cast during sync
+
+An exception such as `DefaultAndroidLibrarySourceSet_Decorated cannot be cast to AndroidLibrarySourceSet` indicates a library source-set API mismatch; the IDE's generic cache-corruption banner is not proof of a corrupt download. The OpenCV module avoids that registration path: `androidComponents.onVariants` registers its generated Java, JNI libraries and Java resources with `addGeneratedSourceDirectory`, using three declared `DirectoryProperty` outputs on `BuildOpenCvTask`. This preserves the existing output paths, packages the upstream license, and wires each consumer to the generator. Plugin versions and DSL-mode flags are unchanged. Sync again with the updated `opencv-minimal/build.gradle.kts`; if the exception persists, the full `--stacktrace` is needed to identify another plugin or source-set access.
 
 The app is minSdk26 / targetSdk35 / compileSdk36, arm64-v8a only. Compile SDK is not target SDK. Keep real CameraX, bundled ML Kit, coroutines, Room (existing inventory), Exif and bundled SQLite dependencies.
 
@@ -115,6 +167,14 @@ Compilation/packaging is not native execution on Android. CI does **not** prove 
 
 ### Executed in the restricted sandbox
 
+The build-setup suite has **30 Python tests**: 28 native-toolchain policy tests and two static Gradle registration guards. The native tests cover installed/missing/version-mismatched packages, exact SDK-root/package selection, licensing/nonzero/false-success handling, Windows Java/native/batch argv handling, modern Android CLI slash paths, deprecated-wrapper avoidance, the setup-only CLI, and Android-host detection/refusal to download desktop packages onto a phone. The registration guards check the generated-source variant API, all three declared output paths, and their producer-task wiring. They first failed against the old library source-set registration and pass with the new variant registration.
+
+These tests mock installation/executable checks and inspect the Gradle script: **they do not compile Kotlin DSL, execute Gradle, or download an NDK/compiler/SDK**. The revised setup and source registration still need genuine Gradle/SDK integration verification; the CI result above predates these fixes. This sandbox has no installed JDK or Android SDK.
+
+```sh
+python3 -m unittest discover -s tools/tests -p 'test_*.py'
+```
+
 ```sh
 # Use an installed Kotlin distribution (including its coroutines jar) and real Java runtime.
 JAVA_HOME=/path/to/jdk KOTLIN_HOME=/path/to/kotlinc \
@@ -125,7 +185,9 @@ python3 tools/check-offline-recognition-boundary.py
 
 The Kotlin harness compiles **production logic/CSV/Reader guards** with real Kotlin 2.2.10/coroutines and tiny, clearly marked host-only PointF/RectF/Bitmap/clock/log shims. A genuine SDK `android.jar` supplies API types, **not executable Android JSON parsing**. It reads all three expected-token fixtures. It does **not** OCR images, execute Android `JsonReader`, run Android/native SQLite, measure native memory or substitute for Gradle. `ANDROID_HOME`/`ANDROID_SDK_ROOT` with platform36 can supply the jar automatically.
 
-**28 Kotlin host groups passed:** inverse mapping; NFKD; merger/votes; rectified lines; vintage; hierarchy conflicts and nested specificity; fill/form states, capture rejection/shutter timing and clearing of stale automatic suggestions; extraction edges; failed-index partial preservation; measured-vs-estimated confidence and zero/invalid-score guards; three six-GREEN expected-token fixtures; optional-engine rectified-only policy; deadline/partial/cleanup; expired deadline; native lease serialization; two-bitmap ownership accounting; streaming CSV/quoting/alias order/caller ownership; malformed records; byte/row/UTF-8 guards; JSON lexical guards (not Android parser execution); 25,000 lazily generated rows delivered incrementally.
+**35 Kotlin host groups passed:** inverse mapping; NFKD; merger/votes; rectified lines; vintage; hierarchy conflicts and nested specificity; fill/form states, capture rejection/shutter timing and clearing of stale automatic suggestions; extraction edges; producer/cuvee/varietal, wrapped-marker, footer and FTS-shortlist regressions; location-only readings keep producer/name RED and blank; failed-index partial preservation; measured-vs-estimated confidence and zero/invalid-score guards; three six-GREEN expected-token fixtures; optional-engine rectified-only policy; deadline/partial/cleanup; expired deadline; native lease serialization; two-bitmap ownership accounting; streaming CSV/quoting/alias order/caller ownership; malformed records; byte/row/UTF-8 guards; JSON lexical guards (not Android parser execution); 25,000 lazily generated rows delivered incrementally.
+
+Eight new **Compose/Robolectric review tests** (`ScanReviewHeaderTest`) cover default-hidden diagnostics, explicit reveal/hide, identical-retake reset, production-mode hiding, the retake callback, one-tap confirmation with manual edits preserved, location-only partial feedback, opt-in mapped readings before filtering, and light/dark status contrast. They are authored but **not executed in this sandbox**, which lacks a complete Android SDK/Gradle dependency environment. The limited Kotlin harness does not render Compose or execute these tests. Test-only Compose dependencies do not enter the release app. The earlier CI result predates these review/extraction changes.
 
 **2 host SQLite groups passed:** `check-kb-import-sql.py` executes the production schema/staging/transfer/FTS SQL with Python's real SQLite/FTS5, tests arbitrary parent/alias ordering, and verifies atomic data+FTS rollback on invalid foreign keys. This validates SQL semantics on **host SQLite**, not the bundled Android driver/JNI. It needs Python with SQLite/FTS5 and leaves no database artifact.
 
@@ -139,7 +201,7 @@ An earlier limited Kotlin backend type-check succeeded with a real Android35 API
 
 - `OfflineScannerDeviceTest`: real ML Kit/warp on three printed labels, inverse/bbox/variant/budget checks, and a warmed 20-scan Java/native heap-growth/ownership check.
 - `SqliteKnowledgeBaseDeviceTest`: genuine bundled FTS5, streamed CSV/JSON import, late-schema/duplicate/FK/hierarchy rollback, caller stream ownership and temporary-file cleanup.
-- Existing 13-photo `LabelOcrImageRegressionTest`: GREEN values must agree with reviewed truth; unknown YELLOW and rejected RED are explicit, rather than requiring the tiny fixture KB to know all brands. Strict synthetic/device tests separately guard against an all-RED no-op pipeline.
+- Existing 13-photo `LabelOcrImageRegressionTest`: GREEN values must agree with reviewed truth; directly readable producer/wine-name evidence must not be misassigned even when YELLOW; unknown YELLOW and rejected RED are explicit, rather than requiring the tiny fixture KB to know all brands. Strict synthetic/device tests separately guard against an all-RED no-op pipeline.
 
 On an ARM64 device:
 
