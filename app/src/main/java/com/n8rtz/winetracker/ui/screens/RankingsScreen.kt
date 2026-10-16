@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,8 +47,14 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
     // Back to the top whenever the ranked list changes (new sort, filter or search). The list is built
     // asynchronously in the ViewModel, so this keys on the list itself: scrolling when the filter state
     // changes would run before the re-sorted list arrives, and the keyed rows would keep the old row in view.
+    // The saved hash means coming back to this tab with the same list does not reset the scroll.
+    var lastRankedHash by rememberSaveable { mutableIntStateOf(rankedWines.hashCode()) }
     LaunchedEffect(rankedWines) {
-        rankingsListState.scrollToItem(0)
+        val hash = rankedWines.hashCode()
+        if (hash != lastRankedHash) {
+            lastRankedHash = hash
+            rankingsListState.scrollToItem(0)
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {

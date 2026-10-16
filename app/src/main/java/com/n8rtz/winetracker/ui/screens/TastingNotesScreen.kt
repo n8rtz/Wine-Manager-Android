@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -97,6 +99,18 @@ fun TastingNotesScreen(
         }
     }
 
+    // Back to the top when the sort, a filter or the search changes. The saved key means coming back to
+    // this tab (or from a note) with nothing changed leaves the list where it was.
+    val notesListState = rememberLazyListState()
+    val listKey = remember(filterState, searchQuery) { 31 * filterState.hashCode() + searchQuery.hashCode() }
+    var lastListKey by rememberSaveable { mutableIntStateOf(listKey) }
+    LaunchedEffect(listKey) {
+        if (listKey != lastListKey) {
+            lastListKey = listKey
+            notesListState.scrollToItem(0)
+        }
+    }
+
     val groupedHistory = remember(filteredHistory) {
         filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .values.toList()
@@ -166,6 +180,7 @@ fun TastingNotesScreen(
                 }
             } else {
                 LazyColumn(
+                    state = notesListState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

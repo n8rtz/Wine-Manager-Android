@@ -98,14 +98,16 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 10. [ ] In **Cellar**, the filters and sorts Ready Now / Too Early / Past Peak still behave as before: a wine with no typed window is not placed in any of them because of its estimate.
 11. [ ] Look at the ageing table (`drinkingwindow/AgeingProfiles.kt`) and mark what you disagree with. Each entry's `source` says where it came from; entries marked “assumption” have a start or end year no source gave. Send me the corrections and I will edit the table (and set `reviewed`).
 
-### Rankings scroll-to-top
+### Rankings and Tasting Notes scroll-to-top
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
 1. [ ] Open **Rankings** and scroll down to a wine in the middle of the list (for example Thanisch Riesling).
 2. [ ] Open the filter sheet, choose **Rating (Low)** and close the sheet. The list is at the top, showing the lowest-rated wine first.
 3. [ ] Repeat with **Rating (High)**, a type or price filter, and by typing in the search box. Each time the list returns to the top.
-4. [ ] Open a wine's notes or detail from Rankings and go back: the list should not jump (it only resets when the list contents change).
+4. [ ] Scroll down in Rankings, switch to another tab and back: the list should still be where you left it (it only resets when sort, filter or search changes).
+5. [ ] **Tasting Notes:** scroll to a note in the middle (for example Thanisch Riesling), open the filter sheet, choose **Price (High)** or **Price (Low)** and close it. The list is at the top. Repeat with a type or status filter and with the search box.
+6. [ ] In Tasting Notes, open a note, go back with nothing changed: the list is where you left it.
 
 ### Profile tab returns to the Profile page
 
