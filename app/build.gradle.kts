@@ -53,8 +53,8 @@ android {
         applicationId = "com.n8rtz.winetracker"
         minSdk = 33
         targetSdk = 36
-        versionCode = 55
-        versionName = "0.5.5"
+        versionCode = 56
+        versionName = "0.5.6"
         buildConfigField("String", "BUILD_BRANCH", "\"$escapedBuildBranch\"")
         buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
         buildConfigField("boolean", "BUILD_DIRTY", buildDirty.toString())

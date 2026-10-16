@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.6] - 2026-10-16
 ### Added
 - **History entry actions:** long-pressing an entry on the Consumption History screen opens a small bottom sheet with **Restore to cellar** (adds the bottle back and removes the entry) and **Delete log entry** (removes the entry only; the cellar is not changed). There is no visible button; both actions ask for confirmation and both keep any tasting note, unlike the snackbar UNDO right after consuming, which still removes the note it just created.
 - **Drinking-window estimate (W-050 Phase 1):** Wine Detail shows an “Est.” drinking window (just the years, e.g. “Est. 2028 – 2038”) when you have not entered one. It reads the maker, wine name, subregion, region, country, and vintage (not the price you paid), so a Côtes du Rhône Villages, a Vacqueyras and a Châteauneuf-du-Pape no longer share one answer, and Rioja Crianza/Reserva/Gran Reserva, Pauillac vs. generic Bordeaux and Spätlese vs. Kabinett Riesling differ. A wine the table does not recognise gets a type-only window labelled “Estimate by type”; non-vintage wines get none. The 61-rule table (new `drinkingwindow` package) was drafted from web sources noted per entry and is unreviewed. Estimates are never saved, exported, or used by the Ready Now / Too Early / Past Peak filters.
@@ -228,4 +230,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.3.1]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.1.0...v0.2.0
-[Unreleased]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.5...HEAD
+[Unreleased]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.6...HEAD
+[0.5.6]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.5...v0.5.6
