@@ -18,9 +18,9 @@ A personal wine cellar app for Android. It tracks what is in the cellar, what ha
 
 Requirements:
 
-- Android Studio Quail 2 (2026.1.2) or newer, or Code on the Go on the phone.
+- Android Studio that supports AGP 9.1.1. Code on the Go may not build this project (see below).
 - JDK 17 or newer for Gradle, and the Android SDK Platform 36.
-- Gradle 9.6.1 (the wrapper downloads it), AGP 9.3.1, Kotlin 2.3.21. The app runs on Android 13 (API 33) and newer.
+- Gradle 9.3.1 (the wrapper downloads it), AGP 9.1.1, Kotlin 2.2.10, KSP 2.3.2. These are pinned on purpose; do not upgrade them without the owner's say-so. Code on the Go bundles AGP 9.3.1 / Kotlin 2.3.21 / Gradle 9.6.1 and can fail to resolve AGP 9.1.1 from its offline repository. The app runs on Android 13 (API 33) and newer.
 
 ```
 ./gradlew :app:assembleDebug          # build the debug app

@@ -73,7 +73,7 @@
 
 ### 1. W-056 — Automated build-and-test (CI) and tag-based releases *(new)*
 **Complexity:** S · **Status:** Open
-* **Goal:** Every PR is compiled and unit-tested automatically, and each release is a Git tag, so a broken build or failing test is caught before merge. The repo has no `.github/` workflows and no tags (the `CHANGELOG.md` compare links assume `v*` tags).
+* **Goal:** Every PR is compiled and unit-tested automatically, and each release is a Git tag, so a broken build or failing test is caught before merge. The repo has no `.github/` workflows. Tags exist up to `v0.5.5` (the `CHANGELOG.md` compare links use `v*` tags); the CI work adds tagging as part of the release step.
 * **Scope:** one GitHub Actions workflow on pull requests and pushes to `main`: JDK 17, `./gradlew :app:assembleDebug :app:testDebugUnitTest`, upload the test report. Instrumented tests (`connectedDebugAndroidTest`) stay manual until an emulator job is justified. Release steps are in `PIPELINE.md`.
 * **Watch-outs:** confirm every test under `app/src/test` runs on a plain JVM (the scanner OCR regression test must not need a device); the 13 label fixtures (~45 MB) make checkout slower.
 * **Done when:** a PR shows a green/red check from the workflow, and `v0.5.6` exists as a tag.

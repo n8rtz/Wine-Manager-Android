@@ -17,7 +17,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
 | `arena/814c691f-wine-manager-android` | not opened yet | current work | Cleanup of dead code, Profile + Settings, build info in App Information, debug test-data restore, backlog and docs rewrite | [Jump](#branch-arena814c691f-wine-manager-android) |
-| `arena/a8add687-wine-manager-android` | #5, merged 2026-10-15 | in `main` | Toolchain matched to Code on the Go (AGP 9.3.1, Kotlin 2.3.21, Gradle 9.6.1) | [Jump](#branch-arenaa8add687-wine-manager-android) |
+| `arena/a8add687-wine-manager-android` | #5, merged 2026-10-15 | in `main` | Toolchain matched to Code on the Go (AGP 9.3.1, Kotlin 2.3.21, Gradle 9.6.1); **reverted on this branch to AGP 9.1.1 / Kotlin 2.2.10 / Gradle 9.3.1** | [Jump](#branch-arenaa8add687-wine-manager-android) |
 | `arena/77d08ab9-wine-manager-android` | #4, merged 2026-10-15 | in `main` | Aroma wheel and tasting-note editor controls, Bug-022 to Bug-026 | [Jump](#branch-arena77d08ab9-wine-manager-android) |
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
@@ -28,7 +28,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
 1. [ ] In Android Studio, choose **File → Open…** and select the repository root (the folder containing `settings.gradle.kts`). Wait for Gradle sync to finish; resolve any SDK/license prompts rather than dismissing them.
-2. [ ] Open **File → Settings → Build, Execution, Deployment → Build Tools → Gradle** (on macOS, **Android Studio → Settings…**). Set **Gradle JDK** to Android Studio's bundled JDK 17 or newer; this project uses AGP 9.3.1 (matching the Code on the Go on-device IDE), which needs Android Studio Quail 2 (2026.1.2) or newer and Gradle 9.5.0 or newer (the wrapper uses 9.6.1).
+2. [ ] Open **File → Settings → Build, Execution, Deployment → Build Tools → Gradle** (on macOS, **Android Studio → Settings…**). Set **Gradle JDK** to Android Studio's bundled JDK 17 or newer; this project is pinned to AGP 9.1.1 with Gradle 9.3.1 (the wrapper downloads it), so the Android Studio sync message must not say the project was built with a different AGP.
 3. [ ] Open **Tools → SDK Manager** and install Android SDK Platform 36 when prompted (the app compiles against API 36). The app's minimum supported device API is 33.
 4. [ ] Open **Tools → Device Manager → Create Device**, choose a Pixel profile, download/start an API 33-or-newer system image, and wait for the emulator to finish booting. A physical Android device is preferable for autofocus/camera checks. If using an emulator for OCR, configure its back-camera input (for example, the host webcam).
 5. [ ] Select the **app** run configuration and the booted device in the toolbar, then click **Run ▶**. Confirm the app opens on **Cellar**. Use a disposable emulator/install for any step that writes data; do not clear or alter a personal cellar.
@@ -127,8 +127,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
-1. [ ] In **Android Studio Quail 2 (2026.1.2) or newer**, sync Gradle and run `:app:assembleDebug`. It must resolve AGP 9.3.1, Kotlin 2.3.21 and Gradle 9.6.1 without errors.
-2. [ ] In **Code on the Go** on the phone, open the project and run its assemble-debug task. It must build and install.
+1. [ ] In Android Studio, sync Gradle and run `:app:assembleDebug`. It must resolve AGP 9.1.1, Kotlin 2.2.10, KSP 2.3.2 and Gradle 9.3.1 with **no** "built with AGP 9.3.1 but synced with 9.1.1" warning.
+2. [ ] (Optional, expected to be at risk) In **Code on the Go** on the phone, open the project and run its assemble-debug task. With AGP 9.1.1 it can fail with "Could not find guava-33.3.1-jre.jar ... localMvnRepository"; that was the reason PR #5 moved to AGP 9.3.1.
 3. [ ] The installed app opens on **Cellar**. In **App Information** the **Signing key** shows a fingerprint; note it for each tool (see *Keeping your data between test installs*).
 
 
