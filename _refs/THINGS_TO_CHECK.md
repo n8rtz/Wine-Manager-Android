@@ -134,11 +134,11 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 Use a throwaway install or the debug seed, not data you can't replace.
 
-1. [ ] Open **History**. Each entry shows a **⋮** at its right edge. Tapping the card itself still opens its note as before.
+1. [ ] Open **History**. Entries have no buttons or menu icons. Tapping a card still opens its note as before. **Press and hold** a card: you feel a short vibration and a bottom sheet slides up with the wine name, **Restore to cellar** and **Delete log entry** (red).
 2. [ ] Note one wine's quantity in **Cellar**, then consume one bottle from its detail screen (**Mark as Consumed**, add a rating or note) so a History entry appears.
-3. [ ] On that entry tap **⋮ → Restore to cellar → Restore**. The entry disappears, the wine's cellar quantity goes back up by one, and the tasting note (if you wrote one) is still in **Tasting Notes**.
-4. [ ] Consume a bottle again, then **⋮ → Delete log entry → Delete**. The entry disappears, the cellar quantity does **not** change, and the note is still in **Tasting Notes**.
-5. [ ] Tap **Cancel** in either dialog: nothing changes.
+3. [ ] On that entry tap **press and hold → Restore to cellar → Restore**. The entry disappears, the wine's cellar quantity goes back up by one, and the tasting note (if you wrote one) is still in **Tasting Notes**.
+4. [ ] Consume a bottle again, then **press and hold → Delete log entry → Delete**. The entry disappears, the cellar quantity does **not** change, and the note is still in **Tasting Notes**.
+5. [ ] Tap **Cancel** in either dialog, or swipe the sheet down / tap outside it: nothing changes.
 6. [ ] Restore an old entry that has no date (“Date not recorded”): it still restores. If the wine's cellar row was deleted earlier, the wine reappears in the cellar.
 7. [ ] Right after consuming, tap the snackbar **UNDO**: it still restores the bottle and removes the note that consume created (unchanged behaviour).
 
