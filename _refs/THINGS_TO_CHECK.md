@@ -107,6 +107,15 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 3. [ ] Repeat with **Rating (High)**, a type or price filter, and by typing in the search box. Each time the list returns to the top.
 4. [ ] Open a wine's notes or detail from Rankings and go back: the list should not jump (it only resets when the list contents change).
 
+### Add Note from Wine Detail
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open a wine from **Cellar** (for example Thanisch Riesling 2016). Tap **+ → Add Note**. The editor opens with that wine and vintage already chosen.
+2. [ ] Do the same from a non-vintage wine: the vintage shows NV.
+3. [ ] Save the note: it appears under that wine in **Tasting Notes**.
+4. [ ] From **Cellar**, **Rankings** or **Tasting Notes** (not a wine detail), tap **+ → Add Note**: the editor starts blank, as before.
+
 ### Keeping your data between test installs
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*

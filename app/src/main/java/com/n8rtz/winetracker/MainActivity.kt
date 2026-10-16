@@ -291,6 +291,8 @@ fun MainAppScaffold(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var isMenuExpanded by remember { mutableStateOf(false) }
+    // Used only so "Add Note" from a wine's detail screen can prefill that wine.
+    val activeInventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val fabRotation by animateFloatAsState(targetValue = if (isMenuExpanded) 45f else 0f, label = "fabRotation")
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -603,7 +605,22 @@ fun MainAppScaffold(
                         onClick = {
                             Log.d("WineTracker", "Popup: Add Note clicked")
                             isMenuExpanded = false
-                            navController.navigate("note_editor/create")
+                            // From a wine's detail screen, start the note on that wine and vintage.
+                            val detailBottleId = if (currentRoute == "detail/{bottleId}") {
+                                navBackStackEntry?.arguments?.getLong("bottleId")
+                            } else null
+                            val detailBottle = detailBottleId?.let { id ->
+                                activeInventory.find { it.bottle.bottleId == id }
+                            }
+                            Log.d("WineTracker", "Popup: Add Note from detail bottleId=$detailBottleId found=${detailBottle != null}")
+                            if (detailBottle != null) {
+                                navController.navigate(
+                                    "note_editor/create?definitionId=${detailBottle.definition.definitionId}" +
+                                        "&vintage=${Uri.encode(detailBottle.bottle.vintage)}"
+                                )
+                            } else {
+                                navController.navigate("note_editor/create")
+                            }
                         }
                     )
                 }
