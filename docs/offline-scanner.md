@@ -405,3 +405,36 @@ assignments. Expected fields never enter the recognizer; image bytes follow the 
 path, and scoring still occurs only after recognition. Photo loading is streamed on IO,
 checksummed and cancellable without extra full-size bitmaps. Debug package assets increase
 by approximately 10 MiB; release package assets and scanning limits are unchanged.
+
+### OCR Text Lab — manual word/phrase crops
+
+Debug Profile now includes **OCR Text Lab — draw a crop**, separate from the wine benchmark.
+Choose a local photo, drag a rectangle around a word/phrase, and press **Run OCR on crop**.
+Drawing a new box replaces the prior selection; clear/full-image controls and optional
+up-to-2× enlargement are available. Leave space around accents, descenders and flourishes.
+The crop preview, raw ML Kit lines, measured/estimated confidence and original-image
+polygon coordinates are shown with **Copy OCR result**. No expected wine answers, dictionary
+correction, confidence-based line suppression or field extraction are used.
+
+The source is EXIF-upright and downsampled to at most 1920 pixels on its long edge, as in
+normal scanning; this is not native-resolution region decoding of the original JPEG.
+The display preserves that aspect ratio with no letterbox offsets. Selection fractions
+are converted outward to integer source pixels, then directly drawn into one bounded OCR
+crop (width ≤1280, edge ≤1920). Output is original color with optional uniform enlargement,
+not sharpening, thresholding, dewarping or the normal V2 half-height transform. The shared
+ML Kit adapter then converts to grayscale NV21 with even-edge padding; the UI explicitly
+labels its preview as before that conversion. Padding does not shift coordinates. Crop resize,
+translation and original downsampling have an explicit inverse-coordinate map.
+
+Photo import/decoding and OCR run off the UI thread. Each operation uses a two-working-bitmap
+workspace and finally cleanup; the view holds only file metadata and bounded image previews.
+Recognition uses the existing app-scoped scan/native-engine gates and bundled Latin ML Kit
+client, **not** optional rectified-label-only engines. A cooperative 8-second OCR budget
+includes initialization/gate wait/preparation. Stop and failure paths release owned bitmaps
+and temporary results; source/crop files are removed on replacement/close. Normal scanner
+and 30-case benchmark behavior are not changed.
+
+Host checks exercise reverse/out-of-bounds drags, tiny/invalid selections, output-size limits
+and crop-to-original corner/round-trip mapping. Static checks guard the debug-only private
+activity and raw ML Kit path. Android touch interaction and real font-recognition accuracy
+still need on-device validation; no emulator or APK validation was performed for this change.
