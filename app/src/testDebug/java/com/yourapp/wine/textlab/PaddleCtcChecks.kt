@@ -5,6 +5,15 @@ import kotlin.math.abs
 
 object PaddleCtcChecks {
     fun run() {
+        PaddleCtc.validateInputShape(longArrayOf(1,3,48,320))
+        PaddleCtc.validateInputShape(longArrayOf(-1,3,48,-1))
+        PaddleCtc.validateInputShape(longArrayOf(-1,-1,-1,-1))
+        check(PaddleCtc.widths(842,274,-1)==(148 to 320)) // User's Merlot crop is within budget.
+        for(shape in listOf(longArrayOf(1,4,48,320),longArrayOf(1,3,32,320),
+            longArrayOf(2,3,48,320),longArrayOf(1,3,48),longArrayOf(1,3,48,0),longArrayOf(1,3,48,1025))) {
+            try { PaddleCtc.validateInputShape(shape);error("Incompatible fixed input must fail") }
+            catch(expected:IllegalArgumentException) { check(expected.message!!.contains(shape.contentToString())) }
+        }
         // Blank, repeated symbol, blank, same symbol, different symbol, appended space.
         fun buffer(indices:List<Int>,classes:Int):FloatBuffer = FloatBuffer.wrap(indices.flatMap { best ->
             List(classes) { if(it==best) .9f else .1f/(classes-1) }

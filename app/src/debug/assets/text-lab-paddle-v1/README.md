@@ -45,3 +45,16 @@ been executed here. No accuracy uplift, Merlot result, phone timing, peak native
 debug APK size is claimed. Debug builds need working build-machine access to GitHub release
 assets and the usual Maven dependency repositories; installed recognition is offline. Verify
 debug APK/native size on the build machine before considering production deployment.
+
+### Windows packaging and failure diagnostics
+
+The upstream `ppocrv5_dict.txt` is packaged as `ppocrv5_dict.utf8` with Git `-text`
+attributes. Its bytes and SHA-256 are unchanged. This new filename ensures an existing
+Windows checkout receives a fresh byte-exact artifact rather than retaining a previously
+CRLF-converted `.txt` copy. Runtime length/hash verification remains strict.
+
+Input metadata accepts symbolic (negative) ONNX dimensions while still requiring any
+fixed batch/channel/height dimensions to match 1/3/48. Actual input is constructed at
+that shape, and actual output cardinality remains checked after inference. Errors now
+identify the processing stage and exception detail, including incompatible tensor shapes;
+a failure must not be interpreted as the recognizer seeing no text.

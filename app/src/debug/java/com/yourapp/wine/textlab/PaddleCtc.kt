@@ -5,6 +5,18 @@ import kotlin.math.ceil
 
 /** No vocabulary correction. These are raw CTC posteriors, not ML Kit confidence or calibrated certainty. */
 internal object PaddleCtc {
+    /** Symbolic ONNX dimensions are negative, not incompatible fixed sizes.
+     * We still construct exactly [1,3,48,width] and validate concrete output after run.
+     */
+    fun validateInputShape(shape:LongArray) {
+        require(shape.size==4 &&
+            (shape[0]<0 || shape[0]==1L) &&
+            (shape[1]<0 || shape[1]==3L) &&
+            (shape[2]<0 || shape[2]==48L) &&
+            (shape[3]<0 || shape[3] in 1L..1024L)) {
+            "Input shape ${shape.contentToString()} incompatible with [1,3,48,width<=1024]; negative dimensions are dynamic"
+        }
+    }
     data class Reading(val text:String,val confidence:Float)
     fun decode(values:FloatBuffer,steps:Int,classes:Int,dictionary:List<String>,checkActive:()->Unit={}):Reading {
         require(steps in 1..512 && classes==dictionary.size+2 && values.remaining()==steps*classes)

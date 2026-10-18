@@ -77,7 +77,7 @@ internal object TextLabRunner {
                         val alternative=try {
                             PaddleTextRecognizer.recognize(context,crop,workspace,deadline,WineScannerServices.nativeGate)
                         } catch(cancel:CancellationException) { throw cancel }
-                        catch(error:Exception) { "PP-OCRv5 unavailable/failed (${error.javaClass.simpleName}). No alternative reading produced. Check model assets or use a shorter single-line crop." }
+                        catch(error:Exception) { "PP-OCRv5 failed (${error.javaClass.simpleName}).\nDetails: ${error.message?.take(1500) ?: "No exception detail"}\nNo alternative reading produced; this is an engine failure, not a negative recognition result. Copy this report for diagnosis." }
                         catch(_:LinkageError) { "PP-OCRv5 runtime unavailable on this device. ML Kit result retained." }
                         partial += "\n\n$alternative"
                     }

@@ -8,6 +8,7 @@
   "model_sha256": "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224",
   "model_bytes": 16562373,
   "dictionary_sha256": "d1979e9f794c464c0d2e0b70a7fe14dd978e9dc644c0e71f14158cdf8342af1b",
+  "dictionary_asset": "ppocrv5_dict.utf8",
   "dictionary_entries": 18383,
   "dictionary_source": "ppocr/utils/dict/ppocrv5_dict.txt",
   "license": "Apache-2.0",
