@@ -22,13 +22,38 @@ data class LabLabel(val id:String=UUID.randomUUID().toString(),val uri:Uri,val l
 data class LabelRun(val id:String,val label:String,val expected:Map<FieldId,String>,val seed:Int,
     val inputHash:String="",val baseHash:String="",val base:File?=null,val setup:ScanReport?=null,
     val results:List<BenchmarkCaseResult> = emptyList(),val status:String="queued")
-data class LabState(val busy:Boolean=false,val progress:String="Choose up to 10 label photos, then enter each label's actual details.",
+data class LabState(val busy:Boolean=false,val progress:String="Choose up to 10 label photos, then select a cellar wine or enter each label's actual details.",
     val labels:List<LabLabel> = emptyList(),val runs:List<LabelRun> = emptyList(),val batchId:String="",val savedRows:Int=0,val historyReady:Boolean=false)
+data class CellarSearchState(val loading:Boolean=false,val wines:List<CellarWineChoice> = emptyList(),val error:String?=null)
 private class HistoryWriteFailure(cause:Exception):Exception(cause)
 
 class OcrLabViewModel(app:Application):AndroidViewModel(app) {
     private val mutable=MutableStateFlow(LabState())
     val state=mutable.asStateFlow()
+    private val cellarMutable=MutableStateFlow(CellarSearchState())
+    val cellarSearch=cellarMutable.asStateFlow()
+    private var cellarJob:Job?=null
+    fun searchCellar(query:String) {
+        cellarJob?.cancel()
+        cellarMutable.value=CellarSearchState(loading=true)
+        cellarJob=viewModelScope.launch {
+            try {
+                delay(250)
+                val choices=CellarWineSearch.find(getApplication(),query)
+                ensureActive()
+                cellarMutable.value=CellarSearchState(wines=choices)
+            } catch(cancel:CancellationException) { throw cancel }
+            catch(_:Exception) { cellarMutable.value=CellarSearchState(error="Could not read the cellar. Try again, or enter the details manually.") }
+        }
+    }
+    fun closeCellarSearch() { cellarJob?.cancel();cellarMutable.value=CellarSearchState() }
+    fun useCellarWine(labelId:String,wine:CellarWineChoice) {
+        if(mutable.value.busy) return
+        mutable.update { state -> state.copy(labels=state.labels.map { label ->
+            if(label.id!=labelId) label else label.copy(label=wine.title.take(120),expected=wine.expected(),reviewed=false)
+        }) }
+        closeCellarSearch()
+    }
     private var job:Job?=null
     private var directory:File?=null
     private val history=BenchmarkHistory(File(app.noBackupFilesDir,"ocr-lab-csv-v1"))
@@ -40,7 +65,7 @@ class OcrLabViewModel(app:Application):AndroidViewModel(app) {
         val unique=uris.distinct()
         if(unique.size>10) { mutable.update { it.copy(progress="Select at most 10 photos per batch. No selection was changed.") };return }
         mutable.update { it.copy(labels=unique.mapIndexed { index,uri -> LabLabel(uri=uri,label="Label ${index+1}") },
-            progress="Enter the actual details separately for each photo and mark it reviewed. Previous CSV history is retained.") }
+            progress="Select a cellar wine or enter details for each photo, then mark it reviewed. Previous CSV history is retained.") }
     }
     fun edit(id:String,field:FieldId?,value:String) {
         if(mutable.value.busy) return

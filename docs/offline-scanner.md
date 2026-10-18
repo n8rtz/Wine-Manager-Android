@@ -367,3 +367,25 @@ A host regression replays the actual CSV homography and synthetic footer/upper-t
 checks rejection/retention, bounded fallback sizing, and inverse coordinate mapping. This is
 not a phone ML Kit rerun or a claim that every contour on the supplied photo is fixed; confirm
 on-device that the next base preview includes the upper title before comparing OCR recipes.
+
+### OCR Lab: choose expected details from the cellar
+
+Each queued photo now has **Search cellar to fill actual details**. Search current,
+positive-quantity cellar inventory by maker, wine, vintage, country, region or subregion;
+matching is case/diacritic insensitive and supports multiple search words. Different
+vintages are separate choices. Results show saved identity, vintage and geography (first
+60 matches; narrow the query for more). Archived and zero-quantity bottles are excluded.
+
+Selection replaces all six expected fields for that photo, including clearing blanks from
+any previous choice, sets its nickname, and resets the reviewed checkbox. Values remain
+editable; verify the photo/vintage before marking reviewed. Country is copied as stored,
+including the cellar's U.S. state convention. NV/unknown vintages remain blank/unscored.
+No automatic reuse of previous benchmark answers or image-to-wine guessing is performed.
+
+The debug-only picker opens the existing cellar SQLite database read-only on IO, closes
+its cursor/connection after each cancellable search, and never creates/migrates/writes
+inventory or loads wine images. Errors offer retry/manual entry. Selection is disabled
+while benchmarking; the run freezes each photo's expected map and uses it only after OCR
+for scoring, exactly as before. No cellar record/answer enters BenchmarkRunner or normal
+recognition. Pure host tests cover search, mapping, vintage distinction and missing values;
+the Compose dialog and on-device SQLite path still require device validation.

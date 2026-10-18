@@ -39,6 +39,7 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedImage by rememberSaveable { mutableStateOf<String?>(null) }
     var imageIndex by rememberSaveable(selected,selectedImage) { mutableStateOf(0) }
+    var cellarLabelId by rememberSaveable { mutableStateOf<String?>(null) }
     var clearConfirm by remember { mutableStateOf(false) }
     var autoExport by rememberSaveable { mutableStateOf(exportRequested) }
     var showSummary by rememberSaveable { mutableStateOf(false) }
@@ -68,6 +69,7 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
                     Text(label.label,style=MaterialTheme.typography.titleMedium)
                     if(!state.busy) LabelImage(label.uri,"Selected label ${label.label}",180)
                     OutlinedTextField(label.label,{vm.edit(label.id,null,it)},label={Text("Image nickname / sample ID")},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
+                    OutlinedButton(enabled=!state.busy,onClick={cellarLabelId=label.id}) { Text("Search cellar to fill actual details") }
                     FieldId.entries.forEach { field ->
                         val title=when(field) {
                             FieldId.PRODUCER -> "Actual maker / producer"
@@ -90,7 +92,7 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
             if(state.busy) { LinearProgressIndicator(Modifier.fillMaxWidth());TextButton(onClick=vm::cancel) { Text("Stop") } }
             Text(state.progress)
             Text("Saved CSV history: ${state.savedRows} rows. Retained across screen close and app restart.")
-            Text("CSV includes typed actual answers, recognized fields, raw text/confidence, recipe, timing and device/build data—no images or original paths. ZIP also includes this batch's processed images.",style=MaterialTheme.typography.bodySmall)
+            Text("CSV includes reviewed actual answers, recognized fields, raw text/confidence, recipe, timing and device/build data—no images or original paths. ZIP also includes this batch's processed images.",style=MaterialTheme.typography.bodySmall)
             OutlinedButton(enabled=!state.busy && state.savedRows>0,onClick={csvExporter.launch("wine-ocr-tests.csv")}) { Text("Export all saved test data (CSV)") }
             OutlinedButton(enabled=!state.busy && state.runs.any { it.results.isNotEmpty() },onClick={zipExporter.launch("wine-ocr-batch.zip")}) { Text("Export current batch CSV + images ZIP") }
             TextButton(enabled=!state.busy && state.savedRows>0,onClick={clearConfirm=true}) { Text("Clear saved test history…") }
@@ -133,6 +135,12 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
                 }
             }
         }
+    }
+    cellarLabelId?.let { id ->
+        val label=state.labels.firstOrNull { it.id==id }
+        if(label!=null && !state.busy) CellarWinePicker(label.label,vm,
+            onDismiss={cellarLabelId=null;vm.closeCellarSearch()},
+            onSelect={wine -> vm.useCellarWine(id,wine);cellarLabelId=null})
     }
     if(clearConfirm) AlertDialog(onDismissRequest={clearConfirm=false},title={Text("Delete saved test history?")},
         text={Text("Export your CSV first. This permanently deletes saved benchmark rows, not cellar data or original photos.")},
