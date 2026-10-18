@@ -56,6 +56,19 @@ class TextHullClusterer {
             val offset = kotlin.math.hypot((centerX - .5f).toDouble(), (centerY - .5f).toDouble())
             ink * sqrt(group.size.toDouble()) * (1.0 - .5 * offset)
         } ?: return emptyList()
-        return chosen.map { samples[it].token }
+        val selected = chosen.map { samples[it] }
+        val left = selected.minOf { it.box.left }; val right = selected.maxOf { it.box.right }
+        val top = selected.minOf { it.box.top }; val bottom = selected.maxOf { it.box.bottom }
+        // A crest/illustration can separate the title and footer by more than the clustering gap.
+        // Do not silently discard a substantial aligned text box, even if its OCR score is weak.
+        val omittedAlignedText = samples.indices.filter { it !in chosen }.any { index ->
+            val other = samples[index]
+            val overlap = max(0f, min(right, other.box.right) - max(left, other.box.left)) /
+                min(right-left, other.box.width())
+            other.token.text.count(Char::isLetter) >= 3 && other.box.width() >= .15f * workW &&
+                other.box.height() >= .015f * workH && overlap >= .6f &&
+                (other.box.bottom < top || other.box.top > bottom)
+        }
+        return if (omittedAlignedText) emptyList() else selected.map { it.token }
     }
 }

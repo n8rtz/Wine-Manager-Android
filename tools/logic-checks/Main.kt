@@ -34,6 +34,7 @@ fun main() {
         "separate text columns remain separate" to com.yourapp.wine.LocalizationChecks::separateBottleColumnsDoNotJoin,
         "bounded rectified-label upscaling" to com.yourapp.wine.LocalizationChecks::rectifiedCropsUseThePixelBudgetWithoutExceedingIt,
         "padding stays in frame and declines tiny fragments" to com.yourapp.wine.LocalizationChecks::paddedProposalsStayBoundedAndTinyFragmentsRemainFallbacks,
+        "reported footer crop declines / omitted aligned title preserved / full-frame inverse" to com.yourapp.wine.LocalizationChecks::footerCropDeclinesInsteadOfLosingTheTitle,
         "rescue schedules from usable confidence not raw counts" to com.yourapp.wine.LocalizationChecks::rescueUsesUsableEvidenceRatherThanRawLineCount,
         "upscaled-crop inverse coordinate mapping" to com.yourapp.wine.LocalizationChecks::enlargedCropPreservesOriginalCoordinateRoundtrip).forEach { (name, test) ->
         test(); println("PASS: $name")

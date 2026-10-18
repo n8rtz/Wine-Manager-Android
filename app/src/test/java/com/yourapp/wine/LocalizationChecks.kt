@@ -93,6 +93,42 @@ object LocalizationChecks {
         check(LabelGeometryPolicy.areaFraction(exact, 100, 100) == LabelGeometryPolicy.MIN_LABEL_AREA_FRACTION)
     }
 
+    fun footerCropDeclinesInsteadOfLosingTheTitle() {
+        // Actual original->base homography from the attached CSV (both acc9133 and e9aad50).
+        // This is geometric replay, NOT a rerun of ML Kit on the attached photograph.
+        val oldH = Matrix3(listOf(0.6140555876325383, 0.014192887910906109, -275.46691910871994,
+            -0.014197716967851444, 0.6138407008954746, -1536.711078974689,
+            8.672068791062052E-11, -3.844494468431005E-11, 1.0))
+        val oldQuad = listOf(PointF(0f,0f),PointF(1280f,0f),PointF(1280f,884f),PointF(0f,884f))
+            .map(oldH.inverse()::map)
+        check(oldQuad.minOf { it.y } / 4000 > .60f)
+        check(oldH.map(PointF(1500f,1200f)).y < 0) // Upper title is outside the old base.
+        check(LabelGeometryPolicy.isPartialBand(oldQuad,4000))
+        val footer = listOf(read("Founding date",.7f,.20f,.69f,.75f,.73f),
+            read("Origin line",.9f,.14f,.77f,.82f,.84f),read("Producer footer",.5f,.23f,.89f,.76f,.95f))
+        val selected = TextHullClusterer().select(footer,W,H)
+        check(selected.size==footer.size)
+        check(LabelGeometryPolicy.textQuad(selected,W,H,3000,4000)==null)
+        val title = read("Upper title",.3f,.28f,.25f,.75f,.39f)
+        val joined=TextHullClusterer().select(footer+title,W,H)
+        check(joined.isEmpty() || title in joined)
+        val separatedTitle=read("Distant upper title",.3f,.28f,.10f,.75f,.20f)
+        check(TextHullClusterer().select(footer+separatedTitle,W,H).isEmpty())
+        check(title.score==.3f) // Weak geometry is not promoted into accepted identity evidence.
+        val fullLabel = listOf(PointF(200f,300f),PointF(2800f,300f),PointF(2800f,3900f),PointF(200f,3900f))
+        check(!LabelGeometryPolicy.isPartialBand(fullLabel,4000))
+        val fullWideLabel = listOf(PointF(0f,20f),PointF(1000f,20f),PointF(1000f,480f),PointF(0f,480f))
+        check(!LabelGeometryPolicy.isPartialBand(fullWideLabel,500))
+        // Fallback preserves the entire source in a bounded image, with an invertible mapping.
+        val size=LabelGeometryPolicy.rectifiedSize(1439f,1918f)
+        val fallback=Matrix3.scale(size.width/3000.0,size.height/4000.0)
+        val titlePoint=PointF(1500f,1200f)
+        val mapped=fallback.map(titlePoint)
+        check(mapped.x in 0f..size.width.toFloat() && mapped.y in 0f..size.height.toFloat())
+        val restored=fallback.inverse().map(mapped)
+        check(abs(restored.x-titlePoint.x)<.002f && abs(restored.y-titlePoint.y)<.002f)
+    }
+
     fun rescueUsesUsableEvidenceRatherThanRawLineCount() {
         val probe = deviceProbe()
         val v1 = probe.map { it.copy(variantId = "V1", score = if (it.text == "CALIFORNIA") .780f else .547f) }

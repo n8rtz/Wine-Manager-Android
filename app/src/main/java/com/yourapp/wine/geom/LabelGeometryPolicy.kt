@@ -32,6 +32,18 @@ object LabelGeometryPolicy {
         }) / (2.0 * frameW * frameH)
     }
 
+    /** SAME-space quad/frame pixels. A short wide band may be only the readable label footer.
+     * Decline rather than invent an upper boundary; the caller retains the full-frame fallback.
+     * Deliberately conservative: a genuine wide label may also fall back, never lose its pixels.
+     */
+    fun isPartialBand(quad: List<PointF>, frameH: Int): Boolean {
+        require(frameH > 0)
+        if (quad.size != 4 || quad.any { !it.x.isFinite() || !it.y.isFinite() }) return true
+        val width = quad.maxOf { it.x } - quad.minOf { it.x }
+        val height = quad.maxOf { it.y } - quad.minOf { it.y }
+        return height < .5f * frameH && width > 1.2f * height
+    }
+
     /** WORKING text polygons -> ORIGINAL proposal, aligned with text baselines rather than a tapered group's hull. */
     fun textQuad(tokens: List<RawToken>, workW: Int, workH: Int, origW: Int, origH: Int): List<PointF>? {
         if (tokens.isEmpty()) return null
@@ -78,6 +90,6 @@ object LabelGeometryPolicy {
         })
         // Unlike a contour boundary, a small OCR envelope is not proof that the actual label is too small.
         // Decline the proposal instead of rejecting an otherwise readable capture as "Move closer".
-        return quad.takeIf { areaFraction(it, origW, origH) >= MIN_LABEL_AREA_FRACTION }
+        return quad.takeIf { areaFraction(it, origW, origH) >= MIN_LABEL_AREA_FRACTION && !isPartialBand(it, origH) }
     }
 }

@@ -341,3 +341,29 @@ never pick an arbitrary state, and importer text cannot provide origin evidence.
 are not used to fill absent fields. Existing imported records, manual edits, scan deadlines,
 bitmap limits and OCR Lab truth isolation remain unchanged. Run the catalog `--check`, Python
 tests and host logic checks described in the catalog README; these are not APK/emulator checks.
+
+### Footer-only crop safeguard (2026-10-18)
+
+The supplied Rhône photo/CSV demonstrates an upstream localization loss, not a V2-only
+crop: both acc9133 and e9aad50 used the same 1280×884 base/homography, whose top edge is
+below 60% of the 3000×4000 original. The upper title is outside that base. V2 subsequently
+halves its height to 1280×442 for aspect rescue; no filter can recover the missing title.
+
+Contour and padded text proposals now decline a wide band (width > 1.2× height) spanning
+less than half the frame height. This is a conservative **rejection** heuristic, not an
+invented label boundary or a fixed field-position mask. A genuine small/wide label may
+also fall back. Text clustering additionally declines proposals that would discard substantial
+vertically separated, horizontally aligned text boxes, including positive-score weak boxes.
+No OCR score or field retention threshold is relaxed.
+
+When no other supported proposal remains, the existing mapped, bounded full-frame fallback
+retains all source content and caps fields at YELLOW. No extra bitmap, pass, or time budget
+is added. OCR Lab now allows that mapped full-frame base, uses the full-frame engine input
+kind (so optional label-only engines remain excluded), and does not mark it as a found label.
+All 30 recipes still share one fixed base. Base-image/homography failures still stop setup;
+the historical Kirkland/Penfolds exceptions have not been individually diagnosed.
+
+A host regression replays the actual CSV homography and synthetic footer/upper-title boxes,
+checks rejection/retention, bounded fallback sizing, and inverse coordinate mapping. This is
+not a phone ML Kit rerun or a claim that every contour on the supplied photo is fixed; confirm
+on-device that the next base preview includes the upper title before comparing OCR recipes.

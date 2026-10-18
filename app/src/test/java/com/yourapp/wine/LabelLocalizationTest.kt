@@ -9,6 +9,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26], manifest = Config.NONE)
 class LabelLocalizationTest {
+    @Test fun footerCropDoesNotDiscardUpperName() = LocalizationChecks.footerCropDeclinesInsteadOfLosingTheTitle()
     @Test fun weakBoxesMayLocateButNeverBecomeAcceptedFields() = LocalizationChecks.weakBoxesLocalizeWithoutBecomingAcceptedText()
     @Test fun sparseLabelBodyIsOnePaddedProposal() = LocalizationChecks.sparseBodyKeepsTheBrandAndLowerLabelInOneProposal()
     @Test fun weakOrInvalidBoxesCannotCreateAnUnanchoredLabel() = LocalizationChecks.geometryNeedsAnAnchorAndRejectsInvalidReadings()

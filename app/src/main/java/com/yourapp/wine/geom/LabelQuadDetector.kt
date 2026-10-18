@@ -53,7 +53,8 @@ class LabelQuadDetector {
                     score to ordered.map { p -> PointF(p.x * geom.origW / small.cols(), p.y * geom.origH / small.rows()) }
                 } finally { curve.release(); approx.release() }
             }
-            return candidates.maxByOrNull { it.first }?.second
+            return candidates.filterNot { LabelGeometryPolicy.isPartialBand(it.second, geom.origH) }
+                .maxByOrNull { it.first }?.second
         } finally {
             contours.forEach { it.release() }
             listOf(rgba, gray, small, edges, hierarchy).forEach { it.release() }

@@ -23,13 +23,15 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
         val baseFile=File(directory,"base.png")
         onProgress("Locating label and warming engines (not a scored case)…")
         val setup=scanner.captureBenchmarkBase(photo,baseFile)
-        require(baseFile.isFile && setup.homography!=null && setup.quadOrig!=null) {
-            "Could not obtain a rectified label. Choose a clearer, closer label photo."
+        require(baseFile.isFile && setup.homography!=null) {
+            "Could not prepare a mapped image. Choose a clearer label photo."
         }
         if(baseFile.length()>previewBudgetBytes) {
             baseFile.delete()
             error("Base image exceeds per-image preview budget; try a smaller batch")
         }
+        // A declined crop is still a valid mapped, bounded full-frame base, not a setup failure.
+        val inputKind = if (setup.quadOrig != null) OcrInputKind.RECTIFIED_LABEL else OcrInputKind.FULL_FRAME_FALLBACK
         onBase(setup,baseFile)
         var previewBytes=baseFile.length()
         val ordered=listOf(BenchmarkPlan.cases.first())+BenchmarkPlan.cases.drop(1).shuffled(Random(seed))
@@ -76,10 +78,10 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
                         val batch=OcrEnsemble(engines,onTiming={timings+=it}).run(withPreviews,deadline,onTokens={ raw ->
                             raw.forEach { token ->
                                 val mapped=mapper.toOriginal(token)
-                                trace.reading(token,OcrInputKind.RECTIFIED_LABEL,mapped!=null)
+                                trace.reading(token,inputKind,mapped!=null)
                                 if(mapped!=null) records+=mapped
                             }
-                        })
+                        },inputKind=inputKind)
                         if(batch.deadlineCancelled) status="deadline"
                         Unit
                     }
@@ -91,7 +93,7 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
                 catch(error:Exception) { trace.failed(error);status="failure: ${error.javaClass.simpleName}" }
                 finally { workspace.close() }
                 val fill=CellarFieldPresentation.apply(fills.fill(records,Year.now().value,
-                    ConfidenceContext(labelFound=true,deadlineReached=status=="deadline",weakQuality=status!="complete")))
+                    ConfidenceContext(labelFound=setup.quadOrig!=null,deadlineReached=status=="deadline",weakQuality=status!="complete")))
                 val elapsed=SystemClock.elapsedRealtime()-start
                 if(elapsed>=ScanDeadline.BUDGET_MS) status="deadline"
                 val safeFill=if(status=="complete") fill else fill.copy(fields=fill.fields.mapValues { (_,field) ->
