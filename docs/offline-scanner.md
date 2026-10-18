@@ -494,3 +494,18 @@ termination and OpenCV operations are cooperative. Caps and failures are reporte
 to infer missing text. Thresholds, exact pins, coordinate contracts, limits and validation
 caveats are in `app/src/debug/assets/text-lab-paddle-v1/README.md`. The new detector has not yet
 been run on a phone here; full-label success is not implied by the earlier tight Merlot crop.
+
+
+### Current Text Lab: three-candidate CSV benchmark
+
+Text Lab now has independent toggles for (1) existing v5 Mobile det/rec, (2) v6 Small detector
+with Medium recognizer, and (3) v6 Medium det/rec. All enabled candidates run on one shared crop
+and are exported into **one CSV per test** with **Export last test CSV**. The previous shared
+eight-second Text Lab budget/session-retention descriptions above are superseded: each Paddle
+candidate gets eight seconds, with separate shared preparation and ML Kit-reference budgets.
+Sessions are released between candidates and detector/recognizer stages. No 80 MiB model-asset
+cap is imposed for this explicit experiment. Normal scanning is unaffected.
+
+Full instructions, schema, exact model/dictionary provenance, limits and validation status:
+[`text-lab-candidates.md`](text-lab-candidates.md). Candidate failures, timeout/Stop partials and
+not-run candidates are retained, never silently omitted or counted as recognition successes.

@@ -2,51 +2,56 @@ package com.yourapp.wine.textlab
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.SystemClock
 import com.yourapp.wine.capture.BitmapWorkspace
 import com.yourapp.wine.geom.Matrix3
 import com.yourapp.wine.ocr.NativeEngineGate
 import com.yourapp.wine.ocr.ScanDeadline
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import java.util.Locale
+import kotlinx.coroutines.*
 
-/** Debug only. Every crop comes from the independent detector, never ML Kit's boxes or expected text. */
+/** No ML Kit boxes, expected answers or shared detections between candidates. */
 internal object PaddleLabelPipeline {
+    data class Outcome(val status:String,val regions:Int,val attempted:Int,val read:Int,val failed:Int)
     suspend fun recognize(context:Context,base:Bitmap,workspace:BitmapWorkspace,deadline:ScanDeadline,
-        gate:NativeEngineGate,baseToOriginal:Matrix3,originalWidth:Int,originalHeight:Int,append:(String)->Unit) {
-        val started=SystemClock.elapsedRealtime()
-        append("Starting independent full-label detection; base = user-selected crop (not automatic label localization).")
-        val detection=PaddleTextDetector.detect(context,base,workspace,gate)
-        append(detection.description)
-        append("Base crop→original matrix: ${baseToOriginal.values.joinToString(" ")}\n"+
-            "Original→base crop matrix: ${baseToOriginal.inverse().values.joinToString(" ")}")
-        if(detection.regions.lines.isEmpty()) {
-            append("No text regions detected. Recognition was not run; no whole-label single-line fallback.")
-            return
+        gate:NativeEngineGate,baseToOriginal:Matrix3,originalWidth:Int,originalHeight:Int,
+        spec:PaddleCandidate,journal:TextLabJournal):Outcome {
+        val id=spec.id
+        val detection=try {
+            PaddleTextDetector.detect(context,base,workspace,gate,spec) { values -> journal.add(id,"detection",values=values) }
+        } finally {
+            // Do not retain a Medium detector while loading a Medium recognizer.
+            withContext(NonCancellable) { PaddleTextDetector.release(gate) }
         }
-        // Publish ALL detected boxes before recognition, so a timeout still distinguishes detection from reading.
-        detection.regions.lines.forEachIndexed { index,region ->
+        journal.add(id,"detection_report",details=detection.description)
+        if(detection.regions.lines.isEmpty()) return Outcome("no_regions",0,0,0,0)
+        fun coordinates(region:PaddleRegion):Map<String,String> {
             val original=region.quadBase.map(baseToOriginal::map)
-            append("Region ${index+1}: detector box mean ${String.format(Locale.ROOT,"%.3f",region.detectionScore)}\n"+
-                "Base-crop polygon: ${region.quadBase.joinToString { "(${it.x}, ${it.y})" }}\n"+
-                "Base-crop normalized box (left top right bottom): ${PaddleDetectionGeometry.normalizedBox(region.quadBase,base.width,base.height)}\n"+
-                "Original polygon: ${original.joinToString { "(${it.x}, ${it.y})" }}\n"+
-                "Original normalized box (left top right bottom): ${PaddleDetectionGeometry.normalizedBox(original,originalWidth,originalHeight)}")
+            return mapOf("detector_score" to region.detectionScore.toString(),
+                "base_polygon" to region.quadBase.joinToString(";") { "${it.x} ${it.y}" },
+                "original_polygon" to original.joinToString(";") { "${it.x} ${it.y}" },
+                "base_box_normalized" to PaddleDetectionGeometry.normalizedBox(region.quadBase,base.width,base.height),
+                "original_box_normalized" to PaddleDetectionGeometry.normalizedBox(original,originalWidth,originalHeight))
         }
-        var completed=0
+        detection.regions.lines.forEachIndexed { index,region ->
+            journal.add(id,"region",values=coordinates(region)+("region_id" to (index+1).toString()))
+        }
+        var attempted=0;var read=0;var failed=0
         for((index,region) in detection.regions.lines.withIndex()) {
             currentCoroutineContext().ensureActive()
-            if(deadline.expired) { append("Budget reached before region ${index+1}; completed $completed/${detection.regions.lines.size} line attempts.");return }
-            append("Reading region ${index+1}…")
-            val report=try {
-                PaddleTextRecognizer.recognize(context,base,workspace,deadline,gate,region.quadBase)
+            if(deadline.expired) throw CandidateBudgetExpired()
+            val location=coordinates(region)+("region_id" to (index+1).toString())
+            journal.add(id,"line_start","running",location)
+            try {
+                val report=PaddleTextRecognizer.recognize(context,base,workspace,deadline,gate,region.quadBase,spec) { values ->
+                    if(!values["raw_text"].isNullOrEmpty()) read++
+                    journal.add(id,"recognition",if(values["raw_text"].isNullOrEmpty()) "no_text" else "complete",location+values)
+                }
+                journal.add(id,"line_report",values=mapOf("region_id" to (index+1).toString()),details=report)
             } catch(cancel:CancellationException) { throw cancel }
-            catch(error:Exception) { "Region ${index+1} failed: ${error.message?.take(1200)}. No reading assigned." }
-            append(report)
-            completed++
+            catch(expired:CandidateBudgetExpired) { throw expired }
+            catch(error:Exception) { failed++;journal.add(id,"recognition","failed",location, error.message.orEmpty().take(1500)) }
+            attempted++
         }
-        append("Paddle pipeline finished: $completed/${detection.regions.lines.size} line attempts; ${SystemClock.elapsedRealtime()-started} ms total. No wine-field assignment.")
+        return Outcome(if(failed>0) "partial_failed" else if(detection.regions.truncated) "truncated" else if(read==0) "no_text" else "complete",
+            detection.regions.lines.size,attempted,read,failed)
     }
 }

@@ -1,3 +1,19 @@
+# Current experiment: three independently selectable candidates
+
+See `docs/text-lab-candidates.md` for the current UI, combined CSV schema, timing and lifecycle.
+Candidate 1 is the v5 pipeline described below; candidate 2 is v6 Small detection + Medium
+recognition, and candidate 3 is v6 Medium detection + Medium recognition. `candidate-models.json`
+records the additional real pinned v6 assets. All three are enabled by default. The 80 MiB
+asset limit is not enforced for this user-requested experiment.
+
+Each candidate now has its own eight-second budget; shared preparation and ML Kit are separate.
+Model sessions are released between stages/candidates, not kept resident between tests. Private
+CSV checkpoints retain all selected candidates' data, including cancelled or failed attempts.
+The original v5 implementation notes below describe its model/preprocessing, not the current
+multi-candidate timing or session policy. Native v6 execution remains unverified in this sandbox.
+
+---
+
 # Experimental PP-OCRv5 mobile detection + recognition
 
 **Debug Text Lab only.** The normal scanner, wine field assignment, 30-case benchmark and

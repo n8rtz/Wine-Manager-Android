@@ -14,13 +14,17 @@ import java.nio.ByteOrder
 
 /** Independent PP-OCRv5 mobile detector. No ML Kit boxes, expected words or label-position heuristics. */
 internal object PaddleTextDetector {
-    const val MODEL_HASH="1eb7b4f7ab657ebd1c66d5f79bca7497f29768a2e3c15e52daecbba1a8e4a039"
     private val mutex=Mutex()
     private var session:OrtSession?=null
+    private var loaded:String?=null
+    suspend fun release(gate:NativeEngineGate)=mutex.withLock {
+        val lease=gate.acquire()
+        try { val old=session;session=null;loaded=null;old?.close() } finally { lease.close() }
+    }
     data class Detection(val regions:PaddleRegions,val description:String)
-    private fun open(context:Context):OrtSession {
-        session?.let { return it }
-        val file=PaddleAssets.verified(context,"detection.onnx",MODEL_HASH,4826518)
+    private fun open(context:Context,spec:PaddleCandidate):OrtSession {
+        session?.let { check(loaded==spec.detector.sha) { "Previous candidate session was not released" };return it }
+        val file=PaddleAssets.verified(context,spec.detector.asset,spec.detector.sha,spec.detector.bytes)
         val created=OrtSession.SessionOptions().use { options ->
             options.setIntraOpNumThreads(2);options.setInterOpNumThreads(1)
             OrtEnvironment.getEnvironment().createSession(file.path,options)
@@ -33,15 +37,15 @@ internal object PaddleTextDetector {
                 (shape[1]<0 || shape[1]==3L) && shape[2]<0 && shape[3]<0) {
                 "Expected dynamic detector FLOAT [1,3,H,W], got ${info.type} ${shape.contentToString()}"
             }
-            session=created;return created
+            loaded=spec.detector.sha;session=created;return created
         } catch(error:Throwable) { created.close();throw error }
     }
-    suspend fun detect(context:Context,base:Bitmap,workspace:BitmapWorkspace,gate:NativeEngineGate):Detection = mutex.withLock {
+    suspend fun detect(context:Context,base:Bitmap,workspace:BitmapWorkspace,gate:NativeEngineGate,spec:PaddleCandidate=PaddleCandidates.all[0],emit:(Map<String,String>)->Unit={}):Detection = mutex.withLock {
         val lease=gate.acquire()
         var stage="detector asset verification / initialization"
         try {
             currentCoroutineContext().ensureActive()
-            val started=SystemClock.elapsedRealtime();val active=open(context)
+            val started=SystemClock.elapsedRealtime();val active=open(context,spec)
             val setupMs=SystemClock.elapsedRealtime()-started
             currentCoroutineContext().ensureActive()
             stage="detector preprocessing"
@@ -82,16 +86,20 @@ internal object PaddleTextDetector {
                                 }
                                 val values=FloatArray((shape[2]*shape[3]).toInt());output.floatBuffer.get(values)
                                 val owner=currentCoroutineContext()
-                                val regions=PaddleDbPostprocess.decode(values,shape[3].toInt(),shape[2].toInt(),base.width,base.height) { owner.ensureActive() }
+                                val regions=PaddleDbPostprocess.decode(values,shape[3].toInt(),shape[2].toInt(),base.width,base.height,spec) { owner.ensureActive() }
                                 val postMs=SystemClock.elapsedRealtime()-postStart
                                 val mapToBase=PaddleDetectionGeometry.mapToBase(shape[3].toInt(),shape[2].toInt(),base.width,base.height)
-                                Detection(regions,"PP-OCRv5 mobile detection → line rectification → recognition\n"+
-                                    "Detector SHA-256: $MODEL_HASH\n"+
+                                emit(mapOf("setup_ms" to setupMs.toString(),"preprocess_ms" to prepMs.toString(),"inference_ms" to inferMs.toString(),
+                                    "postprocess_ms" to postMs.toString(),"input_shape" to "1 3 $height $width","output_shape" to shape.joinToString(" "),
+                                    "region_count" to regions.lines.size.toString(),"candidate_count" to regions.candidates.toString(),"truncated" to regions.truncated.toString(),
+                                    "map_to_base" to mapToBase.values.joinToString(" "),"base_to_map" to mapToBase.inverse().values.joinToString(" "))+TextLabMemory.sample())
+                                Detection(regions,"${spec.detector.name} detection → line rectification → recognition\n"+
+                                    "Detector SHA-256: ${spec.detector.sha}\n"+
                                     "Detector setup: $setupMs ms; preprocessing: $prepMs ms; inference: $inferMs ms; DB decoding: $postMs ms\n"+
                                     "Detector input: BGR/ImageNet normalization [1,3,$height,$width]; output: ${shape.contentToString()}\n"+
                                     "Map→base crop matrix: ${mapToBase.values.joinToString(" ")}\n"+
                                     "Base crop→map matrix: ${mapToBase.inverse().values.joinToString(" ")}\n"+
-                                    "DB threshold .3; box score .6; rectangular unclip 1.5. ${regions.lines.size} lines; ${regions.candidates} candidates; capped=${regions.truncated}.\n"+
+                                    "DB threshold ${spec.threshold}; box score ${spec.boxThreshold}; rectangular unclip ${spec.unclip}. ${regions.lines.size} lines; ${regions.candidates} candidates; capped=${regions.truncated}.\n"+
                                     "Detector scores and CTC posteriors are distinct, uncalibrated measures; neither is comparable to ML Kit confidence.")
                             }
                         } finally { withContext(NonCancellable) { stop.cancelAndJoin() } }

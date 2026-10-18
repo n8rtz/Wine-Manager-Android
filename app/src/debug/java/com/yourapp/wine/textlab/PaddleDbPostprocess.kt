@@ -9,18 +9,18 @@ import org.opencv.imgproc.Imgproc
 internal data class PaddleRegion(val quadBase:List<PointF>,val detectionScore:Float)
 internal data class PaddleRegions(val lines:List<PaddleRegion>,val candidates:Int,val truncated:Boolean)
 
-/** Bounded DB rectangle decoder: .3 bitmap, .6 box mean, 1.5 rectangular unclip.
+/** Bounded DB rectangle decoder: family-specific thresholds/unclip from the candidate profile.
  * Components cap noisy native contour allocations BEFORE findContours, not after allocating thousands.
  * All returned quads are in the selected base crop, not detector-resized pixels.
  */
 internal object PaddleDbPostprocess {
-    fun decode(prob:FloatArray,width:Int,height:Int,baseWidth:Int,baseHeight:Int,checkActive:()->Unit):PaddleRegions {
+    fun decode(prob:FloatArray,width:Int,height:Int,baseWidth:Int,baseHeight:Int,spec:PaddleCandidate,checkActive:()->Unit):PaddleRegions {
         require(width in 1..960 && height in 1..960 && prob.size==width*height)
         val bytes=ByteArray(prob.size) { index ->
             if(index%4096==0) checkActive()
             val value=prob[index]
             require(value.isFinite() && value in 0f..1.00001f) { "Detector output is not a probability map" }
-            if(value>.3f) 255.toByte() else 0
+            if(value>spec.threshold) 255.toByte() else 0
         }
         OpenCvRuntime.ensureLoaded()
         val binary=Mat(height,width,CvType.CV_8UC1);val labels=Mat();val stats=Mat();val centers=Mat()
@@ -58,9 +58,9 @@ internal object PaddleDbPostprocess {
                                 return QuadOrder.clockwise(corners.map { PointF(it.x.toFloat(),it.y.toFloat()) })
                             }
                             val score=PaddleDetectionGeometry.boxScore(prob,width,height,quad(rect),checkActive)
-                            if(score<.6f) continue
+                            if(score<spec.boxThreshold) continue
                             // For a rectangle, the bounding rectangle of a round-join offset expands both axes by 2d.
-                            val distance=rect.size.width*rect.size.height*1.5/(2*(rect.size.width+rect.size.height))
+                            val distance=rect.size.width*rect.size.height*spec.unclip/(2*(rect.size.width+rect.size.height))
                             val expanded=RotatedRect(rect.center,Size(rect.size.width+2*distance,rect.size.height+2*distance),rect.angle)
                             val base=quad(expanded).map(mapToBase::map).map {
                                 PointF(it.x.coerceIn(0f,baseWidth.toFloat()),it.y.coerceIn(0f,baseHeight.toFloat()))

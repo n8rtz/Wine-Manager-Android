@@ -15,16 +15,19 @@ import java.nio.ByteOrder
 
 /** Actual ONNX inference on a manual line or a detector-supplied, perspective-rectified line. Not the whole-label optional Paddle bridge. */
 internal object PaddleTextRecognizer {
-    private const val MODEL_HASH="243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224"
-    private const val DICT_HASH="d1979e9f794c464c0d2e0b70a7fe14dd978e9dc644c0e71f14158cdf8342af1b"
     private val mutex=Mutex()
     private var session:OrtSession?=null
+    private var loaded:String?=null
+    suspend fun release(gate:NativeEngineGate)=mutex.withLock {
+        val lease=gate.acquire()
+        try { val old=session;session=null;loaded=null;dictionary=emptyList();old?.close() } finally { lease.close() }
+    }
     private var dictionary:List<String> = emptyList()
-    private fun open(context:Context):OrtSession {
-        session?.let { return it }
-        val model=PaddleAssets.verified(context,"inference.onnx",MODEL_HASH,16562373)
-        val dict=PaddleAssets.verified(context,"ppocrv5_dict.utf8",DICT_HASH,74012).readLines(Charsets.UTF_8)
-        check(dict.size==18383 && dict.none(String::isEmpty)) { "Dictionary has ${dict.size} entries; expected 18383 nonempty entries" }
+    private fun open(context:Context,spec:PaddleCandidate):OrtSession {
+        session?.let { check(loaded==spec.recognizer.sha) { "Previous candidate session was not released" };return it }
+        val model=PaddleAssets.verified(context,spec.recognizer.asset,spec.recognizer.sha,spec.recognizer.bytes)
+        val dict=PaddleAssets.verified(context,spec.dictionary.asset,spec.dictionary.sha,spec.dictionary.bytes).readLines(Charsets.UTF_8)
+        check(dict.size==spec.dictionary.entries && dict.none(String::isEmpty)) { "Dictionary has ${dict.size} entries; expected ${spec.dictionary.entries} nonempty entries" }
         val created=OrtSession.SessionOptions().use { options ->
             options.setIntraOpNumThreads(2);options.setInterOpNumThreads(1)
             OrtEnvironment.getEnvironment().createSession(model.path,options)
@@ -35,21 +38,21 @@ internal object PaddleTextRecognizer {
             check(input.type==OnnxJavaType.FLOAT) { "Expected FLOAT input, got ${input.type}" }
             PaddleCtc.validateInputShape(input.shape)
             val output=created.outputInfo.values.single().info as? TensorInfo ?: error("Model output is not a tensor")
-            check(output.type==OnnxJavaType.FLOAT && output.shape.size==3 && (output.shape[2]<0 || output.shape[2]==18385L)) { "Expected FLOAT [1,time,18385] output; got ${output.type} ${output.shape.contentToString()}" }
-            dictionary=dict;session=created
+            check(output.type==OnnxJavaType.FLOAT && output.shape.size==3 && (output.shape[2]<0 || output.shape[2]==(spec.dictionary.entries+2).toLong())) { "Expected FLOAT [1,time,${spec.dictionary.entries+2}] output; got ${output.type} ${output.shape.contentToString()}" }
+            dictionary=dict;loaded=spec.recognizer.sha;session=created
             return created
         } catch(error:Throwable) { created.close();throw error }
     }
-    suspend fun recognize(context:Context,crop:Bitmap,workspace:BitmapWorkspace,deadline:ScanDeadline,gate:NativeEngineGate,lineQuad:List<android.graphics.PointF>?=null):String = mutex.withLock {
+    suspend fun recognize(context:Context,crop:Bitmap,workspace:BitmapWorkspace,deadline:ScanDeadline,gate:NativeEngineGate,lineQuad:List<android.graphics.PointF>?=null,spec:PaddleCandidate=PaddleCandidates.all[0],emit:(Map<String,String>)->Unit={}):String = mutex.withLock {
         val lease=gate.acquire()
         var stage="asset verification / model initialization"
         try {
             currentCoroutineContext().ensureActive()
             val loadStart=SystemClock.elapsedRealtime()
-            val active=open(context)
+            val active=open(context,spec)
             val loadMs=SystemClock.elapsedRealtime()-loadStart
             currentCoroutineContext().ensureActive()
-            if(deadline.expired) return@withLock "PP-OCRv5: budget ended during model initialization; retry after warm-up."
+            if(deadline.expired) throw CandidateBudgetExpired()
             stage="input preprocessing"
             val inputInfo=active.inputInfo.values.single().info as TensorInfo
             val size=lineQuad?.let(PaddleDetectionGeometry::lineSize) ?: (crop.width to crop.height)
@@ -70,7 +73,7 @@ internal object PaddleTextRecognizer {
             } finally { if(resized!==crop) workspace.release(resized) }
             val preprocessMs=SystemClock.elapsedRealtime()-preprocessStart
             currentCoroutineContext().ensureActive()
-            if(deadline.expired) return@withLock "PP-OCRv5: budget ended before inference."
+            if(deadline.expired) throw CandidateBudgetExpired()
             stage="input tensor creation"
             val env=OrtEnvironment.getEnvironment()
             OnnxTensor.createTensor(env,buffer,longArrayOf(1,3,48,paddedWidth.toLong())).use { tensor ->
@@ -90,11 +93,18 @@ internal object PaddleTextRecognizer {
                                 stage="output validation / CTC decoding"
                                 val result=output[0] as? OnnxTensor ?: error("Inference output is not a tensor")
                                 val shape=result.info.shape
-                                check(shape.size==3 && shape[0]==1L && shape[1] in 1L..512L && shape[2]==18385L) { "Actual output shape ${shape.contentToString()}; expected [1,time<=512,18385]" }
+                                check(shape.size==3 && shape[0]==1L && shape[1] in 1L..512L && shape[2]==(spec.dictionary.entries+2).toLong()) { "Actual output shape ${shape.contentToString()}; expected [1,time<=512,${spec.dictionary.entries+2}]" }
                                 val owner=currentCoroutineContext()
+                                val decodeStart=SystemClock.elapsedRealtime()
                                 val decoded=PaddleCtc.decode(result.floatBuffer,shape[1].toInt(),shape[2].toInt(),dictionary) { owner.ensureActive() }
-                                "PP-OCRv5 mobile (ONNX Runtime 1.21.1 CPU)\n"+
-                                    "Model SHA-256: $MODEL_HASH\n"+
+                                val decodeMs=SystemClock.elapsedRealtime()-decodeStart
+                                emit(mapOf("postprocess_ms" to decodeMs.toString(),"raw_text" to decoded.text,"ctc_posterior" to decoded.confidence.toString(),
+                                    "setup_ms" to loadMs.toString(),"preprocess_ms" to preprocessMs.toString(),"inference_ms" to inferenceMs.toString(),
+                                    "input_shape" to "1 3 48 $paddedWidth","content_width" to resizedWidth.toString(),"output_shape" to shape.joinToString(" "),
+                                    "line_to_base" to (warp?.lineToBase?.values?.joinToString(" ") ?: ""),
+                                    "base_to_line" to (warp?.lineToBase?.inverse()?.values?.joinToString(" ") ?: ""))+TextLabMemory.sample())
+                                "${spec.recognizer.name} (ONNX Runtime 1.21.1 CPU)\n"+
+                                    "Model SHA-256: ${spec.recognizer.sha}\n"+
                                     "Declared input: ${inputInfo.shape.contentToString()}; actual output: ${shape.contentToString()}\n"+
                                     "Model setup: ${loadMs} ms; preprocessing: ${preprocessMs} ms; inference: ${inferenceMs} ms\n"+
                                     "Input: BGR NCHW 1×3×48×$paddedWidth; content width $resizedWidth; normalized zero padding\n"+
@@ -108,6 +118,7 @@ internal object PaddleTextRecognizer {
                 }
             }
         } catch(cancel:CancellationException) { throw cancel }
+        catch(expired:CandidateBudgetExpired) { throw expired }
         catch(error:Exception) {
             currentCoroutineContext().ensureActive()
             throw IllegalStateException("$stage: ${error.javaClass.simpleName}: ${error.message ?: "no detail"}",error)

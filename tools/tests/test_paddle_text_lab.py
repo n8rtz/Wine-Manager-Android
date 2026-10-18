@@ -9,7 +9,7 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(raw).hexdigest(),meta['dictionary_sha256'])
         self.assertEqual(len(raw.decode().splitlines()),meta['dictionary_entries'])
         self.assertEqual(meta['dictionary_entries'],18383)
-        self.assertLess(meta['model_bytes']+len(raw),80*1024*1024)
+        self.assertEqual(len(raw),74012)
         self.assertIn('Apache License',(DATA/'LICENSE-PaddleOCR.txt').read_text())
     def test_dictionary_is_byte_exact_on_windows(self):
         import subprocess
@@ -22,7 +22,7 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertEqual(meta['dictionary_asset'],pathlib.Path(asset).name)
         self.assertNotEqual(hashlib.sha256(raw.replace(b'\n',b'\r\n')).hexdigest(),meta['dictionary_sha256'])
         engine=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleTextRecognizer.kt').read_text()
-        self.assertIn('verified(context,"ppocrv5_dict.utf8",DICT_HASH,74012)',engine)
+        self.assertIn('verified(context,spec.dictionary.asset,spec.dictionary.sha,spec.dictionary.bytes)',engine)
 
     def test_gradle_task_avoids_java_accessor_shadowing(self):
         gradle=(ROOT/'app/build.gradle.kts').read_text()
@@ -60,14 +60,15 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('PaddleCtc.validateInputShape(input.shape)',engine)
         self.assertIn('Actual output shape ${shape.contentToString()}',engine)
         self.assertIn('$stage: ${error.javaClass.simpleName}',engine)
-        self.assertIn('error.message?.take(1500)',runner)
+        self.assertIn('error.message.orEmpty().take(2000)',runner)
         self.assertNotIn('Check model assets or use a shorter single-line crop',runner)
 
     def test_comparison_preserves_partial_readings(self):
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        self.assertIn('partial=buildString',runner)
-        self.assertIn('PaddleTextRecognizer.recognize(context,crop,workspace,deadline,WineScannerServices.nativeGate)',runner)
-        self.assertIn('return completed ?: partial.takeIf',runner)
+        vm=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
+        self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
+        self.assertIn('journal.finishPending(',vm)
+        self.assertIn('csv=journal.save(csvFolder)',vm)
         self.assertNotIn('BenchmarkScoring',runner)
         self.assertNotIn('FieldExtractor',runner)
 
@@ -77,10 +78,10 @@ class PaddleTextLabTests(unittest.TestCase):
         gradle=(ROOT/'app/build.gradle.kts').read_text()
         for value in (det['model_url'],det['model_sha256'],str(det['model_bytes'])):
             self.assertIn(value,gradle)
-        self.assertLess(meta['model_bytes']+det['model_bytes']+74012,80*1024*1024)
+        self.assertGreater(det['model_bytes'],0)
         engine=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleTextDetector.kt').read_text()
-        self.assertIn(det['model_sha256'],engine)
-        self.assertIn('PaddleAssets.verified(context,"detection.onnx"',engine)
+        self.assertIn(det['model_sha256'],(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text())
+        self.assertIn('PaddleAssets.verified(context,spec.detector.asset,spec.detector.sha,spec.detector.bytes)',engine)
         self.assertIn('gate.acquire()',engine)
         self.assertIn('stop.cancelAndJoin()',engine)
         self.assertIn('finally { lease.close() }',engine)
@@ -88,11 +89,11 @@ class PaddleTextLabTests(unittest.TestCase):
 
     def test_full_label_pipeline_has_no_mlkit_box_dependency(self):
         pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
-        self.assertIn('PaddleTextDetector.detect(context,base,workspace,gate)',pipeline)
-        self.assertIn('PaddleTextRecognizer.recognize(context,base,workspace,deadline,gate,region.quadBase)',pipeline)
-        self.assertIn('No text regions detected. Recognition was not run',pipeline)
-        self.assertIn('Original normalized box',pipeline)
-        self.assertIn('Base-crop normalized box',pipeline)
+        self.assertIn('PaddleTextDetector.detect(context,base,workspace,gate,spec)',pipeline)
+        self.assertIn('PaddleTextRecognizer.recognize(context,base,workspace,deadline,gate,region.quadBase,spec)',pipeline)
+        self.assertIn('if(detection.regions.lines.isEmpty()) return Outcome("no_regions"',pipeline)
+        self.assertIn('original_box_normalized',pipeline)
+        self.assertIn('base_box_normalized',pipeline)
         self.assertNotIn('tokens.',pipeline)
         self.assertNotIn('BenchmarkScoring',pipeline)
         decoder=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleDbPostprocess.kt').read_text()
@@ -103,7 +104,36 @@ class PaddleTextLabTests(unittest.TestCase):
 
     def test_incremental_reports_survive_timeout(self):
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        self.assertIn('update -> partial +=',runner)
-        self.assertIn('return completed ?: partial.takeIf',runner)
+        self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
+        self.assertIn('status=if(done==null) "timed_out"',runner)
         state=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
         self.assertIn('detectLines:Boolean=true',state)
+
+    def test_v6_dictionary_and_profiles(self):
+        import subprocess
+        raw=(DATA/'ppocrv6_dict.utf8').read_bytes()
+        self.assertEqual(len(raw),74947)
+        self.assertEqual(len(raw.decode().splitlines()),18708)
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),'b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d')
+        attr=subprocess.check_output(['git','check-attr','text','--',str(DATA/'ppocrv6_dict.utf8')],cwd=ROOT,text=True)
+        self.assertIn(': text: unset',attr)
+        manifest=json.loads((DATA/'candidate-models.json').read_text())
+        config=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text()
+        gradle=(ROOT/'app/build.gradle.kts').read_text()
+        for model in manifest['v6_models']:
+            for value in (model['sha256'],str(model['bytes']),model['asset']):
+                self.assertIn(value,config)
+                self.assertIn(value,gradle)
+            self.assertIn(model['url'],gradle)
+        self.assertEqual(manifest['asset_budget_enforced'],False)
+
+    def test_sessions_are_released_and_all_candidates_export_together(self):
+        runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
+        pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
+        ui=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt').read_text()
+        self.assertIn('for(spec in PaddleCandidates.selected(journal.selected))',runner)
+        self.assertIn('PaddleTextRecognizer.release(gate)',runner)
+        self.assertIn('withContext(NonCancellable) { PaddleTextDetector.release(gate) }',pipeline)
+        self.assertIn('PaddleCandidates.all.forEach',ui)
+        self.assertIn('ActivityResultContracts.CreateDocument("text/csv")',ui)
+        self.assertNotIn('80*1024*1024',runner)

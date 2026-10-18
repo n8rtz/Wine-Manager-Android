@@ -197,6 +197,12 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
             "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224", 16562373L)
         download("detection.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_det.onnx",
             "1eb7b4f7ab657ebd1c66d5f79bca7497f29768a2e3c15e52daecbba1a8e4a039", 4826518L)
+        download("v6-small-det.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_small_det.onnx",
+            "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e", 9880512L)
+        download("v6-medium-det.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_medium_det.onnx",
+            "eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1", 62032837L)
+        download("v6-medium-rec.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_medium_rec.onnx",
+            "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba", 76554979L)
     }
 }
 

@@ -1,2 +1,4 @@
 # Pinned OCR dictionary is a byte-exact upstream artifact, even with core.autocrlf=true.
 app/src/debug/assets/text-lab-paddle-v1/ppocrv5_dict.utf8 -text
+
+app/src/debug/assets/text-lab-paddle-v1/ppocrv6_dict.utf8 -text

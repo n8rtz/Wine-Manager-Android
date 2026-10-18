@@ -62,6 +62,8 @@ fun main() {
     println("PASS: 30 benchmark recipes / shear inverse and corner retention / ground-truth scoring isolation")
     com.yourapp.wine.textlab.PaddleDetectionChecks.run()
     println("PASS: detector sizing / BGR normalization / map inverse / full-box score / orientation / cancellation")
+    com.yourapp.wine.textlab.TextLabJournalChecks.run()
+    println("PASS: all seven candidate toggle combinations / shared medium recognizer / partial CSV / Unicode / quotes / formula escaping")
     com.yourapp.wine.textlab.PaddleCtcChecks.run()
     println("PASS: Paddle CTC blank/repeats/Unicode / tensor sizing / BGR / malformed output / cancellation hook")
     com.yourapp.wine.textlab.TextCropChecks.geometry()
