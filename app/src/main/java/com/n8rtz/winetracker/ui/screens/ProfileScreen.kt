@@ -300,6 +300,26 @@ fun ProfileScreen(
                     }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                if (BuildConfig.DEBUG) {
+                    ListItem(
+                        headlineContent = { Text("OCR Lab — multi-image tests") },
+                        supportingContent = { Text("Enter actual label details and compare 30 treatments per image") },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            context.startActivity(android.content.Intent().setClassName(context,
+                                "com.yourapp.wine.benchmark.OcrLabActivity"))
+                        }
+                    )
+                    ListItem(
+                        headlineContent = { Text("Export OCR test data (CSV)") },
+                        supportingContent = { Text("Export saved test history, including expected and recognized fields") },
+                        leadingContent = { Icon(Icons.Filled.Download, contentDescription = null, tint = bordeauxRed) },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            context.startActivity(android.content.Intent().setClassName(context,
+                                "com.yourapp.wine.benchmark.OcrLabActivity").putExtra("export_csv", true))
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
                 ListItem(
                     headlineContent = { Text("App Information") },
                     supportingContent = {

@@ -18,13 +18,17 @@ data class BenchmarkCaseResult(val recipe:Treatment,val report:ScanReport,val st
 
 /** No ground truth accepted here: fixed crop, raw OCR and production field extraction only. */
 class BenchmarkRunner(private val scanner:OfflineWineScanner) {
-    suspend fun run(photo:File,directory:File,seed:Int,onBase:(ScanReport,File)->Unit,
-        onProgress:(String)->Unit,onResult:(BenchmarkCaseResult)->Unit) = withContext(Dispatchers.Default) {
+    suspend fun run(photo:File,directory:File,seed:Int,onBase:suspend (ScanReport,File)->Unit,
+        onProgress:(String)->Unit,onResult:suspend (BenchmarkCaseResult)->Unit,previewBudgetBytes:Long=64L*1024*1024) = withContext(Dispatchers.Default) {
         val baseFile=File(directory,"base.png")
         onProgress("Locating label and warming engines (not a scored case)…")
         val setup=scanner.captureBenchmarkBase(photo,baseFile)
         require(baseFile.isFile && setup.homography!=null && setup.quadOrig!=null) {
             "Could not obtain a rectified label. Choose a clearer, closer label photo."
+        }
+        if(baseFile.length()>previewBudgetBytes) {
+            baseFile.delete()
+            error("Base image exceeds per-image preview budget; try a smaller batch")
         }
         onBase(setup,baseFile)
         var previewBytes=baseFile.length()
@@ -61,9 +65,9 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
                             val before=SystemClock.elapsedRealtime()
                             val bitmap=variant.prepare()
                             val image=File(folder,"${variant.id}.png")
-                            if(previewBytes < 64L*1024*1024) {
+                            if(previewBytes < previewBudgetBytes) {
                                 image.outputStream().use { check(bitmap.compress(Bitmap.CompressFormat.PNG,100,it)) }
-                                if(previewBytes+image.length() <= 64L*1024*1024) { previews+=image;previewBytes+=image.length() }
+                                if(previewBytes+image.length() <= previewBudgetBytes) { previews+=image;previewBytes+=image.length() }
                                 else image.delete()
                             }
                             prepMs+=SystemClock.elapsedRealtime()-before

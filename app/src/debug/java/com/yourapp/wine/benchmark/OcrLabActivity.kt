@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,91 +22,127 @@ import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanDiagnosticsPanel
+import java.util.Locale
 
-/** Only packaged/registered in debug. Never applies a benchmark suggestion to the user's cellar form. */
 class OcrLabActivity:ComponentActivity() {
     override fun onCreate(savedInstanceState:Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setContent { WineTrackerTheme { Surface { OcrLabScreen(onClose={finish()}) } } }
+        val exportRequested=intent.getBooleanExtra("export_csv",false)
+        setContent { WineTrackerTheme { Surface { OcrLabScreen(exportRequested,onClose={finish()}) } } }
     }
 }
 
 @Composable
-private fun OcrLabScreen(onClose:()->Unit,vm:OcrLabViewModel=viewModel()) {
+private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewModel=viewModel()) {
     val state by vm.state.collectAsState()
-    var producer by rememberSaveable { mutableStateOf("Blackstone") }
-    var name by rememberSaveable { mutableStateOf("Merlot") }
-    var country by rememberSaveable { mutableStateOf("California") }
-    var vintage by rememberSaveable { mutableStateOf("") }
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
-    var imageIndex by rememberSaveable(selected) { mutableStateOf(0) }
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if(uri!=null) { selected=null;vm.start(uri,mapOf(FieldId.PRODUCER to producer,FieldId.WINE_NAME to name,FieldId.COUNTRY to country,FieldId.VINTAGE to vintage)) }
+    var selectedImage by rememberSaveable { mutableStateOf<String?>(null) }
+    var imageIndex by rememberSaveable(selected,selectedImage) { mutableStateOf(0) }
+    var clearConfirm by remember { mutableStateOf(false) }
+    var autoExport by rememberSaveable { mutableStateOf(exportRequested) }
+    var showSummary by rememberSaveable { mutableStateOf(false) }
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> vm.choose(uris) }
+    val csvExporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> if(uri!=null) vm.export(uri,csv=true) }
+    val zipExporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if(uri!=null) vm.export(uri) }
+    LaunchedEffect(state.historyReady,autoExport) {
+        if(state.historyReady && autoExport) { autoExport=false;if(state.savedRows>0) csvExporter.launch("wine-ocr-tests.csv") }
     }
-    val exporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-        if(uri!=null) vm.export(uri)
-    }
-    val ranked=remember(state.results) { state.results.filter { it.status=="complete" }.sortedWith(
-        compareByDescending<BenchmarkCaseResult> { it.score?.rawNameSimilarity ?: -1.0 }
-            .thenByDescending { it.score?.exactFields ?: 0 }) }
+    val run=state.runs.firstOrNull { it.id==selectedImage } ?: state.runs.firstOrNull()
+    val results=run?.results.orEmpty()
+    val ranked=remember(results) { results.filter { it.status=="complete" }.sortedWith(
+        compareByDescending<BenchmarkCaseResult> { it.score?.rawNameSimilarity ?: -1.0 }.thenByDescending { it.score?.exactFields ?: 0 }) }
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp),contentPadding=PaddingValues(vertical=16.dp)) {
         item {
-            Text("OCR Lab · 30 treatments",style=MaterialTheme.typography.headlineSmall)
+            Text("OCR Lab · multi-label benchmark",style=MaterialTheme.typography.headlineSmall)
             Text("Debug build ${BuildConfig.BUILD_COMMIT}",style=MaterialTheme.typography.bodySmall)
-            Text("Local experiments only. No cellar fields are changed. Allow several minutes; keep this screen open. You can stop at any time.")
-            Text("Expected answers are for scoring only. Blank means unscored. Presets are editable examples—check them against your photo. Changes apply to the next run.")
+            Text("30 treatments per image, run sequentially. Up to 10 photos per batch; allow several minutes per photo. No cellar fields are changed.")
+            Text("Actual details are used ONLY to score results. Blank = unscored, not expected-absent. Check each photo separately; answers are never copied between labels.")
+            Button(enabled=!state.busy,onClick={picker.launch(arrayOf("image/*"))}) { Text("Choose multiple label images") }
+            Text("Selecting photos replaces the editable queue, not saved CSV history.",style=MaterialTheme.typography.bodySmall)
         }
-        item {
-            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                TextButton(enabled=!state.busy,onClick={producer="Blackstone";name="Merlot";country="California";vintage=""}) { Text("Blackstone") }
-                TextButton(enabled=!state.busy,onClick={producer="Bodegas Olarra";name="Reciente Gran Reserva";country="Spain";vintage=""}) { Text("Olarra") }
+        items(state.labels,key={"edit-${it.id}"}) { label ->
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                    Text(label.label,style=MaterialTheme.typography.titleMedium)
+                    if(!state.busy) LabelImage(label.uri,"Selected label ${label.label}",180)
+                    OutlinedTextField(label.label,{vm.edit(label.id,null,it)},label={Text("Image nickname / sample ID")},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
+                    FieldId.entries.forEach { field ->
+                        val title=when(field) {
+                            FieldId.PRODUCER -> "Actual maker / producer"
+                            FieldId.WINE_NAME -> "Actual wine name"
+                            FieldId.COUNTRY -> "Actual Country (state for U.S.)"
+                            FieldId.REGION -> "Actual region"
+                            FieldId.SUBREGION -> "Actual subregion / appellation"
+                            FieldId.VINTAGE -> "Actual vintage"
+                        }
+                        OutlinedTextField(label.expected[field].orEmpty(),{vm.edit(label.id,field,it)},label={Text(title)},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
+                    }
+                    Row { Checkbox(label.reviewed,{vm.review(label.id,it)},enabled=!state.busy);Text("I checked this image's actual details") }
+                }
             }
-            OutlinedTextField(producer,{producer=it.take(120)},label={Text("Expected producer")},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(name,{name=it.take(120)},label={Text("Expected wine name")},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(country,{country=it.take(120)},label={Text("Expected Country (state for U.S.)")},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
-            OutlinedTextField(vintage,{vintage=it.take(4)},label={Text("Expected vintage (optional)")},enabled=!state.busy,modifier=Modifier.fillMaxWidth())
         }
         item {
-            Button(enabled=!state.busy,onClick={
-                picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            }) { Text("Choose photo & run 30 cases") }
+            Button(enabled=!state.busy && state.labels.isNotEmpty() && state.labels.all { it.reviewed },onClick={selected=null;selectedImage=null;vm.start()}) {
+                Text("Run ${state.labels.size} images × 30 treatments")
+            }
             if(state.busy) { LinearProgressIndicator(Modifier.fillMaxWidth());TextButton(onClick=vm::cancel) { Text("Stop") } }
             Text(state.progress)
-            if(state.results.isNotEmpty()) {
-                Text("${state.results.size}/30 cases recorded. Scored against: ${state.expected.values.joinToString(" · ")}")
-                Text("Export includes cropped/processed label images, expected answers, OCR text and device/build diagnostics. Share only if comfortable.",style=MaterialTheme.typography.bodySmall)
-                OutlinedButton(enabled=!state.busy,onClick={exporter.launch("wine-ocr-lab.zip")}) { Text("Export results + images ZIP") }
-            }
+            Text("Saved CSV history: ${state.savedRows} rows. Retained across screen close and app restart.")
+            Text("CSV includes typed actual answers, recognized fields, raw text/confidence, recipe, timing and device/build data—no images or original paths. ZIP also includes this batch's processed images.",style=MaterialTheme.typography.bodySmall)
+            OutlinedButton(enabled=!state.busy && state.savedRows>0,onClick={csvExporter.launch("wine-ocr-tests.csv")}) { Text("Export all saved test data (CSV)") }
+            OutlinedButton(enabled=!state.busy && state.runs.any { it.results.isNotEmpty() },onClick={zipExporter.launch("wine-ocr-batch.zip")}) { Text("Export current batch CSV + images ZIP") }
+            TextButton(enabled=!state.busy && state.savedRows>0,onClick={clearConfirm=true}) { Text("Clear saved test history…") }
             TextButton(onClick=onClose) { Text("Close OCR Lab") }
         }
-        if(ranked.isNotEmpty()) item {
-            Text("Complete cases — best raw name match first",style=MaterialTheme.typography.titleMedium)
-            Text("Raw % = closest 1–3 OCR lines to expected name, not confidence or full-label accuracy. Field matches can include dictionary corrections. Repeat on other photos before choosing a filter.",style=MaterialTheme.typography.bodySmall)
+        if(state.runs.isNotEmpty()) item {
+            TextButton(onClick={showSummary=!showSummary}) { Text("${if(showSummary) "Hide" else "Show"} cross-image summary") }
+            if(showSummary) {
+                Text("Means use complete, scored cases only. Compare coverage before interpreting a high score; incomplete/missing cases are not successes.",style=MaterialTheme.typography.bodySmall)
+                BenchmarkPlan.cases.forEach { recipe ->
+                    val cases=state.runs.flatMap { it.results }.filter { it.recipe.id==recipe.id && it.status=="complete" }
+                    val names=cases.mapNotNull { it.score?.rawNameSimilarity }
+                    val mean=if(names.isEmpty()) "unscored" else String.format(Locale.ROOT,"%.1f%%",names.average()*100)
+                    Text("${recipe.id}: ${cases.size}/${state.runs.size} complete; raw name $mean (${names.size} scored); fields ${cases.sumOf { it.score?.exactFields ?: 0 }}/${cases.sumOf { it.score?.checkedFields ?: 0 }}",style=MaterialTheme.typography.bodySmall)
+                }
+            }
+            Text("Inspect a label",style=MaterialTheme.typography.titleMedium)
+            state.runs.forEach { label ->
+                TextButton(onClick={selectedImage=label.id;selected=null}) { Text("${label.label}: ${label.status} · ${label.results.size}/30") }
+            }
+            run?.let { Text("${it.label} — scored against ${it.expected.values.joinToString(" · ")}") }
+            Text("Raw name % = closest 1–3 OCR lines, not confidence/full-label accuracy. Field matches may include dictionary corrections.",style=MaterialTheme.typography.bodySmall)
         }
-        items(ranked + state.results.filter { it.status!="complete" },key={it.recipe.id}) { result ->
+        items(ranked+results.filter { it.status!="complete" },key={"result-${run?.id}-${it.recipe.id}"}) { result ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
                     Text(result.recipe.id,style=MaterialTheme.typography.titleMedium)
-                    val score=result.score
-                    Text("${result.status} · ${result.report.elapsedMs} ms · raw name ${score?.rawNameSimilarity?.let { "${(it*100).toInt()}%" } ?: "unscored"} · fields ${score?.exactFields}/${score?.checkedFields}")
-                    TextButton(enabled=!state.busy,onClick={selected=if(selected==result.recipe.id) null else result.recipe.id}) { Text("Inspect image, OCR and fields") }
+                    Text("${result.status} · ${result.report.elapsedMs} ms · raw name ${result.score?.rawNameSimilarity?.let { "${(it*100).toInt()}%" } ?: "unscored"} · fields ${result.score?.exactFields}/${result.score?.checkedFields}")
+                    TextButton(enabled=!state.busy,onClick={selected=if(selected==result.recipe.id) null else result.recipe.id}) { Text("Inspect processed image and OCR") }
                     if(!state.busy && selected==result.recipe.id) {
                         Text(result.recipe.description,style=MaterialTheme.typography.bodySmall)
                         if(result.previews.isNotEmpty()) {
                             val image=result.previews[imageIndex.coerceIn(result.previews.indices)]
                             Text("Prepared image: ${image.name}")
                             if(result.previews.size>1) TextButton(onClick={imageIndex=(imageIndex+1)%result.previews.size}) { Text("Next pass image") }
-                            AsyncImage(model=ImageRequest.Builder(LocalContext.current).data(image).size(600)
-                                .memoryCachePolicy(CachePolicy.DISABLED).diskCachePolicy(CachePolicy.DISABLED).build(),
-                                contentDescription="Processed label for ${result.recipe.id}",modifier=Modifier.fillMaxWidth().height(320.dp))
-                        } else Text("No preview saved (early failure or image-storage cap).")
-                        Text("Raw OCR: "+result.report.tokens.joinToString(" | ") { "${it.textRaw} (${it.score})" })
-                        ScanDiagnosticsPanel(result.report,state.results.indexOf(result).toLong(),allowDebugOverlay=false)
+                            LabelImage(image,"Processed label",320)
+                        } else Text("No preview saved (early failure or per-image storage cap).")
+                        ScanDiagnosticsPanel(result.report,results.indexOf(result).toLong(),allowDebugOverlay=false)
                     }
                 }
             }
         }
     }
+    if(clearConfirm) AlertDialog(onDismissRequest={clearConfirm=false},title={Text("Delete saved test history?")},
+        text={Text("Export your CSV first. This permanently deletes saved benchmark rows, not cellar data or original photos.")},
+        confirmButton={TextButton(onClick={clearConfirm=false;vm.clearHistory()}) { Text("Delete test history") }},
+        dismissButton={TextButton(onClick={clearConfirm=false}) { Text("Cancel") }})
+}
+
+@Composable
+private fun LabelImage(model:Any,description:String,height:Int) {
+    AsyncImage(model=ImageRequest.Builder(LocalContext.current).data(model).size(600)
+        .memoryCachePolicy(CachePolicy.DISABLED).diskCachePolicy(CachePolicy.DISABLED).build(),
+        contentDescription=description,modifier=Modifier.fillMaxWidth().height(height.dp))
 }
