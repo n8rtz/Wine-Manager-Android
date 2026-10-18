@@ -34,7 +34,7 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/main/java/com/n8rtz/winetracker/scanner/LabelScanState.kt
     "$root/capture/BitmapWorkspace.kt" "$root/kb/OpenWinesAdapter.kt" "$root/kb/KnowledgeRecord.kt"
     "$root/kb/CsvKnowledgeRecords.kt" "$root/kb/JsonKnowledgeRecords.kt" "$root/kb/ImportReaders.kt"
-    app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/DiagnosticChecks.kt app/src/test/java/com/yourapp/wine/LocalizationChecks.kt app/src/test/java/com/yourapp/wine/LabelNameChecks.kt app/src/test/java/com/yourapp/wine/ReportedWineChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
+    app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/DiagnosticChecks.kt app/src/test/java/com/yourapp/wine/LocalizationChecks.kt app/src/test/java/com/yourapp/wine/AdministrativeLabelChecks.kt app/src/test/java/com/yourapp/wine/LabelNameChecks.kt app/src/test/java/com/yourapp/wine/ReportedWineChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
     tools/logic-checks/AndroidGeometry.kt tools/logic-checks/AndroidClock.kt tools/logic-checks/AndroidLog.kt
     tools/logic-checks/HostBitmap.kt tools/logic-checks/DeadlineChecks.kt tools/logic-checks/ImportChecks.kt tools/logic-checks/Main.kt
     app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkCsv.kt

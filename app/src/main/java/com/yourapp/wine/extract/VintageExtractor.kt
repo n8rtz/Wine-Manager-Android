@@ -17,7 +17,7 @@ class VintageExtractor {
             val number = match.value.toInt()
             if (number !in 1900..currentYear) return@mapNotNull null
             val prefix = TextNorm.normalize(line.text.substring(0, match.range.first).takeLast(30))
-            val adjacentFoundation = foundation.containsMatchIn(prefix)
+            val adjacentFoundation = foundation.containsMatchIn(prefix) || LabelTextRoles.isFoundingStatement(line.text)
             val matching = line.tokens.filter { year.find(it.canonical)?.value == match.value }
             Read(match.value, matching.maxOfOrNull { it.vote } ?: line.vote, adjacentFoundation, line)
         }.toList() }

@@ -46,6 +46,9 @@ class ProducerLineSelector {
         }.maxByOrNull { it.bboxRect.height() } ?: selected
     }
 
+    /** Explicit production marker protects a real unknown domaine from name/style ambiguity. */
+    fun hasProducerCue(text: String): Boolean = producerCue.containsMatchIn(TextNorm.normalize(text))
+
     /** No coordinates: a bare administrative producer word is not an identity or a wine name. */
     fun isMarker(text: String): Boolean {
         val normalized = TextNorm.normalize(text)
@@ -58,6 +61,7 @@ class ProducerLineSelector {
     /** No coordinates: generic varietal/style lines can name a wine, but cannot identify an unknown producer. */
     fun isWineDescription(text: String): Boolean {
         val normalized = TextNorm.normalize(WineTermSpacing.wineWords.repair(text).text)
+        if (LabelTextRoles.isRhoneAppellation(text)) return true
         if (normalized in styles || normalized.filter(Char::isLetterOrDigit) in compactStyles) return true
         var remaining = normalized
         var hasVarietal = false

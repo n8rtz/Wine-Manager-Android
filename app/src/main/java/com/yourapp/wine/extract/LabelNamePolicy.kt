@@ -31,6 +31,15 @@ object LabelNamePolicy {
         } }
     }
 
+    /** BASE normalized label lines: a nearby reserve designation supports a wine-name interpretation. */
+    fun hasAdjacentStyle(name: LabelLine, lines: List<LabelLine>): Boolean = lines.any { style ->
+        if (style == name || TextNorm.normalize(style.text) !in styles) false else {
+            val a = name.bboxRect; val b = style.bboxRect
+            b.top >= a.bottom && b.top - a.bottom <= max(.06f, a.height()) &&
+                min(a.right, b.right) - max(a.left, b.left) >= .4f * min(a.width(), b.width())
+        }
+    }
+
     /** Rectified candidate boxes in: combine a distinctive name with its adjacent printed reserve designation. */
     fun joinStyle(candidates: List<FieldCandidate>, producer: String?): FieldCandidate? {
         val names = candidates.filterNot { TextNorm.normalize(it.value) in styles }

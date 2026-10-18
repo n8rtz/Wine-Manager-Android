@@ -84,7 +84,12 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             result[FieldId.PRODUCER] = known.filter { it.first.editDistance == bestDistance }.map { it.second }
                 .distinctBy { TextNorm.normalize(it.value) }
         } else {
-            val unknown = producerLines.unknown(producerCandidates)
+            // Do not promote an ambiguous cuvee-plus-reserve heading to maker merely because it is prominent.
+            // Exact KB matches above, curated producer names and explicit domaine/winery cues retain priority.
+            val unknown = producerLines.unknown(producerCandidates.filterNot { candidate ->
+                !producerLines.hasProducerCue(candidate.text) && BundledProducerNames.exactName(candidate.text) == null &&
+                    LabelNamePolicy.hasAdjacentStyle(candidate, identityLines)
+            })
             if (unknown != null) {
                 val curated = BundledProducerNames.exactName(unknown.text)
                 result[FieldId.PRODUCER] = listOf(FieldCandidate(FieldId.PRODUCER, curated ?: unknown.text,
@@ -103,8 +108,12 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             }
             // A fuzzy-only producer line must not be duplicated into the wine-name field.
             if (distinctive == line.text && line.tokens.any { it in producerSources }) return@mapNotNull null
-            claims.sortedByDescending { it.place.name.length }.forEach { claim ->
-                distinctive = removeNormalizedPhrase(distinctive, claim.place.name)
+            // A printed appellation may itself name the wine. Keep its observed suffix (even truncated),
+            // rather than stripping the geographic core and promoting the leftover fragment.
+            if (!LabelTextRoles.isRhoneAppellation(distinctive)) {
+                claims.sortedByDescending { it.place.name.length }.forEach { claim ->
+                    distinctive = removeNormalizedPhrase(distinctive, claim.place.name)
+                }
             }
             distinctive = distinctive.replace(Regex("\\s+"), " ").trim()
             if (!MetadataRules.isIdentity(distinctive)) return@mapNotNull null
@@ -121,10 +130,10 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             .thenByDescending { it.sources.maxOfOrNull { t -> t.bboxRect.height() } ?: 0f })
         // A printed style/appellation can be the only wine name (e.g. Prosecco or Champagne).
         // Reuse actual accepted label text only, never infer a cuvee from its geography or producer.
-        val styleFallback = if (wines.isEmpty() && selectedProducer != null) placeLines.mapNotNull { line ->
+        val styleFallback = if (wines.isEmpty()) placeLines.mapNotNull { line ->
             val raw = rawLines.firstOrNull { it.tokens == line.tokens }?.text ?: line.text
             val display = WineTermSpacing.wineWords.repair(MetadataRules.identityText(raw)).text
-            if (!producerLines.isWineDescription(display)) null else FieldCandidate(FieldId.WINE_NAME, display,
+            if (!producerLines.isWineDescription(display) || (selectedProducer == null && !LabelTextRoles.isRhoneAppellation(display))) null else FieldCandidate(FieldId.WINE_NAME, display,
                 UiState.YELLOW, "Printed wine style/appellation used as name — confirm", line.tokens)
         }.sortedByDescending { vote(it.sources) } else emptyList()
         result[FieldId.WINE_NAME] = listOfNotNull(LabelNamePolicy.joinStyle(wines + styleFallback, selectedProducer))

@@ -10,7 +10,8 @@ object MetadataRules {
     fun isPackaging(text: String): Boolean = packaging.containsMatchIn(text)
 
     /** No coordinates: administrative label text is not a distinctive producer or cuvée. */
-    fun isBoilerplate(text: String): Boolean = boilerplate.containsMatchIn(TextNorm.normalize(text))
+    fun isBoilerplate(text: String): Boolean = boilerplate.containsMatchIn(TextNorm.normalize(text)) ||
+        LabelTextRoles.isFoundingStatement(text) || LabelTextRoles.isLegalStatement(text)
 
     /** No coordinates: remove year/packaging tokens and explicit producer cues, retaining the original evidence. */
     fun identityText(text: String): String = packaging.replace(text, " ")

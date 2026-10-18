@@ -9,6 +9,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26], manifest = Config.NONE)
 class ReportedWineTest {
+    @Test fun appellationIsNotAMaker() = AdministrativeLabelChecks.rhoneAppellationIsNotAMakerAndLegalDebrisIsNotAName()
+    @Test fun legalTextDoesNotEraseRealBrands() = AdministrativeLabelChecks.narrowAdministrativeRulesPreserveRealIdentities()
+    @Test fun cuveePlusStyleDoesNotInventProducer() = AdministrativeLabelChecks.reserveHeadingIsNotAnUnsupportedProducer()
     @Test fun awardStickerIsNotTheWineName() = LabelNameChecks.awardDoesNotDisplacePrintedNameAndStyle()
     @Test fun fragmentedWineryIsNotACuvee() = LabelNameChecks.fragmentsNeverInventMerlotAndPresentationUsesState()
     @Test fun kirklandFieldsUseTheActualSupportedEvidence() = ReportedWineChecks.kirklandReportDoesNotSwapProducerAndVariety()

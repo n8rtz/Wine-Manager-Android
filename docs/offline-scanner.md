@@ -286,3 +286,22 @@ This opt-in benchmark is separate from normal scanning. See [ocr-lab.md](ocr-lab
 for recipes, scoring limitations, budgets and explicit image/diagnostics export.
 Sauvola, stroke thickening, fixed shear and Zhang–Suen thinning are implemented
 only in this debug source set; the production pipeline remains unchanged.
+
+### Rules learned from the first multi-label CSV
+
+The 90 completed cases (plus one setup failure) do not justify enabling every
+experimental filter in production. The combined pipeline remains unchanged.
+Extraction now distinguishes standalone Côtes du Rhône (+ a bounded printed
+Villages fragment) from a maker. It preserves the observed fragment as a YELLOW
+wine-name suggestion instead of completing missing letters or inferring a maker.
+French founding statements and narrowly matched OCR variants of legal appellation
+text are rejected as identities; explicit producer phrases remain eligible.
+An unknown prominent heading immediately above a reserve designation is considered
+an ambiguous wine-name heading, not automatically the producer. Exact KB/curated
+producer names and explicit domaine/winery cues retain priority.
+
+`AdministrativeLabelChecks` uses transcribed CSV text/scores but **synthetic box
+arrangements**, because the CSV does not export individual token boxes. These are
+extraction regressions, not a pixel replay or proof of phone OCR improvements.
+No expected label answer is fed into OCR, no missing producer is supplied, and
+acceptance thresholds and the normal three-variant pipeline are unchanged.
