@@ -1,5 +1,7 @@
 package com.yourapp.wine.extract
 
+import com.yourapp.wine.kb.BundledGrapes
+import com.yourapp.wine.kb.BundledWineStyles
 import com.yourapp.wine.merge.BoxMath
 import com.yourapp.wine.merge.LabelLine
 import com.yourapp.wine.merge.TextNorm
@@ -55,8 +57,8 @@ class ProducerLineSelector {
 
     /** No coordinates: generic varietal/style lines can name a wine, but cannot identify an unknown producer. */
     fun isWineDescription(text: String): Boolean {
-        val normalized = TextNorm.normalize(text)
-        if (normalized in styles) return true
+        val normalized = TextNorm.normalize(WineTermSpacing.wineWords.repair(text).text)
+        if (normalized in styles || normalized.filter(Char::isLetterOrDigit) in compactStyles) return true
         var remaining = normalized
         var hasVarietal = false
         varietyPatterns.forEach { pattern ->
@@ -76,13 +78,13 @@ class ProducerLineSelector {
         val producerFooter = Regex("^(?:winery|wines|vineyards?|cellars|estate)\\s+\\S")
         val administrative = setOf("estate grown", "estate bottled", "bottled at the estate")
         val styles = setOf("reserve", "reserva", "riserva", "gran reserva", "grand reserve", "old vine",
-            "red wine", "white wine", "rose wine", "dry red wine", "dry white wine", "red blend", "white blend")
+            "red wine", "white wine", "rose wine", "dry red wine", "dry white wine", "red blend", "white blend") +
+            BundledWineStyles.terms.flatMap { listOf(it.name) + it.aliases }.map(TextNorm::normalize)
+        val compactStyles = styles.map { it.filter(Char::isLetterOrDigit) }.toSet()
         val modifiers = setOf("reserve", "reserva", "riserva", "gran", "grand", "old", "vine", "vines",
             "red", "white", "wine", "dry", "sweet", "blend", "oak", "aged", "and", "et", "estate", "grown")
-        val varieties = listOf("cabernet sauvignon", "cabernet franc", "sauvignon blanc", "pinot grigio",
-            "pinot gris", "pinot noir", "pinot blanc", "chenin blanc", "petite sirah", "petit verdot",
-            "chardonnay", "merlot", "riesling", "shiraz", "syrah", "zinfandel", "malbec", "tempranillo",
-            "sangiovese", "grenache", "garnacha", "nebbiolo", "viognier", "mourvedre", "carignan", "gewurztraminer")
+        val varieties = BundledGrapes.terms.flatMap { listOf(it.name) + it.aliases }.map(TextNorm::normalize)
+            .distinct().sortedByDescending { it.length }
         val varietyPatterns = varieties.map { variety ->
             Regex("(?<![\\p{L}\\p{N}])${Regex.escape(variety)}(?![\\p{L}\\p{N}])")
         }

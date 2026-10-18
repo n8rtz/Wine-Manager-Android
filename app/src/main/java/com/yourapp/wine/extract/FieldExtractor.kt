@@ -4,6 +4,7 @@ import com.yourapp.wine.fill.FieldCandidate
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.fill.UiState
 import com.yourapp.wine.kb.Place
+import com.yourapp.wine.kb.BundledProducerNames
 import com.yourapp.wine.kb.PlaceHierarchy
 import com.yourapp.wine.kb.PlaceGazetteer
 import com.yourapp.wine.kb.WineKnowledgeBase
@@ -16,12 +17,14 @@ data class PlaceClaim(val place: Place, val sources: List<MergedToken>)
 data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, val placeClaims: List<PlaceClaim>)
 
 class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: VintageExtractor = VintageExtractor(),
-                     private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb)) {
+                     private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb),
+                     private val normalizer: WineTextNormalizer = WineTextNormalizer(kb)) {
     private val gazetteer = PlaceGazetteer(kb)
     private val producerLines = ProducerLineSelector()
-    init { gazetteer.matches("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
+    init { gazetteer.matches(""); normalizer.repair("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
-    fun extract(lines: List<LabelLine>, currentYear: Int): ExtractionResult {
+    fun extract(rawLines: List<LabelLine>, currentYear: Int): ExtractionResult {
+        val lines = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
         val result = mutableMapOf<FieldId, List<FieldCandidate>>()
         result[FieldId.VINTAGE] = vintage.extract(lines, currentYear)
         val geography = hierarchy.snapshot()
@@ -82,8 +85,12 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 .distinctBy { TextNorm.normalize(it.value) }
         } else {
             val unknown = producerLines.unknown(producerCandidates)
-            if (unknown != null) result[FieldId.PRODUCER] = listOf(FieldCandidate(FieldId.PRODUCER, unknown.text,
-                UiState.YELLOW, "OCR-only producer; boutique/unknown wines are allowed", unknown.tokens))
+            if (unknown != null) {
+                val curated = BundledProducerNames.exactName(unknown.text)
+                result[FieldId.PRODUCER] = listOf(FieldCandidate(FieldId.PRODUCER, curated ?: unknown.text,
+                    UiState.YELLOW, if (curated == null) "OCR-only producer; boutique/unknown wines are allowed"
+                    else "Exact authored producer-name alias; origin not inferred — confirm", unknown.tokens))
+            }
         }
         val producerSources = result[FieldId.PRODUCER]?.firstOrNull()?.sources.orEmpty().toSet()
         val selectedProducer = result[FieldId.PRODUCER]?.firstOrNull()?.value
@@ -104,13 +111,23 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             val hit = producerId?.let { kb.findCuvee(it, distinctive) }
             FieldCandidate(FieldId.WINE_NAME, hit?.cuvee?.name ?: distinctive,
                 if (hit?.editDistance == 0 && line.vote >= 0.6f) UiState.GREEN else UiState.YELLOW,
-                if (hit == null) "Distinctive OCR-only wine name; confirm" else "Known cuvée for selected producer (edit ${hit.editDistance})",
+                if (hit == null) "Distinctive OCR-only wine name; confirm" +
+                    (if (line.tokens.any { normalizer.repair(it.canonical).changed }) "; verified term spacing normalized" else "")
+                else "Known cuvée for selected producer (edit ${hit.editDistance})",
                 line.tokens)
         }.sortedWith(compareBy<FieldCandidate> { if (it.state == UiState.GREEN) 0 else 1 }
             .thenBy { if (producerLines.isWineDescription(it.value)) 1 else 0 }
             .thenByDescending { (vote(it.sources) * 1000).toInt() }
             .thenByDescending { it.sources.maxOfOrNull { t -> t.bboxRect.height() } ?: 0f })
-        result[FieldId.WINE_NAME] = wines.take(1)
+        // A printed style/appellation can be the only wine name (e.g. Prosecco or Champagne).
+        // Reuse actual accepted label text only, never infer a cuvee from its geography or producer.
+        val styleFallback = if (wines.isEmpty() && selectedProducer != null) placeLines.mapNotNull { line ->
+            val raw = rawLines.firstOrNull { it.tokens == line.tokens }?.text ?: line.text
+            val display = WineTermSpacing.wineWords.repair(MetadataRules.identityText(raw)).text
+            if (!producerLines.isWineDescription(display)) null else FieldCandidate(FieldId.WINE_NAME, display,
+                UiState.YELLOW, "Printed wine style/appellation used as name — confirm", line.tokens)
+        }.sortedByDescending { vote(it.sources) } else emptyList()
+        result[FieldId.WINE_NAME] = (wines + styleFallback).take(1)
         return ExtractionResult(result, claims)
     }
 

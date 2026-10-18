@@ -210,7 +210,7 @@ object LogicChecks {
         val blackstone = fill.fill(listOf(token("Blackstone", y = .10f, h = .09f),
             token("WINERY", y = .21f, h = .025f, x = .22f, w = .35f),
             token("Merlot", y = .48f, h = .14f), token("California", y = .70f)), 2026)
-        check(blackstone.fields.getValue(FieldId.PRODUCER).value == "Blackstone WINERY") { blackstone.fields }
+        check(blackstone.fields.getValue(FieldId.PRODUCER).value == "Blackstone Winery") { blackstone.fields }
         check(blackstone.fields.getValue(FieldId.WINE_NAME).value == "Merlot") { blackstone.fields }
         check(blackstone.fields.getValue(FieldId.PRODUCER).sources.size == 2)
         check(blackstone.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)

@@ -23,5 +23,19 @@ object OcrRescuePolicy {
         return usable.size < 3 || weakIdentity
     }
 
+    /** BASE rectified-label polygons in; choose aspect rescue for weak, abnormally tall/condensed identity glyphs. */
+    fun needsAspectRescue(readings: List<RawToken>): Boolean = readings.any { token ->
+        if (!token.score.isFinite() || token.score !in 0f..1f || token.score >= threshold(token.engineId) ||
+            token.polygon.size < 3 || token.polygon.any { !it.x.isFinite() || !it.y.isFinite() } ||
+            producerLines.isMarker(token.text) || producerLines.isAdministrative(token.text) ||
+            MetadataRules.isPackaging(token.text) || !MetadataRules.isIdentity(MetadataRules.identityText(token.text))) false
+        else {
+            val width = token.polygon.maxOf { it.x } - token.polygon.minOf { it.x }
+            val height = token.polygon.maxOf { it.y } - token.polygon.minOf { it.y }
+            val letters = token.text.count(Char::isLetter)
+            width > 0 && height > 0 && letters >= 3 && height * letters / width >= 1.8f
+        }
+    }
+
     private fun threshold(engine: String): Float = if (engine.startsWith("paddle")) .75f else .60f
 }

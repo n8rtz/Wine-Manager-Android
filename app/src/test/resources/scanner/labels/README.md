@@ -70,3 +70,7 @@ remain separate device acceptance checks; see `docs/offline-scanner.md`.
 ### Report-driven Blackstone localization case
 
 `LocalizationChecks` uses the rounded box coordinates/scores from the user's actual OnePlus diagnostic report for this exact Blackstone JPEG. Weak probe boxes are geometry hints around a strong anchor, not accepted producer text. The regression keeps the sparse body together, pads missing-glyph/script margins, bounds upscaling, retains inverse coordinates, and schedules an unsharp rescue from usable confidence rather than raw line count. It does not hard-code Blackstone into the KB, change acceptance thresholds, or claim that host logic tests have rerun native ML Kit. The device must rescan the saved image to verify the new readings.
+
+### Kirkland/condensed-font report regressions
+
+`ReportedWineChecks` replays the user's rounded Kirkland V0/V1 evidence and ensures split CABERN ET is a grape/name, not producer; an exact curated Kirkland alias stays YELLOW; Alexander Valley is nested under Sonoma County; word breaks do not create false contradictions; and real country/imported-hierarchy conflicts remain YELLOW. The same checks prove no known-name table can promote Blackstone's .48–.59 reads. Aspect-rescue tests use fake-engine coordinates to verify the inverse and callback contract (including odd heights), not to simulate recognition of Blackstone or Merlot. No Android emulator/native pixel checks are run or awaited locally for these changes.

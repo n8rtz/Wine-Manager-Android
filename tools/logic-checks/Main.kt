@@ -38,6 +38,17 @@ fun main() {
         "upscaled-crop inverse coordinate mapping" to com.yourapp.wine.LocalizationChecks::enlargedCropPreservesOriginalCoordinateRoundtrip).forEach { (name, test) ->
         test(); println("PASS: $name")
     }
+    listOf("Kirkland logged producer/variety/geography assignments" to com.yourapp.wine.ReportedWineChecks::kirklandReportDoesNotSwapProducerAndVariety,
+        "known word breaks only, never spelling guesses" to com.yourapp.wine.ReportedWineChecks::wordBreakRepairDoesNotGuessLettersOrUnknownNames,
+        "cached read-only geography on existing snapshots" to com.yourapp.wine.ReportedWineChecks::geographicSupplementIsCachedReadOnlyAndWorksOnExistingSnapshots,
+        "imported hierarchy and explicit conflicts preserved" to com.yourapp.wine.ReportedWineChecks::importedHierarchyWinsAndConflictsStayReviewable,
+        "spacing equivalence versus genuine disagreement" to com.yourapp.wine.ReportedWineChecks::spacingIsNotDisagreementButDifferentLettersStillAre,
+        "Blackstone cannot be fabricated from weak scores" to com.yourapp.wine.ReportedWineChecks::blackstoneWeakTextDoesNotBecomeAFieldJustBecauseANameIsKnown,
+        "aspect inverse handles odd pixel dimensions" to com.yourapp.wine.ReportedWineChecks::aspectInverseHandlesOddDimensionsAndOriginalCoordinates,
+        "ensemble callback projects variant into base label" to com.yourapp.wine.ReportedWineChecks::ensemblePublishesBaseLabelCoordinatesNotVariantPixels,
+        "explicit printed style/appellation wine name" to com.yourapp.wine.ReportedWineChecks::printedAppellationStyleCanBeTheOnlyWineName).forEach { (name,test) ->
+        test(); println("PASS: $name")
+    }
     GeneratedFixtureChecks.run()
     com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
     println("PASS: optional engines never receive localization/full-scene fallback pixels")

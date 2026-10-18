@@ -30,7 +30,7 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
     suspend fun scan(file: File, shutterMs: Long, source: ScanInputSource = ScanInputSource.FILE): ScanReport = withContext(Dispatchers.Default) {
         val trace = ScanTraceRecorder(SystemClock::elapsedRealtime)
         var diagnostics = ScanDiagnostics(source = source, inputBytes = file.length(),
-            kbImplementation = kb.javaClass.simpleName,
+            kbImplementation = "${kb.javaClass.simpleName}+curated_origins",
             engines = engines.map { ScanEngineStatus(it.id, it.available, (it as? NotAvailable)?.reason) })
         val deadline = ScanDeadline(shutterMs + ScanDeadline.BUDGET_MS - POSTPROCESS_RESERVE_MS)
         val records = mutableListOf<TokenRecord>(); val timings = mutableListOf<EngineTiming>()

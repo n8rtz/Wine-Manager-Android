@@ -4,18 +4,30 @@ import android.graphics.Bitmap
 import com.yourapp.wine.capture.BitmapWorkspace
 import com.yourapp.wine.ocr.OcrRescuePolicy
 import com.yourapp.wine.ocr.OcrVariant
+import com.yourapp.wine.ocr.OcrVariantGeometry
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 
-/** V0/V1 plus an optional evidence-gated unsharp rescue; never allocates more than one extra Bitmap. */
+/** V0/V1 plus one evidence-gated unsharp/aspect rescue; raw + at most one extra Bitmap stays invariant. */
 class Preprocess(private val enableV2: Boolean = false, private val lastResortThreshold: Boolean = false) {
-    /** Lazy variants of RECTIFIED pixels only; dimensions/polygons are unchanged by every filter. */
+    /** BASE rectified pixels -> lazy variants; any V2 resize is explicitly inverse-mapped by the ensemble. */
     fun variants(rectified: Bitmap, workspace: BitmapWorkspace): List<OcrVariant> = buildList {
         add(OcrVariant("V0", { rectified }, {}))
         add(OcrVariant("V1", { enhance(rectified, workspace, "foil") }, workspace::release))
-        if (enableV2) add(OcrVariant("V2", { enhance(rectified, workspace, if (lastResortThreshold) "threshold" else "unsharp") },
-            workspace::release, enabled = OcrRescuePolicy::shouldRun))
+        if (enableV2) {
+            val labelW = rectified.width; val labelH = rectified.height
+            var aspect = false
+            add(OcrVariant("V2", { enhance(rectified, workspace,
+                if (lastResortThreshold) "threshold" else if (aspect) "aspect" else "unsharp") }, workspace::release,
+                enabled = { readings ->
+                    aspect = !lastResortThreshold && OcrRescuePolicy.needsAspectRescue(readings)
+                    OcrRescuePolicy.shouldRun(readings)
+                }, toLabel = { token, w, h -> OcrVariantGeometry.toLabel(token, w, h, labelW, labelH) },
+                description = { w, h -> if (h != labelH || w != labelW)
+                    "aspect rescue ${w}x${h} -> base ${labelW}x${labelH}; polygons inverse-scaled"
+                    else if (lastResortThreshold) "explicit threshold rescue" else "unsharp rescue" }))
+        }
     }
 
     private fun enhance(raw: Bitmap, workspace: BitmapWorkspace, mode: String): Bitmap {
@@ -50,8 +62,14 @@ class Preprocess(private val enableV2: Boolean = false, private val lastResortTh
                     Imgproc.cvtColor(rgb, output, Imgproc.COLOR_RGB2RGBA)
                 }
             }
-            val bitmap = workspace.create(raw.width, raw.height)
-            Utils.matToBitmap(output, bitmap)
+            val targetHeight = if (mode == "aspect") OcrVariantGeometry.aspectHeight(raw.height) else raw.height
+            // Resize the native Mat BEFORE allocating the single variant Bitmap; never create a third Bitmap.
+            val bitmapSource = if (mode == "aspect") {
+                Imgproc.resize(output, blur, Size(raw.width.toDouble(), targetHeight.toDouble()), 0.0, 0.0, Imgproc.INTER_AREA)
+                blur
+            } else output
+            val bitmap = workspace.create(raw.width, targetHeight)
+            Utils.matToBitmap(bitmapSource, bitmap)
             return bitmap
         } finally { (listOf(rgba, rgb, lab, output, blur, lut) + channels).forEach { it.release() } }
     }

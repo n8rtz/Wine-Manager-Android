@@ -9,7 +9,9 @@ import kotlinx.coroutines.ensureActive
 
 /** Lazy preparation/release guarantees raw + at most one extra rectified Bitmap. */
 data class OcrVariant(val id: String, val prepare: () -> Bitmap, val release: (Bitmap) -> Unit,
-    val enabled: (List<RawToken>) -> Boolean = { true })
+    val enabled: (List<RawToken>) -> Boolean = { true },
+    val toLabel: (RawToken, Int, Int) -> RawToken = { token, _, _ -> token },
+    val description: (Int, Int) -> String? = { _, _ -> null })
 data class EngineTiming(val engineId: String, val variantId: String, val ms: Long, val tokenCount: Int,
     val deadlineCancelled: Boolean, val detail: String? = null)
 data class OcrBatch(val tokens: List<RawToken>, val timings: List<EngineTiming>, val deadlineCancelled: Boolean)
@@ -32,26 +34,32 @@ class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (Engine
             if (deadline.expired) { cancelled = true; break }
             if (!variant.enabled(tokens)) continue
             val bitmap = variant.prepare()
+            val inputW = bitmap.width; val inputH = bitmap.height
             try {
                 for (engine in eligible) {
                     if (deadline.expired) { cancelled = true; break@variantLoop }
                     val start = SystemClock.elapsedRealtime()
-                    var detail: String? = null
+                    var detail: String? = variant.description(inputW, inputH)
                     val read = try {
                         if (engine.id == "mlkit" && variant.id == "V0" && reuseMlkitV0 != null) {
                             detail = "reused mapped quad probe"; reuseMlkitV0
                         } else deadline.run { engine.recognize(bitmap, variant.id, deadline) }
                     } catch (cancel: CancellationException) {
                         val timing = EngineTiming(engine.id, variant.id, SystemClock.elapsedRealtime() - start,
-                            0, true, "deadline/lifecycle cancelled awaiting engine")
+                            0, true, listOfNotNull(detail, "deadline/lifecycle cancelled awaiting engine").joinToString("; "))
                         timings += timing; log(timing); onTiming(timing)
                         throw cancel
                     }
-                    catch (error: Exception) { detail = engine.failureDetail(error).take(240); emptyList() }
+                    catch (error: Exception) {
+                        detail = listOfNotNull(detail, engine.failureDetail(error)).joinToString("; ").take(240)
+                        emptyList()
+                    }
+                    // Variant resizing must be inverted BEFORE coordinate mapping, merging, or field extraction.
+                    val labelRead = read?.map { variant.toLabel(it, inputW, inputH) }
                     val timing = EngineTiming(engine.id, variant.id, SystemClock.elapsedRealtime() - start,
-                        read?.size ?: 0, read == null || deadline.expired, detail)
+                        labelRead?.size ?: 0, read == null || deadline.expired, detail)
                     timings += timing; log(timing); onTiming(timing)
-                    if (read != null) { tokens += read; onTokens(read) }
+                    if (labelRead != null) { tokens += labelRead; onTokens(labelRead) }
                     if (timing.deadlineCancelled) { cancelled = true; break@variantLoop }
                 }
             } finally { variant.release(bitmap) }
