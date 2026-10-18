@@ -13,7 +13,7 @@ import kotlin.math.min
 object LabelNamePolicy {
     private val publications = setOf("decanter", "wine spectator", "wine enthusiast", "wine advocate", "james suckling")
     private val score = Regex("^(?:[89][0-9]|100)(?:\\s*(?:pts?|points))?[,.*]?$", RegexOption.IGNORE_CASE)
-    private val styles = setOf("gran reserva", "reserva", "riserva", "reserve", "crianza", "grand reserve")
+
 
     /** Normalized rectified lines in/out: mask local score-badge fragments only around a publisher plus rating. */
     fun withoutAwards(lines: List<LabelLine>): List<LabelLine> {
@@ -33,22 +33,23 @@ object LabelNamePolicy {
 
     /** BASE normalized label lines: a nearby reserve designation supports a wine-name interpretation. */
     fun hasAdjacentStyle(name: LabelLine, lines: List<LabelLine>): Boolean = lines.any { style ->
-        if (style == name || TextNorm.normalize(style.text) !in styles) false else {
+        if (style == name || !WineDesignations.isDesignation(style.text)) false else {
             val a = name.bboxRect; val b = style.bboxRect
-            b.top >= a.bottom && b.top - a.bottom <= max(.06f, a.height()) &&
+            max(0f, max(a.top, b.top) - min(a.bottom, b.bottom)) <= max(.06f, a.height()) &&
                 min(a.right, b.right) - max(a.left, b.left) >= .4f * min(a.width(), b.width())
         }
     }
 
     /** Rectified candidate boxes in: combine a distinctive name with its adjacent printed reserve designation. */
     fun joinStyle(candidates: List<FieldCandidate>, producer: String?): FieldCandidate? {
-        val names = candidates.filterNot { TextNorm.normalize(it.value) in styles }
+        val names = candidates.filterNot { WineDesignations.isDesignation(it.value) }
         val selected = names.firstOrNull() ?: return candidates.firstOrNull()
-        val designation = candidates.filter { TextNorm.normalize(it.value) in styles }.firstOrNull { style ->
+        val adjacent = candidates.filter { WineDesignations.isDesignation(it.value) }.filter { style ->
             val a=BoxMath.union(selected.sources.map { it.bboxRect }); val b=BoxMath.union(style.sources.map { it.bboxRect })
-            b.top >= a.top && max(0f,b.top-a.bottom) <= max(.06f,a.height()) &&
+            max(0f,max(a.top,b.top)-min(a.bottom,b.bottom)) <= max(.06f,a.height()) &&
                 min(a.right,b.right)-max(a.left,b.left) >= .4f*min(a.width(),b.width())
         }
+        val designation = adjacent.firstOrNull()
         var name = selected.value
         var corrected = false
         // User-verified label transcription, scoped to the supported producer AND printed style.
@@ -60,9 +61,13 @@ object LabelNamePolicy {
             name = "Reciente"
         }
         if (designation == null) return selected
-        val style = designation.value.lowercase().split(' ').joinToString(" ") { it.replaceFirstChar(Char::uppercaseChar) }
+        val style = requireNotNull(WineDesignations.display(designation.value))
+        if (TextNorm.normalize(name).endsWith(TextNorm.normalize(style))) return selected // No duplicate suffix.
+        if (WineDesignations.split(name).suffix != null) return selected.copy(state = UiState.YELLOW,
+            reason = selected.reason + "; additional conflicting designation nearby — confirm")
         return FieldCandidate(FieldId.WINE_NAME, "$name $style", UiState.YELLOW,
-            "Adjacent printed name and style — confirm" + if (corrected) "; producer-scoped correction of OCR name" else "",
+            "Adjacent printed name and style — confirm" + (if (corrected) "; producer-scoped correction of OCR name" else "") +
+                (if (adjacent.map { TextNorm.normalize(it.value) }.distinct().size > 1) "; multiple nearby designations — confirm selection" else ""),
             (selected.sources + designation.sources).distinct())
     }
 

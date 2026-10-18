@@ -233,7 +233,8 @@ object LogicChecks {
         for (description in listOf("Merlot", "Reserve Cabernet Sauvignon", "Old Vine Zinfandel", "Gran Reserva")) {
             val result = fill.fill(listOf(token(description), token("2019", y = .7f)), 2026)
             check(result.fields.getValue(FieldId.PRODUCER).state == UiState.RED) { result.fields }
-            check(result.fields.getValue(FieldId.WINE_NAME).value == description) { result.fields }
+            val expected = if (description == "Reserve Cabernet Sauvignon") "Cabernet Sauvignon Reserve" else description
+            check(result.fields.getValue(FieldId.WINE_NAME).value == expected) { result.fields }
         }
         for (marker in listOf("Winery", "W I N E R Y", "Winery®", "Winery.")) {
             val markers = fill.fill(listOf(token(marker), token("Estate Grown", y = .3f),

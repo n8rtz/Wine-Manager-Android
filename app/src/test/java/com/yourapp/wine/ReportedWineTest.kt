@@ -9,6 +9,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26], manifest = Config.NONE)
 class ReportedWineTest {
+    @Test fun designationSuffixes() = AppellationContextChecks.designationsFollowNamesWithoutBecomingProducers()
+    @Test fun originContext() = AppellationContextChecks.namedOriginsAreStrongButGenericDesignationsAreNotCountries()
+    @Test fun guardedSpellingRepair() = AppellationContextChecks.spellingNeedsIndependentCompatibleEvidenceAndStaysYellow()
     @Test fun appellationIsNotAMaker() = AdministrativeLabelChecks.rhoneAppellationIsNotAMakerAndLegalDebrisIsNotAName()
     @Test fun legalTextDoesNotEraseRealBrands() = AdministrativeLabelChecks.narrowAdministrativeRulesPreserveRealIdentities()
     @Test fun cuveePlusStyleDoesNotInventProducer() = AdministrativeLabelChecks.reserveHeadingIsNotAnUnsupportedProducer()

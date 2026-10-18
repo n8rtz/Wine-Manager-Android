@@ -53,7 +53,7 @@ class WineTermSpacing(forms: List<Pair<String, String>>) {
             // Keep the label's legitimate grape alias (e.g. Petite Sirah), not a different synonym.
             WineTermSpacing((BundledGrapes.terms + BundledWineStyles.terms).flatMap { term ->
                 (listOf(term.name) + term.aliases).map { it to it }
-            })
+            } + WineDesignations.names.map { it to it })
         }
     }
 }

@@ -59,7 +59,7 @@ object ScanDiagnosticFormatter {
         out.line("mapped_readings=${report.tokens.size} retained_clusters=${merged.size}")
         out.line("Repeated variants from one engine are NOT independent votes; estimated confidence cannot validate GREEN.")
         out.line("Singleton minimum: ML Kit 0.60, Paddle 0.75. Independent combined vote minimum: 0.60.")
-        out.line("Field display may repair known word breaks or use an exact curated producer alias; raw readings/scores remain unchanged.")
+        out.line("Field display may repair known word breaks, reorder printed designations, use a curated producer alias, or suggest a context-supported appellation spelling (YELLOW); raw readings/scores remain unchanged.")
         out.line()
         out.line("[Field decisions: scanner suggestions, NOT manual form values]")
         FieldId.entries.forEach { id ->

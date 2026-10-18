@@ -61,7 +61,7 @@ class ProducerLineSelector {
     /** No coordinates: generic varietal/style lines can name a wine, but cannot identify an unknown producer. */
     fun isWineDescription(text: String): Boolean {
         val normalized = TextNorm.normalize(WineTermSpacing.wineWords.repair(text).text)
-        if (LabelTextRoles.isRhoneAppellation(text)) return true
+        if (WineDesignations.isAppellationName(text) || WineDesignations.isDesignation(text) || WineDesignations.hasNameAndDesignation(text)) return true
         if (normalized in styles || normalized.filter(Char::isLetterOrDigit) in compactStyles) return true
         var remaining = normalized
         var hasVarietal = false

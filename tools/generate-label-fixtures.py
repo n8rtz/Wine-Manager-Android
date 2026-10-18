@@ -13,7 +13,7 @@ labels = [
     ("barolo", ["Vietti", "Castiglione", "Barolo", "2019"],
      ["Vietti", "Castiglione", "Italy", "Piedmont", "Barolo", "2019"]),
     ("napa", ["Robert Mondavi", "Reserve Cabernet Sauvignon", "Napa Valley", "2020"],
-     ["Robert Mondavi", "Reserve Cabernet Sauvignon", "United States", "California", "Napa Valley", "2020"]),
+     ["Robert Mondavi", "Cabernet Sauvignon Reserve", "United States", "California", "Napa Valley", "2020"]),
 ]
 for slug, lines, expected in labels:
     image = Image.new("RGB", (840, 1120), (241, 235, 218))

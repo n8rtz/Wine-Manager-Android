@@ -305,3 +305,26 @@ arrangements**, because the CSV does not export individual token boxes. These ar
 extraction regressions, not a pixel replay or proof of phone OCR improvements.
 No expected label answer is fed into OCR, no missing producer is supplied, and
 acceptance thresholds and the normal three-variant pipeline are unchanged.
+
+### Designations and contextual appellation spelling
+
+Wine-name display now places printed Reserva/Riserva, Gran Reserva, Grand Cru,
+Premier Cru/1er Cru and Villages qualifiers after the name. Adjacent aligned label
+lines may join in either vertical order; distant lines do not. Duplicate suffixes
+are not repeated and conflicting designations require confirmation. A recognized
+appellation may itself be an editable wine name, not an unknown producer. Generic
+countries/states are not converted into wine identities. Known cuvee lookup happens
+before display reordering, preserving the original KB evidence.
+
+Existing curated geography supplies named-appellation ancestry (e.g. Rioja → Spain,
+Chablis → Burgundy → France, Barolo → Piedmont → Italy). Grand Cru, Villages,
+Reserva etc. alone do **not** determine a country. Explicit contradictions remain
+YELLOW rather than silently overriding label text.
+
+A new narrow correction can suggest a unique authored appellation one edit away
+from a retained 6–32-character reading **only** when separately read, supported
+country/region text agrees with its local hierarchy. Generic designations, importer
+addresses, producer names and expected benchmark answers cannot supply this anchor.
+Short/incomplete aliases cannot expand a fragment into a long appellation. Guesses
+never alter raw OCR/scores and all dependent candidates are capped YELLOW with a
+contextual-repair explanation. No acceptance thresholds or image passes changed.

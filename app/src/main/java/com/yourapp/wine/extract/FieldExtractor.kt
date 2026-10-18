@@ -24,7 +24,9 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
     init { gazetteer.matches(""); normalizer.repair("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
     fun extract(rawLines: List<LabelLine>, currentYear: Int): ExtractionResult {
-        val lines = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
+        val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
+        val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
+        val lines = contextual.lines
         val result = mutableMapOf<FieldId, List<FieldCandidate>>()
         result[FieldId.VINTAGE] = vintage.extract(lines, currentYear)
         val geography = hierarchy.snapshot()
@@ -47,7 +49,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 result[field] = candidates.distinctBy { TextNorm.normalize(it.value) }
             }
         }
-        val placeLines = lines.filter { line -> matchPlaces(line.text, line.tokens).any { claim ->
+        val placeLines = lines.filter { line -> !WineDesignations.isAppellationName(line.text) && matchPlaces(line.text, line.tokens).any { claim ->
             val cleaned = TextNorm.normalize(line.text).replace(claim.place.nameNorm, "").trim()
             cleaned.isEmpty() || MetadataRules.isBoilerplate(cleaned)
         } }.toSet()
@@ -110,7 +112,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             if (distinctive == line.text && line.tokens.any { it in producerSources }) return@mapNotNull null
             // A printed appellation may itself name the wine. Keep its observed suffix (even truncated),
             // rather than stripping the geographic core and promoting the leftover fragment.
-            if (!LabelTextRoles.isRhoneAppellation(distinctive)) {
+            if (!WineDesignations.isAppellationName(distinctive)) {
                 claims.sortedByDescending { it.place.name.length }.forEach { claim ->
                     distinctive = removeNormalizedPhrase(distinctive, claim.place.name)
                 }
@@ -118,7 +120,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             distinctive = distinctive.replace(Regex("\\s+"), " ").trim()
             if (!MetadataRules.isIdentity(distinctive)) return@mapNotNull null
             val hit = producerId?.let { kb.findCuvee(it, distinctive) }
-            FieldCandidate(FieldId.WINE_NAME, hit?.cuvee?.name ?: distinctive,
+            FieldCandidate(FieldId.WINE_NAME, WineDesignations.orderName(hit?.cuvee?.name ?: distinctive),
                 if (hit?.editDistance == 0 && line.vote >= 0.6f) UiState.GREEN else UiState.YELLOW,
                 if (hit == null) "Distinctive OCR-only wine name; confirm" +
                     (if (line.tokens.any { normalizer.repair(it.canonical).changed }) "; verified term spacing normalized" else "")
@@ -133,10 +135,16 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val styleFallback = if (wines.isEmpty()) placeLines.mapNotNull { line ->
             val raw = rawLines.firstOrNull { it.tokens == line.tokens }?.text ?: line.text
             val display = WineTermSpacing.wineWords.repair(MetadataRules.identityText(raw)).text
-            if (!producerLines.isWineDescription(display) || (selectedProducer == null && !LabelTextRoles.isRhoneAppellation(display))) null else FieldCandidate(FieldId.WINE_NAME, display,
+            if (!producerLines.isWineDescription(display) || (selectedProducer == null && !WineDesignations.isAppellationName(display))) null else FieldCandidate(FieldId.WINE_NAME, display,
                 UiState.YELLOW, "Printed wine style/appellation used as name — confirm", line.tokens)
         }.sortedByDescending { vote(it.sources) } else emptyList()
         result[FieldId.WINE_NAME] = listOfNotNull(LabelNamePolicy.joinStyle(wines + styleFallback, selectedProducer))
+        // A lexical suggestion is not measured evidence: cap all dependent fields and inherited geography.
+        if (contextual.repaired.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
+            if (candidate.sources.any { it in contextual.repaired }) candidate.copy(state = UiState.YELLOW,
+                reason = candidate.reason + "; contextual appellation spelling suggestion supported by separate geography — confirm; raw OCR unchanged")
+            else candidate
+        } }
         return ExtractionResult(result, claims)
     }
 
