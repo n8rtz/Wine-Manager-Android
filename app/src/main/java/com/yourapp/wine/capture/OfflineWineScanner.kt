@@ -4,6 +4,7 @@ import android.os.SystemClock
 import android.os.Debug
 import android.util.Log
 import com.yourapp.wine.diagnostics.*
+import com.yourapp.wine.fill.CellarFieldPresentation
 import com.yourapp.wine.fill.ConfidenceContext
 import com.yourapp.wine.fill.ResilientFillEngine
 import com.yourapp.wine.fill.UiState
@@ -177,7 +178,7 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
         }
         Log.d("WineScanner", "scan ms=$elapsed tokens=${records.size} peakBitmaps=${workspace.peakCount} alive=${workspace.aliveCount} deadlineCancelled=$deadlineCancelled javaHeap=${Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()} nativeHeap=${Debug.getNativeHeapAllocatedSize()}")
         fill.fields.values.forEach { Log.d("WineScanner", "${it.field} ${it.state}: ${it.reason}") }
-        ScanReport(fill, records.toList(), originalW, originalH, rectW, rectH, quad, homography?.values,
+        ScanReport(CellarFieldPresentation.apply(fill), records.toList(), originalW, originalH, rectW, rectH, quad, homography?.values,
             timings.toList(), elapsed, deadlineCancelled, workspace.peakCount, workspace.aliveCount,
             diagnostics = trace.finish(diagnostics))
     }

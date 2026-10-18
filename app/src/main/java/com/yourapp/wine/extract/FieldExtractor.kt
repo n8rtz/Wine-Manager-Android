@@ -51,7 +51,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             val cleaned = TextNorm.normalize(line.text).replace(claim.place.nameNorm, "").trim()
             cleaned.isEmpty() || MetadataRules.isBoilerplate(cleaned)
         } }.toSet()
-        val identityLines = lines.filter { it !in placeLines }.mapNotNull { line ->
+        val identityLines = LabelNamePolicy.withoutAwards(lines).filter { it !in placeLines }.mapNotNull { line ->
             val cleaned = MetadataRules.identityText(line.text)
             if (MetadataRules.isIdentity(cleaned) && !producerLines.isAdministrative(cleaned)) line.copy(text = cleaned) else null
         }
@@ -127,7 +127,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             if (!producerLines.isWineDescription(display)) null else FieldCandidate(FieldId.WINE_NAME, display,
                 UiState.YELLOW, "Printed wine style/appellation used as name — confirm", line.tokens)
         }.sortedByDescending { vote(it.sources) } else emptyList()
-        result[FieldId.WINE_NAME] = (wines + styleFallback).take(1)
+        result[FieldId.WINE_NAME] = listOfNotNull(LabelNamePolicy.joinStyle(wines + styleFallback, selectedProducer))
         return ExtractionResult(result, claims)
     }
 

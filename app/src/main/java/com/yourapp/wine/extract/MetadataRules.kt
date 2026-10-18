@@ -4,7 +4,7 @@ import com.yourapp.wine.merge.TextNorm
 
 object MetadataRules {
     private val packaging = Regex("""(?i)\b\d+(?:[.,]\d+)?\s*%|\b\d+(?:[.,]\d+)?\s*(?:cl|ml|l|litres?|liters?|oz)\b|\b(?:alc|alcohol|abv)\b|\b\d{8,14}\b""")
-    private val boilerplate = Regex("""\b(?:appellation|controlee|protegee|denominazione|origine|contains|sulfites|bottled|mis en bouteille|product of|produced in|imported|barcode|gtin|ean|upc|volume|by vol|founded|established|est|since|grand vin)\b""")
+    private val boilerplate = Regex("""\b(?:appellation|controlee|protegee|denominazione|denominacion|calificada|origine|contains|sulfites|bottled|mis en bouteille|product of|produced in|imported|barcode|gtin|ean|upc|volume|by vol|founded|established|est|since|grand vin)\b""")
 
     /** No coordinates: packaging, alcohol and barcodes are never identity/name candidates. */
     fun isPackaging(text: String): Boolean = packaging.containsMatchIn(text)
@@ -20,5 +20,6 @@ object MetadataRules {
 
     /** No coordinates: a meaningful identity needs at least three letters, not just three digits. */
     fun isIdentity(text: String): Boolean = text.count(Char::isLetter) >= 3 &&
+        Regex("[\\p{L}\\p{M}]{3,}").containsMatchIn(text) &&
         !isPackaging(text) && !isBoilerplate(text)
 }

@@ -197,7 +197,7 @@ object LogicChecks {
             token("Gran Reserva", y = .30f, h = .05f), token("Bodegas Olarra", y = .43f, h = .05f),
             token("Rioja", y = .60f), token("2019", y = .80f)), 2026)
         check(olarra.fields.getValue(FieldId.PRODUCER).value == "Bodegas Olarra") { olarra.fields }
-        check(olarra.fields.getValue(FieldId.WINE_NAME).value == "Reciente") { olarra.fields }
+        check(olarra.fields.getValue(FieldId.WINE_NAME).value == "Reciente Gran Reserva") { olarra.fields }
         check(olarra.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
         val boutique = fill.fill(listOf(token("Domaine Petit Nuage", y = .1f, h = .05f),
             token("Pinot Noir", y = .4f, h = .16f)), 2026)

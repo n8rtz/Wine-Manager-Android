@@ -49,6 +49,10 @@ fun main() {
         "explicit printed style/appellation wine name" to com.yourapp.wine.ReportedWineChecks::printedAppellationStyleCanBeTheOnlyWineName).forEach { (name,test) ->
         test(); println("PASS: $name")
     }
+    com.yourapp.wine.LabelNameChecks.awardDoesNotDisplacePrintedNameAndStyle()
+    println("PASS: award badge excluded / adjacent name-style / producer-scoped correction")
+    com.yourapp.wine.LabelNameChecks.fragmentsNeverInventMerlotAndPresentationUsesState()
+    println("PASS: letter fragments rejected / no invented Merlot / state-as-country / manual edits preserved")
     GeneratedFixtureChecks.run()
     com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
     println("PASS: optional engines never receive localization/full-scene fallback pixels")

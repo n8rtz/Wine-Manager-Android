@@ -9,6 +9,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [26], manifest = Config.NONE)
 class ReportedWineTest {
+    @Test fun awardStickerIsNotTheWineName() = LabelNameChecks.awardDoesNotDisplacePrintedNameAndStyle()
+    @Test fun fragmentedWineryIsNotACuvee() = LabelNameChecks.fragmentsNeverInventMerlotAndPresentationUsesState()
     @Test fun kirklandFieldsUseTheActualSupportedEvidence() = ReportedWineChecks.kirklandReportDoesNotSwapProducerAndVariety()
     @Test fun exactWineWordBreaksCanBeRepairedButMissingLettersCannot() = ReportedWineChecks.wordBreakRepairDoesNotGuessLettersOrUnknownNames()
     @Test fun installedGazetteersReceiveReadOnlySupplements() = ReportedWineChecks.geographicSupplementIsCachedReadOnlyAndWorksOnExistingSnapshots()
