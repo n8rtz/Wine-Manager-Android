@@ -18,7 +18,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 data class LabLabel(val id:String=UUID.randomUUID().toString(),val uri:Uri,val label:String,
-    val expected:Map<FieldId,String> = emptyMap(),val reviewed:Boolean=false)
+    val expected:Map<FieldId,String> = emptyMap(),val reviewed:Boolean=false,val presetKey:String?=null)
 data class LabelRun(val id:String,val label:String,val expected:Map<FieldId,String>,val seed:Int,
     val inputHash:String="",val baseHash:String="",val base:File?=null,val setup:ScanReport?=null,
     val results:List<BenchmarkCaseResult> = emptyList(),val status:String="queued")
@@ -52,6 +52,7 @@ class OcrLabViewModel(app:Application):AndroidViewModel(app) {
         mutable.update { state -> state.copy(labels=state.labels.map { label ->
             if(label.id!=labelId) label else label.copy(label=wine.title.take(120),expected=wine.expected(),reviewed=false)
         }) }
+        saveBundledChanges()
         closeCellarSearch()
     }
     private var job:Job?=null
@@ -59,6 +60,22 @@ class OcrLabViewModel(app:Application):AndroidViewModel(app) {
     private val history=BenchmarkHistory(File(app.noBackupFilesDir,"ocr-lab-csv-v1"))
     init { viewModelScope.launch { refreshCount() } }
     private suspend fun refreshCount() { val count=history.count();mutable.update { it.copy(savedRows=count,historyReady=true) } }
+
+    private fun saveBundledChanges() = BundledLabSamples.save(getApplication(),mutable.value.labels)
+    fun loadBundledSamples() {
+        if(mutable.value.busy) return
+        mutable.update { it.copy(busy=true,progress="Loading bundled test photos…") }
+        job=viewModelScope.launch {
+            try {
+                val samples=BundledLabSamples.load(getApplication())
+                mutable.update { it.copy(labels=samples,progress="Bundled photos and expected details loaded. Review once; corrections and confirmations are remembered.") }
+            } catch(cancel:CancellationException) {
+                mutable.update { it.copy(progress="Loading cancelled. Previous queue retained.") };throw cancel
+            } catch(_:Exception) {
+                mutable.update { it.copy(progress="Could not load bundled photos. Previous queue retained; try again or choose photos manually.") }
+            } finally { mutable.update { it.copy(busy=false) } }
+        }
+    }
 
     fun choose(uris:List<Uri>) {
         if(mutable.value.busy || uris.isEmpty()) return
@@ -71,9 +88,11 @@ class OcrLabViewModel(app:Application):AndroidViewModel(app) {
         if(mutable.value.busy) return
         mutable.update { state -> state.copy(labels=state.labels.map { if(it.id!=id) it else if(field==null)
             it.copy(label=value.take(120),reviewed=false) else it.copy(expected=it.expected+(field to value.take(120)),reviewed=false) }) }
+        saveBundledChanges()
     }
     fun review(id:String,value:Boolean) {
         if(!mutable.value.busy) mutable.update { state -> state.copy(labels=state.labels.map { if(it.id==id) it.copy(reviewed=value) else it }) }
+        if(!mutable.value.busy) saveBundledChanges()
     }
     private fun updateRun(id:String,change:(LabelRun)->LabelRun) { mutable.update { it.copy(runs=it.runs.map { run -> if(run.id==id) change(run) else run }) } }
 

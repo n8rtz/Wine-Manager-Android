@@ -389,3 +389,19 @@ while benchmarking; the run freezes each photo's expected map and uses it only a
 for scoring, exactly as before. No cellar record/answer enters BenchmarkRunner or normal
 recognition. Pure host tests cover search, mapping, vintage distinction and missing values;
 the Compose dialog and on-device SQLite path still require device validation.
+
+### Bundled repeatable OCR Lab samples
+
+**Load bundled test wines (3)** loads the original Blackstone, Olarra and Rhône uploads plus
+the user's prior CSV expected details. All inputs live under `app/src/debug/assets/ocr-lab-v1`
+and are absent from release assets. Original JPEG bytes and their SHA-256 identities are
+retained; no prepared crop or screenshot is substituted. Loading replaces only the editable
+queue, not CSV history or cellar data. Review once, then subsequent loads restore local
+corrections and confirmations. A changed field still requires renewed review. Normal image
+picking and cellar search remain available.
+
+The registry's README documents source batches and potentially debatable maker/name
+assignments. Expected fields never enter the recognizer; image bytes follow the normal import
+path, and scoring still occurs only after recognition. Photo loading is streamed on IO,
+checksummed and cancellable without extra full-size bitmaps. Debug package assets increase
+by approximately 10 MiB; release package assets and scanning limits are unchanged.

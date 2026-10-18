@@ -60,6 +60,8 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
             Text("Debug build ${BuildConfig.BUILD_COMMIT}",style=MaterialTheme.typography.bodySmall)
             Text("30 treatments per image, run sequentially. Up to 10 photos per batch; allow several minutes per photo. No cellar fields are changed.")
             Text("Actual details are used ONLY to score results. Blank = unscored, not expected-absent. Check each photo separately; answers are never copied between labels.")
+            OutlinedButton(enabled=!state.busy,onClick=vm::loadBundledSamples) { Text("Load bundled test wines (3)") }
+            Text("Blackstone, Olarra and Rhône originals with saved expected details. Replaces this queue, not CSV history. Review once; edits and confirmations are remembered.",style=MaterialTheme.typography.bodySmall)
             Button(enabled=!state.busy,onClick={picker.launch(arrayOf("image/*"))}) { Text("Choose multiple label images") }
             Text("Selecting photos replaces the editable queue, not saved CSV history.",style=MaterialTheme.typography.bodySmall)
         }
