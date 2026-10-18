@@ -28,6 +28,16 @@ fun main() {
         "streamed photo bytes / byte cap / cancellation" to com.yourapp.wine.DiagnosticChecks::photoBytesAreStreamedBoundedAndCancellable).forEach { (name, test) ->
         test(); println("PASS: $name")
     }
+    listOf("weak probe geometry never lowers field confidence" to com.yourapp.wine.LocalizationChecks::weakBoxesLocalizeWithoutBecomingAcceptedText,
+        "logged label body stays in one padded proposal" to com.yourapp.wine.LocalizationChecks::sparseBodyKeepsTheBrandAndLowerLabelInOneProposal,
+        "localization requires a strong anchor and valid geometry" to com.yourapp.wine.LocalizationChecks::geometryNeedsAnAnchorAndRejectsInvalidReadings,
+        "separate text columns remain separate" to com.yourapp.wine.LocalizationChecks::separateBottleColumnsDoNotJoin,
+        "bounded rectified-label upscaling" to com.yourapp.wine.LocalizationChecks::rectifiedCropsUseThePixelBudgetWithoutExceedingIt,
+        "padding stays in frame and declines tiny fragments" to com.yourapp.wine.LocalizationChecks::paddedProposalsStayBoundedAndTinyFragmentsRemainFallbacks,
+        "rescue schedules from usable confidence not raw counts" to com.yourapp.wine.LocalizationChecks::rescueUsesUsableEvidenceRatherThanRawLineCount,
+        "upscaled-crop inverse coordinate mapping" to com.yourapp.wine.LocalizationChecks::enlargedCropPreservesOriginalCoordinateRoundtrip).forEach { (name, test) ->
+        test(); println("PASS: $name")
+    }
     GeneratedFixtureChecks.run()
     com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
     println("PASS: optional engines never receive localization/full-scene fallback pixels")

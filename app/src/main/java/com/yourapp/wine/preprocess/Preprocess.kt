@@ -2,20 +2,20 @@ package com.yourapp.wine.preprocess
 
 import android.graphics.Bitmap
 import com.yourapp.wine.capture.BitmapWorkspace
-import com.yourapp.wine.merge.TextNorm
+import com.yourapp.wine.ocr.OcrRescuePolicy
 import com.yourapp.wine.ocr.OcrVariant
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 
-/** Phase 1/2 uses two passes. V2 is opt-in and never makes more than one extra Bitmap. */
+/** V0/V1 plus an optional evidence-gated unsharp rescue; never allocates more than one extra Bitmap. */
 class Preprocess(private val enableV2: Boolean = false, private val lastResortThreshold: Boolean = false) {
     /** Lazy variants of RECTIFIED pixels only; dimensions/polygons are unchanged by every filter. */
     fun variants(rectified: Bitmap, workspace: BitmapWorkspace): List<OcrVariant> = buildList {
         add(OcrVariant("V0", { rectified }, {}))
         add(OcrVariant("V1", { enhance(rectified, workspace, "foil") }, workspace::release))
         if (enableV2) add(OcrVariant("V2", { enhance(rectified, workspace, if (lastResortThreshold) "threshold" else "unsharp") },
-            workspace::release, enabled = { tokens -> tokens.map { TextNorm.normalize(it.text) }.distinct().size < 3 }))
+            workspace::release, enabled = OcrRescuePolicy::shouldRun))
     }
 
     private fun enhance(raw: Bitmap, workspace: BitmapWorkspace, mode: String): Bitmap {
@@ -39,7 +39,7 @@ class Preprocess(private val enableV2: Boolean = false, private val lastResortTh
                     Imgproc.cvtColor(rgb, output, Imgproc.COLOR_RGB2RGBA)
                 }
                 "threshold" -> {
-                    // Only enabled for the third, last-resort pass after V0+V1 produced fewer than three distinct tokens.
+                    // Explicit last-resort opt-in only; normal V2 uses color-preserving unsharp after sparse/weak readings.
                     Imgproc.cvtColor(rgb, blur, Imgproc.COLOR_RGB2GRAY)
                     Imgproc.adaptiveThreshold(blur, output, 255.0, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 31, 7.0)
                 }

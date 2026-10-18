@@ -66,3 +66,7 @@ YELLOW requires one-tap confirmation, RED fills nothing. Retakes preserve manual
 
 After scanning, the camera closes back to the normal Add Wine form. All builds offer **Show scan details → Copy diagnostics** explicitly; the report includes raw/mapped/filtered text, timing, geometry, device ABI and build information, not a photo. Debug builds separately offer **Show OCR boxes**; no large wireframe opens automatically. **Choose label photo** runs the same local scanner on a stored image, without camera permission. Clipboard/picker/import/view-model tests require the full Android Gradle environment. Physical ML Kit accuracy, 8000ms timing and 20 actual camera captures
 remain separate device acceptance checks; see `docs/offline-scanner.md`.
+
+### Report-driven Blackstone localization case
+
+`LocalizationChecks` uses the rounded box coordinates/scores from the user's actual OnePlus diagnostic report for this exact Blackstone JPEG. Weak probe boxes are geometry hints around a strong anchor, not accepted producer text. The regression keeps the sparse body together, pads missing-glyph/script margins, bounds upscaling, retains inverse coordinates, and schedules an unsharp rescue from usable confidence rather than raw line count. It does not hard-code Blackstone into the KB, change acceptance thresholds, or claim that host logic tests have rerun native ML Kit. The device must rescan the saved image to verify the new readings.

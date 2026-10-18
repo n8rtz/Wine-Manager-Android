@@ -104,7 +104,7 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
                         val reuse = if (quad == null) probe?.map { it.copy(polygon = it.polygon.map(workToRect::map), variantId = "V0") } else null
                         val inputKind = if (quad != null) OcrInputKind.RECTIFIED_LABEL else OcrInputKind.FULL_FRAME_FALLBACK
                         trace.enter(ScanStage.OCR)
-                        val batch = ensemble.run(Preprocess().variants(rectified.bitmap, workspace), deadline, reuseMlkitV0 = reuse,
+                        val batch = ensemble.run(Preprocess(enableV2 = true).variants(rectified.bitmap, workspace), deadline, reuseMlkitV0 = reuse,
                             onTokens = { raw -> raw.forEach { token ->
                                 val mapped = mapper.toOriginal(token)
                                 trace.reading(token, inputKind, mapped != null)

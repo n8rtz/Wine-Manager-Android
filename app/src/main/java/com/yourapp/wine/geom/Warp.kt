@@ -7,7 +7,6 @@ import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import kotlin.math.hypot
-import kotlin.math.roundToInt
 
 /** Caller owns geom.H_origToRect and must release it in finally; the workspace owns bitmap. */
 data class RectifiedLabel(val bitmap: Bitmap, val geom: FrameGeom, val originalToRect: Matrix3)
@@ -19,10 +18,9 @@ object Warp {
             ?: listOf(PointF(0f, 0f), PointF(geom.workW.toFloat(), 0f), PointF(geom.workW.toFloat(), geom.workH.toFloat()), PointF(0f, geom.workH.toFloat()))
         val naturalW = (distance(quad[0], quad[1]) + distance(quad[2], quad[3])) / 2
         val naturalH = (distance(quad[0], quad[3]) + distance(quad[1], quad[2])) / 2
-        require(naturalW >= 16f && naturalH >= 16f) { "Degenerate label quad" }
-        val scale = minOf(1f, 1280f / naturalW, 1920f / maxOf(naturalW, naturalH))
-        val width = (naturalW * scale).roundToInt().coerceIn(16, 1280)
-        val height = (naturalH * scale).roundToInt().coerceIn(16, 1920)
+        val size = LabelGeometryPolicy.rectifiedSize(naturalW, naturalH)
+        val width = size.width
+        val height = size.height
         val source = MatOfPoint2f(*quad.map { Point(it.x.toDouble(), it.y.toDouble()) }.toTypedArray())
         val destination = MatOfPoint2f(Point(0.0, 0.0), Point(width.toDouble(), 0.0),
             Point(width.toDouble(), height.toDouble()), Point(0.0, height.toDouble()))
@@ -36,7 +34,8 @@ object Warp {
             originalToRectMat = Mat(3, 3, CvType.CV_64F).apply { put(0, 0, *originalToRect.values.toDoubleArray()) }
             Utils.bitmapToMat(working, input)
             Imgproc.warpPerspective(input, output, workToRect, Size(width.toDouble(), height.toDouble()),
-                Imgproc.INTER_LINEAR, Core.BORDER_REPLICATE)
+                if (width > naturalW || height > naturalH) Imgproc.INTER_CUBIC else Imgproc.INTER_LINEAR,
+                Core.BORDER_REPLICATE)
             input.release()
             val bitmap = workspace.create(width, height)
             Utils.matToBitmap(output, bitmap)
