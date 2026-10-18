@@ -5,41 +5,32 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
-val buildBranchName = runCatching {
-    val process = ProcessBuilder("git", "branch", "--show-current")
-        .directory(rootProject.projectDir)
-        .redirectErrorStream(true)
-        .start()
-    val branch = process.inputStream.bufferedReader().use { it.readText().trim() }
-    if (process.waitFor() == 0) branch.takeIf { it.isNotBlank() } else null
+// Provider-backed process output is tracked by Gradle's configuration cache. A Git pull must
+// invalidate cached build metadata instead of leaving the installed app reporting an older SHA.
+fun gitMetadata(vararg arguments: String): String? = runCatching {
+    val output = providers.exec {
+        workingDir(rootProject.projectDir)
+        commandLine(listOf("git") + arguments)
+        isIgnoreExitValue = true
+    }
+    if (output.result.get().exitValue == 0) output.standardOutput.asText.get().trim() else null
 }.getOrNull()
-    ?: System.getenv("BUILD_BRANCH")?.takeIf { it.isNotBlank() }
-    ?: runCatching {
-        val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
-            .directory(rootProject.projectDir)
-            .redirectErrorStream(true)
-            .start()
-        val commit = process.inputStream.bufferedReader().use { it.readText().trim() }
-        if (process.waitFor() == 0) commit.takeIf { it.isNotBlank() } else null
-    }.getOrNull()?.let { "detached@$it" }
-    ?: "unknown"
 
+val buildCommit = gitMetadata("rev-parse", "--short=12", "HEAD")?.takeIf { it.isNotBlank() } ?: "unknown"
+val buildBranchName = gitMetadata("branch", "--show-current")?.takeIf { it.isNotBlank() }
+    ?: providers.environmentVariable("BUILD_BRANCH").orNull?.takeIf { it.isNotBlank() }
+    ?: buildCommit.takeUnless { it == "unknown" }?.let { "detached@$it" }
+    ?: "unknown"
 val escapedBuildBranch = buildBranchName
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
-
-val buildCommit = runCatching {
-    val process = ProcessBuilder("git", "rev-parse", "--short=12", "HEAD")
-        .directory(rootProject.projectDir).redirectErrorStream(true).start()
-    val value = process.inputStream.bufferedReader().use { it.readText().trim() }
-    if (process.waitFor() == 0) value else "unknown"
-}.getOrDefault("unknown")
-val buildWorkingTree = runCatching {
-    val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=normal")
-        .directory(rootProject.projectDir).redirectErrorStream(true).start()
-    val changes = process.inputStream.bufferedReader().use { it.readText() }
-    if (process.waitFor() != 0) "unknown" else if (changes.isBlank()) "clean" else "dirty"
-}.getOrDefault("unknown")
+    .replace("\n", "\\n")
+    .replace("\r", "\\r")
+val buildWorkingTree = when (gitMetadata("status", "--porcelain", "--untracked-files=normal")) {
+    null -> "unknown"
+    "" -> "clean"
+    else -> "dirty"
+}
 val packagedNativeAbis = listOf("arm64-v8a")
 
 android {
