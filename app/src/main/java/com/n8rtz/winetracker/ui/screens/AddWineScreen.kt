@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -29,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.isBusy
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
@@ -42,6 +45,7 @@ import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanFormState
 import com.yourapp.wine.ui.ScanFieldStatus
 import com.yourapp.wine.ui.ScanReviewHeader
+import com.yourapp.wine.ui.LabelScanActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +55,7 @@ fun AddWineScreen(
     onWineAdded: () -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val focusManager = LocalFocusManager.current
     val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
@@ -76,8 +81,21 @@ fun AddWineScreen(
         }
     }
 
-    DisposableEffect(scannerViewModel) {
-        onDispose { scannerViewModel.cancelActiveLabelScan() }
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            cameraError = null
+            if (!scannerViewModel.onLabelPhotoSelected(uri)) cameraError = "Wait for the previous scan to finish, then choose the photo again."
+        }
+    }
+    DisposableEffect(lifecycleOwner, scannerViewModel) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            scannerViewModel.cancelActiveLabelScan()
+        }
     }
     
     var maker by remember { mutableStateOf("") }
@@ -98,9 +116,11 @@ fun AddWineScreen(
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
     var lastScanId by remember { mutableStateOf(0L) }
     val retake: () -> Unit = {
-        cameraError = null
-        if (cameraPermissionGranted) showLabelCamera = true
-        else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        if (!labelScanState.isBusy) {
+            cameraError = null
+            if (cameraPermissionGranted) showLabelCamera = true
+            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
     val fieldStatus: @Composable (FieldId) -> Unit = { field ->
         ScanFieldStatus(scanForm.fields.getValue(field),
@@ -172,22 +192,19 @@ fun AddWineScreen(
         ) {
             // Form Section
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
-                    onClick = {
+                LabelScanActions(busy = labelScanState.isBusy,
+                    progressMessage = if (showLabelCamera) null else when (labelScanState) {
+                        is LabelScanState.ImportingPhoto -> "Opening selected photo…"
+                        is LabelScanState.Processing -> "Reading selected photo on this device…"
+                        is LabelScanState.FinishingCancelledScan -> "Finishing the previous scan…"
+                        else -> null
+                    }, onCamera = retake, onChoosePhoto = {
                         cameraError = null
-                        if (cameraPermissionGranted) {
-                            showLabelCamera = true
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Camera, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Scan label with camera")
-                }
-                cameraError?.let { message ->
+                        scannerViewModel.warmLabelScanner()
+                        runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                            .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
+                    })
+                (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
                         modifier = Modifier.fillMaxWidth(),
@@ -196,9 +213,9 @@ fun AddWineScreen(
                     )
                 }
 
-                lastScanReport?.let { report ->
+                lastScanReport?.takeUnless { labelScanState.isBusy }?.let { report ->
                     ScanReviewHeader(report = report, form = scanForm, scanId = lastScanId,
-                        allowDiagnostics = BuildConfig.DEBUG, onRetake = retake)
+                        allowDebugOverlay = BuildConfig.DEBUG, canRetake = !labelScanState.isBusy, onRetake = retake)
                 }
                 fieldStatus(FieldId.PRODUCER)
                 // Autocomplete Producer Search
@@ -523,7 +540,7 @@ fun AddWineScreen(
                     )
                 }
                 Button(
-                    enabled = isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation,
+                    enabled = isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
                     onClick = {
                         viewModel.addWine(
                             maker = maker,
@@ -683,6 +700,7 @@ private fun LabelScanCameraDialog(
                             Spacer(Modifier.width(8.dp))
                             Text(if (scanState is LabelScanState.Error) "Retake Label" else "Take Label Photo")
                         }
+                        is LabelScanState.ImportingPhoto -> LabelScanProgress("Opening selected photo…")
                         is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
                         is LabelScanState.Processing -> LabelScanProgress("Reading offline… 8-second budget, then review any partial results.")
                         is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")

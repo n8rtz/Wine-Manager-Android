@@ -28,10 +28,12 @@ sources=()
 while IFS= read -r source; do sources+=("$source"); done < <(find "$root/merge" "$root/extract" "$root/fill" -name '*.kt' -print)
 sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.kt" "$root/ui/ScanFormState.kt" "$root/kb/WineKnowledgeBase.kt" "$root/kb/FixtureKnowledgeBase.kt" "$root/kb/PlaceGazetteer.kt" "$root/kb/PlaceHierarchy.kt"
     "$root/ocr/OcrEngine.kt" "$root/ocr/OcrEnsemble.kt" "$root/ocr/ScanDeadline.kt" "$root/ocr/NativeEngineGate.kt"
-    "$root/capture/ScanReport.kt" app/src/main/java/com/n8rtz/winetracker/scanner/LabelScanState.kt
+    "$root/capture/ScanReport.kt" "$root/capture/SelectedLabelPhotoImporter.kt"
+    "$root/diagnostics/ScanDiagnostics.kt" "$root/diagnostics/ScanTraceRecorder.kt" "$root/diagnostics/ScanDiagnosticFormatter.kt"
+    app/src/main/java/com/n8rtz/winetracker/scanner/LabelScanState.kt
     "$root/capture/BitmapWorkspace.kt" "$root/kb/OpenWinesAdapter.kt" "$root/kb/KnowledgeRecord.kt"
     "$root/kb/CsvKnowledgeRecords.kt" "$root/kb/JsonKnowledgeRecords.kt" "$root/kb/ImportReaders.kt"
-    app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
+    app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/DiagnosticChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
     tools/logic-checks/AndroidGeometry.kt tools/logic-checks/AndroidClock.kt tools/logic-checks/AndroidLog.kt
     tools/logic-checks/HostBitmap.kt tools/logic-checks/DeadlineChecks.kt tools/logic-checks/ImportChecks.kt tools/logic-checks/Main.kt
     .ocr-harness/checks/GeneratedFixtureChecks.kt)

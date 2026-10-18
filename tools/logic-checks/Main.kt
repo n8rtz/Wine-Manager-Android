@@ -21,6 +21,13 @@ fun main() {
         "producer marker requires nearby aligned text" to LogicChecks::producerMarkersDoNotBorrowDistantOrUnrelatedText).forEach { (name, test) ->
         test(); println("PASS: $name")
     }
+    listOf("copyable diagnostics explain build/device/filtered evidence" to com.yourapp.wine.DiagnosticChecks::reportExplainsPartialEvidenceAndBuild,
+        "bounded trace samples without exception messages" to com.yourapp.wine.DiagnosticChecks::traceHasBoundedSamplesAndNoExceptionMessages,
+        "bounded locale-independent diagnostics" to com.yourapp.wine.DiagnosticChecks::reportsAreBoundedAndLocaleIndependent,
+        "input provenance and busy/cancel states" to com.yourapp.wine.DiagnosticChecks::inputStatesAndFailuresRetainProvenance,
+        "streamed photo bytes / byte cap / cancellation" to com.yourapp.wine.DiagnosticChecks::photoBytesAreStreamedBoundedAndCancellable).forEach { (name, test) ->
+        test(); println("PASS: $name")
+    }
     GeneratedFixtureChecks.run()
     com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
     println("PASS: optional engines never receive localization/full-scene fallback pixels")

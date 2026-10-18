@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -17,20 +16,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.fill.UiState
-import java.util.Locale
 
-/** No image ownership: review stays in Add Wine; original-coordinate diagnostics require an explicit debug-only action. */
+/** No image ownership: text diagnostics are opt-in in all builds; original-coordinate wireframes stay debug-only. */
 @Composable
 fun ScanReviewHeader(
     report: ScanReport,
     form: ScanFormState,
     scanId: Long,
-    allowDiagnostics: Boolean = false,
+    allowDebugOverlay: Boolean = false,
+    canRetake: Boolean = true,
     onRetake: () -> Unit
 ) {
     // Key by the capture request, not data-class equality: even identical retakes start collapsed.
@@ -63,39 +61,13 @@ fun ScanReviewHeader(
                 Text(it, style = MaterialTheme.typography.bodySmall)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onRetake, colors = actionColors) { Text("Retake photo") }
-                if (allowDiagnostics) TextButton(onClick = { showDetails = !showDetails }, colors = actionColors) {
+                TextButton(onClick = onRetake, colors = actionColors, enabled = canRetake) { Text("Retake photo") }
+                TextButton(onClick = { showDetails = !showDetails }, colors = actionColors) {
                     Text(if (showDetails) "Hide scan details" else "Show scan details")
                 }
             }
-            if (allowDiagnostics && showDetails) {
-                Column(Modifier.fillMaxWidth().testTag("scan_debug_details"),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Debug diagnostics · not a separate wine review screen", style = MaterialTheme.typography.labelMedium)
-                    SelectionContainer {
-                        Column {
-                            Text("Elapsed: ${report.elapsedMs} ms · line readings: ${report.tokens.size} · " +
-                                "deadline reached: ${report.deadlineCancelled}", style = MaterialTheme.typography.bodySmall)
-                            report.timings.forEach { timing ->
-                                Text("${timing.engineId}/${timing.variantId}: ${timing.ms} ms, ${timing.tokenCount} lines" +
-                                    timing.detail?.let { " · $it" }.orEmpty(), style = MaterialTheme.typography.bodySmall)
-                            }
-                            report.fill.fields.forEach { (field, candidate) ->
-                                Text("$field: ${candidate.state} · ${candidate.reason}", style = MaterialTheme.typography.bodySmall)
-                            }
-                            Text("Mapped OCR readings (before confidence filtering):", style = MaterialTheme.typography.labelMedium)
-                            report.tokens.take(50).forEach { reading ->
-                                val score = String.format(Locale.ROOT, "%.3f", reading.score)
-                                Text("${reading.textRaw} · score=$score" +
-                                    (if (reading.scoreIsEstimated) " (estimated)" else " (measured)") +
-                                    " · ${reading.engineId}/${reading.variantId}", style = MaterialTheme.typography.bodySmall)
-                            }
-                            if (report.tokens.size > 50) Text("Showing the first 50 of ${report.tokens.size} readings.",
-                                style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    if (report.tokens.isNotEmpty()) ScanDebugOverlay(report)
-                }
+            if (showDetails) {
+                ScanDiagnosticsPanel(report, scanId, allowDebugOverlay)
             }
         }
     }

@@ -64,8 +64,5 @@ or varietals. A full-text shortlist alone may not replace a readable unknown win
 producer. The name, vintage and geographic hierarchy are reviewed independently: GREEN validates,
 YELLOW requires one-tap confirmation, RED fills nothing. Retakes preserve manual edits.
 
-After scanning, the camera closes back to the normal Add Wine form. Debug builds offer **Show scan
-details** explicitly; they no longer automatically display a large technical wireframe above the
-fields. The review UI has eight authored Compose/Robolectric tests; executing those requires the full
-Android Gradle test environment. Physical ML Kit accuracy, 8000ms timing and 20 actual camera captures
+After scanning, the camera closes back to the normal Add Wine form. All builds offer **Show scan details → Copy diagnostics** explicitly; the report includes raw/mapped/filtered text, timing, geometry, device ABI and build information, not a photo. Debug builds separately offer **Show OCR boxes**; no large wireframe opens automatically. **Choose label photo** runs the same local scanner on a stored image, without camera permission. Clipboard/picker/import/view-model tests require the full Android Gradle environment. Physical ML Kit accuracy, 8000ms timing and 20 actual camera captures
 remain separate device acceptance checks; see `docs/offline-scanner.md`.

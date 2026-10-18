@@ -11,6 +11,8 @@ interface OcrEngine : AutoCloseable {
     val available: Boolean
     /** No coordinates: releases an unused/failed-init client; never close an engine while native work is in flight. */
     override fun close() = Unit
+    /** No coordinates: diagnostic type/code only; never return exception messages, file paths or input URIs. */
+    fun failureDetail(error: Exception): String = "failed: ${error.javaClass.name}; cause=${error.cause?.javaClass?.name ?: "none"}"
     /** Returns one token per OCR line in rectified-label pixels; implementations must honor the shared elapsed-realtime deadline. */
     suspend fun recognize(bitmap: Bitmap, variantId: String, deadline: ScanDeadline): List<RawToken>
 }

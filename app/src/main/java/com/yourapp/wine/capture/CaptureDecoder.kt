@@ -11,7 +11,7 @@ import kotlin.math.roundToInt
 data class DecodedCapture(val bitmap: Bitmap, val origW: Int, val origH: Int)
 
 class CaptureDecoder {
-    /** Decodes CameraX's JPEG to bounded upright RGB; CameraX owns/closes the saved capture's ImageProxy. */
+    /** Original local image bytes -> bounded EXIF-upright RGB; camera and selected photos use identical decoding. */
     fun decode(file: File, workspace: BitmapWorkspace): DecodedCapture {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)

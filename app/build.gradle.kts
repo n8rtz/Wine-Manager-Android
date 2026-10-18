@@ -28,6 +28,20 @@ val escapedBuildBranch = buildBranchName
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 
+val buildCommit = runCatching {
+    val process = ProcessBuilder("git", "rev-parse", "--short=12", "HEAD")
+        .directory(rootProject.projectDir).redirectErrorStream(true).start()
+    val value = process.inputStream.bufferedReader().use { it.readText().trim() }
+    if (process.waitFor() == 0) value else "unknown"
+}.getOrDefault("unknown")
+val buildWorkingTree = runCatching {
+    val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=normal")
+        .directory(rootProject.projectDir).redirectErrorStream(true).start()
+    val changes = process.inputStream.bufferedReader().use { it.readText() }
+    if (process.waitFor() != 0) "unknown" else if (changes.isBlank()) "clean" else "dirty"
+}.getOrDefault("unknown")
+val packagedNativeAbis = listOf("arm64-v8a")
+
 android {
     namespace = "com.n8rtz.winetracker"
     compileSdk = 36
@@ -38,8 +52,11 @@ android {
         targetSdk = 35
         versionCode = 55
         versionName = "0.5.5"
-        ndk { abiFilters += "arm64-v8a" }
+        ndk { abiFilters += packagedNativeAbis }
         buildConfigField("String", "BUILD_BRANCH", "\"$escapedBuildBranch\"")
+        buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
+        buildConfigField("String", "BUILD_WORKING_TREE", "\"$buildWorkingTree\"")
+        buildConfigField("String", "NATIVE_ABIS", "\"${packagedNativeAbis.joinToString(",")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

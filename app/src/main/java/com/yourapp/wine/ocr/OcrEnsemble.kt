@@ -47,7 +47,7 @@ class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (Engine
                         timings += timing; log(timing); onTiming(timing)
                         throw cancel
                     }
-                    catch (error: Exception) { detail = "failed: ${error.javaClass.simpleName}"; emptyList() }
+                    catch (error: Exception) { detail = engine.failureDetail(error).take(240); emptyList() }
                     val timing = EngineTiming(engine.id, variant.id, SystemClock.elapsedRealtime() - start,
                         read?.size ?: 0, read == null || deadline.expired, detail)
                     timings += timing; log(timing); onTiming(timing)

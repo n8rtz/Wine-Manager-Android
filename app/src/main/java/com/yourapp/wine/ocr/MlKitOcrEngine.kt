@@ -2,6 +2,7 @@ package com.yourapp.wine.ocr
 
 import android.graphics.Bitmap
 import android.graphics.PointF
+import com.google.mlkit.common.MlKitException
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.tasks.await
@@ -48,6 +49,10 @@ class MlKitOcrEngine(private val nativeGate: NativeEngineGate) : OcrEngine {
             if (!submitted) { input?.release(); lease.close() }
         }
     }
+
+    /** No coordinates: export ML Kit's numeric error code, never its potentially path-bearing message. */
+    override fun failureDetail(error: Exception): String = super<OcrEngine>.failureDetail(error) +
+        ((error as? MlKitException)?.let { "; mlkit_error_code=${it.errorCode}" } ?: "")
 
     /** No coordinates: only used if app-scoped construction fails, before any recognition Task starts. */
     override fun close() { recognizer.close() }

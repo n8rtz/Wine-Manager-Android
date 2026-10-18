@@ -1,6 +1,8 @@
 package com.yourapp.wine
 
 import android.app.Application
+import android.content.ClipboardManager
+import android.content.ClipDescription
 import androidx.core.graphics.ColorUtils
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -22,6 +26,9 @@ import com.yourapp.wine.fill.FillEngine
 import com.yourapp.wine.kb.FixtureKnowledgeBase
 import com.yourapp.wine.fill.UiState
 import com.yourapp.wine.ui.ScanFieldStatus
+import com.yourapp.wine.ui.ScanDiagnosticsPanel
+import com.yourapp.wine.ui.LabelScanActions
+import com.yourapp.wine.diagnostics.ScanEnvironment
 import com.yourapp.wine.ui.ScanFormState
 import com.yourapp.wine.ui.ScanReviewHeader
 import com.yourapp.wine.ui.scanFieldStatusColor
@@ -32,6 +39,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /** UI contracts only: synthetic field results do not execute CameraX, ML Kit or native OpenCV. */
@@ -52,13 +60,15 @@ class ScanReviewHeaderTest {
 
     @Test fun wireframeIsHiddenUntilExplicitlyRequested() {
         compose.setContent {
-            MaterialTheme { ScanReviewHeader(report, initialForm, 1, allowDiagnostics = true, onRetake = {}) }
+            MaterialTheme { ScanReviewHeader(report, initialForm, 1, allowDebugOverlay = true, onRetake = {}) }
         }
         compose.onNodeWithText("Review scanned details").assertIsDisplayed()
         compose.onNodeWithText("2 of 6 label fields read. Check the suggestions in the form below.").assertIsDisplayed()
         compose.onNodeWithTag("scan_debug_details").assertDoesNotExist()
         compose.onNodeWithText("Show scan details").performClick()
         compose.onNodeWithTag("scan_debug_details").assertExists()
+        compose.onNodeWithTag("scan_debug_overlay").assertDoesNotExist()
+        compose.onNodeWithText("Copy diagnostics").assertExists()
         compose.onNodeWithText("Hide scan details").performClick()
         compose.onNodeWithTag("scan_debug_details").assertDoesNotExist()
     }
@@ -66,7 +76,7 @@ class ScanReviewHeaderTest {
     @Test fun identicalRetakeStillResetsTheDiagnosticsPanel() {
         var scanId by mutableStateOf(1L)
         compose.setContent {
-            MaterialTheme { ScanReviewHeader(report, initialForm, scanId, allowDiagnostics = true, onRetake = {}) }
+            MaterialTheme { ScanReviewHeader(report, initialForm, scanId, allowDebugOverlay = true, onRetake = {}) }
         }
         compose.onNodeWithText("Show scan details").performClick()
         compose.onNodeWithTag("scan_debug_details").assertExists()
@@ -77,10 +87,12 @@ class ScanReviewHeaderTest {
 
     @Test fun productionReviewDoesNotOfferDebugWireframe() {
         compose.setContent {
-            MaterialTheme { ScanReviewHeader(report, initialForm, 1, allowDiagnostics = false, onRetake = {}) }
+            MaterialTheme { ScanReviewHeader(report, initialForm, 1, allowDebugOverlay = false, onRetake = {}) }
         }
-        compose.onNodeWithText("Show scan details").assertDoesNotExist()
-        compose.onNodeWithTag("scan_debug_details").assertDoesNotExist()
+        compose.onNodeWithText("Show scan details").performClick()
+        compose.onNodeWithText("Copy diagnostics").assertExists()
+        compose.onNodeWithText("Show OCR boxes").assertDoesNotExist()
+        compose.onNodeWithTag("scan_debug_overlay").assertDoesNotExist()
     }
 
     @Test fun rejectedCaptureOffersManualEntryAndTheExistingRetakeCallback() {
@@ -143,13 +155,14 @@ class ScanReviewHeaderTest {
         val partial = locationOnlyReport()
         val form = ScanFormState().apply(partial.fill, FieldId.entries.associateWith { "" })
         compose.setContent {
-            MaterialTheme { ScanReviewHeader(partial, form, 1, allowDiagnostics = true, onRetake = {}) }
+            MaterialTheme { ScanReviewHeader(partial, form, 1, allowDebugOverlay = true, onRetake = {}) }
         }
-        val weakReading = "EXAMPLE WINERY · score=0.450 (measured) · mlkit/V0"
-        compose.onNodeWithText(weakReading).assertDoesNotExist()
+        compose.onNodeWithText("EXAMPLE WINERY", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Show scan details").performClick()
-        compose.onNodeWithText(weakReading).assertExists()
-        compose.onNodeWithText("CALIFORNIA · score=0.840 (measured) · mlkit/V0").assertExists()
+        waitForReport()
+        compose.onNodeWithText("text=\"EXAMPLE WINERY\"", substring = true).assertExists()
+        compose.onNodeWithText("score=0.450", substring = true).assertExists()
+        compose.onNodeWithText("score=0.840", substring = true).assertExists()
     }
 
     @Test fun semanticStatusColorsHaveReadableContrastOnTheAppFormBackgrounds() {
@@ -162,6 +175,50 @@ class ScanReviewHeaderTest {
             val contrast = ColorUtils.calculateContrast(foreground.toArgb(), tinted.toArgb())
             assertTrue("$state dark=$dark contrast=$contrast", contrast >= 4.5)
         }
+    }
+
+    private fun waitForReport() {
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("WINE-SCAN-DIAGNOSTICS v1", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test fun copyButtonExportsThePlainTextReportToTheClipboard() {
+        val clipboard = RuntimeEnvironment.getApplication().getSystemService(ClipboardManager::class.java)
+        clipboard.clearPrimaryClip()
+        compose.setContent {
+            MaterialTheme { ScanDiagnosticsPanel(locationOnlyReport(), 9, allowDebugOverlay = false,
+                environment = ScanEnvironment(buildCommit = "test123", model = "test device")) }
+        }
+        waitForReport()
+        compose.onNodeWithText("Copy diagnostics").performClick()
+        compose.onNodeWithText("Diagnostics copied").assertExists()
+        compose.runOnIdle {
+            val clip = clipboard.primaryClip!!
+            val text = clip.getItemAt(0).text.toString()
+            assertTrue(text.startsWith("WINE-SCAN-DIAGNOSTICS v1"))
+            assertTrue("commit=test123" in text && "CALIFORNIA" in text)
+            assertTrue(clip.description.extras!!.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE))
+        }
+    }
+
+    @Test fun choosingPhotoDoesNotInvokeTheCameraAction() {
+        var cameraRequests = 0
+        var photoRequests = 0
+        compose.setContent {
+            MaterialTheme { LabelScanActions(false, null, { cameraRequests++ }, { photoRequests++ }) }
+        }
+        compose.onNodeWithText("Choose label photo").performClick()
+        compose.runOnIdle { assertEquals(0, cameraRequests); assertEquals(1, photoRequests) }
+    }
+
+    @Test fun inputActionsAreDisabledWhileACopyOrScanIsBusy() {
+        compose.setContent {
+            MaterialTheme { LabelScanActions(true, "Opening selected photo…", {}, {}) }
+        }
+        compose.onNodeWithText("Choose label photo").assertIsNotEnabled()
+        compose.onNodeWithText("Scan label with camera").assertIsNotEnabled()
+        compose.onNodeWithText("Opening selected photo…").assertIsDisplayed()
     }
 
 }

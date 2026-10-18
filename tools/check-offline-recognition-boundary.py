@@ -60,7 +60,7 @@ def violations():
 
     # The ViewModel legitimately contains lazy Retrofit for startImageImport(), but scans must not use it.
     vm = code_only(VIEW_MODEL.read_text())
-    for name in ("requestLabelScan", "onLabelPhotoCaptured", "warmLabelScanner", "finishScan", "onImageCaptured"):
+    for name in ("requestLabelScan", "onLabelPhotoCaptured", "onLabelPhotoSelected", "launchPhotoScan", "warmLabelScanner", "finishScan", "onImageCaptured"):
         entry = body(vm, name)
         if FORBIDDEN_CLIENT.search(entry) or re.search(r"\b(?:api|retrofit|batchProcessor|startImageImport)\b", entry):
             errors.append(f"{VIEW_MODEL.relative_to(ROOT)}: network dependency inside {name}()")
@@ -77,5 +77,5 @@ if __name__ == "__main__":
     if errors:
         print("\n".join(errors), file=sys.stderr)
         raise SystemExit(1)
-    print(f"PASS: {count} local recognition sources and 5 scan entry points have no project wine-network client dependency")
+    print(f"PASS: {count} local recognition sources and 7 scan entry points have no project wine-network client dependency")
     print("Normal Android/Google dependencies and explicit image-import networking remain allowed.")
