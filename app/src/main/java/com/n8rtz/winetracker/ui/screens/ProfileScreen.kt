@@ -35,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.data.local.WineImageAssetWithDefinition
 import com.n8rtz.winetracker.image.WineImageKind
 import com.n8rtz.winetracker.image.resolveWineImageModel
@@ -301,7 +302,10 @@ fun ProfileScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 ListItem(
                     headlineContent = { Text("App Information") },
-                    supportingContent = { Text("App version, database version, and build branch") },
+                    supportingContent = {
+                        val commit = BuildConfig.BUILD_COMMIT.takeIf { it.isNotBlank() && it != "unknown" } ?: "unavailable"
+                        Text("Installed build: $commit\nApp version: ${BuildConfig.VERSION_NAME}")
+                    },
                     leadingContent = {
                         Icon(Icons.Filled.Info, contentDescription = null, tint = bordeauxRed)
                     },

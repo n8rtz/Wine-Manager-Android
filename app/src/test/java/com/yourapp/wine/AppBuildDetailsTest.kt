@@ -32,7 +32,7 @@ class AppBuildDetailsTest {
                 }
             }
         }
-        compose.onNodeWithText("Git commit").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Installed build / commit").assertIsDisplayed()
         compose.onNodeWithText("abcdef123456").assertIsDisplayed()
         compose.onNodeWithText("Includes uncommitted local changes").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("test-branch").performScrollTo().assertIsDisplayed()

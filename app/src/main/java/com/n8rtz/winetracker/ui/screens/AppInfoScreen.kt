@@ -121,11 +121,11 @@ internal fun AppBuildDetails(
     Card(modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            AppInfoRow("Installed build / commit", commitText, selectable = true)
+            HorizontalDivider()
             AppInfoRow("App version", versionName)
             HorizontalDivider()
             AppInfoRow("Version code", versionCode.toString())
-            HorizontalDivider()
-            AppInfoRow("Git commit", commitText, selectable = true)
             HorizontalDivider()
             AppInfoRow("Source state", sourceText)
             HorizontalDivider()

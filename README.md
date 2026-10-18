@@ -6,7 +6,7 @@ Android wine-cellar manager (`com.n8rtz.winetracker`). The Add Wine camera scann
 - Ordinary Android/Google components remain supported. The app's Internet permission is still used by unrelated image-import features.
 - No custom OCR/NER weights or wine-world database are fabricated or required.
 - **Choose label photo** scans an existing phone image locally without camera permission. **Show scan details → Copy diagnostics** exports bounded text for troubleshooting, without uploading or retaining the photo.
-- **Profile → App Information → Git commit** shows the installed build's 12-character source SHA (long-press to copy), branch and clean/dirty source state. Rebuild/Run after pulling Git to update the installed app.
+- **Profile → App Information → Installed build / commit** shows the installed build's 12-character source SHA (long-press to copy), branch and clean/dirty source state. The Profile menu entry also displays the installed build ID. Rebuild/Run after pulling Git to update the installed app.
 
 For **“NDK is not installed”** on a desktop development host, see [native toolchain setup](docs/offline-scanner.md#fix-ndk-is-not-installed): the build prepares pinned NDK **28.2.13676358** and CMake **3.22.1** using Android CLI or the legacy SDK manager (accepted licenses required). Native source builds on an Android phone have not been validated.
 
