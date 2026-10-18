@@ -79,6 +79,8 @@ android {
 }
 
 dependencies {
+    // Experimental Text Lab only; no ONNX runtime or Paddle model in release builds.
+    debugImplementation("com.microsoft.onnxruntime:onnxruntime-android:1.21.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -145,4 +147,53 @@ tasks.register<Exec>("checkArm64ApkBudget") {
     dependsOn("assembleRelease")
     commandLine(providers.gradleProperty("pythonExecutable").getOrElse("python3"), rootProject.file("tools/check-apk-budget.py"),
         layout.buildDirectory.file("outputs/apk/release/app-release-unsigned.apk").get().asFile)
+}
+
+
+/** Genuine, checksum-pinned model acquisition at BUILD time, never from the recognition path. */
+abstract class PrepareTextLabPaddle : DefaultTask() {
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun prepare() {
+        val expected = "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224"
+        fun hash(file: java.io.File): String {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(32768)
+                while (true) { val n = input.read(buffer); if (n < 0) break; digest.update(buffer, 0, n) }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
+        val folder = outputDirectory.dir("text-lab-paddle-v1").get().asFile.apply { mkdirs() }
+        val model = java.io.File(folder, "inference.onnx")
+        if (model.isFile && model.length() == 16562373L && hash(model) == expected) return
+        val temp = java.io.File(folder, "model.download")
+        try {
+            val connection = java.net.URI("https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx")
+                .toURL().openConnection().apply { connectTimeout = 30000; readTimeout = 30000 }
+            connection.getInputStream().use { input -> temp.outputStream().use { output ->
+                val buffer = ByteArray(32768); var total = 0L
+                while (true) {
+                    val n = input.read(buffer); if (n < 0) break
+                    total += n; check(total <= 16562373L) { "Paddle asset exceeds pinned size" }
+                    output.write(buffer, 0, n)
+                }
+            } }
+            check(temp.length() == 16562373L && hash(temp) == expected) { "Paddle asset checksum mismatch" }
+            java.nio.file.Files.move(temp.toPath(), model.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        } catch (error: Exception) {
+            throw GradleException("Cannot prepare genuine PP-OCRv5 Text Lab model. Check build-machine access to GitHub release assets and retry. No placeholder model is allowed.", error)
+        } finally { temp.delete() }
+    }
+}
+
+val prepareTextLabPaddle = tasks.register<PrepareTextLabPaddle>("prepareTextLabPaddle") {
+    outputDirectory.set(layout.buildDirectory.dir("generated/textLabPaddleAssets"))
+}
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(prepareTextLabPaddle, PrepareTextLabPaddle::outputDirectory)
+    }
 }

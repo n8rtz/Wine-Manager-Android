@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
 
-data class TextLabState(val photo:TextPhoto?=null,val selection:TextCrop?=null,val enlarge:Boolean=false,
+data class TextLabState(val photo:TextPhoto?=null,val selection:TextCrop?=null,val enlarge:Boolean=false,val comparePaddle:Boolean=true,
     val busy:Boolean=false,val result:String="",val cropPreview:File?=null,
     val message:String="Choose a photo, then drag a box around a word or phrase.")
 class TextLabViewModel(app:Application):AndroidViewModel(app) {
@@ -21,6 +21,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
     private fun clearPreview() { mutable.value.cropPreview?.delete() }
     fun select(crop:TextCrop?) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(selection=crop,result="",cropPreview=null) } } }
     fun enlarge(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(enlarge=value,result="",cropPreview=null) } } }
+    fun compare(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(comparePaddle=value,result="",cropPreview=null) } } }
     fun choose(uri:Uri) {
         if(mutable.value.busy) return
         clearPreview()
@@ -58,7 +59,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
             try {
                 val text=withContext(Dispatchers.Default) {
                     val file=File.createTempFile("ocr-text-crop-",".png",getApplication<Application>().cacheDir).also { output=it }
-                    TextLabRunner.recognize(getApplication(),photo,crop,snapshot.enlarge,file)
+                    TextLabRunner.recognize(getApplication(),photo,crop,snapshot.enlarge,file,snapshot.comparePaddle)
                 }
                 if(text==null) mutable.update { it.copy(message="8-second OCR budget reached. Try again or use a smaller crop.") }
                 else {

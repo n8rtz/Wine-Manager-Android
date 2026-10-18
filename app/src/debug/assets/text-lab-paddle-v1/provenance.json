@@ -1,0 +1,19 @@
+{
+  "family": "PP-OCRv5_mobile_rec",
+  "upstream": "https://github.com/PaddlePaddle/PaddleOCR",
+  "upstream_revision": "dab3fe35379033fdcb2d0e9572fac0b36c9a9ebf",
+  "conversion_distributor": "GreatV/oar-ocr",
+  "release": "v0.3.0",
+  "model_url": "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx",
+  "model_sha256": "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224",
+  "model_bytes": 16562373,
+  "dictionary_sha256": "d1979e9f794c464c0d2e0b70a7fe14dd978e9dc644c0e71f14158cdf8342af1b",
+  "dictionary_entries": 18383,
+  "dictionary_source": "ppocr/utils/dict/ppocrv5_dict.txt",
+  "license": "Apache-2.0",
+  "runtime": "com.microsoft.onnxruntime:onnxruntime-android:1.21.1",
+  "preprocessing_reference": "configs/rec/PP-OCRv5/PP-OCRv5_mobile_rec.yml and tools/infer/predict_rec.py",
+  "preprocessing": "BGR, NCHW, height 48, aspect-preserving bilinear resize, (pixel/255 - 0.5)/0.5, right padding zero in normalized space",
+  "decoding": "CTC blank 0, dictionary at indices 1..18383, appended space at 18384; collapse consecutive identical indices; no word lexicon",
+  "status": "Experimental debug-only line recognizer; phone accuracy and runtime are not yet measured"
+}

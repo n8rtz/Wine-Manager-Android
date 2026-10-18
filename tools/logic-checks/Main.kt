@@ -60,6 +60,8 @@ fun main() {
     com.yourapp.wine.benchmark.BenchmarkChecks.shearRetainsCornersAndMapsBack()
     com.yourapp.wine.benchmark.BenchmarkChecks.scoringDoesNotRewardConfidenceOrInventMissingText()
     println("PASS: 30 benchmark recipes / shear inverse and corner retention / ground-truth scoring isolation")
+    com.yourapp.wine.textlab.PaddleCtcChecks.run()
+    println("PASS: Paddle CTC blank/repeats/Unicode / tensor sizing / BGR / malformed output / cancellation hook")
     com.yourapp.wine.textlab.TextCropChecks.geometry()
     println("PASS: manual text crops / reverse drag / bounds / pixel budget / original-coordinate inverse")
     com.yourapp.wine.benchmark.CellarWineChoiceChecks.searchAndExpectedFields()

@@ -45,7 +45,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
         contentPadding=PaddingValues(vertical=16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             Text("OCR Text Lab",style=MaterialTheme.typography.headlineSmall)
-            Text("Test one word or phrase at a time. Raw ML Kit Latin OCR only—no wine-name correction or field assignment. Photos stay on this device.")
+            Text("Test one word or single text line at a time. Compare raw recognizers—no wine-name correction or field assignment. Photos stay on this device.")
             Button(onClick={picker.launch(arrayOf("image/*"))},enabled=!state.busy) { Text("Choose image") }
             Text(state.message)
             if(state.busy) {
@@ -66,15 +66,20 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                     Checkbox(state.enlarge,{vm.enlarge(it)},enabled=!state.busy)
                     Text("Enlarge crop up to 2× before OCR")
                 }
-                Text("No sharpening or thresholding. The shared ML Kit adapter converts the crop to grayscale NV21. Crop output stays within 1280 px width / 1920 px edge.",style=MaterialTheme.typography.bodySmall)
+                Row {
+                    Checkbox(state.comparePaddle,{vm.compare(it)},enabled=!state.busy)
+                    Text("Compare with PP-OCRv5 mobile (experimental)")
+                }
+                Text("PP-OCRv5 reads a single line, not an entire label. Both engines share an 8-second budget; first use includes model loading. Scores are not directly comparable.",style=MaterialTheme.typography.bodySmall)
+                Text("No sharpening or thresholding. ML Kit uses grayscale NV21; PP-OCRv5 uses normalized BGR at 48 px height. Crop output stays within 1280 px width / 1920 px edge.",style=MaterialTheme.typography.bodySmall)
                 val pixels=state.selection?.pixels(photo.width,photo.height)
                 pixels?.let { Text("Crop: ${it.width} × ${it.height} working pixels") }
                 if(state.selection!=null && pixels==null) Text("Box is too small. Select at least 8 × 8 working pixels.")
-                Button(enabled=!state.busy && pixels!=null,onClick=vm::run) { Text("Run OCR on crop") }
+                Button(enabled=!state.busy && pixels!=null,onClick=vm::run) { Text(if(state.comparePaddle) "Compare OCR on crop" else "Run ML Kit on crop") }
             }
         }
         if(!state.busy && state.cropPreview!=null) item {
-            Text("Selected crop (before ML Kit grayscale conversion)",style=MaterialTheme.typography.titleMedium)
+            Text("Shared crop (before each model’s input conversion)",style=MaterialTheme.typography.titleMedium)
             AsyncImage(model=ImageRequest.Builder(LocalContext.current).data(state.cropPreview).size(900)
                 .memoryCachePolicy(CachePolicy.DISABLED).diskCachePolicy(CachePolicy.DISABLED).build(),
                 contentDescription="Selected text crop",contentScale=ContentScale.Fit,

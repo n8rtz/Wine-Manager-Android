@@ -11,6 +11,7 @@ import com.yourapp.wine.capture.CaptureDecoder
 import com.yourapp.wine.capture.WineScannerServices
 import com.yourapp.wine.ocr.ScanDeadline
 import com.n8rtz.winetracker.BuildConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import java.io.File
@@ -25,10 +26,11 @@ internal object TextLabRunner {
             return TextPhoto(input,output,decoded.bitmap.width,decoded.bitmap.height,decoded.origW,decoded.origH)
         }
     }
-    suspend fun recognize(context:Context,photo:TextPhoto,selection:TextCrop,enlarge:Boolean,output:File):String? {
+    suspend fun recognize(context:Context,photo:TextPhoto,selection:TextCrop,enlarge:Boolean,output:File,comparePaddle:Boolean):String? {
         val started=SystemClock.elapsedRealtime()
         val deadline=ScanDeadline(started+ScanDeadline.BUDGET_MS)
-        return deadline.run {
+        var partial=""
+        val completed=deadline.run {
             val scanner=WineScannerServices.get(context)
             scanner.withBenchmarkEngines { engines,_ ->
                 currentCoroutineContext().ensureActive()
@@ -45,18 +47,25 @@ internal object TextLabRunner {
                     currentCoroutineContext().ensureActive()
                     if(deadline.expired) return@withBenchmarkEngines "Preparation exceeded the 8-second budget. Try again."
                     output.outputStream().use { check(crop.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)) }
-                    val engine=engines.firstOrNull { it.id=="mlkit" && it.available } ?: error("ML Kit unavailable")
-                    val tokens=engine.recognize(crop,"manual-text-crop",deadline)
-                    buildString {
+                    val mlStarted=SystemClock.elapsedRealtime()
+                    var mlFailure:String?=null
+                    val tokens=try {
+                        val engine=engines.firstOrNull { it.id=="mlkit" && it.available } ?: error("ML Kit unavailable")
+                        engine.recognize(crop,"manual-text-crop",deadline)
+                    } catch(cancel:CancellationException) { throw cancel }
+                    catch(error:Exception) { mlFailure="ML Kit failed: ${error.javaClass.simpleName}";emptyList() }
+                    val mlElapsed=SystemClock.elapsedRealtime()-mlStarted
+                    partial=buildString {
                         appendLine("OCR Text Lab · build ${BuildConfig.BUILD_COMMIT}")
-                        appendLine("ML Kit Latin · raw text only · ${SystemClock.elapsedRealtime()-started} ms")
+                        appendLine("ML Kit Latin · raw text only · ${mlElapsed} ms recognition; ${SystemClock.elapsedRealtime()-started} ms including preparation")
                         appendLine("Upright source ${decoded.origW}×${decoded.origH}; working ${photo.width}×${photo.height}")
                         appendLine("Working crop: x=${box.x}, y=${box.y}, w=${box.width}, h=${box.height}")
                         appendLine("OCR input: ${width}×${height}; ${if(enlarge) "up to 2×" else "native working size"}")
                         appendLine("Crop→original matrix: ${mapping.values.joinToString(" ")}")
                         appendLine("Shared ML Kit adapter: grayscale NV21; even-edge padding without coordinate shift.")
                         appendLine("No wine dictionary, producer inference or field assignment.")
-                        if(tokens.isEmpty()) appendLine("\nNo text recognized. Try a different box or 2× enlargement.")
+                        if(mlFailure!=null) appendLine(mlFailure)
+                        if(tokens.isEmpty() && mlFailure==null) appendLine("\nNo text recognized. Try a different box or 2× enlargement.")
                         tokens.forEachIndexed { i,token ->
                             appendLine("\n${i+1}. ${token.text}")
                             appendLine("Confidence: ${String.format(Locale.ROOT,"%.3f",token.score)}${if(token.scoreIsEstimated) " (estimated, not measured)" else " (measured)"}")
@@ -64,9 +73,19 @@ internal object TextLabRunner {
                                 String.format(Locale.ROOT,"(%.1f, %.1f)",point.x,point.y) })
                         }
                     }
+                    if(comparePaddle) {
+                        val alternative=try {
+                            PaddleTextRecognizer.recognize(context,crop,workspace,deadline,WineScannerServices.nativeGate)
+                        } catch(cancel:CancellationException) { throw cancel }
+                        catch(error:Exception) { "PP-OCRv5 unavailable/failed (${error.javaClass.simpleName}). No alternative reading produced. Check model assets or use a shorter single-line crop." }
+                        catch(_:LinkageError) { "PP-OCRv5 runtime unavailable on this device. ML Kit result retained." }
+                        partial += "\n\n$alternative"
+                    }
+                    partial
                 }
             }
         }
+        return completed ?: partial.takeIf { it.isNotBlank() }?.plus("\n\n8-second comparison budget reached; remaining recognition cancelled. Partial results retained.")
     }
 }
 

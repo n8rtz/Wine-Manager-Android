@@ -438,3 +438,33 @@ Host checks exercise reverse/out-of-bounds drags, tiny/invalid selections, outpu
 and crop-to-original corner/round-trip mapping. Static checks guard the debug-only private
 activity and raw ML Kit path. Android touch interaction and real font-recognition accuracy
 still need on-device validation; no emulator or APK validation was performed for this change.
+
+### Text Lab: experimental PP-OCRv5 comparison
+
+Text Lab now defaults **Compare with PP-OCRv5 mobile (experimental)** on; turn it off for the
+previous ML Kit-only run. Select one word or one line, not a whole label. Both recognizers
+receive the same crop; ML Kit retains its grayscale NV21 adapter and the Paddle model uses
+its BGR/48-pixel-height normalization. Results are separate, with timing and explicitly
+non-comparable confidence measures. There is no consensus boost or auto-fill from agreement.
+
+A real ONNX Runtime Android adapter loads the pinned PP-OCRv5 mobile model, checks its input/
+output contract and applies dictionary-based CTC decoding. Debug builds prepare the genuine
+model using a bounded SHA-256-verified GitHub release download. The model, dictionary,
+provenance and licensing are documented in `app/src/debug/assets/text-lab-paddle-v1/README.md`.
+No weights are downloaded at scan time. No release dependency/assets or normal full-label
+Paddle bridge activation is added. The production services now expose their existing native
+lease internally so this debug engine cannot overlap a late ML Kit native task.
+
+The comparison shares the existing cooperative eight-second Text Lab budget. Completed ML Kit
+readings survive a Paddle failure or timeout. First use includes model setup; retry after
+warm-up if needed. ONNX termination is requested from a cancellation watcher while its tensors,
+RunOptions and native lease remain alive until the synchronous call returns. Model loading and
+native cancellation are not a hard wall-clock guarantee. The source and crop bitmap limits are
+unchanged (the small Paddle resize uses the freed source slot).
+
+The sandbox could not download the release-asset model, so no native ONNX execution or phone
+font benchmark was performed. Decoder/sizing tests, provenance checks and a real-Java-API
+adapter compile check do not prove Android runtime behavior or accuracy. Debug native library
+size/memory still need measurement; release size is unaffected. The next test is the same
+Merlot crop followed by several unrelated script fonts, without giving either engine expected
+text. Only consider a normal-pipeline fallback after those results and budget checks.

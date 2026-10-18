@@ -37,6 +37,8 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/DiagnosticChecks.kt app/src/test/java/com/yourapp/wine/LocalizationChecks.kt app/src/test/java/com/yourapp/wine/AppellationContextChecks.kt app/src/test/java/com/yourapp/wine/ReferenceCatalogChecks.kt app/src/test/java/com/yourapp/wine/AdministrativeLabelChecks.kt app/src/test/java/com/yourapp/wine/LabelNameChecks.kt app/src/test/java/com/yourapp/wine/ReportedWineChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
     tools/logic-checks/AndroidGeometry.kt tools/logic-checks/AndroidClock.kt tools/logic-checks/AndroidLog.kt
     tools/logic-checks/HostBitmap.kt tools/logic-checks/DeadlineChecks.kt tools/logic-checks/ImportChecks.kt tools/logic-checks/Main.kt
+    app/src/debug/java/com/yourapp/wine/textlab/PaddleCtc.kt
+    app/src/testDebug/java/com/yourapp/wine/textlab/PaddleCtcChecks.kt
     app/src/debug/java/com/yourapp/wine/textlab/TextCropGeometry.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextCropChecks.kt
     app/src/debug/java/com/yourapp/wine/benchmark/CellarWineChoice.kt

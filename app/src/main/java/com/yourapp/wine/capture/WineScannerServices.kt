@@ -15,6 +15,8 @@ import com.yourapp.wine.ocr.PaddleEngineFactory
 /** App-scoped clients/DB/native gate, never reconstructed for each capture. */
 object WineScannerServices {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    // Shared by built-in engines and the debug-only line recognizer; late native tasks retain their lease.
+    internal val nativeGate = NativeEngineGate()
     @Volatile private var pending: Deferred<OfflineWineScanner>? = null
 
     /** No coordinates: cancellably awaits app-scoped initialization; native/client construction stays on Default. */
@@ -23,7 +25,7 @@ object WineScannerServices {
         val job = synchronized(this) {
             // A failed async is cancelled: do not permanently poison every later retake with its exception.
             pending?.takeUnless { it.isCancelled } ?: scope.async {
-                val gate = NativeEngineGate()
+                val gate = nativeGate
                 val presence = PaddleEngineFactory.inspect(app)
                 val kb = SqliteWineKnowledgeBase.open(app, presence.installedBytes)
                 val engines = mutableListOf<OcrEngine>()
