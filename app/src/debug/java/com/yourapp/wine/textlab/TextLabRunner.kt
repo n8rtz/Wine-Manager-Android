@@ -26,7 +26,7 @@ internal object TextLabRunner {
             return TextPhoto(input,output,decoded.bitmap.width,decoded.bitmap.height,decoded.origW,decoded.origH)
         }
     }
-    suspend fun recognize(context:Context,photo:TextPhoto,selection:TextCrop,enlarge:Boolean,output:File,comparePaddle:Boolean):String? {
+    suspend fun recognize(context:Context,photo:TextPhoto,selection:TextCrop,enlarge:Boolean,output:File,comparePaddle:Boolean,detectLines:Boolean=true):String? {
         val started=SystemClock.elapsedRealtime()
         val deadline=ScanDeadline(started+ScanDeadline.BUDGET_MS)
         var partial=""
@@ -75,11 +75,15 @@ internal object TextLabRunner {
                     }
                     if(comparePaddle) {
                         val alternative=try {
-                            PaddleTextRecognizer.recognize(context,crop,workspace,deadline,WineScannerServices.nativeGate)
+                            if(detectLines) {
+                                PaddleLabelPipeline.recognize(context,crop,workspace,deadline,WineScannerServices.nativeGate,
+                                    mapping,decoded.origW,decoded.origH) { update -> partial += "\n\n$update" }
+                                ""
+                            } else PaddleTextRecognizer.recognize(context,crop,workspace,deadline,WineScannerServices.nativeGate)
                         } catch(cancel:CancellationException) { throw cancel }
-                        catch(error:Exception) { "PP-OCRv5 failed (${error.javaClass.simpleName}).\nDetails: ${error.message?.take(1500) ?: "No exception detail"}\nNo alternative reading produced; this is an engine failure, not a negative recognition result. Copy this report for diagnosis." }
+                        catch(error:Exception) { "PP-OCRv5 failed (${error.javaClass.simpleName}).\nDetails: ${error.message?.take(1500) ?: "No exception detail"}\nPipeline stopped; any completed readings above are retained. This is an engine failure, not a negative recognition result. Copy this report for diagnosis." }
                         catch(_:LinkageError) { "PP-OCRv5 runtime unavailable on this device. ML Kit result retained." }
-                        partial += "\n\n$alternative"
+                        if(alternative.isNotBlank()) partial += "\n\n$alternative"
                     }
                     partial
                 }

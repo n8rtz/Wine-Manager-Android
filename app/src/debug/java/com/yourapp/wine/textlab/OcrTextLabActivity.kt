@@ -45,7 +45,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
         contentPadding=PaddingValues(vertical=16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             Text("OCR Text Lab",style=MaterialTheme.typography.headlineSmall)
-            Text("Test one word or single text line at a time. Compare raw recognizers—no wine-name correction or field assignment. Photos stay on this device.")
+            Text("Test a full label with line detection, or a single line without detection. Compare raw recognizers—no wine-name correction or field assignment. Photos stay on this device.")
             Button(onClick={picker.launch(arrayOf("image/*"))},enabled=!state.busy) { Text("Choose image") }
             Text(state.message)
             if(state.busy) {
@@ -70,8 +70,12 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                     Checkbox(state.comparePaddle,{vm.compare(it)},enabled=!state.busy)
                     Text("Compare with PP-OCRv5 mobile (experimental)")
                 }
-                Text("PP-OCRv5 reads a single line, not an entire label. Both engines share an 8-second budget; first use includes model loading. Scores are not directly comparable.",style=MaterialTheme.typography.bodySmall)
-                Text("No sharpening or thresholding. ML Kit uses grayscale NV21; PP-OCRv5 uses normalized BGR at 48 px height. Crop output stays within 1280 px width / 1920 px edge.",style=MaterialTheme.typography.bodySmall)
+                Row {
+                    Checkbox(state.detectLines,{vm.detectLines(it)},enabled=!state.busy && state.comparePaddle)
+                    Text("Detect text lines first (full-label mode)")
+                }
+                Text("Full-label mode independently detects text regions, straightens each line, then reads it. Turn it off for a tight one-word/line crop. Both engines share an 8-second budget; first use includes model loading. Partial results survive a timeout; scores are not directly comparable.",style=MaterialTheme.typography.bodySmall)
+                Text("No image sharpening or thresholding. ML Kit uses grayscale NV21. Paddle detects at up to 960 px edge, then rectifies each detected line to 48 px height. Crop output stays within 1280 px width / 1920 px edge.",style=MaterialTheme.typography.bodySmall)
                 val pixels=state.selection?.pixels(photo.width,photo.height)
                 pixels?.let { Text("Crop: ${it.width} × ${it.height} working pixels") }
                 if(state.selection!=null && pixels==null) Text("Box is too small. Select at least 8 × 8 working pixels.")

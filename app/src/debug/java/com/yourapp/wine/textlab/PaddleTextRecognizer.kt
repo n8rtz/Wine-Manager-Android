@@ -10,43 +10,20 @@ import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.security.MessageDigest
 
-/** Actual ONNX inference on a MANUALLY selected text line. Not the whole-label optional Paddle bridge. */
+/** Actual ONNX inference on a manual line or a detector-supplied, perspective-rectified line. Not the whole-label optional Paddle bridge. */
 internal object PaddleTextRecognizer {
     private const val MODEL_HASH="243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224"
     private const val DICT_HASH="d1979e9f794c464c0d2e0b70a7fe14dd978e9dc644c0e71f14158cdf8342af1b"
     private val mutex=Mutex()
     private var session:OrtSession?=null
     private var dictionary:List<String> = emptyList()
-    private fun hash(file:File):String {
-        val digest=MessageDigest.getInstance("SHA-256")
-        file.inputStream().use { input -> val buffer=ByteArray(32768)
-            while(true) { val n=input.read(buffer);if(n<0) break;digest.update(buffer,0,n) } }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
     private fun open(context:Context):OrtSession {
         session?.let { return it }
-        val dir=File(context.noBackupFilesDir,"text-lab-paddle-v1").apply { check(isDirectory || mkdirs()) { "Cannot create private model directory" } }
-        fun verified(name:String,expected:String,limit:Long):File {
-            val target=File(dir,name)
-            if(target.isFile && target.length()==limit && hash(target)==expected) return target
-            val temp=File.createTempFile("model-",".tmp",dir)
-            try {
-                context.assets.open("text-lab-paddle-v1/$name").use { input -> temp.outputStream().use { output ->
-                    val buffer=ByteArray(32768);var size=0L
-                    while(true) { val n=input.read(buffer);if(n<0) break;size+=n;check(size<=limit) { "Asset $name exceeds pinned size $limit" };output.write(buffer,0,n) }
-                } }
-                check(temp.length()==limit && hash(temp)==expected) { "Bundled $name checksum/size mismatch: ${temp.length()} bytes; expected $limit" }
-                check(temp.renameTo(target)) { "Cannot install verified asset $name" }
-            } finally { temp.delete() }
-            return target
-        }
-        val model=verified("inference.onnx",MODEL_HASH,16562373)
-        val dict=verified("ppocrv5_dict.utf8",DICT_HASH,74012).readLines(Charsets.UTF_8)
+        val model=PaddleAssets.verified(context,"inference.onnx",MODEL_HASH,16562373)
+        val dict=PaddleAssets.verified(context,"ppocrv5_dict.utf8",DICT_HASH,74012).readLines(Charsets.UTF_8)
         check(dict.size==18383 && dict.none(String::isEmpty)) { "Dictionary has ${dict.size} entries; expected 18383 nonempty entries" }
         val created=OrtSession.SessionOptions().use { options ->
             options.setIntraOpNumThreads(2);options.setInterOpNumThreads(1)
@@ -63,7 +40,7 @@ internal object PaddleTextRecognizer {
             return created
         } catch(error:Throwable) { created.close();throw error }
     }
-    suspend fun recognize(context:Context,crop:Bitmap,workspace:BitmapWorkspace,deadline:ScanDeadline,gate:NativeEngineGate):String = mutex.withLock {
+    suspend fun recognize(context:Context,crop:Bitmap,workspace:BitmapWorkspace,deadline:ScanDeadline,gate:NativeEngineGate,lineQuad:List<android.graphics.PointF>?=null):String = mutex.withLock {
         val lease=gate.acquire()
         var stage="asset verification / model initialization"
         try {
@@ -75,10 +52,12 @@ internal object PaddleTextRecognizer {
             if(deadline.expired) return@withLock "PP-OCRv5: budget ended during model initialization; retry after warm-up."
             stage="input preprocessing"
             val inputInfo=active.inputInfo.values.single().info as TensorInfo
-            val (resizedWidth,paddedWidth)=PaddleCtc.widths(crop.width,crop.height,inputInfo.shape[3])
+            val size=lineQuad?.let(PaddleDetectionGeometry::lineSize) ?: (crop.width to crop.height)
+            val (resizedWidth,paddedWidth)=PaddleCtc.widths(size.first,size.second,inputInfo.shape[3])
             val preprocessStart=SystemClock.elapsedRealtime()
             val buffer=ByteBuffer.allocateDirect(3*48*paddedWidth*4).order(ByteOrder.nativeOrder()).asFloatBuffer()
-            val resized=workspace.own(Bitmap.createScaledBitmap(crop,resizedWidth,48,true))
+            val warp=lineQuad?.let { PaddleLineWarp.create(crop,it,resizedWidth,48,workspace) }
+            val resized=warp?.bitmap ?: workspace.own(Bitmap.createScaledBitmap(crop,resizedWidth,48,true))
             try {
                 val row=IntArray(resizedWidth)
                 repeat(48) { y ->
@@ -119,6 +98,7 @@ internal object PaddleTextRecognizer {
                                     "Declared input: ${inputInfo.shape.contentToString()}; actual output: ${shape.contentToString()}\n"+
                                     "Model setup: ${loadMs} ms; preprocessing: ${preprocessMs} ms; inference: ${inferenceMs} ms\n"+
                                     "Input: BGR NCHW 1×3×48×$paddedWidth; content width $resizedWidth; normalized zero padding\n"+
+                                    (warp?.let { "Line pixels→base crop matrix: ${it.lineToBase.values.joinToString(" ")}\nBase crop→line pixels matrix: ${it.lineToBase.inverse().values.joinToString(" ")}\n" } ?: "")+
                                     "Text: ${decoded.text.ifEmpty { "[no text recognized]" }}\n"+
                                     "Mean retained CTC posterior: ${java.lang.String.format(java.util.Locale.ROOT,"%.3f",decoded.confidence)}\n"+
                                     "Not calibrated and NOT comparable to ML Kit confidence. Recognition-only; no word boxes or wine corrections."

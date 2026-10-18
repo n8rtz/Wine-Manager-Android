@@ -16,5 +16,16 @@
   "preprocessing_reference": "configs/rec/PP-OCRv5/PP-OCRv5_mobile_rec.yml and tools/infer/predict_rec.py",
   "preprocessing": "BGR, NCHW, height 48, aspect-preserving bilinear resize, (pixel/255 - 0.5)/0.5, right padding zero in normalized space",
   "decoding": "CTC blank 0, dictionary at indices 1..18383, appended space at 18384; collapse consecutive identical indices; no word lexicon",
-  "status": "Experimental debug-only line recognizer; phone accuracy and runtime are not yet measured"
+  "status": "Experimental debug-only detection and recognition; user confirmed tight Merlot recognition, full-label detector validation pending",
+  "detector": {
+    "family": "PP-OCRv5_mobile_det",
+    "model_url": "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_det.onnx",
+    "asset": "detection.onnx",
+    "model_sha256": "1eb7b4f7ab657ebd1c66d5f79bca7497f29768a2e3c15e52daecbba1a8e4a039",
+    "model_bytes": 4826518,
+    "preprocessing": "BGR NCHW, max edge 960 rounded to multiples of 32; scale 1/255; means [0.485,0.456,0.406], std [0.229,0.224,0.225]",
+    "reference": "configs/det/PP-OCRv5/PP-OCRv5_mobile_det.yml",
+    "postprocessing": "DB rectangle mode: bitmap .3, mean box .6, rectangular unclip 1.5; bounded components/contours; <=32 lines",
+    "validation": "Not executed on Android in this sandbox"
+  }
 }

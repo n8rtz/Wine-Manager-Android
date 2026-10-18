@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
 
-data class TextLabState(val photo:TextPhoto?=null,val selection:TextCrop?=null,val enlarge:Boolean=false,val comparePaddle:Boolean=true,
+data class TextLabState(val photo:TextPhoto?=null,val selection:TextCrop?=null,val enlarge:Boolean=false,val comparePaddle:Boolean=true,val detectLines:Boolean=true,
     val busy:Boolean=false,val result:String="",val cropPreview:File?=null,
-    val message:String="Choose a photo, then drag a box around a word or phrase.")
+    val message:String="Choose a photo, then select the full label or a text line.")
 class TextLabViewModel(app:Application):AndroidViewModel(app) {
     private val mutable=MutableStateFlow(TextLabState())
     val state=mutable.asStateFlow()
@@ -22,6 +22,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
     fun select(crop:TextCrop?) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(selection=crop,result="",cropPreview=null) } } }
     fun enlarge(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(enlarge=value,result="",cropPreview=null) } } }
     fun compare(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(comparePaddle=value,result="",cropPreview=null) } } }
+    fun detectLines(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(detectLines=value,result="",cropPreview=null) } } }
     fun choose(uri:Uri) {
         if(mutable.value.busy) return
         clearPreview()
@@ -37,7 +38,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
                     }
                 }
                 val previous=mutable.value.photo
-                mutable.update { it.copy(photo=photo,selection=null,message="Drag across the text. Leave a little space around accents and flourishes.") }
+                mutable.update { it.copy(photo=photo,selection=null,message="Drag around the label or text to test. Keep all lettering and flourishes inside the box.") }
                 retained=true
                 previous?.input?.delete();previous?.preview?.delete()
             } catch(_:TimeoutCancellationException) { mutable.update { it.copy(message="Photo loading timed out. Try again.") } }
@@ -53,13 +54,13 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
         val crop=snapshot.selection ?: return
         if(snapshot.busy || crop.pixels(photo.width,photo.height)==null) return
         clearPreview()
-        mutable.update { it.copy(busy=true,result="",cropPreview=null,message="Reading selected text only…") }
+        mutable.update { it.copy(busy=true,result="",cropPreview=null,message="Reading selected crop…") }
         job=viewModelScope.launch {
             var output:File?=null;var retained=false
             try {
                 val text=withContext(Dispatchers.Default) {
                     val file=File.createTempFile("ocr-text-crop-",".png",getApplication<Application>().cacheDir).also { output=it }
-                    TextLabRunner.recognize(getApplication(),photo,crop,snapshot.enlarge,file,snapshot.comparePaddle)
+                    TextLabRunner.recognize(getApplication(),photo,crop,snapshot.enlarge,file,snapshot.comparePaddle,snapshot.detectLines)
                 }
                 if(text==null) mutable.update { it.copy(message="8-second OCR budget reached. Try again or use a smaller crop.") }
                 else {

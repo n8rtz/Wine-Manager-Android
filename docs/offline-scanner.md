@@ -468,3 +468,29 @@ adapter compile check do not prove Android runtime behavior or accuracy. Debug n
 size/memory still need measurement; release size is unaffected. The next test is the same
 Merlot crop followed by several unrelated script fonts, without giving either engine expected
 text. Only consider a normal-pipeline fallback after those results and budget checks.
+
+### Text Lab upgrade: independent detector → rectified lines → recognition
+
+**Current default:** both **Compare with PP-OCRv5 mobile** and **Detect text lines first
+(full-label mode)** are enabled. Select the full label (or full image) and run. Detection is
+independent of ML Kit, so it can propose regions ML Kit missed. Disable line detection to
+repeat the successful manual Merlot experiment; disable Paddle comparison for ML Kit only.
+
+The genuine v0.3.0 PP-OCRv5 mobile detector adds 4,826,518 checksum-pinned bytes to generated
+**debug** assets. It uses the existing ONNX Runtime and OpenCV dependencies, not another runtime.
+Its BGR-normalized input is capped at 960px edge. Bounded DB-style decoding yields up to 32
+regions; each is perspective-rectified directly to the recognizer's 48px-height input. The
+base crop is retained throughout, and detector/line working bitmaps occupy the second slot
+sequentially. No automatic outer-label localization can crop away content in this experiment.
+
+The report separates detector setup/preprocessing/inference/postprocessing, per-line recognition,
+raw confidence measures, region coordinates in original and base-crop spaces, normalized boxes,
+and invertible transforms. Detected boxes are retained even if recognition later times out;
+completed line readings and ML Kit output are retained incrementally. No detected regions means
+no line recognition, not a whole-label fallback. Source/normal-scanner limits remain unchanged.
+
+The eight-second budget still covers both engines plus preparation. Cold loading, native
+termination and OpenCV operations are cooperative. Caps and failures are reported, never used
+to infer missing text. Thresholds, exact pins, coordinate contracts, limits and validation
+caveats are in `app/src/debug/assets/text-lab-paddle-v1/README.md`. The new detector has not yet
+been run on a phone here; full-label success is not implied by the earlier tight Merlot crop.

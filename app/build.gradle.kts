@@ -163,7 +163,6 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
 
     @TaskAction
     fun prepare() {
-        val expected = "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224"
         fun hash(file: File): String {
             val digest = MessageDigest.getInstance("SHA-256")
             file.inputStream().use { input ->
@@ -173,25 +172,31 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
             return digest.digest().joinToString("") { "%02x".format(it) }
         }
         val folder = outputDirectory.dir("text-lab-paddle-v1").get().asFile.apply { mkdirs() }
-        val model = File(folder, "inference.onnx")
-        if (model.isFile && model.length() == 16562373L && hash(model) == expected) return
-        val temp = File(folder, "model.download")
-        try {
-            val connection = URI("https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx")
-                .toURL().openConnection().apply { connectTimeout = 30000; readTimeout = 30000 }
-            connection.getInputStream().use { input -> temp.outputStream().use { output ->
-                val buffer = ByteArray(32768); var total = 0L
-                while (true) {
-                    val n = input.read(buffer); if (n < 0) break
-                    total += n; check(total <= 16562373L) { "Paddle asset exceeds pinned size" }
-                    output.write(buffer, 0, n)
-                }
-            } }
-            check(temp.length() == 16562373L && hash(temp) == expected) { "Paddle asset checksum mismatch" }
-            Files.move(temp.toPath(), model.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        } catch (error: Exception) {
-            throw GradleException("Cannot prepare genuine PP-OCRv5 Text Lab model. Check build-machine access to GitHub release assets and retry. No placeholder model is allowed.", error)
-        } finally { temp.delete() }
+        fun download(name: String, url: String, expected: String, size: Long) {
+            val model = File(folder, name)
+            if (model.isFile && model.length() == size && hash(model) == expected) return
+            val temp = File(folder, "$name.download")
+            try {
+                val connection = URI(url)
+                    .toURL().openConnection().apply { connectTimeout = 30000; readTimeout = 30000 }
+                connection.getInputStream().use { input -> temp.outputStream().use { output ->
+                    val buffer = ByteArray(32768); var total = 0L
+                    while (true) {
+                        val n = input.read(buffer); if (n < 0) break
+                        total += n; check(total <= size) { "Paddle asset exceeds pinned size: $name" }
+                        output.write(buffer, 0, n)
+                    }
+                } }
+                check(temp.length() == size && hash(temp) == expected) { "Paddle asset checksum mismatch: $name" }
+                Files.move(temp.toPath(), model.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } catch (error: Exception) {
+                throw GradleException("Cannot prepare genuine PP-OCRv5 Text Lab model $name. Check build-machine access to GitHub release assets and retry. No placeholder model is allowed.", error)
+            } finally { temp.delete() }
+        }
+        download("inference.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx",
+            "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224", 16562373L)
+        download("detection.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_det.onnx",
+            "1eb7b4f7ab657ebd1c66d5f79bca7497f29768a2e3c15e52daecbba1a8e4a039", 4826518L)
     }
 }
 

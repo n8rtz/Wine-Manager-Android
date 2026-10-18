@@ -1,60 +1,87 @@
-# Experimental PP-OCRv5 mobile line recognizer
+# Experimental PP-OCRv5 mobile detection + recognition
 
-This directory contains the genuine PaddleOCR character dictionary, upstream Apache-2.0
-license, and pinned model provenance. The **actual ONNX model is generated into debug assets
-by `:app:prepareTextLabPaddle`**, not manufactured or represented by a stub. Debug builds
-fetch the 16,562,373-byte ONNX conversion from GreatV/oar-ocr v0.3.0 and require the exact
-published SHA-256. The digest is also recorded in that project's model registry at commit
-84817f58d7a0932d5368a9fa18105ba5d842af29. Failure to fetch/verify fails model preparation;
-no empty file or fake model is substituted. Generated weights stay out of Git.
+**Debug Text Lab only.** The normal scanner, wine field assignment, 30-case benchmark and
+optional Paddle Lite bridge are unchanged. Neither model receives expected text or wine
+reference answers. ML Kit is a separate comparison, not the source of Paddle's boxes.
 
-Upstream training/model family: PaddlePaddle/PaddleOCR PP-OCRv5_mobile_rec (general multilingual
-mobile model, not the English-only variant). ONNX conversion/distribution: GreatV/oar-ocr.
-This is not a claim of an independently verified training history or a model trained on these
-wine photos. Dictionary bytes were obtained from upstream PaddleOCR at the revision in
-provenance.json and match the distribution's dictionary checksum exactly.
+## Genuine artifacts and provenance
 
-Runtime: Microsoft ONNX Runtime Android 1.21.1, CPU, two intra-op threads, one inter-op thread.
-It and these assets are **debug-only**. No HTTP client runs on a photo or during recognition.
-First use copies and checks assets into private no-backup storage; one app-scoped session is
-reused under a mutex and the existing native-engine lease. That lease remains held until the
-synchronous ONNX call actually exits, even after cancellation requests native termination.
+`provenance.json` records exact URLs, SHA-256 hashes, sizes, and preprocessing sources.
+`:app:prepareTextLabPaddle` downloads the real ONNX conversions from GreatV/oar-ocr **v0.3.0**
+into generated debug assets. The recognition model is 16,562,373 bytes; detection is 4,826,518
+bytes. Both models plus the 74,012-byte dictionary total about **20.47 MiB**. Digests match
+published release metadata and the distributor's registry. Build preparation fails if a
+fetch/checksum fails; no placeholder model is used and generated weights are not in Git.
 
-Input is a manually selected **single word/line**, not a whole label. The original model's
-Paddle training/inference contract is BGR, NCHW, height 48, bilinear aspect-preserving resize,
-normalization `(pixel/255 - .5)/.5`, and right padding with normalized zeros. Dynamic widths
-use at least 320, capped at 1024 for this mobile experiment; overly wide crops are refused.
-The upstream training YAML specifies BGR; do not silently switch to RGB based on a different
-Android demo's preprocessing. Input/output ranks, types, and dictionary cardinality are checked.
-The decoder uses CTC blank index 0, exact dictionary strings, appended space, and consecutive
-repeat collapse. Its mean retained CTC posterior is NOT calibrated or comparable to ML Kit's
-confidence. No wine dictionary, expected answer or spelling correction is used.
+Upstream family/configuration/dictionary: PaddlePaddle/PaddleOCR, revision
+`dab3fe35379033fdcb2d0e9572fac0b36c9a9ebf`, Apache-2.0 (license included). ONNX conversion/
+distribution is third-party GreatV/oar-ocr, not an independent training-history verification.
 
-The UI displays both engines' raw outputs separately on the same user-selected crop, with
-model-specific preprocessing. PP-OCRv5 supplies no detected word boxes; do not treat its
-whole-line reading as a detected word polygon. Only Text Lab calls it; the ordinary scanner,
-30-case benchmark and optional Paddle Lite full-label bridge remain unchanged.
+The upstream `ppocrv5_dict.txt` is packaged byte-for-byte as `ppocrv5_dict.utf8` with Git
+`-text` attributes. The changed filename replaces previously CRLF-converted Windows copies.
+Runtime hash/size checks remain strict. Models/dictionary are copied to private no-backup
+storage once; there is no network request during recognition or photo upload.
 
-## Validation limits
+## Full-label mode (default)
 
-Host checks cover CTC, sizing, channel order, malformed tensors and the cancellation callback.
-The Android adapter was compile-checked against genuine ONNX Runtime v1.21.1 Java sources
-and an Android SDK jar. This is not an APK build or native inference test.
-The sandbox denied GitHub release-asset CDN downloads, so the actual model graph has **not**
-been executed here. No accuracy uplift, Merlot result, phone timing, peak native memory, or
-debug APK size is claimed. Debug builds need working build-machine access to GitHub release
-assets and the usual Maven dependency repositories; installed recognition is offline. Verify
-debug APK/native size on the build machine before considering production deployment.
+1. The selected crop is the **base coordinate space**. No automatic outer-label crop removes
+   content; this is not a claim that the whole label has been perspective-rectified.
+2. Independent PP-OCRv5 mobile detection: BGR, NCHW, edge at most 960, dimensions rounded to
+   multiples of 32, scale 1/255, means [.485,.456,.406], std [.229,.224,.225]. This follows
+   `configs/det/PP-OCRv5/PP-OCRv5_mobile_det.yml`; both axes are mapped back explicitly.
+3. Bounded DB-style rectangle decoding: bitmap threshold .3, mean over the entire unexpanded
+   rectangle >=.6, minimum side 3 map pixels, rectangular unclip ratio 1.5. Connected-component
+   filtering precedes contour extraction. At most 4096 components, the 128 largest eligible
+   candidates, 16384 contour vertices per candidate and 32 returned lines. Noisy-map refusal
+   and candidate/line truncation are reported. This is an in-house bounded rectangle decoder,
+   **not a claim of bit-for-bit equivalence to upstream's general polygon/Clipper code**.
+4. Each detected quadrilateral is perspective-warped **directly** from the retained base crop
+   to a small 48-pixel-high line bitmap. No third working bitmap or giant rectified line is
+   allocated. Tall regions are rotated to their long axis; there is no upside-down classifier.
+5. The working recognizer runs sequentially on each line. BGR, height 48, aspect-preserving
+   bilinear sampling, `(pixel/255-.5)/.5`, normalized-zero right padding, NCHW. Dynamic tensor
+   width is at least 320 and at most 1024; overlong lines fail explicitly rather than stretch.
+   CTC uses blank 0, exact dictionary strings, appended space and adjacent-repeat collapse.
 
-### Windows packaging and failure diagnostics
+Reports contain per-stage timings, raw line text, distinct detector/CTC scores, every detected
+region in base and original pixels plus normalized boxes, and forward/inverse coordinate
+matrices. These scores are uncalibrated and **not comparable** to ML Kit confidence. No
+recognizer-generated word boxes are invented. If detection finds nothing, recognition is not
+run on the whole label as a fake single-line fallback. Turn off **Detect text lines first**
+for the previous manual single-line experiment.
 
-The upstream `ppocrv5_dict.txt` is packaged as `ppocrv5_dict.utf8` with Git `-text`
-attributes. Its bytes and SHA-256 are unchanged. This new filename ensures an existing
-Windows checkout receives a fresh byte-exact artifact rather than retaining a previously
-CRLF-converted `.txt` copy. Runtime length/hash verification remains strict.
+## Budgets and cancellation
 
-Input metadata accepts symbolic (negative) ONNX dimensions while still requiring any
-fixed batch/channel/height dimensions to match 1/3/48. Actual input is constructed at
-that shape, and actual output cardinality remains checked after inference. Errors now
-identify the processing stage and exception detail, including incompatible tensor shapes;
-a failure must not be interpreted as the recognizer seeing no text.
+Microsoft ONNX Runtime Android 1.21.1 CPU is debug-only, with two intra-op threads and one
+inter-op thread per session. The existing source-built OpenCV 4.12.0 core/imgproc performs
+DB geometry. No new runtime dependency is added for the detector.
+
+Both model sessions are app-scoped, individually mutex-protected, and share the normal
+scanner's native-engine lease. Native ONNX cancellation requests termination, then retains
+RunOptions, tensors and the lease until the synchronous call really returns. OpenCV/native
+initialization is cooperative, not a hard real-time guarantee. All temporary Mats and bitmaps
+have finally cleanup. The base + detector resize OR base + one 48px line are the only working
+bitmaps. Detector probability/label arrays are bounded by 960×960.
+
+The entire ML Kit + Paddle comparison shares eight seconds, including preparation/cold model
+loading. All detected boxes are published before line recognition and completed readings are
+retained on timeout/failure. No unbounded retries or adaptive image variants are used.
+
+## Validation status
+
+The user confirmed **Merlot** on a tight word crop with build b549663 (45 ms recognizer inference),
+while ML Kit returned no text. The previous full-label experiment correctly returned no text
+because the entire label was squeezed to 26×48 pixels. Neither result validates the new detector.
+
+Host checks cover detector sizing/BGR normalization, coordinate inverses, box-score arithmetic,
+orientation, CTC, malformed inputs and cancellation callbacks. Adapters compile against genuine
+ONNX Runtime v1.21.1 Java sources, Android SDK types and vendored OpenCV 4.12.0 Java API sources
+(`jenly1314/WeChatQRCode`, commit `cc792b0c51ec35945a84c26abd69c3e399caab77`, compile-only).
+Robolectric perspective/two-bitmap tests are authored but not executed here. No Android emulator,
+native model inference, full APK build, phone detector timing, peak memory or new APK-size
+measurement was performed in this sandbox. Native libraries/release dependencies are unchanged;
+this does not assert the experimental debug APK meets the installed-code budget.
+
+Next phone test: select the entire Blackstone label, leave both Paddle/detection checkboxes on,
+run, and copy the report. Check whether a detected region covers Merlot and whether that region
+reads correctly. Test unrelated labels and blank/decorative regions before production use.
