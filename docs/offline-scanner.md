@@ -262,3 +262,19 @@ Also perform **20 actual CameraX shutter captures**, not just file scans. Record
 | 4 optional Paddle | honest presence/bridge interface; missing-assets/rectified-only policy tests pass | ML Kit-only default; native Paddle intentionally unavailable |
 
 Earlier **local** Gradle9.3.1 wrapper attempts failed with TLS EOF before configuration. Hosted CI resolved the real dependencies and now passes debug, instrumented-test compilation, scanner Robolectric and release budget checks. There is still no SDK/NDK/emulator/device available locally; do not describe 20-camera-capture/OOM, device OCR or physical latency as accepted until the device commands above succeed.
+
+### Image-treatment diagnostics
+
+Each attempted pass now carries its actual preprocessing description: raw base/probe,
+Lab-luminance highlight compression plus CLAHE, or the selected unsharp/aspect rescue.
+The optional Gaussian adaptive threshold mode is described only when selected; it is
+not enabled by the normal scanner. A reused probe is explicitly marked as reuse, not a
+new recognition attempt. V2 is conditional; an absent timing is not evidence it ran.
+Pass timing measures the recognizer call including adapter conversion/wait, not variant
+preparation. ML Kit receives grayscale NV21 after preprocessing on every pass; the
+color-preserving filters describe intermediate processing, not color input to ML Kit.
+
+This reporting change adds no new image manipulation. Sauvola/Wolf binarization,
+stroke dilation, slant correction, skeletonization and ligature cutting are not
+implemented. They need controlled original-versus-treated image/OCR comparisons;
+adding destructive filters without those measurements is not an accuracy guarantee.

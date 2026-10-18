@@ -43,6 +43,10 @@ object ScanDiagnosticFormatter {
         trace.failures.forEach { out.line("failure stage=${it.stage} type=${safe(it.type)}") }
         out.line()
         out.line("[Engines and passes]")
+        out.line("Each recorded pass lists its actual image treatment in detail; ms measures the recognizer call (including input conversion/wait), not variant preparation.")
+        out.line("V0 = base image (or explicitly reused probe); V1 = luminance contrast enhancement; V2 = conditional rescue, not always run.")
+        out.line("Absent passes were not recorded as attempted; this can reflect scheduling, deadline, failure or unavailable engines.")
+        out.line("Current ML Kit adapter converts every prepared image to grayscale NV21 (neutral chroma); color above describes preprocessing, not color OCR input.")
         if (trace.engines.isEmpty()) out.line("No engine inventory: initialization/capture may not have completed.")
         trace.engines.forEach { out.line("engine=${safe(it.id)} available=${it.available} reason=${safe(it.reason)}") }
         report.timings.forEach {

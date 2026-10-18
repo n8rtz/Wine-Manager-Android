@@ -77,7 +77,8 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
                         if (quad == null && !deadline.expired) {
                             // Only fallback localization OCRs the scene. It is never the primary field-reading path.
                             val cheap = OcrEnsemble(engines.filter { it.id == "mlkit" }, onTiming = { timings += it })
-                                .run(listOf(OcrVariant("probe", { working }, {})),
+                                .run(listOf(OcrVariant("probe", { working }, {},
+                                    description = { _, _ -> OcrImageTreatments.PROBE })),
                                     ScanDeadline(minOf(deadline.expiresAtMs, SystemClock.elapsedRealtime() + 1500)),
                                     onTokens = { reads ->
                                         completedProbe += reads

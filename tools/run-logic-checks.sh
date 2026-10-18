@@ -27,7 +27,7 @@ root=app/src/main/java/com/yourapp/wine
 sources=()
 while IFS= read -r source; do sources+=("$source"); done < <(find "$root/merge" "$root/extract" "$root/fill" -name '*.kt' -print)
 sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.kt" "$root/geom/QuadOrder.kt" "$root/geom/LabelGeometryPolicy.kt" "$root/geom/TextHullClusterer.kt" "$root/ui/ScanFormState.kt" "$root/kb/WineKnowledgeBase.kt" "$root/kb/FixtureKnowledgeBase.kt" "$root/kb/PlaceGazetteer.kt" "$root/kb/PlaceHierarchy.kt"
-    "$root/ocr/OcrVariantGeometry.kt" "$root/ocr/OcrRescuePolicy.kt" "$root/ocr/OcrEngine.kt" "$root/ocr/OcrEnsemble.kt" "$root/ocr/ScanDeadline.kt" "$root/ocr/NativeEngineGate.kt"
+    "$root/ocr/OcrImageTreatments.kt" "$root/ocr/OcrVariantGeometry.kt" "$root/ocr/OcrRescuePolicy.kt" "$root/ocr/OcrEngine.kt" "$root/ocr/OcrEnsemble.kt" "$root/ocr/ScanDeadline.kt" "$root/ocr/NativeEngineGate.kt"
     "$root/kb/WineTerms.kt" "$root/kb/BundledGrapes.kt" "$root/kb/BundledWineStyles.kt" "$root/kb/BundledProducerNames.kt" "$root/kb/BundledOrigins.kt" "$root/kb/SupplementedWineKnowledgeBase.kt"
     "$root/capture/ScanReport.kt" "$root/capture/SelectedLabelPhotoImporter.kt"
     "$root/diagnostics/ScanDiagnostics.kt" "$root/diagnostics/ScanTraceRecorder.kt" "$root/diagnostics/ScanDiagnosticFormatter.kt"

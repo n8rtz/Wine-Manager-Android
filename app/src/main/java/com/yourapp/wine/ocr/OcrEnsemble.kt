@@ -42,7 +42,7 @@ class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (Engine
                     var detail: String? = variant.description(inputW, inputH)
                     val read = try {
                         if (engine.id == "mlkit" && variant.id == "V0" && reuseMlkitV0 != null) {
-                            detail = "reused mapped quad probe"; reuseMlkitV0
+                            detail = OcrImageTreatments.REUSED_PROBE; reuseMlkitV0
                         } else deadline.run { engine.recognize(bitmap, variant.id, deadline) }
                     } catch (cancel: CancellationException) {
                         val timing = EngineTiming(engine.id, variant.id, SystemClock.elapsedRealtime() - start,

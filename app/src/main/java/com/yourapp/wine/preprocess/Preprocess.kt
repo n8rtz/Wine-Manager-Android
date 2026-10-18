@@ -2,6 +2,7 @@ package com.yourapp.wine.preprocess
 
 import android.graphics.Bitmap
 import com.yourapp.wine.capture.BitmapWorkspace
+import com.yourapp.wine.ocr.OcrImageTreatments
 import com.yourapp.wine.ocr.OcrRescuePolicy
 import com.yourapp.wine.ocr.OcrVariant
 import com.yourapp.wine.ocr.OcrVariantGeometry
@@ -13,8 +14,9 @@ import org.opencv.imgproc.Imgproc
 class Preprocess(private val enableV2: Boolean = false, private val lastResortThreshold: Boolean = false) {
     /** BASE rectified pixels -> lazy variants; any V2 resize is explicitly inverse-mapped by the ensemble. */
     fun variants(rectified: Bitmap, workspace: BitmapWorkspace): List<OcrVariant> = buildList {
-        add(OcrVariant("V0", { rectified }, {}))
-        add(OcrVariant("V1", { enhance(rectified, workspace, "foil") }, workspace::release))
+        add(OcrVariant("V0", { rectified }, {}, description = { _, _ -> OcrImageTreatments.RAW }))
+        add(OcrVariant("V1", { enhance(rectified, workspace, "foil") }, workspace::release,
+            description = { _, _ -> OcrImageTreatments.FOIL }))
         if (enableV2) {
             val labelW = rectified.width; val labelH = rectified.height
             var aspect = false
@@ -25,8 +27,8 @@ class Preprocess(private val enableV2: Boolean = false, private val lastResortTh
                     OcrRescuePolicy.shouldRun(readings)
                 }, toLabel = { token, w, h -> OcrVariantGeometry.toLabel(token, w, h, labelW, labelH) },
                 description = { w, h -> if (h != labelH || w != labelW)
-                    "aspect rescue ${w}x${h} -> base ${labelW}x${labelH}; polygons inverse-scaled"
-                    else if (lastResortThreshold) "explicit threshold rescue" else "unsharp rescue" }))
+                    OcrImageTreatments.aspect(w, h, labelW, labelH)
+                    else if (lastResortThreshold) OcrImageTreatments.THRESHOLD else OcrImageTreatments.UNSHARP }))
         }
     }
 

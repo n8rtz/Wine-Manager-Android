@@ -53,6 +53,8 @@ fun main() {
     println("PASS: award badge excluded / adjacent name-style / producer-scoped correction")
     com.yourapp.wine.LabelNameChecks.fragmentsNeverInventMerlotAndPresentationUsesState()
     println("PASS: letter fragments rejected / no invented Merlot / state-as-country / manual edits preserved")
+    com.yourapp.wine.DiagnosticChecks.passTreatmentsAreVisibleWithoutInventingAttempts()
+    println("PASS: actual pass treatment descriptions / grayscale adapter / absent and reused passes")
     GeneratedFixtureChecks.run()
     com.yourapp.wine.EnsemblePolicyChecks.optionalEnginesNeverReadAnUnrectifiedScene()
     println("PASS: optional engines never receive localization/full-scene fallback pixels")

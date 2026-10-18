@@ -11,6 +11,8 @@ import com.yourapp.wine.fill.FillEngine
 import com.yourapp.wine.kb.FixtureKnowledgeBase
 import com.yourapp.wine.ocr.OcrInputKind
 import com.yourapp.wine.ocr.RawToken
+import com.yourapp.wine.ocr.EngineTiming
+import com.yourapp.wine.ocr.OcrImageTreatments
 import com.yourapp.wine.ocr.OcrEngine
 import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.CancellationException
@@ -46,6 +48,21 @@ object DiagnosticChecks {
                 "PRODUCER state=RED value=\"\"", "score=0.450", "text=\"EXAMPLE WINERY\"", "CALIFORNIA")) {
             check(value in text) { "Missing diagnostic: $value" }
         }
+    }
+
+    fun passTreatmentsAreVisibleWithoutInventingAttempts() {
+        val treatments = listOf("probe" to OcrImageTreatments.PROBE, "V0" to OcrImageTreatments.RAW,
+            "V1" to OcrImageTreatments.FOIL, "V2" to OcrImageTreatments.aspect(1280, 903, 1280, 1805))
+        val text = ScanDiagnosticFormatter.format(report().copy(timings = treatments.map { (id, detail) ->
+            EngineTiming("mlkit", id, 10, 2, false, detail)
+        }), environment, 42)
+        treatments.forEach { (id, detail) -> check("pass=mlkit/$id" in text && "detail=$detail" in text) }
+        check("grayscale NV21" in text && "not variant preparation" in text)
+        val notRun = ScanDiagnosticFormatter.format(report(), environment, 43)
+        check("pass=mlkit/V2" !in notRun && "not always run" in notRun)
+        val reused = ScanDiagnosticFormatter.format(report().copy(timings = listOf(
+            EngineTiming("mlkit", "V0", 0, 2, false, OcrImageTreatments.REUSED_PROBE))), environment, 44)
+        check("no new V0 image processing or OCR" in reused)
     }
 
     fun traceHasBoundedSamplesAndNoExceptionMessages() {
