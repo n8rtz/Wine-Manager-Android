@@ -23,7 +23,8 @@ class PlaceGazetteer(private val kb: WineKnowledgeBase) {
             }
             root = updated; indexedPlaces = current
         }
-        val found = mutableListOf<Place>()
+        data class Match(val place:Place,val start:Int,val end:Int)
+        val found = mutableListOf<Match>()
         for (start in normalizedText.indices) {
             if (!normalizedText[start].isLetterOrDigit() || (start > 0 && normalizedText[start - 1].isLetterOrDigit())) continue
             var node = root
@@ -31,13 +32,16 @@ class PlaceGazetteer(private val kb: WineKnowledgeBase) {
             while (index < normalizedText.length) {
                 val char = normalizedText[index]
                 if (!char.isLetterOrDigit()) {
-                    if (char.isWhitespace() || char in "'-’.") { index++; continue } else break
+                    if (char.isWhitespace() || char in "'-’.!") { index++; continue } else break
                 }
                 node = node.children[char] ?: break
                 index++
-                if (index == normalizedText.length || !normalizedText[index].isLetterOrDigit()) found += node.places
+                if (index == normalizedText.length || !normalizedText[index].isLetterOrDigit()) found += node.places.filter { ReferenceWineCatalog.mayMatch(it, normalizedText) }.map { Match(it,start,index) }
             }
         }
-        return found.distinctBy { it.id }.sortedByDescending { it.nameNorm.length }
+        // Nested names inside one longer appellation are not separate contradictory origin claims.
+        return found.filter { hit -> found.none { other -> other.start <= hit.start && other.end >= hit.end &&
+            other.end-other.start > hit.end-hit.start } }.map { it.place }
+            .distinctBy { it.id }.sortedByDescending { it.nameNorm.length }
     }
 }

@@ -1,0 +1,4148 @@
+{
+  "repository": "UCDavisLibrary/ava",
+  "commit": "a00174df3809f4edcea101f4489961d8b97e4ff9",
+  "as_of": "2026-10-18",
+  "license": "CC0-1.0",
+  "records": [
+    {
+      "file": "avas/adelaida_district.geojson",
+      "properties": [
+        {
+          "name": "Adelaida District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.238"
+        }
+      ]
+    },
+    {
+      "file": "avas/alexander_valley.geojson",
+      "properties": [
+        {
+          "name": "Alexander Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma",
+          "created": "1984-11-23",
+          "valid_start": "2008-04-10",
+          "valid_end": null,
+          "cfr_index": "9.53"
+        }
+      ]
+    },
+    {
+      "file": "avas/alexandria_lakes.geojson",
+      "properties": [
+        {
+          "name": "Alexandria Lakes",
+          "aka": null,
+          "state": "MN",
+          "within": null,
+          "created": "2003-01-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.177"
+        }
+      ]
+    },
+    {
+      "file": "avas/alisos_canyon.geojson",
+      "properties": [
+        {
+          "name": "Alisos Canyon",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "2020-07-28",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.270"
+        }
+      ]
+    },
+    {
+      "file": "avas/alta_mesa.geojson",
+      "properties": [
+        {
+          "name": "Alta Mesa",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.195"
+        }
+      ]
+    },
+    {
+      "file": "avas/altus.geojson",
+      "properties": [
+        {
+          "name": "Altus",
+          "aka": null,
+          "state": "AR",
+          "within": "Arkansas Mountain|Ozark Mountain",
+          "created": "1984-05-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.77"
+        }
+      ]
+    },
+    {
+      "file": "avas/ancient_lakes_of_columbia_valley.geojson",
+      "properties": [
+        {
+          "name": "Ancient Lakes of Columbia Valley",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2012-11-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.227"
+        }
+      ]
+    },
+    {
+      "file": "avas/anderson_valley.geojson",
+      "properties": [
+        {
+          "name": "Anderson Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Mendocino |North Coast",
+          "created": "1983-09-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.86"
+        }
+      ]
+    },
+    {
+      "file": "avas/antelope_valley_of_the_california_high_desert.geojson",
+      "properties": [
+        {
+          "name": "Antelope Valley of the California High Desert",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2011-06-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.219"
+        }
+      ]
+    },
+    {
+      "file": "avas/appalachian_high_country.geojson",
+      "properties": [
+        {
+          "name": "Appalachian High Country",
+          "aka": null,
+          "state": "NC|TN|VA",
+          "within": null,
+          "created": "2016-10-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.260"
+        }
+      ]
+    },
+    {
+      "file": "avas/applegate_valley.geojson",
+      "properties": [
+        {
+          "name": "Applegate Valley",
+          "aka": null,
+          "state": "OR",
+          "within": "Rogue Valley|Southern Oregon",
+          "created": "2000-12-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.165"
+        }
+      ]
+    },
+    {
+      "file": "avas/arkansas_mountain.geojson",
+      "properties": [
+        {
+          "name": "Arkansas Mountain",
+          "aka": null,
+          "state": "AR",
+          "within": "Ozark Mountain",
+          "created": "1986-09-26",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.112"
+        }
+      ]
+    },
+    {
+      "file": "avas/arroyo_grande_valley.geojson",
+      "properties": [
+        {
+          "name": "Arroyo Grande Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1990-02-05",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.129"
+        }
+      ]
+    },
+    {
+      "file": "avas/arroyo_seco.geojson",
+      "properties": [
+        {
+          "name": "Arroyo Seco",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Monterey",
+          "created": "1983-05-16",
+          "valid_start": "2021-09-24",
+          "valid_end": null,
+          "cfr_index": "9.59"
+        }
+      ]
+    },
+    {
+      "file": "avas/atlas_peak.geojson",
+      "properties": [
+        {
+          "name": "Atlas Peak",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1992-02-24",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.140"
+        }
+      ]
+    },
+    {
+      "file": "avas/augusta.geojson",
+      "properties": [
+        {
+          "name": "Augusta",
+          "aka": null,
+          "state": "MO",
+          "within": null,
+          "created": "1980-06-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.22"
+        }
+      ]
+    },
+    {
+      "file": "avas/ballard_canyon.geojson",
+      "properties": [
+        {
+          "name": "Ballard Canyon",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Santa Ynez Valley",
+          "created": "2013-11-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.230"
+        }
+      ]
+    },
+    {
+      "file": "avas/bell_mountain.geojson",
+      "properties": [
+        {
+          "name": "Bell Mountain",
+          "aka": null,
+          "state": "TX",
+          "within": "Texas Hill Country",
+          "created": "1986-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.55"
+        }
+      ]
+    },
+    {
+      "file": "avas/ben_lomond_mountain.geojson",
+      "properties": [
+        {
+          "name": "Ben Lomond Mountain",
+          "aka": null,
+          "state": "CA",
+          "within": "Santa Cruz Mountains",
+          "created": "1988-01-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.118"
+        }
+      ]
+    },
+    {
+      "file": "avas/benmore_valley.geojson",
+      "properties": [
+        {
+          "name": "Benmore Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1991-11-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.138"
+        }
+      ]
+    },
+    {
+      "file": "avas/bennett_valley.geojson",
+      "properties": [
+        {
+          "name": "Bennett Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Sonoma Coast|Sonoma Mountain|Sonoma Valley",
+          "created": "2003-12-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.142"
+        }
+      ]
+    },
+    {
+      "file": "avas/beverly_washington.geojson",
+      "properties": [
+        {
+          "name": "Beverly Washington",
+          "aka": null,
+          "state": "Washington",
+          "within": null,
+          "created": "2024-10-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.297"
+        }
+      ]
+    },
+    {
+      "file": "avas/big_valley_district_lake_county.geojson",
+      "properties": [
+        {
+          "name": "Big Valley District-Lake County",
+          "aka": null,
+          "state": "CA",
+          "within": "Clear Lake|North Coast",
+          "created": "2013-11-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.232"
+        }
+      ]
+    },
+    {
+      "file": "avas/borden_ranch.geojson",
+      "properties": [
+        {
+          "name": "Borden Ranch",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.196"
+        }
+      ]
+    },
+    {
+      "file": "avas/california_shenandoah_valley.geojson",
+      "properties": [
+        {
+          "name": "California Shenandoah Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Sierra Foothills",
+          "created": "1983-01-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.37"
+        }
+      ]
+    },
+    {
+      "file": "avas/calistoga.geojson",
+      "properties": [
+        {
+          "name": "Calistoga",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "2010-01-07",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.209"
+        }
+      ]
+    },
+    {
+      "file": "avas/candy_mountain.geojson",
+      "properties": [
+        {
+          "name": "Candy Mountain",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley|Yakima Valley",
+          "created": "2020-10-26",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.272"
+        }
+      ]
+    },
+    {
+      "file": "avas/capay_valley.geojson",
+      "properties": [
+        {
+          "name": "Capay Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2003-02-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.176"
+        }
+      ]
+    },
+    {
+      "file": "avas/cape_may_peninsula.geojson",
+      "properties": [
+        {
+          "name": "Cape May Peninsula",
+          "aka": null,
+          "state": "NJ",
+          "within": "Outer Coastal Plain",
+          "created": "2018-04-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.262"
+        }
+      ]
+    },
+    {
+      "file": "avas/carmel_valley.geojson",
+      "properties": [
+        {
+          "name": "Carmel Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1983-01-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.58"
+        }
+      ]
+    },
+    {
+      "file": "avas/catoctin.geojson",
+      "properties": [
+        {
+          "name": "Catoctin",
+          "aka": null,
+          "state": "MD",
+          "within": null,
+          "created": "1983-10-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.67"
+        }
+      ]
+    },
+    {
+      "file": "avas/cayuga_lake.geojson",
+      "properties": [
+        {
+          "name": "Cayuga Lake",
+          "aka": null,
+          "state": "NY",
+          "within": "Finger Lakes",
+          "created": "1988-04-25",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.127"
+        }
+      ]
+    },
+    {
+      "file": "avas/central_coast.geojson",
+      "properties": [
+        {
+          "name": "Central Coast",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1985-10-24",
+          "valid_start": "2024-04-15",
+          "valid_end": null,
+          "cfr_index": "9.75"
+        }
+      ]
+    },
+    {
+      "file": "avas/central_delaware_valley.geojson",
+      "properties": [
+        {
+          "name": "Central Delaware Valley",
+          "aka": null,
+          "state": "NJ|PA",
+          "within": null,
+          "created": "1984-03-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.49"
+        }
+      ]
+    },
+    {
+      "file": "avas/chalk_hill.geojson",
+      "properties": [
+        {
+          "name": "Chalk Hill",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma|Russian River Valley|Sonoma Coast",
+          "created": "1983-11-21",
+          "valid_start": "1988-06-13",
+          "valid_end": null,
+          "cfr_index": "9.52"
+        }
+      ]
+    },
+    {
+      "file": "avas/chalone.geojson",
+      "properties": [
+        {
+          "name": "Chalone",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Gabilan Mountains",
+          "created": "1982-07-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.24"
+        }
+      ]
+    },
+    {
+      "file": "avas/champlain_valley_of_new_york.geojson",
+      "properties": [
+        {
+          "name": "Champlain Valley of New York",
+          "aka": null,
+          "state": "NY",
+          "within": null,
+          "created": "2016-08-22",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.258"
+        }
+      ]
+    },
+    {
+      "file": "avas/chehalem_mountains.geojson",
+      "properties": [
+        {
+          "name": "Chehalem Mountains",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2006-11-24",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.205"
+        }
+      ]
+    },
+    {
+      "file": "avas/chiles_valley.geojson",
+      "properties": [
+        {
+          "name": "Chiles Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1999-04-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.154"
+        }
+      ]
+    },
+    {
+      "file": "avas/cienega_valley.geojson",
+      "properties": [
+        {
+          "name": "Cienega Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Benito",
+          "created": "1982-09-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.38"
+        }
+      ]
+    },
+    {
+      "file": "avas/clarksburg.geojson",
+      "properties": [
+        {
+          "name": "Clarksburg",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1984-02-22",
+          "valid_start": "2022-04-08",
+          "valid_end": null,
+          "cfr_index": "9.95"
+        }
+      ]
+    },
+    {
+      "file": "avas/clear_lake.geojson",
+      "properties": [
+        {
+          "name": "Clear Lake",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1984-06-07",
+          "valid_start": "2022-07-05",
+          "valid_end": null,
+          "cfr_index": "9.99"
+        }
+      ]
+    },
+    {
+      "file": "avas/clements_hills.geojson",
+      "properties": [
+        {
+          "name": "Clements Hills",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.197"
+        }
+      ]
+    },
+    {
+      "file": "avas/cole_ranch.geojson",
+      "properties": [
+        {
+          "name": "Cole Ranch",
+          "aka": "Cole Vineyard",
+          "state": "CA",
+          "within": "Mendocino|North Coast",
+          "created": "1983-05-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.42"
+        }
+      ]
+    },
+    {
+      "file": "avas/columbia_gorge.geojson",
+      "properties": [
+        {
+          "name": "Columbia Gorge",
+          "aka": null,
+          "state": "OR|WA",
+          "within": null,
+          "created": "2004-05-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.178"
+        }
+      ]
+    },
+    {
+      "file": "avas/columbia_valley.geojson",
+      "properties": [
+        {
+          "name": "Columbia Valley",
+          "aka": null,
+          "state": "OR|WA",
+          "within": null,
+          "created": "1984-11-13",
+          "valid_start": "2016-05-20",
+          "valid_end": null,
+          "cfr_index": "9.74"
+        }
+      ]
+    },
+    {
+      "file": "avas/comptche.geojson",
+      "properties": [
+        {
+          "name": "Comptche",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "2024-05-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": null
+        }
+      ]
+    },
+    {
+      "file": "avas/contra_costa.geojson",
+      "properties": [
+        {
+          "name": "Contra Costa",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2024-04-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.291"
+        }
+      ]
+    },
+    {
+      "file": "avas/coombsville.geojson",
+      "properties": [
+        {
+          "name": "Coombsville",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "2002-01-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.223"
+        }
+      ]
+    },
+    {
+      "file": "avas/cosumnes_river.geojson",
+      "properties": [
+        {
+          "name": "Cosumnes River",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.198"
+        }
+      ]
+    },
+    {
+      "file": "avas/covelo.geojson",
+      "properties": [
+        {
+          "name": "Covelo",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2006-03-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.187"
+        }
+      ]
+    },
+    {
+      "file": "avas/crest_of_the_blue_ridge_henderson_county.geojson",
+      "properties": [
+        {
+          "name": "Crest of the Blue Ridge Henderson County",
+          "aka": null,
+          "state": "NC",
+          "within": null,
+          "created": "2019-07-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.266"
+        }
+      ]
+    },
+    {
+      "file": "avas/creston_district.geojson",
+      "properties": [
+        {
+          "name": "Creston District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.239"
+        }
+      ]
+    },
+    {
+      "file": "avas/crystal_springs_of_napa_valley.geojson",
+      "properties": [
+        {
+          "name": "Crystal Springs of Napa Valley ",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2024-11-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.296"
+        }
+      ]
+    },
+    {
+      "file": "avas/cucamonga_valley.geojson",
+      "properties": [
+        {
+          "name": "Cucamonga Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1995-05-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.150"
+        }
+      ]
+    },
+    {
+      "file": "avas/cumberland_valley.geojson",
+      "properties": [
+        {
+          "name": "Cumberland Valley",
+          "aka": null,
+          "state": "MD|PA",
+          "within": null,
+          "created": "1985-07-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.105"
+        }
+      ]
+    },
+    {
+      "file": "avas/dahlonega_plateau.geojson",
+      "properties": [
+        {
+          "name": "Dahlonega Plateau",
+          "aka": null,
+          "state": "GA",
+          "within": null,
+          "created": "2018-06-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.263"
+        }
+      ]
+    },
+    {
+      "file": "avas/diablo_grande.geojson",
+      "properties": [
+        {
+          "name": "Diablo Grande",
+          "aka": "refered by many newspaper articles as the  \"Oak Flats Valley Ranch\" or the \"Oak Flats Valley\"",
+          "state": "CA",
+          "within": null,
+          "created": "1998-08-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.156"
+        }
+      ]
+    },
+    {
+      "file": "avas/diamond_mountain_district.geojson",
+      "properties": [
+        {
+          "name": "Diamond Mountain District",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "2001-07-31",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.166"
+        }
+      ]
+    },
+    {
+      "file": "avas/dos_rios.geojson",
+      "properties": [
+        {
+          "name": "Dos Rios",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2005-11-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.175"
+        }
+      ]
+    },
+    {
+      "file": "avas/dry_creek_valley.geojson",
+      "properties": [
+        {
+          "name": "Dry Creek Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma",
+          "created": "1983-09-06",
+          "valid_start": "2001-12-03",
+          "valid_end": null,
+          "cfr_index": "9.64"
+        }
+      ]
+    },
+    {
+      "file": "avas/dundee_hills.geojson",
+      "properties": [
+        {
+          "name": "Dundee Hills",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2005-01-31",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.180"
+        }
+      ]
+    },
+    {
+      "file": "avas/dunnigan_hills.geojson",
+      "properties": [
+        {
+          "name": "Dunnigan Hills",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1993-06-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.145"
+        }
+      ]
+    },
+    {
+      "file": "avas/eagle_foothills.geojson",
+      "properties": [
+        {
+          "name": "Eagle Foothills",
+          "aka": null,
+          "state": "ID",
+          "within": "Snake River Valley",
+          "created": "2015-11-25",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.252"
+        }
+      ]
+    },
+    {
+      "file": "avas/eagle_peak_mendocino_county.geojson",
+      "properties": [
+        {
+          "name": "Eagle Peak Mendocino County",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.237"
+        }
+      ]
+    },
+    {
+      "file": "avas/eastern_connecticut_highlands.geojson",
+      "properties": [
+        {
+          "name": "Eastern Connecticut Highlands",
+          "aka": null,
+          "state": "CT",
+          "within": null,
+          "created": "2019-10-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.267"
+        }
+      ]
+    },
+    {
+      "file": "avas/edna_valley.geojson",
+      "properties": [
+        {
+          "name": "Edna Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1982-06-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.35"
+        }
+      ]
+    },
+    {
+      "file": "avas/el_dorado.geojson",
+      "properties": [
+        {
+          "name": "El Dorado",
+          "aka": null,
+          "state": "CA",
+          "within": "Sierra Foothills",
+          "created": "1983-11-14",
+          "valid_start": "1987-07-24",
+          "valid_end": null,
+          "cfr_index": "9.61"
+        }
+      ]
+    },
+    {
+      "file": "avas/el_pomar_district.geojson",
+      "properties": [
+        {
+          "name": "El Pomar District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.240"
+        }
+      ]
+    },
+    {
+      "file": "avas/elkton_oregon.geojson",
+      "properties": [
+        {
+          "name": "Elkton Oregon",
+          "aka": null,
+          "state": "OR",
+          "within": "Southern Oregon|Umpqua Valley",
+          "created": "2013-03-07",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.229"
+        }
+      ]
+    },
+    {
+      "file": "avas/eola_amity_hills.geojson",
+      "properties": [
+        {
+          "name": "Eola-Amity Hills",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2006-08-16",
+          "valid_start": "2019-01-14",
+          "valid_end": null,
+          "cfr_index": "9.202"
+        }
+      ]
+    },
+    {
+      "file": "avas/escondido_valley.geojson",
+      "properties": [
+        {
+          "name": "Escondido Valley",
+          "aka": null,
+          "state": "TX",
+          "within": null,
+          "created": "1992-06-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.141"
+        }
+      ]
+    },
+    {
+      "file": "avas/fair_play.geojson",
+      "properties": [
+        {
+          "name": "Fair Play",
+          "aka": null,
+          "state": "CA",
+          "within": "El Dorado|Sierra Foothills",
+          "created": "2001-04-27",
+          "valid_start": "2015-02-05",
+          "valid_end": null,
+          "cfr_index": "9.168"
+        }
+      ]
+    },
+    {
+      "file": "avas/fennville.geojson",
+      "properties": [
+        {
+          "name": "Fennville",
+          "aka": null,
+          "state": "MI",
+          "within": "Lake Michigan Shore",
+          "created": "1981-10-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.33"
+        }
+      ]
+    },
+    {
+      "file": "avas/fiddletown.geojson",
+      "properties": [
+        {
+          "name": "Fiddletown",
+          "aka": null,
+          "state": "CA",
+          "within": "Sierra Foothills",
+          "created": "1983-11-03",
+          "valid_start": "1987-02-27",
+          "valid_end": null,
+          "cfr_index": "9.81"
+        }
+      ]
+    },
+    {
+      "file": "avas/finger_lakes.geojson",
+      "properties": [
+        {
+          "name": "Finger Lakes",
+          "aka": null,
+          "state": "NY",
+          "within": null,
+          "created": "1982-09-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.34"
+        }
+      ]
+    },
+    {
+      "file": "avas/fort_ross_seaview.geojson",
+      "properties": [
+        {
+          "name": "Fort Ross-Seaview",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Sonoma Coast",
+          "created": "2011-12-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.221"
+        }
+      ]
+    },
+    {
+      "file": "avas/fountaingrove_district.geojson",
+      "properties": [
+        {
+          "name": "Fountaingrove District",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "2015-03-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.250"
+        }
+      ]
+    },
+    {
+      "file": "avas/fredericksburg_in_the_texas_hill_country.geojson",
+      "properties": [
+        {
+          "name": "Fredericksburg in the Texas Hill Country",
+          "aka": null,
+          "state": "TX",
+          "within": "Texas Hill Country",
+          "created": "1988-12-22",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.125"
+        }
+      ]
+    },
+    {
+      "file": "avas/gabilan_mountains.geojson",
+      "properties": [
+        {
+          "name": "Gabilan Mountains",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2022-09-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.288"
+        }
+      ]
+    },
+    {
+      "file": "avas/goose_gap.geojson",
+      "properties": [
+        {
+          "name": "Goose Gap",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley|Yakima Valley",
+          "created": "2021-08-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.277"
+        }
+      ]
+    },
+    {
+      "file": "avas/grand_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Grand River Valley",
+          "aka": null,
+          "state": "OH",
+          "within": "Lake Erie",
+          "created": "1983-11-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.87"
+        }
+      ]
+    },
+    {
+      "file": "avas/grand_valley.geojson",
+      "properties": [
+        {
+          "name": "Grand Valley",
+          "aka": null,
+          "state": "CO",
+          "within": null,
+          "created": "1991-12-26",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.137"
+        }
+      ]
+    },
+    {
+      "file": "avas/green_valley_of_russian_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Green Valley of Russian River Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma Valley|Russian River Valley|Sonoma Coast",
+          "created": "1983-12-21",
+          "valid_start": "2007-04-23",
+          "valid_end": null,
+          "cfr_index": "9.57"
+        }
+      ]
+    },
+    {
+      "file": "avas/guenoc_valley.geojson",
+      "properties": [
+        {
+          "name": "Guenoc Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1981-12-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.26"
+        }
+      ]
+    },
+    {
+      "file": "avas/hames_valley.geojson",
+      "properties": [
+        {
+          "name": "Hames Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Monterey",
+          "created": "1994-04-25",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.147"
+        }
+      ]
+    },
+    {
+      "file": "avas/happy_canyon_of_santa_barbara.geojson",
+      "properties": [
+        {
+          "name": "Happy Canyon of Santa Barbara",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Santa Ynez Valley",
+          "created": "2009-11-09",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.217"
+        }
+      ]
+    },
+    {
+      "file": "avas/haw_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Haw River Valley",
+          "aka": "Haw River",
+          "state": "NC",
+          "within": null,
+          "created": "2009-03-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.214"
+        }
+      ]
+    },
+    {
+      "file": "avas/hermann.geojson",
+      "properties": [
+        {
+          "name": "Hermann",
+          "aka": null,
+          "state": "MO",
+          "within": "Ozark Mountain",
+          "created": "1983-08-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.71"
+        }
+      ]
+    },
+    {
+      "file": "avas/high_valley.geojson",
+      "properties": [
+        {
+          "name": "High Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Clear Lake|North Coast",
+          "created": "2023-07-05",
+          "valid_start": "2023-08-04",
+          "valid_end": null,
+          "cfr_index": "9.189"
+        }
+      ]
+    },
+    {
+      "file": "avas/horse_heaven_hills.geojson",
+      "properties": [
+        {
+          "name": "Horse Heaven Hills",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2005-08-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.188"
+        }
+      ]
+    },
+    {
+      "file": "avas/howell_mountain.geojson",
+      "properties": [
+        {
+          "name": "Howell Mountain",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1984-01-30",
+          "valid_start": "1987-02-27",
+          "valid_end": null,
+          "cfr_index": "9.94"
+        }
+      ]
+    },
+    {
+      "file": "avas/hudson_river_region.geojson",
+      "properties": [
+        {
+          "name": "Hudson River Region",
+          "aka": null,
+          "state": "NY",
+          "within": null,
+          "created": "1982-07-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.47"
+        }
+      ]
+    },
+    {
+      "file": "avas/indiana_uplands.geojson",
+      "properties": [
+        {
+          "name": "Indiana Uplands",
+          "aka": null,
+          "state": "IN",
+          "within": null,
+          "created": "2013-02-05",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.228"
+        }
+      ]
+    },
+    {
+      "file": "avas/inwood_valley.geojson",
+      "properties": [
+        {
+          "name": "Inwood Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2012-10-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.226"
+        }
+      ]
+    },
+    {
+      "file": "avas/isle_st__george.geojson",
+      "properties": [
+        {
+          "name": "Isle St. George",
+          "aka": null,
+          "state": "OH",
+          "within": "Lake Erie",
+          "created": "1982-08-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.51"
+        }
+      ]
+    },
+    {
+      "file": "avas/jahant.geojson",
+      "properties": [
+        {
+          "name": "Jahant",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.199"
+        }
+      ]
+    },
+    {
+      "file": "avas/kanawha_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Kanawha River Valley",
+          "aka": null,
+          "state": "WV",
+          "within": "Ohio River Valley",
+          "created": "1986-04-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.111"
+        }
+      ]
+    },
+    {
+      "file": "avas/kelsey_bench_lake_county.geojson",
+      "properties": [
+        {
+          "name": "Kelsey Bench-Lake County",
+          "aka": "Kelsey Bench, Kelseyfille Bench",
+          "state": "CA",
+          "within": "Clear Lake|North Coast",
+          "created": "2013-11-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.233"
+        }
+      ]
+    },
+    {
+      "file": "avas/knights_valley.geojson",
+      "properties": [
+        {
+          "name": "Knights Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma",
+          "created": "1983-11-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.76"
+        }
+      ]
+    },
+    {
+      "file": "avas/lake_chelan.geojson",
+      "properties": [
+        {
+          "name": "Lake Chelan",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2009-05-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.215"
+        }
+      ]
+    },
+    {
+      "file": "avas/lake_erie.geojson",
+      "properties": [
+        {
+          "name": "Lake Erie",
+          "aka": null,
+          "state": "NY|OH|PA",
+          "within": null,
+          "created": "1983-11-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.83"
+        }
+      ]
+    },
+    {
+      "file": "avas/lake_michigan_shore.geojson",
+      "properties": [
+        {
+          "name": "Lake Michigan Shore",
+          "aka": null,
+          "state": "MI",
+          "within": null,
+          "created": "1983-10-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.79"
+        }
+      ]
+    },
+    {
+      "file": "avas/lake_wisconsin.geojson",
+      "properties": [
+        {
+          "name": "Lake Wisconsin",
+          "aka": null,
+          "state": "WI",
+          "within": "Upper Mississippi|River Valley",
+          "created": "1994-01-05",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.146"
+        }
+      ]
+    },
+    {
+      "file": "avas/lamorinda.geojson",
+      "properties": [
+        {
+          "name": "Lamorinda",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Francisco Bay",
+          "created": "2016-03-25",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.254"
+        }
+      ]
+    },
+    {
+      "file": "avas/lancaster_valley.geojson",
+      "properties": [
+        {
+          "name": "Lancaster Valley",
+          "aka": null,
+          "state": "PA",
+          "within": null,
+          "created": "1982-05-12",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.41"
+        }
+      ]
+    },
+    {
+      "file": "avas/laurelwood_district.geojson",
+      "properties": [
+        {
+          "name": "Laurelwood District",
+          "aka": null,
+          "state": "OR",
+          "within": "Chehalem Mountains|Willamette Valley",
+          "created": "2020-07-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.269"
+        }
+      ]
+    },
+    {
+      "file": "avas/leelanau_peninsula.geojson",
+      "properties": [
+        {
+          "name": "Leelanau Peninsula",
+          "aka": null,
+          "state": "MI",
+          "within": null,
+          "created": "1982-03-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.40"
+        }
+      ]
+    },
+    {
+      "file": "avas/lehigh_valley.geojson",
+      "properties": [
+        {
+          "name": "Lehigh Valley",
+          "aka": null,
+          "state": "PA",
+          "within": null,
+          "created": "2008-03-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.210"
+        }
+      ]
+    },
+    {
+      "file": "avas/leona_valley.geojson",
+      "properties": [
+        {
+          "name": "Leona Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2008-11-28",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.212"
+        }
+      ]
+    },
+    {
+      "file": "avas/lewis_clark_valley.geojson",
+      "properties": [
+        {
+          "name": "Lewis-Clark Valley",
+          "aka": null,
+          "state": "ID|WA",
+          "within": null,
+          "created": "2016-05-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.256"
+        }
+      ]
+    },
+    {
+      "file": "avas/lime_kiln_valley.geojson",
+      "properties": [
+        {
+          "name": "Lime Kiln Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Cienega Valley|Central Coast|San Benito",
+          "created": "1982-07-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.27"
+        }
+      ]
+    },
+    {
+      "file": "avas/linganore.geojson",
+      "properties": [
+        {
+          "name": "Linganore",
+          "aka": null,
+          "state": "MD",
+          "within": null,
+          "created": "1983-08-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.63"
+        }
+      ]
+    },
+    {
+      "file": "avas/livermore_valley.geojson",
+      "properties": [
+        {
+          "name": "Livermore Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Francisco Bay",
+          "created": "1982-10-01",
+          "valid_start": "2006-07-17",
+          "valid_end": null,
+          "cfr_index": "9.46"
+        }
+      ]
+    },
+    {
+      "file": "avas/lodi.geojson",
+      "properties": [
+        {
+          "name": "Lodi",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1986-03-17",
+          "valid_start": "2002-11-04",
+          "valid_end": null,
+          "cfr_index": "9.107"
+        }
+      ]
+    },
+    {
+      "file": "avas/loess_hills_district.geojson",
+      "properties": [
+        {
+          "name": "Loess Hills District",
+          "aka": null,
+          "state": "IA|MO",
+          "within": null,
+          "created": "2016-03-03",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.255"
+        }
+      ]
+    },
+    {
+      "file": "avas/long_island.geojson",
+      "properties": [
+        {
+          "name": "Long Island",
+          "aka": null,
+          "state": "NY",
+          "within": null,
+          "created": "2001-05-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.170"
+        }
+      ]
+    },
+    {
+      "file": "avas/long_valley-lake_county.geojson",
+      "properties": [
+        {
+          "name": "Long Valley-Lake County",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2023-07-05",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.289"
+        }
+      ]
+    },
+    {
+      "file": "avas/loramie_creek.geojson",
+      "properties": [
+        {
+          "name": "Loramie Creek",
+          "aka": null,
+          "state": "OH",
+          "within": null,
+          "created": "1982-12-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.62"
+        }
+      ]
+    },
+    {
+      "file": "avas/los_carneros.geojson",
+      "properties": [
+        {
+          "name": "Los Carneros",
+          "aka": "Carneros",
+          "state": "CA",
+          "within": "Napa Valley|North Coast|Sonoma Coast|Sonoma Valley",
+          "created": "1983-09-19",
+          "valid_start": "2006-11-15",
+          "valid_end": null,
+          "cfr_index": "9.32"
+        }
+      ]
+    },
+    {
+      "file": "avas/los_olivos_district.geojson",
+      "properties": [
+        {
+          "name": "Los Olivos District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Santa Ynez Valley",
+          "created": "2016-02-22",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.253"
+        }
+      ]
+    },
+    {
+      "file": "avas/lower_long_tom.geojson",
+      "properties": [
+        {
+          "name": "Lower Long Tom",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2021-12-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.281"
+        }
+      ]
+    },
+    {
+      "file": "avas/madera.geojson",
+      "properties": [
+        {
+          "name": "Madera",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1985-01-07",
+          "valid_start": "1987-02-27",
+          "valid_end": null,
+          "cfr_index": "9.92"
+        }
+      ]
+    },
+    {
+      "file": "avas/malibu_coast.geojson",
+      "properties": [
+        {
+          "name": "Malibu Coast",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2014-08-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.235"
+        }
+      ]
+    },
+    {
+      "file": "avas/malibu_newton_canyon.geojson",
+      "properties": [
+        {
+          "name": "Malibu-Newton Canyon",
+          "aka": null,
+          "state": "CA",
+          "within": "Malibu Coast",
+          "created": "1996-06-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.152"
+        }
+      ]
+    },
+    {
+      "file": "avas/manton_valley.geojson",
+      "properties": [
+        {
+          "name": "Manton Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2014-09-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.236"
+        }
+      ]
+    },
+    {
+      "file": "avas/martha_s_vineyard.geojson",
+      "properties": [
+        {
+          "name": "Martha's Vineyard",
+          "aka": null,
+          "state": "MA",
+          "within": "Southeastern New England",
+          "created": "1985-01-03",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.73"
+        }
+      ]
+    },
+    {
+      "file": "avas/mcdowell_valley.geojson",
+      "properties": [
+        {
+          "name": "McDowell Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Mendocino|North Coast",
+          "created": "1982-01-04",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.36"
+        }
+      ]
+    },
+    {
+      "file": "avas/mcminnville.geojson",
+      "properties": [
+        {
+          "name": "McMinnville",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2005-03-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.181"
+        }
+      ]
+    },
+    {
+      "file": "avas/mendocino.geojson",
+      "properties": [
+        {
+          "name": "Mendocino",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1984-07-16",
+          "valid_start": "2014-11-10",
+          "valid_end": null,
+          "cfr_index": "9.93"
+        }
+      ]
+    },
+    {
+      "file": "avas/mendocino_ridge.geojson",
+      "properties": [
+        {
+          "name": "Mendocino Ridge",
+          "aka": null,
+          "state": "CA",
+          "within": "Mendocino|North Coast",
+          "created": "1997-10-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.158"
+        }
+      ]
+    },
+    {
+      "file": "avas/merritt_island.geojson",
+      "properties": [
+        {
+          "name": "Merritt Island",
+          "aka": null,
+          "state": "CA",
+          "within": "Clarksburg",
+          "created": "1983-06-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.68"
+        }
+      ]
+    },
+    {
+      "file": "avas/mesilla_valley.geojson",
+      "properties": [
+        {
+          "name": "Mesilla Valley",
+          "aka": null,
+          "state": "NM| TX",
+          "within": null,
+          "created": "1985-02-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.100"
+        }
+      ]
+    },
+    {
+      "file": "avas/middle_rio_grande_valley.geojson",
+      "properties": [
+        {
+          "name": "Middle Rio Grande Valley",
+          "aka": null,
+          "state": "NM",
+          "within": null,
+          "created": "1988-03-03",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.119"
+        }
+      ]
+    },
+    {
+      "file": "avas/middleburg_virginia.geojson",
+      "properties": [
+        {
+          "name": "Middleburg Virginia",
+          "aka": "Middleburg",
+          "state": "VA",
+          "within": null,
+          "created": "2012-09-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.225"
+        }
+      ]
+    },
+    {
+      "file": "avas/mimbres_valley.geojson",
+      "properties": [
+        {
+          "name": "Mimbres Valley",
+          "aka": null,
+          "state": "NM",
+          "within": null,
+          "created": "1985-11-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.103"
+        }
+      ]
+    },
+    {
+      "file": "avas/mississippi_delta.geojson",
+      "properties": [
+        {
+          "name": "Mississippi Delta",
+          "aka": "Yazoo Basin, Delta",
+          "state": "MS|LA|TN",
+          "within": null,
+          "created": "1984-07-07",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.96"
+        }
+      ]
+    },
+    {
+      "file": "avas/mokelumne_river.geojson",
+      "properties": [
+        {
+          "name": "Mokelumne River",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.200"
+        }
+      ]
+    },
+    {
+      "file": "avas/monterey.geojson",
+      "properties": [
+        {
+          "name": "Monterey",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1984-06-15",
+          "valid_start": "1987-02-27",
+          "valid_end": null,
+          "cfr_index": "9.98"
+        }
+      ]
+    },
+    {
+      "file": "avas/monticello.geojson",
+      "properties": [
+        {
+          "name": "Monticello",
+          "aka": null,
+          "state": "VA",
+          "within": null,
+          "created": "1984-01-23",
+          "valid_start": "2019-01-14",
+          "valid_end": null,
+          "cfr_index": "9.48"
+        }
+      ]
+    },
+    {
+      "file": "avas/moon_mountain_district_sonoma_county.geojson",
+      "properties": [
+        {
+          "name": "Moon Mountain District Sonoma County",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Sonoma Valley",
+          "created": "2013-11-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.231"
+        }
+      ]
+    },
+    {
+      "file": "avas/mount_pisgah__polk_county__oregon.geojson",
+      "properties": [
+        {
+          "name": "Mount Pisgah, Polk County, Oregon",
+          "aka": "Mt. Pisgah, Polk County, Oregon",
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2022-06-03",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.284"
+        }
+      ]
+    },
+    {
+      "file": "avas/mt__harlan.geojson",
+      "properties": [
+        {
+          "name": "Mt. Harlan",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Gabilan Mountains",
+          "created": "1990-12-17",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.131"
+        }
+      ]
+    },
+    {
+      "file": "avas/mt__veeder.geojson",
+      "properties": [
+        {
+          "name": "Mt. Veeder",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1990-03-22",
+          "valid_start": "1994-01-12",
+          "valid_end": null,
+          "cfr_index": "9.123"
+        }
+      ]
+    },
+    {
+      "file": "avas/naches_heights.geojson",
+      "properties": [
+        {
+          "name": "Naches Heights",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2012-01-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.222"
+        }
+      ]
+    },
+    {
+      "file": "avas/napa_valley.geojson",
+      "properties": [
+        {
+          "name": "Napa Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1981-02-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.23"
+        }
+      ]
+    },
+    {
+      "file": "avas/niagara_escarpment.geojson",
+      "properties": [
+        {
+          "name": "Niagara Escarpment",
+          "aka": null,
+          "state": "NY",
+          "within": null,
+          "created": "2005-02-09",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.186"
+        }
+      ]
+    },
+    {
+      "file": "avas/north_coast.geojson",
+      "properties": [
+        {
+          "name": "North Coast",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1983-09-21",
+          "valid_start": "2023-08-04",
+          "valid_end": null,
+          "cfr_index": "9.30"
+        }
+      ]
+    },
+    {
+      "file": "avas/north_fork_of_long_island.geojson",
+      "properties": [
+        {
+          "name": "North Fork of Long Island",
+          "aka": null,
+          "state": "NY",
+          "within": "Long Island",
+          "created": "1986-10-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.113"
+        }
+      ]
+    },
+    {
+      "file": "avas/north_fork_of_roanoke.geojson",
+      "properties": [
+        {
+          "name": "North Fork of Roanoke",
+          "aka": null,
+          "state": "VA",
+          "within": null,
+          "created": "1983-05-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.65"
+        }
+      ]
+    },
+    {
+      "file": "avas/north_yuba.geojson",
+      "properties": [
+        {
+          "name": "North Yuba",
+          "aka": null,
+          "state": "CA",
+          "within": "Sierra Foothills",
+          "created": "1985-08-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.106"
+        }
+      ]
+    },
+    {
+      "file": "avas/northern_neck_george_washington_birthplace.geojson",
+      "properties": [
+        {
+          "name": "Northern Neck George Washington Birthplace",
+          "aka": null,
+          "state": "VA",
+          "within": null,
+          "created": "1987-04-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.109"
+        }
+      ]
+    },
+    {
+      "file": "avas/northern_sonoma.geojson",
+      "properties": [
+        {
+          "name": "Northern Sonoma",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1985-06-17",
+          "valid_start": "2011-12-16",
+          "valid_end": null,
+          "cfr_index": "9.70"
+        }
+      ]
+    },
+    {
+      "file": "avas/oak_knoll_district_of_napa_valley.geojson",
+      "properties": [
+        {
+          "name": "Oak Knoll District of Napa Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "2004-04-26",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.161"
+        }
+      ]
+    },
+    {
+      "file": "avas/oakville.geojson",
+      "properties": [
+        {
+          "name": "Oakville",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1993-08-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.134"
+        }
+      ]
+    },
+    {
+      "file": "avas/ohio_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Ohio River Valley",
+          "aka": null,
+          "state": "IN|KY|OH|WV",
+          "within": null,
+          "created": "1983-09-07",
+          "valid_start": "2013-03-07",
+          "valid_end": null,
+          "cfr_index": "9.78"
+        }
+      ]
+    },
+    {
+      "file": "avas/old_mission_peninsula.geojson",
+      "properties": [
+        {
+          "name": "Old Mission Peninsula",
+          "aka": null,
+          "state": "MI",
+          "within": null,
+          "created": "1987-05-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.114"
+        }
+      ]
+    },
+    {
+      "file": "avas/outer_coastal_plain.geojson",
+      "properties": [
+        {
+          "name": "Outer Coastal Plain",
+          "aka": null,
+          "state": "NJ",
+          "within": null,
+          "created": "2007-03-12",
+          "valid_start": "2018-01-08",
+          "valid_end": null,
+          "cfr_index": "9.207"
+        }
+      ]
+    },
+    {
+      "file": "avas/ozark_highlands.geojson",
+      "properties": [
+        {
+          "name": "Ozark Highlands",
+          "aka": null,
+          "state": "MO",
+          "within": "Ozark Mountain",
+          "created": "1987-01-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.115"
+        }
+      ]
+    },
+    {
+      "file": "avas/ozark_mountain.geojson",
+      "properties": [
+        {
+          "name": "Ozark Mountain",
+          "aka": null,
+          "state": "AR|MO|OK",
+          "within": null,
+          "created": "1986-08-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.108"
+        }
+      ]
+    },
+    {
+      "file": "avas/pacheco_pass.geojson",
+      "properties": [
+        {
+          "name": "Pacheco Pass",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Francisco Bay|Santa Clara Valley\n",
+          "created": "1984-04-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.88"
+        }
+      ]
+    },
+    {
+      "file": "avas/paicines.geojson",
+      "properties": [
+        {
+          "name": "Paicines",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Benito",
+          "created": "1982-09-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.39"
+        }
+      ]
+    },
+    {
+      "file": "avas/palos_verdes_peninsula.geojson",
+      "properties": [
+        {
+          "name": "Palos Verdes Peninsula",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2021-07-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.274"
+        }
+      ]
+    },
+    {
+      "file": "avas/paso_robles.geojson",
+      "properties": [
+        {
+          "name": "Paso Robles",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1983-11-03",
+          "valid_start": "2009-02-20",
+          "valid_end": null,
+          "cfr_index": "9.84"
+        }
+      ]
+    },
+    {
+      "file": "avas/paso_robles_estrella_district.geojson",
+      "properties": [
+        {
+          "name": "Paso Robles Estrella District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.241"
+        }
+      ]
+    },
+    {
+      "file": "avas/paso_robles_geneseo_district.geojson",
+      "properties": [
+        {
+          "name": "Paso Robles Geneseo District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.242"
+        }
+      ]
+    },
+    {
+      "file": "avas/paso_robles_highlands_district.geojson",
+      "properties": [
+        {
+          "name": "Paso Robles Highlands District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.243"
+        }
+      ]
+    },
+    {
+      "file": "avas/paso_robles_willow_creek_district.geojson",
+      "properties": [
+        {
+          "name": "Paso Robles Willow Creek District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.244"
+        }
+      ]
+    },
+    {
+      "file": "avas/paulsell_valley.geojson",
+      "properties": [
+        {
+          "name": "Paulsell Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2022-06-03",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.285"
+        }
+      ]
+    },
+    {
+      "file": "avas/petaluma_gap.geojson",
+      "properties": [
+        {
+          "name": "Petaluma Gap",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Sonoma Coast",
+          "created": "2018-01-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.261"
+        }
+      ]
+    },
+    {
+      "file": "avas/pine_mountain_cloverdale_peak.geojson",
+      "properties": [
+        {
+          "name": "Pine Mountain-Cloverdale Peak",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma",
+          "created": "2011-11-28",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.220"
+        }
+      ]
+    },
+    {
+      "file": "avas/potter_valley.geojson",
+      "properties": [
+        {
+          "name": "Potter Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Mendocino|North Coast",
+          "created": "1983-11-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.82"
+        }
+      ]
+    },
+    {
+      "file": "avas/puget_sound.geojson",
+      "properties": [
+        {
+          "name": "Puget Sound",
+          "aka": null,
+          "state": "WA",
+          "within": null,
+          "created": "1995-10-04",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.151"
+        }
+      ]
+    },
+    {
+      "file": "avas/ramona_valley.geojson",
+      "properties": [
+        {
+          "name": "Ramona Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "South Coast",
+          "created": "2006-01-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.191"
+        }
+      ]
+    },
+    {
+      "file": "avas/rattlesnake_hills.geojson",
+      "properties": [
+        {
+          "name": "Rattlesnake Hills",
+          "aka": null,
+          "state": "WA",
+          "within": "Yakima Valley|Columbia Valley",
+          "created": "2006-03-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.193"
+        }
+      ]
+    },
+    {
+      "file": "avas/red_hill_douglas_county__oregon.geojson",
+      "properties": [
+        {
+          "name": "Red Hill Douglas County, Oregon",
+          "aka": null,
+          "state": "OR",
+          "within": "Southern Oregon|Umpqua Valley",
+          "created": "2005-11-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.190"
+        }
+      ]
+    },
+    {
+      "file": "avas/red_hills_lake_county.geojson",
+      "properties": [
+        {
+          "name": "Red Hills Lake County",
+          "aka": null,
+          "state": "CA",
+          "within": "Clear Lake|North Coast",
+          "created": "2004-09-10",
+          "valid_start": "2024-02-02",
+          "valid_end": null,
+          "cfr_index": "9.169"
+        }
+      ]
+    },
+    {
+      "file": "avas/red_mountain.geojson",
+      "properties": [
+        {
+          "name": "Red Mountain",
+          "aka": null,
+          "state": "WA",
+          "within": "Yakima Valley|Columbia Valley",
+          "created": "2001-06-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.167"
+        }
+      ]
+    },
+    {
+      "file": "avas/redwood_valley.geojson",
+      "properties": [
+        {
+          "name": "Redwood Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Mendocino|North Coast",
+          "created": "1997-02-21",
+          "valid_start": "2014-11-10",
+          "valid_end": null,
+          "cfr_index": "9.153"
+        }
+      ]
+    },
+    {
+      "file": "avas/ribbon_ridge.geojson",
+      "properties": [
+        {
+          "name": "Ribbon Ridge",
+          "aka": null,
+          "state": "OR",
+          "within": "Chehalem Mountains|Willamette Valley",
+          "created": "2005-06-01",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.182"
+        }
+      ]
+    },
+    {
+      "file": "avas/river_junction.geojson",
+      "properties": [
+        {
+          "name": "River Junction",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2001-07-09",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.164"
+        }
+      ]
+    },
+    {
+      "file": "avas/rockpile.geojson",
+      "properties": [
+        {
+          "name": "Rockpile",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma",
+          "created": "2002-04-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.173"
+        }
+      ]
+    },
+    {
+      "file": "avas/rocky_knob.geojson",
+      "properties": [
+        {
+          "name": "Rocky Knob",
+          "aka": null,
+          "state": "VA",
+          "within": null,
+          "created": "1983-02-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.43"
+        }
+      ]
+    },
+    {
+      "file": "avas/rocky_reach.geojson",
+      "properties": [
+        {
+          "name": "Rocky Reach",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2022-06-03",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.287"
+        }
+      ]
+    },
+    {
+      "file": "avas/rogue_valley.geojson",
+      "properties": [
+        {
+          "name": "Rogue Valley",
+          "aka": null,
+          "state": "OR",
+          "within": "Southern Oregon",
+          "created": "1991-02-22",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.132"
+        }
+      ]
+    },
+    {
+      "file": "avas/royal_slope.geojson",
+      "properties": [
+        {
+          "name": "Royal Slope",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2020-10-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.271"
+        }
+      ]
+    },
+    {
+      "file": "avas/russian_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Russian River Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Northern Sonoma|Sonoma Coast",
+          "created": "1983-11-21",
+          "valid_start": "2011-12-16",
+          "valid_end": null,
+          "cfr_index": "9.66"
+        }
+      ]
+    },
+    {
+      "file": "avas/rutherford.geojson",
+      "properties": [
+        {
+          "name": "Rutherford",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1993-08-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.133"
+        }
+      ]
+    },
+    {
+      "file": "avas/saddle_rock_malibu.geojson",
+      "properties": [
+        {
+          "name": "Saddle Rock-Malibu",
+          "aka": null,
+          "state": "CA",
+          "within": "Malibu Coast",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.203"
+        }
+      ]
+    },
+    {
+      "file": "avas/salado_creek.geojson",
+      "properties": [
+        {
+          "name": "Salado Creek",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2004-08-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.163"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_antonio_valley.geojson",
+      "properties": [
+        {
+          "name": "San Antonio Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "2006-07-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.194"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_benito.geojson",
+      "properties": [
+        {
+          "name": "San Benito",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1987-11-04",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.110"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_bernabe.geojson",
+      "properties": [
+        {
+          "name": "San Bernabe",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Monterey",
+          "created": "2004-08-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.171"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_francisco_bay.geojson",
+      "properties": [
+        {
+          "name": "San Francisco Bay",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1999-03-22",
+          "valid_start": "2024-03-14",
+          "valid_end": null,
+          "cfr_index": "9.157"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_juan_creek.geojson",
+      "properties": [
+        {
+          "name": "San Juan Creek",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.245"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_lucas.geojson",
+      "properties": [
+        {
+          "name": "San Lucas",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Monterey",
+          "created": "1987-03-02",
+          "valid_start": "2004-08-30",
+          "valid_end": null,
+          "cfr_index": "9.56"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_luis_obispo_coast.geojson",
+      "properties": [
+        {
+          "name": "San Luis Obispo Coast",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "2022-04-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.282"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_luis_rey.geojson",
+      "properties": [
+        {
+          "name": "San Luis Rey",
+          "aka": null,
+          "state": "CA",
+          "within": "South Coast",
+          "created": "2024-09-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.295"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_miguel_district.geojson",
+      "properties": [
+        {
+          "name": "San Miguel District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.246"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_pasqual_valley.geojson",
+      "properties": [
+        {
+          "name": "San Pasqual Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "South Coast",
+          "created": "1981-09-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.25"
+        }
+      ]
+    },
+    {
+      "file": "avas/san_ysidro_district.geojson",
+      "properties": [
+        {
+          "name": "San Ysidro District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Francisco Bay|Santa Clara Valley",
+          "created": "1990-12-17",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.130"
+        }
+      ]
+    },
+    {
+      "file": "avas/santa_clara_valley.geojson",
+      "properties": [
+        {
+          "name": "Santa Clara Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|San Francisco Bay",
+          "created": "1989-04-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.126"
+        }
+      ]
+    },
+    {
+      "file": "avas/santa_cruz_mountains.geojson",
+      "properties": [
+        {
+          "name": "Santa Cruz Mountains",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1982-01-04",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.31"
+        }
+      ]
+    },
+    {
+      "file": "avas/santa_lucia_highlands.geojson",
+      "properties": [
+        {
+          "name": "Santa Lucia Highlands",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Monterey",
+          "created": "1992-06-15",
+          "valid_start": "2021-09-24",
+          "valid_end": null,
+          "cfr_index": "9.139"
+        }
+      ]
+    },
+    {
+      "file": "avas/santa_margarita_ranch.geojson",
+      "properties": [
+        {
+          "name": "Santa Margarita Ranch",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.247"
+        }
+      ]
+    },
+    {
+      "file": "avas/santa_maria_valley.geojson",
+      "properties": [
+        {
+          "name": "Santa Maria Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1981-09-04",
+          "valid_start": "2011-01-28",
+          "valid_end": null,
+          "cfr_index": "9.28"
+        }
+      ]
+    },
+    {
+      "file": "avas/santa_ynez_valley.geojson",
+      "properties": [
+        {
+          "name": "Santa Ynez Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1983-05-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.54"
+        }
+      ]
+    },
+    {
+      "file": "avas/seiad_valley.geojson",
+      "properties": [
+        {
+          "name": "Seiad Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1994-06-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.148"
+        }
+      ]
+    },
+    {
+      "file": "avas/seneca_lake.geojson",
+      "properties": [
+        {
+          "name": "Seneca Lake",
+          "aka": null,
+          "state": "NY",
+          "within": "Finger Lakes",
+          "created": "2003-09-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.128"
+        }
+      ]
+    },
+    {
+      "file": "avas/shawnee_hills.geojson",
+      "properties": [
+        {
+          "name": "Shawnee Hills",
+          "aka": null,
+          "state": "IL",
+          "within": null,
+          "created": "2006-12-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.206"
+        }
+      ]
+    },
+    {
+      "file": "avas/shenandoah_valley.geojson",
+      "properties": [
+        {
+          "name": "Shenandoah Valley",
+          "aka": null,
+          "state": "VA|WV",
+          "within": null,
+          "created": "1982-07-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.60"
+        }
+      ]
+    },
+    {
+      "file": "avas/sierra_foothills.geojson",
+      "properties": [
+        {
+          "name": "Sierra Foothills",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1987-12-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.120"
+        }
+      ]
+    },
+    {
+      "file": "avas/sierra_pelona_valley.geojson",
+      "properties": [
+        {
+          "name": "Sierra Pelona Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2010-08-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.218"
+        }
+      ]
+    },
+    {
+      "file": "avas/sloughhouse.geojson",
+      "properties": [
+        {
+          "name": "Sloughhouse",
+          "aka": null,
+          "state": "CA",
+          "within": "Lodi",
+          "created": "2006-08-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.201"
+        }
+      ]
+    },
+    {
+      "file": "avas/snake_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Snake River Valley",
+          "aka": null,
+          "state": "ID| OR",
+          "within": null,
+          "created": "2007-04-09",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.208"
+        }
+      ]
+    },
+    {
+      "file": "avas/snipes_mountain.geojson",
+      "properties": [
+        {
+          "name": "Snipes Mountain",
+          "aka": null,
+          "state": "WA",
+          "within": "Yakima Valley|Columbia Valley",
+          "created": "2009-02-20",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.213"
+        }
+      ]
+    },
+    {
+      "file": "avas/solano_county_green_valley.geojson",
+      "properties": [
+        {
+          "name": "Solano County Green Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1983-01-28",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.44"
+        }
+      ]
+    },
+    {
+      "file": "avas/sonoita.geojson",
+      "properties": [
+        {
+          "name": "Sonoita",
+          "aka": null,
+          "state": "AZ",
+          "within": null,
+          "created": "1984-11-26",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.97"
+        }
+      ]
+    },
+    {
+      "file": "avas/sonoma_coast.geojson",
+      "properties": [
+        {
+          "name": "Sonoma Coast",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1987-07-13",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.116"
+        }
+      ]
+    },
+    {
+      "file": "avas/sonoma_mountain.geojson",
+      "properties": [
+        {
+          "name": "Sonoma Mountain",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Sonoma Valley",
+          "created": "1985-02-22",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.102"
+        }
+      ]
+    },
+    {
+      "file": "avas/sonoma_valley.geojson",
+      "properties": [
+        {
+          "name": "Sonoma Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast|Sonoma Coast",
+          "created": "1982-01-04",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.29"
+        }
+      ]
+    },
+    {
+      "file": "avas/south_coast.geojson",
+      "properties": [
+        {
+          "name": "South Coast",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1985-12-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.104"
+        }
+      ]
+    },
+    {
+      "file": "avas/southeastern_new_england.geojson",
+      "properties": [
+        {
+          "name": "Southeastern New England",
+          "aka": null,
+          "state": "CT|RI|MA",
+          "within": null,
+          "created": "1983-07-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.72"
+        }
+      ]
+    },
+    {
+      "file": "avas/southern_oregon.geojson",
+      "properties": [
+        {
+          "name": "Southern Oregon",
+          "aka": null,
+          "state": "OR",
+          "within": null,
+          "created": "2004-12-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.179"
+        }
+      ]
+    },
+    {
+      "file": "avas/spring_mountain_district.geojson",
+      "properties": [
+        {
+          "name": "Spring Mountain District",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1993-06-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.143"
+        }
+      ]
+    },
+    {
+      "file": "avas/squaw_valley_miramonte.geojson",
+      "properties": [
+        {
+          "name": "Squaw Valley-Miramonte",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2015-09-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.251"
+        }
+      ]
+    },
+    {
+      "file": "avas/st__helena.geojson",
+      "properties": [
+        {
+          "name": "St. Helena",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1995-10-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.149"
+        }
+      ]
+    },
+    {
+      "file": "avas/sta__rita_hills.geojson",
+      "properties": [
+        {
+          "name": "Sta. Rita Hills",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Santa Ynez Valley",
+          "created": "2001-07-30",
+          "valid_start": "2016-09-21",
+          "valid_end": null,
+          "cfr_index": "9.162"
+        }
+      ]
+    },
+    {
+      "file": "avas/stags_leap_district.geojson",
+      "properties": [
+        {
+          "name": "Stags Leap District",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1989-02-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.117"
+        }
+      ]
+    },
+    {
+      "file": "avas/suisun_valley.geojson",
+      "properties": [
+        {
+          "name": "Suisun Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "North Coast",
+          "created": "1982-12-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.45"
+        }
+      ]
+    },
+    {
+      "file": "avas/swan_creek.geojson",
+      "properties": [
+        {
+          "name": "Swan Creek",
+          "aka": null,
+          "state": "NC",
+          "within": "Yadkin Valley",
+          "created": "2008-05-27",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.211"
+        }
+      ]
+    },
+    {
+      "file": "avas/tehachapi_mountains.geojson",
+      "properties": [
+        {
+          "name": "Tehachapi Mountains",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2020-12-21",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.273"
+        }
+      ]
+    },
+    {
+      "file": "avas/temecula_valley.geojson",
+      "properties": [
+        {
+          "name": "Temecula Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "South Coast",
+          "created": "1984-11-23",
+          "valid_start": "2004-06-18",
+          "valid_end": null,
+          "cfr_index": "9.50"
+        }
+      ]
+    },
+    {
+      "file": "avas/templeton_gap_district.geojson",
+      "properties": [
+        {
+          "name": "Templeton Gap District",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast|Paso Robles",
+          "created": "2014-11-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.248"
+        }
+      ]
+    },
+    {
+      "file": "avas/texas_davis_mountains.geojson",
+      "properties": [
+        {
+          "name": "Texas Davis Mountains",
+          "aka": null,
+          "state": "TX",
+          "within": null,
+          "created": "1998-03-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.155"
+        }
+      ]
+    },
+    {
+      "file": "avas/texas_high_plains.geojson",
+      "properties": [
+        {
+          "name": "Texas High Plains",
+          "aka": null,
+          "state": "TX",
+          "within": null,
+          "created": "1993-03-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.144"
+        }
+      ]
+    },
+    {
+      "file": "avas/texas_hill_country.geojson",
+      "properties": [
+        {
+          "name": "Texas Hill Country",
+          "aka": null,
+          "state": "TX",
+          "within": null,
+          "created": "1993-07-28",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.136"
+        }
+      ]
+    },
+    {
+      "file": "avas/texoma.geojson",
+      "properties": [
+        {
+          "name": "Texoma",
+          "aka": null,
+          "state": "TX",
+          "within": null,
+          "created": "2005-12-07",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.185"
+        }
+      ]
+    },
+    {
+      "file": "avas/the_burn_of_columbia_valley.geojson",
+      "properties": [
+        {
+          "name": "The Burn of Columbia Valley",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2021-07-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.276"
+        }
+      ]
+    },
+    {
+      "file": "avas/the_hamptons_long_island.geojson",
+      "properties": [
+        {
+          "name": "The Hamptons, Long Island",
+          "aka": null,
+          "state": "NY",
+          "within": "Long Island",
+          "created": "1985-05-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.101"
+        }
+      ]
+    },
+    {
+      "file": "avas/the_rocks_district_of_milton_freewater.geojson",
+      "properties": [
+        {
+          "name": "The Rocks District of Milton-Freewater",
+          "aka": null,
+          "state": "OR",
+          "within": "Columbia Valley|Walla Walla Valley",
+          "created": "2015-03-11",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.249"
+        }
+      ]
+    },
+    {
+      "file": "avas/tip_of_the_mitt.geojson",
+      "properties": [
+        {
+          "name": "Tip of the Mitt",
+          "aka": null,
+          "state": "MI",
+          "within": null,
+          "created": "2018-04-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.257"
+        }
+      ]
+    },
+    {
+      "file": "avas/tracy_hills.geojson",
+      "properties": [
+        {
+          "name": "Tracy Hills",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2006-12-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.204"
+        }
+      ]
+    },
+    {
+      "file": "avas/trinity_lakes.geojson",
+      "properties": [
+        {
+          "name": "Trinity Lakes",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2005-04-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.184"
+        }
+      ]
+    },
+    {
+      "file": "avas/tualatin_hills.geojson",
+      "properties": [
+        {
+          "name": "Tualatin Hills",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2020-07-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.268"
+        }
+      ]
+    },
+    {
+      "file": "avas/ulupalakua.geojson",
+      "properties": [
+        {
+          "name": "Ulupalakua",
+          "aka": null,
+          "state": "HI",
+          "within": null,
+          "created": "2021-08-02",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.278"
+        }
+      ]
+    },
+    {
+      "file": "avas/umpqua_valley.geojson",
+      "properties": [
+        {
+          "name": "Umpqua Valley",
+          "aka": null,
+          "state": "OR",
+          "within": "Southern Oregon",
+          "created": "1984-03-16",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.89"
+        }
+      ]
+    },
+    {
+      "file": "avas/upper_cumberland.geojson",
+      "properties": [
+        {
+          "name": "Upper Cumberland",
+          "aka": null,
+          "state": "Tennessee",
+          "within": null,
+          "created": "2024-05-15",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.294"
+        }
+      ]
+    },
+    {
+      "file": "avas/upper_hiwassee_highlands.geojson",
+      "properties": [
+        {
+          "name": "Upper Hiwassee Highlands",
+          "aka": null,
+          "state": "GA|NC",
+          "within": null,
+          "created": "2014-08-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.234"
+        }
+      ]
+    },
+    {
+      "file": "avas/upper_hudson.geojson",
+      "properties": [
+        {
+          "name": "Upper Hudson",
+          "aka": null,
+          "state": "NY",
+          "within": null,
+          "created": "2019-01-07",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.264"
+        }
+      ]
+    },
+    {
+      "file": "avas/upper_lake_valley.geojson",
+      "properties": [
+        {
+          "name": "Upper Lake Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Clear Lake|North Coast",
+          "created": "2022-07-05",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.286"
+        }
+      ]
+    },
+    {
+      "file": "avas/upper_mississippi_river_valley.geojson",
+      "properties": [
+        {
+          "name": "Upper Mississippi River Valley",
+          "aka": null,
+          "state": "IL|IA|MN|WI",
+          "within": null,
+          "created": "2009-07-22",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.216"
+        }
+      ]
+    },
+    {
+      "file": "avas/van_duzer_corridor.geojson",
+      "properties": [
+        {
+          "name": "Van Duzer Corridor",
+          "aka": null,
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2018-12-14",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.265"
+        }
+      ]
+    },
+    {
+      "file": "avas/verde_valley.geojson",
+      "properties": [
+        {
+          "name": "Verde Valley",
+          "aka": null,
+          "state": "AZ",
+          "within": null,
+          "created": "2021-12-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.280"
+        }
+      ]
+    },
+    {
+      "file": "avas/virginia_peninsula.geojson",
+      "properties": [
+        {
+          "name": "Virginia Peninsula",
+          "aka": null,
+          "state": "VA",
+          "within": null,
+          "created": "2021-09-24",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.279"
+        }
+      ]
+    },
+    {
+      "file": "avas/virginia_s_eastern_shore.geojson",
+      "properties": [
+        {
+          "name": "Virginia’s Eastern Shore",
+          "aka": null,
+          "state": "VA",
+          "within": null,
+          "created": "1990-12-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.135"
+        }
+      ]
+    },
+    {
+      "file": "avas/wahluke_slope.geojson",
+      "properties": [
+        {
+          "name": "Wahluke Slope",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2006-01-06",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.192"
+        }
+      ]
+    },
+    {
+      "file": "avas/walla_walla_valley.geojson",
+      "properties": [
+        {
+          "name": "Walla Walla Valley",
+          "aka": null,
+          "state": "OR|WA",
+          "within": "Columbia Valley",
+          "created": "1984-01-12",
+          "valid_start": "2001-04-27",
+          "valid_end": null,
+          "cfr_index": "9.91"
+        }
+      ]
+    },
+    {
+      "file": "avas/warren_hills.geojson",
+      "properties": [
+        {
+          "name": "Warren Hills",
+          "aka": null,
+          "state": "NJ",
+          "within": null,
+          "created": "1988-07-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.121"
+        }
+      ]
+    },
+    {
+      "file": "avas/west_elks.geojson",
+      "properties": [
+        {
+          "name": "West Elks",
+          "aka": null,
+          "state": "CO",
+          "within": null,
+          "created": "2001-05-07",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.172"
+        }
+      ]
+    },
+    {
+      "file": "avas/west_sonoma_coast.geojson",
+      "properties": [
+        {
+          "name": "West Sonoma Coast",
+          "aka": null,
+          "state": "CA",
+          "within": "Sonoma Coast, North Coast",
+          "created": "2022-05-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.283"
+        }
+      ]
+    },
+    {
+      "file": "avas/western_connecticut_highlands.geojson",
+      "properties": [
+        {
+          "name": "Western Connecticut Highlands",
+          "aka": null,
+          "state": "CT",
+          "within": null,
+          "created": "1988-03-10",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.122"
+        }
+      ]
+    },
+    {
+      "file": "avas/white_bluffs.geojson",
+      "properties": [
+        {
+          "name": "White Bluffs",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "2021-07-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.275"
+        }
+      ]
+    },
+    {
+      "file": "avas/wild_horse_valley.geojson",
+      "properties": [
+        {
+          "name": "Wild Horse Valley",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast|Solano County|Green Valley",
+          "created": "1988-12-30",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.124"
+        }
+      ]
+    },
+    {
+      "file": "avas/willamette_valley.geojson",
+      "properties": [
+        {
+          "name": "Willamette Valley",
+          "aka": null,
+          "state": "OR",
+          "within": null,
+          "created": "1983-12-01",
+          "valid_start": "2016-04-04",
+          "valid_end": null,
+          "cfr_index": "9.90"
+        }
+      ]
+    },
+    {
+      "file": "avas/willcox.geojson",
+      "properties": [
+        {
+          "name": "Willcox",
+          "aka": null,
+          "state": "AZ",
+          "within": null,
+          "created": "2016-10-12",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.259"
+        }
+      ]
+    },
+    {
+      "file": "avas/willow_creek.geojson",
+      "properties": [
+        {
+          "name": "Willow Creek",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "1983-09-19",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.85"
+        }
+      ]
+    },
+    {
+      "file": "avas/winters_highlands.geojson",
+      "properties": [
+        {
+          "name": "Winters Highlands",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2023-08-29",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.290"
+        }
+      ]
+    },
+    {
+      "file": "avas/wisconsin_ledge.geojson",
+      "properties": [
+        {
+          "name": "Wisconsin Ledge",
+          "aka": null,
+          "state": "WI",
+          "within": null,
+          "created": "2012-04-23",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.224"
+        }
+      ]
+    },
+    {
+      "file": "avas/yadkin_valley.geojson",
+      "properties": [
+        {
+          "name": "Yadkin Valley",
+          "aka": null,
+          "state": "NC",
+          "within": null,
+          "created": "2002-12-09",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.174"
+        }
+      ]
+    },
+    {
+      "file": "avas/yakima_valley.geojson",
+      "properties": [
+        {
+          "name": "Yakima Valley",
+          "aka": null,
+          "state": "WA",
+          "within": "Columbia Valley",
+          "created": "1983-04-04",
+          "valid_start": "2020-10-26",
+          "valid_end": null,
+          "cfr_index": "9.69"
+        }
+      ]
+    },
+    {
+      "file": "avas/yamhill_carlton.geojson",
+      "properties": [
+        {
+          "name": "Yamhill-Carlton",
+          "aka": "Yamhill-Carlton District",
+          "state": "OR",
+          "within": "Willamette Valley",
+          "created": "2004-11-18",
+          "valid_start": "2010-12-03",
+          "valid_end": null,
+          "cfr_index": "9.183"
+        }
+      ]
+    },
+    {
+      "file": "avas/york_mountain.geojson",
+      "properties": [
+        {
+          "name": "York Mountain",
+          "aka": null,
+          "state": "CA",
+          "within": "Central Coast",
+          "created": "1983-09-23",
+          "valid_start": "1987-02-27",
+          "valid_end": null,
+          "cfr_index": "9.80"
+        }
+      ]
+    },
+    {
+      "file": "avas/yorkville_highlands.geojson",
+      "properties": [
+        {
+          "name": "Yorkville Highlands",
+          "aka": null,
+          "state": "CA",
+          "within": "Mendocino|North Coast",
+          "created": "1998-06-08",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.159"
+        }
+      ]
+    },
+    {
+      "file": "avas/yountville.geojson",
+      "properties": [
+        {
+          "name": "Yountville",
+          "aka": null,
+          "state": "CA",
+          "within": "Napa Valley|North Coast",
+          "created": "1999-05-18",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.160"
+        }
+      ]
+    },
+    {
+      "file": "avas/yucaipa_valley.geojson",
+      "properties": [
+        {
+          "name": "Yucaipa Valley",
+          "aka": null,
+          "state": "CA",
+          "within": null,
+          "created": "2024-05-28",
+          "valid_start": null,
+          "valid_end": null,
+          "cfr_index": "9.293"
+        }
+      ]
+    }
+  ]
+}

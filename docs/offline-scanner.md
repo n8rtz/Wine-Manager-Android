@@ -328,3 +328,16 @@ addresses, producer names and expected benchmark answers cannot supply this anch
 Short/incomplete aliases cannot expand a fragment into a long appellation. Guesses
 never alter raw OCR/scores and all dependent candidates are capped YELLOW with a
 contextual-repair explanation. No acceptance thresholds or image passes changed.
+
+### Large offline relationship catalog
+
+See [`data/wine-knowledge/README.md`](../data/wine-knowledge/README.md) and its main
+[`origins.csv`](../data/wine-knowledge/origins.csv): 1,020 named origins across 29 countries,
+121 role/classification/style terms, and 42 non-inferential typical-grape associations.
+The bundled generator is deterministic and network-free. UC Davis CC0 AVA metadata is pinned;
+non-U.S. additions are explicitly project-authored references, not a verified global legal registry.
+New reference-derived geography stays YELLOW, contradictions stay visible, multi-state origins
+never pick an arbitrary state, and importer text cannot provide origin evidence. Typical grapes
+are not used to fill absent fields. Existing imported records, manual edits, scan deadlines,
+bitmap limits and OCR Lab truth isolation remain unchanged. Run the catalog `--check`, Python
+tests and host logic checks described in the catalog README; these are not APK/emulator checks.

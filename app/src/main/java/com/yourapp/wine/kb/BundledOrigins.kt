@@ -1,28 +1,37 @@
 package com.yourapp.wine.kb
 
-/** Existing source-authored wine vocabulary shared with the legacy parser; not a world-catalog download. */
+/** Legacy vocabulary plus a generated reference overlay; the legacy source string remains parser-compatible. */
 object BundledOrigins {
-    val terms: List<WineOriginTerm> by lazy { source.trimIndent().lineSequence().map(String::trim).filter(String::isNotEmpty).map { line ->
+    private val legacyTerms: List<WineOriginTerm> by lazy { source.trimIndent().lineSequence().map(String::trim).filter(String::isNotEmpty).map { line ->
         val parts = line.split('|')
         WineOriginTerm(parts[0].trim(), parts[1].trim(), parts[2].trim(), parts.getOrNull(5)?.split(';')?.map(String::trim).orEmpty())
     }.toList() }
 
+    private val legacyIndex by lazy { legacyTerms.associateBy { it.country to com.yourapp.wine.merge.TextNorm.normalize(it.name) } }
+    fun legacy(name: String, country: String): WineOriginTerm? = legacyIndex[country to com.yourapp.wine.merge.TextNorm.normalize(name)]
+
+    // Catalog overrides may remove an unjustified single region (e.g. cross-state AVAs or Prosecco).
+    val terms: List<WineOriginTerm> by lazy {
+        (ReferenceWineCatalog.terms.map { term -> term.copy(aliases =
+            (term.aliases + legacy(term.name, term.country)?.aliases.orEmpty()).distinct()) } + legacyTerms).distinctBy { it.country to com.yourapp.wine.merge.TextNorm.normalize(it.name) }
+    }
+
     private val countryCodes = mapOf("France" to "FR", "Italy" to "IT", "Spain" to "ES", "Portugal" to "PT",
         "Germany" to "DE", "Greece" to "GR", "Georgia" to "GE", "United States" to "US",
-        "Australia" to "AU", "New Zealand" to "NZ", "South Africa" to "ZA", "Chile" to "CL", "Argentina" to "AR")
+        "Australia" to "AU", "New Zealand" to "NZ", "South Africa" to "ZA", "Chile" to "CL", "Argentina" to "AR") + ReferenceWineCatalog.countryCodes
     /** No coordinates: ISO codes for the countries already present in the authored table. */
     fun countryCode(name: String): String? = countryCodes[name]
     private val aliases by lazy {
         val result = mutableMapOf<Pair<String,String>, MutableSet<String>>()
         fun add(code: String, forms: List<String>) {
-            forms.forEach { form -> result.getOrPut(code to com.yourapp.wine.merge.TextNorm.normalize(form)) { linkedSetOf() }.addAll(forms) }
+            forms.filter(String::isNotBlank).forEach { form -> result.getOrPut(code to com.yourapp.wine.merge.TextNorm.normalize(form)) { linkedSetOf() }.addAll(forms) }
         }
         terms.forEach { term -> countryCode(term.country)?.let { code ->
             add(code, listOf(term.country)); add(code, listOf(term.region)); add(code, listOf(term.name) + term.aliases)
         } }
         result.mapValues { it.value.toList() }
     }
-    /** No coordinates: only verified forms for this name/country; unknown imported places remain untouched. */
+    /** No coordinates: only catalogued forms for this name/country; unknown imported places remain untouched. */
     fun spellingForms(place: Place): List<String> = if (place.type == "country") {
         countryCodes.filterValues { it == place.countryCode }.keys.toList()
     } else aliases[place.countryCode to place.nameNorm].orEmpty()

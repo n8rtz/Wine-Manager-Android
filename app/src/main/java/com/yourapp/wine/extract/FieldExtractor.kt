@@ -31,7 +31,10 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         result[FieldId.VINTAGE] = vintage.extract(lines, currentYear)
         val geography = hierarchy.snapshot()
         val whole = lines.joinToString(" ") { it.text }
-        val claims = (lines.flatMap { matchPlaces(it.text, it.tokens) } + matchPlaces(whole, lines.flatMap { it.tokens }))
+        // Importer/distributor and warning lines are not wine-origin evidence, in any catalog language.
+        val originLines = lines.filterNot { com.yourapp.wine.kb.ReferenceWineCatalog.isAdministrative(it.text) }
+        val claims = (originLines.flatMap { matchPlaces(it.text, it.tokens) } +
+            matchPlaces(originLines.joinToString(" ") { it.text }, originLines.flatMap { it.tokens }))
             .distinctBy { it.place.id }.sortedWith(compareByDescending<PlaceClaim> { geography.ancestors(it.place).size }
                 .thenByDescending { it.place.nameNorm.length }.thenByDescending { vote(it.sources) })
         val primary = claims.firstOrNull()
@@ -41,7 +44,8 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 val explicit = claims.filter { fieldFor(it.place) == field }
                 val inherited = when (field) {
                     FieldId.COUNTRY -> path.firstOrNull { it.type == "country" }
-                    FieldId.REGION -> path.firstOrNull { it.type == "region" }
+                    FieldId.REGION -> if ((com.yourapp.wine.kb.ReferenceWineCatalog.origin(primary.place)?.regions?.size ?: 0) > 1)
+                        null else path.firstOrNull { it.type == "region" }
                     else -> path.firstOrNull { it.type in setOf("subregion", "appellation") }
                 }
                 val candidates = explicit.map { claim -> placeCandidate(field, claim.place, claim.sources, "Label gazetteer match") } +
@@ -143,6 +147,13 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         if (contextual.repaired.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
             if (candidate.sources.any { it in contextual.repaired }) candidate.copy(state = UiState.YELLOW,
                 reason = candidate.reason + "; contextual appellation spelling suggestion supported by separate geography — confirm; raw OCR unchanged")
+            else candidate
+        } }
+        val referenceSources = claims.filter { com.yourapp.wine.kb.ReferenceWineCatalog.requiresConfirmation(it.place) }
+            .flatMap { it.sources }.toSet()
+        if (referenceSources.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
+            if (candidate.state != UiState.RED && candidate.sources.any { it in referenceSources }) candidate.copy(state = UiState.YELLOW,
+                reason = candidate.reason + "; expanded reference-catalog origin — confirm; not a legal certification")
             else candidate
         } }
         return ExtractionResult(result, claims)

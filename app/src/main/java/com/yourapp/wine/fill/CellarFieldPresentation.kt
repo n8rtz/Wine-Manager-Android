@@ -26,6 +26,10 @@ object CellarFieldPresentation {
             fields[FieldId.REGION] = FieldCandidate(FieldId.REGION,"",UiState.RED,
                 "State moved to Country; no separate regional candidate supplied",emptyList())
         }
+        if (TextNorm.normalize(country.value) == "united states" && state.state == UiState.RED) {
+            fields[FieldId.COUNTRY] = country.copy(value = "", state = UiState.RED,
+                reason = country.reason + "; U.S. origin known but state not determined; enter state for cellar Country")
+        }
         return result.copy(fields = fields)
     }
 }

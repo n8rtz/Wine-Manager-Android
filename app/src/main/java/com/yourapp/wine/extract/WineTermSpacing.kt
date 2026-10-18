@@ -29,7 +29,7 @@ class WineTermSpacing(forms: List<Pair<String, String>>) {
             for (end in index until minOf(words.size, index + 12)) {
                 if (end > index) {
                     val gap = text.substring(words[end-1].range.last + 1, words[end].range.first)
-                    if (gap.any { !it.isWhitespace() && it !in "'-’" }) break
+                    if (gap.any { !it.isWhitespace() && it !in "'-’!" }) break
                 }
                 key += compact(words[end].value)
                 if (key.length > maxLength) break
@@ -53,7 +53,7 @@ class WineTermSpacing(forms: List<Pair<String, String>>) {
             // Keep the label's legitimate grape alias (e.g. Petite Sirah), not a different synonym.
             WineTermSpacing((BundledGrapes.terms + BundledWineStyles.terms).flatMap { term ->
                 (listOf(term.name) + term.aliases).map { it to it }
-            } + WineDesignations.names.map { it to it })
+            } + com.yourapp.wine.kb.ReferenceWineCatalog.labelTerms.filter { it.role !in setOf("producer_marker", "administrative_prefix") }.map { it.name to it.name })
         }
     }
 }

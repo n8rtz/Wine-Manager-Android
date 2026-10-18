@@ -5,8 +5,7 @@ import com.yourapp.wine.merge.TextNorm
 
 /** Designations qualify a name; none of these words by itself establishes a country or producer. */
 object WineDesignations {
-    val names = listOf("Gran Reserva", "Gran Riserva", "Grand Reserve", "Reserva", "Riserva", "Reserve",
-        "Crianza", "Premier Grand Cru Classé", "Grand Cru Classé", "Grand Cru", "Premier Cru", "1er Cru", "Villages")
+    val names = com.yourapp.wine.kb.ReferenceWineCatalog.names("suffix")
     private fun key(text: String) = TextNorm.normalize(text).filter(Char::isLetterOrDigit)
     private val standalone = names.associateBy(::key)
     fun display(text: String): String? = standalone[key(text)]
@@ -30,7 +29,11 @@ object WineDesignations {
     }
 
     // Only authored appellation/style terms, not generic countries/states or an arbitrary fuzzy place name.
-    val appellations by lazy { BundledOrigins.terms.filter { it.country in setOf("France", "Italy", "Spain", "Portugal") } }
+    val appellations by lazy { BundledOrigins.terms.filter { term ->
+        val reference = com.yourapp.wine.kb.ReferenceWineCatalog.named(term.name, BundledOrigins.countryCode(term.country).orEmpty())
+        if (reference != null) reference.nameRole == "appellation"
+        else term.country in setOf("France", "Italy", "Spain", "Portugal")
+    } }
     private val appellationKeys by lazy { appellations.flatMap { listOf(it.name) + it.aliases }.map(::key).toSet() }
     fun isAppellationName(text: String): Boolean = key(text) in appellationKeys ||
         key(split(text).base) in appellationKeys || LabelTextRoles.isRhoneAppellation(text)

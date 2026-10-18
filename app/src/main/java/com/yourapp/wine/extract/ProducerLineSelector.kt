@@ -52,7 +52,7 @@ class ProducerLineSelector {
     /** No coordinates: a bare administrative producer word is not an identity or a wine name. */
     fun isMarker(text: String): Boolean {
         val normalized = TextNorm.normalize(text)
-        return normalized.none(Char::isDigit) && normalized.filter(Char::isLetter) in markers
+        return normalized.none(Char::isDigit) && normalized.filter(Char::isLetter) in compactMarkers
     }
 
     /** No coordinates: these standalone production statements are not producer/cuvee identities. */
@@ -61,6 +61,7 @@ class ProducerLineSelector {
     /** No coordinates: generic varietal/style lines can name a wine, but cannot identify an unknown producer. */
     fun isWineDescription(text: String): Boolean {
         val normalized = TextNorm.normalize(WineTermSpacing.wineWords.repair(text).text)
+        if (com.yourapp.wine.kb.ReferenceWineCatalog.isDescription(text)) return true
         if (WineDesignations.isAppellationName(text) || WineDesignations.isDesignation(text) || WineDesignations.hasNameAndDesignation(text)) return true
         if (normalized in styles || normalized.filter(Char::isLetterOrDigit) in compactStyles) return true
         var remaining = normalized
@@ -77,7 +78,9 @@ class ProducerLineSelector {
 
     private companion object {
         val markers = setOf("chateau", "domaine", "winery", "wines", "bodega", "bodegas", "estate",
-            "vineyard", "vineyards", "cellars", "weingut", "quinta", "finca", "tenuta", "cantina", "maison")
+            "vineyard", "vineyards", "cellars", "weingut", "quinta", "finca", "tenuta", "cantina", "maison") +
+            com.yourapp.wine.kb.ReferenceWineCatalog.names("producer_marker").map(TextNorm::normalize)
+        val compactMarkers = markers.map { it.filter(Char::isLetter) }.toSet()
         val producerCue = Regex("\\b(?:${markers.joinToString("|")})\\b")
         val producerFooter = Regex("^(?:winery|wines|vineyards?|cellars|estate)\\s+\\S")
         val administrative = setOf("estate grown", "estate bottled", "bottled at the estate")

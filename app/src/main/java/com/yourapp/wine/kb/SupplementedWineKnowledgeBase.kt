@@ -35,8 +35,12 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
             val countries = byCountry[code].orEmpty()
             val country = if (countries.isEmpty()) add(term.country, "country", null, code) else countries.singleOrNull()
             if (country == null) continue
-            val region = add(term.region, "region", country.id, code) ?: continue
-            if (TextNorm.normalize(term.name) != region.nameNorm) add(term.name, "appellation", region.id, code)
+            val region = if (term.region.isBlank()) country else add(term.region, "region", country.id, code) ?: continue
+            val reference = ReferenceWineCatalog.named(term.name, code)
+            val type = if (reference?.nameRole == "geography") {
+                if (term.region.isBlank() && reference.regions.isEmpty()) "region" else "subregion"
+            } else "appellation"
+            if (TextNorm.normalize(term.name) != region.nameNorm) add(term.name, type, region.id, code)
         }
         // Explicit, real containment omitted by the old flat list. Only virtual children may be linked;
         // an imported place's chosen hierarchy always wins and can still produce a YELLOW conflict.
