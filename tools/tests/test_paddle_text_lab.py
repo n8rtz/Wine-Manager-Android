@@ -11,6 +11,16 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertEqual(meta['dictionary_entries'],18383)
         self.assertLess(meta['model_bytes']+len(raw),80*1024*1024)
         self.assertIn('Apache License',(DATA/'LICENSE-PaddleOCR.txt').read_text())
+    def test_gradle_task_avoids_java_accessor_shadowing(self):
+        gradle=(ROOT/'app/build.gradle.kts').read_text()
+        task=gradle.split('abstract class PrepareTextLabPaddle',1)[1]
+        for name in ('java.io.File','java.net.URI','java.nio.file.Files',
+                     'java.nio.file.StandardCopyOption','java.security.MessageDigest'):
+            self.assertIn('import '+name,gradle)
+            self.assertNotIn(name,task)
+        self.assertIn('MessageDigest.getInstance("SHA-256")',task)
+        self.assertIn('Files.move(',task)
+
     def test_debug_only_generated_model_and_runtime(self):
         meta=json.loads((DATA/'provenance.json').read_text())
         gradle=(ROOT/'app/build.gradle.kts').read_text()

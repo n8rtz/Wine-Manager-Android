@@ -1,3 +1,9 @@
+import java.io.File
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
+
 plugins {
     alias(libs.plugins.android.application)
     // alias(libs.plugins.kotlin.android) // This is the cause of the duplicate extension error
@@ -158,8 +164,8 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
     @TaskAction
     fun prepare() {
         val expected = "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224"
-        fun hash(file: java.io.File): String {
-            val digest = java.security.MessageDigest.getInstance("SHA-256")
+        fun hash(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
             file.inputStream().use { input ->
                 val buffer = ByteArray(32768)
                 while (true) { val n = input.read(buffer); if (n < 0) break; digest.update(buffer, 0, n) }
@@ -167,11 +173,11 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
             return digest.digest().joinToString("") { "%02x".format(it) }
         }
         val folder = outputDirectory.dir("text-lab-paddle-v1").get().asFile.apply { mkdirs() }
-        val model = java.io.File(folder, "inference.onnx")
+        val model = File(folder, "inference.onnx")
         if (model.isFile && model.length() == 16562373L && hash(model) == expected) return
-        val temp = java.io.File(folder, "model.download")
+        val temp = File(folder, "model.download")
         try {
-            val connection = java.net.URI("https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx")
+            val connection = URI("https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx")
                 .toURL().openConnection().apply { connectTimeout = 30000; readTimeout = 30000 }
             connection.getInputStream().use { input -> temp.outputStream().use { output ->
                 val buffer = ByteArray(32768); var total = 0L
@@ -182,7 +188,7 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
                 }
             } }
             check(temp.length() == 16562373L && hash(temp) == expected) { "Paddle asset checksum mismatch" }
-            java.nio.file.Files.move(temp.toPath(), model.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            Files.move(temp.toPath(), model.toPath(), StandardCopyOption.REPLACE_EXISTING)
         } catch (error: Exception) {
             throw GradleException("Cannot prepare genuine PP-OCRv5 Text Lab model. Check build-machine access to GitHub release assets and retry. No placeholder model is allowed.", error)
         } finally { temp.delete() }
