@@ -60,6 +60,7 @@ fun ProfileScreen(
     onParetoClick: () -> Unit = {},
     onImportComplete: () -> Unit
 ) {
+    val context = LocalContext.current
     val importState by viewModel.importState
     val imageImportState by wineImageImportViewModel.state.collectAsState()
     val storageStatus by wineImageImportViewModel.storageStatus.collectAsState()
