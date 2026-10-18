@@ -46,7 +46,8 @@ def body(code, name):
 
 def violations():
     errors = []
-    sources = sorted(LOCAL_ROOT.rglob("*.kt")) + [FACADE]
+    debug_root = ROOT / "app/src/debug/java/com/yourapp/wine"
+    sources = sorted(LOCAL_ROOT.rglob("*.kt")) + sorted(debug_root.rglob("*.kt")) + [FACADE]
     if len(sources) < 10:
         raise AssertionError("Missing recognition source tree")
     for path in sources:

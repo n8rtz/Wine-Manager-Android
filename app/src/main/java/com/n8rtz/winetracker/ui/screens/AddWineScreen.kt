@@ -204,6 +204,12 @@ fun AddWineScreen(
                         runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                             .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
                     })
+                if (BuildConfig.DEBUG) {
+                    OutlinedButton(enabled = !labelScanState.isBusy && !showLabelCamera, onClick = {
+                        context.startActivity(android.content.Intent().setClassName(context,
+                            "com.yourapp.wine.benchmark.OcrLabActivity"))
+                    }) { Text("OCR Lab — compare 30 treatments") }
+                }
                 (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,

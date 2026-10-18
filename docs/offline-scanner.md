@@ -276,5 +276,13 @@ color-preserving filters describe intermediate processing, not color input to ML
 
 This reporting change adds no new image manipulation. Sauvola/Wolf binarization,
 stroke dilation, slant correction, skeletonization and ligature cutting are not
-implemented. They need controlled original-versus-treated image/OCR comparisons;
+implemented in the normal scanner. They need controlled original-versus-treated image/OCR comparisons;
 adding destructive filters without those measurements is not an accuracy guarantee.
+
+### Debug OCR Lab
+
+Debug builds now include **Add New Wine → OCR Lab — compare 30 treatments**.
+This opt-in benchmark is separate from normal scanning. See [ocr-lab.md](ocr-lab.md)
+for recipes, scoring limitations, budgets and explicit image/diagnostics export.
+Sauvola, stroke thickening, fixed shear and Zhang–Suen thinning are implemented
+only in this debug source set; the production pipeline remains unchanged.

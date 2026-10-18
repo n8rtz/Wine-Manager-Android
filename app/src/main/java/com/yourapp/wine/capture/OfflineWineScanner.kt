@@ -28,7 +28,21 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
     private val scans = Semaphore(1)
 
     /** JPEG original coordinates are EXIF-upright; shutterMs MUST be elapsedRealtime at the shutter request. */
-    suspend fun scan(file: File, shutterMs: Long, source: ScanInputSource = ScanInputSource.FILE): ScanReport = withContext(Dispatchers.Default) {
+    suspend fun scan(file: File, shutterMs: Long, source: ScanInputSource = ScanInputSource.FILE): ScanReport =
+        scanInternal(file, shutterMs, source)
+
+    /** Debug harness only: copies the base rectified pixels before any variant, under the normal scan budget. */
+    internal suspend fun captureBenchmarkBase(file: File, target: File): ScanReport =
+        scanInternal(file, SystemClock.elapsedRealtime(), ScanInputSource.FILE) { bitmap ->
+            target.outputStream().use { check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)) }
+        }
+
+    /** Shares the normal scan/native-engine serialization; callers must release their workspaces before returning. */
+    internal suspend fun <T> withBenchmarkEngines(block: suspend (List<OcrEngine>, ResilientFillEngine) -> T): T =
+        scans.withPermit { block(engines, fills) }
+
+    private suspend fun scanInternal(file: File, shutterMs: Long, source: ScanInputSource,
+        onBase: ((android.graphics.Bitmap) -> Unit)? = null): ScanReport = withContext(Dispatchers.Default) {
         val trace = ScanTraceRecorder(SystemClock::elapsedRealtime)
         var diagnostics = ScanDiagnostics(source = source, inputBytes = file.length(),
             kbImplementation = "${kb.javaClass.simpleName}+curated_origins",
@@ -100,6 +114,7 @@ class OfflineWineScanner(private val kb: WineKnowledgeBase, private val engines:
                         rectW = rectified.bitmap.width; rectH = rectified.bitmap.height
                         // Free the working scene BEFORE allocating any rectified preprocess variant.
                         workspace.release(working)
+                        onBase?.invoke(rectified.bitmap)
                         val mapper = CoordMapper(rectified.originalToRect, originalW, originalH, rectW, rectH)
                         val workToRect = rectified.originalToRect * Matrix3.scale(originalW.toDouble() / geom.workW,
                             originalH.toDouble() / geom.workH)
