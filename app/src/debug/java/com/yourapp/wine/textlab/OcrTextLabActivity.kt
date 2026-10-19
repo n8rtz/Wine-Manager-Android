@@ -40,64 +40,75 @@ class OcrTextLabActivity:ComponentActivity() {
 private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
     val state by vm.state.collectAsState()
     val clipboard=LocalClipboardManager.current
-    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::choose) }
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if(uris.isNotEmpty()) vm.choose(uris) }
     val csvExporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::exportCsv) }
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp),
         contentPadding=PaddingValues(vertical=16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item {
             Text("OCR Text Lab",style=MaterialTheme.typography.headlineSmall)
-            Text("Test a full label with line detection, or a single line without detection. Compare raw recognizers—no wine-name correction or field assignment. Photos stay on this device.")
-            Button(onClick={picker.launch(arrayOf("image/*"))},enabled=!state.busy) { Text("Choose image") }
+            Text("Choose multiple images and compare raw OCR pipelines. Full images are selected by default; optionally draw a separate crop on each. No wine-name correction or field assignment. Photos stay on this device.")
+            Button(onClick={picker.launch(arrayOf("image/*"))},enabled=!state.busy) { Text("Choose images") }
+            Text("Choosing again replaces the image queue, not your saved CSV.",style=MaterialTheme.typography.bodySmall)
             Text(state.message)
             if(state.busy) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
                 TextButton(onClick=vm::cancel) { Text("Stop") }
             }
         }
+        if(state.images.isNotEmpty()) item {
+            Text("Image ${state.activeImage+1} of ${state.images.size}: ${state.current?.name}",style=MaterialTheme.typography.titleMedium)
+            Row {
+                TextButton(enabled=!state.busy && state.activeImage>0,onClick={vm.showImage(state.activeImage-1)}) { Text("Previous") }
+                TextButton(enabled=!state.busy && state.activeImage<state.images.lastIndex,onClick={vm.showImage(state.activeImage+1)}) { Text("Next") }
+            }
+            state.current?.error?.let { Text(it+". This image's failure will be included in the batch CSV.") }
+        }
         state.photo?.let { photo ->
             item {
-                Text("Draw a new box to replace the selection. The full photo is preserved; only the selected rectangle goes to OCR.")
+                Text("This crop belongs only to this image. Previous/Next keeps each image's selection.")
                 if(!state.busy) CropCanvas(photo,state.selection,vm::select)
-                Text("Upright photo: ${photo.originalW} × ${photo.originalH}. Working image: ${photo.width} × ${photo.height} (maximum edge 1920).",style=MaterialTheme.typography.bodySmall)
+                Text("Upright photo: ${photo.originalW} × ${photo.originalH}. Working: ${photo.width} × ${photo.height} (maximum edge 1920).",style=MaterialTheme.typography.bodySmall)
                 Row {
                     TextButton(enabled=!state.busy,onClick={vm.select(null)}) { Text("Clear box") }
                     TextButton(enabled=!state.busy,onClick={vm.select(TextCrop(0f,0f,1f,1f))}) { Text("Select full image") }
                 }
-                Row {
-                    Checkbox(state.enlarge,{vm.enlarge(it)},enabled=!state.busy)
-                    Text("Enlarge crop up to 2× before OCR")
-                }
-                Text("Candidates to include in this test",style=MaterialTheme.typography.titleMedium)
-                PaddleCandidates.all.forEach { candidate ->
-                    Row {
-                        Checkbox(candidate.id in state.selectedCandidates,{vm.candidate(candidate.id,it)},enabled=!state.busy)
-                        Text(candidate.title)
-                    }
-                }
-                Row {
-                    Checkbox(state.detectLines,{vm.detectLines(it)},enabled=!state.busy)
-                    Text("Detect text lines first (full-label mode)")
-                }
-                Text("Same crop for every enabled candidate. Runs sequentially with ${TextLabBudgets.OCR_MS / 1000} seconds per candidate and a separate ${TextLabBudgets.OCR_MS / 1000}-second ML Kit reference budget. All three plus the reference can take about four minutes, plus preparation; native calls may overrun. Stop retains partial CSV results.",style=MaterialTheme.typography.bodySmall)
-                Text("Sessions start fresh per candidate; model files may be cached. All models are bundled in this experimental debug build; toggles control execution. Scores are not directly comparable. Normal scanning is unchanged.",style=MaterialTheme.typography.bodySmall)
-                Text("For a tight single-word comparison, turn detection off (candidates 2 and 3 then use the same recognizer). Full-label detection uses up to 960 px edge and recognition uses rectified 48 px lines. At most 32 lines per candidate.",style=MaterialTheme.typography.bodySmall)
                 val pixels=state.selection?.pixels(photo.width,photo.height)
-                pixels?.let { Text("Crop: ${it.width} × ${it.height} working pixels") }
-                if(state.selection!=null && pixels==null) Text("Box is too small. Select at least 8 × 8 working pixels.")
-                if(state.selectedCandidates.isEmpty()) Text("Enable at least one candidate.")
-                Button(enabled=!state.busy && pixels!=null && state.selectedCandidates.isNotEmpty(),onClick=vm::run) { Text("Run selected candidates") }
+                if(pixels==null) Text("Select at least 8 × 8 pixels, or select the full image.")
+                else Text("Crop: ${pixels.width} × ${pixels.height} working pixels")
             }
         }
+        if(state.images.isNotEmpty()) item {
+            Row {
+                Checkbox(state.enlarge,{vm.enlarge(it)},enabled=!state.busy)
+                Text("Enlarge every selected crop up to 2×")
+            }
+            Text("Candidates for every image",style=MaterialTheme.typography.titleMedium)
+            PaddleCandidates.all.forEach { candidate ->
+                Row {
+                    Checkbox(candidate.id in state.selectedCandidates,{vm.candidate(candidate.id,it)},enabled=!state.busy)
+                    Text(candidate.title)
+                }
+            }
+            Row {
+                Checkbox(state.detectLines,{vm.detectLines(it)},enabled=!state.busy)
+                Text("Detect text lines first (full-label mode)")
+            }
+            Text("Images and candidates run sequentially. Each candidate and each image's ML Kit reference gets ${TextLabBudgets.OCR_MS / 1000} seconds. With all three candidates, allow up to about four minutes PER IMAGE plus preparation; native calls may overrun. Stop preserves partial and unrun results.",style=MaterialTheme.typography.bodySmall)
+            Text("Sessions start fresh per candidate; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line; candidates 2 and 3 then use the same recognizer. Normal scanning is unchanged.",style=MaterialTheme.typography.bodySmall)
+            if(!state.cropsReady) Text("One or more loaded images needs a valid crop. Review with Previous/Next or select full image.")
+            if(state.selectedCandidates.isEmpty()) Text("Enable at least one candidate.")
+            Button(enabled=!state.busy && state.cropsReady && state.selectedCandidates.isNotEmpty(),onClick=vm::run) { Text("Run all ${state.images.size} images") }
+        }
         if(!state.busy && state.cropPreview!=null) item {
-            Text("Shared crop (before each model’s input conversion)",style=MaterialTheme.typography.titleMedium)
+            Text("Test crop for the reviewed image",style=MaterialTheme.typography.titleMedium)
             AsyncImage(model=ImageRequest.Builder(LocalContext.current).data(state.cropPreview).size(900)
                 .memoryCachePolicy(CachePolicy.DISABLED).diskCachePolicy(CachePolicy.DISABLED).build(),
                 contentDescription="Selected text crop",contentScale=ContentScale.Fit,
                 modifier=Modifier.fillMaxWidth().heightIn(min=80.dp,max=280.dp))
         }
         if(state.lastCsv!=null) item {
-            Button(enabled=!state.busy,onClick={csvExporter.launch("wine-ocr-candidates-${state.lastCsv?.name}")}) { Text("Export last test CSV") }
-            Text("One CSV includes all chosen candidates, the shared ML Kit reference, timings, raw readings, coordinates and errors. Saved test: ${state.lastCsv?.name}",style=MaterialTheme.typography.bodySmall)
+            Button(enabled=!state.busy,onClick={csvExporter.launch("wine-ocr-batch-${state.lastCsv?.name}")}) { Text("Export last batch CSV") }
+            Text("One CSV includes every queued image and enabled candidate, including errors and partial results. Saved batch: ${state.lastCsv?.name}",style=MaterialTheme.typography.bodySmall)
         }
         if(state.result.isNotBlank()) item {
             TextButton(onClick={clipboard.setText(AnnotatedString(state.result))}) { Text("Copy OCR result") }

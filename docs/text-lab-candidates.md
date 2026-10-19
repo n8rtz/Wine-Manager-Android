@@ -2,26 +2,36 @@
 
 ## Run and export
 
-Profile → OCR Text Lab. Choose a photo, select the full label, and enable any combination:
+Profile → OCR Text Lab → **Choose images**. Use the Android document picker's multiple-selection
+controls (often long-press the first image, then select the others). Full images are selected
+by default. Use **Previous / Next** to review and optionally draw independent crops; a crop
+is never reused for another image. Choosing again replaces the queue. Enable any combination:
 
 1. **PP-OCRv5 Mobile detector + Mobile recognizer** — existing pipeline/models.
 2. **PP-OCRv6 Small detector + Medium recognizer**.
 3. **PP-OCRv6 Medium detector + Medium recognizer**.
 
-All three are enabled by default. **Run selected candidates** uses one prepared crop, never
-recrops or enlarges differently for different candidates. ML Kit is recorded once as a
-separate shared reference, not substituted for any candidate's detector. Unchecked candidates
-are not executed and have no result rows. With detection off, candidates 2 and 3 intentionally
-use the same Medium recognizer; use full-label mode to compare their detectors.
+All three are enabled by default. **Run all N images** runs images sequentially, with enabled
+candidates sequentially within each image. Candidate toggles, enlargement and line-detection
+settings apply across the batch. Each image uses one prepared crop for all its candidates,
+never differently recropped/enlarged for different candidates. ML Kit runs once per image as
+a shared reference. Unchecked candidates have no result rows. With detection off, crop each
+image to one line; candidates 2 and 3 intentionally use the same Medium recognizer.
 
-**Export last test CSV** uses Android's document picker and exports ONE UTF-8 CSV containing
-every selected candidate for that test, including failures/partial results. No ZIP or photo
-upload is needed. The last saved CSV remains exportable after changing the crop or reopening
-Text Lab. Each test has its own private UUID-named CSV in `noBackupFilesDir/text-lab-tests`;
-export is the last test, not a concatenation of all historical tests. Previous private test
-files are retained. Checkpoints are written at candidate boundaries, and final partial data
-is saved on Stop/error. A process death during native inference can leave an unfinished
-checkpoint (no `test_end` row), rather than falsely marking that test complete.
+**Export last batch CSV** exports ONE UTF-8 CSV containing every queued image and selected
+candidate, including failed imports, partial results and explicitly unrun candidates/images.
+No ZIP or photo upload is needed. Stop preserves completed work and marks remaining images
+unrun. Ordinary per-image errors do not prevent later images from running; cancellation or
+memory pressure stops the batch. A cleared/invalid crop must be fixed before starting.
+
+Each batch has its own UUID-named CSV in `noBackupFilesDir/text-lab-tests`; export is the last
+batch, not a concatenation of history. Previous private CSVs remain, including older single-test
+CSVs. The last saved CSV remains exportable after replacing the queue or reopening Text Lab.
+Checkpoints rewrite the same batch file at candidate/image boundaries. Process death can
+leave an unfinished checkpoint with `batch_status=running` and queued/unrun images; it must
+not be interpreted as complete. A final-save failure is reported; an earlier checkpoint may
+still be exportable. Original imported files/previews are temporary private files, released
+when the queue is replaced or Text Lab closes; only the active image is displayed/processed.
 
 The normal scanner, its eight-second shutter deadline, and automatic wine-field assignment
 are unchanged. The older 30-treatment OCR Lab is separate; these toggles/CSV belong to Text Lab.
@@ -31,7 +41,7 @@ are unchanged. The older 30-treatment OCR Lab is separate; these toggles/CSV bel
 - Shared preparation has an eight-second budget; the ML Kit reference gets a separate 60
   seconds. Each enabled Paddle candidate then gets its own 60 seconds for initialization,
   detection, rectification and line recognition. Three enabled candidates can therefore take
-  roughly four minutes plus preparation/service startup; synchronous native cleanup can overrun.
+  roughly four minutes **per image** plus preparation/service startup; synchronous native cleanup can overrun.
 - Fixed candidate order 1→2→3 is recorded. Each candidate creates fresh ONNX sessions; **asset
   files and OS caches may be warm**. The first run copies/checks newly bundled weights. Repeat
   the test after that initial copy before comparing steady-file-cache timings.
@@ -50,6 +60,11 @@ are unchanged. The older 30-treatment OCR Lab is separate; these toggles/CSV bel
 
 ## CSV layout
 
+Schema 2 adds `batch_id`, `batch_status`, `image_id`, `image_name`, 1-based `image_index`, and
+`image_count` to every row. Filenames can repeat; group by batch/image IDs, not filename. Each
+image retains its own `test_id` and row sequence. Metadata and coordinates never carry over
+from another image. Queued/import-failed images can lack input hashes and geometry.
+
 `test_id`, build/device/API, input/crop SHA-256, original/working/crop dimensions, enlargement,
 coordinate transforms, selected IDs, execution order, budgets, session policy and model names,
 SHA-256 digests/byte sizes/dictionary cardinalities identify the experiment.
@@ -66,12 +81,14 @@ Rows have a `stage` and `status`. Relevant stages:
 - `candidate_summary`: one terminal row per enabled candidate, even when stopped or unrun.
   Status distinguishes complete, no_text, no_regions, partial_failed, truncated, timed_out,
   failed, unavailable, memory_pressure, cancelled, cleanup_failed and not_run_*.
+- `image_queued` / `image_summary`: per-image execution status (including import failures and unrun images).
 - `error`, `checkpoint`, `test_start`/`test_end`, and memory samples preserve operational context.
 
 Use `recognition` rows for text comparisons and `candidate_summary` for completion filtering.
 Missing timing/count cells mean unavailable/not completed, not zero. A `test_end` of complete
-means the batch loop ended; inspect each candidate's summary for success/failure. Region IDs
-are local to each candidate: candidate 2 region 3 need not be candidate 1 region 3; match by
+means that image's candidate loop ended; `image_summary=complete` and `batch_status=complete`
+also mean execution finished, not OCR correctness or success of every candidate. Inspect each
+candidate's summary for success/failure. Region IDs are local to each image and candidate: candidate 2 region 3 need not be candidate 1 region 3; match by
 original coordinates instead. CSV quotes commas/newlines/quotes. Leading spreadsheet formula
 characters are escaped with an apostrophe; this does not change inference text internally.
 

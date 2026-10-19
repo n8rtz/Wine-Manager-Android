@@ -62,19 +62,24 @@ internal class TextLabJournal(val selected:Set<String>,val build:String,val dete
             return target
         } finally { temp.delete() }
     }
-    fun writeCsv(writer:Writer) {
-        val headers=(metadata.keys+listOf("sequence","candidate","candidate_order","stage","status")+
-            rows.flatMap { it.keys }.sorted()).distinct()
+    fun writeCsv(writer:Writer) = TextLabCsv.write(writer,rows.asSequence().map { metadata+it })
+}
+
+/** Shared CSV encoder: metadata is attached to each row, never taken from the last batch image. */
+internal object TextLabCsv {
+    fun write(writer:Writer,records:Sequence<Map<String,String>>) {
+        val headers=linkedSetOf<String>()
+        records.forEach { headers.addAll(it.keys) }
         fun cell(value:String):String {
             val safe=if(value.trimStart().firstOrNull() in listOf('=','+','-','@') || value.startsWith('\t') || value.startsWith('\r')) "'$value" else value
             return "\""+safe.replace("\"","\"\"")+"\""
         }
         writer.append(headers.joinToString(",",transform=::cell)).append("\r\n")
-        rows.forEach { row ->
-            val record=metadata+row
+        records.forEach { record ->
             writer.append(headers.joinToString(",") { cell(record[it].orEmpty()) }).append("\r\n")
         }
     }
+
 }
 
 /** Experimental Text Lab only; never changes the normal scanner deadline. */

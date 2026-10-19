@@ -67,8 +67,8 @@ class PaddleTextLabTests(unittest.TestCase):
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
         vm=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
         self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
-        self.assertIn('journal.finishPending(',vm)
-        self.assertIn('csv=journal.save(csvFolder)',vm)
+        self.assertIn('batch.finishPending(',vm)
+        self.assertIn('csv=batch.save(csvFolder)',vm)
         self.assertNotIn('BenchmarkScoring',runner)
         self.assertNotIn('FieldExtractor',runner)
 
@@ -158,3 +158,21 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('buffer.remaining()==values.size',engine)
         pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
         self.assertIn('values["diagnostic_stage"] ?: "detection"',pipeline)
+
+    def test_multi_image_picker_and_per_image_metadata(self):
+        root=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+        ui=(root/'OcrTextLabActivity.kt').read_text()
+        vm=(root/'TextLabViewModel.kt').read_text()
+        batch=(root/'TextLabBatch.kt').read_text()
+        self.assertIn('ActivityResultContracts.OpenMultipleDocuments()',ui)
+        self.assertIn('Run all ${state.images.size} images',ui)
+        self.assertIn('for((index,image) in snapshot.images.withIndex())',vm)
+        self.assertIn('val journal=batch.journals[index]',vm)
+        self.assertIn('requireNotNull(image.selection)',vm)
+        self.assertIn('batch.save(csvFolder)',vm)
+        self.assertIn('imageStatus="import_failed"',vm)
+        self.assertIn('imageStatus="cancelled"',vm)
+        self.assertIn('journal.metadata+it',batch)
+        for field in ('batch_id','image_id','image_name','image_index','image_count'):
+            self.assertIn('"'+field+'"',batch)
+        self.assertNotIn('async(',vm)
