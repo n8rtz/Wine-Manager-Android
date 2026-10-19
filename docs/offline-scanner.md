@@ -509,3 +509,10 @@ cap is imposed for this explicit experiment. Normal scanning is unaffected.
 Full instructions, schema, exact model/dictionary provenance, limits and validation status:
 [`text-lab-candidates.md`](text-lab-candidates.md). Candidate failures, timeout/Stop partials and
 not-run candidates are retained, never silently omitted or counted as recognition successes.
+
+
+Text Lab timeout update: the three-candidate experiment now uses **60 seconds per candidate**
+and **60 seconds for the shared ML Kit reference**, superseding the eight-second experimental
+budgets described above. CSV metadata reports these values. Photo import/preparation and the
+normal scanner's eight-second deadline are unchanged. All three candidates plus ML Kit may
+take about four minutes, plus startup/preparation and cooperative native cleanup.

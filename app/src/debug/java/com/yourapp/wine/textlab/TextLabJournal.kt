@@ -15,7 +15,7 @@ internal class TextLabJournal(val selected:Set<String>,val build:String,val dete
     val metadata=linkedMapOf("schema_version" to "1","test_id" to id,"build" to build,
         "started_at_ms" to System.currentTimeMillis().toString(),"selected_candidates" to selected.sorted().joinToString(" "),
         "mode" to if(detectLines) "det_line_rec" else "manual_line_rec",
-        "candidate_budget_ms" to "8000","session_policy" to "fresh per candidate; file/OS caches may be warm",
+        "candidate_budget_ms" to TextLabBudgets.OCR_MS.toString(),"mlkit_budget_ms" to TextLabBudgets.OCR_MS.toString(),"session_policy" to "fresh per candidate; file/OS caches may be warm",
         "runtime" to "ONNX Runtime Android 1.21.1 CPU; intra=2 inter=1",
         "detection_enabled" to detectLines.toString(),"detector_max_edge" to "960","recognizer_max_width" to "1024",
         "max_lines" to "32","max_components" to "4096","max_contour_candidates" to "128")
@@ -76,3 +76,6 @@ internal class TextLabJournal(val selected:Set<String>,val build:String,val dete
         }
     }
 }
+
+/** Experimental Text Lab only; never changes the normal scanner deadline. */
+internal object TextLabBudgets { const val OCR_MS = 60_000L }

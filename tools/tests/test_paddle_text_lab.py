@@ -137,3 +137,16 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('PaddleCandidates.all.forEach',ui)
         self.assertIn('ActivityResultContracts.CreateDocument("text/csv")',ui)
         self.assertNotIn('80*1024*1024',runner)
+
+    def test_experimental_timeout_is_60_seconds_without_changing_normal_scan(self):
+        root=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+        journal=(root/'TextLabJournal.kt').read_text()
+        runner=(root/'TextLabRunner.kt').read_text()
+        ui=(root/'OcrTextLabActivity.kt').read_text()
+        self.assertIn('const val OCR_MS = 60_000L',journal)
+        self.assertIn('"candidate_budget_ms" to TextLabBudgets.OCR_MS.toString()',journal)
+        self.assertIn('"mlkit_budget_ms" to TextLabBudgets.OCR_MS.toString()',journal)
+        self.assertIn('ScanDeadline(mlStarted+TextLabBudgets.OCR_MS)',runner)
+        self.assertIn('ScanDeadline(caseStart+TextLabBudgets.OCR_MS)',runner)
+        self.assertIn('${TextLabBudgets.OCR_MS / 1000}',ui)
+        self.assertIn('const val BUDGET_MS = 8_000L',(ROOT/'app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt').read_text())

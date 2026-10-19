@@ -28,10 +28,10 @@ are unchanged. The older 30-treatment OCR Lab is separate; these toggles/CSV bel
 
 ## Timing, memory and fairness
 
-- Shared preparation has an eight-second budget; the ML Kit reference gets a separate eight
-  seconds. Each enabled Paddle candidate then gets its own eight seconds for initialization,
+- Shared preparation has an eight-second budget; the ML Kit reference gets a separate 60
+  seconds. Each enabled Paddle candidate then gets its own 60 seconds for initialization,
   detection, rectification and line recognition. Three enabled candidates can therefore take
-  roughly 40 seconds including shared stages; synchronous native cleanup can overrun.
+  roughly four minutes plus preparation/service startup; synchronous native cleanup can overrun.
 - Fixed candidate order 1→2→3 is recorded. Each candidate creates fresh ONNX sessions; **asset
   files and OS caches may be warm**. The first run copies/checks newly bundled weights. Repeat
   the test after that initial copy before comparing steady-file-cache timings.

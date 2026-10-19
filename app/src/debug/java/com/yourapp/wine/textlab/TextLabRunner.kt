@@ -67,7 +67,7 @@ internal object TextLabRunner {
                 val mlStarted=SystemClock.elapsedRealtime()
                 var mlStatus="failed"
                 try {
-                    val deadline=ScanDeadline(mlStarted+8000)
+                    val deadline=ScanDeadline(mlStarted+TextLabBudgets.OCR_MS)
                     val result=deadline.run {
                         val engine=engines.firstOrNull { it.id=="mlkit" && it.available } ?: error("ML Kit unavailable")
                         engine.recognize(crop,"manual-text-crop",deadline)
@@ -92,7 +92,7 @@ internal object TextLabRunner {
                     journal.add(spec.id,"candidate_start","running",TextLabMemory.sample())
                     checkpoint()
                     val caseStart=SystemClock.elapsedRealtime()
-                    val deadline=ScanDeadline(caseStart+8000)
+                    val deadline=ScanDeadline(caseStart+TextLabBudgets.OCR_MS)
                     var status="failed"
                     var outcome:PaddleLabelPipeline.Outcome?=null
                     try {

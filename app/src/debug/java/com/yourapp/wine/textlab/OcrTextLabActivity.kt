@@ -78,7 +78,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                     Checkbox(state.detectLines,{vm.detectLines(it)},enabled=!state.busy)
                     Text("Detect text lines first (full-label mode)")
                 }
-                Text("Same crop for every enabled candidate. Runs sequentially with 8 seconds per candidate, plus separate shared preparation and ML Kit reference budgets. Three candidates can take about 40 seconds; native calls may overrun. Stop retains partial CSV results.",style=MaterialTheme.typography.bodySmall)
+                Text("Same crop for every enabled candidate. Runs sequentially with ${TextLabBudgets.OCR_MS / 1000} seconds per candidate and a separate ${TextLabBudgets.OCR_MS / 1000}-second ML Kit reference budget. All three plus the reference can take about four minutes, plus preparation; native calls may overrun. Stop retains partial CSV results.",style=MaterialTheme.typography.bodySmall)
                 Text("Sessions start fresh per candidate; model files may be cached. All models are bundled in this experimental debug build; toggles control execution. Scores are not directly comparable. Normal scanning is unchanged.",style=MaterialTheme.typography.bodySmall)
                 Text("For a tight single-word comparison, turn detection off (candidates 2 and 3 then use the same recognizer). Full-label detection uses up to 960 px edge and recognition uses rectified 48 px lines. At most 32 lines per candidate.",style=MaterialTheme.typography.bodySmall)
                 val pixels=state.selection?.pixels(photo.width,photo.height)
