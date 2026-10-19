@@ -16,7 +16,7 @@ internal object PaddleLabelPipeline {
         spec:PaddleCandidate,journal:TextLabJournal):Outcome {
         val id=spec.id
         val detection=try {
-            PaddleTextDetector.detect(context,base,workspace,gate,spec) { values -> journal.add(id,"detection",values=values) }
+            PaddleTextDetector.detect(context,base,workspace,gate,spec) { values -> journal.add(id,values["diagnostic_stage"] ?: "detection",values=values) }
         } finally {
             // Do not retain a Medium detector while loading a Medium recognizer.
             withContext(NonCancellable) { PaddleTextDetector.release(gate) }

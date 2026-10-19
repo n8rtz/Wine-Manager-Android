@@ -112,3 +112,15 @@ full Gradle APK build or native model execution. V6 ONNX execution, speed, accur
 pressure behavior and the export picker still require phone validation; no emulator/CI wait
 was performed here. An unsupported graph/runtime combination will appear as a failed candidate
 in the same CSV while preserving other candidates' data.
+
+
+### Detector probability boundary diagnostics
+
+`detector_output` rows are emitted before probability validation or DB decoding, with model
+output name/type/shape, completed setup/preprocessing/inference timings, raw finite min/max,
+non-finite count, below-zero/above-one counts and the first invalid value/index. Failed DB
+validation therefore no longer hides the raw output range. A symmetric float32 tolerance of
+1e-5 is accepted at the 0/1 boundaries; only these tiny excursions are clamped. NaN, infinity,
+and values beyond that tolerance still fail explicitly. No automatic sigmoid/logits conversion
+or broad clamping is performed. Emulator reports previously lacked the values necessary to
+confirm whether boundary roundoff was the cause; rerun on-device to establish that.

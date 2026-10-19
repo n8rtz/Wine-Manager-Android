@@ -150,3 +150,11 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('ScanDeadline(caseStart+TextLabBudgets.OCR_MS)',runner)
         self.assertIn('${TextLabBudgets.OCR_MS / 1000}',ui)
         self.assertIn('const val BUDGET_MS = 8_000L',(ROOT/'app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt').read_text())
+
+    def test_probability_diagnostics_precede_db_failure(self):
+        engine=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleTextDetector.kt').read_text()
+        self.assertLess(engine.index('"diagnostic_stage" to "detector_output"'),engine.index('PaddleProbabilityMap.validateAndClamp'))
+        self.assertLess(engine.index('PaddleProbabilityMap.validateAndClamp'),engine.index('PaddleDbPostprocess.decode'))
+        self.assertIn('buffer.remaining()==values.size',engine)
+        pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
+        self.assertIn('values["diagnostic_stage"] ?: "detection"',pipeline)

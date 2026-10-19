@@ -84,8 +84,18 @@ internal object PaddleTextDetector {
                                     shape[2] in 1L..960L && shape[3] in 1L..960L) {
                                     "Expected detector FLOAT [1,1,H<=960,W<=960], got ${output.info.type} ${shape.contentToString()}"
                                 }
-                                val values=FloatArray((shape[2]*shape[3]).toInt());output.floatBuffer.get(values)
+                                val values=FloatArray((shape[2]*shape[3]).toInt())
+                                val buffer=output.floatBuffer
+                                check(buffer.remaining()==values.size) { "Detector buffer length ${buffer.remaining()} does not match shape ${shape.contentToString()}" }
+                                buffer.get(values)
                                 val owner=currentCoroutineContext()
+                                val rawStats=PaddleProbabilityMap.inspect(values) { owner.ensureActive() }
+                                // Emit BEFORE validation/DB decoding: a failed map must retain its actual range and timings.
+                                emit(mapOf("diagnostic_stage" to "detector_output","setup_ms" to setupMs.toString(),
+                                    "preprocess_ms" to prepMs.toString(),"inference_ms" to inferMs.toString(),
+                                    "input_shape" to "1 3 $height $width","output_shape" to shape.joinToString(" "),
+                                    "output_name" to active.outputNames.single(),"output_type" to output.info.type.toString())+rawStats.fields())
+                                PaddleProbabilityMap.validateAndClamp(values) { owner.ensureActive() }
                                 val regions=PaddleDbPostprocess.decode(values,shape[3].toInt(),shape[2].toInt(),base.width,base.height,spec) { owner.ensureActive() }
                                 val postMs=SystemClock.elapsedRealtime()-postStart
                                 val mapToBase=PaddleDetectionGeometry.mapToBase(shape[3].toInt(),shape[2].toInt(),base.width,base.height)
