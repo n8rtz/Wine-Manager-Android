@@ -96,6 +96,8 @@ fun main() {
     csvImportChecks()
     boundedImportChecks()
     com.yourapp.wine.textlab.FormBatchReplay.run()
+    com.yourapp.wine.textlab.LayoutBatchReplay.run()
+    com.yourapp.wine.LabelLayoutChecks.run()
     com.yourapp.wine.CellarGeographyChecks.run()
     com.yourapp.wine.textlab.TextLabFormChecks.run()
     com.yourapp.wine.FuzzySpellingChecks.run()

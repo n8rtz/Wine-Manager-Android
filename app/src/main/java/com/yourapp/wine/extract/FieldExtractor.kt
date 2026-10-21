@@ -43,7 +43,11 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
         val geoSpelling=geographySpelling.suggest(contextual.lines)
         val spellingSuggestions=(contextual.suggestions+geoSpelling.suggestions).toMutableList()
-        val lines = joinPrintedAppellations(geoSpelling.lines)
+        val layoutLines=geoSpelling.lines.map(LabelLayoutContext::repair)
+        val layoutRepairs=geoSpelling.lines.zip(layoutLines).filter { it.first.text!=it.second.text }
+        spellingSuggestions+=layoutRepairs.map { LabelLayoutContext.suggestion(it.first,it.second) }
+        val lines = joinPrintedAppellations(layoutLines)
+        val paragraphSources=LabelLayoutContext.paragraphLines(lines).flatMap { it.tokens }.toSet()
         val result = mutableMapOf<FieldId, List<FieldCandidate>>()
         result[FieldId.VINTAGE] = vintage.extract(lines.filterNot { MetadataRules.isPackaging(it.text) ||
             com.yourapp.wine.kb.ReferenceWineCatalog.isAdministrative(it.text) }, currentYear)
@@ -152,7 +156,8 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 (!producerLines.hasProducerCue(line.text) && LabelNamePolicy.hasAdjacentStyle(line,identityLines))
             }.map { line -> IdentityOption(FieldCandidate(FieldId.PRODUCER,line.text,UiState.YELLOW,
                 "OCR-only producer; unknown makers allowed",line.tokens),
-                (if(producerLines.hasProducerCue(line.text)) 65.0 else 30.0)+line.bboxRect.height().coerceIn(0f,.2f)*20) }
+                (if(producerLines.hasProducerCue(line.text)) 65.0 else 30.0)+line.bboxRect.height().coerceIn(0f,.2f)*20 -
+                    (if(line.tokens.isNotEmpty() && line.tokens.all { it in paragraphSources }) 20.0 else 0.0)) }
         val rankedProducers=producerOptions.sortedWith(compareByDescending<IdentityOption> { it.priority }.thenByDescending { it.candidate.sources.size }).distinctBy { TextNorm.normalize(it.candidate.value) }
         result[FieldId.PRODUCER]=rankedProducers.map { it.candidate }.take(4)
         // A cuvee lookup is allowed only for an unambiguous, full exact producer match.
@@ -212,11 +217,14 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         }
         val correctedSources=fuzzyNames.flatMap { it.sources }.toSet()
         val montalcinoName=MontalcinoNameContext.supported(safeLines)
-        val allNames=(wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames+listOfNotNull(montalcinoName)).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
+        val layoutNames=LabelLayoutContext.titles(safeLines)
+        spellingSuggestions+=layoutNames.mapNotNull { it.spelling }
+        val allNames=(layoutNames+wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames+listOfNotNull(montalcinoName)).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
         val designations=allNames.filter { WineDesignations.isDesignation(it.value) }
         val nameOptions=allNames.filter { !WineDesignations.isDesignation(it.value) || allNames.all { n -> WineDesignations.isDesignation(n.value) } }.map { candidate ->
             val joined=LabelNamePolicy.joinStyle(listOf(candidate)+designations,selectedProducer) ?: candidate
             val priority=when {
+                candidate.reason.startsWith("Aligned stacked title") -> 88.0
                 candidate.reason.contains("contextual wine-name suggestion") -> 75.0
                 candidate.spelling?.domain=="cuvee" -> if(candidate.spelling.editDistance==1) 88.0 else 84.0
                 candidate.spelling!=null -> if(candidate.spelling.editDistance==1) 55.0 else 51.0
@@ -234,11 +242,18 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                         minOf(a.right,b.right)-maxOf(a.left,b.left) >= .5f*minOf(a.width(),b.width())
                 }
             }
-            val penalty=if(nearLegal && !producerLines.isWineDescription(candidate.value) && priority<90) 30.0 else 0.0
-            IdentityOption(if(penalty>0) joined.copy(reason=joined.reason+"; adjacent legal block lowers unsupported name rank") else joined,priority-penalty)
+            val paragraph=candidate.sources.isNotEmpty() && candidate.sources.all { it in paragraphSources }
+            val penalty=if((paragraph || nearLegal) && !producerLines.isWineDescription(candidate.value) && priority<90) 30.0 else 0.0
+            IdentityOption(if(penalty>0) joined.copy(reason=joined.reason+"; paragraph/adjacent legal block lowers unsupported name rank") else joined,priority-penalty)
         }
         val selection=IdentityAssignment.select(producerOptions,nameOptions)
         result.putAll(selection.fields)
+        result.replaceAll { _, candidates -> candidates.map { candidate ->
+            val repairs=layoutRepairs.filter { (original,_) -> candidate.sources.any { it in original.tokens } }
+            if(repairs.isNotEmpty() && candidate.state!=UiState.RED) candidate.copy(state=UiState.YELLOW,
+                spelling=LabelLayoutContext.suggestion(repairs.first().first,repairs.first().second),
+                reason=candidate.reason+"; bounded role/appellation repair: "+repairs.joinToString { "'${it.first.text}' -> '${it.second.text}'" }+"; confirm; raw OCR unchanged") else candidate
+        } }
         // A lexical suggestion is not measured evidence: cap all dependent fields and inherited geography.
         if (contextual.repaired.isNotEmpty() || geoSpelling.repaired.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
             if (candidate.state!=UiState.RED && candidate.sources.any { it in contextual.repaired || it in geoSpelling.repaired }) candidate.copy(state = UiState.YELLOW,

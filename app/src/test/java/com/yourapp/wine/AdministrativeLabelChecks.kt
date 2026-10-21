@@ -18,8 +18,8 @@ object AdministrativeLabelChecks {
         ),2026)
         check(result.fields.getValue(FieldId.PRODUCER).state == UiState.RED) { result.fields }
         val name = result.fields.getValue(FieldId.WINE_NAME)
-        check(name.value.contains("VILLAC") && name.state == UiState.YELLOW) { result.fields }
-        check(!name.value.contains("Villages",ignoreCase=true)) // No completion from expected answers.
+        check(name.value == "Côtes du Rhône Villages" && name.state == UiState.YELLOW) { result.fields }
+        check(name.reason.contains("bounded role/appellation repair")) // Anchored suffix suggestion, never a silent exact reading.
         check(result.fields.getValue(FieldId.COUNTRY).value == "France")
         check(result.fields.getValue(FieldId.VINTAGE).value == "2022")
         val exact = engine.fill(listOf(LogicChecks.token("Côtes du Rhône Villages",.9f)),2026)
