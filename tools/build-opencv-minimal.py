@@ -88,7 +88,7 @@ def main():
     utils = (source / "modules/java/generator/android/java/org/opencv/android/Utils.java").read_text(encoding="utf-8")
     methods = utils[utils.index("    /**\n     * Converts Android Bitmap"):]
     android = java / "android"
-    android.mkdir()
+    android.mkdir(exist_ok=True)
     (android / "Utils.java").write_text(
         "// OpenCV upstream bitmap-only excerpt; Apache-2.0 (see META-INF/licenses/opencv-LICENSE.txt).\n"
         "package org.opencv.android;\nimport android.graphics.Bitmap;\nimport org.opencv.core.Mat;\n"
