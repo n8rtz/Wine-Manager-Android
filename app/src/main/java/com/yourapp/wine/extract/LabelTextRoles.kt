@@ -16,6 +16,15 @@ object LabelTextRoles {
             (tail.length in 5..8 && tail.startsWith("vill") && TextNorm.editDistance(tail, "villages", 2) != null)
     }
 
+    fun isDamagedRhoneAppellation(text:String):Boolean {
+        val value=TextNorm.normalize(text)
+        if(!value.startsWith("cotes du ") || isRhoneAppellation(text)) return false
+        val tail=value.removePrefix("cotes du ").replace(" ","")
+        return tail.length in 5..14 && tail.startsWith("rh") &&
+            (4..6).any { n -> tail.length>=n && TextNorm.editDistance(tail.take(n),"rhone",1)!=null &&
+                (tail.drop(n).isEmpty() || tail.drop(n).matches(Regex("v[ilav]{1,7}"))) }
+    }
+
     /** Founding statements, including observed split/doubled letters; do not reject a brand containing a similar word. */
     fun isFoundingStatement(text: String): Boolean {
         val value = compact(text)

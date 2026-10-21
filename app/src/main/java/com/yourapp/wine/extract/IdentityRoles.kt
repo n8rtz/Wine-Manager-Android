@@ -20,6 +20,9 @@ object IdentityRoles {
         if(producers.isWineDescription(text)) roles+=IdentityRole.STYLE
         if(producers.hasProducerCue(text)) roles+=IdentityRole.PRODUCER_CUE
         if(originOnly(text,places)) roles+=IdentityRole.ORIGIN
+        // A damaged appellation-shaped line is not an unknown maker or cuvée.
+        // This exclusion creates no geography claim or Villages completion.
+        if(LabelTextRoles.isDamagedRhoneAppellation(text)) roles+=IdentityRole.ORIGIN_SUSPECT
         val words=TextNorm.normalize(text).split(' ')
         // Allow one tiny inserted OCR token, but still require a known locality prefix and a damaged type suffix.
         val prefixes=listOf(words.dropLast(1).joinToString(" "))+words.dropLast(1).indices.filter { words[it].length<=2 }.map { drop ->

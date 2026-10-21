@@ -22,7 +22,9 @@ class FillEngine(baseKb: WineKnowledgeBase) {
     /** Consumes original/rectified normalized token boxes; always returns explicit states for all six fields. */
     fun fill(records: List<TokenRecord>, currentYear: Int, context: ConfidenceContext = ConfidenceContext()): FillResult {
         val tokens = merger.merge(records)
-        val extracted=extractor.extract(lines.build(tokens), currentYear)
+        val built=lines.build(tokens)
+        val titleConnectors=com.yourapp.wine.extract.LabelAlternativeEvidence.connectors(built,records)
+        val extracted=extractor.extract(built, currentYear,titleConnectors)
         val validated = validator.validate(extracted, currentYear)
         val fields = validated.mapValues { (_, candidate) ->
             if (candidate.state == UiState.RED) candidate.copy(value = "") else {

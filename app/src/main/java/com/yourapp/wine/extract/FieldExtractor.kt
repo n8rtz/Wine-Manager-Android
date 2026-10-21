@@ -38,7 +38,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
     }
     init { gazetteer.matches(""); normalizer.repair("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
-    fun extract(rawLines: List<LabelLine>, currentYear: Int): ExtractionResult {
+    fun extract(rawLines: List<LabelLine>, currentYear: Int, titleConnectors:List<LabelLine> = emptyList()): ExtractionResult {
         val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
         val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
         val geoSpelling=geographySpelling.suggest(contextual.lines)
@@ -46,7 +46,9 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val layoutLines=geoSpelling.lines.map(LabelLayoutContext::repair)
         val layoutRepairs=geoSpelling.lines.zip(layoutLines).filter { it.first.text!=it.second.text }
         spellingSuggestions+=layoutRepairs.map { LabelLayoutContext.suggestion(it.first,it.second) }
-        val lines = joinPrintedAppellations(layoutLines)
+        val repeated=com.yourapp.wine.extract.LabelAlternativeEvidence.repeatedTails(layoutLines)
+        spellingSuggestions+=repeated.changes.map { LabelAlternativeEvidence.suggestion(it.first,it.second) }
+        val lines = joinPrintedAppellations(repeated.lines)
         val paragraphSources=LabelLayoutContext.paragraphLines(lines).flatMap { it.tokens }.toSet()
         val result = mutableMapOf<FieldId, List<FieldCandidate>>()
         result[FieldId.VINTAGE] = vintage.extract(lines.filterNot { MetadataRules.isPackaging(it.text) ||
@@ -217,7 +219,10 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         }
         val correctedSources=fuzzyNames.flatMap { it.sources }.toSet()
         val montalcinoName=MontalcinoNameContext.supported(safeLines)
-        val layoutNames=LabelLayoutContext.titles(safeLines)
+        val layoutNames=LabelLayoutContext.titles(safeLines+titleConnectors).map { candidate ->
+            if(titleConnectors.any { line -> candidate.sources.any { it in line.tokens } }) candidate.copy(
+                reason=candidate.reason+"; weak connector retained only for aligned title; no OCR confidence increase") else candidate
+        }
         spellingSuggestions+=layoutNames.mapNotNull { it.spelling }
         val allNames=(layoutNames+wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames+listOfNotNull(montalcinoName)).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
         val designations=allNames.filter { WineDesignations.isDesignation(it.value) }
@@ -249,9 +254,15 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val selection=IdentityAssignment.select(producerOptions,nameOptions)
         result.putAll(selection.fields)
         result.replaceAll { _, candidates -> candidates.map { candidate ->
+            val repair=repeated.changes.firstOrNull { (original,_) -> candidate.sources.any { it in original.tokens } }
+            if(repair!=null && candidate.state!=UiState.RED) candidate.copy(state=UiState.YELLOW,
+                spelling=LabelAlternativeEvidence.suggestion(repair.first,repair.second),
+                reason=candidate.reason+"; alternative OCR/cross-label repair '${repair.first.text}' -> '${repair.second.text}'; confirm; raw readings retained") else candidate
+        } }
+        result.replaceAll { _, candidates -> candidates.map { candidate ->
             val repairs=layoutRepairs.filter { (original,_) -> candidate.sources.any { it in original.tokens } }
             if(repairs.isNotEmpty() && candidate.state!=UiState.RED) candidate.copy(state=UiState.YELLOW,
-                spelling=LabelLayoutContext.suggestion(repairs.first().first,repairs.first().second),
+                spelling=candidate.spelling ?: LabelLayoutContext.suggestion(repairs.first().first,repairs.first().second),
                 reason=candidate.reason+"; bounded role/appellation repair: "+repairs.joinToString { "'${it.first.text}' -> '${it.second.text}'" }+"; confirm; raw OCR unchanged") else candidate
         } }
         // A lexical suggestion is not measured evidence: cap all dependent fields and inherited geography.
