@@ -7,10 +7,11 @@ object MetadataRules {
     private val boilerplate = Regex("""\b(?:appellation|controlee|protegee|denominazione|denominacion|calificada|origine|contains|sulfites|bottled|mis en bouteille|product of|produced in|imported|barcode|gtin|ean|upc|volume|by vol|founded|established|est|since|grand vin)\b""")
 
     /** No coordinates: packaging, alcohol and barcodes are never identity/name candidates. */
-    fun isPackaging(text: String): Boolean = packaging.containsMatchIn(text) || damagedAlcohol.containsMatchIn(text) ||
+    fun isPackaging(text: String): Boolean = packaging.containsMatchIn(text) || damagedAlcohol.containsMatchIn(text) || truncatedAlcohol.matches(text.trim()) ||
         damagedUnit.matches(TextNorm.normalize(text).filter(Char::isLetterOrDigit))
 
     // Closed unit vocabulary plus numeric/BY syntax, not a blacklist of digit-bearing brands.
+    private val truncatedAlcohol=Regex("""(?i)^(?:[\d.,%]+|[a-z][.,])?\s*b?by\s+vol\.?$""")
     private val damagedUnit=Regex("(?:[0-9b]{0,4}byvol|netcont(?:ents?)?[0-9]+[ml1]{1,2})")
     private val damagedAlcohol = Regex("""(?i)\b(?:[5-9]|[12][0-9]|30)[.,][0-9]{1,2}\s*%?\s+by\s+[vft1][o0][l1i]\b""")
 

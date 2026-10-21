@@ -32,6 +32,6 @@ internal class TextLabFieldExtractor(baseKb:WineKnowledgeBase) {
             if(field.state==UiState.RED || field.value.isBlank()) field.copy(value="",state=UiState.RED)
             else field.copy(state=UiState.YELLOW,reason=field.reason+"; lab-only uncalibrated suggestion; confirm")
         }
-        return CellarFieldPresentation.apply(FillResult(fields,null,extracted.alternatives,extracted.roles.mapIndexed { i,r -> "line=$i; ${r.reason}; bbox=${r.line.bboxRect.left},${r.line.bboxRect.top},${r.line.bboxRect.right},${r.line.bboxRect.bottom}; text=${r.line.text}; sources=${r.line.tokens.joinToString { it.canonical }}" },extracted.spellingSuggestions))
+        return CellarFieldPresentation.apply(FillResult(fields,null,extracted.alternatives,extracted.roles.mapIndexed { i,r -> "line=$i; ${r.reason}; bbox=${r.line.bboxRect.left},${r.line.bboxRect.top},${r.line.bboxRect.right},${r.line.bboxRect.bottom}; text=${r.line.text}; sources=${r.line.tokens.joinToString { it.canonical }}" },extracted.spellingSuggestions,extracted.geographyPath))
     }
 }

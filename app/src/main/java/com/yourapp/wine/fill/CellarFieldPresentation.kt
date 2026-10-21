@@ -30,6 +30,35 @@ object CellarFieldPresentation {
             fields[FieldId.COUNTRY] = country.copy(value = "", state = UiState.RED,
                 reason = country.reason + "; U.S. origin known but state not determined; enter state for cellar Country")
         }
+        val sub=fields.getValue(FieldId.SUBREGION)
+        if(sub.state!=UiState.RED && TextNorm.normalize(sub.value) in setOf("brunello di montalcino","rosso di montalcino")) {
+            fields[FieldId.SUBREGION]=sub.copy(value="Montalcino",reason=sub.reason+"; cellar locality for the printed Montalcino appellation")
+        }
+        val geographyConflicts=listOf(FieldId.COUNTRY,FieldId.REGION,FieldId.SUBREGION).any {
+            fields.getValue(it).reason.contains("conflict",ignoreCase=true)
+        }
+        val currentSub=fields.getValue(FieldId.SUBREGION)
+        // Use an actual ancestor when available (e.g. Oakville -> Napa Valley), never a guessed parent.
+        val valley=result.geographyPath.firstOrNull { isValley(it.name) }
+        if(!geographyConflicts && currentSub.state!=UiState.RED && currentSub.value.isNotBlank() && valley!=null) {
+            fields[FieldId.REGION]=currentSub.copy(field=FieldId.REGION,value=valley.name,
+                reason=currentSub.reason+"; valley-level Region from the local hierarchy")
+            if(TextNorm.normalize(currentSub.value)==TextNorm.normalize(valley.name))
+                fields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,"",UiState.RED,"Valley displayed in Region; no finer locality read",emptyList())
+        } else if(!geographyConflicts && currentSub.state!=UiState.RED && isValley(currentSub.value)) {
+            fields[FieldId.REGION]=currentSub.copy(field=FieldId.REGION,reason=currentSub.reason+"; valley-level Region")
+            fields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,"",UiState.RED,"Valley moved to Region",emptyList())
+        }
+        // Global presentation invariant: retain a known locality by promotion, never invent its parent.
+        val region=fields.getValue(FieldId.REGION)
+        val remaining=fields.getValue(FieldId.SUBREGION)
+        if((region.state==UiState.RED || region.value.isBlank()) && remaining.state!=UiState.RED && remaining.value.isNotBlank()) {
+            if(!geographyConflicts) fields[FieldId.REGION]=remaining.copy(field=FieldId.REGION,state=UiState.YELLOW,
+                reason=remaining.reason+"; no parent Region available; locality promoted for confirmation")
+            fields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,"",UiState.RED,
+                "Subregion requires a Region; no unsupported parent supplied",emptyList())
+        }
         return result.copy(fields = fields)
     }
+    private fun isValley(name:String):Boolean = Regex("\\b(valley|valle|vallee)\\b").containsMatchIn(TextNorm.normalize(name))
 }

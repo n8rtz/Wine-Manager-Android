@@ -115,6 +115,19 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
             Button(enabled=!state.busy,onClick={csvExporter.launch("wine-ocr-batch-${state.lastCsv?.name}")}) { Text("Export last batch CSV") }
             Text("One CSV includes every queued image and enabled candidate, including errors and partial results. Saved batch: ${state.lastCsv?.name}",style=MaterialTheme.typography.bodySmall)
         }
+        if(state.formTable.isNotEmpty()) item {
+            Text("Scanning form preview · combined engines",style=MaterialTheme.typography.titleMedium)
+            Text("One row per wine. Production field rules applied to saved crop readings, not a camera/shutter replay. Confirm suggestions before saving.",style=MaterialTheme.typography.bodySmall)
+            SelectionContainer {
+                Column(Modifier.horizontalScroll(rememberScrollState())) {
+                    Row { TextLabWineTable.formHeaders.forEach { Text(it,Modifier.width(170.dp).padding(8.dp),style=MaterialTheme.typography.labelLarge) } }
+                    state.formTable.forEach { row ->
+                        HorizontalDivider()
+                        Row { row.forEach { Text(it,Modifier.width(170.dp).padding(8.dp),style=MaterialTheme.typography.bodySmall) } }
+                    }
+                }
+            }
+        }
         if(state.wineTable.isNotEmpty()) item {
             Text("Head-to-head wine fields",style=MaterialTheme.typography.titleMedium)
             Text("Suggestions, not ground truth. — means unknown; † marks a spelling suggestion (details in CSV). Swipe horizontally for all six fields. Each engine/pass is independent in this table; values require confirmation.",style=MaterialTheme.typography.bodySmall)

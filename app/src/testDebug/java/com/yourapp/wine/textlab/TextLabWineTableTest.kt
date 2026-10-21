@@ -26,6 +26,6 @@ class TextLabWineTableTest {
         val csv=java.io.StringWriter().also(batch::writeCsv).toString()
         assertTrue(csv.contains("field_summary"))
         assertTrue(csv.contains("vintage"))
-        assertTrue(batch.summary().startsWith("HEAD-TO-HEAD"))
+        assertTrue(batch.summary().startsWith("COMBINED SCANNING FORM PREVIEW"))
     }
 }

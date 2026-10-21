@@ -42,6 +42,10 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
             } else "appellation"
             if (TextNorm.normalize(term.name) != region.nameNorm) add(term.name, type, region.id, code)
         }
+        // The DOCG/DOC names remain appellations; the cellar displays their shared town separately.
+        byName["IT" to TextNorm.normalize("Tuscany")]?.singleOrNull()?.let { tuscany ->
+            add("Montalcino","subregion",tuscany.id,"IT")
+        }
         // Explicit, real containment omitted by the old flat list. Only virtual children may be linked;
         // an imported place's chosen hierarchy always wins and can still produce a YELLOW conflict.
         for ((childName, parentName) in containment) {
@@ -61,6 +65,7 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
 
     private companion object {
         val containment = mapOf(
+            "Brunello di Montalcino" to "Montalcino", "Rosso di Montalcino" to "Montalcino",
             "Alexander Valley" to "Sonoma County", "Russian River Valley" to "Sonoma County",
             "Oakville" to "Napa Valley", "Rutherford" to "Napa Valley",
             "Dundee Hills" to "Willamette Valley", "Côtes du Rhône Villages" to "Côtes du Rhône",

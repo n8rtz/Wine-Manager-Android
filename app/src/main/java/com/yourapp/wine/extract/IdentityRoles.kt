@@ -21,8 +21,12 @@ object IdentityRoles {
         if(producers.hasProducerCue(text)) roles+=IdentityRole.PRODUCER_CUE
         if(originOnly(text,places)) roles+=IdentityRole.ORIGIN
         val words=TextNorm.normalize(text).split(' ')
+        // Allow one tiny inserted OCR token, but still require a known locality prefix and a damaged type suffix.
+        val prefixes=listOf(words.dropLast(1).joinToString(" "))+words.dropLast(1).indices.filter { words[it].length<=2 }.map { drop ->
+            words.dropLast(1).filterIndexed { index,_ -> index!=drop }.joinToString(" ")
+        }
         if(words.size>=2 && !producers.hasProducerCue(text) && words.last().length>=4 &&
-            originTypes[words.dropLast(1).joinToString(" ")].orEmpty().any { words.last()!=it && TextNorm.editDistance(words.last(),it,2)!=null })
+            prefixes.flatMap { originTypes[it].orEmpty() }.any { words.last()!=it && TextNorm.editDistance(words.last(),it,2)!=null })
             roles+=IdentityRole.ORIGIN_SUSPECT
         // A locality alias is not evidence of the similarly named winery.
         if(BundledProducerNames.exactName(text)!=null && IdentityRole.ORIGIN !in roles && IdentityRole.ORIGIN_SUSPECT !in roles && IdentityRole.APPELLATION !in roles)
@@ -31,7 +35,7 @@ object IdentityRoles {
             MetadataRules.isIdentity(MetadataRules.identityText(text))) roles+=IdentityRole.NAME
         return RoleEvidence(line,roles,"roles-v1: "+roles.joinToString("+"))
     }
-    /** Closed geographic type suffixes; an exact observed prefix is required. This does not create place claims. */
+    /** Closed geographic type suffixes; a known prefix (optionally with one tiny inserted token) is required. This does not create place claims. */
     fun originTypes(places:List<Place>):Map<String,Set<String>> = places.map { TextNorm.normalize(it.name) }
         .filter { it.substringAfterLast(' ') in setOf("district","valley","county","coast","region") && ' ' in it }
         .groupBy { it.substringBeforeLast(' ') }.mapValues { (_,names) -> names.map { it.substringAfterLast(' ') }.toSet() }

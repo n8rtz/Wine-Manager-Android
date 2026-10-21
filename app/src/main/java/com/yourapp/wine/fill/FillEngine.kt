@@ -42,7 +42,7 @@ class FillEngine(baseKb: WineKnowledgeBase) {
         val hint = context.hint ?: if (fields.values.all { it.state == UiState.RED }) "Retake the label or enter details manually" else null
         return FillResult(fields, hint,extracted.alternatives,extracted.roles.mapIndexed { i,role ->
             "line=$i; ${role.reason}; bbox=${role.line.bboxRect.left},${role.line.bboxRect.top},${role.line.bboxRect.right},${role.line.bboxRect.bottom}; text=${role.line.text}; sources=${role.line.tokens.flatMap { it.members }.joinToString { it.engineId+"/"+it.variantId+":"+it.textRaw }}"
-        },extracted.spellingSuggestions)
+        },extracted.spellingSuggestions,extracted.geographyPath)
     }
 
     /** No coordinates: a failed quality gate fills nothing and carries a retake/manual-entry hint. */

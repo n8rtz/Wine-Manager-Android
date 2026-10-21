@@ -18,7 +18,7 @@ data class TextLabImage(val id:String,val name:String,val photo:TextPhoto?=null,
     val selection:TextCrop?=TextCrop(0f,0f,1f,1f),val error:String?=null)
 data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeImage:Int=0,
     val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
-    val busy:Boolean=false,val result:String="",val wineTable:List<List<String>> = emptyList(),val cropPreview:File?=null,val lastCsv:File?=null,
+    val busy:Boolean=false,val result:String="",val wineTable:List<List<String>> = emptyList(),val formTable:List<List<String>> = emptyList(),val cropPreview:File?=null,val lastCsv:File?=null,
     val message:String="Choose one or more images. Full images are selected by default.") {
     val current:TextLabImage? get()=images.getOrNull(activeImage)
     val photo:TextPhoto? get()=current?.photo
@@ -38,23 +38,23 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
         clearPreview()
         mutable.update { state -> state.copy(images=state.images.mapIndexed { index,image ->
             if(index==state.activeImage) image.copy(selection=crop) else image
-        },result="",cropPreview=null) }
+        },result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) }
     }
     fun showImage(index:Int) {
         if(mutable.value.busy || index !in mutable.value.images.indices) return
         clearPreview();mutable.update { it.copy(activeImage=index,cropPreview=null) }
     }
-    fun enlarge(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(enlarge=value,result="",cropPreview=null) } } }
+    fun enlarge(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(enlarge=value,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) } } }
     fun candidate(id:String,enabled:Boolean) {
         if(mutable.value.busy || TextLabChoices.all.none { it.id==id }) return
-        clearPreview();mutable.update { it.copy(selectedCandidates=if(enabled) it.selectedCandidates+id else it.selectedCandidates-id,result="",cropPreview=null) }
+        clearPreview();mutable.update { it.copy(selectedCandidates=if(enabled) it.selectedCandidates+id else it.selectedCandidates-id,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) }
     }
-    fun detectLines(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(detectLines=value,result="",cropPreview=null) } } }
+    fun detectLines(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(detectLines=value,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) } } }
     fun choose(uris:List<Uri>) {
         if(mutable.value.busy || uris.isEmpty()) return
         clearPreview()
         val previous=mutable.value.images
-        mutable.update { it.copy(busy=true,message="Importing ${uris.size} images…",result="",cropPreview=null) }
+        mutable.update { it.copy(busy=true,message="Importing ${uris.size} images…",result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) }
         job=viewModelScope.launch {
             val loaded=mutableListOf<TextLabImage>()
             try {
@@ -103,7 +103,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
         if(snapshot.busy || snapshot.images.isEmpty() || snapshot.selectedCandidates.isEmpty() || !snapshot.cropsReady) return
         clearPreview()
         val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines)
-        mutable.update { it.copy(busy=true,result="",wineTable=emptyList(),cropPreview=null,message="Running image batch…") }
+        mutable.update { it.copy(busy=true,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null,message="Running image batch…") }
         job=viewModelScope.launch {
             var finalStatus="complete"
             var retainedPreview:File?=null
@@ -165,7 +165,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
                         catch(_:Exception) { csv=File(csvFolder,"${batch.id}.csv").takeIf { it.isFile } }
                         summary=batch.summary()
                     }
-                    if(cleared) retainedPreview?.delete() else mutable.update { it.copy(busy=false,result=summary,wineTable=TextLabWineTable.rows(batch.journals),cropPreview=retainedPreview,lastCsv=csv,
+                    if(cleared) retainedPreview?.delete() else mutable.update { it.copy(busy=false,result=summary,wineTable=TextLabWineTable.rows(batch.journals),formTable=TextLabWineTable.formRows(batch.journals),cropPreview=retainedPreview,lastCsv=csv,
                         message="Batch $finalStatus. Export last batch CSV for every image and selected candidate."+(if(!finalSaved) " Final CSV save failed; any earlier checkpoint and Copy OCR result remain available." else "")) }
                 }
             }

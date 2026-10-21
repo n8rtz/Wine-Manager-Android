@@ -16,7 +16,7 @@ import com.yourapp.wine.ocr.MergedToken
 /** Place claims preserve explicit OCR contradictions instead of silently correcting a country. */
 data class PlaceClaim(val place: Place, val sources: List<MergedToken>)
 data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, val placeClaims: List<PlaceClaim>, val roles:List<RoleEvidence> = emptyList(),
-    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),val spellingSuggestions:List<SpellingSuggestion> = emptyList())
+    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),val spellingSuggestions:List<SpellingSuggestion> = emptyList(),val geographyPath:List<Place> = emptyList())
 
 class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: VintageExtractor = VintageExtractor(),
                      private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb),
@@ -211,11 +211,13 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             }
         }
         val correctedSources=fuzzyNames.flatMap { it.sources }.toSet()
-        val allNames=(wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
+        val montalcinoName=MontalcinoNameContext.supported(safeLines)
+        val allNames=(wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames+listOfNotNull(montalcinoName)).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
         val designations=allNames.filter { WineDesignations.isDesignation(it.value) }
         val nameOptions=allNames.filter { !WineDesignations.isDesignation(it.value) || allNames.all { n -> WineDesignations.isDesignation(n.value) } }.map { candidate ->
             val joined=LabelNamePolicy.joinStyle(listOf(candidate)+designations,selectedProducer) ?: candidate
             val priority=when {
+                candidate.reason.contains("contextual wine-name suggestion") -> 75.0
                 candidate.spelling?.domain=="cuvee" -> if(candidate.spelling.editDistance==1) 88.0 else 84.0
                 candidate.spelling!=null -> if(candidate.spelling.editDistance==1) 55.0 else 51.0
                 candidate.reason.startsWith("Known cuvée") -> 100.0
@@ -258,7 +260,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 reason = candidate.reason + "; expanded reference-catalog origin — confirm; not a legal certification")
             else candidate
         } }
-        return ExtractionResult(result, claims,roles,selection.alternatives,spellingSuggestions.distinct().take(64))
+        return ExtractionResult(result, claims,roles,selection.alternatives,spellingSuggestions.distinct().take(64),primary?.let { geography.ancestors(it.place) }.orEmpty())
     }
 
     /** Only two adjacent observed pieces whose entire combined text is a verified appellation. */

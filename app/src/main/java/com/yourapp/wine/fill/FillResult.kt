@@ -29,6 +29,7 @@ data class FillResult(
     val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),
     val postProcessing:List<String> = emptyList(),
     val spellingSuggestions:List<SpellingSuggestion> = emptyList(),
+    val geographyPath:List<com.yourapp.wine.kb.Place> = emptyList(),
 )
 
 /** No coordinates: global conditions can only downgrade otherwise validated suggestions. */

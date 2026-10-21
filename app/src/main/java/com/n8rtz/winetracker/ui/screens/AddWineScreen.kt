@@ -473,6 +473,9 @@ fun AddWineScreen(
                     }
                 }
 
+                if(selectedAppellation.isNotBlank() && selectedRegion.isBlank()) {
+                    Text("Select or enter a Region before saving a Subregion.",color=MaterialTheme.colorScheme.error)
+                }
                 // Subregion stays visible and editable for boutique/unknown wines.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     fieldStatus(FieldId.SUBREGION)
@@ -546,7 +549,7 @@ fun AddWineScreen(
                     )
                 }
                 Button(
-                    enabled = isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
+                    enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
                     onClick = {
                         viewModel.addWine(
                             maker = maker,

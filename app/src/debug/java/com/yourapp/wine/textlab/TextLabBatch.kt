@@ -43,6 +43,7 @@ internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,bu
         } finally { temp.delete() }
     }
     fun summary():String=buildString {
+        appendLine(TextLabWineTable.formText(journals))
         appendLine(TextLabWineTable.text(journals))
         appendLine("OCR Text Lab · batch $id · ${journals.size} images")
         journals.forEach { journal ->

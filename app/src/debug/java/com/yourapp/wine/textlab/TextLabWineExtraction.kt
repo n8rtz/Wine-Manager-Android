@@ -68,6 +68,8 @@ internal object TextLabWineExtraction {
                 catch(error:Exception) { status="failed";details="${error.javaClass.simpleName}: ${error.message}" }
                 journal.add(candidate,"field_summary",status,values,details)
             }
+            val production=kb?.let { com.yourapp.wine.fill.FillEngine(it) }
+            batch.journals.forEach { TextLabFormPreview.append(it,production,Year.now().value) }
         } finally { kb?.close() }
     }
     private fun box(value:String?):RectF? {
