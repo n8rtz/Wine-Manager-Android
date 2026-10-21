@@ -4,10 +4,11 @@ import json
 import sys
 from pathlib import Path
 root=Path(__file__).resolve().parents[2]
+architecture='--architecture' in sys.argv
 brand='--brand' in sys.argv
 evidence='--evidence' in sys.argv
 layout='--layout' in sys.argv
-data=json.loads((root/('app/src/testDebug/resources/textlab/brand-review.json' if brand else 'app/src/testDebug/resources/textlab/evidence-review.json' if evidence else 'app/src/testDebug/resources/textlab/layout-review.json' if layout else 'app/src/testDebug/resources/textlab/form-review.json')).read_text())
+data=json.loads((root/('app/src/testDebug/resources/textlab/architecture-review.json' if architecture else 'app/src/testDebug/resources/textlab/brand-review.json' if brand else 'app/src/testDebug/resources/textlab/evidence-review.json' if evidence else 'app/src/testDebug/resources/textlab/layout-review.json' if layout else 'app/src/testDebug/resources/textlab/form-review.json')).read_text())
 def q(s): return json.dumps(s,ensure_ascii=False).replace('$',r'\$')
 images=','.join('TextLabImageKey('+q(c['image_index'])+','+q(c['image_name'])+')' for c in data['cases'])
 lines=[]
@@ -82,4 +83,10 @@ if brand:
   for(key in listOf("producer","wine_name")) check(summaries[1][key+"_state"]=="YELLOW")
 '''+source[end:]
     source=source.replace('FormBatchReplay','BrandBatchReplay').replace('form-preview-replay.csv','brand-preview-replay.csv')
-p=root/('.ocr-harness/checks/BrandBatchReplay.kt' if brand else '.ocr-harness/checks/EvidenceBatchReplay.kt' if evidence else '.ocr-harness/checks/LayoutBatchReplay.kt'  if layout else '.ocr-harness/checks/FormBatchReplay.kt');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
+if architecture:
+    start=source.index('  check(summaries[1]')
+    end=source.index('  java.io.File',start)
+    source=source[:start]+source[end:]
+    source=source.replace('FormBatchReplay','ArchitectureBatchReplay').replace('form-preview-replay.csv','architecture-preview-replay.csv')
+source=source.replace('  java.io.File', '  val experimental=com.yourapp.wine.textlab.evidence.EvidenceExtractor(com.yourapp.wine.kb.FixtureKnowledgeBase())\n  batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,2026) }\n  check(batch.journals.all { j -> j.rows.single { it["stage"]=="evidence_summary" }["status"]!="failed" })\n  java.io.File')
+p=root/('.ocr-harness/checks/ArchitectureBatchReplay.kt' if architecture else '.ocr-harness/checks/BrandBatchReplay.kt' if brand else '.ocr-harness/checks/EvidenceBatchReplay.kt' if evidence else '.ocr-harness/checks/LayoutBatchReplay.kt'  if layout else '.ocr-harness/checks/FormBatchReplay.kt');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)

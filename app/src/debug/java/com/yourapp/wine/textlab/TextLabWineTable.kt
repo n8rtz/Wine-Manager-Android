@@ -27,17 +27,17 @@ internal object TextLabWineTable {
                 fields.map { key -> row[key].orEmpty().ifBlank { "—" }+if(!row["${key}_edit_distance"].isNullOrBlank() && !row[key].isNullOrBlank()) " †" else "" }
         }
     }
-    val formHeaders=listOf("Image","Review","Producer","Wine name","Country","Region","Subregion","Vintage")
+    val formHeaders=listOf("Image","Pipeline / review","Producer","Wine name","Country","Region","Subregion","Vintage")
     fun formRows(journals:List<TextLabJournal>):List<List<String>> = journals.flatMap { journal ->
-        journal.rows.filter { it["stage"]=="form_summary" }.map { row ->
+        journal.rows.filter { it["stage"] in setOf("form_summary","evidence_summary") }.map { row ->
             listOf("${journal.metadata["image_index"]}: ${journal.metadata["image_name"]}",
-                when(row["status"]) { "failed" -> "Preview failed"; "no_fields" -> "No fields"; "partial_suggestions" -> "Partial — confirm";else -> "Confirm suggestions" })+
+                (if(row["stage"]=="evidence_summary") "Experimental · " else "Production · ")+when(row["status"]) { "failed" -> "Preview failed"; "no_fields" -> "No fields"; "partial_suggestions" -> "Partial — confirm";else -> "Confirm suggestions" })+
                 fields.map { row[it].orEmpty().ifBlank { "—" } }
         }
     }
     fun formText(journals:List<TextLabJournal>):String=buildString {
         appendLine("COMBINED SCANNING FORM PREVIEW")
-        appendLine("Production field rules on saved crop readings; not a shutter/quad replay. Confirm suggestions; — = unknown.")
+        appendLine("Production baseline and optional experimental evidence rows on identical saved readings; not a shutter/quad replay. Confirm suggestions; — = unknown.")
         appendLine(formHeaders.joinToString(" | "))
         formRows(journals).forEach { appendLine(it.joinToString(" | ") { cell -> cell.replace('\n',' ').replace('|','/') }) }
     }

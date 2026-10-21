@@ -17,7 +17,7 @@ import com.n8rtz.winetracker.BuildConfig
 data class TextLabImage(val id:String,val name:String,val photo:TextPhoto?=null,
     val selection:TextCrop?=TextCrop(0f,0f,1f,1f),val error:String?=null)
 data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeImage:Int=0,
-    val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
+    val compareEvidence:Boolean=false,val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
     val busy:Boolean=false,val result:String="",val wineTable:List<List<String>> = emptyList(),val formTable:List<List<String>> = emptyList(),val cropPreview:File?=null,val lastCsv:File?=null,
     val message:String="Choose one or more images. Full images are selected by default.") {
     val current:TextLabImage? get()=images.getOrNull(activeImage)
@@ -48,6 +48,9 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
     fun candidate(id:String,enabled:Boolean) {
         if(mutable.value.busy || TextLabChoices.all.none { it.id==id }) return
         clearPreview();mutable.update { it.copy(selectedCandidates=if(enabled) it.selectedCandidates+id else it.selectedCandidates-id,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) }
+    }
+    fun compareEvidence(value:Boolean) {
+        if(!mutable.value.busy) mutable.update { it.copy(compareEvidence=value,result="",formTable=emptyList(),wineTable=emptyList()) }
     }
     fun detectLines(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(detectLines=value,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) } } }
     fun choose(uris:List<Uri>) {
@@ -102,7 +105,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
         val snapshot=mutable.value
         if(snapshot.busy || snapshot.images.isEmpty() || snapshot.selectedCandidates.isEmpty() || !snapshot.cropsReady) return
         clearPreview()
-        val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines)
+        val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines,snapshot.compareEvidence)
         mutable.update { it.copy(busy=true,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null,message="Running image batch…") }
         job=viewModelScope.launch {
             var finalStatus="complete"

@@ -98,6 +98,11 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Checkbox(state.detectLines,{vm.detectLines(it)},enabled=!state.busy)
                 Text("Detect text lines first (full-label mode)")
             }
+            Row {
+                Checkbox(state.compareEvidence,{vm.compareEvidence(it)},enabled=!state.busy)
+                Text("Compare experimental evidence pipeline (keeps production baseline)")
+            }
+            Text("Experimental extraction uses the same OCR readings, not another model run. Requires text-line detection. Both results are exported; no intake fields are changed.",style=MaterialTheme.typography.bodySmall)
             Text("Images and candidates run sequentially. Each candidate and each image's ML Kit reference gets ${TextLabBudgets.OCR_MS / 1000} seconds. Allow up to about ${(state.selectedCandidates.size+1)} minutes PER IMAGE plus preparation; native calls may overrun. Stop preserves partial and unrun results.",style=MaterialTheme.typography.bodySmall)
             Text("Sessions start fresh; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line. The field table uses shared local rules and is not production autofill.",style=MaterialTheme.typography.bodySmall)
             if(!state.cropsReady) Text("One or more loaded images needs a valid crop. Review with Previous/Next or select full image.")
@@ -117,7 +122,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
         }
         if(state.formTable.isNotEmpty()) item {
             Text("Scanning form preview · combined engines",style=MaterialTheme.typography.titleMedium)
-            Text("One row per wine. Production field rules applied to saved crop readings, not a camera/shutter replay. Confirm suggestions before saving.",style=MaterialTheme.typography.bodySmall)
+            Text("One baseline row per wine, plus an experimental row when selected. Same saved readings, not a camera/shutter replay. Confirm suggestions before saving.",style=MaterialTheme.typography.bodySmall)
             SelectionContainer {
                 Column(Modifier.horizontalScroll(rememberScrollState())) {
                     Row { TextLabWineTable.formHeaders.forEach { Text(it,Modifier.width(170.dp).padding(8.dp),style=MaterialTheme.typography.labelLarge) } }

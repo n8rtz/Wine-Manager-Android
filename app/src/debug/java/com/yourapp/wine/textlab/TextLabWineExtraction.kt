@@ -70,6 +70,10 @@ internal object TextLabWineExtraction {
             }
             val production=kb?.let { com.yourapp.wine.fill.FillEngine(it) }
             batch.journals.forEach { TextLabFormPreview.append(it,production,Year.now().value) }
+            if(batch.compareEvidence) {
+                val experimental=kb?.let { com.yourapp.wine.textlab.evidence.EvidenceExtractor(it) }
+                batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value) }
+            }
         } finally { kb?.close() }
     }
     private fun box(value:String?):RectF? {
