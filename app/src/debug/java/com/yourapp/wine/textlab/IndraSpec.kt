@@ -3,6 +3,8 @@ package com.yourapp.wine.textlab
 /** Pinned upstream v1.1.0 base-script models, NOT the full multilingual/document pipeline. */
 internal object IndraSpec {
     const val ID="indra_latin"
+    const val MULTIPASS_ID="indra_multipass"
+    const val MULTIPASS_TITLE="6 · Indra 12-pass experiment (one shared 60s budget)"
     const val ENHANCED_ID="indra_enhanced"
     const val ENHANCED_TITLE="5 · Indra enhanced: orientation + adaptive + LM"
     const val LM_SHA="6c0fb618a363a0acdd05d4f5b0edd9e8146d2d990541b87f6130bbfe17cea58d"
@@ -29,13 +31,17 @@ internal object IndraSpec {
         "detector_max_edge" to "2048","recognizer_max_width" to "4096","max_lines" to "256",
         "indra_language_model" to "enabled for 0.5 <= greedy posterior < 0.9; alpha=0.5 beta=1.5 beam=8 floor=0.003",
         "indra_lm_sha256" to LM_SHA,"indra_orientation_sha256" to ORIENT_SHA,
-        "indra_profile_version" to "enhanced-base-1",
+        "indra_profile_version" to "enhanced-base-2",
         "indra_confidence_semantics" to "uncalibrated greedy posterior, NOT a posterior for LM-rescored text",
         "indra_lm_bytes" to "15695957","indra_orientation_bytes" to "371802")
+    val multipassMetadata=enhancedMetadata+mapOf("indra_profile_version" to "multipass-base-1",
+        "indra_configuration" to "12 ablations: 1024/1536/2048 detector edge x orientation/deskew off/on x contrast off/CLAHE; base+LM",
+        "session_policy" to "fresh sessions and LM per pass; shared 60s candidate budget; file/OS caches warm",
+        "pass_count" to "12","pass_selection" to "none; all readings retained, no automatic winner or independent votes")
 }
 
 internal data class TextLabChoice(val id:String,val title:String)
 internal object TextLabChoices {
-    val all=PaddleCandidates.all.map { TextLabChoice(it.id,it.title) }+TextLabChoice(IndraSpec.ID,IndraSpec.TITLE)+TextLabChoice(IndraSpec.ENHANCED_ID,IndraSpec.ENHANCED_TITLE)
+    val all=PaddleCandidates.all.map { TextLabChoice(it.id,it.title) }+TextLabChoice(IndraSpec.ID,IndraSpec.TITLE)+TextLabChoice(IndraSpec.ENHANCED_ID,IndraSpec.ENHANCED_TITLE)+TextLabChoice(IndraSpec.MULTIPASS_ID,IndraSpec.MULTIPASS_TITLE)
     fun selected(ids:Set<String>)=all.filter { it.id in ids }
 }

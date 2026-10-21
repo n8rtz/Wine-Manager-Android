@@ -17,11 +17,11 @@ internal object IndraMath {
     data class Regions(val boxes:List<Box>,val components:Int,val truncated:Boolean)
     data class Reading(val raw:String,val confidence:Float) { val accepted get()=confidence>=.5f }
     fun decode(ids:LongArray,confidence:FloatArray,length:Int,vocab:List<String>):Reading {
-        require(length in 0..ids.size && length<=confidence.size)
+        require(length in 0..ids.size && length<=confidence.size) { "Greedy length $length exceeds ids=${ids.size} confidence=${confidence.size}" }
         val tokens=mutableListOf<String>();var sum=0.0;var previous=-1L
         for(i in 0 until length) {
             val id=ids[i];val p=confidence[i]
-            require(id in 0L..vocab.size.toLong() && p.isFinite() && p in 0f..1f)
+            require(id in 0L..vocab.size.toLong() && p.isFinite() && p in 0f..1f) { "Invalid greedy step=$i id=$id vocabulary=${vocab.size} posterior=$p" }
             if(id!=0L && id!=previous) { tokens+=vocab[id.toInt()-1];sum+=p }
             previous=id
         }

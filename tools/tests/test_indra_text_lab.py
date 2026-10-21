@@ -50,7 +50,7 @@ class IndraLabTests(unittest.TestCase):
     def test_enhanced_indra_keeps_separate_identity_and_provenance(self):
         spec=(LAB/'IndraSpec.kt').read_text()
         journal=(LAB/'TextLabJournal.kt').read_text()
-        for key in ('indra_enhanced','indra_lm_sha256','indra_orientation_sha256','enhanced-base-1'):
+        for key in ('indra_enhanced','indra_lm_sha256','indra_orientation_sha256','enhanced-base-2'):
             self.assertIn(key,spec)
         self.assertIn('IndraSpec.enhancedMetadata',journal)
         source=(LAB/'IndraPipeline.kt').read_text()
@@ -76,3 +76,29 @@ class IndraLabTests(unittest.TestCase):
         for sha in ('6c0fb618a363a0acdd05d4f5b0edd9e8146d2d990541b87f6130bbfe17cea58d',
                     '20eaf670f55a7cf9facfe1bdd6c7b8e40be75bbf4d48a3df43f66aa3bbd874fd'):
             self.assertIn(sha,gradle);self.assertIn(sha,spec)
+
+    def test_multipass_shares_one_deadline_and_preserves_identity(self):
+        case=(LAB/'IndraMultiPass.kt').read_text()
+        self.assertEqual(case.count('ScanDeadline('),1)
+        self.assertLess(case.index('ScanDeadline('),case.index('for(pass in IndraPassPlan.all)'))
+        self.assertIn('deadline.expired',case)
+        self.assertIn('not_run_$finalStatus',case)
+        self.assertIn('journal.passContext=emptyMap()',case)
+        self.assertIn('"pass_summary"',case)
+        pipeline=(LAB/'IndraPipeline.kt').read_text()
+        self.assertIn('pass?.edge ?: 1024',pipeline)
+        self.assertIn('pass==null && enhanced',pipeline)
+        self.assertIn('pass?.deskew!=false',pipeline)
+        self.assertIn('clahe.collectGarbage();clahe.clear()',pipeline)
+    def test_lm_fallback_preserves_greedy_without_hiding_errors(self):
+        source=(LAB/'IndraPipeline.kt').read_text()
+        self.assertLess(source.index('"greedy_recognition"'),source.index('if(rescored) try'))
+        self.assertIn('decoded=reading.raw',source)
+        self.assertIn('"greedy_retained"',source)
+        self.assertIn('"greedy_fallback"',source)
+        self.assertIn('"complete_with_lm_fallback"',source)
+        self.assertIn('checkActive,vocab.size',source)
+        self.assertIn('catch(cancel:CancellationException) { throw cancel }',source)
+        beam=(LAB/'IndraLanguageModel.kt').read_text()
+        self.assertIn('0L..vocabularySize.toLong()',beam)
+        self.assertIn('!b0.isNaN()',beam)

@@ -141,6 +141,7 @@ internal object TextLabRunner {
                 }
                 IndraLabCase.run(context,crop,mapping,photo,gate,journal,checkpoint)
                 IndraLabCase.run(context,crop,mapping,photo,gate,journal,checkpoint,enhanced=true)
+                IndraMultiPass.run(context,crop,mapping,photo,gate,journal,checkpoint)
             }
         }
     }

@@ -101,6 +101,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
     fun run() {
         val snapshot=mutable.value
         if(snapshot.busy || snapshot.images.isEmpty() || snapshot.selectedCandidates.isEmpty() || !snapshot.cropsReady) return
+        if(IndraSpec.MULTIPASS_ID in snapshot.selectedCandidates && !snapshot.detectLines) return
         clearPreview()
         val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines)
         mutable.update { it.copy(busy=true,result="",cropPreview=null,message="Running image batch…") }

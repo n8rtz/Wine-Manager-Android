@@ -5,7 +5,7 @@
 For the strongest **currently implemented base-recognizer comparison**, select candidate 3
 (v6 Medium + Medium) and **5 · Indra enhanced: orientation + adaptive + LM**. Disable option 4
 unless you also want the old raw baseline as an ablation. All three can run in the same batch.
-The new stable CSV candidate ID is `indra_enhanced`, profile `enhanced-base-1`.
+The new stable CSV candidate ID is `indra_enhanced`, profile `enhanced-base-2` (decoder/fallback fixes; original enhanced results used version 1).
 
 Added versus the old raw profile:
 
@@ -149,3 +149,54 @@ actual graph loading, output contracts, preprocessing fidelity, performance and 
 The existing Code on the Go failure at `:opencv-minimal:prepareOpenCvToolchain` is **not fixed**
 by this change. Source-built OpenCV still requires a supported host with the pinned NDK/CMake;
 this is not a claim that the new branch builds inside the Android-hosted IDE.
+
+## Option 6: twelve-pass experiment and diagnostic fixes
+
+Select **3 (Paddle Medium)** and **6 (Indra 12-pass experiment)** for the new comparison.
+Enable Detect text lines first. Options 4 and 5 remain optional single-pass baselines.
+No production engine/field-assignment change is made by this experiment.
+
+The fixed plan is **three detector edges (1024, 1536, 2048) × orientation/deskew off/on ×
+contrast off/CLAHE (clip 2, grid 8×8)**. Unlike option 5, higher resolutions are forced, not
+conditional on the adaptive-height trigger that did not fire in the prior phone sample.
+Contrast is applied to a private grayscale Mat, never to the shared Bitmap. All transforms
+still invert back through the prepared crop to the original image. Each pass starts fresh
+native sessions and reloads the LM; these costs are included, not hidden or extrapolated.
+
+**One absolute 60-second budget covers all 12 passes for one image**, including setup and
+checkpoints, not 60 seconds per pass. A slow device/image may execute fewer than 12. Stop,
+timeout and errors preserve existing rows and explicit unrun-pass summaries. Native cleanup
+can overrun. The next image still gets its own budget. Independent options 4/5 each still have
+their own existing 60-second budget if also enabled.
+
+CSV candidate ID: `indra_multipass`. Every pass row has `pass_id`, `pass_index`, detector edge,
+orientation/deskew and contrast settings. Region IDs are local to each pass; compare using
+`batch_id/image_id/candidate/pass_id/region_id` and mapped coordinates. `pass_summary` records
+status, timings and counts; `candidate_summary` reports aggregate elapsed time and pass counts.
+No automatic “best reading” is selected, and repeated reads are **not independent votes**.
+These are ablations to establish whether more computation helps, not an assertion of accuracy.
+
+Fixes prompted by the four `Failed requirement.` lines:
+
+- LM `vocab_size` is a backoff normalization count; the decoder now validates token IDs against
+  the **recognizer vocabulary** passed explicitly, not that LM count. Unseen but valid tokens
+  use the reference backoff behavior. Truly out-of-range recognizer IDs are still rejected.
+- Blank log-probability `-Infinity` is legitimate log(0), not malformed output. NaN, positive
+  infinity and invalid positive log-probabilities remain rejected. There is no broad clamping.
+- Greedy output is journaled before optional LM decoding. LM setup/output/decoding failures
+  retain greedy text with explicit `lm_fallback` / `greedy_fallback` records and a degraded
+  candidate status instead of silently losing a valid OCR line. Cancellation and memory
+  pressure are not swallowed as recoverable LM errors.
+- Shape, vocabulary and probability assertions now name their stage and actual values.
+  The previous CSV did not contain those values, so these fixes **do not establish which
+  assertion caused each of those four specific failures**. The next phone run will verify it.
+- `greedy_recognition` is diagnostic backup evidence, **not another OCR vote**. Use final
+  `recognition` rows for finished-line comparisons; inspect greedy backups if a pass was cut
+  short. Greedy and LM-rescored text remain separate columns.
+
+Validation for this update: executed host tests including all 63 candidate toggle combinations,
+12 unique pass recipes, idempotent unrun summaries, pass-context isolation, LM vocabulary-count
+mismatch and zero-probability cases, plus retained upstream golden decoder tests; 64 Python
+checks; adapter compilation against real Android/OpenCV/ONNX APIs. No native Android execution,
+new accuracy benchmark, full APK build or measured 12-pass completion time is claimed.
+The existing Code on the Go OpenCV-toolchain limitation is unchanged.

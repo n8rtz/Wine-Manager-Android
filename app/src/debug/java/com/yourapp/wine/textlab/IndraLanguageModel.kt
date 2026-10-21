@@ -102,12 +102,13 @@ internal object IndraBeam {
     private data class Entry(var blank:Double,var nonblank:Double,val score:Double,val history:Long)
     private fun lse(a:Double,b:Double):Double { if(a==NEG) return b;if(b==NEG) return a;val m=max(a,b);return m+ln(exp(a-m)+exp(b-m)) }
     fun decode(blank:FloatArray,top:FloatArray,ids:LongArray,steps:Int,k:Int,lm:IndraLanguageModel,
-        checkActive:()->Unit):List<Int> {
-        require(steps in 0..4096 && k in 1..256 && blank.size>=steps && top.size>=steps*k && ids.size>=steps*k)
+        checkActive:()->Unit,vocabularySize:Int=lm.vocabSize):List<Int> {
+        require(steps in 0..4096 && k in 1..256 && blank.size>=steps && top.size>=steps*k && ids.size>=steps*k) { "LM tensor lengths: steps=$steps k=$k blank=${blank.size} top=${top.size} ids=${ids.size}" }
+        require(vocabularySize in 1..65536) { "Invalid recognizer vocabulary size $vocabularySize" }
         val mask=(1L shl (lm.bits*(lm.order-1)))-1
         var beams=linkedMapOf(emptyList<Int>() to Entry(0.0,NEG,0.0,0))
         for(t in 0 until steps) {
-            checkActive();val b0=blank[t].toDouble();require(b0.isFinite() && b0<=.00001)
+            checkActive();val b0=blank[t].toDouble();require(!b0.isNaN() && b0<=.00001) { "Invalid blank log-probability at step $t: $b0" }
             if(b0>ln(.999)) {
                 beams=LinkedHashMap(beams.mapValues { (_,e)->Entry(lse(e.blank,e.nonblank)+b0,NEG,e.score,e.history) });continue
             }
@@ -118,7 +119,9 @@ internal object IndraBeam {
             }
             val candidates=(0 until k).map { j ->
                 val id=ids[t*k+j];val p=top[t*k+j].toDouble()
-                require(id in 0L..lm.vocabSize.toLong() && !p.isNaN() && p<=.00001)
+                // LM vocab_size is a backoff normalization count, not the recognizer token-ID bound.
+                require(id in 0L..vocabularySize.toLong()) { "LM top token out of recognizer vocabulary: step=$t rank=$j id=$id vocabulary=$vocabularySize lm_count=${lm.vocabSize}" }
+                require(!p.isNaN() && p<=.00001) { "Invalid top log-probability: step=$t rank=$j value=$p" }
                 id.toInt() to p
             }.filter { it.first!=0 && it.second>=ln(.003) }
             for((p,e) in beams) {

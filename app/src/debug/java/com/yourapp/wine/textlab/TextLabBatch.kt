@@ -47,12 +47,13 @@ internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,bu
         journals.forEach { journal ->
             appendLine("\nImage ${journal.metadata["image_index"]}: ${journal.metadata["image_name"]}")
             appendLine("Image ID: ${journal.metadata["image_id"]}; test: ${journal.id}")
-            journal.rows.filter { it["stage"] in setOf("image_summary","candidate_summary","error","recognition") }.forEach { row ->
+            journal.rows.filter { it["stage"] in setOf("image_summary","candidate_summary","pass_summary","error","lm_fallback","recognition") }.forEach { row ->
                 if(length>50_000) {
                     appendLine("\nOn-screen summary truncated. Export the CSV for the complete batch.")
                     return@buildString
                 }
                 appendLine("${row["candidate"]} · ${row["stage"]} · ${row["status"]}"+
+                    (row["pass_id"]?.let { " · $it" } ?: "")+
                     (row["elapsed_ms"]?.let { " · $it ms" } ?: "")+
                     (row["raw_text"]?.let { " · $it" } ?: "")+
                     (row["details"]?.takeIf(String::isNotEmpty)?.let { " · $it" } ?: ""))

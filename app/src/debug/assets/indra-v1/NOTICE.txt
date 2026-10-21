@@ -15,3 +15,8 @@ logic from pipeline.py: genuine orientation/LM weights, thresholded quarter turn
 white-canvas deskew (modified from upstream), adaptive detection up to 2048, recognizer width
 4096, cap 256 lines. Greedy and LM-rescored text are both recorded. Still no multilingual
 routing, layout or math. Reference code license applies to these adaptations as well.
+
+Multipass-base-1 tests 12 deterministic combinations of detector resolution, orientation/deskew
+and CLAHE contrast under a shared budget. Decoder validation now separates recognizer token
+bounds from LM normalization counts and accepts log(0) blank probabilities. Failed optional
+rescoring preserves greedy output with diagnostics; repeated passes are not independent votes.

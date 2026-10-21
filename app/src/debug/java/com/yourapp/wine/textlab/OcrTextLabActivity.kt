@@ -45,7 +45,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
     if(confirmIndra!=null) AlertDialog(onDismissRequest={confirmIndra=null},
         title={Text("Indra model terms and benchmark scope")},
         text={ Column {
-            Text("Datalab's models use a modified OpenRAIL-M license, including use restrictions, attribution and output share-alike terms. Enable only if you accept those terms. The enhanced option enables orientation, deskew, adaptive detection and base-language-model rescoring; the raw option omits them. Both use the base recognizer, not full multilingual script routing or document layout. The CSV records raw and rescored readings.")
+            Text("Datalab's models use a modified OpenRAIL-M license, including use restrictions, attribution and output share-alike terms. Enable only if you accept those terms. The enhanced option enables orientation, deskew, adaptive detection and base-language-model rescoring; the raw option omits them. The 12-pass option tests scales, deskew and contrast within one shared 60-second budget. These use the base recognizer, not full multilingual script routing or document layout. The CSV records raw and rescored readings.")
             TextButton(onClick={context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
                 android.net.Uri.parse("https://huggingface.co/datalab-to/indra-ocr/blob/v1.1.0/LICENSE")))}) { Text("Read model license") }
         } },
@@ -97,7 +97,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
             TextLabChoices.all.forEach { candidate ->
                 Row {
                     Checkbox(candidate.id in state.selectedCandidates,{ enabled ->
-                        if(candidate.id in setOf(IndraSpec.ID,IndraSpec.ENHANCED_ID) && enabled) confirmIndra=candidate.id else vm.candidate(candidate.id,enabled)
+                        if(candidate.id in setOf(IndraSpec.ID,IndraSpec.ENHANCED_ID,IndraSpec.MULTIPASS_ID) && enabled) confirmIndra=candidate.id else vm.candidate(candidate.id,enabled)
                     },enabled=!state.busy)
                     Text(candidate.title)
                 }
@@ -107,10 +107,12 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Text("Detect text lines first (full-label mode)")
             }
             Text("Images and candidates run sequentially. Each candidate and each image's ML Kit reference gets ${TextLabBudgets.OCR_MS / 1000} seconds. Allow up to about ${(state.selectedCandidates.size+1)} minutes PER IMAGE plus preparation; native calls may overrun. Stop preserves partial and unrun results.",style=MaterialTheme.typography.bodySmall)
-            Text("Sessions start fresh per candidate; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line; candidates 2 and 3 then use the same recognizer. For the strongest implemented Indra test, select option 5 (enhanced). Option 4 retains the old raw baseline. Model terms apply to exported Indra output.",style=MaterialTheme.typography.bodySmall)
+            Text("Sessions start fresh per candidate; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line; candidates 2 and 3 then use the same recognizer. Option 6 tests 12 Indra variants with a shared 60-second budget. Option 5 runs enhanced once; option 4 is the raw baseline. Repeated passes are not independent votes. Model terms apply to exported Indra output.",style=MaterialTheme.typography.bodySmall)
             if(!state.cropsReady) Text("One or more loaded images needs a valid crop. Review with Previous/Next or select full image.")
             if(state.selectedCandidates.isEmpty()) Text("Enable at least one candidate.")
-            Button(enabled=!state.busy && state.cropsReady && state.selectedCandidates.isNotEmpty(),onClick=vm::run) { Text("Run all ${state.images.size} images") }
+            val passModeReady=IndraSpec.MULTIPASS_ID !in state.selectedCandidates || state.detectLines
+            if(!passModeReady) Text("Enable Detect text lines first for the 12-pass experiment, or uncheck option 6.")
+            Button(enabled=!state.busy && state.cropsReady && state.selectedCandidates.isNotEmpty() && passModeReady,onClick=vm::run) { Text("Run all ${state.images.size} images") }
         }
         if(!state.busy && state.cropPreview!=null) item {
             Text("Test crop for the reviewed image",style=MaterialTheme.typography.titleMedium)
