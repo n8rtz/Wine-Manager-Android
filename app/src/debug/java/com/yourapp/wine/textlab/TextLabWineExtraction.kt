@@ -2,10 +2,7 @@ package com.yourapp.wine.textlab
 
 import android.content.Context
 import android.graphics.RectF
-import com.yourapp.wine.fill.CellarFieldPresentation
-import com.yourapp.wine.fill.FillEngine
 import com.yourapp.wine.fill.FieldId
-import com.yourapp.wine.fill.ConfidenceContext
 import com.yourapp.wine.kb.SqliteWineKnowledgeBase
 import com.yourapp.wine.merge.TextNorm
 import com.yourapp.wine.ocr.TokenRecord
@@ -20,7 +17,7 @@ internal object TextLabWineExtraction {
         val engine=try {
             if(skip) null else {
                 kb=SqliteWineKnowledgeBase.open(context.applicationContext,0)
-                FillEngine(kb!!)
+                TextLabFieldExtractor(kb!!)
             }
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) { setupError="${error.javaClass.simpleName}: ${error.message}";null }
@@ -30,7 +27,7 @@ internal object TextLabWineExtraction {
                 val run=journal.rows.lastOrNull { it["candidate"]==candidate && it["pass_id"].orEmpty()==pass &&
                     it["stage"] in setOf("candidate_summary","pass_summary","summary") }
                 val values=mutableMapOf("pass_id" to pass,"ocr_status" to (run?.get("status") ?: "not_run"),
-                    "field_extractor" to "local FillEngine v1; isolated candidate/pass; uncalibrated suggestions",
+                    "field_extractor" to "local lab extractor v2; production field rules without confidence merge gate; isolated candidate/pass",
                     "field_year" to Year.now().value.toString())
                 var status="complete";var details="All nonblank fields require confirmation; not ground truth."
                 try {
@@ -43,7 +40,7 @@ internal object TextLabWineExtraction {
                         TokenRecord(text,TextNorm.normalize(text),.5f,box(row["original_box_normalized"]) ?: baseBox,
                             baseBox,emptyList(),candidate,pass.ifEmpty { "single" },scoreIsEstimated=true)
                     }
-                    val result=CellarFieldPresentation.apply(engine.fill(records,Year.now().value,ConfidenceContext(weakQuality=true)))
+                    val result=engine.extract(records,Year.now().value)
                     FieldId.entries.forEach { field ->
                         val key=field.name.lowercase(java.util.Locale.ROOT)
                         val value=result.fields[field]
@@ -52,6 +49,9 @@ internal object TextLabWineExtraction {
                         values["${key}_reason"]=value?.reason.orEmpty()
                     }
                     values["field_input_lines"]=records.size.toString()
+                    val count=result.fields.values.count { it.value.isNotBlank() }
+                    values["field_values_found"]=count.toString()
+                    status=when { records.isEmpty() -> "no_readings";count==0 -> "no_fields";else -> "suggestions" }
                 } catch(cancel:CancellationException) { throw cancel }
                 catch(error:Exception) { status="failed";details="${error.javaClass.simpleName}: ${error.message}" }
                 journal.add(candidate,"field_summary",status,values,details)

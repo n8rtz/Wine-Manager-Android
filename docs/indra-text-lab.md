@@ -210,7 +210,7 @@ batch CSV now includes `field_summary` rows with those six named columns, their
 states/reasons, input line count, extractor identity and year. Raw OCR and diagnostic
 rows remain unchanged. Blank CSV values / em dashes in the table mean unknown.
 
-This is **OCR plus the same local FillEngine/KB rules**, not raw transcription,
+This is **OCR plus the same local field-extraction/validation/KB rules**, not raw transcription,
 ground truth or an accuracy score. Geography may be inferred through the local
 hierarchy. Each candidate and each of the 12 passes is extracted separately; there
 is no best-pass selection, cross-engine supplementation, or repeated-vote inflation.
@@ -222,3 +222,20 @@ Extraction runs on a worker after OCR, outside the recorded inference timings.
 Older saved CSVs are not retroactively reprocessed; run a new batch for the table.
 The table also applies the existing cellar display convention: a known U.S. state
 is displayed in Country, and a generic trailing “Winery” is omitted from producer.
+
+### Blank-table regression fix (lab extractor v2)
+
+The original table adapter gave accepted lines an estimated 0.5 score and sent them
+through production FillEngine. Its TokenMerger correctly rejects singleton scores
+below 0.6 (0.75 for paddle-prefixed engines), so every line disappeared. The lab now
+passes each accepted line directly to the shared field rules and validator, without
+that production confidence merge gate. Scores are not boosted; every nonblank field
+is forced to YELLOW. Production FillEngine and TokenMerger are unchanged. Mixed
+engine/pass inputs are rejected, and no line is counted as independent corroboration.
+
+CSV `field_summary.status` is now `suggestions`, `no_readings`, `no_fields`, or `failed`.
+`field_values_found` gives the nonblank count, while `ocr_status` remains the separate
+inference outcome. The visible table distinguishes both statuses. The regression
+fixture contains only 11 OCR strings/normalized boxes from the reported batch, no
+photo or inferred ground truth; it checks Spain/2023, empty input, score preservation,
+and rejection of mixed passes. Host checks passed; Android execution is separate.

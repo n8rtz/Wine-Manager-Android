@@ -100,5 +100,6 @@ fun main() {
     bitmapOwnershipChecks()
     csvImportChecks()
     boundedImportChecks()
+    com.yourapp.wine.textlab.TextLabFieldChecks.run()
 
 }
