@@ -253,7 +253,8 @@ class AndroidNativeToolchainTest(unittest.TestCase):
     def test_generated_opencv_sources_use_variant_api_instead_of_legacy_source_sets(self):
         gradle = (Path(__file__).resolve().parents[2] / "opencv-minimal/build.gradle.kts").read_text()
         self.assertNotRegex(gradle, r"\bsourceSets\s*[.({]")
-        self.assertNotIn("addStaticSourceDirectory", gradle)  # Generated inputs need their producer task.
+        self.assertNotIn("addStaticSourceDirectory", gradle.split("// This custom Exec native build", 1)[1])  # Generated inputs need their producer task.
+        self.assertIn('addStaticSourceDirectory("prebuilt/java")', gradle)
         self.assertIn("androidComponents.onVariants { variant ->", gradle)
         for source, output in (("java", "javaSourcesDirectory"), ("jniLibs", "jniLibsDirectory"),
                                ("resources", "resourcesDirectory")):

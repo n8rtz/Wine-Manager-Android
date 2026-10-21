@@ -54,7 +54,7 @@ jobs:
             bash tools/run-ci-check.sh 'Legacy Android SDK installation' sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
           fi
       - name: Prepare pinned NDK and CMake through the app's setup task
-        run: bash tools/run-ci-check.sh 'Pinned native toolchain setup' ./gradlew --no-daemon --console=plain :opencv-minimal:prepareOpenCvToolchain
+        run: bash tools/run-ci-check.sh 'Pinned native toolchain setup' ./gradlew --no-daemon --console=plain -PopencvFromSource=true :opencv-minimal:prepareOpenCvToolchain
       - name: Restore reproducible OpenCV source and arm64 outputs
         id: opencv-cache
         uses: actions/cache/restore@v5

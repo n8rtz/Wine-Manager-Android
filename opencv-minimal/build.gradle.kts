@@ -35,6 +35,19 @@ android {
     }
 }
 
+// Phone builds consume the checked-in, hash-verified CI output. Source builds are explicit.
+val fromSource = providers.gradleProperty("opencvFromSource").getOrElse("false").toBooleanStrict()
+if (!fromSource) {
+    androidComponents.onVariants { variant ->
+        variant.sources.java?.addStaticSourceDirectory("prebuilt/java")
+        variant.sources.jniLibs?.addStaticSourceDirectory("prebuilt/jniLibs")
+        variant.sources.resources?.addStaticSourceDirectory("prebuilt/resources")
+    }
+    val verifyOpenCvPrebuilt by tasks.registering(Exec::class) {
+        commandLine(pythonExecutable, rootProject.file("tools/opencv-prebuilt.py"))
+    }
+    tasks.named("preBuild") { dependsOn(verifyOpenCvPrebuilt) }
+} else {
 // This custom Exec native build must prepare SDK prerequisites before resolving the NDK path.
 // Resolve the SDK only: asking sdkComponents.ndkDirectory first throws before setup can run.
 val prepareOpenCvToolchain by tasks.registering(Exec::class) {
@@ -80,3 +93,5 @@ androidComponents.onVariants { variant ->
     variant.sources.resources?.addGeneratedSourceDirectory(buildOpenCv) { it.resourcesDirectory }
 }
 tasks.named("preBuild") { dependsOn(buildOpenCv) }
+
+}
