@@ -22,9 +22,9 @@ object LabelNameChecks {
         val fill=FillEngine(FixtureKnowledgeBase()).fill(evidence,2026)
         check(fill.fields.getValue(FieldId.PRODUCER).value=="Bodegas Olarra") { fill.fields }
         val name=fill.fields.getValue(FieldId.WINE_NAME)
-        check(name.value=="Reciente Gran Reserva" && name.state==UiState.YELLOW) { fill.fields }
+        check(name.value=="ECIENTL Gran Reserva" && name.state==UiState.YELLOW) { fill.fields }
         check(name.sources.any { it.canonical=="ECIENTL" })
-        check("correction" in name.reason)
+        check("correction" !in name.reason) // No bottle-specific name completion.
         val other=FillEngine(FixtureKnowledgeBase()).fill(evidence.filterNot { it.textRaw in setOf("BODEGAS","OLARRA") }+
             line("Domaine Other",.95f,.1f,.65f,.6f,.06f),2026)
         check(other.fields.getValue(FieldId.WINE_NAME).value!="Reciente Gran Reserva")

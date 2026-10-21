@@ -14,25 +14,40 @@ import com.yourapp.wine.ocr.MergedToken
 
 /** Place claims preserve explicit OCR contradictions instead of silently correcting a country. */
 data class PlaceClaim(val place: Place, val sources: List<MergedToken>)
-data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, val placeClaims: List<PlaceClaim>)
+data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, val placeClaims: List<PlaceClaim>, val roles:List<RoleEvidence> = emptyList(),
+    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap())
 
 class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: VintageExtractor = VintageExtractor(),
                      private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb),
                      private val normalizer: WineTextNormalizer = WineTextNormalizer(kb)) {
     private val gazetteer = PlaceGazetteer(kb)
     private val producerLines = ProducerLineSelector()
+    private var indexedRolePlaces:List<Place>?=null
+    private var roleOriginTypes:Map<String,Set<String>> = emptyMap()
+    @Synchronized private fun originTypeIndex():Map<String,Set<String>> {
+        val places=kb.places()
+        if(places!==indexedRolePlaces) {
+            roleOriginTypes=IdentityRoles.originTypes(places);indexedRolePlaces=places
+        }
+        return roleOriginTypes
+    }
     init { gazetteer.matches(""); normalizer.repair("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
     fun extract(rawLines: List<LabelLine>, currentYear: Int): ExtractionResult {
         val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
         val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
-        val lines = contextual.lines
+        val lines = joinPrintedAppellations(contextual.lines)
         val result = mutableMapOf<FieldId, List<FieldCandidate>>()
-        result[FieldId.VINTAGE] = vintage.extract(lines, currentYear)
+        result[FieldId.VINTAGE] = vintage.extract(lines.filterNot { MetadataRules.isPackaging(it.text) ||
+            com.yourapp.wine.kb.ReferenceWineCatalog.isAdministrative(it.text) }, currentYear)
         val geography = hierarchy.snapshot()
-        val whole = lines.joinToString(" ") { it.text }
+        val originTypes=originTypeIndex()
+        val roles=lines.map { IdentityRoles.classify(it,gazetteer.matches(TextNorm.normalize(it.text)),originTypes) }
+        val excluded=roles.filter { IdentityRole.PACKAGING in it.roles || IdentityRole.ADMINISTRATIVE in it.roles || IdentityRole.ORIGIN_SUSPECT in it.roles }.map { it.line }.toSet()
+        val safeLines=lines.filterNot { it in excluded }
+        val whole = safeLines.joinToString(" ") { it.text }
         // Importer/distributor and warning lines are not wine-origin evidence, in any catalog language.
-        val originLines = lines.filterNot { com.yourapp.wine.kb.ReferenceWineCatalog.isAdministrative(it.text) }
+        val originLines = safeLines.filterNot { com.yourapp.wine.kb.ReferenceWineCatalog.isAdministrative(it.text) }
         val claims = (originLines.flatMap { matchPlaces(it.text, it.tokens) } +
             matchPlaces(originLines.joinToString(" ") { it.text }, originLines.flatMap { it.tokens }))
             .distinctBy { it.place.id }.sortedWith(compareByDescending<PlaceClaim> { geography.ancestors(it.place).size }
@@ -53,11 +68,8 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 result[field] = candidates.distinctBy { TextNorm.normalize(it.value) }
             }
         }
-        val placeLines = lines.filter { line -> !WineDesignations.isAppellationName(line.text) && matchPlaces(line.text, line.tokens).any { claim ->
-            val cleaned = TextNorm.normalize(line.text).replace(claim.place.nameNorm, "").trim()
-            cleaned.isEmpty() || MetadataRules.isBoilerplate(cleaned)
-        } }.toSet()
-        val identityLines = LabelNamePolicy.withoutAwards(lines).filter { it !in placeLines }.mapNotNull { line ->
+        val placeLines=roles.filter { IdentityRole.ORIGIN in it.roles && IdentityRole.APPELLATION !in it.roles }.map { it.line }.toSet()
+        val identityLines = LabelNamePolicy.withoutAwards(safeLines).filter { it !in placeLines }.mapNotNull { line ->
             val cleaned = MetadataRules.identityText(line.text)
             if (MetadataRules.isIdentity(cleaned) && !producerLines.isAdministrative(cleaned)) line.copy(text = cleaned) else null
         }
@@ -73,36 +85,41 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             }
         }
         // Whole-label fallback can recover a producer split across lines or sharing a line with a year.
-        val normalizedWhole = TextNorm.normalize(whole)
+        val producerContexts=safeLines+safeLines.flatMapIndexed { index,line ->
+            safeLines.drop(index+1).take(3).filter { other ->
+                val a=line.bboxRect;val b=other.bboxRect
+                maxOf(0f,maxOf(a.top,b.top)-minOf(a.bottom,b.bottom)) <= (if(producerLines.isMarker(line.text)) 3f else 1.5f)*maxOf(a.height(),b.height()) &&
+                    minOf(a.right,b.right)-maxOf(a.left,b.left) >= .4f*minOf(a.width(),b.width())
+            }.map { other -> LabelLine(line.text+" "+other.text,line.tokens+other.tokens,
+                com.yourapp.wine.merge.BoxMath.union(listOf(line.bboxRect,other.bboxRect))) }
+        }
         val knownWhole = kb.findProducer(whole).mapNotNull { hit ->
-            if (!Regex("(?<![\\p{L}\\p{N}])${Regex.escape(hit.matchedNorm)}(?![\\p{L}\\p{N}])").containsMatchIn(normalizedWhole)) return@mapNotNull null
-            val words = hit.matchedNorm.split(' ').toSet()
-            val sources = lines.flatMap { it.tokens }.filter { token -> TextNorm.normalize(token.canonical).split(' ').any { it in words } }
+            val pattern=Regex("(?<![\\p{L}\\p{N}])${Regex.escape(hit.matchedNorm)}(?![\\p{L}\\p{N}])")
+            val context=producerContexts.firstOrNull { pattern.containsMatchIn(TextNorm.normalize(it.text)) } ?: return@mapNotNull null
+            val sources=context.tokens
             hit.copy(editDistance = 0) to FieldCandidate(FieldId.PRODUCER, hit.producer.name,
-                if (vote(sources) >= .6f) UiState.GREEN else UiState.YELLOW, "Normalized exact producer in whole-label text", sources)
+                if (vote(sources) >= .6f) UiState.GREEN else UiState.YELLOW, "Normalized exact producer in spatially contiguous text", sources)
         }
         val known = (knownLines + knownWhole).sortedWith(
             compareBy<Pair<com.yourapp.wine.kb.ProducerHit, FieldCandidate>> { it.first.editDistance ?: Int.MAX_VALUE }
                 .thenByDescending { vote(it.second.sources) })
-        val producerId = known.firstOrNull()?.first?.producer?.id
-        if (known.isNotEmpty()) {
-            val bestDistance = known.first().first.editDistance
-            result[FieldId.PRODUCER] = known.filter { it.first.editDistance == bestDistance }.map { it.second }
-                .distinctBy { TextNorm.normalize(it.value) }
-        } else {
-            // Do not promote an ambiguous cuvee-plus-reserve heading to maker merely because it is prominent.
-            // Exact KB matches above, curated producer names and explicit domaine/winery cues retain priority.
-            val unknown = producerLines.unknown(producerCandidates.filterNot { candidate ->
-                !producerLines.hasProducerCue(candidate.text) && BundledProducerNames.exactName(candidate.text) == null &&
-                    LabelNamePolicy.hasAdjacentStyle(candidate, identityLines)
-            })
-            if (unknown != null) {
-                val curated = BundledProducerNames.exactName(unknown.text)
-                result[FieldId.PRODUCER] = listOf(FieldCandidate(FieldId.PRODUCER, curated ?: unknown.text,
-                    UiState.YELLOW, if (curated == null) "OCR-only producer; boutique/unknown wines are allowed"
-                    else "Exact authored producer-name alias; origin not inferred — confirm", unknown.tokens))
-            }
-        }
+        val curated=producerCandidates.mapNotNull { line -> BundledProducerNames.exactName(line.text)?.let {
+            IdentityOption(FieldCandidate(FieldId.PRODUCER,it,UiState.YELLOW,"Exact authored producer alias; confirm",line.tokens),95.0)
+        } }
+        val established=known.map { (hit,candidate) -> IdentityOption(candidate,if(hit.editDistance==0) 100.0 else 70.0) }+curated
+        val producerOptions=established+
+            producerCandidates.filterNot { line ->
+                established.any { match -> match.candidate.sources.any { it in line.tokens } } ||
+                (!producerLines.hasProducerCue(line.text) && LabelNamePolicy.hasAdjacentStyle(line,identityLines))
+            }.map { line -> IdentityOption(FieldCandidate(FieldId.PRODUCER,line.text,UiState.YELLOW,
+                "OCR-only producer; unknown makers allowed",line.tokens),
+                (if(producerLines.hasProducerCue(line.text)) 65.0 else 30.0)+line.bboxRect.height().coerceIn(0f,.2f)*20) }
+        val rankedProducers=producerOptions.sortedWith(compareByDescending<IdentityOption> { it.priority }.thenByDescending { it.candidate.sources.size }).distinctBy { TextNorm.normalize(it.candidate.value) }
+        result[FieldId.PRODUCER]=rankedProducers.map { it.candidate }.take(4)
+        // A cuvee lookup is allowed only for an unambiguous, full exact producer match.
+        val producerId=known.firstOrNull()?.takeIf { entry -> entry.first.editDistance==0 &&
+            known.filter { it.first.editDistance==0 }.map { it.first.producer.id }.distinct().size==1 &&
+            rankedProducers.firstOrNull()?.candidate?.value==entry.second.value }?.first?.producer?.id
         val producerSources = result[FieldId.PRODUCER]?.firstOrNull()?.sources.orEmpty().toSet()
         val selectedProducer = result[FieldId.PRODUCER]?.firstOrNull()?.value
         val producerSpellings = known.firstOrNull()?.first?.producer?.let { listOf(it.name) + it.aliases } ?: listOfNotNull(selectedProducer)
@@ -123,7 +140,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             }
             distinctive = distinctive.replace(Regex("\\s+"), " ").trim()
             if (!MetadataRules.isIdentity(distinctive)) return@mapNotNull null
-            val hit = producerId?.let { kb.findCuvee(it, distinctive) }
+            val hit = producerId?.let { kb.findCuvee(it, distinctive) }?.takeIf { it.editDistance==0 }
             FieldCandidate(FieldId.WINE_NAME, WineDesignations.orderName(hit?.cuvee?.name ?: distinctive),
                 if (hit?.editDistance == 0 && line.vote >= 0.6f) UiState.GREEN else UiState.YELLOW,
                 if (hit == null) "Distinctive OCR-only wine name; confirm" +
@@ -136,13 +153,36 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             .thenByDescending { it.sources.maxOfOrNull { t -> t.bboxRect.height() } ?: 0f })
         // A printed style/appellation can be the only wine name (e.g. Prosecco or Champagne).
         // Reuse actual accepted label text only, never infer a cuvee from its geography or producer.
-        val styleFallback = if (wines.isEmpty()) placeLines.mapNotNull { line ->
+        val styleFallback = placeLines.mapNotNull { line ->
             val raw = rawLines.firstOrNull { it.tokens == line.tokens }?.text ?: line.text
             val display = WineTermSpacing.wineWords.repair(MetadataRules.identityText(raw)).text
             if (!producerLines.isWineDescription(display) || (selectedProducer == null && !WineDesignations.isAppellationName(display))) null else FieldCandidate(FieldId.WINE_NAME, display,
                 UiState.YELLOW, "Printed wine style/appellation used as name — confirm", line.tokens)
-        }.sortedByDescending { vote(it.sources) } else emptyList()
-        result[FieldId.WINE_NAME] = listOfNotNull(LabelNamePolicy.joinStyle(wines + styleFallback, selectedProducer))
+        }.sortedByDescending { vote(it.sources) }
+        val allNames=(wines+styleFallback).distinctBy { TextNorm.normalize(it.value) }
+        val designations=allNames.filter { WineDesignations.isDesignation(it.value) }
+        val nameOptions=allNames.filter { !WineDesignations.isDesignation(it.value) || allNames.all { n -> WineDesignations.isDesignation(n.value) } }.map { candidate ->
+            val joined=LabelNamePolicy.joinStyle(listOf(candidate)+designations,selectedProducer) ?: candidate
+            val priority=when {
+                candidate.reason.startsWith("Known cuvée") -> 100.0
+                joined.value!=candidate.value || WineDesignations.hasNameAndDesignation(candidate.value) -> 80.0
+                !producerLines.isWineDescription(candidate.value) && candidate.value.split(Regex("\\s+")).count { word -> word.count(Char::isLetter)>=3 }>=2 -> 70.0
+                WineDesignations.isAppellationName(candidate.value) -> 60.0
+                producerLines.isWineDescription(candidate.value) -> 65.0
+                else -> 45.0
+            }
+            val nearLegal=roles.any { role ->
+                IdentityRole.ADMINISTRATIVE in role.roles && LabelTextRoles.isLegalStatement(role.line.text) && candidate.sources.any { source ->
+                    val a=source.bboxRect;val b=role.line.bboxRect
+                    maxOf(0f,maxOf(a.top,b.top)-minOf(a.bottom,b.bottom)) <= maxOf(a.height(),b.height()) &&
+                        minOf(a.right,b.right)-maxOf(a.left,b.left) >= .5f*minOf(a.width(),b.width())
+                }
+            }
+            val penalty=if(nearLegal && !producerLines.isWineDescription(candidate.value) && priority<90) 30.0 else 0.0
+            IdentityOption(if(penalty>0) joined.copy(reason=joined.reason+"; adjacent legal block lowers unsupported name rank") else joined,priority-penalty)
+        }
+        val selection=IdentityAssignment.select(producerOptions,nameOptions)
+        result.putAll(selection.fields)
         // A lexical suggestion is not measured evidence: cap all dependent fields and inherited geography.
         if (contextual.repaired.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
             if (candidate.sources.any { it in contextual.repaired }) candidate.copy(state = UiState.YELLOW,
@@ -156,7 +196,36 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 reason = candidate.reason + "; expanded reference-catalog origin — confirm; not a legal certification")
             else candidate
         } }
-        return ExtractionResult(result, claims)
+        return ExtractionResult(result, claims,roles,selection.alternatives)
+    }
+
+    /** Only two adjacent observed pieces whose entire combined text is a verified appellation. */
+    private fun joinPrintedAppellations(input:List<LabelLine>):List<LabelLine> {
+        val ordered=input.sortedBy { it.bboxRect.centerY() };val used=mutableSetOf<LabelLine>();val output=mutableListOf<LabelLine>()
+        for((index,line) in ordered.withIndex()) {
+            if(line in used) continue
+            val next=ordered.drop(index+1).take(4).firstOrNull { other ->
+                if(other in used) false else {
+                    val a=line.bboxRect;val b=other.bboxRect
+                    val gap=maxOf(0f,b.top-a.bottom)
+                    val aligned=minOf(a.right,b.right)-maxOf(a.left,b.left) >= .4f*minOf(a.width(),b.width())
+                    val text=normalizer.repair(line.text+" "+other.text).text
+                    val compact=TextNorm.normalize(text).filter(Char::isLetterOrDigit)
+                    aligned && gap<=1.5f*maxOf(a.height(),b.height()) && WineDesignations.isAppellationName(text) &&
+                        gazetteer.matches(TextNorm.normalize(text)).any { place ->
+                            (listOf(place.name)+com.yourapp.wine.kb.BundledOrigins.spellingForms(place)).any {
+                                TextNorm.normalize(it).filter(Char::isLetterOrDigit)==compact
+                            }
+                        }
+                }
+            }
+            if(next==null) output+=line else {
+                used+=next
+                output+=LabelLine(normalizer.repair(line.text+" "+next.text).text,line.tokens+next.tokens,
+                    com.yourapp.wine.merge.BoxMath.union(listOf(line.bboxRect,next.bboxRect)))
+            }
+        }
+        return output
     }
 
     private fun removeNormalizedPhrase(raw: String, phrase: String): String {

@@ -5,8 +5,11 @@
 Production remains ML Kit Latin + PP-OCRv6 Medium detection/recognition, sequential
 native execution, bounded working bitmaps, inverse coordinate mappings and a shared
 15-second deadline. No extra model, cloud wine API, NER, confidence inflation or
-label-specific correction is proposed. Model removal is implemented in this change;
-the field-policy changes below are a staged design, **not yet implemented**.
+label-specific correction is added. The shared role classification, bounded identity
+assignment, packaging masks, spatial grouping, diagnostics and replay checks are now
+implemented as **identity-v2**. See [implementation and validation](postprocessing-v2.md).
+The original findings/design below describe the pre-change code and rationale.
+Independent held-out evaluation and Android timing validation remain outstanding.
 
 Evidence: batch `24987ba8-df0d-4ba4-b3f6-a0ddd424cab9`, build `df45fbb5e57b`, six images.
 The diagnostic table processes each engine separately with estimated scores, bypasses

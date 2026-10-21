@@ -70,6 +70,11 @@ object ScanDiagnosticFormatter {
             }
         }
         out.line()
+        out.line("[Post-processing roles and alternatives]")
+        report.fill.postProcessing.take(64).forEach { out.line(safe(it,512)) }
+        report.fill.alternatives.forEach { (field,candidates) -> candidates.take(4).forEach {
+            out.line("alternative $field value=${safe(it.value)} reason=${safe(it.reason,256)}")
+        } }
         out.line("[Raw OCR samples before coordinate/confidence filtering]")
         out.line("sampled=${trace.reads.size}/${trace.totalReadings}; caps=30 localization + 80 primary label readings")
         trace.reads.forEachIndexed { i, read ->

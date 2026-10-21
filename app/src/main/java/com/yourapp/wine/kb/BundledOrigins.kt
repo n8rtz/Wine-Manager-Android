@@ -33,8 +33,15 @@ object BundledOrigins {
     }
     /** No coordinates: only catalogued forms for this name/country; unknown imported places remain untouched. */
     fun spellingForms(place: Place): List<String> = if (place.type == "country") {
-        countryCodes.filterValues { it == place.countryCode }.keys.toList()
+        countryCodes.filterValues { it == place.countryCode }.keys.toList()+countryLabelForms[place.countryCode].orEmpty()
     } else aliases[place.countryCode to place.nameNorm].orEmpty()
+
+    // Exact native-language country names only; no demonym/country inference or fuzzy matching.
+    private val countryLabelForms=mapOf(
+        "ES" to listOf("España","Espagne"), "IT" to listOf("Italia","Italie"),
+        "DE" to listOf("Deutschland","Allemagne"), "FR" to listOf("Francia"),
+        "AT" to listOf("Österreich","Autriche"), "PT" to listOf("Portugal")
+    )
 
     val source = """
         Brunello di Montalcino|Italy|Tuscany|Brunello di Montalcino|Red|Brunello Montalcino;Brunello di Montalcinu;Brunello di

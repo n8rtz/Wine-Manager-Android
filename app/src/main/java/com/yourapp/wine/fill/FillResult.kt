@@ -21,6 +21,8 @@ data class FieldCandidate(
 data class FillResult(
     val fields: Map<FieldId, FieldCandidate>,
     val overallHint: String?,
+    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),
+    val postProcessing:List<String> = emptyList(),
 )
 
 /** No coordinates: global conditions can only downgrade otherwise validated suggestions. */

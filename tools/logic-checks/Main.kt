@@ -95,6 +95,10 @@ fun main() {
     bitmapOwnershipChecks()
     csvImportChecks()
     boundedImportChecks()
+    com.yourapp.wine.textlab.PostProcessingReplay.run()
+    com.yourapp.wine.PostProcessingChecks.rolesRankingAndSafety()
+    com.yourapp.wine.PostProcessingChecks.boundedAssignmentKeepsAlternativesAndAbstains()
+    println("PASS: identity-v2 roles, packaging negatives, exact producer priority, appellation joins, geography footer, ambiguity and bounded alternatives")
     com.yourapp.wine.capture.RetiredModelChecks.run()
     com.yourapp.wine.textlab.TextLabFieldChecks.run()
 

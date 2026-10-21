@@ -22,12 +22,13 @@ class FillEngine(baseKb: WineKnowledgeBase) {
     /** Consumes original/rectified normalized token boxes; always returns explicit states for all six fields. */
     fun fill(records: List<TokenRecord>, currentYear: Int, context: ConfidenceContext = ConfidenceContext()): FillResult {
         val tokens = merger.merge(records)
-        val validated = validator.validate(extractor.extract(lines.build(tokens), currentYear), currentYear)
+        val extracted=extractor.extract(lines.build(tokens), currentYear)
+        val validated = validator.validate(extracted, currentYear)
         val fields = validated.mapValues { (_, candidate) ->
             if (candidate.state == UiState.RED) candidate.copy(value = "") else {
                 val reasons = mutableListOf<String>()
                 if (!context.labelFound) reasons += "No label quad; full-frame fallback is YELLOW maximum"
-                if (context.deadlineReached) reasons += "8-second budget reached; partial evidence requires confirmation"
+                if (context.deadlineReached) reasons += "Scan budget reached; partial evidence requires confirmation"
                 if (context.weakQuality) reasons += "Weak quality / incomplete reading"
                 if (candidate.sources.any { !it.hasReliableSupport }) reasons += "Insufficient measured confidence; estimated scores require confirmation"
                 if (candidate.sources.any { token -> token.members.map { normalizer.comparison(it.textRaw) }.distinct().size > 1 }) reasons += "OCR readings disagree"
@@ -39,7 +40,9 @@ class FillEngine(baseKb: WineKnowledgeBase) {
             }
         }
         val hint = context.hint ?: if (fields.values.all { it.state == UiState.RED }) "Retake the label or enter details manually" else null
-        return FillResult(fields, hint)
+        return FillResult(fields, hint,extracted.alternatives,extracted.roles.mapIndexed { i,role ->
+            "line=$i; ${role.reason}; bbox=${role.line.bboxRect.left},${role.line.bboxRect.top},${role.line.bboxRect.right},${role.line.bboxRect.bottom}; text=${role.line.text}; sources=${role.line.tokens.flatMap { it.members }.joinToString { it.engineId+"/"+it.variantId+":"+it.textRaw }}"
+        })
     }
 
     /** No coordinates: a failed quality gate fills nothing and carries a retake/manual-entry hint. */

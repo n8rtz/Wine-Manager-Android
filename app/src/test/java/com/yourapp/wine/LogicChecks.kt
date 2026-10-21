@@ -42,7 +42,7 @@ object LogicChecks {
     }
 
     fun lineGrouping() {
-        val lines = LineBuilder().build(TokenMerger().merge(listOf(token("Margaux", x = .5f, w = .2f),
+        val lines = LineBuilder().build(TokenMerger().merge(listOf(token("Margaux", x = .32f, w = .2f),
             token("Château", x = .1f, w = .2f), token("2018", y = .5f, w = .2f))))
         check(lines.size == 2)
         check(lines.first().text == "Château Margaux")

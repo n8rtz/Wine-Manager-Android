@@ -78,7 +78,7 @@ class ProducerLineSelector {
 
     private companion object {
         val markers = setOf("chateau", "domaine", "winery", "wines", "bodega", "bodegas", "estate",
-            "vineyard", "vineyards", "cellars", "weingut", "quinta", "finca", "tenuta", "cantina", "maison") +
+            "herederos del", "herederos de", "heirs of", "successeurs de", "vineyard", "vineyards", "cellars", "weingut", "quinta", "finca", "tenuta", "cantina", "maison") +
             com.yourapp.wine.kb.ReferenceWineCatalog.names("producer_marker").map(TextNorm::normalize)
         val compactMarkers = markers.map { it.filter(Char::isLetter) }.toSet()
         val producerCue = Regex("\\b(?:${markers.joinToString("|")})\\b")

@@ -41,12 +41,15 @@ internal object TextLabWineExtraction {
                             baseBox,emptyList(),candidate,pass.ifEmpty { "single" },scoreIsEstimated=true)
                     }
                     val result=engine.extract(records,Year.now().value)
+                    values["post_processing_version"]=com.yourapp.wine.extract.IdentityAssignment.VERSION
+                    values["role_diagnostics"]=result.postProcessing.joinToString("\n")
                     FieldId.entries.forEach { field ->
                         val key=field.name.lowercase(java.util.Locale.ROOT)
                         val value=result.fields[field]
                         values[key]=value?.value.orEmpty()
                         values["${key}_state"]=value?.state?.name ?: "RED"
                         values["${key}_reason"]=value?.reason.orEmpty()
+                        values["${key}_alternatives"]=result.alternatives[field].orEmpty().joinToString(" | ") { it.value+": "+it.reason }
                     }
                     values["field_input_lines"]=records.size.toString()
                     val count=result.fields.values.count { it.value.isNotBlank() }

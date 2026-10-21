@@ -27,10 +27,11 @@ internal class TextLabFieldExtractor(baseKb:WineKnowledgeBase) {
             // Each accepted line is a single observation, not an independently corroborated merge.
             MergedToken(record.textRaw,listOf(record.copy(scoreIsEstimated=true)),record.score,record.bboxRect)
         }
-        val fields=validator.validate(extractor.extract(LineBuilder().build(tokens),year),year).mapValues { (_,field) ->
+        val extracted=extractor.extract(LineBuilder().build(tokens),year)
+        val fields=validator.validate(extracted,year).mapValues { (_,field) ->
             if(field.state==UiState.RED || field.value.isBlank()) field.copy(value="",state=UiState.RED)
             else field.copy(state=UiState.YELLOW,reason=field.reason+"; lab-only uncalibrated suggestion; confirm")
         }
-        return CellarFieldPresentation.apply(FillResult(fields,null))
+        return CellarFieldPresentation.apply(FillResult(fields,null,extracted.alternatives,extracted.roles.mapIndexed { i,r -> "line=$i; ${r.reason}; bbox=${r.line.bboxRect.left},${r.line.bboxRect.top},${r.line.bboxRect.right},${r.line.bboxRect.bottom}; text=${r.line.text}; sources=${r.line.tokens.joinToString { it.canonical }}" }))
     }
 }

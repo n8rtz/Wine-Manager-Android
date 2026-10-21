@@ -51,22 +51,13 @@ object LabelNamePolicy {
         }
         val designation = adjacent.firstOrNull()
         var name = selected.value
-        var corrected = false
-        // User-verified label transcription, scoped to the supported producer AND printed style.
-        // Never supplies a missing name: only a >=.60 retained reading within two edits may match.
-        if (TextNorm.normalize(producer.orEmpty()) == "bodegas olarra" &&
-            designation?.let { TextNorm.normalize(it.value) == "gran reserva" } == true &&
-            TextNorm.editDistance(TextNorm.normalize(name).replace(" ", ""), "reciente", 2) != null) {
-            corrected = TextNorm.normalize(name) != "reciente"
-            name = "Reciente"
-        }
         if (designation == null) return selected
         val style = requireNotNull(WineDesignations.display(designation.value))
         if (TextNorm.normalize(name).endsWith(TextNorm.normalize(style))) return selected // No duplicate suffix.
         if (WineDesignations.split(name).suffix != null) return selected.copy(state = UiState.YELLOW,
             reason = selected.reason + "; additional conflicting designation nearby — confirm")
         return FieldCandidate(FieldId.WINE_NAME, "$name $style", UiState.YELLOW,
-            "Adjacent printed name and style — confirm" + (if (corrected) "; producer-scoped correction of OCR name" else "") +
+            "Adjacent printed name and style — confirm" +
                 (if (adjacent.map { TextNorm.normalize(it.value) }.distinct().size > 1) "; multiple nearby designations — confirm selection" else ""),
             (selected.sources + designation.sources).distinct())
     }

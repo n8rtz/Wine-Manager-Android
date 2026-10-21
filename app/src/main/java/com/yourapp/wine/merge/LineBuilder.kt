@@ -20,6 +20,9 @@ class LineBuilder {
             .forEach { token ->
                 val best = lines.filter { line ->
                     val box = representative(line)
+                    // Do not join independent columns just because their baselines align.
+                    val gap = maxOf(0f, maxOf(box.left,token.bboxRect.left)-minOf(box.right,token.bboxRect.right))
+                    gap <= minOf(.10f, 2f*maxOf(box.height(),token.bboxRect.height())) &&
                     BoxMath.verticalOverlap(box, token.bboxRect) >= 0.5f &&
                         abs(box.centerY() - token.bboxRect.centerY()) <= 0.45f * medianHeight
                 }.minByOrNull { abs(representative(it).centerY() - token.bboxRect.centerY()) }

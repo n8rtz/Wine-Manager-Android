@@ -23,6 +23,7 @@ if [[ ! -f "$ANDROID_JAR" ]]; then
 fi
 mkdir -p .ocr-harness/checks
 python3 tools/logic-checks/generate-fixture-checks.py
+python3 tools/logic-checks/generate-postprocessing-replay.py
 root=app/src/main/java/com/yourapp/wine
 sources=()
 while IFS= read -r source; do sources+=("$source"); done < <(find "$root/merge" "$root/extract" "$root/fill" -name '*.kt' -print)
@@ -35,7 +36,7 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/main/java/com/n8rtz/winetracker/scanner/LabelScanState.kt
     "$root/capture/BitmapWorkspace.kt" "$root/kb/OpenWinesAdapter.kt" "$root/kb/KnowledgeRecord.kt"
     "$root/kb/CsvKnowledgeRecords.kt" "$root/kb/JsonKnowledgeRecords.kt" "$root/kb/ImportReaders.kt"
-    app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/DiagnosticChecks.kt app/src/test/java/com/yourapp/wine/LocalizationChecks.kt app/src/test/java/com/yourapp/wine/AppellationContextChecks.kt app/src/test/java/com/yourapp/wine/ReferenceCatalogChecks.kt app/src/test/java/com/yourapp/wine/AdministrativeLabelChecks.kt app/src/test/java/com/yourapp/wine/LabelNameChecks.kt app/src/test/java/com/yourapp/wine/ReportedWineChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
+    app/src/test/java/com/yourapp/wine/PostProcessingChecks.kt app/src/test/java/com/yourapp/wine/LogicChecks.kt app/src/test/java/com/yourapp/wine/DiagnosticChecks.kt app/src/test/java/com/yourapp/wine/LocalizationChecks.kt app/src/test/java/com/yourapp/wine/AppellationContextChecks.kt app/src/test/java/com/yourapp/wine/ReferenceCatalogChecks.kt app/src/test/java/com/yourapp/wine/AdministrativeLabelChecks.kt app/src/test/java/com/yourapp/wine/LabelNameChecks.kt app/src/test/java/com/yourapp/wine/ReportedWineChecks.kt app/src/test/java/com/yourapp/wine/EnsemblePolicyChecks.kt
     tools/logic-checks/AndroidGeometry.kt tools/logic-checks/AndroidClock.kt tools/logic-checks/AndroidLog.kt
     tools/logic-checks/HostBitmap.kt tools/logic-checks/DeadlineChecks.kt tools/logic-checks/ImportChecks.kt tools/logic-checks/Main.kt
     app/src/main/java/com/yourapp/wine/textlab/PaddleDetectionGeometry.kt
@@ -61,7 +62,7 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkPlan.kt
     app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkScoring.kt
     app/src/testDebug/java/com/yourapp/wine/benchmark/BenchmarkChecks.kt
-    .ocr-harness/checks/GeneratedFixtureChecks.kt)
+    .ocr-harness/checks/GeneratedFixtureChecks.kt .ocr-harness/checks/PostProcessingReplay.kt)
 coroutines="$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar"
 "$KOTLIN_HOME/bin/kotlinc" -classpath "$coroutines:$ANDROID_JAR" "${sources[@]}" -d .ocr-harness/checks/logic.jar
 "$KOTLIN_HOME/bin/kotlin" -classpath ".ocr-harness/checks/logic.jar:$coroutines:$ANDROID_JAR" MainKt
