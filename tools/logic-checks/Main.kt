@@ -62,6 +62,8 @@ fun main() {
     println("PASS: 30 benchmark recipes / shear inverse and corner retention / ground-truth scoring isolation")
     com.yourapp.wine.textlab.PaddleDetectionChecks.run()
     println("PASS: detector sizing / BGR normalization / map inverse / full-box score / orientation / cancellation")
+    com.yourapp.wine.textlab.IndraChecks.run()
+    println("PASS: Indra greedy CTC / stride-distance geometry / polarity / 15 candidate combinations / provenance")
     com.yourapp.wine.textlab.TextLabBatchChecks.run()
     println("PASS: multi-image CSV / isolated image metadata / failed and unrun rows / duplicate names / atomic checkpoints")
     com.yourapp.wine.textlab.TextLabJournalChecks.run()

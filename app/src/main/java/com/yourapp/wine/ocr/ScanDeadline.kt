@@ -15,5 +15,5 @@ class ScanDeadline(val expiresAtMs: Long, private val now: () -> Long = SystemCl
         return withTimeoutOrNull(remaining) { operation() }
     }
 
-    companion object { const val BUDGET_MS = 8_000L }
+    companion object { const val BUDGET_MS = 15_000L }
 }

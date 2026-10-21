@@ -26,7 +26,7 @@ object ScanDiagnosticFormatter {
         out.line("device_abis=${safe(environment.deviceAbis.joinToString())} packaged_abis=${safe(environment.packagedAbis)}")
         out.line()
         out.line("[Pipeline]")
-        out.line("elapsed_ms=${report.elapsedMs} budget_ms=8000 deadline_cancelled=${report.deadlineCancelled} deadline_stage=${trace.deadlineStage} last_stage=${trace.lastStage}")
+        out.line("elapsed_ms=${report.elapsedMs} budget_ms=${com.yourapp.wine.ocr.ScanDeadline.BUDGET_MS} deadline_cancelled=${report.deadlineCancelled} deadline_stage=${trace.deadlineStage} last_stage=${trace.lastStage}")
         out.line("input_bytes=${trace.inputBytes} import_ms=${trace.importMs}")
         out.line("original_upright=${report.origW}x${report.origH} working=${trace.workW}x${trace.workH} rectified=${report.rectW}x${report.rectH}")
         out.line("native_ready=${trace.nativeReady ?: "not_attempted"} opencv=${safe(trace.nativeVersion)} kb=${safe(trace.kbImplementation)}")

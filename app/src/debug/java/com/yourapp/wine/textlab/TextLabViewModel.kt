@@ -17,7 +17,7 @@ import com.n8rtz.winetracker.BuildConfig
 data class TextLabImage(val id:String,val name:String,val photo:TextPhoto?=null,
     val selection:TextCrop?=TextCrop(0f,0f,1f,1f),val error:String?=null)
 data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeImage:Int=0,
-    val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_1","candidate_2","candidate_3"),val detectLines:Boolean=true,
+    val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
     val busy:Boolean=false,val result:String="",val cropPreview:File?=null,val lastCsv:File?=null,
     val message:String="Choose one or more images. Full images are selected by default.") {
     val current:TextLabImage? get()=images.getOrNull(activeImage)
@@ -46,7 +46,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
     }
     fun enlarge(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(enlarge=value,result="",cropPreview=null) } } }
     fun candidate(id:String,enabled:Boolean) {
-        if(mutable.value.busy || PaddleCandidates.all.none { it.id==id }) return
+        if(mutable.value.busy || TextLabChoices.all.none { it.id==id }) return
         clearPreview();mutable.update { it.copy(selectedCandidates=if(enabled) it.selectedCandidates+id else it.selectedCandidates-id,result="",cropPreview=null) }
     }
     fun detectLines(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(detectLines=value,result="",cropPreview=null) } } }

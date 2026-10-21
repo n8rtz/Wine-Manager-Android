@@ -13,7 +13,7 @@ import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/** Actual ONNX inference on a manual line or a detector-supplied, perspective-rectified line. Not the whole-label optional Paddle bridge. */
+/** Actual ONNX inference on a manual line or a detector-supplied, perspective-rectified line. Shared by the production label engine and Text Lab. */
 internal object PaddleTextRecognizer {
     private val mutex=Mutex()
     private var session:OrtSession?=null
@@ -60,7 +60,7 @@ internal object PaddleTextRecognizer {
             val preprocessStart=SystemClock.elapsedRealtime()
             val buffer=ByteBuffer.allocateDirect(3*48*paddedWidth*4).order(ByteOrder.nativeOrder()).asFloatBuffer()
             val warp=lineQuad?.let { PaddleLineWarp.create(crop,it,resizedWidth,48,workspace) }
-            val resized=warp?.bitmap ?: workspace.own(Bitmap.createScaledBitmap(crop,resizedWidth,48,true))
+            val resized=warp?.bitmap ?: Bitmap.createScaledBitmap(crop,resizedWidth,48,true).also { if(it!==crop) workspace.own(it) }
             try {
                 val row=IntArray(resizedWidth)
                 repeat(48) { y ->

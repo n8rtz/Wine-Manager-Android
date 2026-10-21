@@ -12,7 +12,7 @@ import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/** Independent PP-OCRv5 mobile detector. No ML Kit boxes, expected words or label-position heuristics. */
+/** Shared pinned Paddle detector. No ML Kit boxes, expected words or label-position heuristics. */
 internal object PaddleTextDetector {
     private val mutex=Mutex()
     private var session:OrtSession?=null
@@ -52,7 +52,7 @@ internal object PaddleTextDetector {
             val prepStart=SystemClock.elapsedRealtime()
             val (width,height)=PaddleDetectionGeometry.inputSize(base.width,base.height)
             val input=ByteBuffer.allocateDirect(3*width*height*4).order(ByteOrder.nativeOrder()).asFloatBuffer()
-            val small=workspace.own(Bitmap.createScaledBitmap(base,width,height,true))
+            val small=Bitmap.createScaledBitmap(base,width,height,true).also { if(it!==base) workspace.own(it) }
             try {
                 val row=IntArray(width)
                 repeat(height) { y ->

@@ -37,16 +37,24 @@ class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (Engine
             val inputW = bitmap.width; val inputH = bitmap.height
             try {
                 for (engine in eligible) {
+                    if (!engine.supportsVariant(variant.id)) continue
                     if (deadline.expired) { cancelled = true; break@variantLoop }
                     val start = SystemClock.elapsedRealtime()
                     var detail: String? = variant.description(inputW, inputH)
+                    var emittedCount = 0
+                    fun emit(readings: List<RawToken>) {
+                        val mapped = readings.map { variant.toLabel(it, inputW, inputH) }
+                        emittedCount += mapped.size
+                        tokens += mapped
+                        onTokens(mapped)
+                    }
                     val read = try {
                         if (engine.id == "mlkit" && variant.id == "V0" && reuseMlkitV0 != null) {
-                            detail = OcrImageTreatments.REUSED_PROBE; reuseMlkitV0
-                        } else deadline.run { engine.recognize(bitmap, variant.id, deadline) }
+                            detail = OcrImageTreatments.REUSED_PROBE; reuseMlkitV0.also(::emit)
+                        } else deadline.run { engine.recognizeStreaming(bitmap, variant.id, deadline, ::emit) }
                     } catch (cancel: CancellationException) {
                         val timing = EngineTiming(engine.id, variant.id, SystemClock.elapsedRealtime() - start,
-                            0, true, listOfNotNull(detail, "deadline/lifecycle cancelled awaiting engine").joinToString("; "))
+                            emittedCount, true, listOfNotNull(detail, "deadline/lifecycle cancelled awaiting engine").joinToString("; "))
                         timings += timing; log(timing); onTiming(timing)
                         throw cancel
                     }
@@ -55,11 +63,9 @@ class OcrEnsemble(private val engines: List<OcrEngine>, private val log: (Engine
                         emptyList()
                     }
                     // Variant resizing must be inverted BEFORE coordinate mapping, merging, or field extraction.
-                    val labelRead = read?.map { variant.toLabel(it, inputW, inputH) }
                     val timing = EngineTiming(engine.id, variant.id, SystemClock.elapsedRealtime() - start,
-                        labelRead?.size ?: 0, read == null || deadline.expired, detail)
+                        emittedCount, read == null || deadline.expired, detail)
                     timings += timing; log(timing); onTiming(timing)
-                    if (labelRead != null) { tokens += labelRead; onTokens(labelRead) }
                     if (timing.deadlineCancelled) { cancelled = true; break@variantLoop }
                 }
             } finally { variant.release(bitmap) }

@@ -307,6 +307,6 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     }
 
     private companion object {
-        const val PHOTO_CAPTURE_TIMEOUT_MS = 8_000L
+        const val PHOTO_CAPTURE_TIMEOUT_MS = com.yourapp.wine.ocr.ScanDeadline.BUDGET_MS
     }
 }

@@ -40,6 +40,17 @@ class OcrTextLabActivity:ComponentActivity() {
 private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
     val state by vm.state.collectAsState()
     val clipboard=LocalClipboardManager.current
+    val context=LocalContext.current
+    var confirmIndra by remember { mutableStateOf(false) }
+    if(confirmIndra) AlertDialog(onDismissRequest={confirmIndra=false},
+        title={Text("Indra model terms and benchmark scope")},
+        text={ Column {
+            Text("Datalab's models use a modified OpenRAIL-M license, including use restrictions, attribution and output share-alike terms. Enable only if you accept those terms. This is the Latin/base raw detector-recognizer profile: no language model, auto-rotation, deskew, script routing or document layout. Use upright Latin-script label crops.")
+            TextButton(onClick={context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse("https://huggingface.co/datalab-to/indra-ocr/blob/v1.1.0/LICENSE")))}) { Text("Read model license") }
+        } },
+        confirmButton={TextButton(onClick={vm.candidate(IndraSpec.ID,true);confirmIndra=false}) { Text("Accept and enable") }},
+        dismissButton={TextButton(onClick={confirmIndra=false}) { Text("Cancel") }})
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if(uris.isNotEmpty()) vm.choose(uris) }
     val csvExporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::exportCsv) }
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp),
@@ -83,9 +94,11 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Text("Enlarge every selected crop up to 2×")
             }
             Text("Candidates for every image",style=MaterialTheme.typography.titleMedium)
-            PaddleCandidates.all.forEach { candidate ->
+            TextLabChoices.all.forEach { candidate ->
                 Row {
-                    Checkbox(candidate.id in state.selectedCandidates,{vm.candidate(candidate.id,it)},enabled=!state.busy)
+                    Checkbox(candidate.id in state.selectedCandidates,{ enabled ->
+                        if(candidate.id==IndraSpec.ID && enabled) confirmIndra=true else vm.candidate(candidate.id,enabled)
+                    },enabled=!state.busy)
                     Text(candidate.title)
                 }
             }
@@ -93,8 +106,8 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Checkbox(state.detectLines,{vm.detectLines(it)},enabled=!state.busy)
                 Text("Detect text lines first (full-label mode)")
             }
-            Text("Images and candidates run sequentially. Each candidate and each image's ML Kit reference gets ${TextLabBudgets.OCR_MS / 1000} seconds. With all three candidates, allow up to about four minutes PER IMAGE plus preparation; native calls may overrun. Stop preserves partial and unrun results.",style=MaterialTheme.typography.bodySmall)
-            Text("Sessions start fresh per candidate; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line; candidates 2 and 3 then use the same recognizer. Normal scanning is unchanged.",style=MaterialTheme.typography.bodySmall)
+            Text("Images and candidates run sequentially. Each candidate and each image's ML Kit reference gets ${TextLabBudgets.OCR_MS / 1000} seconds. Allow up to about ${(state.selectedCandidates.size+1)} minutes PER IMAGE plus preparation; native calls may overrun. Stop preserves partial and unrun results.",style=MaterialTheme.typography.bodySmall)
+            Text("Sessions start fresh per candidate; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line; candidates 2 and 3 then use the same recognizer. Indra is a debug-only raw Latin/base profile; its model terms also apply to its exported output.",style=MaterialTheme.typography.bodySmall)
             if(!state.cropsReady) Text("One or more loaded images needs a valid crop. Review with Previous/Next or select full image.")
             if(state.selectedCandidates.isEmpty()) Text("Enable at least one candidate.")
             Button(enabled=!state.busy && state.cropsReady && state.selectedCandidates.isNotEmpty(),onClick=vm::run) { Text("Run all ${state.images.size} images") }

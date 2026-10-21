@@ -1,5 +1,9 @@
 # Offline wine label scanner
 
+**Current change:** [ML Kit + v6 Medium](production-v6-medium.md), with a 15-second shared
+scan deadline and bundled genuine ONNX models. [Indra comparison](indra-text-lab.md) is debug-only.
+Older acceptance notes below describe the prior 8-second/optional-Paddle implementation.
+
 ## Scope and entry points
 
 `AddWineScreen` → `LabelScanCameraPreview` → `ScannerViewModel` → app-scoped `WineScannerServices` → `OfflineWineScanner`.

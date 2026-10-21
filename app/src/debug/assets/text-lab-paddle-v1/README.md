@@ -1,3 +1,11 @@
+# Current packaging update
+
+The v6 Medium pair and v6 dictionary are now shared with production. The v6 dictionary and
+Paddle code license live in `app/src/main/assets/text-lab-paddle-v1`. Candidate 3 is selected
+by default. Indra is a separate debug-only option; see `docs/indra-text-lab.md`.
+Text Lab candidate budgets are 60 seconds; production shares 15 seconds end-to-end.
+The previous experimental notes below are historical, not current release-packaging claims.
+
 # Current experiment: three independently selectable candidates
 
 See `docs/text-lab-candidates.md` for the current UI, combined CSV schema, timing and lifecycle.

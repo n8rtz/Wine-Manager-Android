@@ -27,3 +27,6 @@
 -keepclassmembers,allowoptimization class com.n8rtz.winetracker.data.local.** { <fields>; }
 -keepclassmembers,allowoptimization class com.n8rtz.winetracker.data.importer.** { <fields>; }
 -keepclassmembers,allowoptimization class com.n8rtz.winetracker.network.** { <fields>; }
+
+# Production ONNX Runtime uses JNI/reflection; preserve the genuine runtime entry points.
+-keep class ai.onnxruntime.** { *; }

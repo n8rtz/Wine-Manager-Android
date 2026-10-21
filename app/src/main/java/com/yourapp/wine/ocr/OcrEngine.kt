@@ -9,6 +9,11 @@ enum class OcrInputKind { RECTIFIED_LABEL, WORKING_LOCALIZATION, FULL_FRAME_FALL
 interface OcrEngine : AutoCloseable {
     val id: String
     val available: Boolean
+    /** Heavy native OCR runs on the base only, avoiding repeated correlated passes and a third bitmap. */
+    fun supportsVariant(variantId: String): Boolean = true
+    /** Emits completed lines before cancellation; the return list is not emitted a second time. */
+    suspend fun recognizeStreaming(bitmap: Bitmap, variantId: String, deadline: ScanDeadline,
+        emit: (List<RawToken>) -> Unit): List<RawToken> = recognize(bitmap, variantId, deadline).also(emit)
     /** No coordinates: releases an unused/failed-init client; never close an engine while native work is in flight. */
     override fun close() = Unit
     /** No coordinates: diagnostic type/code only; never return exception messages, file paths or input URIs. */

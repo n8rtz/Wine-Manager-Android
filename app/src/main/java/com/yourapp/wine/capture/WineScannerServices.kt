@@ -10,7 +10,7 @@ import com.yourapp.wine.kb.SqliteWineKnowledgeBase
 import com.yourapp.wine.ocr.MlKitOcrEngine
 import com.yourapp.wine.ocr.OcrEngine
 import com.yourapp.wine.ocr.NativeEngineGate
-import com.yourapp.wine.ocr.PaddleEngineFactory
+import com.yourapp.wine.textlab.PaddleMediumOcrEngine
 
 /** App-scoped clients/DB/native gate, never reconstructed for each capture. */
 object WineScannerServices {
@@ -26,12 +26,12 @@ object WineScannerServices {
             // A failed async is cancelled: do not permanently poison every later retake with its exception.
             pending?.takeUnless { it.isCancelled } ?: scope.async {
                 val gate = nativeGate
-                val presence = PaddleEngineFactory.inspect(app)
-                val kb = SqliteWineKnowledgeBase.open(app, presence.installedBytes)
+                // Model weights have a separate, explicitly relaxed budget; retain the KB's own cap.
+                val kb = SqliteWineKnowledgeBase.open(app, 0)
                 val engines = mutableListOf<OcrEngine>()
                 try {
                     engines += MlKitOcrEngine(gate)
-                    engines += PaddleEngineFactory.create(app, presence, gate)
+                    engines += PaddleMediumOcrEngine.create(app, gate)
                     OfflineWineScanner(kb, engines.toList())
                 } catch (error: Throwable) {
                     engines.asReversed().forEach { engine -> runCatching { engine.close() }.onFailure(error::addSuppressed) }

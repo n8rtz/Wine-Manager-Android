@@ -1,4 +1,4 @@
-# Three-candidate OCR experiment (debug Text Lab)
+# OCR candidate comparison (debug Text Lab)
 
 ## Run and export
 
@@ -10,8 +10,10 @@ is never reused for another image. Choosing again replaces the queue. Enable any
 1. **PP-OCRv5 Mobile detector + Mobile recognizer** — existing pipeline/models.
 2. **PP-OCRv6 Small detector + Medium recognizer**.
 3. **PP-OCRv6 Medium detector + Medium recognizer**.
+4. **Indra v1.1 Latin/base raw detector + recognizer**, opt-in under its model terms.
+   See [exact configuration, provenance and limitations](indra-text-lab.md).
 
-All three are enabled by default. **Run all N images** runs images sequentially, with enabled
+Candidate 3 is selected by default; enable Indra to compare them. **Run all N images** runs images sequentially, with enabled
 candidates sequentially within each image. Candidate toggles, enlargement and line-detection
 settings apply across the batch. Each image uses one prepared crop for all its candidates,
 never differently recropped/enlarged for different candidates. ML Kit runs once per image as
@@ -33,8 +35,8 @@ not be interpreted as complete. A final-save failure is reported; an earlier che
 still be exportable. Original imported files/previews are temporary private files, released
 when the queue is replaced or Text Lab closes; only the active image is displayed/processed.
 
-The normal scanner, its eight-second shutter deadline, and automatic wine-field assignment
-are unchanged. The older 30-treatment OCR Lab is separate; these toggles/CSV belong to Text Lab.
+The normal scanner now uses ML Kit plus v6 Medium with a 15-second shared deadline; see
+[production integration](production-v6-medium.md). This lab still uses independent 60-second budgets. The older 30-treatment OCR Lab is separate; these toggles/CSV belong to Text Lab.
 
 ## Timing, memory and fairness
 
@@ -101,11 +103,14 @@ The v5 pins remain unchanged. New ONNX weights are checksum/size-pinned to Great
 - v6 Medium detector: 62,032,837 bytes.
 - v6 Medium recognizer: 76,554,979 bytes.
 
+The three Paddle experiments remain available. Production now shares the two Medium graphs
+and v6 dictionary; only the other Paddle models and Indra are debug extras.
+
 All five unique ONNX models occupy 169,857,219 bytes before packaging compression. The user
 explicitly relaxed the previous 80 MiB asset limit: it is **not enforced** for this experiment.
-All are prepared at debug BUILD time regardless of UI selection, stay out of Git, and are
+All are prepared at BUILD time regardless of UI selection, stay out of Git, and are
 local/offline at recognition time. Future cleanup can remove losing models. Release builds
-include neither these debug assets nor ONNX Runtime.
+include the v6 Medium pair, dictionary and ONNX Runtime; v5, Small and Indra remain debug-only.
 
 The genuine v6 dictionary is 74,947 bytes, 18,708 entries (CTC expects 18,710 classes including
 blank and space), fetched from PaddleOCR at `dab3fe35379033fdcb2d0e9572fac0b36c9a9ebf` and matching

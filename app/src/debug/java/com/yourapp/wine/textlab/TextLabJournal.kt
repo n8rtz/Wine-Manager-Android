@@ -22,17 +22,17 @@ internal class TextLabJournal(val selected:Set<String>,val build:String,val dete
     val rows=mutableListOf<Map<String,String>>()
     fun add(candidate:String,stage:String,status:String="complete",values:Map<String,String> = emptyMap(),details:String="") {
         val spec=PaddleCandidates.all.firstOrNull { it.id==candidate }
-        val models=if(spec==null) emptyMap() else mapOf("detector" to spec.detector.name,"detector_sha256" to spec.detector.sha,
+        val models=if(candidate==IndraSpec.ID) IndraSpec.metadata else if(spec==null) emptyMap() else mapOf("detector" to spec.detector.name,"detector_sha256" to spec.detector.sha,
             "detector_bytes" to spec.detector.bytes.toString(),"recognizer_bytes" to spec.recognizer.bytes.toString(),
             "recognizer" to spec.recognizer.name,"recognizer_sha256" to spec.recognizer.sha,"dictionary_sha256" to spec.dictionary.sha,
             "dictionary_entries" to spec.dictionary.entries.toString(),"db_threshold" to spec.threshold.toString(),
             "db_box_threshold" to spec.boxThreshold.toString(),"db_unclip" to spec.unclip.toString())
         rows += models+values+mapOf("sequence" to (rows.size+1).toString(),"candidate" to candidate,
-            "candidate_order" to if(spec==null) "" else (PaddleCandidates.selected(selected).indexOf(spec)+1).toString(),
+            "candidate_order" to TextLabChoices.selected(selected).indexOfFirst { it.id==candidate }.let { if(it<0) "" else (it+1).toString() },
             "stage" to stage,"status" to status,"event_at_ms" to System.currentTimeMillis().toString(),"details" to details)
     }
     fun finishPending(status:String) {
-        for(candidate in PaddleCandidates.selected(selected)) {
+        for(candidate in TextLabChoices.selected(selected)) {
             if(rows.none { it["candidate"]==candidate.id && it["stage"]=="candidate_summary" })
                 add(candidate.id,"candidate_summary",status,details="No completed candidate summary; inspect earlier rows for partial results.")
         }

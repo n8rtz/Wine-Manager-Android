@@ -1,10 +1,10 @@
 # Wine Manager Android
 
-Android wine-cellar manager (`com.n8rtz.winetracker`). The Add Wine camera scanner now uses a local label pipeline: bundled ML Kit Latin OCR, perspective rectification, a small on-device knowledge base, and six independently reviewable fields. Recognition does **not** call a wine-database API.
+Android wine-cellar manager (`com.n8rtz.winetracker`). The Add Wine camera scanner now uses a local label pipeline: bundled ML Kit Latin OCR plus PP-OCRv6 Medium detection/recognition, perspective rectification, a small on-device knowledge base, and six independently reviewable fields. Recognition does **not** call a wine-database API.
 
 - Android 8+ (minSdk 26), targetSdk 35; arm64-v8a only.
 - Ordinary Android/Google components remain supported. The app's Internet permission is still used by unrelated image-import features.
-- No custom OCR/NER weights or wine-world database are fabricated or required.
+- No model weights or wine-world database are fabricated. Genuine pinned Paddle models are bundled by the build.
 - **Choose label photo** scans an existing phone image locally without camera permission. **Show scan details → Copy diagnostics** exports bounded text for troubleshooting, without uploading or retaining the photo.
 - **Profile → App Information → Installed build / commit** shows the installed build's 12-character source SHA (long-press to copy), branch and clean/dirty source state. The Profile menu entry also displays the installed build ID. Rebuild/Run after pulling Git to update the installed app.
 
@@ -12,4 +12,6 @@ For **“NDK is not installed”** on a desktop development host, see [native to
 
 See [offline scanner architecture, build and tests](docs/offline-scanner.md) and [KB import / optional model formats](docs/offline-scanner-data.md).
 
-**Validation status:** [Genuine Android CI passed](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/38661171436) for source commit `4161b12`: debug app and instrumented test APKs compile, scanner Robolectric tests pass, and the shrunk arm64 release APK measures **24.51 MiB** (packed code + libraries **22.20 MiB**, below 40 MiB). The local harness also passes 57 logic groups and two host SQLite/FTS5 groups. Real-device OCR, physical shutter→review timing, and 20-camera-capture heap/OOM acceptance remain unverified. See the test guide for those remaining checks.
+**Current integration:** [production v6 Medium](docs/production-v6-medium.md) and [Indra versus v6 Text Lab](docs/indra-text-lab.md). These changes have host/API checks, **not a full APK/device validation**. The native Android-hosted build blocker remains unresolved.
+
+**Historical validation (before the new model integration):** [Genuine Android CI passed](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/38661171436) for source commit `4161b12`: debug app and instrumented test APKs compile, scanner Robolectric tests pass, and the shrunk arm64 release APK measures **24.51 MiB** (packed code + libraries **22.20 MiB**, below 40 MiB). The local harness also passes 57 logic groups and two host SQLite/FTS5 groups. Real-device OCR, physical shutter→review timing, and 20-camera-capture heap/OOM acceptance remain unverified. See the test guide for those remaining checks.

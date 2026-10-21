@@ -43,6 +43,38 @@ fun deadlineChecks() = runBlocking {
     check(expired.tokens.isEmpty() && expired.deadlineCancelled)
     println("PASS: expired deadline starts no OCR or bitmap allocation")
 
+    // A streaming engine must publish once, retain lines completed before timeout, and skip V1/V2.
+    val streamBitmap=Bitmap.createBitmap(2,2,Bitmap.Config.ARGB_8888)
+    var calls=0
+    val streaming=object:OcrEngine {
+        override val id="paddle-v6-medium"
+        override val available=true
+        override fun supportsVariant(variantId:String)=variantId=="V0"
+        override suspend fun recognize(bitmap:Bitmap,variantId:String,deadline:ScanDeadline)=error("Use streaming")
+        override suspend fun recognizeStreaming(bitmap:Bitmap,variantId:String,deadline:ScanDeadline,emit:(List<RawToken>)->Unit):List<RawToken> {
+            calls++
+            val line=fast.recognize(bitmap,variantId,deadline).map { it.copy(engineId=id,scoreIsEstimated=true) }
+            emit(line)
+            return line
+        }
+    }
+    var streamed=0
+    val variants=listOf("V0","V1","V2").map { OcrVariant(it,{streamBitmap},{}) }
+    val result=OcrEnsemble(listOf(streaming),{}).run(variants,ScanDeadline(now()+1000,now),onTokens={streamed+=it.size})
+    check(calls==1 && streamed==1 && result.tokens.size==1 && result.timings.size==1)
+    val interrupted=object:OcrEngine by streaming {
+        override suspend fun recognizeStreaming(bitmap:Bitmap,variantId:String,deadline:ScanDeadline,emit:(List<RawToken>)->Unit):List<RawToken> {
+            streaming.recognizeStreaming(bitmap,variantId,deadline,emit)
+            delay(10000)
+            return emptyList()
+        }
+    }
+    streamed=0
+    val timed=OcrEnsemble(listOf(interrupted),{}).run(variants,ScanDeadline(now()+100,now),onTokens={streamed+=it.size})
+    check(timed.deadlineCancelled && timed.tokens.size==1 && streamed==1 && timed.timings.single().tokenCount==1)
+    streamBitmap.recycle()
+    println("PASS: production base-only streaming / no double publication / completed lines survive timeout")
+
     val gate = NativeEngineGate()
     val lease = gate.acquire()
     check(withTimeoutOrNull(20) { gate.acquire() } == null)
