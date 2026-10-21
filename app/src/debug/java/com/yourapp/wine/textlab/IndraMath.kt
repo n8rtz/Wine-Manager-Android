@@ -1,9 +1,18 @@
 package com.yourapp.wine.textlab
 
 import kotlin.math.*
+import com.yourapp.wine.geom.Matrix3
 
 /** Adapted from datalab-to/indra det_post.py/vocab.py (Apache-2.0). Bounded phone profile. */
 internal object IndraMath {
+    fun turnMatrix(k:Int,w:Int,h:Int):Matrix3=when(k) {
+        0 -> Matrix3.scale(1.0,1.0)
+        1 -> Matrix3(listOf(0.0,-1.0,h.toDouble(),1.0,0.0,0.0,0.0,0.0,1.0))
+        2 -> Matrix3(listOf(-1.0,0.0,w.toDouble(),0.0,-1.0,h.toDouble(),0.0,0.0,1.0))
+        3 -> Matrix3(listOf(0.0,1.0,0.0,-1.0,0.0,w.toDouble(),0.0,0.0,1.0))
+        else -> error("Unsupported turn $k")
+    }
+
     data class Box(val left:Float,val top:Float,val right:Float,val bottom:Float,val score:Float)
     data class Regions(val boxes:List<Box>,val components:Int,val truncated:Boolean)
     data class Reading(val raw:String,val confidence:Float) { val accepted get()=confidence>=.5f }
@@ -16,18 +25,18 @@ internal object IndraMath {
             if(id!=0L && id!=previous) { tokens+=vocab[id.toInt()-1];sum+=p }
             previous=id
         }
-        val text=buildString {
-            tokens.forEachIndexed { i,t ->
-                append(t)
-                if(t.length>2 && t.startsWith("\\") && t.drop(1).all(Char::isLetter) &&
-                    tokens.getOrNull(i+1)?.firstOrNull()?.isLetter()==true) append(' ')
-            }
+        return Reading(tokensText(tokens),if(tokens.isEmpty()) 0f else (sum/tokens.size).toFloat())
+    }
+    fun tokensText(tokens:List<String>):String=buildString {
+        tokens.forEachIndexed { i,t ->
+            append(t)
+            if(t.length>2 && t.startsWith("\\") && t.drop(1).all(Char::isLetter) &&
+                tokens.getOrNull(i+1)?.firstOrNull()?.isLetter()==true) append(' ')
         }
-        return Reading(text,if(tokens.isEmpty()) 0f else (sum/tokens.size).toFloat())
     }
     /** Four-connected core components; output distances are in detector INPUT pixels, stride=2. */
-    fun regions(out:FloatArray,w:Int,h:Int,scale:Double,baseW:Int,baseH:Int,checkActive:()->Unit):Regions {
-        require(w in 1..512 && h in 1..512 && scale>0 && scale.isFinite())
+    fun regions(out:FloatArray,w:Int,h:Int,scale:Double,baseW:Int,baseH:Int,maxLines:Int=32,checkActive:()->Unit):Regions {
+        require(w in 1..1024 && h in 1..1024 && scale>0 && scale.isFinite())
         val n=w*h;require(out.size>=3*n)
         for(i in 0 until 3*n) { if(i%4096==0) checkActive();require(out[i].isFinite()) }
         val seen=BooleanArray(n);val queue=IntArray(n);val boxes=mutableListOf<Box>();var components=0;var capped=false
@@ -55,8 +64,8 @@ internal object IndraMath {
                 (y1/scale).coerceIn(0.0,baseH.toDouble()).toFloat(),(score/tail).toFloat())
             if(box.right>box.left && box.bottom>box.top) boxes+=box
         }
-        return Regions(boxes.sortedByDescending { it.score }.take(32).sortedWith(compareBy({it.top},{it.left})),
-            components,capped || boxes.size>32)
+        return Regions(boxes.sortedByDescending { it.score }.take(maxLines).sortedWith(compareBy({it.top},{it.left})),
+            components,capped || boxes.size>maxLines)
     }
     fun percentile(hist:IntArray,count:Int,q:Double):Double {
         require(count>0 && hist.size==256)

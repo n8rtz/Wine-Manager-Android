@@ -22,8 +22,9 @@ internal object IndraInput {
         }
         return values
     }
-    fun detector(gray:Mat,checkActive:()->Unit):Tensor {
-        val scale=1024.0/max(gray.cols(),gray.rows())
+    fun detector(gray:Mat,checkActive:()->Unit,longSide:Int=1024):Tensor {
+        require(longSide in 32..2048 && longSide%32==0)
+        val scale=longSide.toDouble()/max(gray.cols(),gray.rows())
         val w=max(1,round(gray.cols()*scale).toInt());val h=max(1,round(gray.rows()*scale).toInt())
         val pw=(w+31)/32*32;val ph=(h+31)/32*32
         val small=Mat()
@@ -33,7 +34,8 @@ internal object IndraInput {
             return Tensor(output,pw,ph,w,scale)
         } finally { small.release() }
     }
-    fun line(gray:Mat,box:IndraMath.Box,checkActive:()->Unit):Tensor {
+    fun line(gray:Mat,box:IndraMath.Box,checkActive:()->Unit,maxWidth:Int=1024):Tensor {
+        require(maxWidth in 1024..4096)
         val x0=max(0,box.left.toInt());val y0=max(0,box.top.toInt())
         val x1=min(gray.cols(),box.right.toInt()+1);val y1=min(gray.rows(),box.bottom.toInt()+1)
         val histogram=IntArray(256);var count=0
@@ -49,8 +51,8 @@ internal object IndraInput {
         val left=floor(box.left-.3*height).toInt();val right=ceil(box.right+.3*height).toInt()
         val top=floor(box.top-1.6*height).toInt();val bottom=ceil(box.bottom+1.6*height).toInt()
         val cw=max(1,right-left);val ch=max(1,bottom-top)
-        require(cw<=4096 && ch<=8192) { "Indra padded crop exceeds bounded input" }
-        val contentWidth=round(cw*96.0/ch).toInt().coerceIn(8,1024)
+        require(cw<=8192 && ch<=16384) { "Indra padded crop exceeds bounded input" }
+        val contentWidth=round(cw*96.0/ch).toInt().coerceIn(8,maxWidth)
         val pw=(contentWidth+7)/8*8
         val crop=Mat(ch,cw,CvType.CV_8UC1,Scalar(if(dark) 0.0 else 255.0));val resized=Mat()
         try {

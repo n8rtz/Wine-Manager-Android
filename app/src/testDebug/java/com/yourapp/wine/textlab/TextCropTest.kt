@@ -8,6 +8,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[26],manifest=Config.NONE)
 class TextCropTest {
+    @Test fun indraEnhancedContracts()=IndraEnhancedChecks.run()
     @Test fun indraContracts()=IndraChecks.run()
     @Test fun multiImageBatchCsv()=TextLabBatchChecks.run()
     @Test fun detectorProbabilityBoundaries()=PaddleProbabilityChecks.run()

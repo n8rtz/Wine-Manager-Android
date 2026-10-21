@@ -20,15 +20,15 @@ object IndraChecks {
         val hist=IntArray(256);hist[0]=90;hist[255]=10;check(IndraMath.dark(hist,100))
         hist[0]=10;hist[255]=90;check(!IndraMath.dark(hist,100))
         val choices=TextLabChoices.all
-        check(choices.size==4)
-        for(mask in 1..15) {
+        check(choices.size==5)
+        for(mask in 1..31) {
             val ids=choices.filterIndexed { i,_ -> mask and (1 shl i)!=0 }.map { it.id }.toSet()
             val journal=TextLabJournal(ids,"test",true);journal.finishPending("not_run_cancelled");journal.finishPending("not_run_cancelled")
             check(journal.rows.size==ids.size)
             if(IndraSpec.ID in ids) {
                 val row=journal.rows.single { it["candidate"]==IndraSpec.ID }
                 check(row["detector_sha256"]==IndraSpec.DET_SHA && row["model_license"]!!.contains("OpenRAIL"))
-                check(row["candidate_order"]==ids.size.toString())
+                check(row["candidate_order"]==(TextLabChoices.selected(ids).indexOfFirst { it.id==IndraSpec.ID }+1).toString())
                 val outCsv=java.io.StringWriter();journal.writeCsv(outCsv)
                 check(outCsv.toString().contains(IndraSpec.REC_SHA))
             }

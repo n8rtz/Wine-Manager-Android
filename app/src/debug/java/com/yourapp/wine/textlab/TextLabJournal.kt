@@ -22,7 +22,7 @@ internal class TextLabJournal(val selected:Set<String>,val build:String,val dete
     val rows=mutableListOf<Map<String,String>>()
     fun add(candidate:String,stage:String,status:String="complete",values:Map<String,String> = emptyMap(),details:String="") {
         val spec=PaddleCandidates.all.firstOrNull { it.id==candidate }
-        val models=if(candidate==IndraSpec.ID) IndraSpec.metadata else if(spec==null) emptyMap() else mapOf("detector" to spec.detector.name,"detector_sha256" to spec.detector.sha,
+        val models=if(candidate==IndraSpec.ENHANCED_ID) IndraSpec.enhancedMetadata else if(candidate==IndraSpec.ID) IndraSpec.metadata else if(spec==null) emptyMap() else mapOf("detector" to spec.detector.name,"detector_sha256" to spec.detector.sha,
             "detector_bytes" to spec.detector.bytes.toString(),"recognizer_bytes" to spec.recognizer.bytes.toString(),
             "recognizer" to spec.recognizer.name,"recognizer_sha256" to spec.recognizer.sha,"dictionary_sha256" to spec.dictionary.sha,
             "dictionary_entries" to spec.dictionary.entries.toString(),"db_threshold" to spec.threshold.toString(),

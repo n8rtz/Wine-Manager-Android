@@ -9,3 +9,9 @@ deskew, adaptive detection, layout, line splitting or math; 1024px detector edge
 recognition width, max 4096 components and 32 retained lines; serial single-line inference.
 These are not performance/accuracy claims about the full upstream document pipeline.
 Model license and attribution are also identified in exported CSV rows.
+
+Enhanced-base-1 profile (option 5) additionally adapts upstream lm.py and orientation/deskew
+logic from pipeline.py: genuine orientation/LM weights, thresholded quarter turns, expanded
+white-canvas deskew (modified from upstream), adaptive detection up to 2048, recognizer width
+4096, cap 256 lines. Greedy and LM-rescored text are both recorded. Still no multilingual
+routing, layout or math. Reference code license applies to these adaptations as well.

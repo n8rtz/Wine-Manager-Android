@@ -236,7 +236,9 @@ abstract class PrepareIndraLab : DefaultTask() {
         val folder=outputDirectory.dir("indra-v1").get().asFile.apply { mkdirs() }
         val models=listOf(
             Triple("det.onnx",389948L,"f2bd4cba23e9c328cf7ec824634e423e191a2c6aacbbf35c62bd79dd70f62f59"),
-            Triple("rec.onnx",5042161L,"475972a2710be4a3cbfeb2bc7f3624ffd563de07de42476fc7a290d4e1ece484"))
+            Triple("rec.onnx",5042161L,"475972a2710be4a3cbfeb2bc7f3624ffd563de07de42476fc7a290d4e1ece484"),
+            Triple("orient.onnx",371802L,"20eaf670f55a7cf9facfe1bdd6c7b8e40be75bbf4d48a3df43f66aa3bbd874fd"),
+            Triple("lm.npz",15695957L,"6c0fb618a363a0acdd05d4f5b0edd9e8146d2d990541b87f6130bbfe17cea58d"))
         fun hash(file:File):String {
             val digest=MessageDigest.getInstance("SHA-256")
             file.inputStream().use { input -> val buffer=ByteArray(32768)

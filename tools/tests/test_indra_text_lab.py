@@ -24,7 +24,7 @@ class IndraLabTests(unittest.TestCase):
         self.assertIn('options.setCPUArenaAllocator(false)',source)
         self.assertIn('options.setTerminate(true)',source)
         self.assertIn('lease.close()',source)
-        self.assertLess(source.index('OpenCvRuntime.ensureLoaded()'),source.index('val gray=Mat()'))
+        self.assertLess(source.index('OpenCvRuntime.ensureLoaded()'),source.index('var gray=Mat()'))
     def test_batch_wiring_and_explicit_scope(self):
         journal=(LAB/'TextLabJournal.kt').read_text()
         self.assertIn('IndraSpec.metadata',journal)
@@ -46,3 +46,33 @@ class IndraLabTests(unittest.TestCase):
         self.assertIn('variantId=="V0"',engine)
         self.assertIn('scoreIsEstimated=true',engine)
         self.assertIn('const val BUDGET_MS = 15_000L',(main/'ocr/ScanDeadline.kt').read_text())
+
+    def test_enhanced_indra_keeps_separate_identity_and_provenance(self):
+        spec=(LAB/'IndraSpec.kt').read_text()
+        journal=(LAB/'TextLabJournal.kt').read_text()
+        for key in ('indra_enhanced','indra_lm_sha256','indra_orientation_sha256','enhanced-base-1'):
+            self.assertIn(key,spec)
+        self.assertIn('IndraSpec.enhancedMetadata',journal)
+        source=(LAB/'IndraPipeline.kt').read_text()
+        self.assertIn('IndraLanguageModel.load',source)
+        self.assertIn('IndraBeam.decode',source)
+        self.assertIn('indra_greedy_text',source)
+        self.assertIn('indra_lm_applied',source)
+        self.assertIn('1024*12/maxOf(median,1.0)',source)
+        self.assertIn('pageToBase*Matrix3',source)
+        self.assertIn('ownedPage?.release()',source)
+    def test_enhanced_preprocessing_and_limits(self):
+        orientation=(LAB/'IndraOrientation.kt').read_text()
+        self.assertIn('BORDER_CONSTANT,Scalar(255.0)',orientation)
+        self.assertIn('(affine*turn).inverse()',orientation)
+        source=(LAB/'IndraPipeline.kt').read_text()
+        self.assertIn('if(enhanced) 4096 else 1024',source)
+        self.assertIn('if(enhanced) 256 else 32',source)
+        self.assertIn('chosen=if(probability>.95f',source)
+        self.assertIn('checkActive()',orientation)
+    def test_genuine_extra_models_are_checksum_pinned(self):
+        gradle=(ROOT/'app/build.gradle.kts').read_text()
+        spec=(LAB/'IndraSpec.kt').read_text()
+        for sha in ('6c0fb618a363a0acdd05d4f5b0edd9e8146d2d990541b87f6130bbfe17cea58d',
+                    '20eaf670f55a7cf9facfe1bdd6c7b8e40be75bbf4d48a3df43f66aa3bbd874fd'):
+            self.assertIn(sha,gradle);self.assertIn(sha,spec)

@@ -1,5 +1,60 @@
 # Indra versus PP-OCRv6 Medium in OCR Text Lab
 
+## Enhanced image profile (new option 5)
+
+For the strongest **currently implemented base-recognizer comparison**, select candidate 3
+(v6 Medium + Medium) and **5 · Indra enhanced: orientation + adaptive + LM**. Disable option 4
+unless you also want the old raw baseline as an ablation. All three can run in the same batch.
+The new stable CSV candidate ID is `indra_enhanced`, profile `enhanced-base-1`.
+
+Added versus the old raw profile:
+
+- Genuine `orient.onnx`, with the upstream 0.95 confidence threshold for quarter turns.
+- Projection-profile deskew: coarse ±45° search, then 0.5° and 0.1° refinements. The final
+  deskew canvas **expands with white padding** to retain label corners instead of upstream's
+  same-size/border-replicated canvas. This intentional difference is not claimed bit-exact.
+- Adaptive detection: initial edge 1024; with at least eight regions and median detector-space
+  height below 9px, rerun toward 12px median height, up to 2048. Only the final detection set
+  is recognized. Both pass timings are recorded; detections are never treated as extra votes.
+- Recognizer maximum width restored to 4096 instead of 1024. Cap increased to 256 retained
+  regions instead of 32; the component safety cap remains 4096 and truncation is reported.
+- Genuine base `lm.npz`, gated exactly as upstream for greedy confidence from 0.5 to below 0.9:
+  CTC prefix beam 8, alpha=.5, beta=1.5, candidate floor=.003. No wine knowledge or expected
+  answer is supplied. An isolated recognizer stage does not silently fall back if required LM
+  artifacts/outputs fail; the candidate/error rows report that failure.
+- `raw_text` is the final accepted reading; `indra_greedy_text` preserves the original reading,
+  `indra_unfiltered_text` preserves pre-gate output, and `indra_lm_applied` identifies rescoring.
+  `ctc_posterior` remains the **uncalibrated GREEDY posterior**, not confidence in the rescored text.
+- Quarter turns/deskew are explicitly inverted before returning original/base polygons and
+  line transforms. Original prepared-crop metadata remains identical between candidates.
+
+Additional genuine v1.1.0 assets, downloaded only at debug build time:
+
+| Asset | Bytes | SHA-256 |
+| --- | ---: | --- |
+| orient.onnx | 371802 | 20eaf670f55a7cf9facfe1bdd6c7b8e40be75bbf4d48a3df43f66aa3bbd874fd |
+| lm.npz | 15695957 | 6c0fb618a363a0acdd05d4f5b0edd9e8146d2d990541b87f6130bbfe17cea58d |
+
+Both pins were checked against the official Hugging Face LFS pointers. Model terms are unchanged.
+The NPZ reader permits only bounded numeric NPY arrays (no pickle/extraction/executable objects),
+with per-entry and total expansion guards and cancellation checks. Loaded tables are per candidate,
+not a permanently retained app cache. Setup/decompression/search all count toward the same
+60-second candidate budget; no silent extension. The production scanner and Paddle are unchanged.
+
+**Remaining scope:** this is still the base recognizer, not the full multilingual/document stack.
+Script routing, extra script recognizers, vertical-script reading, layout networks, line splitting,
+and math are not implemented. A confident vertical-script classification is recorded as unsupported,
+not falsely routed through the base recognizer. Thus this improves the Latin-script wine-label test,
+but must not be described as complete upstream Indra parity or a universal “best possible” result.
+
+**Executed checks for this update:** decoder parity against official Python golden outputs
+(16 backoff queries and 40 beam cases), CTC/geometry/31 selection combinations, host suite,
+62 Python checks, genuine Android/OpenCV/ORT adapter API compilation and Kotlin syntax checks.
+No full Gradle APK build, new graph execution, native orientation/deskew run, LM load on Android,
+performance/accuracy comparison, or end-to-end upstream parity test was executed here.
+
+The instructions/configuration below describe **option 4, the retained raw baseline**.
+
 ## Run on the phone
 
 1. Build debug on a supported desktop/CI host, install, and open Profile → OCR Text Lab.

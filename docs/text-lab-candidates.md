@@ -10,10 +10,12 @@ is never reused for another image. Choosing again replaces the queue. Enable any
 1. **PP-OCRv5 Mobile detector + Mobile recognizer** — existing pipeline/models.
 2. **PP-OCRv6 Small detector + Medium recognizer**.
 3. **PP-OCRv6 Medium detector + Medium recognizer**.
-4. **Indra v1.1 Latin/base raw detector + recognizer**, opt-in under its model terms.
+4. **Indra v1.1 Latin/base raw detector + recognizer**, retained baseline.
+5. **Indra enhanced** — orientation, deskew, adaptive detection and base-language-model rescoring.
+   Both Indra profiles are opt-in under their model terms.
    See [exact configuration, provenance and limitations](indra-text-lab.md).
 
-Candidate 3 is selected by default; enable Indra to compare them. **Run all N images** runs images sequentially, with enabled
+Candidate 3 is selected by default; enable Indra enhanced (option 5) for the stronger image-profile comparison. **Run all N images** runs images sequentially, with enabled
 candidates sequentially within each image. Candidate toggles, enlargement and line-detection
 settings apply across the batch. Each image uses one prepared crop for all its candidates,
 never differently recropped/enlarged for different candidates. ML Kit runs once per image as
