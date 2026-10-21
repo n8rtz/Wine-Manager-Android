@@ -39,6 +39,9 @@ jobs:
           cp -a opencv-minimal/build/generated/opencv/. opencv-minimal/prebuilt/
           python3 tools/opencv-prebuilt.py --seal
           python3 tools/opencv-prebuilt.py
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Compile debug APK using the prebuilt path before publishing
+        run: ./gradlew --no-daemon --console=plain :app:assembleDebug
       - name: Publish only artifact to this branch (never force push)
         run: |
           git config user.name 'github-actions[bot]'
