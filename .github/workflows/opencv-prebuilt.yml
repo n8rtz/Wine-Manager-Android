@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+      # Validate our wrapper before downloaded upstream sources add their unused wrappers.
+      - uses: gradle/actions/setup-gradle@v5
       - uses: actions/cache/restore@v5
         with:
           path: |
@@ -39,7 +41,6 @@ jobs:
           cp -a opencv-minimal/build/generated/opencv/. opencv-minimal/prebuilt/
           python3 tools/opencv-prebuilt.py --seal
           python3 tools/opencv-prebuilt.py
-      - uses: gradle/actions/setup-gradle@v5
       - name: Compile debug APK using the prebuilt path before publishing
         run: ./gradlew --no-daemon --console=plain :app:assembleDebug
       - name: Publish only artifact to this branch (never force push)
