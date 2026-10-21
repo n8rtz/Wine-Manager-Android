@@ -312,7 +312,7 @@ fun ProfileScreen(
                     )
                     ListItem(
                         headlineContent = { Text("OCR Lab — multi-image tests") },
-                        supportingContent = { Text("Enter actual label details and compare 30 treatments per image") },
+                        supportingContent = { Text("Enter actual label details and test the production stack per image") },
                         modifier = Modifier.fillMaxWidth().clickable {
                             context.startActivity(android.content.Intent().setClassName(context,
                                 "com.yourapp.wine.benchmark.OcrLabActivity"))

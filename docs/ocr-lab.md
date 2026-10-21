@@ -1,7 +1,7 @@
 # OCR Lab (debug builds only)
 
 Build/run the **debug** variant in Android Studio, then open **Add New Wine →
-OCR Lab — compare 30 treatments**. Release builds do not package the Lab activity,
+OCR Lab — test production stack**. Release builds do not package the Lab activity,
 recipes, filters, runner, UI or evaluation code. The normal scanner is unchanged;
 the production scanner exposes internal serialization and base-image capture hooks
 that are unused by ordinary scans. No benchmark suggestion is applied to the cellar.
@@ -17,7 +17,7 @@ that are unused by ordinary scans. No benchmark suggestion is applied to the cel
    inputs: maker/producer, wine name, Country (state for U.S.), region, subregion/
    appellation, vintage. Mark each image reviewed. No preset answer is silently
    assigned to a new photo. Blank fields mean **unscored**, not “must be absent.”
-4. Tap **Run N images × 30 treatments**. Images/cases are sequential, never parallel.
+4. Tap **Run N images × production stack**. Images/cases are sequential, never parallel.
    Metadata is frozen per image when the batch starts. Edits after the batch apply
    only to the next run. Failed image setup is recorded, and the batch continues
    with the next image. Stop retains all completed CSV rows.
@@ -56,25 +56,12 @@ pixels. Both exports use Android's save-document picker and are explicitly initi
 by the user; the scanner performs no upload. A failed export may leave a partial
 output document that needs deleting.
 
-## The 30 cases
+## Production baseline only
 
-- Current V0/V1/conditional V2 pipeline on the fixed crop (baseline).
-- Raw; CLAHE/highlight compression; unsharp; unsharp + half-height aspect rescue.
-- Gaussian illumination division (sigma 25); illumination + sharpening.
-- Sauvola: windows 25/51, k 0.20/0.35, with/without illumination correction (8).
-- Dark-stroke thickening (2×2 ellipse) on raw/CLAHE/illumination (3).
-- Sauvola window 25 with thickening, k 0.20/0.35 (2).
-- Fixed shear slopes −0.24/−0.12/+0.12/+0.24 (4).
-- CLAHE plus shear −0.12/+0.12 (2).
-- Sauvola window 25 plus shear −0.12/+0.12 (2).
-- Zhang–Suen thinning on Sauvola output, with/without subsequent thickening (2).
+Only current V0/V1/conditional V2 preprocessing with ML Kit + v6 Medium remains.
+Alternative filters/recipes were removed. Legacy CSV recipe columns are retained
+as empty fields for export compatibility. Old history is retained, not rerun.
 
-These are bounded comparisons, not every possible combination. Shear candidates
-are explicitly fixed experimental slopes, **not** inferred deskew/slant estimates.
-No Wolf/Niblack implementation or heuristic ligature cutting is claimed. Thinning
-is cancellable and limited to 64 iterations; non-convergence is an explicit failed
-case rather than a silently accepted partial skeleton. No ximgproc/native module,
-extra model, external wine lookup or downloaded binary is added.
 
 ## Fair comparison and scoring
 

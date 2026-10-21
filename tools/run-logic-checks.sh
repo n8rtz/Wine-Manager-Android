@@ -29,6 +29,7 @@ while IFS= read -r source; do sources+=("$source"); done < <(find "$root/merge" 
 sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.kt" "$root/geom/QuadOrder.kt" "$root/geom/LabelGeometryPolicy.kt" "$root/geom/TextHullClusterer.kt" "$root/ui/ScanFormState.kt" "$root/kb/WineKnowledgeBase.kt" "$root/kb/FixtureKnowledgeBase.kt" "$root/kb/PlaceGazetteer.kt" "$root/kb/PlaceHierarchy.kt"
     "$root/ocr/OcrImageTreatments.kt" "$root/ocr/OcrVariantGeometry.kt" "$root/ocr/OcrRescuePolicy.kt" "$root/ocr/OcrEngine.kt" "$root/ocr/OcrEnsemble.kt" "$root/ocr/ScanDeadline.kt" "$root/ocr/NativeEngineGate.kt"
     "$root/kb/WineTerms.kt" "$root/kb/BundledGrapes.kt" "$root/kb/BundledWineStyles.kt" "$root/kb/BundledProducerNames.kt" "$root/kb/BundledOrigins.kt" "$root/kb/ReferenceWineCatalog.kt" "$root/kb/GeneratedWineKnowledge.kt" "$root/kb/SupplementedWineKnowledgeBase.kt"
+    "$root/capture/RetiredModelCleanup.kt" tools/logic-checks/RetiredModelChecks.kt
     "$root/capture/ScanReport.kt" "$root/capture/SelectedLabelPhotoImporter.kt"
     "$root/diagnostics/ScanDiagnostics.kt" "$root/diagnostics/ScanTraceRecorder.kt" "$root/diagnostics/ScanDiagnosticFormatter.kt"
     app/src/main/java/com/n8rtz/winetracker/scanner/LabelScanState.kt
@@ -40,12 +41,7 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/main/java/com/yourapp/wine/textlab/PaddleDetectionGeometry.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/PaddleDetectionChecks.kt
     app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt
-    app/src/debug/java/com/yourapp/wine/textlab/IndraSpec.kt
-    app/src/debug/java/com/yourapp/wine/textlab/IndraPassPlan.kt
-    app/src/debug/java/com/yourapp/wine/textlab/IndraMath.kt
-    app/src/debug/java/com/yourapp/wine/textlab/IndraLanguageModel.kt
-    app/src/testDebug/java/com/yourapp/wine/textlab/IndraEnhancedChecks.kt
-    app/src/testDebug/java/com/yourapp/wine/textlab/IndraChecks.kt
+    app/src/debug/java/com/yourapp/wine/textlab/TextLabChoices.kt
     app/src/debug/java/com/yourapp/wine/textlab/TextLabJournal.kt
     app/src/debug/java/com/yourapp/wine/textlab/TextLabFieldExtractor.kt tools/logic-checks/TextLabFieldChecks.kt
     app/src/debug/java/com/yourapp/wine/textlab/TextLabWineTable.kt app/src/debug/java/com/yourapp/wine/textlab/TextLabBatch.kt
@@ -64,7 +60,6 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/testDebug/java/com/yourapp/wine/benchmark/BenchmarkCsvChecks.kt
     app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkPlan.kt
     app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkScoring.kt
-    app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkGeometry.kt
     app/src/testDebug/java/com/yourapp/wine/benchmark/BenchmarkChecks.kt
     .ocr-harness/checks/GeneratedFixtureChecks.kt)
 coroutines="$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar"

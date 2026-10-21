@@ -19,12 +19,11 @@ in service initialization. Wine extraction/knowledge/field-validation logic rema
   confirmation. No vintage-specific override or expected-wine input is added.
 - Both debug and release bundle the two Medium models, **138,587,816 bytes** before packaging,
   plus the v6 dictionary. Build-time checksum verification and local-only runtime extraction
-  are retained. Debug also retains v5/Small models for the lab. The model/KB combined 80 MiB
+  are retained. Debug uses the same Medium models; alternatives have been removed. The model/KB combined 80 MiB
   restriction is not applied to these explicitly authorized large models; the KB retains its
   own cap. The 40 MiB code/native check remains; total APK size is reported separately because
   it now includes model assets. New release sizes have not been measured.
 
-This integration was interrupted by the request to add Indra and is included with that lab
-addition. See [Indra test instructions and validation limits](indra-text-lab.md). Host logic
-checks and adapter API compilation passed; this is not a full APK/device validation claim.
-The Android-hosted OpenCV toolchain blocker remains separate and unresolved.
+The alternative-model experiment has concluded. Only ML Kit and v6 Medium remain.
+See [Text Lab](text-lab-candidates.md) and the [post-processing review](ocr-postprocessing-review.md).
+The production shared 15-second deadline, coordinate mappings and confidence gates are unchanged.

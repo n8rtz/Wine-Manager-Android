@@ -1,7 +1,7 @@
 # Offline wine label scanner
 
 **Current change:** [ML Kit + v6 Medium](production-v6-medium.md), with a 15-second shared
-scan deadline and bundled genuine ONNX models. [Indra comparison](indra-text-lab.md) is debug-only.
+scan deadline and bundled genuine ONNX models. [Text Lab](text-lab-candidates.md) now tests only the production engines.
 Older acceptance notes below describe the prior 8-second/optional-Paddle implementation.
 
 ## Scope and entry points
@@ -21,9 +21,9 @@ Implementation packages under `app/src/main/java/com/yourapp/wine/`:
 | `capture` | EXIF decode, bitmap ownership, quality gate, shared orchestration, image-free report |
 | `geom` | original/working/rectified geometry, quad detection, perspective warp, inverse mapping |
 | `preprocess` | at most three lazy rectified-label variants |
-| `ocr` | engine contracts, native semaphore, byte ownership, deadline, singleton ML Kit, optional Paddle hook |
+| `ocr` | engine contracts, native semaphore, byte ownership, deadline, singleton ML Kit, production Paddle Medium |
 | `merge` | NFKD text normalization, bounded edit distance/Jaro–Winkler, union-find and rectified lines |
-| `extract` | producer/cuvée/place patterns, vintage context, disabled optional NER interface |
+| `extract` | producer/cuvée/place patterns, vintage context, conservative identity validation |
 | `kb` | real source fixture, separate bundled SQLite FTS5, import adapter, cached place trie |
 | `fill` | hierarchy/vintage/identity validation and GREEN/YELLOW/RED decision |
 | `ui` | pure form review policy, one-tap confirmation, original-coordinate debug overlay |
@@ -263,7 +263,7 @@ Also perform **20 actual CameraX shutter captures**, not just file scans. Record
 | 1 camera/ML Kit/review | implemented; six-field/rejection/confirmation policy tests pass | app + instrumented test APKs compile; device capture/OCR pending |
 | 2 quad/warp/variants/overlay | implemented; inverse algebra passes | genuine arm64 OpenCV JNI builds/packages; runtime warp/20 captures pending |
 | 3 merger/extractor/FTS/hierarchy | implemented; genuine Robolectric fixtures/Android JSON and host FTS5 pass | genuine bundled SQLite/device image OCR pending |
-| 4 optional Paddle | honest presence/bridge interface; missing-assets/rectified-only policy tests pass | ML Kit-only default; native Paddle intentionally unavailable |
+| 4 production Paddle | genuine v6 Medium ONNX detector/recognizer; old bridge removed | ML Kit fallback when unavailable; see production-v6-medium.md |
 
 Earlier **local** Gradle9.3.1 wrapper attempts failed with TLS EOF before configuration. Hosted CI resolved the real dependencies and now passes debug, instrumented-test compilation, scanner Robolectric and release budget checks. There is still no SDK/NDK/emulator/device available locally; do not describe 20-camera-capture/OOM, device OCR or physical latency as accepted until the device commands above succeed.
 
@@ -285,11 +285,11 @@ adding destructive filters without those measurements is not an accuracy guarant
 
 ### Debug OCR Lab
 
-Debug builds now include **Add New Wine → OCR Lab — compare 30 treatments**.
+Debug builds now include **Add New Wine → OCR Lab — test production stack**.
 This opt-in benchmark is separate from normal scanning. See [ocr-lab.md](ocr-lab.md)
 for recipes, scoring limitations, budgets and explicit image/diagnostics export.
-Sauvola, stroke thickening, fixed shear and Zhang–Suen thinning are implemented
-only in this debug source set; the production pipeline remains unchanged.
+Alternative preprocessing recipes and their filter code have been removed.
+The production pipeline remains unchanged.
 
 ### Rules learned from the first multi-label CSV
 
@@ -364,7 +364,7 @@ When no other supported proposal remains, the existing mapped, bounded full-fram
 retains all source content and caps fields at YELLOW. No extra bitmap, pass, or time budget
 is added. OCR Lab now allows that mapped full-frame base, uses the full-frame engine input
 kind (so optional label-only engines remain excluded), and does not mark it as a found label.
-All 30 recipes still share one fixed base. Base-image/homography failures still stop setup;
+The production baseline uses one fixed base. Base-image/homography failures still stop setup;
 the historical Kirkland/Penfolds exceptions have not been individually diagnosed.
 
 A host regression replays the actual CSV homography and synthetic footer/upper-title boxes,

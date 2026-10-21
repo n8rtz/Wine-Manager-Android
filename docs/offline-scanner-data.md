@@ -70,38 +70,11 @@ cuvee,,Pavillon Rouge,,,,,1,
 
 `record_type` is `place`, `producer`, `alias` or `cuvee`. `name_norm` is computed, not trusted from external data.
 
-## Optional real Paddle Lite
+## OCR models
 
-Default: **absent and NotAvailable**, so phases 1–3 run ML Kit only. No `.nb`, dictionary, custom JNI or model weights are invented. Supplying named files alone does not create a usable OCR engine: register a genuine `RealPaddleBridgeFactory` in the app-scoped service construction after integrating a real licensed Paddle Lite runtime and compatible real models.
-
-Optional manifest (`assets/ocr/manifest.json`, bounded 16KiB):
-
-```json
-{
-  "schema": "paddle-lite/v1",
-  "family": "PP-OCRv4-mobile",
-  "det": "det.nb",
-  "cls": "cls.nb",
-  "rec": "rec.nb",
-  "dictionary": "dictionary.txt"
-}
-```
-
-`PP-OCRv5-mobile` is also accepted. Names are explicit real filenames, not downloadable placeholders. Presence checks require actual nonempty files. A real `assets/ocr/rec_custom.<tag>.nb`, if supplied, replaces **recognition only**; detector remains the mobile detector. Multiple custom files choose the lexically first one; ship only the intended model. All supplied OCR/NER files count against the combined asset budget, including invalid/unused files. No first-run optional downloader is implemented; adding one also needs a genuine cache-file locator instead of pretending APK assets are writable.
-
-Bridge requirements:
-
-1. Input is the rectified-label bitmap, never the full camera scene.
-2. Real detection → invertible line crop → orientation/classification → real recognition with the correct dictionary.
-3. Return one `RawToken` per line with **rectified-label pixel** corners and actual recognition score; invert every intermediate crop/rotation before returning.
-4. Honor the passed absolute deadline and shared `NativeEngineGate`. Sequential native engines; do not overlap after coroutine timeout while native code still owns inputs.
-5. Load models once app-scoped and own buffers across native async calls. No fake `.nb` decoder or synthetic predictions.
-
-`PaddleEngineFactory` logs why a bridge/model is unavailable; no error prevents the default ML Kit path unless installed assets themselves violate the explicit storage budget.
-
-## Optional NER
-
-`NerService` and `NoNerService` are interface-only/disabled by default. There is no DistilBERT, TFLite dependency, tokenizer emulation, hidden download or required model file. A future real implementation requires actual `assets/ner/model.tflite` and a compatible, specified `tokenizer.json` declaring tokenizer type, vocabulary, normalization, special tokens and sequence length. Its outputs are only extra candidates to pass through the same validator, never authoritative field values. Merely placing a binary in assets does not enable a fake service.
+Only bundled ML Kit and checksum-pinned PP-OCRv6 Medium are supported.
+The old optional Paddle Lite bridge and disabled NER interface have been removed.
+See [production stack](production-v6-medium.md).
 
 ## Label test data
 

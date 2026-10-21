@@ -5,12 +5,11 @@ import java.io.StringWriter
 object TextLabJournalChecks {
     fun run() {
         val specs=PaddleCandidates.all
-        check(specs.size==3 && specs.map { it.id }.toSet().size==3)
-        check(specs[0].detector.name=="PP-OCRv5_mobile_det" && specs[0].recognizer.name=="PP-OCRv5_mobile_rec")
-        check(specs[1].detector.name=="PP-OCRv6_small_det" && specs[2].detector.name=="PP-OCRv6_medium_det")
-        check(specs[1].recognizer==specs[2].recognizer && specs[1].dictionary.entries==18708)
-        check(specs[1].threshold==.2f && specs[0].threshold==.3f)
-        for(mask in 1..7) {
+        check(specs.size==1 && specs.single().id=="candidate_3")
+        check(specs.single().detector.name=="PP-OCRv6_medium_det")
+        check(specs.single().recognizer.name=="PP-OCRv6_medium_rec")
+        check(specs.single().dictionary.entries==18708)
+        for(mask in 1..1) {
             val selected=specs.filterIndexed { i,_ -> mask and (1 shl i)!=0 }.map { it.id }.toSet()
             val journal=TextLabJournal(selected,"test-build",true)
             val first=PaddleCandidates.selected(selected).first()
@@ -27,8 +26,8 @@ object TextLabJournalChecks {
             check(csv.contains("test_id") && csv.contains(journal.id) && csv.contains(first.recognizer.sha))
             val again=StringWriter();journal.writeCsv(again);check(csv==again.toString())
         }
-        val journal=TextLabJournal(setOf("candidate_1"),"test",false)
-        journal.add("candidate_1","recognition",values=mapOf("raw_text" to "  =HYPERLINK(\"evil\")"))
+        val journal=TextLabJournal(setOf("candidate_3"),"test",false)
+        journal.add("candidate_3","recognition",values=mapOf("raw_text" to "  =HYPERLINK(\"evil\")"))
         val writer=StringWriter();journal.writeCsv(writer)
         check(writer.toString().contains("'  =HYPERLINK"))
         val folder=java.nio.file.Files.createTempDirectory("text-lab-csv-check-").toFile()

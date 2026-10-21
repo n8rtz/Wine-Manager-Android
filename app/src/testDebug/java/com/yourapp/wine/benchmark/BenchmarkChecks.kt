@@ -9,22 +9,7 @@ import kotlin.math.abs
 object BenchmarkChecks {
     fun recipesAreBoundedAndGroundTruthDoesNotChooseThem() {
         val recipes=BenchmarkPlan.cases
-        check(recipes.size==30 && recipes.map { it.id }.distinct().size==30)
-        check(recipes.first().id=="baseline")
-        check(recipes.count { it.thin }==2)
-        check(recipes.filter { it.thin }.all { it.window>0 })
-        check(recipes.all { it.window in listOf(0,25,51) && abs(it.shear)<=.24 })
-    }
-    fun shearRetainsCornersAndMapsBack() {
-        for(slope in listOf(-.24,-.12,.12,.24)) {
-            val matrix=BenchmarkGeometry.shear(1280,1805,slope)
-            for(p in listOf(PointF(0f,0f),PointF(1280f,0f),PointF(1280f,1805f),PointF(0f,1805f),PointF(600f,900f))) {
-                val variant=matrix.map(p)
-                check(variant.x>=-.001 && variant.x<=1280.001 && variant.y>=0 && variant.y<=1805)
-                val back=matrix.inverse().map(variant)
-                check(abs(back.x-p.x)<.001 && abs(back.y-p.y)<.001)
-            }
-        }
+        check(recipes.size==1 && recipes.single().id=="baseline")
     }
     fun scoringDoesNotRewardConfidenceOrInventMissingText() {
         val records=listOf(LogicChecks.token("BLACKSTONE",.95f),LogicChecks.token("California",.99f,y=.7f))

@@ -38,7 +38,7 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
         scanner.withBenchmarkEngines { engines,fills ->
             ordered.forEachIndexed { index,recipe ->
                 currentCoroutineContext().ensureActive()
-                onProgress("${index+1}/30: ${recipe.id}")
+                onProgress("${index+1}/${BenchmarkPlan.cases.size}: ${recipe.id}")
                 val start=SystemClock.elapsedRealtime()
                 val deadline=ScanDeadline(start+ScanDeadline.BUDGET_MS-300)
                 val workspace=BitmapWorkspace()
@@ -54,13 +54,7 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
                         val prepareStart=SystemClock.elapsedRealtime()
                         val base=workspace.own(requireNotNull(BitmapFactory.decodeFile(baseFile.absolutePath)))
                         checkpoint(deadline)
-                        val variants=if(recipe.id=="baseline") Preprocess(enableV2=true).variants(base,workspace) else {
-                            val prepared=if(recipe.id=="raw") PreparedTreatment(base,Matrix3.scale(1.0,1.0))
-                                else BenchmarkPreprocess.prepare(base,recipe,workspace,deadline)
-                            listOf(OcrVariant(recipe.id,{ prepared.bitmap },{},
-                                toLabel={ token,_,_ -> token.copy(polygon=token.polygon.map(prepared.variantToBase::map)) },
-                                description={ _,_ -> recipe.description }))
-                        }
+                        val variants=Preprocess(enableV2=true).variants(base,workspace)
                         prepMs+=SystemClock.elapsedRealtime()-prepareStart
                         val withPreviews=variants.map { variant -> variant.copy(prepare={
                             if(deadline.expired) throw BenchmarkBudgetExceeded()
@@ -109,4 +103,10 @@ class BenchmarkRunner(private val scanner:OfflineWineScanner) {
             }
         }
     }
+}
+
+internal class BenchmarkBudgetExceeded : Exception()
+internal suspend fun checkpoint(deadline:ScanDeadline) {
+    currentCoroutineContext().ensureActive()
+    if(deadline.expired) throw BenchmarkBudgetExceeded()
 }

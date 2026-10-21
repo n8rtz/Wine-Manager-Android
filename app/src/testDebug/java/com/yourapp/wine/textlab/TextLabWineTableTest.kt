@@ -5,14 +5,14 @@ import org.junit.Test
 
 class TextLabWineTableTest {
     @Test fun passesAndGreedyDiagnosticsNeverMix() {
-        val journal=TextLabJournal(setOf(IndraSpec.MULTIPASS_ID),"test",true)
-        journal.add(IndraSpec.MULTIPASS_ID,"recognition",values=mapOf("pass_id" to "p01","raw_text" to "2019"))
-        journal.add(IndraSpec.MULTIPASS_ID,"recognition",values=mapOf("pass_id" to "p02","raw_text" to "2014"))
-        journal.add(IndraSpec.MULTIPASS_ID,"greedy_recognition",values=mapOf("pass_id" to "p01","raw_text" to "2018"))
+        val journal=TextLabJournal(setOf("candidate_3"),"test",true)
+        journal.add("candidate_3","recognition",values=mapOf("pass_id" to "p01","raw_text" to "2019"))
+        journal.add("candidate_3","recognition",values=mapOf("pass_id" to "p02","raw_text" to "2014"))
+        journal.add("candidate_3","greedy_recognition",values=mapOf("pass_id" to "p01","raw_text" to "2018"))
         journal.add("mlkit_reference","recognition",values=mapOf("raw_text" to "2020"))
-        assertEquals(listOf("2019"),TextLabWineTable.readings(journal,IndraSpec.MULTIPASS_ID,"p01").map { it["raw_text"] })
-        assertEquals(13,TextLabWineTable.groups(journal).size)
-        assertTrue(TextLabWineTable.readings(journal,IndraSpec.MULTIPASS_ID,"p12").isEmpty())
+        assertEquals(listOf("2019"),TextLabWineTable.readings(journal,"candidate_3","p01").map { it["raw_text"] })
+        assertEquals(2,TextLabWineTable.groups(journal).size)
+        assertTrue(TextLabWineTable.readings(journal,"candidate_3","p12").isEmpty())
     }
     @Test fun unknownAndFailedValuesRemainVisibleWithImageIdentity() {
         val batch=TextLabBatch(listOf(TextLabImageKey("one","one.jpg"),TextLabImageKey("two","two.jpg")),setOf("candidate_3"),"test",true)

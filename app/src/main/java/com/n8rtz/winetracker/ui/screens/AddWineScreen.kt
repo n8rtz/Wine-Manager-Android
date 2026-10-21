@@ -208,7 +208,7 @@ fun AddWineScreen(
                     OutlinedButton(enabled = !labelScanState.isBusy && !showLabelCamera, onClick = {
                         context.startActivity(android.content.Intent().setClassName(context,
                             "com.yourapp.wine.benchmark.OcrLabActivity"))
-                    }) { Text("OCR Lab — compare 30 treatments") }
+                    }) { Text("OCR Lab — test production stack") }
                 }
                 (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(

@@ -7,8 +7,7 @@ internal object TextLabWineTable {
     fun groups(journal:TextLabJournal):List<Pair<String,String>> = buildList {
         add("mlkit_reference" to "")
         TextLabChoices.selected(journal.selected).forEach { choice ->
-            if(choice.id==IndraSpec.MULTIPASS_ID) IndraPassPlan.all.forEach { add(choice.id to it.id) }
-            else add(choice.id to "")
+            add(choice.id to "")
         }
     }
     fun readings(journal:TextLabJournal,candidate:String,pass:String):List<Map<String,String>> =

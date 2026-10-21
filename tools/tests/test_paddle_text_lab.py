@@ -1,25 +1,25 @@
 """Offline provenance/config guards. This does NOT run the downloaded ONNX graph."""
 import hashlib,json,pathlib,unittest
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-DATA=ROOT/'app/src/debug/assets/text-lab-paddle-v1'
+DATA=ROOT/'app/src/main/assets/text-lab-paddle-v1'
 MAIN_DATA=ROOT/'app/src/main/assets/text-lab-paddle-v1'
 class PaddleTextLabTests(unittest.TestCase):
     def test_dictionary_and_pin(self):
-        meta=json.loads((DATA/'provenance.json').read_text())
-        raw=(DATA/'ppocrv5_dict.utf8').read_bytes()
+        meta=json.loads((DATA/'production-models.json').read_text())
+        raw=(DATA/'ppocrv6_dict.utf8').read_bytes()
         self.assertEqual(hashlib.sha256(raw).hexdigest(),meta['dictionary_sha256'])
         self.assertEqual(len(raw.decode().splitlines()),meta['dictionary_entries'])
-        self.assertEqual(meta['dictionary_entries'],18383)
-        self.assertEqual(len(raw),74012)
+        self.assertEqual(meta['dictionary_entries'],18708)
+        self.assertEqual(len(raw),74947)
         self.assertIn('Apache License',(MAIN_DATA/'LICENSE-PaddleOCR.txt').read_text())
     def test_dictionary_is_byte_exact_on_windows(self):
         import subprocess
-        asset='app/src/debug/assets/text-lab-paddle-v1/ppocrv5_dict.utf8'
+        asset='app/src/main/assets/text-lab-paddle-v1/ppocrv6_dict.utf8'
         attr=subprocess.check_output(['git','check-attr','text','--',asset],cwd=ROOT,text=True)
         self.assertIn(': text: unset',attr)
         raw=(ROOT/asset).read_bytes()
         self.assertNotIn(b'\r\n',raw)
-        meta=json.loads((DATA/'provenance.json').read_text())
+        meta=json.loads((DATA/'production-models.json').read_text())
         self.assertEqual(meta['dictionary_asset'],pathlib.Path(asset).name)
         self.assertNotEqual(hashlib.sha256(raw.replace(b'\n',b'\r\n')).hexdigest(),meta['dictionary_sha256'])
         engine=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleTextRecognizer.kt').read_text()
@@ -36,13 +36,13 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('Files.move(',task)
 
     def test_shared_runtime_and_debug_extra_models(self):
-        meta=json.loads((DATA/'provenance.json').read_text())
+        meta=json.loads((DATA/'production-models.json').read_text())
         gradle=(ROOT/'app/build.gradle.kts').read_text()
         self.assertIn('implementation("'+meta['runtime']+'")',gradle)
-        self.assertIn('selector().withBuildType("debug")',gradle)
-        self.assertIn('addGeneratedSourceDirectory(prepareTextLabPaddle',gradle)
-        self.assertIn(meta['model_url'],gradle)
-        self.assertIn(meta['model_sha256'],gradle)
+        self.assertNotIn('PrepareIndraLab',gradle)
+        self.assertNotIn('textLabExtraPaddleAssets',gradle)
+        self.assertIn(meta['v6_models'][1]['url'],gradle)
+        self.assertIn(meta['v6_models'][1]['sha256'],gradle)
         self.assertIn('checksum mismatch',gradle)
         self.assertTrue((MAIN_DATA/'ppocrv6_dict.utf8').exists())
         self.assertIn('addGeneratedSourceDirectory(preparePaddleMedium',gradle)
@@ -75,14 +75,14 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertNotIn('FieldExtractor',runner)
 
     def test_detector_is_genuine_and_build_time_only(self):
-        meta=json.loads((DATA/'provenance.json').read_text())
-        det=meta['detector']
+        meta=json.loads((DATA/'production-models.json').read_text())
+        det=meta['v6_models'][0]
         gradle=(ROOT/'app/build.gradle.kts').read_text()
-        for value in (det['model_url'],det['model_sha256'],str(det['model_bytes'])):
+        for value in (det['url'],det['sha256'],str(det['bytes'])):
             self.assertIn(value,gradle)
-        self.assertGreater(det['model_bytes'],0)
+        self.assertGreater(det['bytes'],0)
         engine=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleTextDetector.kt').read_text()
-        self.assertIn(det['model_sha256'],(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text())
+        self.assertIn(det['sha256'],(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text())
         self.assertIn('PaddleAssets.verified(context,spec.detector.asset,spec.detector.sha,spec.detector.bytes)',engine)
         self.assertIn('gate.acquire()',engine)
         self.assertIn('stop.cancelAndJoin()',engine)
@@ -119,7 +119,7 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(raw).hexdigest(),'b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d')
         attr=subprocess.check_output(['git','check-attr','text','--',str(MAIN_DATA/'ppocrv6_dict.utf8')],cwd=ROOT,text=True)
         self.assertIn(': text: unset',attr)
-        manifest=json.loads((DATA/'candidate-models.json').read_text())
+        manifest=json.loads((DATA/'production-models.json').read_text())
         config=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text()
         gradle=(ROOT/'app/build.gradle.kts').read_text()
         for model in manifest['v6_models']:
@@ -178,3 +178,22 @@ class PaddleTextLabTests(unittest.TestCase):
         for field in ('batch_id','image_id','image_name','image_index','image_count'):
             self.assertIn('"'+field+'"',batch)
         self.assertNotIn('async(',vm)
+
+    def test_only_production_model_profiles_and_recipes_remain(self):
+        config=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text()
+        self.assertEqual(config.count('PaddleCandidate("'),1)
+        self.assertIn('PaddleCandidate("candidate_3"',config)
+        gradle=(ROOT/'app/build.gradle.kts').read_text()
+        for retired in ('v6-small-det.onnx','inference.onnx','detection.onnx','huggingface.co','PrepareIndraLab','mediumOnly'):
+            self.assertNotIn(retired,gradle)
+        self.assertFalse((ROOT/'app/src/debug/assets/indra-v1').exists())
+        self.assertFalse((ROOT/'app/src/main/java/com/yourapp/wine/ocr/PaddleEngineFactory.kt').exists())
+        self.assertFalse((ROOT/'app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkPreprocess.kt').exists())
+        self.assertFalse(list((ROOT/'app/src/debug/java/com/yourapp/wine/textlab').glob('Indra*.kt')))
+
+    def test_review_corpus_is_observed_data_not_ground_truth(self):
+        data=json.loads((ROOT/'app/src/testDebug/resources/textlab/production-review.json').read_text())
+        self.assertIn('NOT ground truth',data['warning'])
+        self.assertEqual(len(data['cases']),12)
+        self.assertEqual({x['engine'] for x in data['cases']},{'mlkit_reference','candidate_3'})
+        self.assertEqual(sum(len(x['readings']) for x in data['cases']),103)

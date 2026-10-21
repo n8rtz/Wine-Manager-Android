@@ -25,6 +25,7 @@ object WineScannerServices {
         val job = synchronized(this) {
             // A failed async is cancelled: do not permanently poison every later retake with its exception.
             pending?.takeUnless { it.isCancelled } ?: scope.async {
+                RetiredModelCleanup.remove(app.noBackupFilesDir)
                 val gate = nativeGate
                 // Model weights have a separate, explicitly relaxed budget; retain the KB's own cap.
                 val kb = SqliteWineKnowledgeBase.open(app, 0)

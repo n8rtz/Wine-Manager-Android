@@ -158,9 +158,6 @@ tasks.register<Exec>("checkArm64ApkBudget") {
 
 /** Genuine, checksum-pinned model acquisition at BUILD time, never from the recognition path. */
 abstract class PrepareTextLabPaddle : DefaultTask() {
-    @get:Input
-    abstract val mediumOnly: Property<Boolean>
-
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
@@ -196,78 +193,18 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
                 throw GradleException("Cannot prepare genuine Paddle OCR model $name. Check build-machine access to GitHub release assets and retry. No placeholder model is allowed.", error)
             } finally { temp.delete() }
         }
-        if (!mediumOnly.get()) {
-            download("inference.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_rec.onnx",
-                "243a0f06d826761323e9045e9b113ab2c191c3aa50565585e628300b8eda0224", 16562373L)
-            download("detection.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.3.0/pp-ocrv5_mobile_det.onnx",
-                "1eb7b4f7ab657ebd1c66d5f79bca7497f29768a2e3c15e52daecbba1a8e4a039", 4826518L)
-            download("v6-small-det.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_small_det.onnx",
-                "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e", 9880512L)
-        } else {
             download("v6-medium-det.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_medium_det.onnx",
                 "eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1", 62032837L)
             download("v6-medium-rec.onnx", "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_medium_rec.onnx",
                 "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba", 76554979L)
-        }
     }
 }
 
-val prepareTextLabPaddle = tasks.register<PrepareTextLabPaddle>("prepareTextLabPaddle") {
-    mediumOnly.set(false)
-    outputDirectory.set(layout.buildDirectory.dir("generated/textLabExtraPaddleAssets"))
-}
 val preparePaddleMedium = tasks.register<PrepareTextLabPaddle>("preparePaddleMedium") {
-    mediumOnly.set(true)
     outputDirectory.set(layout.buildDirectory.dir("generated/paddleMediumAssets"))
 }
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(preparePaddleMedium, PrepareTextLabPaddle::outputDirectory)
     }
-    onVariants(selector().withBuildType("debug")) { variant ->
-        variant.sources.assets?.addGeneratedSourceDirectory(prepareTextLabPaddle, PrepareTextLabPaddle::outputDirectory)
-    }
-}
-
-/** Indra weights are governed by the bundled modified OpenRAIL-M license, not the code license. */
-abstract class PrepareIndraLab : DefaultTask() {
-    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
-    @TaskAction fun prepare() {
-        val folder=outputDirectory.dir("indra-v1").get().asFile.apply { mkdirs() }
-        val models=listOf(
-            Triple("det.onnx",389948L,"f2bd4cba23e9c328cf7ec824634e423e191a2c6aacbbf35c62bd79dd70f62f59"),
-            Triple("rec.onnx",5042161L,"475972a2710be4a3cbfeb2bc7f3624ffd563de07de42476fc7a290d4e1ece484"),
-            Triple("orient.onnx",371802L,"20eaf670f55a7cf9facfe1bdd6c7b8e40be75bbf4d48a3df43f66aa3bbd874fd"),
-            Triple("lm.npz",15695957L,"6c0fb618a363a0acdd05d4f5b0edd9e8146d2d990541b87f6130bbfe17cea58d"))
-        fun hash(file:File):String {
-            val digest=MessageDigest.getInstance("SHA-256")
-            file.inputStream().use { input -> val buffer=ByteArray(32768)
-                while(true) { val n=input.read(buffer);if(n<0) break;digest.update(buffer,0,n) } }
-            return digest.digest().joinToString("") { "%02x".format(it) }
-        }
-        for((name,size,sha) in models) {
-            val target=File(folder,name)
-            if(target.isFile && target.length()==size && hash(target)==sha) continue
-            val temp=File(folder,"$name.download")
-            try {
-                val connection=URI("https://huggingface.co/datalab-to/indra-ocr/resolve/v1.1.0/$name").toURL()
-                    .openConnection().apply { connectTimeout=30000;readTimeout=30000 }
-                connection.getInputStream().use { input -> temp.outputStream().use { output ->
-                    val buffer=ByteArray(32768);var total=0L
-                    while(true) { val n=input.read(buffer);if(n<0) break;total+=n
-                        check(total<=size) { "Indra model exceeds pinned size" };output.write(buffer,0,n) }
-                } }
-                check(temp.length()==size && hash(temp)==sha) { "Indra checksum/size mismatch: $name" }
-                Files.move(temp.toPath(),target.toPath(),StandardCopyOption.REPLACE_EXISTING)
-            } catch(error:Exception) {
-                throw GradleException("Cannot acquire genuine Indra $name. Debug builds require access to Hugging Face and its asset hosts; see docs/indra-text-lab.md. No placeholder is allowed.",error)
-            } finally { temp.delete() }
-        }
-    }
-}
-val prepareIndraLab=tasks.register<PrepareIndraLab>("prepareIndraLab") {
-    outputDirectory.set(layout.buildDirectory.dir("generated/indraLabAssets"))
-}
-androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
-    variant.sources.assets?.addGeneratedSourceDirectory(prepareIndraLab,PrepareIndraLab::outputDirectory)
 }

@@ -19,21 +19,19 @@ internal class TextLabJournal(val selected:Set<String>,val build:String,val dete
         "runtime" to "ONNX Runtime Android 1.21.1 CPU; intra=2 inter=1",
         "detection_enabled" to detectLines.toString(),"detector_max_edge" to "960","recognizer_max_width" to "1024",
         "max_lines" to "32","max_components" to "4096","max_contour_candidates" to "128")
-    var passContext:Map<String,String> = emptyMap() // Worker-confined; reset before other candidates.
     val rows=mutableListOf<Map<String,String>>()
     fun add(candidate:String,stage:String,status:String="complete",values:Map<String,String> = emptyMap(),details:String="") {
         val spec=PaddleCandidates.all.firstOrNull { it.id==candidate }
-        val models=if(candidate==IndraSpec.MULTIPASS_ID) IndraSpec.multipassMetadata else if(candidate==IndraSpec.ENHANCED_ID) IndraSpec.enhancedMetadata else if(candidate==IndraSpec.ID) IndraSpec.metadata else if(spec==null) emptyMap() else mapOf("detector" to spec.detector.name,"detector_sha256" to spec.detector.sha,
+        val models=if(spec==null) emptyMap() else mapOf("detector" to spec.detector.name,"detector_sha256" to spec.detector.sha,
             "detector_bytes" to spec.detector.bytes.toString(),"recognizer_bytes" to spec.recognizer.bytes.toString(),
             "recognizer" to spec.recognizer.name,"recognizer_sha256" to spec.recognizer.sha,"dictionary_sha256" to spec.dictionary.sha,
             "dictionary_entries" to spec.dictionary.entries.toString(),"db_threshold" to spec.threshold.toString(),
             "db_box_threshold" to spec.boxThreshold.toString(),"db_unclip" to spec.unclip.toString())
-        rows += models+(if(candidate==IndraSpec.MULTIPASS_ID) passContext else emptyMap())+values+mapOf("sequence" to (rows.size+1).toString(),"candidate" to candidate,
+        rows += models+values+mapOf("sequence" to (rows.size+1).toString(),"candidate" to candidate,
             "candidate_order" to TextLabChoices.selected(selected).indexOfFirst { it.id==candidate }.let { if(it<0) "" else (it+1).toString() },
             "stage" to stage,"status" to status,"event_at_ms" to System.currentTimeMillis().toString(),"details" to details)
     }
     fun finishPending(status:String) {
-        if(IndraSpec.MULTIPASS_ID in selected) IndraPassPlan.finishPending(this,status)
         for(candidate in TextLabChoices.selected(selected)) {
             if(rows.none { it["candidate"]==candidate.id && it["stage"]=="candidate_summary" })
                 add(candidate.id,"candidate_summary",status,details="No completed candidate summary; inspect earlier rows for partial results.")

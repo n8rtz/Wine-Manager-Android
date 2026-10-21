@@ -58,7 +58,7 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
         item {
             Text("OCR Lab · multi-label benchmark",style=MaterialTheme.typography.headlineSmall)
             Text("Debug build ${BuildConfig.BUILD_COMMIT}",style=MaterialTheme.typography.bodySmall)
-            Text("30 treatments per image, run sequentially. Up to 10 photos per batch; allow several minutes per photo. No cellar fields are changed.")
+            Text("Production stack only, run sequentially. Up to 10 photos per batch; allow several minutes per photo. No cellar fields are changed.")
             Text("Actual details are used ONLY to score results. Blank = unscored, not expected-absent. Check each photo separately; answers are never copied between labels.")
             OutlinedButton(enabled=!state.busy,onClick=vm::loadBundledSamples) { Text("Load bundled test wines (3)") }
             Text("Blackstone, Olarra and Rhône originals with saved expected details. Replaces this queue, not CSV history. Review once; edits and confirmations are remembered.",style=MaterialTheme.typography.bodySmall)
@@ -89,7 +89,7 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
         }
         item {
             Button(enabled=!state.busy && state.labels.isNotEmpty() && state.labels.all { it.reviewed },onClick={selected=null;selectedImage=null;vm.start()}) {
-                Text("Run ${state.labels.size} images × 30 treatments")
+                Text("Run ${state.labels.size} images × production stack")
             }
             if(state.busy) { LinearProgressIndicator(Modifier.fillMaxWidth());TextButton(onClick=vm::cancel) { Text("Stop") } }
             Text(state.progress)
@@ -113,7 +113,7 @@ private fun OcrLabScreen(exportRequested:Boolean,onClose:()->Unit,vm:OcrLabViewM
             }
             Text("Inspect a label",style=MaterialTheme.typography.titleMedium)
             state.runs.forEach { label ->
-                TextButton(onClick={selectedImage=label.id;selected=null}) { Text("${label.label}: ${label.status} · ${label.results.size}/30") }
+                TextButton(onClick={selectedImage=label.id;selected=null}) { Text("${label.label}: ${label.status} · ${label.results.size}/${BenchmarkPlan.cases.size}") }
             }
             run?.let { Text("${it.label} — scored against ${it.expected.values.joinToString(" · ")}") }
             Text("Raw name % = closest 1–3 OCR lines, not confidence/full-label accuracy. Field matches may include dictionary corrections.",style=MaterialTheme.typography.bodySmall)

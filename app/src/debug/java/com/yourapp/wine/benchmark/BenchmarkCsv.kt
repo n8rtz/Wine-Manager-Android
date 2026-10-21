@@ -20,9 +20,8 @@ object BenchmarkCsv {
         recipe:Treatment?,status:String,report:ScanReport?,preparationMs:Long?,expected:Map<FieldId,String>,
         environment:ScanEnvironment):String {
         val score=report?.let { BenchmarkScoring.score(expected,it.fill,it.tokens) }
-        val parameters=recipe?.takeUnless { it.id=="baseline" } // Composite pipeline has no single set of filter parameters.
         val values=mutableListOf<Any?>("1",batch,imageId,label,inputHash,baseHash,seed,order,recipe?.id,
-            recipe?.description,parameters?.contrast,parameters?.sharpen,parameters?.window,parameters?.k,parameters?.thicken,parameters?.shear,parameters?.thin,parameters?.aspect,status,report?.elapsedMs,preparationMs,report?.deadlineCancelled,
+            recipe?.description,null,null,null,null,null,null,null,null,status,report?.elapsedMs,preparationMs,report?.deadlineCancelled,
             score?.exactFields,score?.checkedFields,score?.rawNameSimilarity,environment.buildCommit,
             environment.buildBranch,environment.workingTree,environment.model,environment.androidSdk)
         FieldId.entries.forEach { field ->

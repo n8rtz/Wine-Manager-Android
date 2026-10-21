@@ -1,7 +1,2 @@
-# Pinned OCR dictionary is a byte-exact upstream artifact, even with core.autocrlf=true.
-app/src/debug/assets/text-lab-paddle-v1/ppocrv5_dict.utf8 -text
-
+# Pinned production OCR dictionary must remain byte-exact.
 app/src/main/assets/text-lab-paddle-v1/ppocrv6_dict.utf8 -text
-
-# Byte-exact pinned Indra metadata and licenses.
-app/src/debug/assets/indra-v1/* -text

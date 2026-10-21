@@ -4,12 +4,6 @@
   "release": "GreatV/oar-ocr v0.7.0",
   "v6_models": [
     {
-      "asset": "v6-small-det.onnx",
-      "url": "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_small_det.onnx",
-      "bytes": 9880512,
-      "sha256": "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e"
-    },
-    {
       "asset": "v6-medium-det.onnx",
       "url": "https://github.com/GreatV/oar-ocr/releases/download/v0.7.0/pp-ocrv6_medium_det.onnx",
       "bytes": 62032837,
@@ -31,11 +25,6 @@
   },
   "preprocessing": "BGR NCHW; detector ImageNet normalization; recognition height 48 / [-1,1] / zero right padding; CTC blank + dictionary + space",
   "db_profiles": {
-    "v5": [
-      0.3,
-      0.6,
-      1.5
-    ],
     "v6": [
       0.2,
       0.45,
@@ -43,9 +32,12 @@
     ]
   },
   "sources": [
-    "configs/det/PP-OCRv6/PP-OCRv6_small_det.yml",
     "configs/det/PP-OCRv6/PP-OCRv6_medium_det.yml",
     "configs/rec/PP-OCRv6/PP-OCRv6_medium_rec.yml"
   ],
-  "validation": "Models not executed in sandbox; phone validation required"
+  "validation": "Models not executed in sandbox; phone validation required",
+  "runtime": "com.microsoft.onnxruntime:onnxruntime-android:1.21.1",
+  "dictionary_sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d",
+  "dictionary_entries": 18708,
+  "dictionary_asset": "ppocrv6_dict.utf8"
 }
