@@ -92,3 +92,9 @@ seen wines, not a held-out accuracy test. In particular the Rhône label remains
 and ML Kit's LACKSTONE is not fabricated into Blackstone. Incorrect YELLOW suggestions
 remain possible. Independent annotations, per-field precision/coverage, ablations and
 phone latency/memory validation from the review plan are still needed.
+
+## Field-aware spelling extension
+
+The subsequent `identity-v3-spelling` version adds bounded producer, style, cuvée and
+anchored-geography suggestions without modifying OCR confidence. See
+[field-aware spelling](field-aware-spelling.md) for bounds, metadata and limitations.

@@ -19,6 +19,16 @@ class FixtureKnowledgeBase(private val data: KnowledgeSnapshot = snapshot) : Win
         return KbMatching.rank(text, shortlist)
     }
 
+    override fun findProducerFuzzy(text:String):List<ProducerHit> {
+        val prefixes=KbMatching.fuzzyPrefixes(text)
+        return KbMatching.rank(text,data.producers.filter { p -> (listOf(p.nameNorm)+p.aliases.map(TextNorm::normalize)).any { name ->
+            name.split(' ').any { word -> prefixes.any(word::startsWith) }
+        } })
+    }
+    override fun findCuvees(producerId:Long,text:String):List<CuveeHit> = data.cuvees.filter { it.producerId==producerId }.mapNotNull {
+        TextNorm.editDistance(TextNorm.normalize(text),TextNorm.normalize(it.name))?.let { distance -> CuveeHit(it,distance) }
+    }.sortedBy { it.editDistance }.take(8)
+
     /** No coordinates: returns only a fixture cuvée for the supplied producer. */
     override fun findCuvee(producerId: Long, text: String): CuveeHit? = data.cuvees
         .filter { it.producerId == producerId }.mapNotNull { cuvee ->

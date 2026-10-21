@@ -95,6 +95,7 @@ fun main() {
     bitmapOwnershipChecks()
     csvImportChecks()
     boundedImportChecks()
+    com.yourapp.wine.FuzzySpellingChecks.run()
     com.yourapp.wine.textlab.PostProcessingReplay.run()
     com.yourapp.wine.PostProcessingChecks.rolesRankingAndSafety()
     com.yourapp.wine.PostProcessingChecks.boundedAssignmentKeepsAlternativesAndAbstains()

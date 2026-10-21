@@ -8,9 +8,10 @@ import com.yourapp.wine.ocr.MergedToken
 
 /** Narrow, evidence-backed spelling suggestions. Expected benchmark answers never enter this path. */
 class ContextualAppellationRepair(private val gazetteer: PlaceGazetteer, private val hierarchy: PlaceHierarchy) {
-    data class Result(val lines: List<LabelLine>, val repaired: Set<MergedToken>)
+    data class Result(val lines: List<LabelLine>, val repaired: Set<MergedToken>,val suggestions:List<com.yourapp.wine.fill.SpellingSuggestion> = emptyList())
     fun repair(lines: List<LabelLine>): Result {
         val changed = mutableSetOf<MergedToken>()
+        val suggestions=mutableListOf<com.yourapp.wine.fill.SpellingSuggestion>()
         val view = hierarchy.snapshot()
         val producer = ProducerLineSelector()
         val anchorLines = lines.associateWith { anchor ->
@@ -44,9 +45,12 @@ class ContextualAppellationRepair(private val gazetteer: PlaceGazetteer, private
             }.distinctBy { it.name }
             if (matches.size != 1) line else {
                 changed += line.tokens
-                line.copy(text = matches.single().name + (parts.suffix?.let { " $it" } ?: ""))
+                val target=matches.single().name + (parts.suffix?.let { " $it" } ?: "")
+                suggestions+=com.yourapp.wine.fill.SpellingSuggestion("geography",line.text,target,target,1,
+                    "contextual_character_repair","near_match","separate explicit origin: "+anchors.joinToString { it.name }+"; confirm")
+                line.copy(text = target)
             }
         }
-        return Result(updated, changed)
+        return Result(updated, changed,suggestions)
     }
 }

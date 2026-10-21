@@ -41,3 +41,11 @@ Indra raw/enhanced/12-pass engines, orientation/LM assets and decoder code; v5 M
 and v6 Small profiles/downloads/dictionary; unused Paddle Lite and NER integration hooks;
 29 alternative image-treatment recipes and their shear/thinning/contrast implementation.
 History remains available in Git, not packaged in new APKs.
+
+### Spelling suggestions
+
+The field table marks corrected suggestions with †. CSVs preserve the clean value
+separately from observed text, matched alias, edit distance/type, qualitative strength
+and supporting evidence. Alternatives and unapplied lexical candidates remain in
+`spelling_suggestions`. These are confirmation-required, never rewritten OCR scores.
+See [field-aware spelling](field-aware-spelling.md).

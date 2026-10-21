@@ -42,6 +42,7 @@ internal object TextLabWineExtraction {
                     }
                     val result=engine.extract(records,Year.now().value)
                     values["post_processing_version"]=com.yourapp.wine.extract.IdentityAssignment.VERSION
+                    values["spelling_suggestions"]=result.spellingSuggestions.joinToString("\n",transform=com.yourapp.wine.extract.BoundedSpelling::reason)
                     values["role_diagnostics"]=result.postProcessing.joinToString("\n")
                     FieldId.entries.forEach { field ->
                         val key=field.name.lowercase(java.util.Locale.ROOT)
@@ -49,6 +50,14 @@ internal object TextLabWineExtraction {
                         values[key]=value?.value.orEmpty()
                         values["${key}_state"]=value?.state?.name ?: "RED"
                         values["${key}_reason"]=value?.reason.orEmpty()
+                        value?.spelling?.let { spelling ->
+                            values["${key}_observed"]=spelling.observed
+                            values["${key}_matched_form"]=spelling.matchedForm
+                            values["${key}_edit_distance"]=spelling.editDistance.toString()
+                            values["${key}_edit_kind"]=spelling.editKind
+                            values["${key}_match_strength"]=spelling.strength
+                            values["${key}_spelling_support"]=spelling.support
+                        }
                         values["${key}_alternatives"]=result.alternatives[field].orEmpty().joinToString(" | ") { it.value+": "+it.reason }
                     }
                     values["field_input_lines"]=records.size.toString()

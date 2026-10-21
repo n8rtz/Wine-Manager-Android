@@ -7,7 +7,7 @@ import com.yourapp.wine.merge.TextNorm
 data class IdentityOption(val candidate:FieldCandidate,val priority:Double)
 data class IdentitySelection(val fields:Map<FieldId,List<FieldCandidate>>,val alternatives:Map<FieldId,List<FieldCandidate>>)
 object IdentityAssignment {
-    const val VERSION="identity-v2"
+    const val VERSION="identity-v3-spelling"
     fun select(producers:List<IdentityOption>,names:List<IdentityOption>):IdentitySelection {
         fun bounded(input:List<IdentityOption>)=input.sortedWith(compareByDescending<IdentityOption> { it.priority }.thenByDescending { it.candidate.sources.size })
             .distinctBy { TextNorm.normalize(it.candidate.value) }.take(4)

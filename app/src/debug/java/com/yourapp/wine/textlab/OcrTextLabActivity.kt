@@ -117,7 +117,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
         }
         if(state.wineTable.isNotEmpty()) item {
             Text("Head-to-head wine fields",style=MaterialTheme.typography.titleMedium)
-            Text("Suggestions, not ground truth. — means unknown. Swipe horizontally for all six fields. Each engine/pass is independent in this table; values require confirmation.",style=MaterialTheme.typography.bodySmall)
+            Text("Suggestions, not ground truth. — means unknown; † marks a spelling suggestion (details in CSV). Swipe horizontally for all six fields. Each engine/pass is independent in this table; values require confirmation.",style=MaterialTheme.typography.bodySmall)
             SelectionContainer {
                 Column(Modifier.horizontalScroll(rememberScrollState())) {
                     Row { TextLabWineTable.headers.forEach { Text(it,Modifier.width(170.dp).padding(8.dp),style=MaterialTheme.typography.labelLarge) } }

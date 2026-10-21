@@ -3,6 +3,7 @@ package com.yourapp.wine.extract
 import com.yourapp.wine.fill.FieldCandidate
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.fill.UiState
+import com.yourapp.wine.fill.SpellingSuggestion
 import com.yourapp.wine.kb.Place
 import com.yourapp.wine.kb.BundledProducerNames
 import com.yourapp.wine.kb.PlaceHierarchy
@@ -15,13 +16,17 @@ import com.yourapp.wine.ocr.MergedToken
 /** Place claims preserve explicit OCR contradictions instead of silently correcting a country. */
 data class PlaceClaim(val place: Place, val sources: List<MergedToken>)
 data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, val placeClaims: List<PlaceClaim>, val roles:List<RoleEvidence> = emptyList(),
-    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap())
+    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),val spellingSuggestions:List<SpellingSuggestion> = emptyList())
 
 class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: VintageExtractor = VintageExtractor(),
                      private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb),
                      private val normalizer: WineTextNormalizer = WineTextNormalizer(kb)) {
     private val gazetteer = PlaceGazetteer(kb)
     private val producerLines = ProducerLineSelector()
+    private val geographySpelling=GeographySpelling(kb,gazetteer,hierarchy)
+    private val styleTerms=(com.yourapp.wine.kb.BundledGrapes.terms+com.yourapp.wine.kb.BundledWineStyles.terms)
+        .map { SpellingTerm(TextNorm.normalize(it.name),it.name,it.aliases) }
+    private val bundledProducerTerms=BundledProducerNames.terms.map { SpellingTerm(TextNorm.normalize(it.name),it.name,it.aliases) }
     private var indexedRolePlaces:List<Place>?=null
     private var roleOriginTypes:Map<String,Set<String>> = emptyMap()
     @Synchronized private fun originTypeIndex():Map<String,Set<String>> {
@@ -36,7 +41,9 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
     fun extract(rawLines: List<LabelLine>, currentYear: Int): ExtractionResult {
         val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
         val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
-        val lines = joinPrintedAppellations(contextual.lines)
+        val geoSpelling=geographySpelling.suggest(contextual.lines)
+        val spellingSuggestions=(contextual.suggestions+geoSpelling.suggestions).toMutableList()
+        val lines = joinPrintedAppellations(geoSpelling.lines)
         val result = mutableMapOf<FieldId, List<FieldCandidate>>()
         result[FieldId.VINTAGE] = vintage.extract(lines.filterNot { MetadataRules.isPackaging(it.text) ||
             com.yourapp.wine.kb.ReferenceWineCatalog.isAdministrative(it.text) }, currentYear)
@@ -73,11 +80,18 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             val cleaned = MetadataRules.identityText(line.text)
             if (MetadataRules.isIdentity(cleaned) && !producerLines.isAdministrative(cleaned)) line.copy(text = cleaned) else null
         }
-        val producerCandidates = producerLines.candidates(identityLines)
+        val styleMatches=identityLines.associateWith { line ->
+            if(producerLines.hasProducerCue(line.text) || BundledProducerNames.exactName(line.text)!=null ||
+                producerLines.isWineDescription(line.text) || kb.findProducer(line.text).any { it.editDistance==0 }) emptyList()
+            else BoundedSpelling.matches(line.text,styleTerms,"varietal/style")
+        }
+        val producerCandidates = producerLines.candidates(identityLines).filterNot { line ->
+            styleMatches.any { (source,matches) -> source.tokens==line.tokens && matches.isNotEmpty() }
+        }
         // FTS is a shortlist, not evidence that an unknown winery is a familiar producer.
         // Require a bounded full-name match here; an exact whole-label phrase can still match below.
         val knownLines = (identityLines + producerCandidates).distinct().flatMap { line ->
-            kb.findProducer(line.text).filter { hit -> hit.editDistance?.let { it in 0..2 } == true }.take(3).map { hit ->
+            kb.findProducer(line.text).filter { hit -> hit.editDistance==0 }.take(3).map { hit ->
                 hit to FieldCandidate(FieldId.PRODUCER, hit.producer.name,
                     if (hit.editDistance == 0 && line.vote >= 0.6f) UiState.GREEN else UiState.YELLOW,
                     if (hit.editDistance == 0) "Normalized exact producer in local KB"
@@ -106,7 +120,32 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val curated=producerCandidates.mapNotNull { line -> BundledProducerNames.exactName(line.text)?.let {
             IdentityOption(FieldCandidate(FieldId.PRODUCER,it,UiState.YELLOW,"Exact authored producer alias; confirm",line.tokens),95.0)
         } }
-        val established=known.map { (hit,candidate) -> IdentityOption(candidate,if(hit.editDistance==0) 100.0 else 70.0) }+curated
+        val fuzzyProducers=producerCandidates.flatMap { line ->
+            if(known.any { (_,candidate) -> candidate.sources.any { it in line.tokens } } ||
+                curated.any { option -> option.candidate.sources.any { it in line.tokens } }) emptyList() else {
+                val local=kb.findProducerFuzzy(line.text).map { it.producer }.distinctBy { it.id }.map {
+                    SpellingTerm(TextNorm.normalize(it.name),it.name,it.aliases)
+                }
+                val matches=BoundedSpelling.matches(line.text,local+bundledProducerTerms,"producer")
+                matches.take(8).map { match ->
+                    val records=line.tokens.flatMap { it.members }
+                    val observedEngines=records.filter { BoundedSpelling.key(it.textRaw)==BoundedSpelling.key(line.text) ||
+                        BoundedSpelling.distance(it.textRaw,match.suggestion.matchedForm)?.let { d -> d>0 }==true }.map { it.engineId }.toSet()
+                    val corroboration=records.filter { BoundedSpelling.key(it.textRaw)==BoundedSpelling.key(match.suggestion.matchedForm) &&
+                        it.engineId !in observedEngines && !it.scoreIsEstimated && it.score >= if(it.engineId.startsWith("paddle")) .75f else .6f }.map { it.engineId }.distinct()
+                    val support=when {
+                        corroboration.isNotEmpty() -> "separate engine exact reading: "+corroboration.joinToString()+"; confirm"
+                        producerLines.hasProducerCue(line.text) -> "producer marker supports role, not identity; confirm"
+                        else -> "lexical only; confirm"
+                    }
+                    val suggestion=match.suggestion.copy(support=support)
+                    spellingSuggestions+=suggestion
+                    IdentityOption(FieldCandidate(FieldId.PRODUCER,match.term.name,UiState.YELLOW,
+                        BoundedSpelling.reason(suggestion),line.tokens,suggestion),if(suggestion.editDistance==1) 72.0 else 68.0)
+                }
+            }
+        }
+        val established=known.map { (hit,candidate) -> IdentityOption(candidate,if(hit.editDistance==0) 100.0 else 70.0) }+curated+fuzzyProducers
         val producerOptions=established+
             producerCandidates.filterNot { line ->
                 established.any { match -> match.candidate.sources.any { it in line.tokens } } ||
@@ -159,11 +198,26 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             if (!producerLines.isWineDescription(display) || (selectedProducer == null && !WineDesignations.isAppellationName(display))) null else FieldCandidate(FieldId.WINE_NAME, display,
                 UiState.YELLOW, "Printed wine style/appellation used as name — confirm", line.tokens)
         }.sortedByDescending { vote(it.sources) }
-        val allNames=(wines+styleFallback).distinctBy { TextNorm.normalize(it.value) }
+        val fuzzyNames=styleMatches.flatMap { (line,matches) -> matches.take(8).map { match ->
+            val suggestion=match.suggestion
+            spellingSuggestions+=suggestion
+            FieldCandidate(FieldId.WINE_NAME,match.term.name,UiState.YELLOW,BoundedSpelling.reason(suggestion),line.tokens,suggestion)
+        } } + if(producerId==null) emptyList() else wines.filterNot { it.reason.startsWith("Known cuvée") }.flatMap { candidate ->
+            val terms=kb.findCuvees(producerId,candidate.value).map { SpellingTerm(TextNorm.normalize(it.cuvee.name),it.cuvee.name,emptyList()) }
+            BoundedSpelling.matches(candidate.value,terms,"cuvee").take(8).map { match ->
+                val suggestion=match.suggestion.copy(support="unambiguous exact producer: $selectedProducer; confirm")
+                spellingSuggestions+=suggestion
+                candidate.copy(value=match.term.name,state=UiState.YELLOW,reason=BoundedSpelling.reason(suggestion),spelling=suggestion)
+            }
+        }
+        val correctedSources=fuzzyNames.flatMap { it.sources }.toSet()
+        val allNames=(wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
         val designations=allNames.filter { WineDesignations.isDesignation(it.value) }
         val nameOptions=allNames.filter { !WineDesignations.isDesignation(it.value) || allNames.all { n -> WineDesignations.isDesignation(n.value) } }.map { candidate ->
             val joined=LabelNamePolicy.joinStyle(listOf(candidate)+designations,selectedProducer) ?: candidate
             val priority=when {
+                candidate.spelling?.domain=="cuvee" -> if(candidate.spelling.editDistance==1) 88.0 else 84.0
+                candidate.spelling!=null -> if(candidate.spelling.editDistance==1) 55.0 else 51.0
                 candidate.reason.startsWith("Known cuvée") -> 100.0
                 joined.value!=candidate.value || WineDesignations.hasNameAndDesignation(candidate.value) -> 80.0
                 !producerLines.isWineDescription(candidate.value) && candidate.value.split(Regex("\\s+")).count { word -> word.count(Char::isLetter)>=3 }>=2 -> 70.0
@@ -184,10 +238,18 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
         val selection=IdentityAssignment.select(producerOptions,nameOptions)
         result.putAll(selection.fields)
         // A lexical suggestion is not measured evidence: cap all dependent fields and inherited geography.
-        if (contextual.repaired.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
-            if (candidate.sources.any { it in contextual.repaired }) candidate.copy(state = UiState.YELLOW,
+        if (contextual.repaired.isNotEmpty() || geoSpelling.repaired.isNotEmpty()) result.replaceAll { _, candidates -> candidates.map { candidate ->
+            if (candidate.state!=UiState.RED && candidate.sources.any { it in contextual.repaired || it in geoSpelling.repaired }) candidate.copy(state = UiState.YELLOW,
                 reason = candidate.reason + "; contextual appellation spelling suggestion supported by separate geography — confirm; raw OCR unchanged")
             else candidate
+        } }
+        // Attach the lexical cause to any geography derived from the repaired observation.
+        result.replaceAll { _,candidates -> candidates.map { candidate ->
+            val suggestion=(contextual.suggestions+geoSpelling.suggestions).firstOrNull { spelling -> candidate.sources.any { token ->
+                (token in geoSpelling.repaired || token in contextual.repaired) && BoundedSpelling.key(token.canonical)==BoundedSpelling.key(spelling.observed)
+            } }
+            if(suggestion!=null && candidate.state!=UiState.RED) candidate.copy(state=UiState.YELLOW,spelling=suggestion,
+                reason=candidate.reason+"; "+BoundedSpelling.reason(suggestion)) else candidate
         } }
         val referenceSources = claims.filter { com.yourapp.wine.kb.ReferenceWineCatalog.requiresConfirmation(it.place) }
             .flatMap { it.sources }.toSet()
@@ -196,7 +258,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 reason = candidate.reason + "; expanded reference-catalog origin — confirm; not a legal certification")
             else candidate
         } }
-        return ExtractionResult(result, claims,roles,selection.alternatives)
+        return ExtractionResult(result, claims,roles,selection.alternatives,spellingSuggestions.distinct().take(64))
     }
 
     /** Only two adjacent observed pieces whose entire combined text is a verified appellation. */

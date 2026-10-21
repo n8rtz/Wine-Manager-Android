@@ -33,6 +33,10 @@ object TextLabFieldChecks {
         val statuses=TextLabWineTable.rows(listOf(journal)).map { it[2] }
         check(statuses==listOf("OCR: complete / 2 fields suggested","OCR: complete / no fields identified",
             "OCR: complete / no accepted OCR lines","OCR: complete / extraction failed"))
+        journal.add("candidate_3","field_summary","suggestions",mapOf("producer" to "Blackstone","producer_edit_distance" to "1","field_values_found" to "1","ocr_status" to "complete"))
+        check(TextLabWineTable.rows(listOf(journal)).last()[3]=="Blackstone †")
+        val csv=java.io.StringWriter().also(journal::writeCsv).toString()
+        check(csv.contains("\"Blackstone\"") && !csv.contains("Blackstone †"))
         println("PASS: uploaded OCR -> lab fields; no score inflation/GREEN; production gate unchanged; empty and mixed-pass guards")
     }
 }

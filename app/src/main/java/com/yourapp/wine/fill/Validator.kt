@@ -82,6 +82,10 @@ class Validator(private val kb: WineKnowledgeBase, private val hierarchy: PlaceH
         if (name.state == UiState.GREEN && fields.getValue(FieldId.PRODUCER).state != UiState.GREEN) {
             fields[FieldId.WINE_NAME] = name.copy(state = UiState.YELLOW, reason = name.reason + "; producer identity requires confirmation")
         }
+        fields.replaceAll { _,candidate ->
+            if(candidate.spelling!=null && candidate.state!=UiState.RED) candidate.copy(state=UiState.YELLOW,
+                reason=candidate.reason+"; spelling suggestion requires confirmation") else candidate
+        }
         return fields
     }
 }

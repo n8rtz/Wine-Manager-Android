@@ -24,12 +24,12 @@ internal object TextLabWineTable {
                     "suggestions" -> "${row["field_values_found"]} fields suggested"
                     else -> "field extraction ${row["status"].orEmpty()}"
                 })+
-                fields.map { row[it].orEmpty().ifBlank { "—" } }
+                fields.map { key -> row[key].orEmpty().ifBlank { "—" }+if(!row["${key}_edit_distance"].isNullOrBlank() && !row[key].isNullOrBlank()) " †" else "" }
         }
     }
     fun text(journals:List<TextLabJournal>):String=buildString {
         appendLine("HEAD-TO-HEAD WINE FIELDS (suggestions, not ground truth)")
-        appendLine("— = unknown. Each row uses only that engine/pass. All values require confirmation.")
+        appendLine("— = unknown. † = spelling suggestion; CSV records the original text, edits and support. Each row uses only that engine/pass. All values require confirmation.")
         appendLine(headers.joinToString(" | "))
         rows(journals).forEach { row -> appendLine(row.joinToString(" | ") { it.replace('\n',' ').replace('|','/') }) }
     }

@@ -70,6 +70,8 @@ object ScanDiagnosticFormatter {
             }
         }
         out.line()
+        out.line("[Spelling suggestions; raw OCR scores unchanged]")
+        report.fill.spellingSuggestions.take(32).forEach { out.line(safe(com.yourapp.wine.extract.BoundedSpelling.reason(it),512)) }
         out.line("[Post-processing roles and alternatives]")
         report.fill.postProcessing.take(64).forEach { out.line(safe(it,512)) }
         report.fill.alternatives.forEach { (field,candidates) -> candidates.take(4).forEach {

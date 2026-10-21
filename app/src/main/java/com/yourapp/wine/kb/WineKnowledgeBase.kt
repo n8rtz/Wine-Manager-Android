@@ -23,8 +23,12 @@ interface WineKnowledgeBase {
     fun places(): List<Place>
     /** No coordinates: FTS shortlist of at most 25 identities, reranked with bounded edit distance. */
     fun findProducer(text: String): List<ProducerHit>
+    /** Bounded typo-tolerant shortlist; lexical acceptance remains the caller's responsibility. */
+    fun findProducerFuzzy(text:String):List<ProducerHit> = findProducer(text)
     /** No coordinates: matches only cuvées belonging to this producer, at edit distance at most two. */
     fun findCuvee(producerId: Long, text: String): CuveeHit?
+    /** Preserve competing cuvee matches, scoped to one confirmed producer. */
+    fun findCuvees(producerId:Long,text:String):List<CuveeHit> = listOfNotNull(findCuvee(producerId,text))
 }
 
 interface OpenWinesImporter {
@@ -33,6 +37,13 @@ interface OpenWinesImporter {
 }
 
 object KbMatching {
+    /** One FTS query, capped prefix expansion for a missing first letter; not a database-wide fuzzy scan. */
+    fun fuzzyPrefixes(text:String):List<String> {
+        val words=Regex("[\\p{L}\\p{N}]{3,}").findAll(TextNorm.normalize(text)).map { it.value }.take(6).toList()
+        return (words.map { it.take(4) }+words.filter { it.length>=5 }.take(2).flatMap { word ->
+            ('a'..'z').flatMap { listOf(it+word.take(3),it+word.drop(1).take(3)) }+word.drop(1).take(4)
+        }).distinct().take(120)
+    }
     /** No coordinates: reranks the real FTS shortlist; aliases use the same NFKD matching policy. */
     fun rank(query: String, shortlist: List<Producer>): List<ProducerHit> {
         val normalized = TextNorm.normalize(query)

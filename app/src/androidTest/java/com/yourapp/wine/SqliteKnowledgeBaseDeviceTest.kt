@@ -13,6 +13,18 @@ import java.io.ByteArrayInputStream
 
 @RunWith(AndroidJUnit4::class)
 class SqliteKnowledgeBaseDeviceTest {
+    @Test fun fuzzyShortlistAndCuveeTiesUseRealSqlite() = runBlocking {
+        withContext(Dispatchers.Default) {
+            val context=InstrumentationRegistry.getInstrumentation().targetContext
+            SqliteWineKnowledgeBase.open(context).use { kb ->
+                val data="""{"schema":"wine-kb/v1","producers":[{"id":990071,"name":"Blackstone Winery","country_code":"US","region_id":19}],"producer_aliases":[{"producer_id":990071,"alias_norm":"blackstone"}],"cuvees":[{"producer_id":990071,"name":"Sample Reserva"},{"producer_id":990071,"name":"Sample Reserxb"}]}"""
+                kb.importOpenWines(data.byteInputStream())
+                assertTrue(kb.findProducerFuzzy("LACKSTONE").any { it.producer.id==990071L && it.editDistance==1 })
+                assertEquals(2,kb.findCuvees(990071,"Sample Reserxa").size)
+            }
+        }
+    }
+
     @Test fun realFts5AliasesAndTransactionalImport() = runBlocking {
         withContext(Dispatchers.Default) {
             val context = InstrumentationRegistry.getInstrumentation().targetContext

@@ -59,7 +59,7 @@ object LabelNamePolicy {
         return FieldCandidate(FieldId.WINE_NAME, "$name $style", UiState.YELLOW,
             "Adjacent printed name and style — confirm" +
                 (if (adjacent.map { TextNorm.normalize(it.value) }.distinct().size > 1) "; multiple nearby designations — confirm selection" else ""),
-            (selected.sources + designation.sources).distinct())
+            (selected.sources + designation.sources).distinct(),selected.spelling)
     }
 
     private fun nearby(a: LabelLine,b: LabelLine,gap: Float): Boolean =

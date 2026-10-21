@@ -8,6 +8,10 @@ enum class FieldId { PRODUCER, WINE_NAME, COUNTRY, REGION, SUBREGION, VINTAGE }
 /** No coordinates: GREEN validates, YELLOW requires confirmation, RED must not be filled. */
 enum class UiState { GREEN, YELLOW, RED }
 
+/** Lexical evidence is separate from the engine's measured score; never a calibrated probability. */
+data class SpellingSuggestion(val domain:String,val observed:String,val matchedForm:String,val proposed:String,
+    val editDistance:Int,val editKind:String,val strength:String,val support:String)
+
 /** Evidence boxes in sources use normalized rectified-label and original-capture coordinates. */
 data class FieldCandidate(
     val field: FieldId,
@@ -15,6 +19,7 @@ data class FieldCandidate(
     val state: UiState,
     val reason: String,
     val sources: List<MergedToken>,
+    val spelling:SpellingSuggestion? = null,
 )
 
 /** No image ownership: every field has an explicit state, including missing RED fields. */
@@ -23,6 +28,7 @@ data class FillResult(
     val overallHint: String?,
     val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),
     val postProcessing:List<String> = emptyList(),
+    val spellingSuggestions:List<SpellingSuggestion> = emptyList(),
 )
 
 /** No coordinates: global conditions can only downgrade otherwise validated suggestions. */

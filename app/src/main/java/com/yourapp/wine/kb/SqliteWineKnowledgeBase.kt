@@ -35,16 +35,30 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
         KbMatching.rank(text, producers.map { it.copy(aliases = aliases(it.id)) })
     }
 
-    /** No coordinates: only the selected producer's locally known cuvées are considered. */
-    override fun findCuvee(producerId: Long, text: String): CuveeHit? = access {
-        val matches = mutableListOf<CuveeHit>()
+    override fun findProducerFuzzy(text:String):List<ProducerHit> = access {
+        val words=KbMatching.fuzzyPrefixes(text)
+        if(words.isEmpty()) return@access emptyList()
+        val query=words.joinToString(" OR ") { "\"$it\"*" }
+        val producers=mutableListOf<Producer>()
+        connection.prepare("SELECT p.id,p.name,p.country_code,p.region_id FROM producer_fts JOIN producer p ON p.id=producer_fts.rowid WHERE producer_fts MATCH ? ORDER BY bm25(producer_fts) LIMIT 25").use { statement ->
+            statement.bindText(1,query)
+            while(statement.step()) producers+=Producer(statement.getLong(0),statement.getText(1),statement.getText(2),
+                if(statement.isNull(3)) null else statement.getLong(3))
+        }
+        KbMatching.rank(text,producers.map { it.copy(aliases=aliases(it.id)) })
+    }
+
+    override fun findCuvee(producerId:Long,text:String):CuveeHit? = findCuvees(producerId,text).firstOrNull()
+    override fun findCuvees(producerId:Long,text:String):List<CuveeHit> = access {
+        val matches=mutableListOf<CuveeHit>()
         connection.prepare("SELECT name,name_norm FROM cuvee WHERE producer_id=?").use { statement ->
-            statement.bindLong(1, producerId)
-            while (statement.step()) TextNorm.editDistance(TextNorm.normalize(text), statement.getText(1))?.let {
-                matches += CuveeHit(Cuvee(producerId, statement.getText(0)), it)
+            statement.bindLong(1,producerId)
+            while(statement.step()) TextNorm.editDistance(TextNorm.normalize(text),statement.getText(1))?.let {
+                matches+=CuveeHit(Cuvee(producerId,statement.getText(0)),it)
+                if(matches.size>8) { matches.sortBy { hit -> hit.editDistance };matches.removeAt(matches.lastIndex) }
             }
         }
-        matches.minByOrNull { it.editDistance }
+        matches.sortedBy { it.editDistance }.take(8)
     }
 
     /** No coordinates: imports only the stated adapter schema, on a worker thread, with atomic FK/hierarchy checks. */
