@@ -20,7 +20,7 @@ object LabelLayoutContext {
         val core="cotes du rhone"
         if(normalized.startsWith("$core ")) {
             val tail=normalized.removePrefix("$core ")
-            if(tail.length in 5..8 && tail.startsWith("vil") && !tail.contains(' ') &&
+            if(tail.length in 5..8 && tail.startsWith("vi") && !tail.contains(' ') &&
                 TextNorm.editDistance(tail,"villages",3)!=null && tail!="villages")
                 text="Côtes du Rhône Villages"
         }

@@ -39,7 +39,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
     init { gazetteer.matches(""); normalizer.repair("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
     fun extract(rawLines: List<LabelLine>, currentYear: Int, titleConnectors:List<LabelLine> = emptyList()): ExtractionResult {
-        val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(line.text).text) }
+        val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(WrappedBrandContext.reconcile(line).text).text) }
         val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
         val geoSpelling=geographySpelling.suggest(contextual.lines)
         val spellingSuggestions=(contextual.suggestions+geoSpelling.suggestions).toMutableList()
@@ -152,7 +152,8 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
             }
         }
         val established=known.map { (hit,candidate) -> IdentityOption(candidate,if(hit.editDistance==0) 100.0 else 70.0) }+curated+fuzzyProducers
-        val producerOptions=established+
+        val wrappedBrands=WrappedBrandContext.candidates(identityLines)
+        val producerOptions=established+wrappedBrands.map { IdentityOption(it.candidate,82.0) }+
             producerCandidates.filterNot { line ->
                 established.any { match -> match.candidate.sources.any { it in line.tokens } } ||
                 (!producerLines.hasProducerCue(line.text) && LabelNamePolicy.hasAdjacentStyle(line,identityLines))
@@ -224,11 +225,15 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 reason=candidate.reason+"; weak connector retained only for aligned title; no OCR confidence increase") else candidate
         }
         spellingSuggestions+=layoutNames.mapNotNull { it.spelling }
-        val allNames=(layoutNames+wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames+listOfNotNull(montalcinoName)).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
+        val selectedBrand=wrappedBrands.singleOrNull { it.candidate.value==selectedProducer }
+        val brandStyles=selectedBrand?.designations.orEmpty()
+        val allNames=(brandStyles+layoutNames+wines.filterNot { it.spelling==null && it.sources.any { source -> source in correctedSources } }+styleFallback+fuzzyNames+listOfNotNull(montalcinoName)).sortedBy { it.spelling?.editDistance ?: 0 }.distinctBy { TextNorm.normalize(it.value) }
         val designations=allNames.filter { WineDesignations.isDesignation(it.value) }
-        val nameOptions=allNames.filter { !WineDesignations.isDesignation(it.value) || allNames.all { n -> WineDesignations.isDesignation(n.value) } }.map { candidate ->
-            val joined=LabelNamePolicy.joinStyle(listOf(candidate)+designations,selectedProducer) ?: candidate
+        val nameOptions=allNames.filter { brandStyles.any { style -> style.value==it.value } || !WineDesignations.isDesignation(it.value) || allNames.all { n -> WineDesignations.isDesignation(n.value) } }.map { candidate ->
+            val joined=if(selectedBrand!=null && WineDesignations.isAppellationName(candidate.value)) candidate
+                else LabelNamePolicy.joinStyle(listOf(candidate)+designations,selectedProducer) ?: candidate
             val priority=when {
+                candidate.reason.startsWith("Separate designation beneath wrapped brand") -> 85.0
                 candidate.reason.startsWith("Aligned stacked title") -> 88.0
                 candidate.reason.contains("contextual wine-name suggestion") -> 75.0
                 candidate.spelling?.domain=="cuvee" -> if(candidate.spelling.editDistance==1) 88.0 else 84.0

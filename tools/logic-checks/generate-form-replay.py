@@ -4,9 +4,10 @@ import json
 import sys
 from pathlib import Path
 root=Path(__file__).resolve().parents[2]
+brand='--brand' in sys.argv
 evidence='--evidence' in sys.argv
 layout='--layout' in sys.argv
-data=json.loads((root/('app/src/testDebug/resources/textlab/evidence-review.json' if evidence else 'app/src/testDebug/resources/textlab/layout-review.json' if layout else 'app/src/testDebug/resources/textlab/form-review.json')).read_text())
+data=json.loads((root/('app/src/testDebug/resources/textlab/brand-review.json' if brand else 'app/src/testDebug/resources/textlab/evidence-review.json' if evidence else 'app/src/testDebug/resources/textlab/layout-review.json' if layout else 'app/src/testDebug/resources/textlab/form-review.json')).read_text())
 def q(s): return json.dumps(s,ensure_ascii=False).replace('$',r'\$')
 images=','.join('TextLabImageKey('+q(c['image_index'])+','+q(c['image_name'])+')' for c in data['cases'])
 lines=[]
@@ -33,7 +34,7 @@ object FormBatchReplay {
   check(com.yourapp.wine.extract.MetadataRules.isPackaging("M.Bby Vol."))
   check(!com.yourapp.wine.extract.MetadataRules.isPackaging("Volnay"))
   java.io.File(".ocr-harness/checks/form-preview-replay.csv").bufferedWriter().use(batch::writeCsv)
-  println("PASS: latest six-image batch replayed through combined form adapter (not new OCR/device timing)")
+  println("PASS: ${batch.journals.size}-image saved batch replayed through combined form adapter (not new OCR/device timing)")
  }
 }
 '''.replace('IMAGES',images).replace('LINES','\n'.join(lines))
@@ -67,4 +68,18 @@ if evidence:
   for(key in listOf("producer","wine_name")) check(summaries.last()[key+"_state"]=="YELLOW")
 '''+source[end:]
     source=source.replace('FormBatchReplay','EvidenceBatchReplay').replace('form-preview-replay.csv','evidence-preview-replay.csv')
-p=root/('.ocr-harness/checks/EvidenceBatchReplay.kt' if evidence else '.ocr-harness/checks/LayoutBatchReplay.kt'  if layout else '.ocr-harness/checks/FormBatchReplay.kt');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
+if brand:
+    start=source.index('  check(summaries[1]')
+    end=source.index('  java.io.File',start)
+    source=source[:start]+'''  val expected=listOf(
+   listOf("Kirkland Signature","Brunello di Montalcino","Italy","Tuscany","Montalcino","2021"),
+   listOf("ALTOS de VALDOSO","Crianza","Spain","Ribera del Duero","",""),
+   listOf("Vignerons DE L'ENCLavE","LA Reserve de L'ENCLavE","France","Rhône","Côtes du Rhône Villages","2022"),
+   listOf("Blackstone","Merlot","California","","",""),
+   listOf("Bodegas Olarra","RECIENTE Gran Reserva","Spain","Rioja","","2019"))
+  val keys=listOf("producer","wine_name","country","region","subregion","vintage")
+  summaries.zip(expected).forEach { (row,want) -> check(keys.map { row[it].orEmpty() }==want) { row } }
+  for(key in listOf("producer","wine_name")) check(summaries[1][key+"_state"]=="YELLOW")
+'''+source[end:]
+    source=source.replace('FormBatchReplay','BrandBatchReplay').replace('form-preview-replay.csv','brand-preview-replay.csv')
+p=root/('.ocr-harness/checks/BrandBatchReplay.kt' if brand else '.ocr-harness/checks/EvidenceBatchReplay.kt' if evidence else '.ocr-harness/checks/LayoutBatchReplay.kt'  if layout else '.ocr-harness/checks/FormBatchReplay.kt');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(source)
