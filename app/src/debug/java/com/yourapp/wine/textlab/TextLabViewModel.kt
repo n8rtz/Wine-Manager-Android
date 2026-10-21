@@ -18,7 +18,7 @@ data class TextLabImage(val id:String,val name:String,val photo:TextPhoto?=null,
     val selection:TextCrop?=TextCrop(0f,0f,1f,1f),val error:String?=null)
 data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeImage:Int=0,
     val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
-    val busy:Boolean=false,val result:String="",val cropPreview:File?=null,val lastCsv:File?=null,
+    val busy:Boolean=false,val result:String="",val wineTable:List<List<String>> = emptyList(),val cropPreview:File?=null,val lastCsv:File?=null,
     val message:String="Choose one or more images. Full images are selected by default.") {
     val current:TextLabImage? get()=images.getOrNull(activeImage)
     val photo:TextPhoto? get()=current?.photo
@@ -104,7 +104,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
         if(IndraSpec.MULTIPASS_ID in snapshot.selectedCandidates && !snapshot.detectLines) return
         clearPreview()
         val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines)
-        mutable.update { it.copy(busy=true,result="",cropPreview=null,message="Running image batch…") }
+        mutable.update { it.copy(busy=true,result="",wineTable=emptyList(),cropPreview=null,message="Running image batch…") }
         job=viewModelScope.launch {
             var finalStatus="complete"
             var retainedPreview:File?=null
@@ -153,6 +153,11 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
                 withContext(NonCancellable) {
                     batch.finishPending(finalStatus)
                     batch.journals.forEach { it.metadata["batch_status"]=finalStatus }
+                    withContext(Dispatchers.Default) {
+                        try { TextLabWineExtraction.append(getApplication(),batch,finalStatus=="memory_pressure") }
+                        catch(_:OutOfMemoryError) { batch.journals.first().add("shared","field_extraction","memory_pressure") }
+                        catch(error:Exception) { batch.journals.first().add("shared","field_extraction","failed",details=error.message.orEmpty()) }
+                    }
                     var csv:File?=null
                     var finalSaved=false
                     var summary=""
@@ -161,7 +166,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
                         catch(_:Exception) { csv=File(csvFolder,"${batch.id}.csv").takeIf { it.isFile } }
                         summary=batch.summary()
                     }
-                    if(cleared) retainedPreview?.delete() else mutable.update { it.copy(busy=false,result=summary,cropPreview=retainedPreview,lastCsv=csv,
+                    if(cleared) retainedPreview?.delete() else mutable.update { it.copy(busy=false,result=summary,wineTable=TextLabWineTable.rows(batch.journals),cropPreview=retainedPreview,lastCsv=csv,
                         message="Batch $finalStatus. Export last batch CSV for every image and selected candidate."+(if(!finalSaved) " Final CSV save failed; any earlier checkpoint and Copy OCR result remain available." else "")) }
                 }
             }

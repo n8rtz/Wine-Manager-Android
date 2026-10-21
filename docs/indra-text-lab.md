@@ -200,3 +200,25 @@ mismatch and zero-probability cases, plus retained upstream golden decoder tests
 checks; adapter compilation against real Android/OpenCV/ONNX APIs. No native Android execution,
 new accuracy benchmark, full APK build or measured 12-pass completion time is claimed.
 The existing Code on the Go OpenCV-toolchain limitation is unchanged.
+
+## Human-readable head-to-head fields
+
+After a batch finishes (including Stop/partial runs), Text Lab shows a horizontally
+scrollable table: image, candidate/pass, run status, producer, wine name, country,
+region, subregion and vintage. Copy OCR result includes a text version. The existing
+batch CSV now includes `field_summary` rows with those six named columns, their
+states/reasons, input line count, extractor identity and year. Raw OCR and diagnostic
+rows remain unchanged. Blank CSV values / em dashes in the table mean unknown.
+
+This is **OCR plus the same local FillEngine/KB rules**, not raw transcription,
+ground truth or an accuracy score. Geography may be inferred through the local
+hierarchy. Each candidate and each of the 12 passes is extracted separately; there
+is no best-pass selection, cross-engine supplementation, or repeated-vote inflation.
+Only final successful recognition (including explicit greedy fallback) is input;
+greedy diagnostic rows are not extra readings. All lab evidence is treated as
+estimated confidence, so suggestions require confirmation. Unrun passes have blank
+fields and explicit status; extraction failures do not discard OCR diagnostics.
+Extraction runs on a worker after OCR, outside the recorded inference timings.
+Older saved CSVs are not retroactively reprocessed; run a new batch for the table.
+The table also applies the existing cellar display convention: a known U.S. state
+is displayed in Country, and a generic trailing “Winery” is omitted from producer.

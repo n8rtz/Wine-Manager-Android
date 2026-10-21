@@ -47,7 +47,7 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/testDebug/java/com/yourapp/wine/textlab/IndraEnhancedChecks.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/IndraChecks.kt
     app/src/debug/java/com/yourapp/wine/textlab/TextLabJournal.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabBatch.kt
+    app/src/debug/java/com/yourapp/wine/textlab/TextLabWineTable.kt app/src/debug/java/com/yourapp/wine/textlab/TextLabBatch.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextLabBatchChecks.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextLabJournalChecks.kt
     app/src/main/java/com/yourapp/wine/textlab/PaddleProbabilityMap.kt

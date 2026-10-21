@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
@@ -124,6 +126,19 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
         if(state.lastCsv!=null) item {
             Button(enabled=!state.busy,onClick={csvExporter.launch("wine-ocr-batch-${state.lastCsv?.name}")}) { Text("Export last batch CSV") }
             Text("One CSV includes every queued image and enabled candidate, including errors and partial results. Saved batch: ${state.lastCsv?.name}",style=MaterialTheme.typography.bodySmall)
+        }
+        if(state.wineTable.isNotEmpty()) item {
+            Text("Head-to-head wine fields",style=MaterialTheme.typography.titleMedium)
+            Text("Suggestions, not ground truth. — means unknown. Swipe horizontally for all six fields. Each engine/pass is independent in this table; values require confirmation.",style=MaterialTheme.typography.bodySmall)
+            SelectionContainer {
+                Column(Modifier.horizontalScroll(rememberScrollState())) {
+                    Row { TextLabWineTable.headers.forEach { Text(it,Modifier.width(170.dp).padding(8.dp),style=MaterialTheme.typography.labelLarge) } }
+                    state.wineTable.forEach { row ->
+                        HorizontalDivider()
+                        Row { row.forEach { Text(it,Modifier.width(170.dp).padding(8.dp),style=MaterialTheme.typography.bodySmall) } }
+                    }
+                }
+            }
         }
         if(state.result.isNotBlank()) item {
             TextButton(onClick={clipboard.setText(AnnotatedString(state.result))}) { Text("Copy OCR result") }
