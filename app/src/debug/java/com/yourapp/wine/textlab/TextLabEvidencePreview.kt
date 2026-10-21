@@ -26,12 +26,12 @@ internal object TextLabEvidencePreview {
             // Separate bounded diagnostic rows preserve the graph without replacing original recognition rows.
             result.graph.observations.forEach { o -> journal.add("experimental_evidence","evidence_observation",values=mapOf(
                 "region_id" to o.id.toString(),"raw_text" to o.record.textRaw,
-                "details" to "engine=${o.record.engineId}; score=${o.record.score}; estimated=${o.record.scoreIsEstimated}",
+                "evidence_details" to "engine=${o.record.engineId}; score=${o.record.score}; estimated=${o.record.scoreIsEstimated}",
                 "base_box_normalized" to listOf(o.record.bboxRect.left,o.record.bboxRect.top,o.record.bboxRect.right,o.record.bboxRect.bottom).joinToString(" "))) }
             result.graph.phrases.forEach { p -> journal.add("experimental_evidence","evidence_phrase",values=mapOf(
-                "region_id" to p.id.toString(),"raw_text" to p.text,"details" to "${p.construction}; observations=${p.observations}")) }
+                "region_id" to p.id.toString(),"raw_text" to p.text,"evidence_details" to "${p.construction}; observations=${p.observations}")) }
             result.hypotheses.forEachIndexed { index,h -> journal.add("experimental_evidence","evidence_hypothesis",values=mapOf(
-                "region_id" to index.toString(),"details" to "phrase=${h.phrase.id}; observations=${h.phrase.observations}; rank=${h.rank}; ${h.reason}; values=${h.values}")) }
+                "region_id" to index.toString(),"evidence_details" to "phrase=${h.phrase.id}; observations=${h.phrase.observations}; rank=${h.rank}; ${h.reason}; values=${h.values}")) }
             journal.add("experimental_evidence","evidence_summary",if(fill.fields.values.all { it.value.isBlank() }) "no_fields" else "suggestions",values,
                 "Experimental, not ground truth. Same saved OCR as production baseline; shared lexical KB and cellar display only.")
         } catch(cancel:CancellationException) { throw cancel }

@@ -75,3 +75,5 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
 coroutines="$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar"
 "$KOTLIN_HOME/bin/kotlinc" -classpath "$coroutines:$ANDROID_JAR" "${sources[@]}" -d .ocr-harness/checks/logic.jar
 "$KOTLIN_HOME/bin/kotlin" -classpath ".ocr-harness/checks/logic.jar:$coroutines:$ANDROID_JAR" MainKt
+
+python3 tools/evaluate-evidence.py --check

@@ -11,7 +11,7 @@ internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,v
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(base:WineKnowledgeBase) {
-    companion object { const val VERSION="evidence-lab-v1";const val MAX_HYPOTHESES=192;const val BEAM=64 }
+    companion object { const val VERSION="evidence-lab-v2";const val MAX_HYPOTHESES=384;const val BEAM=64 }
     private val kb=SupplementedWineKnowledgeBase(base)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb).snapshot()
@@ -22,24 +22,37 @@ internal class EvidenceExtractor(base:WineKnowledgeBase) {
             if(Thread.currentThread().isInterrupted) throw InterruptedException("Evidence extraction interrupted")
             check((System.nanoTime()-started)/1_000_000<budgetMs) { "Evidence extraction budget exceeded" }
         }
-        val graph=EvidenceGraphBuilder.build(records,::checkBudget)
+        val graph=EvidenceLexicon.expand(EvidenceGraphBuilder.build(records,::checkBudget),::checkBudget)
         val hypotheses=mutableListOf<Hypothesis>()
         val roleNotes=mutableListOf<String>()
-        for(p in graph.phrases) {
+        for(p in graph.phrases.sortedByDescending { it.construction.contains("alternative") }) {
             checkBudget()
             if(hypotheses.size>=MAX_HYPOTHESES) break
-            val text=p.text;val norm=TextNorm.normalize(text)
+            val text=WineTermSpacing.wineWords.repair(p.text).text;val norm=TextNorm.normalize(text)
+            val endsConnector=Regex("\\b(de|du|di|des)$").containsMatchIn(norm)
+            val beginsConnector=Regex("^(de|du|di|des)\\b").containsMatchIn(norm)
+            val lexicalBonus=6.0*p.construction.split("alternative").lastIndex
             val sources=graph.observations.filter { it.id in p.observations }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
             if(!supported) continue // retained in graph, not an independent identity assertion
-            val administrative=MetadataRules.isBoilerplate(text) || MetadataRules.isPackaging(text)
+            val administrative=MetadataRules.isBoilerplate(text) || MetadataRules.isPackaging(text) || '%' in text
             val paragraph=p.box.width()<.25f && graph.phrases.count { other -> other.id!=p.id &&
                 kotlin.math.abs(other.box.left-p.box.left)<.04f && kotlin.math.abs(other.box.centerY()-p.box.centerY())<.12f }>=3
             val places=if(administrative) emptyList() else gazetteer.matches(norm)
             roleNotes+="phrase=${p.id}; administrative=$administrative; paragraph=$paragraph; places=${places.joinToString { it.name }}"
             if(administrative) continue
             fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null) {
-                if(hypotheses.size<MAX_HYPOTHESES) hypotheses+=Hypothesis(values,p,rank,why,place)
+                val incomplete=sources.count { source ->
+                    val key=TextNorm.normalize(source.record.textRaw).filter(Char::isLetter)
+                    key.length>=3 && graph.observations.any { other ->
+                        val full=TextNorm.normalize(other.record.textRaw).filter(Char::isLetter)
+                        other.record.engineId!=source.record.engineId && other.record.score>=.75f &&
+                            full.length>=key.length+3 && full.startsWith(key) &&
+                            com.yourapp.wine.merge.BoxMath.iou(other.record.bboxRect,source.record.bboxRect)>.08f
+                    }
+                }
+                val weakContent=sources.count { TextNorm.normalize(it.record.textRaw) !in setOf("de","du","di","des") && it.record.score < if(it.record.engineId.startsWith("paddle")) .75f else .60f }
+                if(hypotheses.size<MAX_HYPOTHESES) hypotheses+=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place)
             }
             if(Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
                 offer(mapOf(FieldId.VINTAGE to norm),55.0,"complete observed vintage")
@@ -48,27 +61,38 @@ internal class EvidenceExtractor(base:WineKnowledgeBase) {
                 val values=mutableMapOf<FieldId,String>()
                 path.lastOrNull { it.type=="country" }?.let { values[FieldId.COUNTRY]=it.name }
                 path.firstOrNull { it.type=="region" }?.let { values[FieldId.REGION]=it.name }
-                if(place.type !in setOf("country","region")) values[FieldId.SUBREGION]=place.name
-                offer(values,50.0+path.size*5,"observed geography and actual ancestors; no producer-origin inference",place)
+                val core=place.nameNorm.filter(Char::isLetterOrDigit)
+                val compact=norm.filter(Char::isLetterOrDigit)
+                val suffix=if(compact.startsWith(core)) compact.removePrefix(core) else ""
+                val unresolvedSuffix=place.type=="appellation" && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
+                    suffix !in setOf("aoc","aop","doc","docg","dop","igp") && gazetteer.matches(suffix).none { it.type=="country" } &&
+                    places.none { it.nameNorm.filter(Char::isLetterOrDigit)==compact }
+                if(place.type !in setOf("country","region") && !unresolvedSuffix) values[FieldId.SUBREGION]=place.name
+                offer(values,50.0+path.size*5+lexicalBonus,"observed geography and actual ancestors; no producer-origin inference"+(if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else ""),place)
             }
             if(places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
-            if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty()) continue
+            if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) continue
             BundledProducerNames.exactName(text)?.let { offer(mapOf(FieldId.PRODUCER to it),105.0,"exact authored producer alias; no origin inference") }
             val known=kb.findProducer(text).filter { it.editDistance==0 }.take(3)
             known.forEach { offer(mapOf(FieldId.PRODUCER to it.producer.name),110.0,"exact local producer; catalog location is not wine origin") }
+            if(p.construction.contains("designation-linked") && !WineDesignations.isDesignation(text)) {
+                offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),90.0+lexicalBonus,"complete name with adjacent designation")
+                continue
+            }
             if(roles.isWineDescription(text) || WineDesignations.isDesignation(text)) {
-                offer(mapOf(FieldId.WINE_NAME to (WineDesignations.display(text) ?: text)),65.0,"observed varietal or designation")
+                offer(mapOf(FieldId.WINE_NAME to (WineDesignations.display(text) ?: text)),75.0,"observed varietal or designation")
                 continue
             }
             if(norm.count(Char::isLetter)<4 || norm.any(Char::isDigit)) continue
             val joined=p.construction.contains("connector")
-            offer(mapOf(FieldId.PRODUCER to text),if(roles.hasProducerCue(text)) 80.0 else if(joined) 72.0 else 32.0,"producer/brand interpretation; ${p.construction}")
-            offer(mapOf(FieldId.WINE_NAME to text),if(joined) 78.0 else 43.0,"title interpretation; ${p.construction}")
+            val titleCue=Regex("\\b(reserve|reserva|riserva)\\b").containsMatchIn(norm)
+            if(!titleCue) offer(mapOf(FieldId.PRODUCER to text),(if(roles.hasProducerCue(text)) 85.0 else if(joined) 82.0 else 32.0)+lexicalBonus,"producer/brand interpretation; ${p.construction}")
+            offer(mapOf(FieldId.WINE_NAME to text),(if(joined) 88.0 else 43.0)+lexicalBonus,"title interpretation; ${p.construction}")
         }
-        val solution=EvidenceSolver.solve(hypotheses,hierarchy,::checkBudget)
+        val solution=EvidenceSolver.solve(hypotheses,hierarchy,graph,::checkBudget)
         val fields=FieldId.entries.associateWith { field ->
-            val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinct()
+            val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinctBy(TextNorm::normalize)
             val winner=solution.firstOrNull()?.firstOrNull { field in it.values }
             val value=values.singleOrNull().orEmpty()
             FieldCandidate(field,value,if(value.isBlank()) UiState.RED else UiState.YELLOW,

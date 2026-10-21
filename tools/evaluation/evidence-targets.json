@@ -1,0 +1,21 @@
+{
+  "provenance": "Development targets from user-confirmed intake conventions and supplied photos/conversation; not independently adjudicated or held-out. Null fields are unknown/unscored. Repeat scans count separately; per-bottle summaries must accompany totals.",
+  "fields": ["producer", "wine_name", "country", "region", "subregion", "vintage"],
+  "bottles": {
+    "napa": ["Kirkland Signature", "Cabernet Sauvignon", "California", "Napa Valley", null, "2024"],
+    "brunello": ["Kirkland Signature", "Brunello di Montalcino", "Italy", "Tuscany", "Montalcino", "2021"],
+    "riscal": ["Marqués de Riscal", "Verdejo", "Spain", "Castilla y Leon", "Rueda", "2023"],
+    "alexander": ["Kirkland Signature", "Cabernet Sauvignon", "California", "Alexander Valley", "", "2022"],
+    "blackstone": ["Blackstone", "Merlot", "California", "", "", null],
+    "enclave": ["Vignerons de l'Enclave", "La Reserve de l'Enclave", "France", "Rhône", "Côtes du Rhône Villages", "2022"],
+    "altos": ["Altos de Valdoso", "Crianza", "Spain", "Ribera del Duero", "", "2019"],
+    "olarra": ["Bodegas Olarra", "Reciente Gran Reserva", "Spain", "Rioja", "", "2019"]
+  },
+  "batches": {
+    "form": ["napa", "brunello", "riscal", "alexander", "blackstone", "enclave"],
+    "layout": ["brunello", "riscal", "napa", "alexander", "blackstone", "enclave"],
+    "evidence": ["napa", "brunello", "riscal", "alexander", "blackstone", "enclave"],
+    "brand": ["brunello", "altos", "enclave", "blackstone", "olarra"],
+    "architecture": ["napa", "brunello", "riscal", "altos", "enclave"]
+  }
+}
