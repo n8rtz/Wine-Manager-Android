@@ -39,7 +39,7 @@ jobs:
           test "$free_kib" -gt 12582912
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
-          sudo udevadm trigger --name=kvm
+          sudo udevadm trigger
       - name: Execute actual Kotlin assignment on Android
         uses: reactivecircus/android-emulator-runner@v2
         with:
