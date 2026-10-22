@@ -32,6 +32,8 @@ internal object TextLabEvidencePreview {
                 "region_id" to p.id.toString(),"raw_text" to p.text,"evidence_details" to "${p.construction}; observations=${p.observations}")) }
             result.hypotheses.forEachIndexed { index,h -> journal.add("experimental_evidence","evidence_hypothesis",values=mapOf(
                 "region_id" to index.toString(),"evidence_details" to "phrase=${h.phrase.id}; observations=${h.phrase.observations}; rank=${h.rank}; ${h.reason}; values=${h.values}")) }
+            result.trace.rows.forEach { event -> journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to event)) }
+            values["trace_counts"]=result.trace.counts.toString()
             journal.add("experimental_evidence","evidence_summary",if(fill.fields.values.all { it.value.isBlank() }) "no_fields" else "suggestions",values,
                 "Experimental, not ground truth. Same saved OCR as production baseline; shared lexical KB and cellar display only.")
         } catch(cancel:CancellationException) { throw cancel }

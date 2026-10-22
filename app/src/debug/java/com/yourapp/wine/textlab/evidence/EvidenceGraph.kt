@@ -14,7 +14,7 @@ internal data class EvidenceGraph(val observations:List<Observation>,val phrases
 internal object EvidenceGraphBuilder {
     const val MAX_OBSERVATIONS=128
     const val MAX_PHRASES=384
-    fun build(records:List<TokenRecord>,checkBudget:()->Unit = {}):EvidenceGraph {
+    fun build(records:List<TokenRecord>,checkBudget:()->Unit = {},typedIdentity:Boolean=false):EvidenceGraph {
         val observations=records.take(MAX_OBSERVATIONS).mapIndexedNotNull { i,r ->
             val b=r.bboxRect
             if(r.textRaw.isBlank() || r.textRaw.length>256 || !r.score.isFinite() || r.score !in 0f..1f ||
@@ -54,8 +54,12 @@ internal object EvidenceGraphBuilder {
             if(BoxMath.iou(a.box,b.box)>.10f && (" $an ".contains(" $bn ") || " $bn ".contains(" $an "))) continue
             val designation=WineDesignations.isDesignation(b.text) && !WineDesignations.isDesignation(a.text)
             val leadingConnector=Regex("^(de|du|di|des)\\b").containsMatchIn(bn)
-            if(horizontal || designation || leadingConnector || Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des"))
-                add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),if(horizontal) "aligned horizontal phrase" else if(designation) "designation-linked phrase" else "connector-linked phrase")
+            val estateName=typedIdentity && EvidenceIdentityRoles.headingOnly(a.text) &&
+                !EvidenceIdentityRoles.headingOnly(b.text) && b.text.count(Char::isLetter)>=3 &&
+                !b.text.any(Char::isDigit) && !com.yourapp.wine.extract.MetadataRules.isBoilerplate(b.text) &&
+                !com.yourapp.wine.extract.MetadataRules.isPackaging(b.text) && !WineDesignations.isDesignation(b.text)
+            if(estateName || horizontal || designation || leadingConnector || Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des"))
+                add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),if(estateName) "estate-heading composition" else if(horizontal) "aligned horizontal phrase" else if(designation) "designation-linked phrase" else "connector-linked phrase")
         }
         // Horizontal heading fragments (e.g. article + title) can precede an isolated connector.
         for(a in phrases.toList().filter { it.construction=="aligned horizontal phrase" }) for(b in singles) {
