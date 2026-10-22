@@ -53,15 +53,20 @@ jobs:
       - name: Execute actual OCR Lab pipeline
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 30
+          api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_2
           ram-size: 4096M
           heap-size: 256M
+          disable-linux-hw-accel: false
+          emulator-boot-timeout: 360
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 4096
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 4096 -feature -Vulkan -verbose > "$CORPUS_RESULTS/emulator-boot.txt" 2>&1
           script: bash tools/corpus/run_android_corpus.sh
+      - name: Summarize execution coverage without inventing accuracy
+        if: always()
+        run: python3 tools/corpus/summarize_android.py "$CORPUS_RESULTS"
       - name: Retain diagnostics, never corpus photos
         if: always()
         uses: actions/upload-artifact@v5
@@ -80,9 +85,9 @@ jobs:
             const fs = require('fs');
             const root = process.env.CORPUS_RESULTS;
             let text = 'Private candidate corpus; annotations not yet scoring truth. Emulator timing is not phone performance.\n';
-            for (const name of ['acquisition.txt', 'build.txt', 'instrumentation.txt', 'emulator-properties.txt']) {
+            for (const name of ['corpus-summary.json', 'build.txt', 'emulator-boot.txt', 'instrumentation.txt', 'emulator-properties.txt']) {
               const path = `${root}/${name}`;
-              if (fs.existsSync(path)) text += `\n${name}\n${fs.readFileSync(path, 'utf8').slice(-7000)}\n`;
+              if (fs.existsSync(path)) text += `\n${name}\n${fs.readFileSync(path, 'utf8').slice(-5000)}\n`;
             }
             const dir = `${root}/results`;
             if (fs.existsSync(dir)) {

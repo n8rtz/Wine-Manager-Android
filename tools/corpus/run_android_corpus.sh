@@ -25,7 +25,7 @@ while IFS= read -r file; do
   adb exec-in run-as "$pkg" tee "files/private-corpus/images/$(basename "$file")" < "$file" > /dev/null
 done < "$CORPUS_RESULTS/selected-images.txt"
 set +e
-adb shell am instrument -w -r -e class com.yourapp.wine.textlab.PublicCorpusDeviceTest \
+timeout --signal=TERM "$((CORPUS_LIMIT * 150 + 180))" adb shell am instrument -w -r -e class com.yourapp.wine.textlab.PublicCorpusDeviceTest \
   -e privateCorpus true "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$CORPUS_RESULTS/instrumentation.txt" 2>&1
 result=$?
 set -e
