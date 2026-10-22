@@ -75,8 +75,11 @@ def collect(root,out,sha):
         summary['systems'][system]=dict(outcomes=dict(c),producer=dict(p),completion=gate,
             complete_gained_vs_hybrid=sorted(full-basefull),complete_lost_vs_hybrid=sorted(basefull-full),producer_transitions_vs_hybrid=dict(transitions))
     summary['production_promoted']=False
+    decision=dict(meets_user_target=[v for v in VARIANTS if summary['systems'][v]['completion']['passes']],production_promoted=False,
+        rule='At least 80% complete and strictly fewer than 5% with two or more errors. Component improvements are not release acceptance.')
     out.mkdir(parents=True,exist_ok=True)
     (out/'scores.json').write_text(json.dumps(summary,indent=2)+'\n')
+    (out/'decision.json').write_text(json.dumps(decision,indent=2)+'\n')
     with gzip.open(out/'android-results.jsonl.gz','wb') as f:f.write((root/'results.jsonl').read_bytes())
     with (out/'field-results.csv').open('w',newline='') as f:
         w=csv.DictWriter(f,fieldnames=list(outputrows[0]));w.writeheader();w.writerows(outputrows)
