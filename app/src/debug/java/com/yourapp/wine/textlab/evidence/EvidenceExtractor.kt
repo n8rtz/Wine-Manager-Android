@@ -11,12 +11,12 @@ internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,v
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true) {
-    companion object { const val VERSION="evidence-lab-v3-heading-roles";const val MAX_HYPOTHESES=384;const val BEAM=64 }
+    companion object { const val VERSION="evidence-lab-v3-heading-roles";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384;const val BEAM=64 }
     private val kb=SupplementedWineKnowledgeBase(base)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb).snapshot()
     private val roles=ProducerLineSelector()
-    fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=2000):EvidenceResult {
+    fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {
             if(Thread.currentThread().isInterrupted) throw InterruptedException("Evidence extraction interrupted")

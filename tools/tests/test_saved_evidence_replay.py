@@ -35,9 +35,9 @@ class SavedEvidenceReplayTests(unittest.TestCase):
         self.assertNotIn('old.extract',source)
         self.assertIn('revised.extract(records,2026)',source)
 
-    def test_warmup_allowance_does_not_change_corpus_budget(self):
+    def test_warmup_and_corpus_use_generous_experimental_budget(self):
         source=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/SavedEvidenceReplayTest.kt').read_text()
-        self.assertIn('revised.extract(synthetic,2026,budgetMs=60_000)',source)
+        self.assertIn('revised.extract(synthetic,2026,budgetMs=EvidenceExtractor.DEFAULT_BUDGET_MS)',source)
         self.assertIn('revised.extract(records,2026)',source)
         self.assertNotIn('revised.extract(records,2026,budgetMs=',source)
         self.assertIn('"progress.json"',source)
@@ -48,6 +48,15 @@ class SavedEvidenceReplayTests(unittest.TestCase):
             root=Path(temp)
             (root/'validation.json').write_text(json.dumps(dict(images=168,
                 execution_policy='revised_experimental_only',baseline_executions=0,
-                old_experimental_executions=0,completed=167,failures=['timeout'],corpus_budget_ms=2000)))
+                old_experimental_executions=0,completed=167,failures=['timeout'],corpus_budget_ms=60000)))
             with self.assertRaises(AssertionError):collect(root,root/'out','a'*40)
             self.assertFalse((root/'out').exists())
+
+    def test_experimental_budget_and_outer_timeout_are_consistent(self):
+        source=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text()
+        self.assertIn('DEFAULT_BUDGET_MS=60_000L',source)
+        self.assertIn('budgetMs:Long=DEFAULT_BUDGET_MS',source)
+        harness=(ROOT/'tools/corpus/run_saved_evidence_replay.sh').read_text()
+        self.assertIn('168 * 60 + 180',harness)
+        production=(ROOT/'app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt').read_text()
+        self.assertIn('BUDGET_MS = 15_000L',production)

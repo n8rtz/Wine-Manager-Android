@@ -62,3 +62,17 @@ Per-image progress and failures are preserved. The loop finishes collecting case
 failures rather than losing visibility at the first one, but the test and scorer
 reject an incomplete/failed corpus rather than presenting it as a valid comparison.
 No baseline, old extractor, OCR engine, or production scanner is re-executed.
+
+
+## Budget policy update
+
+At the user's request, the experimental extractor now permits **60 seconds per
+image**, for both warm-up and corpus extraction. This replaces the restrictive
+two-second cap described in the historical attempt above. It returns immediately
+when finished; the limit is not a mandatory wait. Hypothesis, phrase and beam caps
+remain in place. Outer instrumentation/job limits allow the complete batch to use
+this allowance without an unrelated harness timeout.
+
+The production scanner's 15-second budget is unchanged. Only revised experimental
+extraction is executed; saved baseline/v2 outputs and saved OCR are reused. The
+report explicitly discloses the historical v2 versus revised budget difference.

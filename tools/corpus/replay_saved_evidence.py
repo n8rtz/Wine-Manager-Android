@@ -27,7 +27,7 @@ def collect(root,out,sha):
     assert validation.get('images')==168 and validation.get('execution_policy')=='revised_experimental_only',validation
     assert validation.get('baseline_executions')==0 and validation.get('old_experimental_executions')==0,validation
     assert validation.get('completed')==168 and validation.get('failures')==[],validation
-    assert validation.get('corpus_budget_ms')==2000,validation
+    assert validation.get('corpus_budget_ms')==60000,validation
     records=[json.loads(line) for line in (root/'results.jsonl').read_text().splitlines()]
     ref,pred,prod=load(REF,RUN)
     assert len(records)==168 and {r['image'] for r in records}==set(prod)
@@ -47,7 +47,7 @@ def collect(root,out,sha):
     with (out/'field-results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(r for r in rows if r['pipeline']=='experimental')
     lines=['# Saved-OCR identity-role iteration','',
-           'Real Android/Kotlin replay of all 168 frozen lab OCR inputs. Production untouched. Only the revised experimental extractor executes. Baseline and v2 outputs are reused from the frozen run, not re-executed. This is development-set feedback, not held-out accuracy.','',
+           'Real Android/Kotlin replay of all 168 frozen lab OCR inputs. Production untouched. Only the revised experimental extractor executes. Baseline and v2 outputs are reused from the frozen run, not re-executed. The revised extractor has a 60-second maximum per image (historical v2 used two seconds), so budget changes are disclosed alongside assignment changes. This is development-set feedback, not held-out accuracy.','',
            '| Extractor | Correct | Wrong | Abstained | Six fields correct / eligible |','|---|---:|---:|---:|---:|']
     for label,key in [('Lab baseline','unchanged_lab_baseline'),('Experimental v2','old_experimental'),('Experimental v3','new_experimental')]:
         p=data[key];s=p['all_fields'];i=p['image_results']

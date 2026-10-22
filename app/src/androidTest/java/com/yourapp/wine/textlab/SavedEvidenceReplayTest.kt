@@ -38,15 +38,15 @@ class SavedEvidenceReplayTest {
                     box,box,emptyList(),"mlkit","V0",true)
             }
             // Cold Android class/catalog initialization is not a corpus extraction measurement.
-            // Only these synthetic regression/warm-up calls receive the larger test allowance.
+            // Warm-up and corpus use the same generous experimental allowance.
             val warmupStarted=android.os.SystemClock.elapsedRealtime()
             File(root,"progress.json").writeText(JSONObject().put("stage","synthetic_warmup").toString())
             val synthetic=listOf(token("Château",.20f),token("des Asters",.28f))
-            val roleResult=revised.extract(synthetic,2026,budgetMs=60_000)
+            val roleResult=revised.extract(synthetic,2026,budgetMs=EvidenceExtractor.DEFAULT_BUDGET_MS)
             assertTrue(roleResult.graph.phrases.any { it.text=="Château des Asters" && it.construction=="estate-heading composition" })
             assertFalse(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Château" })
             assertTrue(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Château des Asters" })
-            val onlyHeading=revised.extract(listOf(token("Château",.20f)),2026,budgetMs=60_000)
+            val onlyHeading=revised.extract(listOf(token("Château",.20f)),2026,budgetMs=EvidenceExtractor.DEFAULT_BUDGET_MS)
             assertTrue(onlyHeading.fill.fields.getValue(FieldId.PRODUCER).value.isBlank())
             val warmupMs=android.os.SystemClock.elapsedRealtime()-warmupStarted
             val failures=mutableListOf<String>()
@@ -64,9 +64,9 @@ class SavedEvidenceReplayTest {
                     val records=TextLabFormPreview.records(journal)
                     File(root,"progress.json").writeText(JSONObject().put("stage","corpus")
                         .put("index",i+1).put("image",name).put("completed",completed)
-                        .put("warmup_ms",warmupMs).put("corpus_budget_ms",2000).toString(2))
+                        .put("warmup_ms",warmupMs).put("corpus_budget_ms",EvidenceExtractor.DEFAULT_BUDGET_MS).toString(2))
                     val result=try {
-                        revised.extract(records,2026) // unchanged default two-second corpus budget
+                        revised.extract(records,2026) // 60-second maximum; returns as soon as extraction finishes
                     } catch(error:Exception) {
                         if(error is InterruptedException || error is kotlinx.coroutines.CancellationException) throw error
                         failures+="$name: ${error.javaClass.simpleName}: ${error.message}"
@@ -93,7 +93,7 @@ class SavedEvidenceReplayTest {
             }
             File(root,"validation.json").writeText(JSONObject().put("images",input.length())
                 .put("completed",completed).put("failures",JSONArray(failures))
-                .put("warmup_ms",warmupMs).put("warmup_budget_ms",60000).put("corpus_budget_ms",2000)
+                .put("warmup_ms",warmupMs).put("warmup_budget_ms",EvidenceExtractor.DEFAULT_BUDGET_MS).put("corpus_budget_ms",EvidenceExtractor.DEFAULT_BUDGET_MS)
                 .put("execution_policy","revised_experimental_only")
                 .put("baseline_executions",0).put("old_experimental_executions",0).toString(2))
             assertTrue("Corpus extraction failures (${failures.size}): ${failures.take(8)}",failures.isEmpty())

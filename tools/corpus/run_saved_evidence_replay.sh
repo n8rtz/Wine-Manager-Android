@@ -11,7 +11,7 @@ expected=$(sha256sum "$root/input.json" | awk '{print $1}')
 actual=$(adb shell run-as "$pkg" sha256sum files/saved-evidence/input.json | awk '{print $1}')
 test "$expected" = "$actual"
 set +e
-timeout --signal=TERM 1200 adb shell am instrument -w -r -e savedEvidenceReplay true -e class com.yourapp.wine.textlab.SavedEvidenceReplayTest "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
+timeout --signal=TERM "$((168 * 60 + 180))" adb shell am instrument -w -r -e savedEvidenceReplay true -e class com.yourapp.wine.textlab.SavedEvidenceReplayTest "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
 result=$?
 set -e
 adb exec-out run-as "$pkg" tar -cf - -C files/saved-evidence . > "$root/device-results.tar"
