@@ -18,6 +18,11 @@ if [[ "${SEARCH_SWEEP:-false}" == true ]]; then
   flag=searchSweep
   seconds=$((6 * 168 * 60 + 180))
 fi
+if [[ "${RULE_ITERATION:-false}" == true ]]; then
+  class=com.yourapp.wine.textlab.RuleIterationDeviceTest
+  flag=ruleIteration
+  seconds=$((7 * 168 * 60 + 180))
+fi
 set +e
 timeout --signal=TERM "$seconds" adb shell am instrument -w -r -e "$flag" true -e class "$class" "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
 result=$?

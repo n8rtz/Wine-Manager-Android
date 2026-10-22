@@ -10,7 +10,7 @@ internal data class Hypothesis(val values:Map<FieldId,String>,val phrase:Phrase,
 internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,val hypotheses:List<Hypothesis>,val elapsedMs:Long,val trace:EvidenceTrace)
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
-internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig()) {
+internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig()) {
     companion object { const val VERSION="evidence-lab-v3-heading-roles";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
     private val kb=SupplementedWineKnowledgeBase(base)
     private val gazetteer=PlaceGazetteer(kb)
@@ -77,6 +77,11 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             if(places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
             if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
+            if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
+                offer(mapOf(FieldId.WINE_NAME to text),75.0,"explicit named cuvee role; not producer attribution")
+                trace.add("explicit_cuvee_role", "phrase=${p.id}")
+                continue
+            }
             BundledProducerNames.exactName(text)?.let { offer(mapOf(FieldId.PRODUCER to it),105.0,"exact authored producer alias; no origin inference") }
             val known=kb.findProducer(text).filter { it.editDistance==0 }.take(3)
             known.forEach { offer(mapOf(FieldId.PRODUCER to it.producer.name),110.0,"exact local producer; catalog location is not wine origin") }
@@ -94,9 +99,12 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             if(!titleCue) offer(mapOf(FieldId.PRODUCER to text),(if(roles.hasProducerCue(text)) 85.0 else if(joined) 82.0 else 32.0)+lexicalBonus,"producer/brand interpretation; ${p.construction}")
             if(!namedEstate) offer(mapOf(FieldId.WINE_NAME to text),(if(joined) 88.0 else 43.0)+lexicalBonus,"title interpretation; ${p.construction}")
         }
-        val solution=EvidenceSolver.solve(hypotheses,hierarchy,graph,::checkBudget,trace,search)
+        val ranked=hypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
+        val solution=EvidenceSolver.solve(ranked,hierarchy,graph,::checkBudget,trace,search)
         val fields=FieldId.entries.associateWith { field ->
-            val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinctBy(TextNorm::normalize)
+            val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinctBy { value ->
+                if(ranking.equivalentNames && field in setOf(FieldId.PRODUCER,FieldId.WINE_NAME)) EvidenceRanking.nameKey(value) else TextNorm.normalize(value)
+            }
             val winner=solution.firstOrNull()?.firstOrNull { field in it.values }
             val value=values.singleOrNull().orEmpty()
             FieldCandidate(field,value,if(value.isBlank()) UiState.RED else UiState.YELLOW,
@@ -104,11 +112,11 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 emptyList())
         }
         val path=solution.firstOrNull()?.firstOrNull { it.place!=null }?.place?.let(hierarchy::ancestors).orEmpty()
-        val alternatives=FieldId.entries.associateWith { f -> hypotheses.filter { f in it.values }.sortedByDescending { it.rank }.distinctBy { it.values[f] }.take(6).map {
+        val alternatives=FieldId.entries.associateWith { f -> ranked.filter { f in it.values }.sortedByDescending { it.rank }.distinctBy { it.values[f] }.take(6).map {
             FieldCandidate(f,it.values.getValue(f),UiState.YELLOW,"${it.reason}; phrase=${it.phrase.id}; observations=${it.phrase.observations}; rank=${it.rank}",emptyList())
         } }
         val fill=CellarFieldPresentation.apply(FillResult(fields,"Experimental saved-reading extraction; not production autofill",alternatives,
             roleNotes.take(384)+"observations=${graph.observations.size}; phrases=${graph.phrases.size}; hypotheses=${hypotheses.size}; truncated=${graph.truncated || hypotheses.size>=MAX_HYPOTHESES}",geographyPath=path))
-        return EvidenceResult(fill,graph,hypotheses,(System.nanoTime()-started)/1_000_000,trace)
+        return EvidenceResult(fill,graph,ranked,(System.nanoTime()-started)/1_000_000,trace)
     }
 }
