@@ -24,6 +24,9 @@ jobs:
           echo "CORPUS_RESULTS=$RUNNER_TEMP/corpus-results" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/corpus-results"
       - uses: actions/checkout@v5
+        with:
+          # Baseline equivalence check needs the original 15s source commit.
+          fetch-depth: 0
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -43,6 +46,7 @@ jobs:
           python3 tools/corpus/validate_corpus.py "$CORPUS_DIR"
       - name: Apply and record the sole CI-only scanner change
         run: |
+          exec > >(tee "$CORPUS_RESULTS/budget-setup.txt") 2>&1
           python3 - <<'PYCODE'
           import hashlib, json, os, subprocess
           from pathlib import Path
@@ -129,7 +133,7 @@ jobs:
             const fs = require('fs');
             const root = process.env.CORPUS_RESULTS;
             let text = 'Private candidate corpus; annotations not yet scoring truth. Emulator timing is not phone performance.\n';
-            for (const name of ['corpus-summary.json', 'input-hashes.tsv', 'disk.txt', 'build.txt', 'emulator-boot.txt', 'instrumentation.txt', 'emulator-properties.txt']) {
+            for (const name of ['budget-setup.txt', 'budget-build.json', 'corpus-summary.json', 'input-hashes.tsv', 'disk.txt', 'build.txt', 'emulator-boot.txt', 'instrumentation.txt', 'emulator-properties.txt']) {
               const path = `${root}/${name}`;
               if (fs.existsSync(path)) text += `\n${name}\n${fs.readFileSync(path, 'utf8').slice(-5000)}\n`;
             }

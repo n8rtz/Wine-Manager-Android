@@ -29,5 +29,7 @@ class BudgetComparisonTests(unittest.TestCase):
         workflow=(ROOT/'.github/workflows/production-budget-comparison.yml').read_text()
         self.assertIn("assert not diff",workflow)
         self.assertIn('budget-build.patch',workflow)
+        self.assertIn('fetch-depth: 0',workflow)
+        self.assertIn('budget-setup.txt',workflow)
         self.assertIn('compare_production_budgets.py',workflow)
         self.assertIn('git push origin HEAD:arena/fd8dc3be-wine-manager-android',workflow)
