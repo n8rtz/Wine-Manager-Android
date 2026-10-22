@@ -1,0 +1,5246 @@
+{
+  "source_commit": "35ddedae2b33dd5e5f7526a164e7080fcac5fe59",
+  "reference_sha256": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+  "input_sha256": "a1e3dc0d6af15574b698734f292e831a74e5b4e390899a0f750714a0e5340d81",
+  "saved_v3_sha256": "48c946507f1504cd126c69ce19bea957b5874fb2a9f0c3a9db118a0d2a4d51d4",
+  "saved_baseline_sha256": "1ebb9b432bc0b6843c6336341d7aa3ba6fea0b021b26d6f0127cf7ec367b93b5",
+  "execution": {
+    "images": 168,
+    "variants": [
+      "rules-001",
+      "rules-010",
+      "rules-011",
+      "rules-100",
+      "rules-101",
+      "rules-110",
+      "rules-111",
+      "baseline-repair",
+      "baseline-cuvee-repair"
+    ],
+    "corpus_budget_ms": 60000,
+    "baseline_executions": 0,
+    "old_experimental_executions": 0,
+    "failures": []
+  },
+  "v3": {
+    "all_fields": {
+      "correct": 599,
+      "wrong": 84,
+      "abstained": 211,
+      "unscored_filled": 27,
+      "unscored_blank": 87,
+      "scored": 894,
+      "unscored": 114,
+      "total": 1008,
+      "filled": 710,
+      "correct_over_scored_pct": 67.0,
+      "correct_over_scored_fills_pct": 87.7
+    },
+    "per_field": {
+      "producer": {
+        "correct": 55,
+        "wrong": 34,
+        "abstained": 76,
+        "unscored_filled": 2,
+        "unscored_blank": 1,
+        "scored": 165,
+        "unscored": 3,
+        "total": 168,
+        "filled": 91,
+        "correct_over_scored_pct": 33.33,
+        "correct_over_scored_fills_pct": 61.8
+      },
+      "wine_name": {
+        "correct": 74,
+        "wrong": 47,
+        "abstained": 36,
+        "unscored_filled": 5,
+        "unscored_blank": 6,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 126,
+        "correct_over_scored_pct": 47.13,
+        "correct_over_scored_fills_pct": 61.16
+      },
+      "country": {
+        "correct": 142,
+        "wrong": 0,
+        "abstained": 15,
+        "unscored_filled": 4,
+        "unscored_blank": 7,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 146,
+        "correct_over_scored_pct": 90.45,
+        "correct_over_scored_fills_pct": 100.0
+      },
+      "region": {
+        "correct": 116,
+        "wrong": 0,
+        "abstained": 37,
+        "unscored_filled": 4,
+        "unscored_blank": 11,
+        "scored": 153,
+        "unscored": 15,
+        "total": 168,
+        "filled": 120,
+        "correct_over_scored_pct": 75.82,
+        "correct_over_scored_fills_pct": 100.0
+      },
+      "subregion": {
+        "correct": 75,
+        "wrong": 3,
+        "abstained": 34,
+        "unscored_filled": 12,
+        "unscored_blank": 44,
+        "scored": 112,
+        "unscored": 56,
+        "total": 168,
+        "filled": 90,
+        "correct_over_scored_pct": 66.96,
+        "correct_over_scored_fills_pct": 96.15
+      },
+      "vintage": {
+        "correct": 137,
+        "wrong": 0,
+        "abstained": 13,
+        "unscored_filled": 0,
+        "unscored_blank": 18,
+        "scored": 150,
+        "unscored": 18,
+        "total": 168,
+        "filled": 137,
+        "correct_over_scored_pct": 91.33,
+        "correct_over_scored_fills_pct": 100.0
+      }
+    },
+    "image_results": {
+      "images": 168,
+      "six_field_eligible": 103,
+      "six_field_ineligible": 65,
+      "six_field_fully_correct": 19,
+      "all_known_fields_correct_not_full_six": 27,
+      "images_with_scored_wrong_fill": 69,
+      "images_with_scored_abstention": 109
+    },
+    "one_photo_per_identity": {
+      "selection": "lowest review number (source hash order); fixed independently of outputs",
+      "all_fields": {
+        "correct": 509,
+        "wrong": 68,
+        "abstained": 185,
+        "unscored_filled": 26,
+        "unscored_blank": 70,
+        "scored": 762,
+        "unscored": 96,
+        "total": 858,
+        "filled": 603,
+        "correct_over_scored_pct": 66.8,
+        "correct_over_scored_fills_pct": 88.21
+      },
+      "image_results": {
+        "images": 143,
+        "six_field_eligible": 87,
+        "six_field_ineligible": 56,
+        "six_field_fully_correct": 16,
+        "all_known_fields_correct_not_full_six": 23,
+        "images_with_scored_wrong_fill": 55,
+        "images_with_scored_abstention": 93
+      }
+    },
+    "by_output_state": {
+      "GREEN": {
+        "correct": 0,
+        "wrong": 0,
+        "abstained": 0,
+        "unscored_filled": 0,
+        "unscored_blank": 0,
+        "scored": 0,
+        "unscored": 0,
+        "total": 0,
+        "filled": 0,
+        "correct_over_scored_pct": null,
+        "correct_over_scored_fills_pct": null
+      },
+      "YELLOW": {
+        "correct": 599,
+        "wrong": 84,
+        "abstained": 0,
+        "unscored_filled": 27,
+        "unscored_blank": 0,
+        "scored": 683,
+        "unscored": 27,
+        "total": 710,
+        "filled": 710,
+        "correct_over_scored_pct": 87.7,
+        "correct_over_scored_fills_pct": 87.7
+      },
+      "RED": {
+        "correct": 0,
+        "wrong": 0,
+        "abstained": 211,
+        "unscored_filled": 0,
+        "unscored_blank": 87,
+        "scored": 211,
+        "unscored": 87,
+        "total": 298,
+        "filled": 0,
+        "correct_over_scored_pct": 0.0,
+        "correct_over_scored_fills_pct": null
+      }
+    },
+    "production_deadline_strata": {
+      "false": {
+        "correct": 249,
+        "wrong": 33,
+        "abstained": 78,
+        "unscored_filled": 20,
+        "unscored_blank": 58,
+        "scored": 360,
+        "unscored": 78,
+        "total": 438,
+        "filled": 302,
+        "correct_over_scored_pct": 69.17,
+        "correct_over_scored_fills_pct": 88.3
+      },
+      "true": {
+        "correct": 350,
+        "wrong": 51,
+        "abstained": 133,
+        "unscored_filled": 7,
+        "unscored_blank": 29,
+        "scored": 534,
+        "unscored": 36,
+        "total": 570,
+        "filled": 408,
+        "correct_over_scored_pct": 65.54,
+        "correct_over_scored_fills_pct": 87.28
+      }
+    },
+    "repeat_consistency": [
+      {
+        "identity_group": "identity-001",
+        "review_numbers": [
+          1,
+          155
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-007",
+        "review_numbers": [
+          7,
+          24
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-010",
+        "review_numbers": [
+          10,
+          63
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-015",
+        "review_numbers": [
+          15,
+          52
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-016",
+        "review_numbers": [
+          16,
+          66
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-018",
+        "review_numbers": [
+          18,
+          76
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-021",
+        "review_numbers": [
+          21,
+          112
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-022",
+        "review_numbers": [
+          22,
+          23
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-031",
+        "review_numbers": [
+          31,
+          75
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-032",
+        "review_numbers": [
+          32,
+          89
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-039",
+        "review_numbers": [
+          39,
+          131
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-041",
+        "review_numbers": [
+          41,
+          100,
+          143
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-042",
+        "review_numbers": [
+          42,
+          61
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-047",
+        "review_numbers": [
+          47,
+          48
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-055",
+        "review_numbers": [
+          55,
+          168
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-060",
+        "review_numbers": [
+          60,
+          153
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-068",
+        "review_numbers": [
+          68,
+          164
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-069",
+        "review_numbers": [
+          69,
+          96
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-079",
+        "review_numbers": [
+          79,
+          82
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-121",
+        "review_numbers": [
+          121,
+          124
+        ],
+        "stable_fields_of_six": 1,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-127",
+        "review_numbers": [
+          127,
+          159
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-130",
+        "review_numbers": [
+          130,
+          138,
+          156
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-134",
+        "review_numbers": [
+          134,
+          135
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      }
+    ]
+  },
+  "baseline": {
+    "all_fields": {
+      "correct": 597,
+      "wrong": 100,
+      "abstained": 197,
+      "unscored_filled": 27,
+      "unscored_blank": 87,
+      "scored": 894,
+      "unscored": 114,
+      "total": 1008,
+      "filled": 724,
+      "correct_over_scored_pct": 66.78,
+      "correct_over_scored_fills_pct": 85.65
+    },
+    "per_field": {
+      "producer": {
+        "correct": 71,
+        "wrong": 38,
+        "abstained": 56,
+        "unscored_filled": 2,
+        "unscored_blank": 1,
+        "scored": 165,
+        "unscored": 3,
+        "total": 168,
+        "filled": 111,
+        "correct_over_scored_pct": 43.03,
+        "correct_over_scored_fills_pct": 65.14
+      },
+      "wine_name": {
+        "correct": 54,
+        "wrong": 56,
+        "abstained": 47,
+        "unscored_filled": 6,
+        "unscored_blank": 5,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 116,
+        "correct_over_scored_pct": 34.39,
+        "correct_over_scored_fills_pct": 49.09
+      },
+      "country": {
+        "correct": 132,
+        "wrong": 1,
+        "abstained": 24,
+        "unscored_filled": 4,
+        "unscored_blank": 7,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 137,
+        "correct_over_scored_pct": 84.08,
+        "correct_over_scored_fills_pct": 99.25
+      },
+      "region": {
+        "correct": 113,
+        "wrong": 1,
+        "abstained": 39,
+        "unscored_filled": 4,
+        "unscored_blank": 11,
+        "scored": 153,
+        "unscored": 15,
+        "total": 168,
+        "filled": 118,
+        "correct_over_scored_pct": 73.86,
+        "correct_over_scored_fills_pct": 99.12
+      },
+      "subregion": {
+        "correct": 81,
+        "wrong": 4,
+        "abstained": 27,
+        "unscored_filled": 11,
+        "unscored_blank": 45,
+        "scored": 112,
+        "unscored": 56,
+        "total": 168,
+        "filled": 96,
+        "correct_over_scored_pct": 72.32,
+        "correct_over_scored_fills_pct": 95.29
+      },
+      "vintage": {
+        "correct": 146,
+        "wrong": 0,
+        "abstained": 4,
+        "unscored_filled": 0,
+        "unscored_blank": 18,
+        "scored": 150,
+        "unscored": 18,
+        "total": 168,
+        "filled": 146,
+        "correct_over_scored_pct": 97.33,
+        "correct_over_scored_fills_pct": 100.0
+      }
+    },
+    "image_results": {
+      "images": 168,
+      "six_field_eligible": 103,
+      "six_field_ineligible": 65,
+      "six_field_fully_correct": 23,
+      "all_known_fields_correct_not_full_six": 34,
+      "images_with_scored_wrong_fill": 76,
+      "images_with_scored_abstention": 96
+    },
+    "one_photo_per_identity": {
+      "selection": "lowest review number (source hash order); fixed independently of outputs",
+      "all_fields": {
+        "correct": 515,
+        "wrong": 84,
+        "abstained": 163,
+        "unscored_filled": 26,
+        "unscored_blank": 70,
+        "scored": 762,
+        "unscored": 96,
+        "total": 858,
+        "filled": 625,
+        "correct_over_scored_pct": 67.59,
+        "correct_over_scored_fills_pct": 85.98
+      },
+      "image_results": {
+        "images": 143,
+        "six_field_eligible": 87,
+        "six_field_ineligible": 56,
+        "six_field_fully_correct": 21,
+        "all_known_fields_correct_not_full_six": 29,
+        "images_with_scored_wrong_fill": 63,
+        "images_with_scored_abstention": 78
+      }
+    },
+    "by_output_state": {
+      "GREEN": {
+        "correct": 0,
+        "wrong": 0,
+        "abstained": 0,
+        "unscored_filled": 0,
+        "unscored_blank": 0,
+        "scored": 0,
+        "unscored": 0,
+        "total": 0,
+        "filled": 0,
+        "correct_over_scored_pct": null,
+        "correct_over_scored_fills_pct": null
+      },
+      "YELLOW": {
+        "correct": 597,
+        "wrong": 100,
+        "abstained": 0,
+        "unscored_filled": 27,
+        "unscored_blank": 0,
+        "scored": 697,
+        "unscored": 27,
+        "total": 724,
+        "filled": 724,
+        "correct_over_scored_pct": 85.65,
+        "correct_over_scored_fills_pct": 85.65
+      },
+      "RED": {
+        "correct": 0,
+        "wrong": 0,
+        "abstained": 197,
+        "unscored_filled": 0,
+        "unscored_blank": 87,
+        "scored": 197,
+        "unscored": 87,
+        "total": 284,
+        "filled": 0,
+        "correct_over_scored_pct": 0.0,
+        "correct_over_scored_fills_pct": null
+      }
+    },
+    "production_deadline_strata": {
+      "false": {
+        "correct": 259,
+        "wrong": 42,
+        "abstained": 59,
+        "unscored_filled": 20,
+        "unscored_blank": 58,
+        "scored": 360,
+        "unscored": 78,
+        "total": 438,
+        "filled": 321,
+        "correct_over_scored_pct": 71.94,
+        "correct_over_scored_fills_pct": 86.05
+      },
+      "true": {
+        "correct": 338,
+        "wrong": 58,
+        "abstained": 138,
+        "unscored_filled": 7,
+        "unscored_blank": 29,
+        "scored": 534,
+        "unscored": 36,
+        "total": 570,
+        "filled": 403,
+        "correct_over_scored_pct": 63.3,
+        "correct_over_scored_fills_pct": 85.35
+      }
+    },
+    "repeat_consistency": [
+      {
+        "identity_group": "identity-001",
+        "review_numbers": [
+          1,
+          155
+        ],
+        "stable_fields_of_six": 3,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-007",
+        "review_numbers": [
+          7,
+          24
+        ],
+        "stable_fields_of_six": 3,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-010",
+        "review_numbers": [
+          10,
+          63
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-015",
+        "review_numbers": [
+          15,
+          52
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-016",
+        "review_numbers": [
+          16,
+          66
+        ],
+        "stable_fields_of_six": 3,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-018",
+        "review_numbers": [
+          18,
+          76
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-021",
+        "review_numbers": [
+          21,
+          112
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-022",
+        "review_numbers": [
+          22,
+          23
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-031",
+        "review_numbers": [
+          31,
+          75
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-032",
+        "review_numbers": [
+          32,
+          89
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-039",
+        "review_numbers": [
+          39,
+          131
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-041",
+        "review_numbers": [
+          41,
+          100,
+          143
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-042",
+        "review_numbers": [
+          42,
+          61
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-047",
+        "review_numbers": [
+          47,
+          48
+        ],
+        "stable_fields_of_six": 5,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-055",
+        "review_numbers": [
+          55,
+          168
+        ],
+        "stable_fields_of_six": 2,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-060",
+        "review_numbers": [
+          60,
+          153
+        ],
+        "stable_fields_of_six": 3,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-068",
+        "review_numbers": [
+          68,
+          164
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-069",
+        "review_numbers": [
+          69,
+          96
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-079",
+        "review_numbers": [
+          79,
+          82
+        ],
+        "stable_fields_of_six": 2,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-121",
+        "review_numbers": [
+          121,
+          124
+        ],
+        "stable_fields_of_six": 2,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-127",
+        "review_numbers": [
+          127,
+          159
+        ],
+        "stable_fields_of_six": 2,
+        "six_field_eligible": true,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-130",
+        "review_numbers": [
+          130,
+          138,
+          156
+        ],
+        "stable_fields_of_six": 4,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      },
+      {
+        "identity_group": "identity-134",
+        "review_numbers": [
+          134,
+          135
+        ],
+        "stable_fields_of_six": 6,
+        "six_field_eligible": false,
+        "every_photo_six_fields_correct": false
+      }
+    ]
+  },
+  "variants": {
+    "rules-001": {
+      "all_fields": {
+        "correct": 602,
+        "wrong": 82,
+        "abstained": 210,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 711,
+        "correct_over_scored_pct": 67.34,
+        "correct_over_scored_fills_pct": 88.01
+      },
+      "per_field": {
+        "producer": {
+          "correct": 55,
+          "wrong": 34,
+          "abstained": 76,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 91,
+          "correct_over_scored_pct": 33.33,
+          "correct_over_scored_fills_pct": 61.8
+        },
+        "wine_name": {
+          "correct": 77,
+          "wrong": 45,
+          "abstained": 35,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 127,
+          "correct_over_scored_pct": 49.04,
+          "correct_over_scored_fills_pct": 63.11
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 19,
+        "all_known_fields_correct_not_full_six": 27,
+        "images_with_scored_wrong_fill": 67,
+        "images_with_scored_abstention": 109
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 511,
+          "wrong": 67,
+          "abstained": 184,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 604,
+          "correct_over_scored_pct": 67.06,
+          "correct_over_scored_fills_pct": 88.41
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 16,
+          "all_known_fields_correct_not_full_six": 23,
+          "images_with_scored_wrong_fill": 54,
+          "images_with_scored_abstention": 93
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 602,
+          "wrong": 82,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 684,
+          "unscored": 27,
+          "total": 711,
+          "filled": 711,
+          "correct_over_scored_pct": 88.01,
+          "correct_over_scored_fills_pct": 88.01
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 210,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 210,
+          "unscored": 87,
+          "total": 297,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 249,
+          "wrong": 33,
+          "abstained": 78,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 302,
+          "correct_over_scored_pct": 69.17,
+          "correct_over_scored_fills_pct": 88.3
+        },
+        "true": {
+          "correct": 353,
+          "wrong": 49,
+          "abstained": 132,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 409,
+          "correct_over_scored_pct": 66.1,
+          "correct_over_scored_fills_pct": 87.81
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 32,
+            "wrong -> correct": 26,
+            "abstained -> correct": 45,
+            "correct -> correct": 531,
+            "correct -> abstained": 53,
+            "abstained -> wrong": 27,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 42,
+            "correct -> wrong": 13,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 125
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 210,
+            "correct -> correct": 599,
+            "wrong -> wrong": 82,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "wrong -> correct": 2,
+            "abstained -> correct": 1
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        }
+      }
+    },
+    "rules-010": {
+      "all_fields": {
+        "correct": 604,
+        "wrong": 94,
+        "abstained": 196,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 725,
+        "correct_over_scored_pct": 67.56,
+        "correct_over_scored_fills_pct": 86.53
+      },
+      "per_field": {
+        "producer": {
+          "correct": 60,
+          "wrong": 40,
+          "abstained": 65,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 102,
+          "correct_over_scored_pct": 36.36,
+          "correct_over_scored_fills_pct": 60.0
+        },
+        "wine_name": {
+          "correct": 74,
+          "wrong": 51,
+          "abstained": 32,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 130,
+          "correct_over_scored_pct": 47.13,
+          "correct_over_scored_fills_pct": 59.2
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 19,
+        "all_known_fields_correct_not_full_six": 29,
+        "images_with_scored_wrong_fill": 77,
+        "images_with_scored_abstention": 100
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 514,
+          "wrong": 76,
+          "abstained": 172,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 616,
+          "correct_over_scored_pct": 67.45,
+          "correct_over_scored_fills_pct": 87.12
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 16,
+          "all_known_fields_correct_not_full_six": 25,
+          "images_with_scored_wrong_fill": 61,
+          "images_with_scored_abstention": 85
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 604,
+          "wrong": 94,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 698,
+          "unscored": 27,
+          "total": 725,
+          "filled": 725,
+          "correct_over_scored_pct": 86.53,
+          "correct_over_scored_fills_pct": 86.53
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 196,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 196,
+          "unscored": 87,
+          "total": 283,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 252,
+          "wrong": 37,
+          "abstained": 71,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 309,
+          "correct_over_scored_pct": 70.0,
+          "correct_over_scored_fills_pct": 87.2
+        },
+        "true": {
+          "correct": 352,
+          "wrong": 57,
+          "abstained": 125,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 416,
+          "correct_over_scored_pct": 65.92,
+          "correct_over_scored_fills_pct": 86.06
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 28,
+            "wrong -> correct": 26,
+            "abstained -> correct": 46,
+            "correct -> correct": 532,
+            "correct -> abstained": 49,
+            "abstained -> wrong": 32,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 46,
+            "correct -> wrong": 16,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 119
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 194,
+            "correct -> correct": 599,
+            "wrong -> wrong": 82,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "abstained -> wrong": 12,
+            "abstained -> correct": 5,
+            "wrong -> abstained": 2
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        }
+      }
+    },
+    "rules-011": {
+      "all_fields": {
+        "correct": 608,
+        "wrong": 89,
+        "abstained": 197,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 724,
+        "correct_over_scored_pct": 68.01,
+        "correct_over_scored_fills_pct": 87.23
+      },
+      "per_field": {
+        "producer": {
+          "correct": 61,
+          "wrong": 37,
+          "abstained": 67,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 100,
+          "correct_over_scored_pct": 36.97,
+          "correct_over_scored_fills_pct": 62.24
+        },
+        "wine_name": {
+          "correct": 77,
+          "wrong": 49,
+          "abstained": 31,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 131,
+          "correct_over_scored_pct": 49.04,
+          "correct_over_scored_fills_pct": 61.11
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 20,
+        "all_known_fields_correct_not_full_six": 30,
+        "images_with_scored_wrong_fill": 73,
+        "images_with_scored_abstention": 102
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 517,
+          "wrong": 72,
+          "abstained": 173,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 615,
+          "correct_over_scored_pct": 67.85,
+          "correct_over_scored_fills_pct": 87.78
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 17,
+          "all_known_fields_correct_not_full_six": 26,
+          "images_with_scored_wrong_fill": 58,
+          "images_with_scored_abstention": 87
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 608,
+          "wrong": 89,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 697,
+          "unscored": 27,
+          "total": 724,
+          "filled": 724,
+          "correct_over_scored_pct": 87.23,
+          "correct_over_scored_fills_pct": 87.23
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 197,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 197,
+          "unscored": 87,
+          "total": 284,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 252,
+          "wrong": 37,
+          "abstained": 71,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 309,
+          "correct_over_scored_pct": 70.0,
+          "correct_over_scored_fills_pct": 87.2
+        },
+        "true": {
+          "correct": 356,
+          "wrong": 52,
+          "abstained": 126,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 415,
+          "correct_over_scored_pct": 66.67,
+          "correct_over_scored_fills_pct": 87.25
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 28,
+            "wrong -> correct": 27,
+            "abstained -> correct": 49,
+            "correct -> correct": 532,
+            "correct -> abstained": 49,
+            "abstained -> wrong": 28,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 45,
+            "correct -> wrong": 16,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 120
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "932e8a7357562df3bff0502b75a3407d6d9e768d.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 195,
+            "correct -> correct": 599,
+            "wrong -> wrong": 80,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "wrong -> correct": 2,
+            "abstained -> correct": 7,
+            "abstained -> wrong": 9,
+            "wrong -> abstained": 2
+          },
+          "complete_gained": [
+            "932e8a7357562df3bff0502b75a3407d6d9e768d.jpg"
+          ],
+          "complete_lost": []
+        }
+      }
+    },
+    "rules-100": {
+      "all_fields": {
+        "correct": 603,
+        "wrong": 86,
+        "abstained": 205,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 716,
+        "correct_over_scored_pct": 67.45,
+        "correct_over_scored_fills_pct": 87.52
+      },
+      "per_field": {
+        "producer": {
+          "correct": 59,
+          "wrong": 34,
+          "abstained": 72,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 95,
+          "correct_over_scored_pct": 35.76,
+          "correct_over_scored_fills_pct": 63.44
+        },
+        "wine_name": {
+          "correct": 74,
+          "wrong": 49,
+          "abstained": 34,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 128,
+          "correct_over_scored_pct": 47.13,
+          "correct_over_scored_fills_pct": 60.16
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 19,
+        "all_known_fields_correct_not_full_six": 28,
+        "images_with_scored_wrong_fill": 70,
+        "images_with_scored_abstention": 105
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 512,
+          "wrong": 70,
+          "abstained": 180,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 608,
+          "correct_over_scored_pct": 67.19,
+          "correct_over_scored_fills_pct": 87.97
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 16,
+          "all_known_fields_correct_not_full_six": 24,
+          "images_with_scored_wrong_fill": 56,
+          "images_with_scored_abstention": 90
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 603,
+          "wrong": 86,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 689,
+          "unscored": 27,
+          "total": 716,
+          "filled": 716,
+          "correct_over_scored_pct": 87.52,
+          "correct_over_scored_fills_pct": 87.52
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 205,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 205,
+          "unscored": 87,
+          "total": 292,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 250,
+          "wrong": 35,
+          "abstained": 75,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 305,
+          "correct_over_scored_pct": 69.44,
+          "correct_over_scored_fills_pct": 87.72
+        },
+        "true": {
+          "correct": 353,
+          "wrong": 51,
+          "abstained": 130,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 411,
+          "correct_over_scored_pct": 66.1,
+          "correct_over_scored_fills_pct": 87.38
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 30,
+            "wrong -> correct": 26,
+            "abstained -> correct": 44,
+            "correct -> correct": 533,
+            "correct -> abstained": 51,
+            "abstained -> wrong": 29,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 44,
+            "correct -> wrong": 13,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 124
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 205,
+            "correct -> correct": 599,
+            "wrong -> wrong": 84,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "abstained -> correct": 4,
+            "abstained -> wrong": 2
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        }
+      }
+    },
+    "rules-101": {
+      "all_fields": {
+        "correct": 606,
+        "wrong": 84,
+        "abstained": 204,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 717,
+        "correct_over_scored_pct": 67.79,
+        "correct_over_scored_fills_pct": 87.83
+      },
+      "per_field": {
+        "producer": {
+          "correct": 59,
+          "wrong": 34,
+          "abstained": 72,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 95,
+          "correct_over_scored_pct": 35.76,
+          "correct_over_scored_fills_pct": 63.44
+        },
+        "wine_name": {
+          "correct": 77,
+          "wrong": 47,
+          "abstained": 33,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 129,
+          "correct_over_scored_pct": 49.04,
+          "correct_over_scored_fills_pct": 62.1
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 19,
+        "all_known_fields_correct_not_full_six": 28,
+        "images_with_scored_wrong_fill": 68,
+        "images_with_scored_abstention": 105
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 514,
+          "wrong": 69,
+          "abstained": 179,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 609,
+          "correct_over_scored_pct": 67.45,
+          "correct_over_scored_fills_pct": 88.16
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 16,
+          "all_known_fields_correct_not_full_six": 24,
+          "images_with_scored_wrong_fill": 55,
+          "images_with_scored_abstention": 90
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 606,
+          "wrong": 84,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 690,
+          "unscored": 27,
+          "total": 717,
+          "filled": 717,
+          "correct_over_scored_pct": 87.83,
+          "correct_over_scored_fills_pct": 87.83
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 204,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 204,
+          "unscored": 87,
+          "total": 291,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 250,
+          "wrong": 35,
+          "abstained": 75,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 305,
+          "correct_over_scored_pct": 69.44,
+          "correct_over_scored_fills_pct": 87.72
+        },
+        "true": {
+          "correct": 356,
+          "wrong": 49,
+          "abstained": 129,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 412,
+          "correct_over_scored_pct": 66.67,
+          "correct_over_scored_fills_pct": 87.9
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 29,
+            "wrong -> correct": 27,
+            "abstained -> correct": 46,
+            "correct -> correct": 533,
+            "correct -> abstained": 51,
+            "abstained -> wrong": 27,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 44,
+            "correct -> wrong": 13,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 124
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 204,
+            "correct -> correct": 599,
+            "wrong -> wrong": 82,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "abstained -> correct": 5,
+            "wrong -> correct": 2,
+            "abstained -> wrong": 2
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        }
+      }
+    },
+    "rules-110": {
+      "all_fields": {
+        "correct": 609,
+        "wrong": 97,
+        "abstained": 188,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 733,
+        "correct_over_scored_pct": 68.12,
+        "correct_over_scored_fills_pct": 86.26
+      },
+      "per_field": {
+        "producer": {
+          "correct": 65,
+          "wrong": 40,
+          "abstained": 60,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 107,
+          "correct_over_scored_pct": 39.39,
+          "correct_over_scored_fills_pct": 61.9
+        },
+        "wine_name": {
+          "correct": 74,
+          "wrong": 54,
+          "abstained": 29,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 133,
+          "correct_over_scored_pct": 47.13,
+          "correct_over_scored_fills_pct": 57.81
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 19,
+        "all_known_fields_correct_not_full_six": 30,
+        "images_with_scored_wrong_fill": 78,
+        "images_with_scored_abstention": 96
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 518,
+          "wrong": 79,
+          "abstained": 165,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 623,
+          "correct_over_scored_pct": 67.98,
+          "correct_over_scored_fills_pct": 86.77
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 16,
+          "all_known_fields_correct_not_full_six": 26,
+          "images_with_scored_wrong_fill": 62,
+          "images_with_scored_abstention": 82
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 609,
+          "wrong": 97,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 706,
+          "unscored": 27,
+          "total": 733,
+          "filled": 733,
+          "correct_over_scored_pct": 86.26,
+          "correct_over_scored_fills_pct": 86.26
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 188,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 188,
+          "unscored": 87,
+          "total": 275,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 254,
+          "wrong": 39,
+          "abstained": 67,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 313,
+          "correct_over_scored_pct": 70.56,
+          "correct_over_scored_fills_pct": 86.69
+        },
+        "true": {
+          "correct": 355,
+          "wrong": 58,
+          "abstained": 121,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 420,
+          "correct_over_scored_pct": 66.48,
+          "correct_over_scored_fills_pct": 85.96
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 25,
+            "wrong -> correct": 27,
+            "abstained -> correct": 48,
+            "correct -> correct": 534,
+            "correct -> abstained": 47,
+            "abstained -> wrong": 33,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 48,
+            "correct -> wrong": 16,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 116
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 186,
+            "correct -> correct": 599,
+            "wrong -> wrong": 82,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "abstained -> correct": 10,
+            "abstained -> wrong": 15,
+            "wrong -> abstained": 2
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        }
+      }
+    },
+    "rules-111": {
+      "all_fields": {
+        "correct": 613,
+        "wrong": 93,
+        "abstained": 188,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 733,
+        "correct_over_scored_pct": 68.57,
+        "correct_over_scored_fills_pct": 86.83
+      },
+      "per_field": {
+        "producer": {
+          "correct": 66,
+          "wrong": 38,
+          "abstained": 61,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 106,
+          "correct_over_scored_pct": 40.0,
+          "correct_over_scored_fills_pct": 63.46
+        },
+        "wine_name": {
+          "correct": 77,
+          "wrong": 52,
+          "abstained": 28,
+          "unscored_filled": 5,
+          "unscored_blank": 6,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 134,
+          "correct_over_scored_pct": 49.04,
+          "correct_over_scored_fills_pct": 59.69
+        },
+        "country": {
+          "correct": 142,
+          "wrong": 0,
+          "abstained": 15,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 90.45,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "region": {
+          "correct": 116,
+          "wrong": 0,
+          "abstained": 37,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 75.82,
+          "correct_over_scored_fills_pct": 100.0
+        },
+        "subregion": {
+          "correct": 75,
+          "wrong": 3,
+          "abstained": 34,
+          "unscored_filled": 12,
+          "unscored_blank": 44,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 90,
+          "correct_over_scored_pct": 66.96,
+          "correct_over_scored_fills_pct": 96.15
+        },
+        "vintage": {
+          "correct": 137,
+          "wrong": 0,
+          "abstained": 13,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 91.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 20,
+        "all_known_fields_correct_not_full_six": 31,
+        "images_with_scored_wrong_fill": 75,
+        "images_with_scored_abstention": 97
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 521,
+          "wrong": 75,
+          "abstained": 166,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 622,
+          "correct_over_scored_pct": 68.37,
+          "correct_over_scored_fills_pct": 87.42
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 17,
+          "all_known_fields_correct_not_full_six": 27,
+          "images_with_scored_wrong_fill": 59,
+          "images_with_scored_abstention": 84
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 613,
+          "wrong": 93,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 706,
+          "unscored": 27,
+          "total": 733,
+          "filled": 733,
+          "correct_over_scored_pct": 86.83,
+          "correct_over_scored_fills_pct": 86.83
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 188,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 188,
+          "unscored": 87,
+          "total": 275,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 254,
+          "wrong": 39,
+          "abstained": 67,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 313,
+          "correct_over_scored_pct": 70.56,
+          "correct_over_scored_fills_pct": 86.69
+        },
+        "true": {
+          "correct": 359,
+          "wrong": 54,
+          "abstained": 121,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 420,
+          "correct_over_scored_pct": 67.23,
+          "correct_over_scored_fills_pct": 86.92
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 1,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> abstained": 24,
+            "wrong -> correct": 28,
+            "abstained -> correct": 51,
+            "correct -> correct": 534,
+            "correct -> abstained": 47,
+            "abstained -> wrong": 29,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 48,
+            "correct -> wrong": 16,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 117
+          },
+          "complete_gained": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "932e8a7357562df3bff0502b75a3407d6d9e768d.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ],
+          "complete_lost": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ]
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> abstained": 186,
+            "correct -> correct": 599,
+            "wrong -> wrong": 80,
+            "unscored_blank -> unscored_blank": 87,
+            "unscored_filled -> unscored_filled": 27,
+            "abstained -> correct": 12,
+            "wrong -> correct": 2,
+            "abstained -> wrong": 13,
+            "wrong -> abstained": 2
+          },
+          "complete_gained": [
+            "932e8a7357562df3bff0502b75a3407d6d9e768d.jpg"
+          ],
+          "complete_lost": []
+        }
+      }
+    },
+    "baseline-repair": {
+      "all_fields": {
+        "correct": 601,
+        "wrong": 100,
+        "abstained": 193,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 728,
+        "correct_over_scored_pct": 67.23,
+        "correct_over_scored_fills_pct": 85.73
+      },
+      "per_field": {
+        "producer": {
+          "correct": 71,
+          "wrong": 38,
+          "abstained": 56,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 111,
+          "correct_over_scored_pct": 43.03,
+          "correct_over_scored_fills_pct": 65.14
+        },
+        "wine_name": {
+          "correct": 58,
+          "wrong": 56,
+          "abstained": 43,
+          "unscored_filled": 6,
+          "unscored_blank": 5,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 36.94,
+          "correct_over_scored_fills_pct": 50.88
+        },
+        "country": {
+          "correct": 132,
+          "wrong": 1,
+          "abstained": 24,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 84.08,
+          "correct_over_scored_fills_pct": 99.25
+        },
+        "region": {
+          "correct": 113,
+          "wrong": 1,
+          "abstained": 39,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 118,
+          "correct_over_scored_pct": 73.86,
+          "correct_over_scored_fills_pct": 99.12
+        },
+        "subregion": {
+          "correct": 81,
+          "wrong": 4,
+          "abstained": 27,
+          "unscored_filled": 11,
+          "unscored_blank": 45,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 96,
+          "correct_over_scored_pct": 72.32,
+          "correct_over_scored_fills_pct": 95.29
+        },
+        "vintage": {
+          "correct": 146,
+          "wrong": 0,
+          "abstained": 4,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 97.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 23,
+        "all_known_fields_correct_not_full_six": 34,
+        "images_with_scored_wrong_fill": 76,
+        "images_with_scored_abstention": 94
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 518,
+          "wrong": 84,
+          "abstained": 160,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 628,
+          "correct_over_scored_pct": 67.98,
+          "correct_over_scored_fills_pct": 86.05
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 21,
+          "all_known_fields_correct_not_full_six": 29,
+          "images_with_scored_wrong_fill": 63,
+          "images_with_scored_abstention": 77
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 601,
+          "wrong": 100,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 701,
+          "unscored": 27,
+          "total": 728,
+          "filled": 728,
+          "correct_over_scored_pct": 85.73,
+          "correct_over_scored_fills_pct": 85.73
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 193,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 193,
+          "unscored": 87,
+          "total": 280,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 259,
+          "wrong": 42,
+          "abstained": 59,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 321,
+          "correct_over_scored_pct": 71.94,
+          "correct_over_scored_fills_pct": 86.05
+        },
+        "true": {
+          "correct": 342,
+          "wrong": 58,
+          "abstained": 134,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 407,
+          "correct_over_scored_pct": 64.04,
+          "correct_over_scored_fills_pct": 85.5
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> wrong": 100,
+            "abstained -> abstained": 193,
+            "correct -> correct": 597,
+            "unscored_filled -> unscored_filled": 27,
+            "unscored_blank -> unscored_blank": 87,
+            "abstained -> correct": 4
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> wrong": 33,
+            "correct -> wrong": 25,
+            "correct -> abstained": 41,
+            "correct -> correct": 533,
+            "abstained -> correct": 53,
+            "wrong -> abstained": 27,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 42,
+            "wrong -> correct": 15,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 125
+          },
+          "complete_gained": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ],
+          "complete_lost": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ]
+        }
+      }
+    },
+    "baseline-cuvee-repair": {
+      "all_fields": {
+        "correct": 601,
+        "wrong": 100,
+        "abstained": 193,
+        "unscored_filled": 27,
+        "unscored_blank": 87,
+        "scored": 894,
+        "unscored": 114,
+        "total": 1008,
+        "filled": 728,
+        "correct_over_scored_pct": 67.23,
+        "correct_over_scored_fills_pct": 85.73
+      },
+      "per_field": {
+        "producer": {
+          "correct": 71,
+          "wrong": 38,
+          "abstained": 56,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "scored": 165,
+          "unscored": 3,
+          "total": 168,
+          "filled": 111,
+          "correct_over_scored_pct": 43.03,
+          "correct_over_scored_fills_pct": 65.14
+        },
+        "wine_name": {
+          "correct": 58,
+          "wrong": 56,
+          "abstained": 43,
+          "unscored_filled": 6,
+          "unscored_blank": 5,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 120,
+          "correct_over_scored_pct": 36.94,
+          "correct_over_scored_fills_pct": 50.88
+        },
+        "country": {
+          "correct": 132,
+          "wrong": 1,
+          "abstained": 24,
+          "unscored_filled": 4,
+          "unscored_blank": 7,
+          "scored": 157,
+          "unscored": 11,
+          "total": 168,
+          "filled": 137,
+          "correct_over_scored_pct": 84.08,
+          "correct_over_scored_fills_pct": 99.25
+        },
+        "region": {
+          "correct": 113,
+          "wrong": 1,
+          "abstained": 39,
+          "unscored_filled": 4,
+          "unscored_blank": 11,
+          "scored": 153,
+          "unscored": 15,
+          "total": 168,
+          "filled": 118,
+          "correct_over_scored_pct": 73.86,
+          "correct_over_scored_fills_pct": 99.12
+        },
+        "subregion": {
+          "correct": 81,
+          "wrong": 4,
+          "abstained": 27,
+          "unscored_filled": 11,
+          "unscored_blank": 45,
+          "scored": 112,
+          "unscored": 56,
+          "total": 168,
+          "filled": 96,
+          "correct_over_scored_pct": 72.32,
+          "correct_over_scored_fills_pct": 95.29
+        },
+        "vintage": {
+          "correct": 146,
+          "wrong": 0,
+          "abstained": 4,
+          "unscored_filled": 0,
+          "unscored_blank": 18,
+          "scored": 150,
+          "unscored": 18,
+          "total": 168,
+          "filled": 146,
+          "correct_over_scored_pct": 97.33,
+          "correct_over_scored_fills_pct": 100.0
+        }
+      },
+      "image_results": {
+        "images": 168,
+        "six_field_eligible": 103,
+        "six_field_ineligible": 65,
+        "six_field_fully_correct": 23,
+        "all_known_fields_correct_not_full_six": 34,
+        "images_with_scored_wrong_fill": 76,
+        "images_with_scored_abstention": 94
+      },
+      "one_photo_per_identity": {
+        "selection": "lowest review number (source hash order); fixed independently of outputs",
+        "all_fields": {
+          "correct": 518,
+          "wrong": 84,
+          "abstained": 160,
+          "unscored_filled": 26,
+          "unscored_blank": 70,
+          "scored": 762,
+          "unscored": 96,
+          "total": 858,
+          "filled": 628,
+          "correct_over_scored_pct": 67.98,
+          "correct_over_scored_fills_pct": 86.05
+        },
+        "image_results": {
+          "images": 143,
+          "six_field_eligible": 87,
+          "six_field_ineligible": 56,
+          "six_field_fully_correct": 21,
+          "all_known_fields_correct_not_full_six": 29,
+          "images_with_scored_wrong_fill": 63,
+          "images_with_scored_abstention": 77
+        }
+      },
+      "by_output_state": {
+        "GREEN": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 0,
+          "unscored_filled": 0,
+          "unscored_blank": 0,
+          "scored": 0,
+          "unscored": 0,
+          "total": 0,
+          "filled": 0,
+          "correct_over_scored_pct": null,
+          "correct_over_scored_fills_pct": null
+        },
+        "YELLOW": {
+          "correct": 601,
+          "wrong": 100,
+          "abstained": 0,
+          "unscored_filled": 27,
+          "unscored_blank": 0,
+          "scored": 701,
+          "unscored": 27,
+          "total": 728,
+          "filled": 728,
+          "correct_over_scored_pct": 85.73,
+          "correct_over_scored_fills_pct": 85.73
+        },
+        "RED": {
+          "correct": 0,
+          "wrong": 0,
+          "abstained": 193,
+          "unscored_filled": 0,
+          "unscored_blank": 87,
+          "scored": 193,
+          "unscored": 87,
+          "total": 280,
+          "filled": 0,
+          "correct_over_scored_pct": 0.0,
+          "correct_over_scored_fills_pct": null
+        }
+      },
+      "production_deadline_strata": {
+        "false": {
+          "correct": 259,
+          "wrong": 42,
+          "abstained": 59,
+          "unscored_filled": 20,
+          "unscored_blank": 58,
+          "scored": 360,
+          "unscored": 78,
+          "total": 438,
+          "filled": 321,
+          "correct_over_scored_pct": 71.94,
+          "correct_over_scored_fills_pct": 86.05
+        },
+        "true": {
+          "correct": 342,
+          "wrong": 58,
+          "abstained": 134,
+          "unscored_filled": 7,
+          "unscored_blank": 29,
+          "scored": 534,
+          "unscored": 36,
+          "total": 570,
+          "filled": 407,
+          "correct_over_scored_pct": 64.04,
+          "correct_over_scored_fills_pct": 85.5
+        }
+      },
+      "repeat_consistency": [
+        {
+          "identity_group": "identity-001",
+          "review_numbers": [
+            1,
+            155
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-007",
+          "review_numbers": [
+            7,
+            24
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-010",
+          "review_numbers": [
+            10,
+            63
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-015",
+          "review_numbers": [
+            15,
+            52
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-016",
+          "review_numbers": [
+            16,
+            66
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-018",
+          "review_numbers": [
+            18,
+            76
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-021",
+          "review_numbers": [
+            21,
+            112
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-022",
+          "review_numbers": [
+            22,
+            23
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-031",
+          "review_numbers": [
+            31,
+            75
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-032",
+          "review_numbers": [
+            32,
+            89
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-039",
+          "review_numbers": [
+            39,
+            131
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-041",
+          "review_numbers": [
+            41,
+            100,
+            143
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-042",
+          "review_numbers": [
+            42,
+            61
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-047",
+          "review_numbers": [
+            47,
+            48
+          ],
+          "stable_fields_of_six": 5,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-055",
+          "review_numbers": [
+            55,
+            168
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-060",
+          "review_numbers": [
+            60,
+            153
+          ],
+          "stable_fields_of_six": 3,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-068",
+          "review_numbers": [
+            68,
+            164
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-069",
+          "review_numbers": [
+            69,
+            96
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-079",
+          "review_numbers": [
+            79,
+            82
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-121",
+          "review_numbers": [
+            121,
+            124
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-127",
+          "review_numbers": [
+            127,
+            159
+          ],
+          "stable_fields_of_six": 2,
+          "six_field_eligible": true,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-130",
+          "review_numbers": [
+            130,
+            138,
+            156
+          ],
+          "stable_fields_of_six": 4,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        },
+        {
+          "identity_group": "identity-134",
+          "review_numbers": [
+            134,
+            135
+          ],
+          "stable_fields_of_six": 6,
+          "six_field_eligible": false,
+          "every_photo_six_fields_correct": false
+        }
+      ],
+      "paired": {
+        "lab_baseline": {
+          "transitions": {
+            "wrong -> wrong": 100,
+            "abstained -> abstained": 193,
+            "correct -> correct": 597,
+            "unscored_filled -> unscored_filled": 27,
+            "unscored_blank -> unscored_blank": 87,
+            "abstained -> correct": 4
+          },
+          "complete_gained": [],
+          "complete_lost": []
+        },
+        "experimental": {
+          "transitions": {
+            "abstained -> wrong": 33,
+            "correct -> wrong": 25,
+            "correct -> abstained": 41,
+            "correct -> correct": 533,
+            "abstained -> correct": 53,
+            "wrong -> abstained": 27,
+            "unscored_blank -> unscored_filled": 5,
+            "unscored_blank -> unscored_blank": 82,
+            "wrong -> wrong": 42,
+            "wrong -> correct": 15,
+            "unscored_filled -> unscored_blank": 5,
+            "unscored_filled -> unscored_filled": 22,
+            "abstained -> abstained": 125
+          },
+          "complete_gained": [
+            "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+            "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+            "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+            "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+            "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+            "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+            "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+            "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+            "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+          ],
+          "complete_lost": [
+            "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+            "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+            "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+            "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+            "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+          ]
+        }
+      }
+    }
+  },
+  "decision": {
+    "advance_candidates": [],
+    "production_promoted": false,
+    "rule": "Advance for further testing only if full entries exceed both controls, wrong fills <= v3, correct fields >= baseline, deduplicated full entries >= baseline.",
+    "next_action": "Do not promote. Use paired losses and hypothesis traces to target the next general rule change."
+  }
+}
