@@ -32,6 +32,7 @@ class PublicCorpusDeviceTest {
             val output = File(root, "results").apply { mkdirs() }
             // One image per checkpoint limits retained rows/memory and preserves partial runs.
             var failures = 0
+            val enginesWithText = mutableSetOf<String>()
             for (image in images) {
                 val batch = TextLabBatch(listOf(TextLabImageKey(image.nameWithoutExtension, image.name)),
                     setOf("candidate_3"), BuildConfig.BUILD_COMMIT, true, true)
@@ -71,6 +72,8 @@ class PublicCorpusDeviceTest {
                     val paddle = journal.rows.lastOrNull { it["candidate"] == "candidate_3" && it["stage"] == "candidate_summary" }
                     if (ml?.get("status") !in setOf("complete", "no_text") ||
                         paddle?.get("status") !in setOf("complete", "no_text", "no_regions")) status = "engine_incomplete"
+                    journal.rows.filter { it["stage"] == "recognition" && !it["raw_text"].isNullOrBlank() }
+                        .mapNotNullTo(enginesWithText) { it["candidate"] }
                     TextLabWineExtraction.append(context, batch)
                     if (journal.rows.any { it["stage"] in setOf("field_summary", "form_summary", "evidence_summary") && it["status"] == "failed" } ||
                         journal.rows.none { it["stage"] == "form_summary" } || journal.rows.none { it["stage"] == "evidence_summary" }) status = "extraction_failed"
@@ -88,6 +91,8 @@ class PublicCorpusDeviceTest {
                     preview.delete(); crop.delete()
                 }
             }
+            assertTrue("Both real engines must demonstrate recognition: $enginesWithText",
+                enginesWithText.containsAll(setOf("mlkit_reference", "candidate_3")))
             assertTrue("$failures/${images.size} images had incomplete engine/extraction runs; inspect CSV", failures == 0)
         }
     }

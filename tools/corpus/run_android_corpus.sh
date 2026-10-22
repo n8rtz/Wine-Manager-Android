@@ -4,6 +4,7 @@ set -euo pipefail
 : "${CORPUS_DIR:?}" "${CORPUS_RESULTS:?}" "${CORPUS_LIMIT:=3}"
 pkg=com.n8rtz.winetracker
 mkdir -p "$CORPUS_RESULTS"
+cp "$CORPUS_DIR/manifest.json" "$CORPUS_RESULTS/acquisition-manifest.json"
 adb shell getprop > "$CORPUS_RESULTS/emulator-properties.txt"
 # Keep the shipped arm64 native libraries. The Google APIs image must expose an ARM64 native bridge.
 adb shell getprop ro.product.cpu.abilist | grep -q arm64-v8a || {
@@ -21,7 +22,7 @@ rows=json.loads((root/'manifest.json').read_text())['records']
 for name in sorted({r['file'] for r in rows})[:limit]: print(root/name)
 PY
 while IFS= read -r file; do
-  adb exec-in run-as "$pkg" sh -c "cat > files/private-corpus/images/$(basename "$file")" < "$file"
+  adb exec-in run-as "$pkg" tee "files/private-corpus/images/$(basename "$file")" < "$file" > /dev/null
 done < "$CORPUS_RESULTS/selected-images.txt"
 set +e
 adb shell am instrument -w -r -e class com.yourapp.wine.textlab.PublicCorpusDeviceTest \
