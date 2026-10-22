@@ -20,14 +20,15 @@ def prepare(path):
     for item in items:item['baseline_fields']={f:pred['lab_baseline'][item['image']][f][0] for f in FIELDS}
     path.write_text(json.dumps(items,ensure_ascii=False))
 
-def collect(root,out,sha,variants=None,description=None):
+def collect(root,out,sha,variants=None,description=None,prepare_input=None):
     variants=VARIANTS if variants is None else variants
+    prepare_input=prepare if prepare_input is None else prepare_input
     validation=json.loads((root/'validation.json').read_text())
     assert validation['images']==168 and set(validation['variants'])==set(variants)
     assert validation['failures']==[] and validation['corpus_budget_ms']==60000
     assert validation['baseline_executions']==validation['old_experimental_executions']==0
     with tempfile.TemporaryDirectory() as d:
-        p=Path(d)/'input.json';prepare(p);assert digest(p)==digest(root/'input.json')
+        p=Path(d)/'input.json';prepare_input(p);assert digest(p)==digest(root/'input.json')
     ref,pred,prod=load(REF,RUN)
     old=[json.loads(line) for line in gzip.open(V3,'rt')]
     assert len(old)==168 and {r['image'] for r in old}==set(prod)
@@ -82,7 +83,8 @@ def collect(root,out,sha,variants=None,description=None):
         '| Variant | Correct / wrong / abstained | Complete / eligible | Complete gained / lost vs baseline |','|---|---:|---:|---:|']
     for name,p in [('saved baseline',base),('saved v3',v3)]+list(result['variants'].items()):
         f=p['all_fields'];i=p['image_results'];pair=p.get('paired',{}).get('lab_baseline',{})
-        lines.append(f"| {name} | {f['correct']} / {f['wrong']} / {f['abstained']} | {i['six_field_fully_correct']} / {i['six_field_eligible']} | {len(pair.get('complete_gained',[]))} / {len(pair.get('complete_lost',[]))} |")
+        paired_display="—" if name=="saved v3" else f"{len(pair.get('complete_gained',[]))} / {len(pair.get('complete_lost',[]))}"
+        lines.append(f"| {name} | {f['correct']} / {f['wrong']} / {f['abstained']} | {i['six_field_fully_correct']} / {i['six_field_eligible']} | {paired_display} |")
     lines+=['',description or 'Rules bits: equivalence of name typography / independent-engine name agreement / explicit cuvée role. Rules-000 is the saved v3 result and is not rerun. The two hybrid strategies use rules-111 results with saved baseline fields, preserving baseline geography and vintage. They require two-engine direct support for changes; a stricter variant only repairs missing/head-only identities, while the other can replace an exact appellation wine name with an explicitly named cuvée.','',
         '## Automatic next-step gate','',json.dumps(result['decision'],indent=2),'',
         'This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure. Hybrid elapsed times in raw output reuse the shared extraction time, not an additional baseline execution.','']

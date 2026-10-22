@@ -74,3 +74,28 @@ The same strict advancement gate is retained, even though baseline-preserving va
 cannot remove the baseline's non-wine errors. A local component improvement is not sufficient
 for promotion or evidence that an architecture beats both controls. Android synthetic
 regressions run before the four-policy corpus batch. All 168 photos remain development data.
+
+## Anchor architecture experiment
+
+The first batch also motivates a whole-component hybrid: baseline producer/vintage anchors
+plus rules-001 wine and **unsplit** geography selection. This is a fixed architecture for
+all photos, not an oracle choosing per case. The four new Kotlin variants are anchors alone,
+anchors with heading-only producer abstention, and that guarded design with one/two-engine
+appellation fallback. Incomplete headings such as “Château de” do not constitute a name.
+
+An offline saved-output preview of the unguarded architecture was 627 correct / 86 wrong /
+181 abstained and 24 complete, motivating actual Android validation. A Python reproduction
+of the existing structural heading guard yielded 627 / 82 / 185, 24 complete and 22 deduplicated
+complete (baseline 21). These are **prototype previews, not Android results**; no advancement
+is asserted from them. The device runs synthetic guard/field-preservation checks before the
+four-policy corpus execution. Only the new hybrid executes: both component outputs and all
+OCR are frozen inputs. The host reconstitutes and hashes those exact inputs and records the
+rules-001 source hash, and rejects any hybrid that changes the chosen origin bundle or vintage.
+The original advancement gate and provisional-development-reference caveats remain in force.
+
+Appellation-only attempt 39831650464 compiled successfully but the emulator failed to boot
+within 360 seconds; no device assertions or corpus policies executed. The next workflow
+combines all four new appellation policies and four anchor policies in one emulator session,
+with a 600-second boot allowance and separate, hashed inputs/results for each batch. It
+clears stale device result files before each test so a preflight failure cannot reuse prior
+outputs. This is an infrastructure retry, not an accuracy observation.
