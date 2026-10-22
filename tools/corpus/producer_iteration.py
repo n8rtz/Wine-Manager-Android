@@ -31,19 +31,20 @@ def prepare(path):
         i['producer_alternatives']=list(dict.fromkeys(alts[i['image']]))[:64]
     path.write_text(json.dumps(items,ensure_ascii=False))
 
-def collect(root,out,sha):
+def collect(root,out,sha,variants=None):
+    variants=VARIANTS if variants is None else variants
     validation=json.loads((root/'validation.json').read_text())
-    assert validation['images']==168 and set(validation['variants'])==set(VARIANTS) and validation['failures']==[]
+    assert validation['images']==168 and set(validation['variants'])==set(variants) and validation['failures']==[]
     assert validation['corpus_budget_ms']==60000 and validation['baseline_executions']==validation['old_experimental_executions']==0
     with tempfile.TemporaryDirectory() as t:
         p=Path(t)/'input.json';prepare(p);assert digest(p)==digest(root/'input.json')
     inputs={r['image']:r for r in json.loads((root/'input.json').read_text())}
     records=[json.loads(line) for line in (root/'results.jsonl').read_text().splitlines()]
-    assert len(records)==168*len(VARIANTS)
+    assert len(records)==168*len(variants)
     seen=set()
     for r in records:
         pair=r['variant'],r['image'];assert pair not in seen;seen.add(pair)
-        assert r['variant'] in VARIANTS and r['image'] in inputs and r['status']=='complete' and r['build']==sha[:12]
+        assert r['variant'] in variants and r['image'] in inputs and r['status']=='complete' and r['build']==sha[:12]
         assert set(r['fields'])==set(inputs[r['image']]['anchor_fields'])
         for f,v in r['fields'].items():
             assert isinstance(v['value'],str) and v['state']==('YELLOW' if v['value'] else 'RED')
@@ -54,7 +55,7 @@ def collect(root,out,sha):
     outcomes={};outputrows=[]
     for system in ['baseline','previous_v3','guarded_hybrid']:
         outcomes[system]={(r['image'],r['field']):r[system+'_outcome'] for r in fixed}
-    for system in VARIANTS:
+    for system in variants:
         scores={}
         for row in records:
             if row['variant']!=system:continue
@@ -75,7 +76,7 @@ def collect(root,out,sha):
         summary['systems'][system]=dict(outcomes=dict(c),producer=dict(p),completion=gate,
             complete_gained_vs_hybrid=sorted(full-basefull),complete_lost_vs_hybrid=sorted(basefull-full),producer_transitions_vs_hybrid=dict(transitions))
     summary['production_promoted']=False
-    decision=dict(meets_user_target=[v for v in VARIANTS if summary['systems'][v]['completion']['passes']],production_promoted=False,
+    decision=dict(meets_user_target=[v for v in variants if summary['systems'][v]['completion']['passes']],production_promoted=False,
         rule='At least 80% complete and strictly fewer than 5% with two or more errors. Component improvements are not release acceptance.')
     out.mkdir(parents=True,exist_ok=True)
     (out/'scores.json').write_text(json.dumps(summary,indent=2)+'\n')

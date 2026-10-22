@@ -26,6 +26,17 @@ class ProducerIterationTests(unittest.TestCase):
             (p/'results.jsonl').write_text('\n'.join(map(json.dumps,rows)))
             with self.assertRaises(AssertionError):suite.collect(p,p/'bad','a'*40)
             self.assertFalse((p/'bad').exists())
+    def test_refined_batch_has_four_new_names(self):
+        import producer_refinement
+        self.assertEqual(len(producer_refinement.VARIANTS),4)
+        self.assertFalse(set(producer_refinement.VARIANTS)&set(suite.VARIANTS))
+        workflow=(ROOT/'.github/workflows/producer-refinement.yml').read_text()
+        self.assertIn('PRODUCER_REFINEMENT=true',workflow)
+        self.assertIn('set -euo pipefail',workflow)
+        source=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/ProducerRefinementDeviceTest.kt').read_text()
+        self.assertIn('ProducerRepair.refinedExperiments',source)
+        self.assertNotIn('EvidenceExtractor(',source)
+
     def test_device_only_runs_new_producer_logic(self):
         s=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/ProducerRepairDeviceTest.kt').read_text()
         for forbidden in ['FillEngine','EvidenceExtractor(', 'TextLabFormPreview.append','WineScannerServices']:self.assertNotIn(forbidden,s)

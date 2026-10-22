@@ -34,3 +34,34 @@ preservation and split-name assembly. Complete gains and losses must both be rev
 Scope: this is the selection/construction portion of the producer plan. The residual
 reading-quality cases still need image-level diagnosis; this does not claim to solve
 OCR errors or to make all candidate-pool opportunities recoverable.
+
+## First measurements and second implemented batch
+
+Android 39854457095 executed all 672 cases and synthetic checks successfully. Its
+publishing step expected decision.json, which the first collector omitted. The fix
+and recovery job 39856497283 retrieved/scored the existing artifact without any rerun.
+Actual first-batch producer C/W/missing and complete forms:
+- guarded control: 71/34/60, 32/160 complete, 82 multi-error forms;
+- direct two-engine: 71/35/59, 32 complete;
+- direct one-engine: 73/36/56, 32 complete;
+- composed one-engine: 76/39/50, 31 complete (one previous complete lost);
+- composed consensus: 76/35/54, 33 complete (one gained, none lost), 80 multi-error forms.
+None meets the user's acceptance target; no producer variant is promoted.
+
+The saved traces identify specific GENERAL design failures: generic multiword estate
+headings could be accepted, adding adjacent fragments could corrupt a reliable full
+name, and uncatalogued brand names had no admissible producer role. The second batch
+therefore tests stricter generic-heading handling; weaker vineyard markers no longer
+suffice as a producer cue without exact KB evidence; reliable existing name extents
+are protected; compositions appending known origin/grape terms to an already named
+estate are rejected. Explicit produced-and-bottled attribution is distinguished from
+bottling alone.
+
+Two additional exploratory variants admit uncatalogued title-like names based on
+relative text height (not fixed image zones), existing layout and engine support,
+excluding grape/style terms, exact places, cuvee markers, vineyard markers and URLs.
+They are ablated with one vs two engines. These are hypotheses about brand roles,
+not a claim that typography or engine agreement proves identity. The two strictly
+cue-based refined variants run alongside them. Old policies and controls are reused,
+not rerun. The second device test adds contrasting generic headings, new invented
+brand names, varietals and full-name protection before evaluating the corpus.
