@@ -1,0 +1,11 @@
+diff --git a/app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt b/app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt
+index 27b8e34..77a0ceb 100644
+--- a/app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt
++++ b/app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt
+@@ -15,5 +15,5 @@ class ScanDeadline(val expiresAtMs: Long, private val now: () -> Long = SystemCl
+         return withTimeoutOrNull(remaining) { operation() }
+     }
+ 
+-    companion object { const val BUDGET_MS = 15_000L }
++    companion object { const val BUDGET_MS = 60_000L }
+ }

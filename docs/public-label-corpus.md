@@ -1,0 +1,97 @@
+# Public label corpus acquisition — initial audit
+
+**Scoring update:** all 168 photos now have a frozen single-agent visual reference. See [field accuracy, whole-image results, and duplicate sensitivity](public-label-corpus-accuracy-v1.md). This is provisional visual-review scoring, not expert-adjudicated ground truth.
+
+**Update: the full 168-photo Android run is complete and audited. See [completed run report](public-label-corpus-run-39716483937.md).** The sections below retain the acquisition and execution-debugging history; earlier pending/blocker statements describe those checkpoints, not current execution status.
+
+## Acquisition completed
+
+Source: `AntoninLeroy/wine_label_reader_toolkit`, pinned revision `eb2c14ba4f9a1b6efaa476696439754a9abde8ce`.
+
+- 163 images from `img/train_and_valid/X` and seven from `img/to_read`: **170 candidates**.
+- Excluded masks (`y`) and copied training/validation directories (`X_train`, `X_valid`).
+- **168 exact-byte-distinct images**; this is NOT yet a count of distinct bottles.
+- Three perceptual near-duplicate pairs flagged for review, not automatically classified as identical wines.
+- Seven originals have a short edge below 400 pixels. Individual label readability still needs review.
+- Local derivatives total **31,781,389 bytes**, EXIF-transposed, RGB, maximum edge 1600 without upscaling, JPEG quality 88. Source bytes were hashed before transformation, then discarded; metadata/EXIF is not preserved in derivatives.
+
+Images and working annotations reside outside the repository at `/home/user/wine-evaluation/public-candidates`. Only reproducible tools, source URLs, revisions, hashes and dimensions are committed. No public or user label images enter the app, Git, or recognition KB.
+
+## Important limits
+
+The source has **no declared license**. The user has explicitly authorized private testing. Rights clearance is not a gate for this private experiment; no images enter app assets, Git, or exported diagnostics. This does not establish redistribution rights.
+
+This is NOT a 170-example verified benchmark. Four photos received an initial agent visual review, stored as external **draft** annotations; none is independently verified. Some identities/field splits remain ambiguous. No bottle-level grouping or holdout is approved. Some reviewed photos are French labels; country/style diversity is not established for the full sample. No accuracy numbers are reported.
+
+A second source, `qanastek/WinesLabelDataset`, was inspected and rejected as the primary OCR corpus: the reviewed annotated images are 300×226 whole-bottle thumbnails and the repository also lacks a declared license. Its images are not included in this inventory.
+
+## Reproduction
+
+Install Pillow in an external tool environment, and use the configured `gh` client:
+
+```
+python tools/corpus/acquire_public_labels.py \
+  --output /home/user/wine-evaluation/public-candidates \
+  --private-review-unlicensed
+python tools/corpus/validate_corpus.py /home/user/wine-evaluation/public-candidates
+```
+
+The acquisition verifies Git blob hashes, records original SHA-256, strips EXIF and caches verified local derivatives. Four concurrent downloads; no credentials stored. Resuming is idempotent for complete verified images. `public-source-inventory.json` contains metadata only. Pillow is an acquisition dependency, not an Android dependency.
+
+`validate_corpus.py --require-evaluation-ready` deliberately rejects this corpus today: unreviewed targets and unassigned bottle groups (use `--private-test` for the authorized private experiment; redistribution clearance remains a separate default gate). It also rejects source-image/bottle leakage across splits, missing groups, changed image bytes and duplicate record IDs. Near duplicates still need semantic review, not just hashing.
+
+## OCR execution blocker
+
+The exact production v6 Medium detector/recognizer asset IDs were resolved from `GreatV/oar-ocr` release v0.7.0. Download attempts failed at the redirected `release-assets.githubusercontent.com` host in this environment. Empty failed-download files are not treated as models. No genuine Medium inference was run, and ML Kit is Android-only. No substitute OCR engine was run or presented as production-equivalent results.
+
+Host-only dependencies were installed externally for investigation; there is no new application OCR stack. This acquisition does not establish scanner improvement or complete the role/composition/trace refactor.
+
+## Work still required
+
+1. Run the authorized private experiment; no redistribution is planned.
+2. Review readability, identity duplicates, category and geographic/style diversity; replace unsuitable samples to reach 100–200 usable distinct labels.
+3. Independently annotate visible text and six-field references, marking inferred facts and unknowns. Group rescans by bottle before freezing development/validation/holdout splits. The four already inspected photos belong in development, not untouched holdout.
+4. Execute the Android instrumentation workflow below with genuine model weights. No desktop OCR substitute.
+5. Replay baseline and experimental extraction with fixed annotations, report wrong fills/abstentions/consistency, and only then iterate on development failures.
+
+The user need not individually supply all those additional labels. However, acquisition, annotation and actual inference are separate milestones; none should be claimed merely because files were downloaded.
+
+## Authorized Android execution
+
+The user authorized GitHub-hosted Android emulation for private corpus testing, superseding the prior no-emulator restriction for this task. `.github/workflows/private-corpus.yml` now defaults to 168 distinct images after the initial smoke investigations; manual dispatch can select three for a smoke run. It builds the same app code/models plus an opt-in instrumentation test; see the explicit CI ABI exception below. Genuine Medium weights are fetched and checksum-checked by the existing Gradle task on the hosted runner, outside this sandbox's download restriction.
+
+`PublicCorpusDeviceTest` runs **two separate real paths** for each image:
+
+- `OfflineWineScanner.scan`: normal FILE-input rectification, engines, shared deadline, ensemble and fill; production reports saved as JSON.
+- `TextLabRunner.recognize` plus `TextLabWineExtraction.append`: actual full-image OCR Lab, ML Kit reference and Medium detector/recognizer, normal lab budgets, production-combined and experimental evidence previews; standard CSV checkpoints.
+
+It does not pretend the OCR Lab's diagnostic budget is the production deadline. It does not emulate camera capture or picker copy time. Images are staged into private app storage, never packaged into the APK. Expected answers are not supplied to recognition. Individual JSON/CSV checkpoints retain failures/partial results and bound retained rows. No text/accuracy assertion is made against unreviewed targets. Native failures, timeouts and failed/missing lab extraction summaries cannot pass the smoke test silently. Production deadline results are retained separately, not silently replaced by lab results.
+
+The initial attempt used the shipped arm64 libraries through the Google APIs native bridge. It reached real inference but failed the smoke gate (see below). The revised CI-only build uses native x86; this is **not phone performance validation**. Normal phone-build defaults are unchanged. Artifact retention is seven days and excludes input photos. A small diagnostics check is also published so execution can be inspected through the GitHub API even when artifact downloads are unavailable in this sandbox.
+
+Execution evidence: run `39707956584` successfully acquired the corpus and built the genuine-model Android app and instrumentation APK (91 tasks, 8m28s). The API 30 emulator then timed out during boot, before instrumentation/inference. The next attempt uses API 35, explicit KVM, no snapshots/Vulkan, retained boot logs and bounded instrumentation. Genuine inference is still unverified. Corpus annotation, bottle grouping and holdout remain unfinished.
+
+Run `39710089700` also compiled both APKs successfully. Retained emulator logs identified the boot failure: approximately 4,996 MB free versus 7,373 MB required for the default userdata partition. The workflow now explicitly requests a 3 GiB test userdata partition; this is CI infrastructure only, not an app/storage behavior change. Branch-local Gradle cache writes are enabled to avoid repeatedly fetching build dependencies. No corpus inference has yet been verified at this checkpoint.
+
+Run `39711655572` proved that the system image still enforces a minimum userdata size larger than the requested 3 GiB. The follow-up frees unused .NET/Swift/NDK toolchains on the **disposable hosted runner after both APKs are built**, then requires at least 12 GiB free before attempting emulator setup. This does not delete anything in the repository or the user's environment. Build and acquisition passed; no OCR inference was reached in that run.
+
+### First genuine Android execution and CI ABI correction
+
+Run `39713113648` executed all three selected photos through the normal scanner and the lab:
+
+- Three production JSON reports; one production deadline; zero reported bitmap ownership violations.
+- Three lab CSVs; Medium timed out in all three; ML Kit produced one recognized line total.
+- All combined/experimental summaries abstained. The smoke assertion correctly failed, rather than treating invocation or model presence as successful recognition.
+- Runtime: shipped arm64 binaries translated on an API 35 x86 emulator. These results do not demonstrate phone accuracy or corpus readiness, and no 168-image run was launched.
+
+`-PprivateCorpusX86=true` is now an explicit **CI-only debug configuration**. It selects x86_64 JNI from the existing ML Kit and ONNX Runtime dependencies and genuine `org.opencv:opencv:4.12.0` instead of the arm64-only minimal prebuilt. The official OpenCV artifact includes unused additional modules; it is not packaged in normal phone builds. The same production/lab Kotlin, Medium model bytes, dictionary, preprocessing, decoding, and deadlines remain in use. Runtime/build ABI is recorded. Release variants are disabled in this configuration, and configuration requires `CI=true`. The arm64 prebuilt files, their hashes/recipes and normal build defaults are untouched. Numerical/device equivalence still requires phone comparison; this is not a claim of identical machine binaries.
+
+The next CI run must demonstrate actual text from **both** engines before expanding to the full corpus. Budgets are not increased to conceal failed translated inference.
+
+Run `39714385936` passed the native-x86 execution gate (three production reports and three lab CSVs, at least one line from both engines, no lab timeouts). However, only one line was recognized by each engine and device input hashes differed from the local candidate derivatives. Acquisition-library differences have not been ruled out; more importantly, raw `adb exec-in` transport had no device-side integrity gate. These outputs are **not accepted as validated corpus results**. Staging now uses `adb push` sync plus an app-private copy, then requires host/device SHA-256 equality for every photo before any inference. The hash pairs are retained in diagnostics. The smoke test must pass again on verified input bytes before expanding the run.
+
+### Verified-byte execution and full-run launch
+
+Run `39715424090` demonstrated actual OCR on a SHA-256-verified photo: 10 Medium lines and 9 ML Kit lines, complete lab engines and baseline/experimental suggestions. Its coverage report exposed another harness issue: although three photos were selected, only the first was staged because ADB inherited the input stream of the shell's `while read` loop. Therefore its successful JUnit status is **not accepted as a three-image pass**.
+
+The staging loop now reads filenames into a Bash array before invoking ADB. Instrumentation requires an explicit expected image count and fails before inference if any selected image is missing; final coverage checks also require a production report and lab CSV for every selected image. These are harness corrections, not OCR changes. The next workflow defaults to all **168 byte-distinct candidate photos**. It retains failures and unknowns; completing inference does not establish annotation correctness or independent bottle count. The whole-corpus run remains pending until its published coverage/status report is inspected.

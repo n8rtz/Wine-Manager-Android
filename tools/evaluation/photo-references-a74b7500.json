@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "batch_id": "a74b7500-be7a-450c-bfaf-2d5a9048e96a",
+  "purpose": "Photo-backed evaluation/reference annotations only. Not loaded by production or experimental extraction.",
+  "null_policy": "Null is unknown and must remain unscored. Empty string is a proposed/confirmed blank intake field; status governs whether it is approved.",
+  "evidence_policy": "Photo readings plus user-confirmed display conventions where explicitly marked. Geographic interpretations and unresolved splits are noted. No external producer research performed. Original private photos are not copied into Git.",
+  "records": [
+    {
+      "batch_image": 14,
+      "photo_filename": "IMG20261013221529.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Rioja Reserva",
+        "country": "Spain",
+        "region": "Rioja",
+        "subregion": "",
+        "vintage": "2020"
+      },
+      "notes": "User confirmed prior proposed intake split. Vintage printed as 20 [shield] 20; annotation only, not OCR completion."
+    },
+    {
+      "batch_image": 16,
+      "photo_filename": "IMG20261013221444.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Sauvignon Blanc",
+        "country": "New Zealand",
+        "region": "Marlborough",
+        "subregion": "",
+        "vintage": "2024"
+      },
+      "notes": "User confirmed omission of Ti Point pending role verification; it remains visible label evidence."
+    },
+    {
+      "batch_image": 13,
+      "photo_filename": "IMG20261013221450.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Penfolds",
+        "wine_name": "Koonunga Hill Chardonnay",
+        "country": "Australia",
+        "region": "South Australia",
+        "subregion": "",
+        "vintage": "2023"
+      },
+      "notes": "First Vintage 1991 and Established 1844 are historical dates, not bottle vintage."
+    },
+    {
+      "batch_image": 18,
+      "photo_filename": "IMG20250509232919.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Los Haroldos",
+        "wine_name": "Malbec Reserva",
+        "country": "Argentina",
+        "region": "Uco Valley",
+        "subregion": "",
+        "vintage": "2020"
+      },
+      "notes": "User confirmed valley-as-Region convention. Label also prints Mendoza; retain as geographic context, not a finer Subregion."
+    },
+    {
+      "batch_image": 17,
+      "photo_filename": "0ff8abd6-2410-4787-b8e2-096072e180f0.jpg",
+      "status": "user_confirmed_with_unknown_name",
+      "fields": {
+        "producer": "Juan Gil",
+        "wine_name": null,
+        "country": "Spain",
+        "region": "Jumilla",
+        "subregion": "",
+        "vintage": "2020"
+      },
+      "notes": "User confirmed leaving intake wine name blank pending further evidence. Null means unscored unknown, NOT an assertion that this wine has no name."
+    },
+    {
+      "batch_image": 5,
+      "photo_filename": "IMG20261013221826.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Réserve des Auléines",
+        "wine_name": "Sauvignon Blanc",
+        "country": "France",
+        "region": "Cévennes",
+        "subregion": "",
+        "vintage": null
+      },
+      "notes": "Visible identity: Réserve des Auléines; origin: Cévennes IGP. Country is inferred from the French geographic designation, not printed as a country on this front label. No vintage visible; that does not establish non-vintage. Producer/brand split and geographic display hierarchy need review. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    },
+    {
+      "batch_image": 6,
+      "photo_filename": "IMG20261013221758.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Chianti Classico Riserva",
+        "country": "Italy",
+        "region": "Tuscany",
+        "subregion": "Chianti Classico",
+        "vintage": "2023"
+      },
+      "notes": "Producer/brand, appellation, designation and year visible. Italy/Tuscany are geographic reference interpretation, not literal front-label country/region text. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    },
+    {
+      "batch_image": 7,
+      "photo_filename": "IMG20261013221635.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Côtes du Rhône Villages",
+        "country": "France",
+        "region": "Rhône",
+        "subregion": "Côtes du Rhône Villages",
+        "vintage": "2024"
+      },
+      "notes": "Name and appellation share the same printed phrase. France/Rhône follow origin interpretation; no specific village is printed. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    },
+    {
+      "batch_image": 9,
+      "photo_filename": "IMG20261013221556.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Saint-Julien",
+        "country": "France",
+        "region": "Bordeaux",
+        "subregion": "Saint-Julien",
+        "vintage": "2023"
+      },
+      "notes": "Demeure Bourgeoise and Saint-Julien are both printed. Whether to include Demeure Bourgeoise in intake wine name remains unconfirmed. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    },
+    {
+      "batch_image": 11,
+      "photo_filename": "IMG20261013221553.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Bodegas Los Pinos",
+        "wine_name": "Monastrell Cabernet Sauvignon",
+        "country": "Spain",
+        "region": null,
+        "subregion": null,
+        "vintage": "2021"
+      },
+      "notes": "Two printed grape names interpreted together as the wine-name fallback. No region is established by this photo. Estate Grown and Bottled / Organic Wine are production statements. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    },
+    {
+      "batch_image": 12,
+      "photo_filename": "IMG20261013221543.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Covalli",
+        "wine_name": "Barolo",
+        "country": "Italy",
+        "region": "Piedmont",
+        "subregion": "Barolo",
+        "vintage": "2019"
+      },
+      "notes": "Covalli is the visible brand; legal winery identity not independently researched. Country/region follow the Barolo geographic hierarchy. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    },
+    {
+      "batch_image": 10,
+      "photo_filename": "IMG20261013221534.jpg",
+      "status": "user_confirmed",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Malbec",
+        "country": "Argentina",
+        "region": "Mendoza",
+        "subregion": "",
+        "vintage": "2022"
+      },
+      "notes": "Country, region, varietal and vintage visible. Distinct from the 2023 Malbec in batch image 22. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
+    }
+  ]
+}

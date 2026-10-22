@@ -1,0 +1,323 @@
+{
+  "source_commit": "17c6f066ca50aba3ff5e7e5a57873bf07a9ff5c9",
+  "input_sha256": "6c21ec81b71ab53302b9cca837784228f76e1f44dc37940ce8c844c9b47dcda0",
+  "provenance": {
+    "tools/evaluation/public-corpus-reference-v1/reference.json": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+    "tools/evaluation/anchor-iteration-39834118734/android-results.jsonl.gz": "c0fcd54571931372cb9be1ba9de185c9376afc4f45a13ce834b18864998003db",
+    "tools/evaluation/saved-evidence-39806541535/android-traces.jsonl.gz": "48c946507f1504cd126c69ce19bea957b5874fb2a9f0c3a9db118a0d2a4d51d4",
+    "tools/evaluation/public-corpus-run-39716483937/ocr-comparison.csv": "1ebb9b432bc0b6843c6336341d7aa3ba6fea0b021b26d6f0127cf7ec367b93b5"
+  },
+  "execution": {
+    "images": 168,
+    "variants": [
+      "producer-refined-2",
+      "producer-refined-1",
+      "producer-title-2",
+      "producer-title-1"
+    ],
+    "corpus_budget_ms": 60000,
+    "baseline_executions": 0,
+    "old_experimental_executions": 0,
+    "failures": []
+  },
+  "systems": {
+    "baseline": {
+      "outcomes": {
+        "wrong_value": 100,
+        "missing_value": 197,
+        "correct_value": 597,
+        "unscored_filled": 7,
+        "unscored_blank": 10,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "wrong_value": 38,
+        "correct_value": 71,
+        "missing_value": 56,
+        "unscored_filled": 2,
+        "unscored_blank": 1
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 26,
+        "two_or_more_errors": 85,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [
+        "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+        "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+        "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+        "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+        "ef747f369bd51180437a7758da7113b4fe906001.jpg"
+      ],
+      "complete_lost_vs_hybrid": [
+        "03110ad18731d0f11fadf9b86725d69202f08cff.jpg",
+        "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+        "36fac584780bdce64ea941f83d2642c252eb80fd.jpg",
+        "41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg",
+        "469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg",
+        "4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg",
+        "60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg",
+        "91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg",
+        "aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg",
+        "c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg",
+        "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+      ],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> wrong_value": 34,
+        "correct_value -> correct_value": 71,
+        "missing_value -> missing_value": 56,
+        "missing_value -> wrong_value": 4,
+        "unscored_filled -> unscored_filled": 2,
+        "unscored_blank -> unscored_blank": 1
+      }
+    },
+    "previous_v3": {
+      "outcomes": {
+        "missing_value": 211,
+        "correct_value": 599,
+        "wrong_value": 84,
+        "unscored_blank": 10,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "missing_value": 76,
+        "wrong_value": 34,
+        "correct_value": 55,
+        "unscored_filled": 2,
+        "unscored_blank": 1
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 24,
+        "two_or_more_errors": 88,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [
+        "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+        "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+        "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg"
+      ],
+      "complete_lost_vs_hybrid": [
+        "03110ad18731d0f11fadf9b86725d69202f08cff.jpg",
+        "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+        "36fac584780bdce64ea941f83d2642c252eb80fd.jpg",
+        "41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg",
+        "469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg",
+        "4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg",
+        "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+        "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+        "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+        "bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg",
+        "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+      ],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> missing_value": 11,
+        "correct_value -> missing_value": 20,
+        "missing_value -> wrong_value": 11,
+        "missing_value -> missing_value": 45,
+        "correct_value -> correct_value": 46,
+        "wrong_value -> wrong_value": 18,
+        "unscored_filled -> unscored_filled": 2,
+        "correct_value -> wrong_value": 5,
+        "missing_value -> correct_value": 4,
+        "wrong_value -> correct_value": 5,
+        "unscored_blank -> unscored_blank": 1
+      }
+    },
+    "guarded_hybrid": {
+      "outcomes": {
+        "wrong_value": 82,
+        "correct_value": 627,
+        "missing_value": 185,
+        "unscored_blank": 10,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "wrong_value": 34,
+        "correct_value": 71,
+        "missing_value": 60,
+        "unscored_filled": 2,
+        "unscored_blank": 1
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 32,
+        "two_or_more_errors": 82,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [],
+      "complete_lost_vs_hybrid": [],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> wrong_value": 34,
+        "correct_value -> correct_value": 71,
+        "missing_value -> missing_value": 60,
+        "unscored_filled -> unscored_filled": 2,
+        "unscored_blank -> unscored_blank": 1
+      }
+    },
+    "producer-refined-2": {
+      "outcomes": {
+        "wrong_value": 81,
+        "correct_value": 632,
+        "missing_value": 181,
+        "unscored_blank": 10,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "wrong_value": 33,
+        "correct_value": 76,
+        "missing_value": 56,
+        "unscored_filled": 2,
+        "unscored_blank": 1
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 33,
+        "two_or_more_errors": 80,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [
+        "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg"
+      ],
+      "complete_lost_vs_hybrid": [],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> wrong_value": 33,
+        "correct_value -> correct_value": 71,
+        "missing_value -> missing_value": 56,
+        "unscored_filled -> unscored_filled": 2,
+        "missing_value -> correct_value": 4,
+        "unscored_blank -> unscored_blank": 1,
+        "wrong_value -> correct_value": 1
+      }
+    },
+    "producer-refined-1": {
+      "outcomes": {
+        "wrong_value": 83,
+        "correct_value": 633,
+        "missing_value": 178,
+        "unscored_blank": 10,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "wrong_value": 35,
+        "correct_value": 77,
+        "missing_value": 53,
+        "unscored_filled": 2,
+        "unscored_blank": 1
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 32,
+        "two_or_more_errors": 78,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [],
+      "complete_lost_vs_hybrid": [],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> wrong_value": 34,
+        "correct_value -> correct_value": 71,
+        "missing_value -> missing_value": 53,
+        "unscored_filled -> unscored_filled": 2,
+        "missing_value -> wrong_value": 1,
+        "missing_value -> correct_value": 6,
+        "unscored_blank -> unscored_blank": 1
+      }
+    },
+    "producer-title-2": {
+      "outcomes": {
+        "wrong_value": 87,
+        "correct_value": 633,
+        "missing_value": 174,
+        "unscored_blank": 9,
+        "unscored_filled": 8,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "wrong_value": 39,
+        "correct_value": 77,
+        "missing_value": 49,
+        "unscored_filled": 3
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 32,
+        "two_or_more_errors": 77,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [],
+      "complete_lost_vs_hybrid": [],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> wrong_value": 33,
+        "correct_value -> correct_value": 71,
+        "missing_value -> missing_value": 49,
+        "unscored_filled -> unscored_filled": 2,
+        "missing_value -> wrong_value": 6,
+        "missing_value -> correct_value": 5,
+        "unscored_blank -> unscored_filled": 1,
+        "wrong_value -> correct_value": 1
+      }
+    },
+    "producer-title-1": {
+      "outcomes": {
+        "wrong_value": 94,
+        "correct_value": 633,
+        "missing_value": 167,
+        "unscored_blank": 9,
+        "unscored_filled": 8,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "producer": {
+        "wrong_value": 46,
+        "correct_value": 77,
+        "missing_value": 42,
+        "unscored_filled": 3
+      },
+      "completion": {
+        "labels": 160,
+        "complete": 33,
+        "two_or_more_errors": 79,
+        "passes": false,
+        "minimum_complete": 128,
+        "maximum_two_or_more_errors": 7
+      },
+      "complete_gained_vs_hybrid": [
+        "d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg"
+      ],
+      "complete_lost_vs_hybrid": [],
+      "producer_transitions_vs_hybrid": {
+        "wrong_value -> wrong_value": 34,
+        "correct_value -> correct_value": 71,
+        "missing_value -> wrong_value": 12,
+        "missing_value -> missing_value": 42,
+        "unscored_filled -> unscored_filled": 2,
+        "missing_value -> correct_value": 6,
+        "unscored_blank -> unscored_filled": 1
+      }
+    }
+  },
+  "production_promoted": false
+}

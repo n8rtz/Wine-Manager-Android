@@ -1,0 +1,106 @@
+{
+  "schema": "wine-label-fixture/v1",
+  "synthetic": true,
+  "image": "barolo.png",
+  "coordinate_note": "Expected tokens describe this printed crop (identity homography); scores are synthetic test inputs, not measured OCR confidence.",
+  "expected": {
+    "PRODUCER": {
+      "value": "Vietti",
+      "state": "GREEN"
+    },
+    "WINE_NAME": {
+      "value": "Castiglione",
+      "state": "GREEN"
+    },
+    "COUNTRY": {
+      "value": "Italy",
+      "state": "GREEN"
+    },
+    "REGION": {
+      "value": "Piedmont",
+      "state": "GREEN"
+    },
+    "SUBREGION": {
+      "value": "Barolo",
+      "state": "GREEN"
+    },
+    "VINTAGE": {
+      "value": "2019",
+      "state": "GREEN"
+    }
+  },
+  "expected_tokens": [
+    {
+      "text": "Vietti",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.39345238095238094,
+        0.19017857142857142,
+        0.6041666666666666,
+        0.2330357142857143
+      ],
+      "bbox_rect": [
+        0.39345238095238094,
+        0.19017857142857142,
+        0.6041666666666666,
+        0.2330357142857143
+      ]
+    },
+    {
+      "text": "Castiglione",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.28273809523809523,
+        0.3580357142857143,
+        0.7172619047619048,
+        0.4142857142857143
+      ],
+      "bbox_rect": [
+        0.28273809523809523,
+        0.3580357142857143,
+        0.7172619047619048,
+        0.4142857142857143
+      ]
+    },
+    {
+      "text": "Barolo",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.3726190476190476,
+        0.5455357142857142,
+        0.6273809523809524,
+        0.5901785714285714
+      ],
+      "bbox_rect": [
+        0.3726190476190476,
+        0.5455357142857142,
+        0.6273809523809524,
+        0.5901785714285714
+      ]
+    },
+    {
+      "text": "2019",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.4023809523809524,
+        0.7517857142857143,
+        0.5976190476190476,
+        0.7955357142857142
+      ],
+      "bbox_rect": [
+        0.4023809523809524,
+        0.7517857142857143,
+        0.5976190476190476,
+        0.7955357142857142
+      ]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "schema": "wine-label-fixture/v1",
+  "synthetic": true,
+  "image": "margaux.png",
+  "coordinate_note": "Expected tokens describe this printed crop (identity homography); scores are synthetic test inputs, not measured OCR confidence.",
+  "expected": {
+    "PRODUCER": {
+      "value": "Château Margaux",
+      "state": "GREEN"
+    },
+    "WINE_NAME": {
+      "value": "Pavillon Rouge",
+      "state": "GREEN"
+    },
+    "COUNTRY": {
+      "value": "France",
+      "state": "GREEN"
+    },
+    "REGION": {
+      "value": "Bordeaux",
+      "state": "GREEN"
+    },
+    "SUBREGION": {
+      "value": "Margaux",
+      "state": "GREEN"
+    },
+    "VINTAGE": {
+      "value": "2018",
+      "state": "GREEN"
+    }
+  },
+  "expected_tokens": [
+    {
+      "text": "Château Margaux",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.15357142857142858,
+        0.18660714285714286,
+        0.8464285714285714,
+        0.24464285714285713
+      ],
+      "bbox_rect": [
+        0.15357142857142858,
+        0.18660714285714286,
+        0.8464285714285714,
+        0.24464285714285713
+      ]
+    },
+    {
+      "text": "Pavillon Rouge",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.2119047619047619,
+        0.3580357142857143,
+        0.7880952380952381,
+        0.4142857142857143
+      ],
+      "bbox_rect": [
+        0.2119047619047619,
+        0.3580357142857143,
+        0.7880952380952381,
+        0.4142857142857143
+      ]
+    },
+    {
+      "text": "Margaux",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.3267857142857143,
+        0.5473214285714286,
+        0.6732142857142858,
+        0.6017857142857143
+      ],
+      "bbox_rect": [
+        0.3267857142857143,
+        0.5473214285714286,
+        0.6732142857142858,
+        0.6017857142857143
+      ]
+    },
+    {
+      "text": "2018",
+      "score": 0.95,
+      "engine_id": "mlkit",
+      "variant_id": "V0",
+      "bbox_orig": [
+        0.4023809523809524,
+        0.7517857142857143,
+        0.5976190476190476,
+        0.7955357142857142
+      ],
+      "bbox_rect": [
+        0.4023809523809524,
+        0.7517857142857143,
+        0.5976190476190476,
+        0.7955357142857142
+      ]
+    }
+  ]
+}

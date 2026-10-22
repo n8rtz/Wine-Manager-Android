@@ -1,0 +1,122 @@
+role,term,country_context,action
+suffix,Gran Reserva,,append_to_name
+suffix,Gran Riserva,,append_to_name
+suffix,Grand Reserve,,append_to_name
+suffix,Reserva,,append_to_name
+suffix,Riserva,,append_to_name
+suffix,Reserve,,append_to_name
+suffix,Reserva Especial,,append_to_name
+suffix,Reserva de Familia,,append_to_name
+suffix,Crianza,,append_to_name
+suffix,Grand Cru,,append_to_name
+suffix,Premier Cru,,append_to_name
+suffix,1er Cru,,append_to_name
+suffix,Premier Grand Cru Classé,,append_to_name
+suffix,Grand Cru Classé,,append_to_name
+suffix,Villages,,append_to_name
+suffix,Classico,,append_to_name
+suffix,Superiore,,append_to_name
+suffix,Superiore Riserva,,append_to_name
+suffix,Classico Riserva,,append_to_name
+producer_marker,adega,PT,producer_role_only
+producer_marker,herdade,PT,producer_role_only
+producer_marker,solar,PT,producer_role_only
+producer_marker,azienda agricola,IT,producer_role_only
+producer_marker,azienda vinicola,IT,producer_role_only
+producer_marker,azienda vitivinicola,IT,producer_role_only
+producer_marker,cooperativa,IT;ES;PT,producer_role_only
+producer_marker,cave,FR;CH,producer_role_only
+producer_marker,caves,FR;CH,producer_role_only
+producer_marker,vignerons,FR;CH,producer_role_only
+producer_marker,viticulteur,FR,producer_role_only
+producer_marker,viticoltore,IT,producer_role_only
+producer_marker,bodegues,ES,producer_role_only
+producer_marker,celler,ES,producer_role_only
+producer_marker,viña,ES;CL,producer_role_only
+producer_marker,vinícola,ES;PT;BR,producer_role_only
+producer_marker,winzergenossenschaft,DE;AT,producer_role_only
+producer_marker,winzer,DE;AT,producer_role_only
+producer_marker,kellerei,DE;AT;IT,producer_role_only
+producer_marker,schloss,DE;AT,producer_role_only
+producer_marker,stift,AT,producer_role_only
+producer_marker,kloster,DE;AT,producer_role_only
+producer_marker,borászat,HU,producer_role_only
+producer_marker,pincészet,HU,producer_role_only
+producer_marker,vinarija,HR;RS,producer_role_only
+administrative_prefix,contains sulphites,,reject_identity
+administrative_prefix,contains sulfites,,reject_identity
+administrative_prefix,contient des sulfites,,reject_identity
+administrative_prefix,contiene sulfitos,,reject_identity
+administrative_prefix,contiene solfiti,,reject_identity
+administrative_prefix,contém sulfitos,,reject_identity
+administrative_prefix,enthält sulfite,,reject_identity
+administrative_prefix,bevat sulfieten,,reject_identity
+administrative_prefix,government warning,,reject_identity
+administrative_prefix,imported by,,reject_identity
+administrative_prefix,importé par,,reject_identity
+administrative_prefix,importado por,,reject_identity
+administrative_prefix,importato da,,reject_identity
+administrative_prefix,distributed by,,reject_identity
+administrative_prefix,distribué par,,reject_identity
+administrative_prefix,distribuito da,,reject_identity
+administrative_prefix,distribuido por,,reject_identity
+administrative_prefix,emballage recyclable,,reject_identity
+administrative_prefix,drink responsibly,,reject_identity
+administrative_prefix,consume responsibly,,reject_identity
+classification,AOC,FR;CH;LU,context_only
+classification,AOP,FR;EU,context_only
+classification,IGP,FR;IT;ES;EU,context_only
+classification,PDO,EU,context_only
+classification,PGI,EU,context_only
+classification,DOP,IT;ES;PT;EU,context_only
+classification,DOC,IT;PT;RO,context_only
+classification,DOCG,IT,context_only
+classification,DOCa,ES,context_only
+classification,DOQ,ES,context_only
+classification,DO,ES;PT;CL,context_only
+classification,IGT,IT,context_only
+classification,DAC,AT,context_only
+classification,VQA,CA,context_only
+classification,AVA,US,context_only
+classification,WO,ZA,context_only
+classification,Qualitätswein,DE;AT,context_only
+classification,Prädikatswein,DE;AT,context_only
+classification,Landwein,DE;AT,context_only
+sweetness,Brut Nature,,never_infer_origin_or_grape
+sweetness,Extra Brut,,never_infer_origin_or_grape
+sweetness,Brut,,never_infer_origin_or_grape
+sweetness,Extra Dry,,never_infer_origin_or_grape
+sweetness,Dry,,never_infer_origin_or_grape
+sweetness,Sec,,never_infer_origin_or_grape
+sweetness,Demi-Sec,,never_infer_origin_or_grape
+sweetness,Doux,,never_infer_origin_or_grape
+sweetness,Trocken,,never_infer_origin_or_grape
+sweetness,Halbtrocken,,never_infer_origin_or_grape
+sweetness,Feinherb,,never_infer_origin_or_grape
+sweetness,Secco,,never_infer_origin_or_grape
+sweetness,Abboccato,,never_infer_origin_or_grape
+sweetness,Amabile,,never_infer_origin_or_grape
+sweetness,Dolce,,never_infer_origin_or_grape
+sweetness,Seco,,never_infer_origin_or_grape
+sweetness,Semiseco,,never_infer_origin_or_grape
+sweetness,Dulce,,never_infer_origin_or_grape
+sweetness,Doce,,never_infer_origin_or_grape
+style,Blanc de Blancs,,never_infer_chardonnay
+style,Blanc de Noirs,,never_infer_pinot_noir
+style,Rosé,,never_infer_grape
+style,Orange Wine,,never_infer_australian_region
+style,Vin Jaune,FR,context_only
+style,Vin de Paille,,context_only
+style,Passito,IT,context_only
+style,Ripasso,IT,context_only
+style,Appassimento,IT,context_only
+style,Kabinett,DE;AT,never_infer_sweetness
+style,Spätlese,DE;AT,never_infer_sweetness
+style,Auslese,DE;AT,never_infer_sweetness
+style,Beerenauslese,DE;AT,context_only
+style,Trockenbeerenauslese,DE;AT,context_only
+style,Eiswein,DE;AT,context_only
+style,Icewine,CA,context_only
+style,Vendanges Tardives,FR,context_only
+style,Sélection de Grains Nobles,FR,context_only
+style,Vin Doux Naturel,FR,context_only

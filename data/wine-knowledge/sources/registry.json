@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-18",
+  "sources": [
+    {
+      "id": "editorial-v1",
+      "title": "Project-authored global wine reference",
+      "input": "../editorial-origins.txt",
+      "provenance": "Manually authored general wine knowledge, not a downloaded or individually regulator-verified worldwide register.",
+      "review": "Reference suggestions require confirmation. Country/region names and historic label names are not a certification of current protected status.",
+      "other_inputs": ["../label-terms.csv", "../typical-grapes.csv"]
+    },
+    {
+      "id": "ucd-ava",
+      "title": "UC Davis Library / DataLab American Viticultural Areas",
+      "url": "https://github.com/UCDavisLibrary/ava",
+      "commit": "a00174df3809f4edcea101f4489961d8b97e4ff9",
+      "license": "CC0-1.0",
+      "license_file": "UCD-CC0-LICENSE.txt",
+      "snapshot": "ucd-ava-properties.json",
+      "selection": "Individual avas/*.geojson properties only; no removed records, expired geometry versions, or future creation/valid-start dates. No geometry bundled.",
+      "review": "Secondary reference metadata, not a current TTB legal certification. State names/codes are normalized and validated. Source within relationships are retained for audit but not assumed to be strict containment."
+    }
+  ]
+}

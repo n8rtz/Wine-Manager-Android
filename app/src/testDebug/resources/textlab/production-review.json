@@ -1,0 +1,1011 @@
+{
+  "source_batch": "24987ba8-df0d-4ba4-b3f6-a0ddd424cab9",
+  "source_build": "df45fbb5e57b",
+  "warning": "Observed OCR and field outputs, NOT ground truth. Per-engine lab output, not combined production autofill.",
+  "cases": [
+    {
+      "image_index": "1",
+      "image_name": "IMG20261013221851.jpg",
+      "engine": "mlkit_reference",
+      "readings": [
+        {
+          "raw_text": "HEREDEROS DEL",
+          "base_box_normalized": "0.258065 0.258333 0.676411 0.282292",
+          "original_box_normalized": "0.303840 0.419421 0.519264 0.437334",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.75651044",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "NET CONT'30M",
+          "base_box_normalized": "0.683468 0.112500 0.862903 0.146875",
+          "original_box_normalized": "0.522898 0.310388 0.615296 0.336089",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.44335938",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "PRODUCT",
+          "base_box_normalized": "0.698589 0.135937 0.848790 0.169792",
+          "original_box_normalized": "0.530684 0.327912 0.608029 0.353223",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7438616",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "OFSPAN",
+          "base_box_normalized": "0.709677 0.159896 0.841734 0.189583",
+          "original_box_normalized": "0.536394 0.345824 0.604395 0.368020",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7207031",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "ARQUES DE RIsCAL",
+          "base_box_normalized": "0.115927 0.298958 0.922379 0.376042",
+          "original_box_normalized": "0.230648 0.449795 0.645923 0.507426",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.49609375",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "AADE WITH ORGANIC GRAPES",
+          "base_box_normalized": "0.126008 0.540104 0.847782 0.571875",
+          "original_box_normalized": "0.235839 0.630088 0.607510 0.653842",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5576172",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "RUEDA",
+          "base_box_normalized": "0.261089 0.703125 0.642137 0.753125",
+          "original_box_normalized": "0.305397 0.751971 0.501615 0.789354",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7601563",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "DENOMINACIÓN DE OR",
+          "base_box_normalized": "0.175403 0.733854 0.649194 0.789063",
+          "original_box_normalized": "0.261274 0.774946 0.505248 0.816223",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.578125",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "Tucda- Byaia",
+          "base_box_normalized": "0.261089 0.796354 0.687500 0.872396",
+          "original_box_normalized": "0.305397 0.821675 0.524974 0.878527",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.30625",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "2023.",
+          "base_box_normalized": "0.330645 0.903125 0.567540 0.938542",
+          "original_box_normalized": "0.341215 0.901502 0.463202 0.927982",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6429688",
+          "confidence_estimated": "false"
+        }
+      ],
+      "observed_fields": {
+        "producer": "Marqués de Riscal",
+        "wine_name": "Tucda- Byaia",
+        "country": "Spain",
+        "region": "Castilla y Leon",
+        "subregion": "Rueda",
+        "vintage": "2023"
+      }
+    },
+    {
+      "image_index": "1",
+      "image_name": "IMG20261013221851.jpg",
+      "engine": "candidate_3",
+      "readings": [
+        {
+          "raw_text": "NETCONT.750ML",
+          "base_box_normalized": "0.673895 0.106894 0.871204 0.150904",
+          "original_box_normalized": "0.517968 0.306197 0.619570 0.339102",
+          "ctc_posterior": "0.99832976",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": ".Bby Vol.",
+          "base_box_normalized": "0.083679 0.116399 0.212025 0.164017",
+          "original_box_normalized": "0.214042 0.313304 0.280132 0.348906",
+          "ctc_posterior": "0.7501097",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "PRODUCT",
+          "base_box_normalized": "0.692872 0.132342 0.859651 0.171459",
+          "original_box_normalized": "0.527740 0.325223 0.613621 0.354469",
+          "ctc_posterior": "0.9999854",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "WHITE",
+          "base_box_normalized": "0.097476 0.147637 0.186761 0.181652",
+          "original_box_normalized": "0.221147 0.336659 0.267123 0.362090",
+          "ctc_posterior": "0.9998413",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "OF SPAIN",
+          "base_box_normalized": "0.701549 0.155361 0.852822 0.193651",
+          "original_box_normalized": "0.532208 0.342434 0.610105 0.371061",
+          "ctc_posterior": "0.94925624",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "WINE",
+          "base_box_normalized": "0.102401 0.169397 0.180427 0.202518",
+          "original_box_normalized": "0.223682 0.352928 0.263861 0.377691",
+          "ctc_posterior": "0.998801",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "HEREDEROS DEL",
+          "base_box_normalized": "0.226891 0.255787 0.673474 0.285259",
+          "original_box_normalized": "0.287787 0.417517 0.517751 0.439553",
+          "ctc_posterior": "0.99087197",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "MARQUÉS DE RISCAL",
+          "base_box_normalized": "0.054101 0.280937 0.941993 0.386771",
+          "original_box_normalized": "0.198811 0.436321 0.656023 0.515448",
+          "ctc_posterior": "0.97543955",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "Verdejo",
+          "base_box_normalized": "0.213279 0.407676 0.659514 0.525856",
+          "original_box_normalized": "0.280778 0.531078 0.510563 0.619436",
+          "ctc_posterior": "0.99995375",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "MADE WITH ORGANIC GRAPES",
+          "base_box_normalized": "0.098943 0.529871 0.857920 0.576422",
+          "original_box_normalized": "0.221902 0.622438 0.612730 0.657241",
+          "ctc_posterior": "0.99973756",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "RUEDA",
+          "base_box_normalized": "0.245311 0.696903 0.637908 0.755836",
+          "original_box_normalized": "0.297272 0.747319 0.499437 0.791381",
+          "ctc_posterior": "0.9999846",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "DENOMINACIÓN DE ORIGEN",
+          "base_box_normalized": "0.154904 0.728993 0.756840 0.789729",
+          "original_box_normalized": "0.250718 0.771312 0.560680 0.816721",
+          "ctc_posterior": "0.9993712",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "Rueda-España",
+          "base_box_normalized": "0.202375 0.788966 0.687436 0.876817",
+          "original_box_normalized": "0.275163 0.816151 0.524941 0.881833",
+          "ctc_posterior": "0.9987569",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "2023",
+          "base_box_normalized": "0.317563 0.899291 0.548318 0.938946",
+          "original_box_normalized": "0.334478 0.898636 0.453303 0.928284",
+          "ctc_posterior": "0.99998856",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ],
+      "observed_fields": {
+        "producer": "Marqués de Riscal",
+        "wine_name": "Rueda-España",
+        "country": "Spain",
+        "region": "Castilla y Leon",
+        "subregion": "Rueda",
+        "vintage": "2023"
+      }
+    },
+    {
+      "image_index": "2",
+      "image_name": "IMG20261013221740.jpg",
+      "engine": "mlkit_reference",
+      "readings": [
+        {
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.303906 0.176704 0.708594 0.246195",
+          "original_box_normalized": "0.343442 0.314014 0.567581 0.348107",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.84277344",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "CABERN ET SAUVIGNON",
+          "base_box_normalized": "0.116406 0.348776 0.932813 0.418928",
+          "original_box_normalized": "0.239594 0.398435 0.691766 0.432853",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6855469",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "ALEXANDER VALLEY",
+          "base_box_normalized": "0.163281 0.555261 0.855469 0.607545",
+          "original_box_normalized": "0.265556 0.499740 0.648929 0.525391",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7597656",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "SONO MA COUNTY",
+          "base_box_normalized": "0.289844 0.632032 0.716406 0.667108",
+          "original_box_normalized": "0.335654 0.537405 0.571908 0.554613",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6503906",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "2022",
+          "base_box_normalized": "0.428125 0.710788 0.573438 0.742555",
+          "original_box_normalized": "0.412242 0.576043 0.492724 0.591629",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.8935547",
+          "confidence_estimated": "false"
+        }
+      ],
+      "observed_fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Cabernet Sauvignon",
+        "country": "California",
+        "region": "",
+        "subregion": "Alexander Valley",
+        "vintage": "2022"
+      }
+    },
+    {
+      "image_index": "2",
+      "image_name": "IMG20261013221740.jpg",
+      "engine": "candidate_3",
+      "readings": [
+        {
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.300872 0.174754 0.716625 0.244256",
+          "original_box_normalized": "0.341762 0.313057 0.572029 0.347156",
+          "ctc_posterior": "0.99146616",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "bignature",
+          "base_box_normalized": "0.340159 0.237566 0.713601 0.282493",
+          "original_box_normalized": "0.363521 0.343873 0.570354 0.365915",
+          "ctc_posterior": "0.9141136",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "CABERNET SAUVIGNON",
+          "base_box_normalized": "0.086085 0.342505 0.934014 0.422934",
+          "original_box_normalized": "0.222800 0.395358 0.692432 0.434818",
+          "ctc_posterior": "0.99923044",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "ALEXANDER VALLEY",
+          "base_box_normalized": "0.151834 0.547212 0.860745 0.610523",
+          "original_box_normalized": "0.259216 0.495791 0.651851 0.526852",
+          "ctc_posterior": "0.9945601",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "SONOMA COUNTY",
+          "base_box_normalized": "0.280832 0.627576 0.722904 0.667554",
+          "original_box_normalized": "0.330662 0.535218 0.575507 0.554832",
+          "ctc_posterior": "0.99232984",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "2022",
+          "base_box_normalized": "0.421574 0.704436 0.578426 0.745564",
+          "original_box_normalized": "0.408613 0.572927 0.495487 0.593105",
+          "ctc_posterior": "0.9999933",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ],
+      "observed_fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "bignature",
+        "country": "California",
+        "region": "",
+        "subregion": "Alexander Valley",
+        "vintage": "2022"
+      }
+    },
+    {
+      "image_index": "3",
+      "image_name": "IMG_3858-1-1270x1536.jpeg",
+      "engine": "mlkit_reference",
+      "readings": [
+        {
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.358796 0.143709 0.650463 0.172848",
+          "original_box_normalized": "0.460630 0.346680 0.559843 0.361003",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.8569336",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "BRUNELLO",
+          "base_box_normalized": "0.152778 0.570199 0.655093 0.674834",
+          "original_box_normalized": "0.390551 0.556315 0.561417 0.607747",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.69677734",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "DI MONTALCINO",
+          "base_box_normalized": "0.164352 0.664901 0.833333 0.750993",
+          "original_box_normalized": "0.394488 0.602865 0.622047 0.645182",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5703125",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "denominczione",
+          "base_box_normalized": "0.158565 0.750993 0.303241 0.788742",
+          "original_box_normalized": "0.392520 0.645182 0.441732 0.663737",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.49609375",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "dorgine conitrollata",
+          "base_box_normalized": "0.166667 0.780132 0.366898 0.823179",
+          "original_box_normalized": "0.395276 0.659505 0.463386 0.680664",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.46930805",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "202I",
+          "base_box_normalized": "0.428241 0.909934 0.562500 0.929801",
+          "original_box_normalized": "0.484252 0.723307 0.529921 0.733073",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7441406",
+          "confidence_estimated": "false"
+        }
+      ],
+      "observed_fields": {
+        "producer": "BRUNELLO",
+        "wine_name": "DI MONTALCINO",
+        "country": "Italy",
+        "region": "Tuscany",
+        "subregion": "Brunello di Montalcino",
+        "vintage": ""
+      }
+    },
+    {
+      "image_index": "3",
+      "image_name": "IMG_3858-1-1270x1536.jpeg",
+      "engine": "candidate_3",
+      "readings": [
+        {
+          "raw_text": "960",
+          "base_box_normalized": "0.883541 0.135516 0.951926 0.222702",
+          "original_box_normalized": "0.639126 0.342653 0.662387 0.385508",
+          "ctc_posterior": "0.627418",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.346329 0.137515 0.661005 0.177710",
+          "original_box_normalized": "0.456389 0.343635 0.563429 0.363393",
+          "ctc_posterior": "0.9999913",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "BRUNELLO",
+          "base_box_normalized": "0.121646 0.536976 0.692329 0.681429",
+          "original_box_normalized": "0.379961 0.539985 0.574084 0.610989",
+          "ctc_posterior": "0.9986089",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "DIMONTALCINO",
+          "base_box_normalized": "0.133033 0.646444 0.869189 0.761539",
+          "original_box_normalized": "0.383835 0.593792 0.634244 0.650366",
+          "ctc_posterior": "0.98045063",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "denominazione",
+          "base_box_normalized": "0.145962 0.745609 0.314444 0.792885",
+          "original_box_normalized": "0.388233 0.642536 0.445543 0.665773",
+          "ctc_posterior": "0.9696338",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "di origine controllata",
+          "base_box_normalized": "0.144069 0.771831 0.372328 0.828460",
+          "original_box_normalized": "0.387589 0.655425 0.465233 0.683260",
+          "ctc_posterior": "0.908381",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "egarantita",
+          "base_box_normalized": "0.147578 0.803437 0.273037 0.844275",
+          "original_box_normalized": "0.388783 0.670960 0.431458 0.691034",
+          "ctc_posterior": "0.9048783",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "2021",
+          "base_box_normalized": "0.421687 0.903539 0.570961 0.932919",
+          "original_box_normalized": "0.482022 0.720164 0.532799 0.734605",
+          "ctc_posterior": "0.98890567",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ],
+      "observed_fields": {
+        "producer": "BRUNELLO",
+        "wine_name": "DIMONTALCINO",
+        "country": "Italy",
+        "region": "Tuscany",
+        "subregion": "Brunello di Montalcino",
+        "vintage": "2021"
+      }
+    },
+    {
+      "image_index": "4",
+      "image_name": "IMG_3657-1413x1536.jpeg",
+      "engine": "mlkit_reference",
+      "readings": [
+        {
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.311015 0.263049 0.672786 0.307005",
+          "original_box_normalized": "0.450106 0.362956 0.568648 0.383789",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.875",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "SIGNATURE",
+          "base_box_normalized": "0.144708 0.464286 0.803456 0.524725",
+          "original_box_normalized": "0.395612 0.458333 0.611465 0.486979",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.765625",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "SERIES",
+          "base_box_normalized": "0.289417 0.543956 0.650108 0.576923",
+          "original_box_normalized": "0.443029 0.496094 0.561217 0.511719",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7701823",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "CABERNET SAUVIGNON",
+          "base_box_normalized": "0.157667 0.811126 0.817495 0.878434",
+          "original_box_normalized": "0.399858 0.622721 0.616065 0.654622",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.80126953",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "NAPA VALLEY",
+          "base_box_normalized": "0.335853 0.876374 0.644708 0.906593",
+          "original_box_normalized": "0.458245 0.653646 0.559448 0.667969",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7675781",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "2024",
+          "base_box_normalized": "0.438445 0.929945 0.542117 0.950549",
+          "original_box_normalized": "0.491861 0.679036 0.525832 0.688802",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.9121094",
+          "confidence_estimated": "false"
+        }
+      ],
+      "observed_fields": {
+        "producer": "SIGNATURE",
+        "wine_name": "KIRKLAND",
+        "country": "California",
+        "region": "",
+        "subregion": "Napa Valley",
+        "vintage": "2024"
+      }
+    },
+    {
+      "image_index": "4",
+      "image_name": "IMG_3657-1413x1536.jpeg",
+      "engine": "candidate_3",
+      "readings": [
+        {
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.295751 0.258460 0.679627 0.312595",
+          "original_box_normalized": "0.445104 0.360781 0.570890 0.386438",
+          "ctc_posterior": "0.9999731",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "noture",
+          "base_box_normalized": "0.433225 0.309793 0.624341 0.326666",
+          "original_box_normalized": "0.490151 0.385110 0.552774 0.393107",
+          "ctc_posterior": "0.85089797",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "SIGNATURE",
+          "base_box_normalized": "0.115790 0.435704 0.824682 0.537104",
+          "original_box_normalized": "0.386136 0.444787 0.618420 0.492846",
+          "ctc_posterior": "0.99993765",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "SＥRＩＥS",
+          "base_box_normalized": "0.276079 0.533984 0.664699 0.583731",
+          "original_box_normalized": "0.438659 0.491367 0.565998 0.514946",
+          "ctc_posterior": "0.71950203",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "Stags Leap Distrid",
+          "base_box_normalized": "0.038143 0.676524 0.889976 0.835257",
+          "original_box_normalized": "0.360694 0.558925 0.639815 0.634158",
+          "ctc_posterior": "0.98716015",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "CABERNET SAUVIGNON",
+          "base_box_normalized": "0.113813 0.802166 0.831839 0.875699",
+          "original_box_normalized": "0.385489 0.618474 0.620765 0.653326",
+          "ctc_posterior": "0.9998677",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "NAPA VALLEY",
+          "base_box_normalized": "0.308350 0.868157 0.653786 0.908054",
+          "original_box_normalized": "0.449233 0.649752 0.562423 0.668661",
+          "ctc_posterior": "0.9999735",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "2024",
+          "base_box_normalized": "0.421262 0.919924 0.550778 0.955076",
+          "original_box_normalized": "0.486231 0.674287 0.528669 0.690947",
+          "ctc_posterior": "0.9999876",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ],
+      "observed_fields": {
+        "producer": "Stags Leap Distrid",
+        "wine_name": "SIGNATURE",
+        "country": "California",
+        "region": "",
+        "subregion": "Napa Valley",
+        "vintage": "2024"
+      }
+    },
+    {
+      "image_index": "5",
+      "image_name": "1e51ac9e-8c20-418e-9ef7-0dd488a52995.jpg",
+      "engine": "mlkit_reference",
+      "readings": [
+        {
+          "raw_text": "limage à la",
+          "base_box_normalized": "0.054075 0.442187 0.166928 0.469792",
+          "original_box_normalized": "0.151471 0.525112 0.229739 0.546729",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.26953125",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "yqui, en 1317,",
+          "base_box_normalized": "0.041536 0.502604 0.185737 0.546354",
+          "original_box_normalized": "0.142775 0.572425 0.242783 0.606686",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.2171875",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "Rquis 4 COmmnes",
+          "base_box_normalized": "0.039969 0.534375 0.186520 0.577083",
+          "original_box_normalized": "0.141688 0.597305 0.243327 0.630750",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.1765625",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "RESER.",
+          "base_box_normalized": "0.422414 0.082813 0.891066 0.170833",
+          "original_box_normalized": "0.406928 0.243683 0.731955 0.312613",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.3138021",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "'ENCLvE",
+          "base_box_normalized": "0.359718 0.214583 0.826802 0.290625",
+          "original_box_normalized": "0.363446 0.346874 0.687386 0.406423",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5228795",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "DE",
+          "base_box_normalized": "0.557994 0.166146 0.656740 0.208333",
+          "original_box_normalized": "0.500957 0.308942 0.569442 0.341980",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5214844",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "FONDÉE EN 1342",
+          "base_box_normalized": "0.431818 0.639583 0.728056 0.683333",
+          "original_box_normalized": "0.413450 0.679695 0.618902 0.713956",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.54003906",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "2022",
+          "base_box_normalized": "0.489812 0.714063 0.663793 0.751562",
+          "original_box_normalized": "0.453671 0.738020 0.574333 0.767386",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.9316406",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "IES DU RHÔNE VL",
+          "base_box_normalized": "0.065831 0.746354 0.888715 0.836979",
+          "original_box_normalized": "0.159624 0.763308 0.730325 0.834277",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4466146",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "APPELLATIO",
+          "base_box_normalized": "0.144201 0.809896 0.407524 0.882813",
+          "original_box_normalized": "0.213977 0.813068 0.396601 0.870169",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.67890626",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "ON D'ORIGIN NE PROTÉCEE",
+          "base_box_normalized": "0.379310 0.811458 0.938088 0.914583",
+          "original_box_normalized": "0.377034 0.814291 0.764567 0.895049",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.50390625",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "OiçNERONS",
+          "base_box_normalized": "0.201411 0.890625 0.536050 0.978125",
+          "original_box_normalized": "0.253654 0.876287 0.485739 0.944809",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.47916666",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "ICNE",
+          "base_box_normalized": "0.250784 0.896354 0.380094 0.963021",
+          "original_box_normalized": "0.287896 0.880774 0.377577 0.932981",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.31152344",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "DE L'ENCLAvE E",
+          "base_box_normalized": "0.546238 0.898958 0.917712 0.976563",
+          "original_box_normalized": "0.492805 0.882813 0.750435 0.943585",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.05859375",
+          "confidence_estimated": "false"
+        }
+      ],
+      "observed_fields": {
+        "producer": "IES DU Rhône VL",
+        "wine_name": "RESER.",
+        "country": "France",
+        "region": "Rhône",
+        "subregion": "",
+        "vintage": "2022"
+      }
+    },
+    {
+      "image_index": "5",
+      "image_name": "1e51ac9e-8c20-418e-9ef7-0dd488a52995.jpg",
+      "engine": "candidate_3",
+      "readings": [
+        {
+          "raw_text": "A RÉSERVE",
+          "base_box_normalized": "0.289665 0.000000 1.000000 0.274578",
+          "original_box_normalized": "0.314861 0.178832 0.807505 0.393856",
+          "ctc_posterior": "0.98009783",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "LA",
+          "base_box_normalized": "0.181852 0.070401 0.448461 0.230432",
+          "original_box_normalized": "0.240089 0.233964 0.424992 0.359285",
+          "ctc_posterior": "0.9999498",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "DE",
+          "base_box_normalized": "0.543345 0.155510 0.680877 0.218897",
+          "original_box_normalized": "0.490798 0.300613 0.586182 0.350252",
+          "ctc_posterior": "0.99976623",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "L'ENCLAUE",
+          "base_box_normalized": "0.338847 0.200091 0.847724 0.309167",
+          "original_box_normalized": "0.348971 0.335525 0.701896 0.420943",
+          "ctc_posterior": "0.94350064",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "tnmelble dea a Clef »",
+          "base_box_normalized": "0.041471 0.397324 0.205406 0.446754",
+          "original_box_normalized": "0.142730 0.489979 0.256425 0.528688",
+          "ctc_posterior": "0.6783761",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "and hommage à la",
+          "base_box_normalized": "0.041947 0.429294 0.179282 0.478806",
+          "original_box_normalized": "0.143060 0.515016 0.238307 0.553788",
+          "ctc_posterior": "0.85722804",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "o",
+          "base_box_normalized": "0.916173 0.460198 0.974452 0.502302",
+          "original_box_normalized": "0.749368 0.539216 0.789787 0.572189",
+          "ctc_posterior": "0.13126837",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "mauté eclésastique",
+          "base_box_normalized": "0.036089 0.462401 0.206399 0.516806",
+          "original_box_normalized": "0.138997 0.540941 0.257113 0.583547",
+          "ctc_posterior": "0.83354855",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "lexcellral",
+          "base_box_normalized": "0.905614 0.489895 0.975452 0.528365",
+          "original_box_normalized": "0.742045 0.562472 0.790480 0.592599",
+          "ctc_posterior": "0.70250213",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "a Rignen qui, en 1317,",
+          "base_box_normalized": "0.033747 0.495207 0.195156 0.550995",
+          "original_box_normalized": "0.137373 0.566632 0.249316 0.610321",
+          "ctc_posterior": "0.7850986",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "viticolen",
+          "base_box_normalized": "0.911650 0.526792 0.976204 0.560492",
+          "original_box_normalized": "0.746231 0.591367 0.791002 0.617758",
+          "ctc_posterior": "0.8704884",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "staquis 4 communes",
+          "base_box_normalized": "0.031636 0.527262 0.196578 0.583469",
+          "original_box_normalized": "0.135908 0.591735 0.250302 0.635751",
+          "ctc_posterior": "0.8691029",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "bau sud de la",
+          "base_box_normalized": "0.039462 0.556204 0.143975 0.607129",
+          "original_box_normalized": "0.141337 0.614400 0.213820 0.654279",
+          "ctc_posterior": "0.85938275",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "FONDÉE EN 1317",
+          "base_box_normalized": "0.392069 0.612193 0.748098 0.694891",
+          "original_box_normalized": "0.385883 0.658245 0.632802 0.723006",
+          "ctc_posterior": "0.9446885",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "COTES DO RHONEVE VILAE",
+          "base_box_normalized": "0.000103 0.667823 1.000000 0.897636",
+          "original_box_normalized": "0.114040 0.701810 0.807505 0.881778",
+          "ctc_posterior": "0.79097706",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "2022",
+          "base_box_normalized": "0.480312 0.707708 0.674375 0.756875",
+          "original_box_normalized": "0.447083 0.733044 0.581672 0.771546",
+          "ctc_posterior": "0.99999756",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "UIGNERONS DE l'ENCLavEe",
+          "base_box_normalized": "0.178979 0.868001 0.899746 0.985196",
+          "original_box_normalized": "0.238097 0.858570 0.737975 0.950346",
+          "ctc_posterior": "0.8389559",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ],
+      "observed_fields": {
+        "producer": "COTES DO RHONEVE VILAE",
+        "wine_name": "UIGNERONS DE l'ENCLavEe",
+        "country": "",
+        "region": "",
+        "subregion": "",
+        "vintage": "2022"
+      }
+    },
+    {
+      "image_index": "6",
+      "image_name": "IMG20261013001611.jpg",
+      "engine": "mlkit_reference",
+      "readings": [
+        {
+          "raw_text": "LACKSTONE",
+          "base_box_normalized": "0.096051 0.348437 0.898613 0.508854",
+          "original_box_normalized": "0.319532 0.391097 0.742285 0.520986",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6085069",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "WI N E R Y",
+          "base_box_normalized": "0.201708 0.517708 0.780149 0.551562",
+          "original_box_normalized": "0.375187 0.528155 0.679884 0.555566",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.41992188",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "CALIFORNIA",
+          "base_box_normalized": "0.305229 0.747396 0.647812 0.775521",
+          "original_box_normalized": "0.429718 0.714132 0.610175 0.736905",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7890625",
+          "confidence_estimated": "false"
+        },
+        {
+          "raw_text": "ALC 13.58 BY TOL",
+          "base_box_normalized": "0.364995 0.882292 0.589114 0.906250",
+          "original_box_normalized": "0.461199 0.823357 0.579255 0.842756",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4544271",
+          "confidence_estimated": "false"
+        }
+      ],
+      "observed_fields": {
+        "producer": "LACKSTONE",
+        "wine_name": "13.58 BY TOL",
+        "country": "California",
+        "region": "",
+        "subregion": "",
+        "vintage": ""
+      }
+    },
+    {
+      "image_index": "6",
+      "image_name": "IMG20261013001611.jpg",
+      "engine": "candidate_3",
+      "readings": [
+        {
+          "raw_text": "BLACKSTONE",
+          "base_box_normalized": "0.063261 0.327026 0.944985 0.522641",
+          "original_box_normalized": "0.302260 0.373760 0.766712 0.532149",
+          "ctc_posterior": "0.99994165",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "WINERY",
+          "base_box_normalized": "0.191381 0.509256 0.795790 0.554420",
+          "original_box_normalized": "0.369747 0.521311 0.688123 0.557880",
+          "ctc_posterior": "0.99997836",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "Merlot",
+          "base_box_normalized": "0.249558 0.661992 0.723486 0.741811",
+          "original_box_normalized": "0.400393 0.644981 0.650036 0.709610",
+          "ctc_posterior": "0.99973476",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "CALIFORNIA",
+          "base_box_normalized": "0.298818 0.743004 0.659586 0.776881",
+          "original_box_normalized": "0.426341 0.710577 0.616377 0.738006",
+          "ctc_posterior": "0.9998653",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "raw_text": "ALC 13.5% BY VOL",
+          "base_box_normalized": "0.354113 0.880017 0.596062 0.907538",
+          "original_box_normalized": "0.455467 0.821515 0.582915 0.843799",
+          "ctc_posterior": "0.99937487",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ],
+      "observed_fields": {
+        "producer": "Blackstone",
+        "wine_name": "Merlot",
+        "country": "California",
+        "region": "",
+        "subregion": "",
+        "vintage": ""
+      }
+    }
+  ]
+}

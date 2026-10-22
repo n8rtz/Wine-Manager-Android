@@ -1,0 +1,169 @@
+review_number	producer	wine_name	country	region	subregion	vintage	notes
+001	La Cave d'Augustin Florent	Médoc	France	Bordeaux	Médoc	2019	Front brand; Bordeaux and France printed; appellation used as name.
+002	Domaine Drouhin	Pinot Noir	Oregon	Willamette Valley	Dundee Hills	2019	Oregon and Dundee Hills printed; parent valley inferred from appellation; state in Country per app convention.
+003	La Cave d'Augustin Florent	Brouilly	France	Beaujolais	Brouilly	2020	Cru du Beaujolais and Produit de France printed.
+004	Domaine de l'A	-	-	-	-	2006	Derenoncourt vignerons footer; no independently readable origin or separate wine name.
+005	Château Haute Brande	Côtes de Bergerac Moelleux	France	South West France	Côtes de Bergerac	2020	MOELLEUX / COTES DE BERGERAC printed; country and parent wine region inferred.
+006	Château Ambe Tour Pourret	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2009	Françoise et Philippe Lannoye footer; country and Bordeaux inferred from appellation.
+007	Château Amélisse	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2016	Bordeaux and France printed; appellation name.
+008	Château Margaux	-	-	-	-	2012	Estate and classification visible; no separate cuvée or legible origin statement; do not infer origin solely from estate identity.
+009	-	Médoc	France	Bordeaux	Médoc	2016	Primary brand top cropped to SOMMELIERS; Maison Delor is explicitly bottler, not substituted for unreadable brand.
+010	Château La Sauvageonne	Volcanie Rosé	France	Languedoc	-	2018	Gérard Bertrand also printed and acceptable producer/brand alternative; Sud de France and Languedoc printed.
+011	Château Alcée	Castillon Côtes de Bordeaux	France	Bordeaux	Castillon Côtes de Bordeaux	2016	Nicolas Thienpont footer; country inferred from appellation.
+012	La Francette	Cabernet Sauvignon	France	-	-	-	Vin de France; bottler Nîmes address is not evidence of wine origin; no year visible.
+013	Château de Beaupré	Coteaux d'Aix-en-Provence	France	Provence	Coteaux d'Aix-en-Provence	2012	Country and parent region inferred from appellation.
+014	Club des Sommeliers	Crozes-Hermitage	France	Rhône	Crozes-Hermitage	2020	Cave de Tain explicitly bottler; France printed; Rhône parent inferred.
+015	La Cave d'Augustin Florent	Costières de Nîmes	France	Rhône	Costières de Nîmes	2019	France printed; Rhône is the wine-region parent, not bottling-address geography.
+016	A. Kolb	Crémant d'Alsace Brut	France	Alsace	-	-	Club des Sommeliers also printed as brand; no year; Crémant regional sparkling designation not a distinct geographic subregion.
+017	Malesan	Bordeaux Cuvée Sélectionnée	France	Bordeaux	-	2019	Bordeaux and Cuvée Sélectionnée printed; country inferred; generic range descriptor optional as for 141.
+018	Château d'Agassac	Haut-Médoc	France	Bordeaux	Haut-Médoc	2014	Country and parent region inferred from appellation.
+019	Delor	Impérial Médoc	France	Bordeaux	Médoc	-	DELOR IMPERIAL MEDOC; F. Delor signature; no readable vintage; country inferred from Médoc.
+020	Lalande	Bordeaux Rosé	France	Bordeaux	-	2015	Do not turn brand Lalande into Lalande-de-Pomerol appellation.
+021	Château de l'Abbaye	Haut-Médoc	France	Bordeaux	Haut-Médoc	2014	Bordeaux and France printed; estate right edge curved.
+022	Viguerie Royale	Cuvée du Baptême	France	South West France	Jurançon	2020	Cave de Gan Jurançon footer; brand and cuvée explicit; parent region inferred.
+023	Viguerie Royale	Cuvée du Baptême	France	South West France	Jurançon	2020	Same visible wine identity as 022, different view.
+024	Château Amélisse	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2016	Same visible wine identity as 007.
+025	Moulin du Paradis	Montagne Saint-Émilion	France	Bordeaux	Montagne Saint-Émilion	2006	Patricia & Pierre Bernault footer; Bordeaux printed; country inferred.
+026	Château Abelyce	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2016	Split year 20 shield 16; finest neck range not a complete producer identity.
+027	La Cave d'Augustin Florent	Beaujolais-Villages	France	Beaujolais	Beaujolais-Villages	2020	France printed; appellation name.
+028	Château Margaux	Margaux	France	Bordeaux	Margaux	2000	Appellation Margaux and France printed; Premier Grand Cru Classé is estate classification.
+029	La Cave d'Augustin Florent	Rosé d'Anjou	France	Loire Valley	Anjou	2020	Val de Loire and France printed; Anjou from appellation.
+030	Maison Chandesais	Les Guillottes	France	Burgundy	Hautes Côtes de Beaune	-	Bourgogne Hautes Côtes de Beaune; Fondée en 1933 is not vintage; no year visible.
+031	Château La Tour de By	Médoc	France	Bordeaux	Médoc	2015	Bordeaux printed; country inferred.
+032	Bertrand Ravache	Léo by Léo	France	Bordeaux	Fronsac	2019	Producer attribution printed at bottom; Bordeaux printed; country inferred.
+033	Château d'Agassac	Haut-Médoc	France	Bordeaux	Haut-Médoc	2018	Cru Bourgeois Exceptionnel is classification; different vintage from 018.
+034	Château Abelyce	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2015	Different vintage from 026.
+035	Château Adaugusta	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2016	Gérard et Catherine Canuel footer; origin inferred from appellation.
+036	Château La Croix	Pomerol	France	Bordeaux	Pomerol	2005	Famille Joseph Janoueix footer; France printed.
+037	Blard & Fils	Mondeuse Noire	France	Savoie	Arbin	2020	Arbin printed; France and Savoie inferred from appellation; name may include Arbin.
+038	-	Bordeaux Supérieur	France	Bordeaux	-	2020	Full-size photo reviewed: Château Canton La Brille… visible, final letters wrap away; complete producer remains unknown. Bordeaux Supérieur and 2020 legible.
+039	Château d'Aiguilhe	-	-	-	-	2016	Comtes von Neipperg ownership shown; origin/name not inferred merely from known estate identity.
+040	La Cave d'Augustin Florent	Les Pierrasques	France	Rhône	Côtes du Rhône	2019	Côtes du Rhône and France printed; distinct cuvée Les Pierrasques.
+041	La Cave d'Augustin Florent	Touraine Sauvignon	France	Loire Valley	Touraine	2020	Val de Loire and France printed; Sauvignon variety.
+042	La Petite Chapelle de Bordeaux	Bordeaux	France	Bordeaux	-	2018	Full-size photo confirms complete brand including de Bordeaux; Vignoble de Talent is tagline; same identity as 061.
+043	Domaine de Cassan	Tradition	France	Rhône	Beaumes-de-Venise	-	Distinct cuvée Tradition; origin parent inferred; no visible vintage.
+044	Roche Mazet	Cabernet Sauvignon	France	Languedoc-Roussillon	-	2020	Pays d'Oc IGP; Cuvée Spéciale / Rondeur & Équilibre optional range descriptors; no narrower origin established.
+045	La Chapelle de Calon	Saint-Estèphe	France	Bordeaux	Saint-Estèphe	2011	Use visible brand rather than inventing absent parent estate Calon-Ségur.
+046	Château Vieux Bonneau	Montagne Saint-Émilion	France	Bordeaux	Montagne Saint-Émilion	2014	Vintage on main label; award label not a second vintage; Franc Despagne footer.
+047	Château Peyrouquet	Saint-Émilion	France	Bordeaux	Saint-Émilion	2020	Appellation does not say Grand Cru.
+048	Château Peyrouquet	Saint-Émilion	France	Bordeaux	Saint-Émilion	2020	Same visible identity as 047, different photo.
+049	Clerico	Trevigne	Italy	Piedmont	Barbera d'Alba	2003	Full-size photo resolves vintage as 2003; Barbera d’Alba printed; Piedmont inferred.
+050	Gérard Bertrand	Naturae Merlot	France	Languedoc-Roussillon	-	2020	Sud de France and Pays d'Oc; Naturae distinctive range; no narrower origin established.
+051	Château de l'Abbaye	Haut-Médoc	France	Bordeaux	Haut-Médoc	2016	Vintage 2016; medal date 2018 is not vintage; different wine year from 021.
+052	La Cave d'Augustin Florent	Costières de Nîmes	France	Rhône	Costières de Nîmes	2019	Same visible identity as 015, different view.
+053	Château Les Tuileries	Bordeaux	France	Bordeaux	-	2015	Regional Bordeaux appellation; no geographic subregion.
+054	Les Chemins d'Onairac	Pays d'Hérault	France	Languedoc	Pays d'Hérault	-	Front brand used; Celliers des Terres de France footer is bottler; no year visible.
+055	Bertrand Ravache	Léo by Léo	France	Bordeaux	Saint-Émilion	2018	Saint-Émilion Grand Cru; oval Léo by Léo; different appellation/vintage from 032.
+056	Château Margaux	Margaux	France	Bordeaux	Margaux	1998	Appellation Margaux printed; classification not distinct cuvée.
+057	Domaine Marguerite Carillon	Chablis	France	Burgundy	Chablis	-	Meursault Côte d'Or footer is producer address, not wine subregion; no year.
+058	Les Ormes de Cambras	Cabernet Sauvignon	France	Languedoc-Roussillon	-	2020	Pays d'Oc; optional Cuvée Réservée range descriptor; Béziers is bottling address.
+059	Lalande	Bordeaux Supérieur	France	Bordeaux	-	2014	Merlot Cabernet Sauvignon blend also printed; no Lalande-de-Pomerol inference.
+060	J. Kieffer	Blanc de Blancs Brut	France	-	-	-	Produit en France; no Champagne or other appellation established; no year.
+061	La Petite Chapelle de Bordeaux	Bordeaux	France	Bordeaux	-	2018	Complete brand visible; same identity as 042.
+062	Château Margaux	Margaux	France	Bordeaux	Margaux	2002	Appellation Margaux printed; different vintage.
+063	Château La Sauvageonne	Volcanie Rosé	France	Languedoc	-	2018	Gérard Bertrand also valid producer/brand reading; same identity as 010.
+064	La Cave d'Augustin Florent	Graves	France	Bordeaux	Graves	2020	Bordeaux and France printed.
+065	Château Acker-Perreau	Bordeaux	France	Bordeaux	-	2013	Vignobles Acker footer; regional appellation without geographic subregion.
+066	A. Kolb	Crémant d'Alsace Brut	France	Alsace	-	-	Same visible undated product identity as 016; Club des Sommeliers also branded.
+067	Jean-Christophe Icard	Sauvignon Blanc	France	South West France	Gascogne	-	Gascogne printed; Premium is optional range descriptor; country/parent region inferred; no year.
+068	Château du Bousquet	Côtes de Bourg	France	Bordeaux	Côtes de Bourg	2019	Grand vin de Bordeaux printed; country inferred.
+069	Château Margaux	Margaux	France	Bordeaux	Margaux	1996	Appellation Margaux and France printed.
+070	Albert Bichot	Les Cailloux Chardonnay	France	Burgundy	-	-	Bourgogne printed; Depuis 1831 is founding date, not vintage; no narrower appellation.
+071	L'Héritage de Carillan	Gamay	France	South West France	Côtes du Tarn	2019	Gamay and Côtes du Tarn printed; 2019 lower band; bottler Bordeaux postcode not origin.
+072	Moulin de Jaure	Bordeaux Supérieur	France	Bordeaux	-	-	Grand vin de Bordeaux; no vintage visible.
+073	La Cave d'Augustin Florent	Fitou	France	Languedoc	Fitou	2020	2021 medal is not vintage; France printed; parent region inferred.
+074	De Luze & Fils	Médoc Supérieur	France	Bordeaux	Médoc	1914	Historical label; 1914 is displayed as vintage, not an establishment date; initial at left partly cropped.
+075	Château La Tour de By	Médoc	France	Bordeaux	Médoc	2015	Same visible identity as 031.
+076	Château d'Agassac	Haut-Médoc	France	Bordeaux	Haut-Médoc	2014	Same visible identity as 018.
+077	Château Les Tuileries	Bordeaux	France	Bordeaux	-	2006	Different vintage from 053.
+078	Château Adaugusta	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2010	Different vintage from 035; lower date 2010.
+079	La Cave d'Augustin Florent	Beaumes-de-Venise	France	Rhône	Beaumes-de-Venise	2020	France and appellation printed.
+080	La Cave d'Augustin Florent	Cahors	France	South West France	Cahors	2019	France printed; parent wine region inferred from appellation.
+081	La Cave d'Augustin Florent	Côtes de Bourg	France	Bordeaux	Côtes de Bourg	2019	Bordeaux and France printed.
+082	La Cave d'Augustin Florent	Beaumes-de-Venise	France	Rhône	Beaumes-de-Venise	2020	Same visible identity as 079.
+083	Baron d'Estey	Côtes de Bourg	France	Bordeaux	Côtes de Bourg	2015	Bordeaux printed; country inferred.
+084	De Luze	Baron de Luze	France	Bordeaux	-	2014	Élevé en fût de chêne par la maison De Luze maker attribution; Bordeaux Merlot Cabernet Sauvignon printed.
+085	Roche Mazet	Merlot	France	Languedoc-Roussillon	-	2020	Pays d'Oc; optional Cuvée Spéciale Rondeur & Fruité range descriptor.
+086	De Luze	Baron de Luze	France	Bordeaux	-	2015	Est. 1820 is not vintage; different year from 084; maker attribution explicit.
+087	La Cave d'Augustin Florent	Madiran	France	South West France	Madiran	2017	France printed; parent wine region inferred.
+088	Château Ambe Tour Pourret	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2012	Different vintage from 006.
+089	Bertrand Ravache	Léo by Léo	France	Bordeaux	Fronsac	2019	Same visible identity as 032.
+090	Château Margaux	-	-	-	-	2007	Estate and classification visible; no separate cuvée or visible appellation statement; same conservative policy as 008.
+091	Château Bellevue Figeac	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2015	Bordeaux printed; Sélection J. et C. de Coninck footer not primary estate.
+092	Domaine Allary Haut-Brion	Pessac-Léognan	France	Bordeaux	Pessac-Léognan	2009	Allary and Haut-Brion compose estate identity; not Château Haut-Brion; appellation and France printed.
+093	Château Croix-Mouton	Bordeaux Supérieur	France	Bordeaux	-	2016	Produce of France; Jean-Philippe Janoueix footer.
+094	Château Amélisse	Saint-Émilion	France	Bordeaux	Saint-Émilion	2011	Does not say Grand Cru on this label; do not borrow qualifier from 007/024.
+095	Château d'Aiguilhe	-	-	-	-	2018	No origin/cuvée printed in visible photo; do not borrow from catalog identity.
+096	Château Margaux	Margaux	France	Bordeaux	Margaux	1996	Same visible identity as 069.
+097	Château Abelyce	Cuvée Garance	France	Bordeaux	Saint-Émilion	2017	Saint-Émilion Grand Cru appellation; distinct cuvée Garance; medal is not identity.
+098	Château Moulin Delille	Saint-Estèphe	France	Bordeaux	Saint-Estèphe	2019	Bordeaux and France printed.
+099	Château d'Abzac	Bordeaux Supérieur	France	Bordeaux	-	2007	Small footer appellation Bordeaux supérieur; Bordeaux and France visible.
+100	La Cave d'Augustin Florent	Touraine Sauvignon	France	Loire Valley	Touraine	2020	Same visible identity as 041.
+101	The Straw Hat	Prestige Collection	-	-	-	-	Full-size footer contains tasting/serving prose, no readable origin or year. Product category not independently established; brand/range only scored.
+102	Château Abelyce	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2010	Amélie Aubert footer; different vintage from other Abelyce photos.
+103	Château Haut La Garde	Blaye Côtes de Bordeaux	France	Bordeaux	Blaye Côtes de Bordeaux	2020	Stéphane Lesparre vigneron footer; Bordeaux printed; country inferred.
+104	Baron de la Varière	Anjou	France	Loire Valley	Anjou	2019	Country and parent region inferred from appellation.
+105	Domaine de l'Ermitage Lamourous	Haut-Médoc	France	Bordeaux	Haut-Médoc	1989	De Luze & Fils selected/distributed footer, not primary estate; France printed.
+106	Baron Philippe de Rothschild	Mouton Cadet	France	Bordeaux	-	2020	Explicit maker below wine/brand Mouton Cadet; Bordeaux appellation; white appearance not a printed varietal.
+107	Lacheteau	Soupçon de Fruit	France	Loire Valley	Anjou	2020	Cabernet d'Anjou appellation; Parfums de Loire footer; explicit brand Lacheteau.
+108	Club des Sommeliers	Médoc	France	Bordeaux	Médoc	2017	Unlike 009, complete brand visible; Maison Delor is bottler.
+109	-	Médoc Select	France	Bordeaux	Médoc	2007	No unambiguous complete producer/brand; V.U.M. footer not expanded; Médoc Select may be product descriptor.
+110	Château d'Aiguilhe	-	-	-	-	2017	No origin/cuvée visible; same conservative treatment as 039 and 095.
+111	Réserve de Padulone	Île de Beauté	France	Corsica	-	-	Front brand used; island-wide IGP, no narrower origin; no year.
+112	Château de l'Abbaye	Haut-Médoc	France	Bordeaux	Haut-Médoc	2014	Same identity as 021.
+113	Château Baudare	Fronton	France	South West France	Fronton	2019	Tradition d'Excellence optional marketing/range wording; appellation Fronton.
+114	Le Pas du Templier	Minervois	France	Languedoc	Minervois	-	France printed; bottler footer not producer identity; no vintage visible.
+115	Château Amélisse	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2017	Bordeaux and France printed; different vintage from 007.
+116	Château Fabas	Payroulière	France	Languedoc	Minervois	2019	Payroulière cuvée and Minervois appellation; Famille Augustin footer.
+117	La Francette	Merlot	France	-	-	-	Vin de France; no year or narrower origin; different grape from 012.
+118	Symbiose	Languedoc	France	Languedoc	-	2019	Main front brand Symbiose; organic certification not identity; lower-left 2019.
+119	Château La Vieille Cure	La Sacristie de la Vieille Cure	France	Bordeaux	Fronsac	2014	Explicit S.N.C. Château La Vieille Cure owner attribution; distinctive wine La Sacristie de la Vieille Cure.
+120	Château La Croix Bertineau	Lalande-de-Pomerol	France	Bordeaux	Lalande-de-Pomerol	2008	2008 on visible neck sticker; appellation on front; parent region/country inferred.
+121	Château Margaux	-	-	-	-	2008	No appellation line in this label view; same conservative unknown policy as 008.
+122	Château Vieux Bonneau	Montagne Saint-Émilion	France	Bordeaux	Montagne Saint-Émilion	2012	Main label vintage; lower medal information not separate identity.
+123	Château Abelyce	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2012	Amélie Aubert Sélection footer; France printed.
+124	Château Margaux	-	-	-	-	2008	Same visible identity as 121; no origin inferred from estate alone.
+125	Château Peyfaures	-	France	Bordeaux	-	2015	Grand vin de Bordeaux and France visible; exact appellation/cuvée absent; Millésime 2015, not medallion 1830.
+126	L'Héritage de Carillan	Cabernet Sauvignon	France	Languedoc-Roussillon	-	-	Pays d'Oc; no visible year; brand's Gamay/Côtes du Tarn bottle is a different wine.
+127	Domaine Georges Bertrand	Corbières	France	Languedoc	Corbières	2019	Gérard Bertrand also printed and acceptable parent producer; Sud de France visible.
+128	Vega Sicilia	Único	Spain	Ribera del Duero	-	1991	Cosecha 1991; Ribera del Duero printed; region-level river wine region, no smaller origin established.
+129	Cave de Roquebrun	Chemin des Olivettes	France	Languedoc	-	2020	Coteaux du Languedoc regional appellation; Roquebrun producer and France printed.
+130	La Cave d'Augustin Florent	Large Malartic	France	Bordeaux	-	2020	Distinct wine Large Malartic; Caves de Rauzan bottler; organic certification not identity.
+131	Château d'Aiguilhe	-	-	-	-	2016	Same visible identity as 039, different view; unprinted origin remains unknown.
+132	La Cave d'Augustin Florent	Mâcon	France	Burgundy	Mâcon	2020	Grand vin de Bourgogne and France printed; Maison Chausseron bottler not brand.
+133	Cavalier	Terre de Provence	France	Provence	Côtes de Provence	2020	Côtes de Provence appellation; top-right small vintage; country inferred.
+134	Hawk's Shadow Estate	Orange Muscat	Texas	Texas High Plains	-	2011	Back label; produced and bottled by Hawk's Shadow Estate; Lost Draw Vineyards is vineyard designation; Dripping Springs winery address is not grape origin.
+135	Hawk's Shadow Estate	Orange Muscat	Texas	Texas High Plains	-	2011	Front label of same wine identity as 134; Estate Winery wording; state displayed in Country by app convention.
+136	Domaine Allary Haut-Brion	Pessac-Léognan	France	Bordeaux	Pessac-Léognan	2010	Different vintage from 092; France printed.
+137	Château Dupeyrat Plouget	Cru de Plouget	France	Bordeaux	Côtes de Bourg	2018	Distinct black-band wording Cru de Plouget; Bordeaux printed; country inferred.
+138	La Cave d'Augustin Florent	Large Malartic	France	Bordeaux	-	2020	Same identity as 130; Large Malartic clearly legible here.
+139	Château Guillaume Blanc	Bordeaux Supérieur	France	Bordeaux	-	2019	Grand vin de Bordeaux printed; country inferred; élevé en fût de chêne not a distinct cuvée.
+140	Château Amélisse	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2018	Small vintage after appellation; France and Bordeaux printed.
+141	Malesan	Bordeaux Cuvée Sélectionnée	France	Bordeaux	-	2020	Range descriptor may be omitted; no smaller appellation.
+142	Château Abelyce	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2018	2018 main label, not lower award date.
+143	La Cave d'Augustin Florent	Touraine Sauvignon	France	Loire Valley	Touraine	2020	Same visible identity as 041/100.
+144	Domaine du Manay	Menetou-Salon	France	Loire Valley	Menetou-Salon	2020	Les Jacquelins also visible producer-family brand; not treated as a cuvée; country and parent region inferred.
+145	La Cave d'Augustin Florent	Blaye Côtes de Bordeaux	France	Bordeaux	Blaye Côtes de Bordeaux	2019	Maison Johanès Boubée is bottler; main brand on gold band.
+146	Citran	Bordeaux	France	Bordeaux	-	2019	Citran brand only; do not upgrade to Château Citran/Haut-Médoc estate from outside knowledge.
+147	Château Ambe Tour Pourret	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2010	Françoise et Philippe Lannoye footer; country and parent region inferred.
+148	Château de l'Abbaye	Haut-Médoc	France	Bordeaux	Haut-Médoc	2011	Different vintage from 021/112; France printed.
+149	Château Margaux	-	-	-	-	2006	No separate appellation/origin in visible view; conservative unknowns as 008/121.
+150	Spottswoode	Cabernet Sauvignon	California	Napa Valley	St. Helena	2019	Family Estate Grown; St. Helena/Napa Valley origin line supports subregion in estate-grown context; California inferred, stored in Country per app convention.
+151	Château Alcée	Castillon Côtes de Bordeaux	France	Bordeaux	Castillon Côtes de Bordeaux	2018	Nicolas Thienpont producer attribution also printed; primary estate retained.
+152	Gérard Bertrand	Naturae Syrah Rosé	France	Languedoc-Roussillon	-	2020	Pays d'Oc; distinct grape/style from Naturae Merlot; no sulfites/organic claims not identity.
+153	J. Kieffer	Blanc de Blancs Brut	France	-	-	-	Same identity as 060; no support for Champagne or Alsace.
+154	Cockburn's	Late Bottled Vintage Port	Portugal	Douro	-	2016	LBV abbreviation printed; Port supports inferred country and Douro; Porto footer not a subregion.
+155	La Cave d'Augustin Florent	Médoc	France	Bordeaux	Médoc	2019	Maison Johanès Boubée bottler; main brand gold band.
+156	La Cave d'Augustin Florent	Large Malartic	France	Bordeaux	-	2020	Same identity as 130/138.
+157	Château Fleur Cardinale	Saint-Émilion Grand Cru	France	Bordeaux	Saint-Émilion	2014	Grand Cru Classé classification also printed; D & F Decoster owners; parent region/country inferred.
+158	Roche Mazet	Les Accords Syrah Marselan	France	Languedoc-Roussillon	-	2020	Pays d'Oc; both blend grapes and Les Accords range visible; small year below explanatory quote.
+159	Domaine Georges Bertrand	Corbières	France	Languedoc	Corbières	2019	Same identity as 127; Gérard Bertrand also printed parent producer.
+160	Château des Roches	Loupiac	France	Bordeaux	Loupiac	2020	Grand vin de Bordeaux and France printed; Michel Boyer owner/bottler attribution not main estate.
+161	La Cave d'Augustin Florent	Côtes de Bergerac Moelleux	France	South West France	Bergerac	2021	France printed; Maison Johanès Boubée bottler; parent region inferred.
+162	Château Vangelys	Lalande-de-Pomerol	France	Bordeaux	Lalande-de-Pomerol	2015	Grand vin de Bordeaux; S.A.S. Landrial is footer attribution, not front estate.
+163	Château Alcée	Castillon Côtes de Bordeaux	France	Bordeaux	Castillon Côtes de Bordeaux	2012	Nicolas Thienpont attribution printed; different year from 151.
+164	Château du Bousquet	Côtes de Bourg	France	Bordeaux	Côtes de Bourg	2019	Grand vin de Bordeaux; country inferred.
+165	Château de Bensse	Médoc Cru Bourgeois	France	Bordeaux	Médoc	2016	Full-size photo confirms Château de Bensse; 2016 is vintage, 2018 is medal date; France/Bordeaux printed; Cru Bourgeois classification.
+166	Château Margaux	Margaux	France	Bordeaux	Margaux	1997	Separate Margaux appellation visible below year, unlike modern-label views in this corpus.
+167	De Luze	Montagne Saint-Émilion	France	Bordeaux	Montagne Saint-Émilion	1985	Est. 1820 is founding date, not vintage; product of France printed.
+168	Bertrand Ravache	Léo by Léo	France	Bordeaux	Saint-Émilion	2018	Full-size photo confirms Léo by Léo, not de Léo; same identity as 055; explicit Bertrand Ravache attribution; Saint-Émilion Grand Cru.

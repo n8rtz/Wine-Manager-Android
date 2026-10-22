@@ -1,0 +1,63 @@
+name: Preserve completed private corpus results
+on:
+  push:
+    branches: ['arena/fd8dc3be-wine-manager-android']
+    paths: ['.github/workflows/collect-corpus-results.yml']
+permissions:
+  actions: read
+  contents: write
+  checks: write
+jobs:
+  collect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: arena/fd8dc3be-wine-manager-android
+      - name: Verify source run identity and completion
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/runs/39716483937 > "$RUNNER_TEMP/source-run.json"
+          python3 - "$RUNNER_TEMP/source-run.json" <<'PY'
+          import json, sys
+          r=json.load(open(sys.argv[1]))
+          assert r['status']=='completed', 'Wait for the existing run; do not start another OCR run'
+          assert r['head_sha']=='80d5d8eb43ace0d24752acb5ebdfb89cb6973d0e'
+          assert r['head_branch']=='arena/fd8dc3be-wine-manager-android'
+          PY
+      - uses: actions/download-artifact@v5
+        with:
+          name: private-corpus-results
+          run-id: 39716483937
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/completed-corpus
+      - name: Validate all input hashes and export plain CSV
+        run: |
+          python3 - "$RUNNER_TEMP/completed-corpus" <<'PY'
+          import pathlib, subprocess, sys
+          roots=list(pathlib.Path(sys.argv[1]).rglob('corpus-summary.json'))
+          assert len(roots)==1, roots
+          subprocess.run(['python3','tools/corpus/export_android_run.py',str(roots[0].parent),
+            'tools/evaluation/public-corpus-run-39716483937','--run-id','39716483937',
+            '--source-commit','80d5d8eb43ace0d24752acb5ebdfb89cb6973d0e'],check=True)
+          PY
+      - name: Preserve evidence on this session branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/evaluation/public-corpus-run-39716483937
+          git diff --cached --quiet && exit 0
+          git commit -m "Preserve verified 168-photo Android corpus execution evidence"
+          git push origin HEAD:arena/fd8dc3be-wine-manager-android
+      - name: Publish export diagnostics
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'tools/evaluation/public-corpus-run-39716483937/audit.json';
+            const summary = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : 'Export failed; inspect collection job. No fabricated evidence published.';
+            await github.rest.checks.create({...context.repo, name: 'Corpus result preservation', head_sha: context.sha,
+              status:'completed', conclusion:'neutral', output:{title:'Corpus export audit',summary:summary.slice(0,60000)}});

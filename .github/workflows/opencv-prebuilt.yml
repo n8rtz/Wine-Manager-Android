@@ -1,0 +1,55 @@
+name: Build branch OpenCV prebuilt
+on:
+  push:
+    branches: ['arena/fd8dc3be-wine-manager-android']
+    paths: ['.github/workflows/opencv-prebuilt.yml', 'tools/opencv-prebuilt.py', 'tools/build-opencv-minimal.py', 'tools/android_native_toolchain.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: opencv-prebuilt-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  prebuilt:
+    if: github.ref == 'refs/heads/arena/fd8dc3be-wine-manager-android'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      # Validate our wrapper before downloaded upstream sources add their unused wrappers.
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
+      - uses: actions/cache/restore@v5
+        with:
+          path: |
+            opencv-minimal/build/vendor
+            opencv-minimal/build/native
+            opencv-minimal/build/generated
+          key: opencv-prebuilt-${{ github.sha }}
+          restore-keys: opencv-4.12.0-ndk28.2-Linux-
+      - name: Build genuine pinned OpenCV core/imgproc JNI and bindings
+        run: python3 tools/build-opencv-minimal.py --sdk "$ANDROID_HOME" --build opencv-minimal/build --install-missing
+      - name: Seal and verify artifact with provenance and upstream license
+        run: |
+          mkdir -p opencv-minimal/prebuilt
+          cp -a opencv-minimal/build/generated/opencv/. opencv-minimal/prebuilt/
+          python3 tools/opencv-prebuilt.py --seal
+          python3 tools/opencv-prebuilt.py
+      - name: Compile debug APK using the prebuilt path before publishing
+        run: ./gradlew --no-daemon --console=plain :app:assembleDebug
+      - name: Publish only artifact to this branch (never force push)
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add opencv-minimal/prebuilt
+          git diff --cached --quiet && exit 0
+          git commit -m 'Bundle verified CI-built minimal OpenCV for Android-hosted builds'
+          git push origin HEAD:arena/fd8dc3be-wine-manager-android

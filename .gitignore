@@ -10,9 +10,17 @@
 .DS_Store
 /build
 
-# Local JVM harness for the scanner logic tests (see .ocr-harness/README.md)
+# Local JVM harness for the scanner logic tests (see docs/offline-scanner.md)
 .ocr-harness/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Native source/build downloads and generated OpenCV bindings are reproducible, not Git assets.
+**/build/
+**/.cxx/
+
+# Python tooling bytecode is generated, never a scanner asset.
+__pycache__/
+*.pyc

@@ -1,0 +1,2 @@
+# Pinned production OCR dictionary must remain byte-exact.
+app/src/main/assets/text-lab-paddle-v1/ppocrv6_dict.utf8 -text

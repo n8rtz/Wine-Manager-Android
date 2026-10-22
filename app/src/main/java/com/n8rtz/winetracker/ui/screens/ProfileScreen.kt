@@ -35,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.data.local.WineImageAssetWithDefinition
 import com.n8rtz.winetracker.image.WineImageKind
 import com.n8rtz.winetracker.image.resolveWineImageModel
@@ -59,6 +60,7 @@ fun ProfileScreen(
     onParetoClick: () -> Unit = {},
     onImportComplete: () -> Unit
 ) {
+    val context = LocalContext.current
     val importState by viewModel.importState
     val imageImportState by wineImageImportViewModel.state.collectAsState()
     val storageStatus by wineImageImportViewModel.storageStatus.collectAsState()
@@ -299,9 +301,40 @@ fun ProfileScreen(
                     }
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                if (BuildConfig.DEBUG) {
+                    ListItem(
+                        headlineContent = { Text("OCR Text Lab — draw a crop") },
+                        supportingContent = { Text("Choose a photo, box a word or phrase, and inspect raw OCR") },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            context.startActivity(android.content.Intent().setClassName(context,
+                                "com.yourapp.wine.textlab.OcrTextLabActivity"))
+                        }
+                    )
+                    ListItem(
+                        headlineContent = { Text("OCR Lab — multi-image tests") },
+                        supportingContent = { Text("Enter actual label details and test the production stack per image") },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            context.startActivity(android.content.Intent().setClassName(context,
+                                "com.yourapp.wine.benchmark.OcrLabActivity"))
+                        }
+                    )
+                    ListItem(
+                        headlineContent = { Text("Export OCR test data (CSV)") },
+                        supportingContent = { Text("Export saved test history, including expected and recognized fields") },
+                        leadingContent = { Icon(Icons.Filled.Download, contentDescription = null, tint = bordeauxRed) },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            context.startActivity(android.content.Intent().setClassName(context,
+                                "com.yourapp.wine.benchmark.OcrLabActivity").putExtra("export_csv", true))
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
                 ListItem(
                     headlineContent = { Text("App Information") },
-                    supportingContent = { Text("App version, database version, and build branch") },
+                    supportingContent = {
+                        val commit = BuildConfig.BUILD_COMMIT.takeIf { it.isNotBlank() && it != "unknown" } ?: "unavailable"
+                        Text("Installed build: $commit\nApp version: ${BuildConfig.VERSION_NAME}")
+                    },
                     leadingContent = {
                         Icon(Icons.Filled.Info, contentDescription = null, tint = bordeauxRed)
                     },

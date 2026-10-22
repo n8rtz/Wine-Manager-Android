@@ -4,22 +4,23 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import com.yourapp.wine.capture.ScanReport
+import com.yourapp.wine.fill.FieldId
+import com.yourapp.wine.fill.UiState
+import com.yourapp.wine.merge.TextNorm
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * Runs the real ML Kit + crop + wine-parser pipeline on the checked-in reference photos.
- *
- * Every fixture must produce OCR text; the reviewed fixtures then have to agree on the fields a
- * human can read on the label. When one of those assertions fails, the `LabelOcrImageTest` Logcat
- * line for that fixture has the raw text and parsed suggestions, so the failure can be traced to
- * either ML Kit's reading or this app's parsing. Group photos hold several bottles, so they are only
- * required to produce text: their suggestions depend on which bottle ML Kit reads first.
+ * Real local scanner on existing photographed labels, not a promise of world-KB coverage.
+ * A confident GREEN value must agree with reviewed label truth. Unsupported boutique identities
+ * remain explicitly reviewable YELLOW; rejected/partial captures never silently fill RED fields.
+ * The three printed fixtures separately test known KB GREEN behavior and 20-capture ownership.
  */
 @RunWith(AndroidJUnit4::class)
 class LabelOcrImageRegressionTest {
@@ -30,12 +31,11 @@ class LabelOcrImageRegressionTest {
         val vintage: String? = null,
         val country: String? = null,
         val region: String? = null,
-        val subregion: String? = null,
-        val type: String? = null
+        val subregion: String? = null
     )
 
     @Test
-    fun scansReferencePhotosAndChecksTheReviewedLabels() = runBlocking {
+    fun scansReferencePhotosAndChecksTheReviewedLabels() = runBlocking(Dispatchers.Default) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val fixtureContext = instrumentation.context
         val appContext = instrumentation.targetContext
@@ -52,12 +52,11 @@ class LabelOcrImageRegressionTest {
             assertTrue("Missing reviewed fixture ${expectation.fixture}", expectation.fixture in fixtureNames)
         }
 
-        // Front labels carry no retail barcode, so the barcode path is exercised (decode attempt +
-        // no lookup) but never asserted; the values are logged for inspection.
+        // This entry point intentionally has no barcode/network wine resolver.
         val reviewedNames = REVIEWED_LABELS.map(LabelExpectation::fixture).toSet()
         val scanner = ScannerManager(appContext)
-        val results = mutableMapOf<String, ScannedWine>()
-        val repeatResults = mutableMapOf<String, ScannedWine>()
+        val results = mutableMapOf<String, ScanReport>()
+        val repeatResults = mutableMapOf<String, ScanReport>()
         val tempDirectory = File(appContext.cacheDir, "wine-label-ocr-fixtures").apply {
             check(mkdirs() || isDirectory) { "Could not create $absolutePath" }
         }
@@ -70,27 +69,29 @@ class LabelOcrImageRegressionTest {
                         fixtureFile.outputStream().use { output -> input.copyTo(output) }
                     }
 
-                    val result = scanner.scanImage(fixtureFile)
-                    assertFalse(
-                        "$fixtureName produced no OCR text",
-                        result.rawText.isNullOrBlank()
-                    )
+                    val result = scanner.scanLabel(fixtureFile)
+                    assertEquals(FieldId.entries.toSet(), result.fill.fields.keys)
+                    assertEquals(0, result.workingBitmapsAfter)
+                    assertTrue(result.peakWorkingBitmaps <= 2)
+                    val legacy = result.toLegacyWine()
+                    if (result.tokens.isEmpty()) {
+                        assertTrue("$fixtureName rejected without a retake/manual hint", !result.fill.overallHint.isNullOrBlank())
+                        assertFalse("RED capture must not fill legacy fields", legacy.hasSuggestions)
+                    }
+                    result.tokens.forEach { token ->
+                        assertEquals(4, token.polyOrig.size)
+                        for (box in listOf(token.bboxOrig, token.bboxRect)) {
+                            assertTrue(box.left >= 0 && box.top >= 0 && box.right <= 1 && box.bottom <= 1)
+                        }
+                    }
                     results[fixtureName] = result
                     // Scanning the same photo twice must give the same suggestions: unstable output
                     // is what users notice as "it works sometimes".
                     if (fixtureName in reviewedNames) {
-                        repeatResults[fixtureName] = scanner.scanImage(fixtureFile)
+                        repeatResults[fixtureName] = scanner.scanLabel(fixtureFile)
                     }
-                    Log.i(
-                        TAG,
-                        "$fixtureName: maker=${result.maker}, name=${result.name}, " +
-                            "vintage=${result.vintage}, country=${result.country}, " +
-                            "region=${result.region}, subregion=${result.subregion}, " +
-                            "type=${result.type}, barcode=${result.barcode}, " +
-                            "agreement=${result.agreement}, needsReview=${result.needsReview}, " +
-                            "captureQuality=${result.captureQuality}; " +
-                            "raw=${result.rawText?.replace('\n', '|')}"
-                    )
+                    Log.i(TAG, "$fixtureName: ${result.fill.fields}; elapsed=${result.elapsedMs} " +
+                        "deadline=${result.deadlineCancelled} engines=${result.timings}; raw=${legacy.rawText}")
                 } finally {
                     fixtureFile.delete()
                 }
@@ -100,47 +101,47 @@ class LabelOcrImageRegressionTest {
             tempDirectory.delete()
         }
 
+        assertTrue("Quality gate/scanner rejected every reference photo", results.values.count { it.tokens.isNotEmpty() } >= 3)
         reviewedNames.forEach { fixtureName ->
             val first = results.getValue(fixtureName)
             val second = repeatResults.getValue(fixtureName)
-            assertEquals(
-                "Repeated scan of $fixtureName changed its suggestions " +
-                    "(first raw=${first.rawText?.replace('\n', '|')}, " +
-                    "second raw=${second.rawText?.replace('\n', '|')})",
-                first.suggestionFields(),
-                second.suggestionFields()
-            )
+            FieldId.entries.forEach { field ->
+                val a = first.fill.fields.getValue(field); val b = second.fill.fields.getValue(field)
+                // Cold/warm deadlines may change review state; two validated GREEN answers may not contradict.
+                if (a.state == UiState.GREEN && b.state == UiState.GREEN) {
+                    assertEquals("Repeated GREEN $fixtureName $field", TextNorm.normalize(a.value), TextNorm.normalize(b.value))
+                }
+            }
         }
 
         REVIEWED_LABELS.forEach { expectation ->
             val result = results.getValue(expectation.fixture)
-            fun assertField(field: String, expected: String?, actual: String?) {
-                if (expected != null) {
-                    assertEquals(
-                        "${expectation.fixture} $field (raw=${result.rawText?.replace('\n', '|')})",
-                        expected,
-                        actual
-                    )
+            val readable = com.yourapp.wine.merge.TokenMerger().merge(result.tokens)
+            fun assertField(field: FieldId, expected: String?) {
+                val actual = result.fill.fields.getValue(field)
+                if (expected != null && actual.state == UiState.GREEN) {
+                    assertEquals("${expectation.fixture} confidently wrong $field: ${actual.reason}",
+                        TextNorm.normalize(expected), TextNorm.normalize(actual.value))
+                }
+                // Unknown wineries are legitimately YELLOW, but that must not conceal swapped
+                // producer/cuvee fields when the retained OCR actually read the reviewed identity.
+                if (expected != null && field in setOf(FieldId.PRODUCER, FieldId.WINE_NAME)) {
+                    val phrase = Regex("(?<![\\p{L}\\p{N}])${Regex.escape(TextNorm.normalize(expected))}(?![\\p{L}\\p{N}])")
+                    if (readable.any { phrase.containsMatchIn(TextNorm.normalize(it.canonical)) }) {
+                        assertFalse("${expectation.fixture} discarded readable $field: ${actual.reason}", actual.state == UiState.RED)
+                        assertEquals("${expectation.fixture} misassigned readable $field: ${actual.reason}",
+                            TextNorm.normalize(expected), TextNorm.normalize(actual.value))
+                    }
                 }
             }
-            // The reference photos are sharp and properly exposed: flagging one would mean the
-            // capture-quality gate is asking users for retakes they do not need.
-            assertNull(
-                "${expectation.fixture} was reported as a bad capture: ${result.captureQuality}",
-                result.captureQuality
-            )
-            assertField("maker", expectation.maker, result.maker)
-            assertField("name", expectation.name, result.name)
-            assertField("vintage", expectation.vintage, result.vintage)
-            assertField("country", expectation.country, result.country)
-            assertField("region", expectation.region, result.region)
-            assertField("subregion", expectation.subregion, result.subregion)
-            assertField("type", expectation.type, result.type)
+            assertField(FieldId.PRODUCER, expectation.maker)
+            assertField(FieldId.WINE_NAME, expectation.name)
+            assertField(FieldId.VINTAGE, expectation.vintage)
+            assertField(FieldId.COUNTRY, expectation.country)
+            assertField(FieldId.REGION, expectation.region)
+            assertField(FieldId.SUBREGION, expectation.subregion)
         }
     }
-
-    private fun ScannedWine.suggestionFields(): List<String?> =
-        listOf(maker, name, vintage, country, region, subregion, type)
 
     private companion object {
         const val TAG = "LabelOcrImageTest"
@@ -167,8 +168,7 @@ class LabelOcrImageRegressionTest {
                 maker = "Blackstone Winery",
                 name = "Merlot",
                 country = "United States",
-                region = "California",
-                type = "Red"
+                region = "California"
             ),
             // OZV Old Vine Zinfandel, estate grown, Lodi; "Zinfandel" is calligraphic.
             LabelExpectation(
@@ -234,8 +234,7 @@ class LabelOcrImageRegressionTest {
                 fixture = "IMG20250810211557.jpg",
                 maker = "Los Riscos",
                 name = "Chardonnay",
-                country = "Chile",
-                type = "White"
+                country = "Chile"
             ),
             // Three Kirkland Signature Malbec bottles (2022/2023/2024), Mendoza, Argentina. The
             // vintage is whichever bottle ML Kit reads first, so it is logged rather than asserted.

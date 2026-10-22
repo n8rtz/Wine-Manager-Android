@@ -1,0 +1,138 @@
+{
+  "policy": "Expected values retain original aliases and geographic inference. Expected blanks earn credit; unsupported fills are errors. Unresolved remains unscored.",
+  "qualification": "Provisional adjudication from existing visual-review notes, not a new image audit or independent review. No predictions rerun. No frozen v1 reference edited.",
+  "provenance": {
+    "tools/evaluation/public-corpus-reference-v1/reference.json": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+    "tools/evaluation/comprehensive-diagnostics-v1/field-diagnostics.csv": "9eb29b151e7613f395df4aa76b30966d9f4ef8041f664536e6c4aff2d69674a2",
+    "tools/evaluation/anchor-iteration-39834118734/field-results.csv": "5723148c08550dd3f2c4c2eaaec0a1df45264ea35d3bd0e69e9853ccab80b6d4"
+  },
+  "implementation_sha256": "6d0240a751b767dc8842ad8b0fdc2751571569796853e5099d8c6774892f20c8",
+  "reference_states": {
+    "expected_value": 894,
+    "unresolved": 17,
+    "expected_blank": 97
+  },
+  "images": 168,
+  "fully_scorable_labels": 160,
+  "partly_unresolved_labels": 8,
+  "systems": {
+    "baseline": {
+      "outcomes": {
+        "wrong_value": 100,
+        "missing_value": 197,
+        "correct_value": 597,
+        "unscored_filled": 7,
+        "unscored_blank": 10,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "correct_total": 674,
+      "wrong_total": 120,
+      "missing_values": 197,
+      "complete": 26,
+      "complete_gained_vs_baseline": [],
+      "complete_lost_vs_baseline": [],
+      "correct_slot_distribution": {
+        "0": 0,
+        "1": 10,
+        "2": 22,
+        "3": 15,
+        "4": 38,
+        "5": 49,
+        "6": 26
+      }
+    },
+    "previous_v3": {
+      "outcomes": {
+        "missing_value": 211,
+        "correct_value": 599,
+        "wrong_value": 84,
+        "unscored_blank": 10,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "correct_total": 676,
+      "wrong_total": 104,
+      "missing_values": 211,
+      "complete": 24,
+      "complete_gained_vs_baseline": [
+        "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+        "60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg",
+        "91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg",
+        "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg",
+        "aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg",
+        "c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg",
+        "e370b6418a1534159b74caaf2f44d0d949a9a079.jpg",
+        "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg",
+        "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+      ],
+      "complete_lost_vs_baseline": [
+        "23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg",
+        "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+        "72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg",
+        "8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg",
+        "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+        "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+        "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+        "bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg",
+        "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+        "ef747f369bd51180437a7758da7113b4fe906001.jpg",
+        "fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg"
+      ],
+      "correct_slot_distribution": {
+        "0": 0,
+        "1": 10,
+        "2": 17,
+        "3": 18,
+        "4": 43,
+        "5": 48,
+        "6": 24
+      }
+    },
+    "guarded_hybrid": {
+      "outcomes": {
+        "wrong_value": 82,
+        "correct_value": 627,
+        "missing_value": 185,
+        "unscored_blank": 10,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "correct_total": 704,
+      "wrong_total": 102,
+      "missing_values": 185,
+      "complete": 32,
+      "complete_gained_vs_baseline": [
+        "03110ad18731d0f11fadf9b86725d69202f08cff.jpg",
+        "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
+        "36fac584780bdce64ea941f83d2642c252eb80fd.jpg",
+        "41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg",
+        "469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg",
+        "4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg",
+        "60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg",
+        "91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg",
+        "aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg",
+        "c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg",
+        "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg"
+      ],
+      "complete_lost_vs_baseline": [
+        "9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg",
+        "ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg",
+        "bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg",
+        "db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg",
+        "ef747f369bd51180437a7758da7113b4fe906001.jpg"
+      ],
+      "correct_slot_distribution": {
+        "0": 0,
+        "1": 6,
+        "2": 18,
+        "3": 15,
+        "4": 43,
+        "5": 46,
+        "6": 32
+      }
+    }
+  }
+}

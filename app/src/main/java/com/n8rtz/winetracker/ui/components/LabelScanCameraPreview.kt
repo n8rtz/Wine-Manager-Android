@@ -22,12 +22,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import coil.compose.AsyncImage
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.io.File
@@ -56,7 +54,12 @@ fun LabelScanCameraPreview(
     }
 
     DisposableEffect(lifecycleOwner, scannerViewModel) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             scannerViewModel.cancelActiveLabelScan()
             bindingState.value?.close()
             cameraReady = false
@@ -77,7 +80,7 @@ fun LabelScanCameraPreview(
                 }
                 val imageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    .setJpegQuality(100)
+                    .setJpegQuality(95)
                     .build()
                 CameraUseCaseBinding(
                     context = viewContext.applicationContext,
@@ -103,14 +106,8 @@ fun LabelScanCameraPreview(
             modifier = Modifier.fillMaxSize()
         )
 
-        if (capturedPhotoPath != null) {
-            AsyncImage(
-                model = File(capturedPhotoPath),
-                contentDescription = "Captured wine label",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        // Do not decode the JPEG again with Coil while OCR owns its two working bitmaps.
+        // The live preview is a CameraX surface, not a working Bitmap.
     }
 }
 
@@ -180,7 +177,7 @@ private class CameraUseCaseBinding(
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                         captureInProgress = false
-                        onPhotoCaptured(requestId, photoFile)
+                        if (closed) photoFile.delete() else onPhotoCaptured(requestId, photoFile)
                     }
 
                     override fun onError(exception: ImageCaptureException) {

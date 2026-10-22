@@ -1,0 +1,1022 @@
+{
+  "source_batch": "47f71e71-0211-4fc1-981d-50d9b0132b57",
+  "cases": [
+    {
+      "image_index": "1",
+      "image_name": "IMG_3858-1-1270x1536.jpeg",
+      "readings": [
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.384701 0.111264 0.669623 0.139423",
+          "original_box_normalized": "0.460236 0.347656 0.561417 0.361003",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.86328125",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "BRUNELLO",
+          "base_box_normalized": "0.186253 0.547390 0.670732 0.664148",
+          "original_box_normalized": "0.389764 0.554362 0.561811 0.609701",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.63720703",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "DI MONTALCINO",
+          "base_box_normalized": "0.198448 0.651099 0.839246 0.741758",
+          "original_box_normalized": "0.394094 0.603516 0.621654 0.646484",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5761719",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "denominrzione",
+          "base_box_normalized": "0.191796 0.739011 0.334812 0.778846",
+          "original_box_normalized": "0.391732 0.645182 0.442520 0.664063",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.42608172",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "dorgine controllata",
+          "base_box_normalized": "0.194013 0.767170 0.390244 0.814560",
+          "original_box_normalized": "0.392520 0.658529 0.462205 0.680990",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4017857",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "tparuntita",
+          "base_box_normalized": "0.196231 0.799451 0.290466 0.828984",
+          "original_box_normalized": "0.393307 0.673828 0.426772 0.687826",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4328125",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "2021",
+          "base_box_normalized": "0.452328 0.903846 0.580931 0.924451",
+          "original_box_normalized": "0.484252 0.723307 0.529921 0.733073",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7792969",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "360",
+          "base_box_normalized": "0.890716 0.100787 0.954359 0.191916",
+          "original_box_normalized": "0.639931 0.342690 0.662532 0.385882",
+          "ctc_posterior": "0.6407243",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.373744 0.103371 0.673953 0.143504",
+          "original_box_normalized": "0.456345 0.343916 0.562955 0.362937",
+          "ctc_posterior": "0.99999106",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "JAT",
+          "base_box_normalized": "0.875319 0.194259 0.930447 0.214675",
+          "original_box_normalized": "0.634464 0.386992 0.654041 0.396669",
+          "ctc_posterior": "0.67530966",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "BRUNELLO",
+          "base_box_normalized": "0.157254 0.512781 0.780266 0.668588",
+          "original_box_normalized": "0.379466 0.537959 0.600709 0.611805",
+          "ctc_posterior": "0.9990847",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "DIMONTALCINO",
+          "base_box_normalized": "0.170059 0.626398 0.874450 0.750912",
+          "original_box_normalized": "0.384013 0.591808 0.634155 0.650823",
+          "ctc_posterior": "0.9560478",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "denominazione",
+          "base_box_normalized": "0.180786 0.732176 0.343804 0.783673",
+          "original_box_normalized": "0.387823 0.641943 0.445713 0.666350",
+          "ctc_posterior": "0.99894917",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "di origine controllata",
+          "base_box_normalized": "0.181822 0.760706 0.398370 0.818700",
+          "original_box_normalized": "0.388190 0.655465 0.465091 0.682951",
+          "ctc_posterior": "0.93343735",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "egarantita",
+          "base_box_normalized": "0.184961 0.793705 0.302830 0.834541",
+          "original_box_normalized": "0.389305 0.671105 0.431162 0.690459",
+          "ctc_posterior": "0.9122408",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "2021",
+          "base_box_normalized": "0.444559 0.898221 0.588336 0.927821",
+          "original_box_normalized": "0.481493 0.720641 0.532551 0.734670",
+          "ctc_posterior": "0.98656386",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ]
+    },
+    {
+      "image_index": "2",
+      "image_name": "IMG20261013221851.jpg",
+      "readings": [
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "WINE",
+          "base_box_normalized": "0.102403 0.205208 0.147335 0.227604",
+          "original_box_normalized": "0.234568 0.356004 0.258517 0.373974",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.3125",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "HEREDEROS DEL",
+          "base_box_normalized": "0.224660 0.284375 0.633229 0.307292",
+          "original_box_normalized": "0.299732 0.419527 0.517503 0.437915",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.8072917",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "NET CONT.T0M",
+          "base_box_normalized": "0.640543 0.147917 0.819227 0.181250",
+          "original_box_normalized": "0.521401 0.310033 0.616641 0.336780",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4970703",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "PRODUC",
+          "base_box_normalized": "0.659352 0.171354 0.803553 0.199479",
+          "original_box_normalized": "0.531427 0.328839 0.608287 0.351407",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.72721356",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "OF SPAN",
+          "base_box_normalized": "0.669801 0.193750 0.800418 0.220313",
+          "original_box_normalized": "0.536996 0.346810 0.606616 0.368124",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.63671875",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "LRQUÉS DE RIsca",
+          "base_box_normalized": "0.083595 0.317187 0.834901 0.397917",
+          "original_box_normalized": "0.224543 0.445856 0.624996 0.510633",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.32617188",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "NADE WITH ORGAN UC GRAPES",
+          "base_box_normalized": "0.100313 0.535417 0.807733 0.584375",
+          "original_box_normalized": "0.233454 0.620963 0.610515 0.660247",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.41015625",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "RUEDA",
+          "base_box_normalized": "0.236155 0.697917 0.598746 0.744792",
+          "original_box_normalized": "0.305859 0.751352 0.499123 0.788965",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.721875",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "DENOMINACIÓN",
+          "base_box_normalized": "0.155695 0.728125 0.449321 0.775000",
+          "original_box_normalized": "0.262973 0.775591 0.419478 0.813204",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6901042",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "A DE ORIGEN",
+          "base_box_normalized": "0.314525 0.733854 0.706374 0.775000",
+          "original_box_normalized": "0.347631 0.780189 0.556490 0.813204",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.49609375",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "ueda-Syaia",
+          "base_box_normalized": "0.249739 0.788021 0.630094 0.858854",
+          "original_box_normalized": "0.313099 0.823652 0.515832 0.880488",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.36015624",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "2023",
+          "base_box_normalized": "0.301985 0.886458 0.503657 0.915625",
+          "original_box_normalized": "0.340947 0.902638 0.448440 0.926041",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.76953125",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "NET CONT.750ML",
+          "base_box_normalized": "0.634436 0.142940 0.826089 0.183830",
+          "original_box_normalized": "0.518146 0.306040 0.620299 0.338850",
+          "ctc_posterior": "0.96694434",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "A.Bby vol.",
+          "base_box_normalized": "0.062685 0.151863 0.188149 0.196262",
+          "original_box_normalized": "0.213398 0.313200 0.280271 0.348825",
+          "ctc_posterior": "0.69505346",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "PRODUCT",
+          "base_box_normalized": "0.650417 0.166340 0.815180 0.203536",
+          "original_box_normalized": "0.526664 0.324816 0.614484 0.354662",
+          "ctc_posterior": "0.9999783",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "WHITE",
+          "base_box_normalized": "0.075456 0.180726 0.165407 0.213340",
+          "original_box_normalized": "0.220205 0.336359 0.268150 0.362529",
+          "ctc_posterior": "0.9997987",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "OF SPAIN",
+          "base_box_normalized": "0.660211 0.188258 0.807924 0.223633",
+          "original_box_normalized": "0.531885 0.342403 0.610617 0.370788",
+          "ctc_posterior": "0.9398151",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "WINE",
+          "base_box_normalized": "0.080099 0.200650 0.158994 0.232745",
+          "original_box_normalized": "0.222680 0.352346 0.264731 0.378099",
+          "ctc_posterior": "0.99898136",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "HEREDEROS DEL",
+          "base_box_normalized": "0.201490 0.281995 0.633927 0.308630",
+          "original_box_normalized": "0.287382 0.417617 0.517875 0.438989",
+          "ctc_posterior": "0.9872923",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "MARQUÉS DE RISCAL",
+          "base_box_normalized": "0.034985 0.307076 0.892098 0.401257",
+          "original_box_normalized": "0.198634 0.437742 0.655482 0.513313",
+          "ctc_posterior": "0.93644553",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "Verdejo",
+          "base_box_normalized": "0.187788 0.423135 0.622333 0.533105",
+          "original_box_normalized": "0.280079 0.530868 0.511695 0.619108",
+          "ctc_posterior": "0.999974",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "MADE WITH ORGANIC GRAPES",
+          "base_box_normalized": "0.077810 0.536758 0.813750 0.580112",
+          "original_box_normalized": "0.221459 0.622039 0.613722 0.656826",
+          "ctc_posterior": "0.9996916",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "RUEDA",
+          "base_box_normalized": "0.215883 0.692029 0.601366 0.748222",
+          "original_box_normalized": "0.295054 0.746628 0.500520 0.791717",
+          "ctc_posterior": "0.9999861",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "DENOMINACIÓN DE ORIGEN",
+          "base_box_normalized": "0.132994 0.723928 0.714848 0.777950",
+          "original_box_normalized": "0.250873 0.772224 0.561006 0.815571",
+          "ctc_posterior": "0.99952865",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "Rueda-España",
+          "base_box_normalized": "0.180506 0.779900 0.646387 0.858577",
+          "original_box_normalized": "0.276198 0.817136 0.524516 0.880266",
+          "ctc_posterior": "0.99932736",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "2023",
+          "base_box_normalized": "0.288507 0.879956 0.514212 0.919440",
+          "original_box_normalized": "0.333763 0.897420 0.454066 0.929102",
+          "ctc_posterior": "0.9999881",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ]
+    },
+    {
+      "image_index": "3",
+      "image_name": "IMG_3657-1413x1536.jpeg",
+      "readings": [
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.346774 0.245149 0.694556 0.286546",
+          "original_box_normalized": "0.447275 0.362305 0.569356 0.383138",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.87060547",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "SIGNATURE",
+          "base_box_normalized": "0.199597 0.435964 0.814516 0.492885",
+          "original_box_normalized": "0.395612 0.458333 0.611465 0.486979",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7795139",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "SERIES",
+          "base_box_normalized": "0.334677 0.510349 0.670363 0.542691",
+          "original_box_normalized": "0.443029 0.495768 0.560863 0.512044",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7239583",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "CABERNET SAUVIGNON",
+          "base_box_normalized": "0.214718 0.761320 0.828629 0.826649",
+          "original_box_normalized": "0.400920 0.622070 0.616419 0.654948",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.78222656",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "NAPA VALLEY",
+          "base_box_normalized": "0.380040 0.824062 0.666331 0.852523",
+          "original_box_normalized": "0.458953 0.653646 0.559448 0.667969",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.7988281",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "2024",
+          "base_box_normalized": "0.473790 0.874515 0.572581 0.893920",
+          "original_box_normalized": "0.491861 0.679036 0.526539 0.688802",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.9169922",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.339645 0.241926 0.698205 0.293224",
+          "original_box_normalized": "0.444773 0.360683 0.570637 0.386499",
+          "ctc_posterior": "0.99997175",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "SIGNATURE",
+          "base_box_normalized": "0.175094 0.413393 0.834479 0.503023",
+          "original_box_normalized": "0.387011 0.446974 0.618473 0.492081",
+          "ctc_posterior": "0.99994165",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "SＥRＩＥS",
+          "base_box_normalized": "0.320922 0.500407 0.685607 0.549937",
+          "original_box_normalized": "0.438201 0.490765 0.566215 0.515691",
+          "ctc_posterior": "0.69743776",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "Leap Distried",
+          "base_box_normalized": "0.298776 0.642916 0.891519 0.779672",
+          "original_box_normalized": "0.430427 0.562483 0.638495 0.631306",
+          "ctc_posterior": "0.9424292",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "Stags",
+          "base_box_normalized": "0.124113 0.656730 0.352861 0.760978",
+          "original_box_normalized": "0.369115 0.569435 0.449412 0.621899",
+          "ctc_posterior": "0.9998122",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "CABERNET SAUVIGNON",
+          "base_box_normalized": "0.166723 0.752393 0.843302 0.825410",
+          "original_box_normalized": "0.384073 0.617578 0.621570 0.654324",
+          "ctc_posterior": "0.99969673",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "NAPA VALLEY",
+          "base_box_normalized": "0.351083 0.813907 0.676869 0.854234",
+          "original_box_normalized": "0.448788 0.648535 0.563147 0.668830",
+          "ctc_posterior": "0.9999751",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "2024",
+          "base_box_normalized": "0.456723 0.865300 0.577817 0.898242",
+          "original_box_normalized": "0.485870 0.674399 0.528377 0.690977",
+          "ctc_posterior": "0.99997914",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ]
+    },
+    {
+      "image_index": "4",
+      "image_name": "IMG20261013221740.jpg",
+      "readings": [
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.285937 0.147521 0.736719 0.214631",
+          "original_box_normalized": "0.342413 0.314799 0.568900 0.347479",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.85498047",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "CABERN ET SAUVIGNON",
+          "base_box_normalized": "0.075781 0.321040 0.980469 0.390568",
+          "original_box_normalized": "0.236824 0.399297 0.691368 0.433155",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.70442706",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "ALEXANDER VALLEY",
+          "base_box_normalized": "0.132031 0.529021 0.900000 0.577993",
+          "original_box_normalized": "0.265086 0.500576 0.650938 0.524424",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.74153644",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "SONO MA COUNTY",
+          "base_box_normalized": "0.275781 0.605200 0.745313 0.639057",
+          "original_box_normalized": "0.337311 0.537673 0.573218 0.554160",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6357422",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "2022",
+          "base_box_normalized": "0.424219 0.683797 0.584375 0.715236",
+          "original_box_normalized": "0.411890 0.575947 0.492358 0.591257",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.90234375",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "KIRKLAND",
+          "base_box_normalized": "0.284549 0.143816 0.742524 0.214329",
+          "original_box_normalized": "0.341716 0.312995 0.571817 0.347332",
+          "ctc_posterior": "0.99995625",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "Gignature",
+          "base_box_normalized": "0.294140 0.208841 0.738468 0.254701",
+          "original_box_normalized": "0.346535 0.344660 0.569779 0.366992",
+          "ctc_posterior": "0.9433423",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "CABERNET SAUVIGNON",
+          "base_box_normalized": "0.049058 0.313963 0.983564 0.393519",
+          "original_box_normalized": "0.223398 0.395851 0.692923 0.434592",
+          "ctc_posterior": "0.9978767",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "ALEXANDER VALLEY",
+          "base_box_normalized": "0.121459 0.518870 0.900322 0.583306",
+          "original_box_normalized": "0.259774 0.495633 0.651100 0.527011",
+          "ctc_posterior": "0.99703455",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "SONOMA COUNTY",
+          "base_box_normalized": "0.261566 0.600308 0.752046 0.640527",
+          "original_box_normalized": "0.330169 0.535291 0.576602 0.554876",
+          "ctc_posterior": "0.9964511",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "2022",
+          "base_box_normalized": "0.416695 0.676529 0.591299 0.720291",
+          "original_box_normalized": "0.408110 0.572408 0.495837 0.593718",
+          "ctc_posterior": "0.99999386",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ]
+    },
+    {
+      "image_index": "5",
+      "image_name": "IMG20261013001611.jpg",
+      "readings": [
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "LACKSTONE",
+          "base_box_normalized": "0.055385 0.334375 0.876923 0.509375",
+          "original_box_normalized": "0.307337 0.393760 0.742941 0.530804",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5303819",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "WI N",
+          "base_box_normalized": "0.218462 0.502083 0.440000 0.542188",
+          "original_box_normalized": "0.393806 0.525093 0.511272 0.556499",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.46484375",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "NE R Y",
+          "base_box_normalized": "0.395897 0.506771 0.778462 0.544271",
+          "original_box_normalized": "0.487887 0.528764 0.690734 0.558131",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.45898438",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "CALIFORNIA",
+          "base_box_normalized": "0.287179 0.743229 0.626667 0.771875",
+          "original_box_normalized": "0.430242 0.713937 0.610248 0.736369",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.79648435",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "ALC 13.5% BY VOL",
+          "base_box_normalized": "0.345641 0.883854 0.568205 0.908333",
+          "original_box_normalized": "0.461240 0.824061 0.579250 0.843231",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.34635416",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "BLACKSTONE",
+          "base_box_normalized": "0.043634 0.304731 0.925697 0.513968",
+          "original_box_normalized": "0.301107 0.370545 0.768802 0.534400",
+          "ctc_posterior": "0.9502575",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "WINERY",
+          "base_box_normalized": "0.173849 0.497408 0.771856 0.544906",
+          "original_box_normalized": "0.370150 0.521432 0.687231 0.558629",
+          "ctc_posterior": "0.9999766",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "Merlot",
+          "base_box_normalized": "0.231685 0.655448 0.702176 0.737821",
+          "original_box_normalized": "0.400817 0.645194 0.650285 0.709701",
+          "ctc_posterior": "0.99982363",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "CALIFORNIA",
+          "base_box_normalized": "0.278580 0.738194 0.638233 0.775325",
+          "original_box_normalized": "0.425682 0.709994 0.616381 0.739071",
+          "ctc_posterior": "0.9999",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "ALC 13.5% BY VOL",
+          "base_box_normalized": "0.332983 0.880870 0.575565 0.908905",
+          "original_box_normalized": "0.454528 0.821724 0.583152 0.843678",
+          "ctc_posterior": "0.9988274",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ]
+    },
+    {
+      "image_index": "6",
+      "image_name": "1e51ac9e-8c20-418e-9ef7-0dd488a52995.jpg",
+      "readings": [
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "Age à la",
+          "base_box_normalized": "0.092188 0.441383 0.151562 0.467315",
+          "original_box_normalized": "0.187307 0.526234 0.230961 0.546920",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.17708333",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "igon qu, en 1317,",
+          "base_box_normalized": "0.031250 0.498649 0.165625 0.541869",
+          "original_box_normalized": "0.142503 0.571915 0.241300 0.606392",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.13964844",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "RESERV",
+          "base_box_normalized": "0.385938 0.048082 0.878125 0.215559",
+          "original_box_normalized": "0.403281 0.212495 0.765154 0.346093",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4934896",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "LA R",
+          "base_box_normalized": "0.240625 0.065370 0.486719 0.200972",
+          "original_box_normalized": "0.296443 0.226286 0.477379 0.334457",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.55078125",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "DE",
+          "base_box_normalized": "0.519531 0.167477 0.614062 0.209076",
+          "original_box_normalized": "0.501504 0.307737 0.571006 0.340921",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5332031",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "L'ÊNCLavE",
+          "base_box_normalized": "0.330469 0.213938 0.771094 0.289573",
+          "original_box_normalized": "0.362499 0.344800 0.686461 0.405134",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.5425347",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "G",
+          "base_box_normalized": "0.585938 0.559697 0.628125 0.589411",
+          "original_box_normalized": "0.550328 0.620614 0.581346 0.644316",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.39453125",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "FONDÉE EN",
+          "base_box_normalized": "0.392969 0.634792 0.590625 0.679633",
+          "original_box_normalized": "0.408451 0.680517 0.553774 0.716287",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.75390625",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "W1317",
+          "base_box_normalized": "0.571094 0.638574 0.678125 0.675311",
+          "original_box_normalized": "0.539414 0.683534 0.618107 0.712839",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.471875",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "2022",
+          "base_box_normalized": "0.454688 0.706105 0.619531 0.743382",
+          "original_box_normalized": "0.453829 0.737404 0.575027 0.767140",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.9248047",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "IES DU RHÔNE VL",
+          "base_box_normalized": "0.055469 0.739600 0.821094 0.825500",
+          "original_box_normalized": "0.160310 0.764123 0.723222 0.832646",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.43554688",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "APPELLATION D'ORIGINE PROTÉCEE",
+          "base_box_normalized": "0.127344 0.790384 0.870313 0.882766",
+          "original_box_normalized": "0.213155 0.804633 0.759410 0.878327",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.6254883",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "OiçNERONS DE",
+          "base_box_normalized": "0.189844 0.884387 0.575781 0.969746",
+          "original_box_normalized": "0.259107 0.879620 0.542861 0.947712",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.4921875",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "cONS DE L'ỂNCLAUE",
+          "base_box_normalized": "0.375000 0.898974 0.804688 0.964884",
+          "original_box_normalized": "0.395240 0.891256 0.711160 0.943833",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.46484375",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "mlkit_reference",
+          "raw_text": "L'ENCLAue",
+          "base_box_normalized": "0.604688 0.882766 0.819531 0.958941",
+          "original_box_normalized": "0.564113 0.878327 0.722074 0.939093",
+          "ctc_posterior": "",
+          "mlkit_confidence": "0.3263889",
+          "confidence_estimated": "false"
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "LA RESERVE",
+          "base_box_normalized": "0.132782 0.006278 0.946662 0.279172",
+          "original_box_normalized": "0.217153 0.179148 0.815544 0.396837",
+          "ctc_posterior": "0.96004844",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "DE",
+          "base_box_normalized": "0.505621 0.157996 0.639579 0.220766",
+          "original_box_normalized": "0.491277 0.300174 0.589767 0.350246",
+          "ctc_posterior": "0.99975485",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "L'ENCLAUE",
+          "base_box_normalized": "0.311896 0.203288 0.792772 0.310035",
+          "original_box_normalized": "0.348843 0.336304 0.702400 0.421456",
+          "ctc_posterior": "0.9567332",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "inmldle dea La Clef »",
+          "base_box_normalized": "0.031583 0.396193 0.185673 0.444482",
+          "original_box_normalized": "0.142748 0.490185 0.256041 0.528706",
+          "ctc_posterior": "0.7018673",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "valle da in",
+          "base_box_normalized": "0.859048 0.425292 0.914762 0.455958",
+          "original_box_normalized": "0.751128 0.513397 0.792090 0.537860",
+          "ctc_posterior": "0.7149754",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "and hommage à la",
+          "base_box_normalized": "0.031503 0.427720 0.161621 0.476171",
+          "original_box_normalized": "0.142690 0.515335 0.238356 0.553984",
+          "ctc_posterior": "0.8821215",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "nauté eclésiastique",
+          "base_box_normalized": "0.026728 0.458577 0.187809 0.514446",
+          "original_box_normalized": "0.139179 0.539949 0.257610 0.584516",
+          "ctc_posterior": "0.85962886",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "po",
+          "base_box_normalized": "0.858377 0.459197 0.909480 0.496011",
+          "original_box_normalized": "0.750634 0.540444 0.788207 0.569811",
+          "ctc_posterior": "0.38242245",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "lexcelleal",
+          "base_box_normalized": "0.848779 0.488233 0.912925 0.523422",
+          "original_box_normalized": "0.743578 0.563606 0.790740 0.591677",
+          "ctc_posterior": "0.7266501",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "A Rignen qui, en 1317,",
+          "base_box_normalized": "0.023611 0.491958 0.176568 0.547797",
+          "original_box_normalized": "0.136887 0.566578 0.249346 0.611121",
+          "ctc_posterior": "0.7194851",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "viticole",
+          "base_box_normalized": "0.852852 0.521580 0.910243 0.557170",
+          "original_box_normalized": "0.746572 0.590207 0.788768 0.618598",
+          "ctc_posterior": "0.9428104",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "aquis 4 communes",
+          "base_box_normalized": "0.023091 0.523824 0.177535 0.578923",
+          "original_box_normalized": "0.136505 0.591997 0.250057 0.635950",
+          "ctc_posterior": "0.87781847",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "au sud de la",
+          "base_box_normalized": "0.026938 0.550940 0.128865 0.602081",
+          "original_box_normalized": "0.139333 0.613628 0.214273 0.654423",
+          "ctc_posterior": "0.8443167",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "FONDÉE EN 1317",
+          "base_box_normalized": "0.368365 0.616990 0.691390 0.686613",
+          "original_box_normalized": "0.390362 0.666316 0.627860 0.721855",
+          "ctc_posterior": "0.9951225",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "COTES DU RHONE VILIAS",
+          "base_box_normalized": "0.000000 0.662520 0.953364 0.883250",
+          "original_box_normalized": "0.119527 0.702636 0.820472 0.878714",
+          "ctc_posterior": "0.86982864",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "2022",
+          "base_box_normalized": "0.444876 0.698600 0.629442 0.750890",
+          "original_box_normalized": "0.446615 0.731417 0.582314 0.773129",
+          "ctc_posterior": "0.999998",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        },
+        {
+          "candidate": "candidate_3",
+          "raw_text": "UIGNERONS De L'ENclave",
+          "base_box_normalized": "0.165036 0.860130 0.838592 0.970753",
+          "original_box_normalized": "0.240867 0.860270 0.736088 0.948515",
+          "ctc_posterior": "0.8060027",
+          "mlkit_confidence": "",
+          "confidence_estimated": ""
+        }
+      ]
+    }
+  ]
+}
