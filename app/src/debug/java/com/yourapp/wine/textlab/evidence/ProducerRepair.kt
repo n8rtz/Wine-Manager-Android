@@ -145,7 +145,7 @@ internal class ProducerRepair(base:WineKnowledgeBase) {
                 "maker_observations" to makerEvidence.joinToString { it.id.toString() },
                 "maker_engines" to makerFamilies.sorted().joinToString(),
                 "maker_text" to makerEvidence.map { it.record.textRaw }.distinct().joinToString(" | "),
-                "role" to if(producerRole(text)) "name prefix or exact local alias" else if(contextualRole) "explicit maker context" else "none")
+                "role" to if(producerRole(text)) (if(config.titleRole) "prefix, exact alias or experimental title role" else "name prefix or exact local alias") else if(contextualRole) "explicit maker context" else "none")
             if(reason=="eligible producer candidate") candidates+=Candidate(best!!.text,engines)
         }
         val originalKey=contentKey(original)

@@ -48,3 +48,18 @@ with 60 seconds per image/policy. Artifact upload is unconditionally disabled in
 prediction traces, paired comparison and diagnostics use the existing branch/check
 publication path. Compute availability remains necessary. No production promotion
 is automatic, even if development metrics improve.
+
+### Current validation status
+
+132 host tests, the offline-boundary check and host SQLite checks passed. Kotlin
+compilation, synthetic device assertions and the 168-image role experiment are
+**authored but not executed**. Manual dispatch through the connected GitHub
+integration returned HTTP 403 (resource not accessible by integration); no run
+was started and no new accuracy improvement is claimed.
+
+To execute using GitHub's UI: Actions → Corpus-guided producer refinement → Run
+workflow → branch `arena/fd8dc3be-wine-manager-android` → enable `producer_roles`.
+This mode forcibly skips archive uploads regardless of the artifact opt-in
+variable. It still requires available hosted compute. After execution, inspect
+`tools/evaluation/producer-roles-RUN_ID/paired-vs-recommended.json` and the report
+before changing the lab recommendation.
