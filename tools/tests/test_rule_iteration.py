@@ -51,3 +51,8 @@ class RuleIterationTests(unittest.TestCase):
         self.assertNotIn('TextLabFormPreview.append',source)
         self.assertNotIn('WineScannerServices',source)
         self.assertIn('baseline_fields',source)
+
+    def test_build_failures_cannot_be_masked_by_tee(self):
+        workflow=(ROOT/'.github/workflows/rule-iteration.yml').read_text()
+        block=workflow.split('- name: Compile real Android app and replay test',1)[1].split('- name:',1)[0]
+        self.assertIn('set -euo pipefail',block)

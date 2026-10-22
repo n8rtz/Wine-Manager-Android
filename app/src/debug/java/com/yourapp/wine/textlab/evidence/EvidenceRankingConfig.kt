@@ -17,7 +17,7 @@ internal object EvidenceRanking {
         if(key.length<4) return emptySet()
         // Only full observed readings, never derived phrases counted as extra votes.
         return graph.observations.filter { o -> nameKey(o.record.textRaw)==key &&
-            o.record.score >= if(o.record.engineId.startsWith("paddle")) .75f else .60f &&
+            o.record.score >= (if(o.record.engineId.startsWith("paddle")) .75f else .60f) &&
             BoxMath.iou(o.record.bboxRect,phrase.box)>=.25f
         }.map { if(it.record.engineId.startsWith("paddle")) "paddle" else it.record.engineId }.toSet()
     }

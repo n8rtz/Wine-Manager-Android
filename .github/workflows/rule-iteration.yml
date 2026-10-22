@@ -31,6 +31,7 @@ jobs:
           python3 -m unittest discover -s tools/tests
       - name: Compile real Android app and replay test
         run: |
+          set -euo pipefail
           ./gradlew --no-daemon --console=plain -PprivateCorpusX86=true :app:assembleDebug :app:assembleDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/replay/build.txt"
       - name: Reserve emulator disk space and enable KVM
         run: |
