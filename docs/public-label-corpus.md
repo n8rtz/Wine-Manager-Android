@@ -1,5 +1,7 @@
 # Public label corpus acquisition — initial audit
 
+**Update: the full 168-photo Android run is complete and audited. See [completed run report](public-label-corpus-run-39716483937.md).** The sections below retain the acquisition and execution-debugging history; earlier pending/blocker statements describe those checkpoints, not current execution status.
+
 ## Acquisition completed
 
 Source: `AntoninLeroy/wine_label_reader_toolkit`, pinned revision `eb2c14ba4f9a1b6efaa476696439754a9abde8ce`.
