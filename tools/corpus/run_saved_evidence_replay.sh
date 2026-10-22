@@ -34,6 +34,11 @@ if [[ "${ANCHOR_ITERATION:-false}" == true ]]; then
   flag=anchorHybrid
   seconds=$((4 * 168 * 60 + 180))
 fi
+if [[ "${PRODUCER_ITERATION:-false}" == true ]]; then
+  class=com.yourapp.wine.textlab.ProducerRepairDeviceTest
+  flag=producerRepair
+  seconds=$((4 * 168 * 60 + 180))
+fi
 set +e
 timeout --signal=TERM "$seconds" adb shell am instrument -w -r -e "$flag" true -e class "$class" "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
 result=$?
