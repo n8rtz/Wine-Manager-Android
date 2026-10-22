@@ -91,7 +91,13 @@ role cache avoids repeated graph/KB checks inside pairwise assembly. Before acce
 this optimization, an Android validation job runs actual lab-routing assertions and
 checks the cached, alternative-free producer result against all 168 frozen preceding
 predictions. No previous extractor or OCR executes; the preceding predictions are
-behavioral parity controls, not reference answers. Its result is pending execution.
+behavioral parity controls, not reference answers. Android run 39861083810 passed
+compilation, synthetic lab routing, and all 168 parity checks (zero mismatches).
+Cached selection-only timings were median 290 ms, maximum 1,932 ms, total 63,204 ms.
+These are separate emulator runs, not a controlled phone performance benchmark.
+The workflow is marked failed solely because the final archive upload hit GitHub
+artifact storage quota; validated results were already committed as 8be476c.
+No rerun was needed. The 127 host tests also pass.
 
 A separate three-photo source-image audit documents genuine name-reading discrepancies
 (cursive, reflective and curved-label examples). It does not claim a cause-specific
