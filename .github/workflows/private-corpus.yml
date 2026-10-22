@@ -98,7 +98,7 @@ jobs:
             const fs = require('fs');
             const root = process.env.CORPUS_RESULTS;
             let text = 'Private candidate corpus; annotations not yet scoring truth. Emulator timing is not phone performance.\n';
-            for (const name of ['corpus-summary.json', 'disk.txt', 'build.txt', 'emulator-boot.txt', 'instrumentation.txt', 'emulator-properties.txt']) {
+            for (const name of ['corpus-summary.json', 'input-hashes.tsv', 'disk.txt', 'build.txt', 'emulator-boot.txt', 'instrumentation.txt', 'emulator-properties.txt']) {
               const path = `${root}/${name}`;
               if (fs.existsSync(path)) text += `\n${name}\n${fs.readFileSync(path, 'utf8').slice(-5000)}\n`;
             }

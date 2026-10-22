@@ -24,7 +24,17 @@ rows=json.loads((root/'manifest.json').read_text())['records']
 for name in sorted({r['file'] for r in rows})[:limit]: print(root/name)
 PY
 while IFS= read -r file; do
-  adb exec-in run-as "$pkg" tee "files/private-corpus/images/$(basename "$file")" < "$file" > /dev/null
+  name=$(basename "$file")
+  # adb's raw exec-in stream can close before a remote writer has drained all bytes.
+  # Use the sync protocol, then copy into app-private storage and verify before decoding.
+  stage="/data/local/tmp/corpus-$name"
+  adb push "$file" "$stage" > /dev/null
+  adb shell run-as "$pkg" cp "$stage" "files/private-corpus/images/$name"
+  adb shell rm "$stage"
+  expected=$(sha256sum "$file" | awk '{print $1}')
+  actual=$(adb shell run-as "$pkg" sha256sum "files/private-corpus/images/$name" | awk '{print $1}')
+  printf '%s\t%s\t%s\n' "$name" "$expected" "$actual" >> "$CORPUS_RESULTS/input-hashes.tsv"
+  test "$actual" = "$expected" || { echo "Device input hash mismatch: $name" >&2; exit 1; }
 done < "$CORPUS_RESULTS/selected-images.txt"
 set +e
 timeout --signal=TERM "$((CORPUS_LIMIT * 150 + 180))" adb shell am instrument -w -r -e class com.yourapp.wine.textlab.PublicCorpusDeviceTest \
