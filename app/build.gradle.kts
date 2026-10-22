@@ -37,7 +37,13 @@ val buildWorkingTree = when (gitMetadata("status", "--porcelain", "--untracked-f
     "" -> "clean"
     else -> "dirty"
 }
-val packagedNativeAbis = listOf("arm64-v8a")
+// Opt-in CI instrumentation only. Shipped phone builds retain the minimal arm64 prebuilt.
+// Avoid ARM translation of ML Kit/ORT on hosted x86 emulators; no OCR code/model changes.
+val privateCorpusX86 = providers.gradleProperty("privateCorpusX86").getOrElse("false").toBooleanStrict()
+require(!privateCorpusX86 || providers.environmentVariable("CI").orNull == "true") {
+    "privateCorpusX86 is restricted to disposable CI instrumentation builds"
+}
+val packagedNativeAbis = if (privateCorpusX86) listOf("x86_64") else listOf("arm64-v8a")
 
 android {
     namespace = "com.n8rtz.winetracker"
@@ -108,7 +114,12 @@ dependencies {
     implementation(libs.androidx.camera.view)
     
     // Source-built OpenCV core/imgproc + the genuine upstream Java JNI bridge (arm64 only).
-    implementation(project(":opencv-minimal"))
+    if (privateCorpusX86) {
+        // Genuine upstream same-version JNI for CI x86 only. Extra modules are unused.
+        implementation("org.opencv:opencv:4.12.0")
+    } else {
+        implementation(project(":opencv-minimal"))
+    }
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.sqlite.bundled)
     implementation(libs.kotlinx.coroutines.core)
@@ -204,6 +215,9 @@ val preparePaddleMedium = tasks.register<PrepareTextLabPaddle>("preparePaddleMed
     outputDirectory.set(layout.buildDirectory.dir("generated/paddleMediumAssets"))
 }
 androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variant ->
+        if (privateCorpusX86) variant.enable = false // Never produce a release APK with the CI ABI/dependency.
+    }
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(preparePaddleMedium, PrepareTextLabPaddle::outputDirectory)
     }

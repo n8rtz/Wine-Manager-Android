@@ -37,7 +37,7 @@ class PublicCorpusDeviceTest {
                 val batch = TextLabBatch(listOf(TextLabImageKey(image.nameWithoutExtension, image.name)),
                     setOf("candidate_3"), BuildConfig.BUILD_COMMIT, true, true)
                 val journal = batch.journals.single()
-                journal.metadata["evaluation_runtime"] = "Android instrumentation; emulator timings are not phone performance"
+                journal.metadata["evaluation_runtime"] = "Android instrumentation; packaged ABI=${BuildConfig.NATIVE_ABIS}; emulator timings are not phone performance"
                 val preview = File(context.cacheDir, "corpus-preview.png")
                 val crop = File(context.cacheDir, "corpus-crop.png")
                 var status = "complete"
@@ -56,7 +56,7 @@ class PublicCorpusDeviceTest {
                         .put("score", token.score).put("scoreEstimated", token.scoreIsEstimated)
                         .put("originalBox", token.bboxOrig.toString()).put("rectifiedBox", token.bboxRect.toString())) }
                     File(output, "${image.nameWithoutExtension}-production.json").writeText(JSONObject()
-                        .put("image", image.name).put("build", BuildConfig.BUILD_COMMIT)
+                        .put("image", image.name).put("build", BuildConfig.BUILD_COMMIT).put("packagedAbi", BuildConfig.NATIVE_ABIS)
                         .put("pipeline", "OfflineWineScanner.scan; unchanged FILE input path")
                         .put("elapsedMs", report.elapsedMs).put("deadlineCancelled", report.deadlineCancelled)
                         .put("fields", fields).put("tokens", tokens)

@@ -54,7 +54,7 @@ The user need not individually supply all those additional labels. However, acqu
 
 ## Authorized Android execution
 
-The user authorized GitHub-hosted Android emulation for private corpus testing, superseding the prior no-emulator restriction for this task. `.github/workflows/private-corpus.yml` first runs a three-image smoke test; manual dispatch accepts up to 168 distinct images. It builds the unchanged app plus an opt-in instrumentation test. Genuine Medium weights are fetched and checksum-checked by the existing Gradle task on the hosted runner, outside this sandbox's download restriction.
+The user authorized GitHub-hosted Android emulation for private corpus testing, superseding the prior no-emulator restriction for this task. `.github/workflows/private-corpus.yml` first runs a three-image smoke test; manual dispatch accepts up to 168 distinct images. It builds the same app code/models plus an opt-in instrumentation test; see the explicit CI ABI exception below. Genuine Medium weights are fetched and checksum-checked by the existing Gradle task on the hosted runner, outside this sandbox's download restriction.
 
 `PublicCorpusDeviceTest` runs **two separate real paths** for each image:
 
@@ -63,10 +63,23 @@ The user authorized GitHub-hosted Android emulation for private corpus testing, 
 
 It does not pretend the OCR Lab's diagnostic budget is the production deadline. It does not emulate camera capture or picker copy time. Images are staged into private app storage, never packaged into the APK. Expected answers are not supplied to recognition. Individual JSON/CSV checkpoints retain failures/partial results and bound retained rows. No text/accuracy assertion is made against unreviewed targets. Native failures, timeouts and failed/missing lab extraction summaries cannot pass the smoke test silently. Production deadline results are retained separately, not silently replaced by lab results.
 
-The emulator uses the shipped arm64 libraries through the Google APIs native bridge; a preflight rejects an image that does not advertise arm64 support. Translation is a runtime difference, **not phone performance validation**. No production ABI, model or OpenCV build setting is changed. Artifact retention is seven days and excludes input photos. A small diagnostics check is also published so execution can be inspected through the GitHub API even when artifact downloads are unavailable in this sandbox.
+The initial attempt used the shipped arm64 libraries through the Google APIs native bridge. It reached real inference but failed the smoke gate (see below). The revised CI-only build uses native x86; this is **not phone performance validation**. Normal phone-build defaults are unchanged. Artifact retention is seven days and excludes input photos. A small diagnostics check is also published so execution can be inspected through the GitHub API even when artifact downloads are unavailable in this sandbox.
 
 Execution evidence: run `39707956584` successfully acquired the corpus and built the genuine-model Android app and instrumentation APK (91 tasks, 8m28s). The API 30 emulator then timed out during boot, before instrumentation/inference. The next attempt uses API 35, explicit KVM, no snapshots/Vulkan, retained boot logs and bounded instrumentation. Genuine inference is still unverified. Corpus annotation, bottle grouping and holdout remain unfinished.
 
 Run `39710089700` also compiled both APKs successfully. Retained emulator logs identified the boot failure: approximately 4,996 MB free versus 7,373 MB required for the default userdata partition. The workflow now explicitly requests a 3 GiB test userdata partition; this is CI infrastructure only, not an app/storage behavior change. Branch-local Gradle cache writes are enabled to avoid repeatedly fetching build dependencies. No corpus inference has yet been verified at this checkpoint.
 
 Run `39711655572` proved that the system image still enforces a minimum userdata size larger than the requested 3 GiB. The follow-up frees unused .NET/Swift/NDK toolchains on the **disposable hosted runner after both APKs are built**, then requires at least 12 GiB free before attempting emulator setup. This does not delete anything in the repository or the user's environment. Build and acquisition passed; no OCR inference was reached in that run.
+
+### First genuine Android execution and CI ABI correction
+
+Run `39713113648` executed all three selected photos through the normal scanner and the lab:
+
+- Three production JSON reports; one production deadline; zero reported bitmap ownership violations.
+- Three lab CSVs; Medium timed out in all three; ML Kit produced one recognized line total.
+- All combined/experimental summaries abstained. The smoke assertion correctly failed, rather than treating invocation or model presence as successful recognition.
+- Runtime: shipped arm64 binaries translated on an API 35 x86 emulator. These results do not demonstrate phone accuracy or corpus readiness, and no 168-image run was launched.
+
+`-PprivateCorpusX86=true` is now an explicit **CI-only debug configuration**. It selects x86_64 JNI from the existing ML Kit and ONNX Runtime dependencies and genuine `org.opencv:opencv:4.12.0` instead of the arm64-only minimal prebuilt. The official OpenCV artifact includes unused additional modules; it is not packaged in normal phone builds. The same production/lab Kotlin, Medium model bytes, dictionary, preprocessing, decoding, and deadlines remain in use. Runtime/build ABI is recorded. Release variants are disabled in this configuration, and configuration requires `CI=true`. The arm64 prebuilt files, their hashes/recipes and normal build defaults are untouched. Numerical/device equivalence still requires phone comparison; this is not a claim of identical machine binaries.
+
+The next CI run must demonstrate actual text from **both** engines before expanding to the full corpus. Budgets are not increased to conceal failed translated inference.

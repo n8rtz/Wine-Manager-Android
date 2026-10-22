@@ -2,7 +2,7 @@ name: Private corpus real Android OCR
 on:
   push:
     branches: ['arena/fd8dc3be-wine-manager-android']
-    paths: ['.github/workflows/private-corpus.yml', 'app/src/androidTest/java/com/yourapp/wine/textlab/PublicCorpusDeviceTest.kt', 'tools/corpus/run_android_corpus.sh']
+    paths: ['.github/workflows/private-corpus.yml', 'app/src/androidTest/java/com/yourapp/wine/textlab/PublicCorpusDeviceTest.kt', 'tools/corpus/run_android_corpus.sh', 'tools/corpus/summarize_android.py']
   workflow_dispatch:
     inputs:
       limit:
@@ -21,6 +21,7 @@ jobs:
     timeout-minutes: 240
     env:
       CORPUS_LIMIT: ${{ inputs.limit || '3' }}
+      CORPUS_ABI: x86_64
     steps:
       - name: Set private working directories
         run: |
@@ -45,8 +46,8 @@ jobs:
           python3 -m pip install Pillow==13.0.0
           python3 tools/corpus/acquire_public_labels.py --output "$CORPUS_DIR" --private-review-unlicensed 2>&1 | tee "$CORPUS_RESULTS/acquisition.txt"
           python3 tools/corpus/validate_corpus.py "$CORPUS_DIR"
-      - name: Build unchanged arm64 app and opt-in test
-        run: ./gradlew --no-daemon --console=plain :app:assembleDebug :app:assembleDebugAndroidTest 2>&1 | tee "$CORPUS_RESULTS/build.txt"
+      - name: Build CI-only native x86 debug app and test
+        run: ./gradlew --no-daemon --console=plain -PprivateCorpusX86=true :app:assembleDebug :app:assembleDebugAndroidTest 2>&1 | tee "$CORPUS_RESULTS/build.txt"
       - name: Reserve emulator disk space on the disposable CI runner
         run: |
           # Both APKs are already built. No source/native builds occur after this point.

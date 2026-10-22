@@ -6,9 +6,11 @@ pkg=com.n8rtz.winetracker
 mkdir -p "$CORPUS_RESULTS"
 cp "$CORPUS_DIR/manifest.json" "$CORPUS_RESULTS/acquisition-manifest.json"
 adb shell getprop > "$CORPUS_RESULTS/emulator-properties.txt"
-# Keep the shipped arm64 native libraries. The Google APIs image must expose an ARM64 native bridge.
-adb shell getprop ro.product.cpu.abilist | grep -q arm64-v8a || {
-  echo 'Emulator cannot run shipped arm64 libraries; refusing to substitute an OCR stack.' >&2; exit 1;
+# Normal builds are arm64; the opt-in CI build uses native x86 to avoid translated inference.
+: "${CORPUS_ABI:=arm64-v8a}"
+case "$CORPUS_ABI" in arm64-v8a|x86_64) ;; *) echo 'Unexpected corpus ABI' >&2; exit 1;; esac
+adb shell getprop ro.product.cpu.abilist | tr ',' '\n' | tr -d '\r' | grep -qx "$CORPUS_ABI" || {
+  echo "Emulator does not support required ABI $CORPUS_ABI" >&2; exit 1;
 }
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
