@@ -44,6 +44,8 @@ jobs:
             bash tools/run-ci-check.sh 'Legacy Android SDK license acceptance' bash -c 'yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses'
           fi
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
       - name: Install Android platform and build tools
         shell: bash
         run: |
@@ -67,7 +69,7 @@ jobs:
       - name: Compile real Android app
         run: bash tools/run-ci-check.sh 'Android debug compilation' ./gradlew --no-daemon --console=plain :app:assembleDebug
       - name: Cache the completed native build before later tests
-        if: steps.opencv-cache.outputs.cache-hit != 'true' && hashFiles('opencv-minimal/build/generated/opencv/jniLibs/arm64-v8a/libopencv_java4.so') != ''
+        if: vars.WINE_ENABLE_CI_CACHE_WRITES == 'true' && (steps.opencv-cache.outputs.cache-hit != 'true' && hashFiles('opencv-minimal/build/generated/opencv/jniLibs/arm64-v8a/libopencv_java4.so') != '')
         uses: actions/cache/save@v5
         with:
           path: |
@@ -82,9 +84,10 @@ jobs:
       - name: Measure arm64 release APK budget
         run: bash tools/run-ci-check.sh 'Arm64 release APK budget' ./gradlew --no-daemon --console=plain :app:checkArm64ApkBudget
       - name: Upload test results and release APK
-        if: always()
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v5
         with:
+          retention-days: 1
           name: scanner-check-results
           if-no-files-found: ignore
           path: |

@@ -25,6 +25,8 @@ jobs:
           python-version: '3.11'
       # Validate our wrapper before downloaded upstream sources add their unused wrappers.
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
       - uses: actions/cache/restore@v5
         with:
           path: |

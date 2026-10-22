@@ -38,7 +38,7 @@ jobs:
           python-version: '3.11'
       - uses: gradle/actions/setup-gradle@v5
         with:
-          cache-read-only: false
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
       - name: Acquire private candidate photos
         env:
           GH_TOKEN: ${{ github.token }}
@@ -81,11 +81,11 @@ jobs:
         if: always()
         run: python3 tools/corpus/summarize_android.py "$CORPUS_RESULTS" --require-complete
       - name: Retain diagnostics, never corpus photos
-        if: always()
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v5
         with:
           name: private-corpus-results
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: warn
           path: |
             ${{ runner.temp }}/corpus-results

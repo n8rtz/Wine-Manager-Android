@@ -24,6 +24,8 @@ jobs:
         with:
           python-version: '3.11'
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
       - name: Validate host tooling
         run: |
           mkdir -p "$RUNNER_TEMP/replay"
@@ -55,10 +57,10 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 4096 -feature -Vulkan
           script: bash tools/corpus/run_anchor_lab_validation.sh
       - uses: actions/upload-artifact@v5
-        if: always()
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
         with:
           name: anchor-lab-validation
-          retention-days: 14
+          retention-days: 1
           path: ${{ runner.temp }}/replay
       - name: Publish accessible diagnostics
         if: always()

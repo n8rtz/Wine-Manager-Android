@@ -24,6 +24,8 @@ jobs:
         with:
           python-version: '3.11'
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
       - name: Prepare frozen OCR without reference answers
         run: |
           mkdir -p "$RUNNER_TEMP/replay/appellation" "$RUNNER_TEMP/replay/anchor"
@@ -71,10 +73,10 @@ jobs:
           git commit -m 'Preserve actual Android anchor hybrid iteration'
           git push origin HEAD:arena/fd8dc3be-wine-manager-android
       - uses: actions/upload-artifact@v5
-        if: always()
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
         with:
           name: anchor-iteration
-          retention-days: 14
+          retention-days: 1
           path: ${{ runner.temp }}/replay
       - name: Publish accessible diagnostics
         if: always()

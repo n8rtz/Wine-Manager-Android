@@ -29,7 +29,8 @@ jobs:
           python3 tools/corpus/comprehensive_diagnostics.py --output "$RUNNER_TEMP/diagnostics"
           cat "$RUNNER_TEMP/diagnostics/report.md" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v5
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
         with:
           name: comprehensive-workflow-diagnostics
           path: ${{ runner.temp }}/diagnostics
-          retention-days: 14
+          retention-days: 1
