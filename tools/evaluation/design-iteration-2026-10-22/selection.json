@@ -1,0 +1,22 @@
+{
+  "selected_candidate": "anchors-role-guard",
+  "selected_for": "default-off experimental lab testing only",
+  "production_promoted": false,
+  "rationale": "Lowest wrong-fill count among the gate-passing candidates, with the same full-entry count and fewer added heuristics than the appellation variants.",
+  "corpus_run": 39834118734,
+  "corpus_source_commit": "fc02b118cf9c61eb62dcac9dcc6c22933f3650d7",
+  "lab_validation_run": 39836157004,
+  "lab_validation_source_commit": "fc033f6c77e3b6ad8a99e0f741fb3d5f08c48ffc",
+  "lab_validation_status": "success",
+  "host_tooling_tests": 113,
+  "complete": 24,
+  "eligible": 103,
+  "correct": 627,
+  "wrong": 82,
+  "abstained": 185,
+  "complete_gained_vs_baseline": 5,
+  "complete_lost_vs_baseline": 4,
+  "fresh_grouped_validation": "not yet executed",
+  "full_scanner_regression_suite": "not executed in this iteration",
+  "reference_status": "provisional development set, not held-out"
+}

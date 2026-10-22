@@ -6,7 +6,7 @@ report is not the end of the iteration. Ask only about a genuinely new product,
 scope, or deployment decision. Never claim an asynchronous agent will edit code
 unattended: the CI automation executes authored experiments, scoring and gates.
 
-## Current implemented batch
+## First implemented batch (completed)
 
 Saved diagnostics identify 54 producer and 29 wine-name fields with a correct v3
 hypothesis not selected. This motivates three independent rule interventions:
@@ -127,6 +127,8 @@ and all nonblank hybrid suggestions are YELLOW. No intake fields are changed.
 The integration CI uses synthetic readings, not another run of the 168-case corpus. It checks
 mode/defaults, actual preview routing, baseline preservation, cuvée role, heading abstention,
 vintage anchor, YELLOW/RED states, idempotency and fail-closed missing-baseline behavior.
-Its result will be recorded after execution. Next validation must use fresh grouped labels
+Run **39836157004**, source **fc033f6**, passed compilation and the actual Android lab-routing
+test (`OK (1 test)`); **113 host tooling tests pass**. This is targeted integration coverage,
+not a full scanner regression suite. Next validation must use fresh grouped labels
 and specifically exercise designation-rich appellations and producer/legal-line ambiguity;
 all current measurements are provisional development-set evidence, not held-out accuracy.

@@ -5,7 +5,7 @@ Actual Android/Kotlin execution; seven rule combinations plus two targeted basel
 | Variant | Correct / wrong / abstained | Complete / eligible | Complete gained / lost vs baseline |
 |---|---:|---:|---:|
 | saved baseline | 597 / 100 / 197 | 23 / 103 | 0 / 0 |
-| saved v3 | 599 / 84 / 211 | 19 / 103 | 0 / 0 |
+| saved v3 | 599 / 84 / 211 | 19 / 103 | 5 / 9 |
 | rules-001 | 602 / 82 / 210 | 19 / 103 | 5 / 9 |
 | rules-010 | 604 / 94 / 196 | 19 / 103 | 5 / 9 |
 | rules-011 | 608 / 89 / 197 | 20 / 103 | 6 / 9 |
@@ -28,3 +28,5 @@ Rules bits: equivalence of name typography / independent-engine name agreement /
 }
 
 This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure. Hybrid elapsed times in raw output reuse the shared extraction time, not an additional baseline execution.
+
+Presentation correction: the saved-v3 gained/lost cell now shows its actual paired comparison to baseline (5/9), rather than the prior empty-comparison placeholder. Frozen outputs and scores are unchanged.
