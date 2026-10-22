@@ -1,5 +1,7 @@
 # Full Android corpus run — completed
 
+**Subsequent scoring:** [all 168 photos visually annotated and compared](public-label-corpus-accuracy-v1.md). The execution-only accuracy limitations below describe this original run audit; the linked report supplies provisional, explicitly denominated correctness results.
+
 **Status: successful; 168 of 168 byte-distinct candidate photos processed and audited.**
 
 - [OCR run 39716483937](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/39716483937): success.

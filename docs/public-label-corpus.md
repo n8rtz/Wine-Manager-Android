@@ -1,5 +1,7 @@
 # Public label corpus acquisition — initial audit
 
+**Scoring update:** all 168 photos now have a frozen single-agent visual reference. See [field accuracy, whole-image results, and duplicate sensitivity](public-label-corpus-accuracy-v1.md). This is provisional visual-review scoring, not expert-adjudicated ground truth.
+
 **Update: the full 168-photo Android run is complete and audited. See [completed run report](public-label-corpus-run-39716483937.md).** The sections below retain the acquisition and execution-debugging history; earlier pending/blocker statements describe those checkpoints, not current execution status.
 
 ## Acquisition completed
