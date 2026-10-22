@@ -7,13 +7,14 @@ import kotlinx.coroutines.CancellationException
 
 internal object TextLabEvidencePreview {
     fun engine(kb:WineKnowledgeBase,useAnchors:Boolean)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(cuveeRole=useAnchors))
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null) {
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null) {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return
-        val values=mutableMapOf("post_processing_version" to if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
+        val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer/vintage, rules-001 wine/origin, heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
         try {
             check(engine!=null) { "Experimental extractor unavailable or skipped after memory pressure" }
             check(journal.detectLines) { "Experimental layout requires Detect text lines; single-line coordinates are insufficient" }
+            if(useProducerRepair) check(useAnchors && producerRepair!=null) { "Producer repair requires guarded hybrid and its repair engine" }
             val baseline=if(useAnchors) journal.rows.singleOrNull { it["stage"]=="form_summary" && it["status"] in setOf("suggestions","partial_suggestions","no_fields") } else null
             if(useAnchors) {
                 check(hybrid!=null && baseline!=null) { "Guarded hybrid requires an existing successful baseline summary; it will not rerun baseline or silently switch architecture" }
@@ -41,6 +42,19 @@ internal object TextLabEvidencePreview {
                         values["${key}_reason"]=if(value.isBlank() && original.getValue(field).isNotBlank()) "Incomplete producer heading suppressed; confirm manually" else "Saved baseline anchor; confirm manually"
                     }
                 }
+            }
+            if(useProducerRepair) {
+                val started=android.os.SystemClock.elapsedRealtime()
+                val original=values.getValue("producer")
+                // Historical alternatives are audit-only: actual repairs require current observed phrase support.
+                val decision=producerRepair!!.repair(original,records,emptyList(),ProducerRepair.recommendedConfig)
+                hybridMs+=android.os.SystemClock.elapsedRealtime()-started
+                values["producer"]=decision.value
+                values["producer_state"]=if(decision.value.isBlank()) "RED" else "YELLOW"
+                values["producer_reason"]=decision.reason+"; before="+original+"; confirm manually"
+                values["preview_policy"]=values.getValue("preview_policy")+"; conservative two-engine producer repair"
+                decision.candidates.forEach { c -> journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to "producer-repair candidate: $c")) }
+                journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to "producer-repair result: before=$original; after=${decision.value}; ${decision.reason}"))
             }
             values["field_input_lines"]=result.graph.observations.size.toString()
             values["field_values_found"]=FieldId.entries.count { values[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()

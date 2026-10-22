@@ -13,6 +13,8 @@ internal class ProducerRepair(base:WineKnowledgeBase) {
     data class Config(val id:String,val minimumEngines:Int,val compose:Boolean=false,val replaceUnsupported:Boolean=false,val refined:Boolean=false,val titleRole:Boolean=false)
     data class Decision(val value:String,val reason:String,val candidates:List<Map<String,String>>)
     companion object {
+        const val VERSION="anchor-producer-repair-v2"
+        val recommendedConfig get()=refinedExperiments.first()
         val experiments=listOf(Config("producer-direct-2",2),Config("producer-direct-1",1),
             Config("producer-compose-1",1,true),Config("producer-consensus-2",2,true,true))
         val refinedExperiments=listOf(Config("producer-refined-2",2,true,true,true),
@@ -67,7 +69,7 @@ internal class ProducerRepair(base:WineKnowledgeBase) {
             !text.contains("@") && !text.contains("://") && !text.lowercase().startsWith("www.") &&
             places.matches(TextNorm.normalize(text)).none { key(it.name)==key(text) }
         val titleHeight=graph.observations.filter { titleContent(it.record.textRaw) }.maxOfOrNull { it.record.bboxRect.height() } ?: 1f
-        fun producerRole(text:String):Boolean {
+        fun computeProducerRole(text:String):Boolean {
             if(!cleanIdentity(text) || isHeading(text)) return false
             if((if(config.refined) strongNamed else named).containsMatchIn(TextNorm.normalize(text))) return true
             if(config.titleRole && titleContent(text) && graph.phrases.any { p ->
@@ -77,6 +79,10 @@ internal class ProducerRepair(base:WineKnowledgeBase) {
                 (listOf(hit.producer.name)+hit.producer.aliases).any { key(it)==key(text) }
             } }
         }
+        // Role evidence is immutable for this call; avoid repeating graph/KB scans in the pair loop.
+        // Cache by exact text, not a typography key: word-boundary segmentation can change the role.
+        val roleCache=mutableMapOf<String,Boolean>()
+        fun producerRole(text:String)=roleCache.getOrPut(text) { computeProducerRole(text) }
         val phrases=graph.phrases.filter { config.compose || it.construction=="observed" }.toMutableList()
         if(config.compose) {
             val singles=graph.phrases.filter { it.construction=="observed" }

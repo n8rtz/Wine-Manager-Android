@@ -107,6 +107,13 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                     Checkbox(state.anchorHybrid,{vm.anchorHybrid(it)},enabled=!state.busy)
                     Text("Use guarded hybrid (baseline producer/vintage + revised wine/origin)")
                 }
+                if(state.anchorHybrid) {
+                    Row {
+                        Checkbox(state.repairProducer,{vm.repairProducer(it)},enabled=!state.busy)
+                        Text("Repair producers with corroborated full names (experimental)")
+                    }
+                    Text("Producer-only repair; preserves the other five hybrid fields. Conservative two-engine mode, not title-based guesses. All suggestions require confirmation.",style=MaterialTheme.typography.bodySmall)
+                }
                 Text("Off: previous evidence architecture. On: development candidate, not validated on fresh labels. Incomplete producer headings remain blank. Production is unchanged.",style=MaterialTheme.typography.bodySmall)
             }
             Text("Experimental extraction uses the same OCR readings, not another model run. Requires text-line detection. Both results are exported; no intake fields are changed.",style=MaterialTheme.typography.bodySmall)

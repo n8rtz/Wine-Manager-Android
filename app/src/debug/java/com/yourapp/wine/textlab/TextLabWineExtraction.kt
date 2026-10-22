@@ -73,7 +73,8 @@ internal object TextLabWineExtraction {
             if(batch.compareEvidence) {
                 val experimental=kb?.let { TextLabEvidencePreview.engine(it,batch.anchorHybrid) }
                 val hybrid=if(batch.anchorHybrid) kb?.let { com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
-                batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid) }
+                val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
+                batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
             }
         } finally { kb?.close() }
     }

@@ -44,6 +44,11 @@ if [[ "${PRODUCER_REFINEMENT:-false}" == true ]]; then
   flag=producerRefinement
   seconds=$((4 * 168 * 60 + 180))
 fi
+if [[ "${PRODUCER_LAB_VALIDATION:-false}" == true ]]; then
+  class=com.yourapp.wine.textlab.ProducerLabValidationTest
+  flag=producerLabValidation
+  seconds=$((168 * 60 + 180))
+fi
 set +e
 timeout --signal=TERM "$seconds" adb shell am instrument -w -r -e "$flag" true -e class "$class" "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
 result=$?

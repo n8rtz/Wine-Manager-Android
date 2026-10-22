@@ -1,0 +1,23 @@
+[
+  {
+    "review_number": 7,
+    "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0091.jpg",
+    "source_git_blob_sha1": "0a26c39e3f26ec4d636c0bde3e02e49b2139c490",
+    "source_sha256": "7aa9c9067f212a155c500b8b6c553fe09abad3f744a58291f08ecd25aa4714b0",
+    "evaluated_reencoded_sha256": "e2cc37df0b974d918157ccef9b06319ae1fe540074cbf95c0ded44ffe042d1a1"
+  },
+  {
+    "review_number": 18,
+    "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0072.jpg",
+    "source_git_blob_sha1": "1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6",
+    "source_sha256": "dff07877f8cc6a1f5d2e94278372adbd9a7c602366143556194fbb08aa9d4659",
+    "evaluated_reencoded_sha256": "b5153fa600aa7f5d6ac62319ec1e5846e4aee36c386afee66ad67f9067bb7362"
+  },
+  {
+    "review_number": 45,
+    "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0036.jpg",
+    "source_git_blob_sha1": "3e2e56b18069c4227cf9d95a286011c3ad00aa12",
+    "source_sha256": "c9949f3605b42f74237dc8c0ab121ee3fbc6423cbf132aa0255ced307fb9986f",
+    "evaluated_reencoded_sha256": "360d622b87db130b648e2ed905be43bd4aa3d9ce9d722aa3c493b374770fc81c"
+  }
+]

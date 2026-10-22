@@ -65,3 +65,34 @@ not a claim that typography or engine agreement proves identity. The two strictl
 cue-based refined variants run alongside them. Old policies and controls are reused,
 not rerun. The second device test adds contrasting generic headings, new invented
 brand names, varietals and full-name protection before evaluating the corpus.
+
+## Refinement measured and selected for optional lab testing
+
+Android run 39857230621, source 17c6f06, completed all four revised variants successfully.
+The conservative `producer-refined-2` is selected for optional lab testing: producer
+76 correct / 33 wrong / 56 missing, complete forms 33/160, multiple-error forms 80/160.
+Relative to the guarded hybrid, four missing producers and one wrong producer became
+correct; all 71 formerly correct producers were preserved; no new producer error was
+introduced. One complete form gained, none lost. The other five fields are unchanged.
+
+The one-engine refined mode was 77/35/53, 32 complete. Title-based two-engine mode was
+77/39/49, 32 complete; title-based one-engine was 77/46/42, 33 complete. Broad title
+classification is rejected: its extra fills are not worth the added wrong identities.
+No variant approaches the user's 80% complete / <5% multiple-error target.
+
+The chosen producer stage is integrated behind a separate default-off lab checkbox
+under the guarded hybrid option. It reuses existing saved readings and the hybrid
+producer, changes only producer, exports decision traces, retains baseline rows and
+uses YELLOW/RED states. Production and previous defaults are untouched.
+
+Measured emulator selection-only time for the chosen uncached variant: median 585 ms,
+maximum 6,940 ms; rejected title variants reached about 34 seconds. A per-call exact-text
+role cache avoids repeated graph/KB checks inside pairwise assembly. Before accepting
+this optimization, an Android validation job runs actual lab-routing assertions and
+checks the cached, alternative-free producer result against all 168 frozen preceding
+predictions. No previous extractor or OCR executes; the preceding predictions are
+behavioral parity controls, not reference answers. Its result is pending execution.
+
+A separate three-photo source-image audit documents genuine name-reading discrepancies
+(cursive, reflective and curved-label examples). It does not claim a cause-specific
+OCR fix or use those names as hardcoded corrections; see producer-reading-audit.md.
