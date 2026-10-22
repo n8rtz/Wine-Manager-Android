@@ -77,7 +77,7 @@ jobs:
           script: |
             const fs = require('fs');
             let text = 'Actual Android saved-OCR assignment replay, not another OCR run.\n';
-            for (const name of ['build.txt', 'instrumentation.txt', 'validation.json']) {
+            for (const name of ['build.txt', 'instrumentation.txt', 'progress.json', 'validation.json']) {
               const p = `${process.env.RUNNER_TEMP}/replay/${name}`;
               if (fs.existsSync(p)) text += `\n${name}\n${fs.readFileSync(p, 'utf8').slice(-12000)}\n`;
             }

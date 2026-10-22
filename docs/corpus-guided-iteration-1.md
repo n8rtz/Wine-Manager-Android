@@ -49,3 +49,16 @@ Production code, its 15-second default, the OCR engines/models, and the referenc
 are unchanged. The experimental lab comparison remains separately selectable and
 default-off. Phone/end-to-end validation follows promising saved-reading results;
 there is no reason to repeat a two-hour OCR acquisition for each parser edit.
+
+## First replay attempt and correction
+
+Run `39801871451` compiled both Android APKs successfully but failed in the first
+synthetic regression extraction, before the corpus loop: `Evidence extraction
+budget exceeded`. No accuracy gain/loss was measured by that attempt.
+
+Synthetic warm-up now has a separately reported 60-second test-only allowance;
+all 168 real corpus extractions retain their unchanged default two-second budget.
+Per-image progress and failures are preserved. The loop finishes collecting case
+failures rather than losing visibility at the first one, but the test and scorer
+reject an incomplete/failed corpus rather than presenting it as a valid comparison.
+No baseline, old extractor, OCR engine, or production scanner is re-executed.

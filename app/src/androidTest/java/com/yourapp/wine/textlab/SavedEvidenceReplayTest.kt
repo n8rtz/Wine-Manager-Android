@@ -37,13 +37,20 @@ class SavedEvidenceReplayTest {
                 return com.yourapp.wine.ocr.TokenRecord(text,com.yourapp.wine.merge.TextNorm.normalize(text),.95f,
                     box,box,emptyList(),"mlkit","V0",true)
             }
+            // Cold Android class/catalog initialization is not a corpus extraction measurement.
+            // Only these synthetic regression/warm-up calls receive the larger test allowance.
+            val warmupStarted=android.os.SystemClock.elapsedRealtime()
+            File(root,"progress.json").writeText(JSONObject().put("stage","synthetic_warmup").toString())
             val synthetic=listOf(token("Château",.20f),token("des Asters",.28f))
-            val roleResult=revised.extract(synthetic,2026)
+            val roleResult=revised.extract(synthetic,2026,budgetMs=60_000)
             assertTrue(roleResult.graph.phrases.any { it.text=="Château des Asters" && it.construction=="estate-heading composition" })
             assertFalse(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Château" })
             assertTrue(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Château des Asters" })
-            val onlyHeading=revised.extract(listOf(token("Château",.20f)),2026)
+            val onlyHeading=revised.extract(listOf(token("Château",.20f)),2026,budgetMs=60_000)
             assertTrue(onlyHeading.fill.fields.getValue(FieldId.PRODUCER).value.isBlank())
+            val warmupMs=android.os.SystemClock.elapsedRealtime()-warmupStarted
+            val failures=mutableListOf<String>()
+            var completed=0
             output.bufferedWriter().use { writer ->
                 for(i in 0 until input.length()) {
                     val item=input.getJSONObject(i)
@@ -55,7 +62,19 @@ class SavedEvidenceReplayTest {
                         journal.rows+=row.keys().asSequence().associateWith { row.getString(it) }
                     }
                     val records=TextLabFormPreview.records(journal)
-                    val result=revised.extract(records,2026)
+                    File(root,"progress.json").writeText(JSONObject().put("stage","corpus")
+                        .put("index",i+1).put("image",name).put("completed",completed)
+                        .put("warmup_ms",warmupMs).put("corpus_budget_ms",2000).toString(2))
+                    val result=try {
+                        revised.extract(records,2026) // unchanged default two-second corpus budget
+                    } catch(error:Exception) {
+                        if(error is InterruptedException || error is kotlinx.coroutines.CancellationException) throw error
+                        failures+="$name: ${error.javaClass.simpleName}: ${error.message}"
+                        writer.appendLine(JSONObject().put("image",name).put("build",BuildConfig.BUILD_COMMIT)
+                            .put("status","failed").put("error",failures.last()).toString())
+                        writer.flush()
+                        continue
+                    }
                     val fields=JSONObject()
                     for(field in FieldId.entries) {
                         val key=field.name.lowercase(java.util.Locale.ROOT)
@@ -69,11 +88,15 @@ class SavedEvidenceReplayTest {
                             .put("phrase",h.phrase.text).put("observations",JSONArray(h.phrase.observations.toList()))
                             .put("rank",h.rank).put("values",h.values.toString()).put("reason",h.reason) }))
                     writer.appendLine(record.toString());writer.flush()
+                    completed++
                 }
             }
             File(root,"validation.json").writeText(JSONObject().put("images",input.length())
+                .put("completed",completed).put("failures",JSONArray(failures))
+                .put("warmup_ms",warmupMs).put("warmup_budget_ms",60000).put("corpus_budget_ms",2000)
                 .put("execution_policy","revised_experimental_only")
                 .put("baseline_executions",0).put("old_experimental_executions",0).toString(2))
+            assertTrue("Corpus extraction failures (${failures.size}): ${failures.take(8)}",failures.isEmpty())
         } finally { kb.close() }
     }
 }

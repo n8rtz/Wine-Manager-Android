@@ -26,6 +26,8 @@ def collect(root,out,sha):
     validation=json.loads((root/'validation.json').read_text())
     assert validation.get('images')==168 and validation.get('execution_policy')=='revised_experimental_only',validation
     assert validation.get('baseline_executions')==0 and validation.get('old_experimental_executions')==0,validation
+    assert validation.get('completed')==168 and validation.get('failures')==[],validation
+    assert validation.get('corpus_budget_ms')==2000,validation
     records=[json.loads(line) for line in (root/'results.jsonl').read_text().splitlines()]
     ref,pred,prod=load(REF,RUN)
     assert len(records)==168 and {r['image'] for r in records}==set(prod)

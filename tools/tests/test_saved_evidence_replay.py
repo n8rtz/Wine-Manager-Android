@@ -33,4 +33,21 @@ class SavedEvidenceReplayTests(unittest.TestCase):
         self.assertNotIn('typedIdentity=false',source)
         self.assertNotIn('expected_baseline',source)
         self.assertNotIn('old.extract',source)
-        self.assertIn('val result=revised.extract(records,2026)',source)
+        self.assertIn('revised.extract(records,2026)',source)
+
+    def test_warmup_allowance_does_not_change_corpus_budget(self):
+        source=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/SavedEvidenceReplayTest.kt').read_text()
+        self.assertIn('revised.extract(synthetic,2026,budgetMs=60_000)',source)
+        self.assertIn('revised.extract(records,2026)',source)
+        self.assertNotIn('revised.extract(records,2026,budgetMs=',source)
+        self.assertIn('"progress.json"',source)
+        self.assertIn('"failures",JSONArray(failures)',source)
+
+    def test_incomplete_corpus_cannot_be_scored(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            (root/'validation.json').write_text(json.dumps(dict(images=168,
+                execution_policy='revised_experimental_only',baseline_executions=0,
+                old_experimental_executions=0,completed=167,failures=['timeout'],corpus_budget_ms=2000)))
+            with self.assertRaises(AssertionError):collect(root,root/'out','a'*40)
+            self.assertFalse((root/'out').exists())
