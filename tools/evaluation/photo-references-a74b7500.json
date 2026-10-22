@@ -78,26 +78,21 @@
     {
       "batch_image": 5,
       "photo_filename": "IMG20261013221826.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
-        "producer": null,
+        "producer": "Réserve des Auléines",
         "wine_name": "Sauvignon Blanc",
         "country": "France",
-        "region": null,
-        "subregion": null,
+        "region": "Cévennes",
+        "subregion": "",
         "vintage": null
       },
-      "notes": "Visible identity: Réserve des Auléines; origin: Cévennes IGP. Country is inferred from the French geographic designation, not printed as a country on this front label. No vintage visible; that does not establish non-vintage. Producer/brand split and geographic display hierarchy need review.",
-      "proposed_fields": {
-        "producer": "Réserve des Auléines",
-        "region": "Cévennes",
-        "subregion": ""
-      }
+      "notes": "Visible identity: Réserve des Auléines; origin: Cévennes IGP. Country is inferred from the French geographic designation, not printed as a country on this front label. No vintage visible; that does not establish non-vintage. Producer/brand split and geographic display hierarchy need review. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     },
     {
       "batch_image": 6,
       "photo_filename": "IMG20261013221758.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
         "producer": "Kirkland Signature",
         "wine_name": "Chianti Classico Riserva",
@@ -106,12 +101,12 @@
         "subregion": "Chianti Classico",
         "vintage": "2023"
       },
-      "notes": "Producer/brand, appellation, designation and year visible. Italy/Tuscany are geographic reference interpretation, not literal front-label country/region text."
+      "notes": "Producer/brand, appellation, designation and year visible. Italy/Tuscany are geographic reference interpretation, not literal front-label country/region text. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     },
     {
       "batch_image": 7,
       "photo_filename": "IMG20261013221635.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
         "producer": "Kirkland Signature",
         "wine_name": "Côtes du Rhône Villages",
@@ -120,29 +115,26 @@
         "subregion": "Côtes du Rhône Villages",
         "vintage": "2024"
       },
-      "notes": "Name and appellation share the same printed phrase. France/Rhône follow origin interpretation; no specific village is printed."
+      "notes": "Name and appellation share the same printed phrase. France/Rhône follow origin interpretation; no specific village is printed. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     },
     {
       "batch_image": 9,
       "photo_filename": "IMG20261013221556.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
         "producer": "Kirkland Signature",
-        "wine_name": null,
+        "wine_name": "Saint-Julien",
         "country": "France",
         "region": "Bordeaux",
         "subregion": "Saint-Julien",
         "vintage": "2023"
       },
-      "notes": "Demeure Bourgeoise and Saint-Julien are both printed. Whether to include Demeure Bourgeoise in intake wine name remains unconfirmed.",
-      "proposed_fields": {
-        "wine_name": "Saint-Julien"
-      }
+      "notes": "Demeure Bourgeoise and Saint-Julien are both printed. Whether to include Demeure Bourgeoise in intake wine name remains unconfirmed. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     },
     {
       "batch_image": 11,
       "photo_filename": "IMG20261013221553.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
         "producer": "Bodegas Los Pinos",
         "wine_name": "Monastrell Cabernet Sauvignon",
@@ -151,12 +143,12 @@
         "subregion": null,
         "vintage": "2021"
       },
-      "notes": "Two printed grape names interpreted together as the wine-name fallback. No region is established by this photo. Estate Grown and Bottled / Organic Wine are production statements."
+      "notes": "Two printed grape names interpreted together as the wine-name fallback. No region is established by this photo. Estate Grown and Bottled / Organic Wine are production statements. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     },
     {
       "batch_image": 12,
       "photo_filename": "IMG20261013221543.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
         "producer": "Covalli",
         "wine_name": "Barolo",
@@ -165,12 +157,12 @@
         "subregion": "Barolo",
         "vintage": "2019"
       },
-      "notes": "Covalli is the visible brand; legal winery identity not independently researched. Country/region follow the Barolo geographic hierarchy."
+      "notes": "Covalli is the visible brand; legal winery identity not independently researched. Country/region follow the Barolo geographic hierarchy. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     },
     {
       "batch_image": 10,
       "photo_filename": "IMG20261013221534.jpg",
-      "status": "photo_transcribed_pending_review",
+      "status": "user_confirmed",
       "fields": {
         "producer": "Kirkland Signature",
         "wine_name": "Malbec",
@@ -179,7 +171,7 @@
         "subregion": "",
         "vintage": "2022"
       },
-      "notes": "Country, region, varietal and vintage visible. Distinct from the 2023 Malbec in batch image 22."
+      "notes": "Country, region, varietal and vintage visible. Distinct from the 2023 Malbec in batch image 22. User subsequently confirmed all proposed entries and field splits. Remaining nulls are still unknown/unscored."
     }
   ]
 }
