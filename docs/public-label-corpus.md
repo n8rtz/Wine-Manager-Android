@@ -15,7 +15,7 @@ Images and working annotations reside outside the repository at `/home/user/wine
 
 ## Important limits
 
-The source has **no declared license**. These are quarantined private source-review candidates, not cleared assets for app inclusion, redistribution or a released dataset. Public GitHub availability is not a license. Rights review/replacement is still required.
+The source has **no declared license**. The user has explicitly authorized private testing. Rights clearance is not a gate for this private experiment; no images enter app assets, Git, or exported diagnostics. This does not establish redistribution rights.
 
 This is NOT a 170-example verified benchmark. Four photos received an initial agent visual review, stored as external **draft** annotations; none is independently verified. Some identities/field splits remain ambiguous. No bottle-level grouping or holdout is approved. Some reviewed photos are French labels; country/style diversity is not established for the full sample. No accuracy numbers are reported.
 
@@ -34,7 +34,7 @@ python tools/corpus/validate_corpus.py /home/user/wine-evaluation/public-candida
 
 The acquisition verifies Git blob hashes, records original SHA-256, strips EXIF and caches verified local derivatives. Four concurrent downloads; no credentials stored. Resuming is idempotent for complete verified images. `public-source-inventory.json` contains metadata only. Pillow is an acquisition dependency, not an Android dependency.
 
-`validate_corpus.py --require-evaluation-ready` deliberately rejects this corpus today: unresolved rights, unreviewed targets, and unassigned bottle groups. It also rejects source-image/bottle leakage across splits, missing groups, changed image bytes and duplicate record IDs. Near duplicates still need semantic review, not just hashing.
+`validate_corpus.py --require-evaluation-ready` deliberately rejects this corpus today: unreviewed targets and unassigned bottle groups (use `--private-test` for the authorized private experiment; redistribution clearance remains a separate default gate). It also rejects source-image/bottle leakage across splits, missing groups, changed image bytes and duplicate record IDs. Near duplicates still need semantic review, not just hashing.
 
 ## OCR execution blocker
 
@@ -44,10 +44,25 @@ Host-only dependencies were installed externally for investigation; there is no 
 
 ## Work still required
 
-1. Resolve image rights or replace the source with a suitably licensed accessible corpus.
+1. Run the authorized private experiment; no redistribution is planned.
 2. Review readability, identity duplicates, category and geographic/style diversity; replace unsuitable samples to reach 100–200 usable distinct labels.
 3. Independently annotate visible text and six-field references, marking inferred facts and unknowns. Group rescans by bottle before freezing development/validation/holdout splits. The four already inspected photos belong in development, not untouched holdout.
-4. Obtain genuine model weights through supported access and execute the production-compatible host OCR portion. Label this separately from full Android ML Kit + Medium results.
+4. Execute the Android instrumentation workflow below with genuine model weights. No desktop OCR substitute.
 5. Replay baseline and experimental extraction with fixed annotations, report wrong fills/abstentions/consistency, and only then iterate on development failures.
 
 The user need not individually supply all those additional labels. However, acquisition, annotation and actual inference are separate milestones; none should be claimed merely because files were downloaded.
+
+## Authorized Android execution
+
+The user authorized GitHub-hosted Android emulation for private corpus testing, superseding the prior no-emulator restriction for this task. `.github/workflows/private-corpus.yml` first runs a three-image smoke test; manual dispatch accepts up to 168 distinct images. It builds the unchanged app plus an opt-in instrumentation test. Genuine Medium weights are fetched and checksum-checked by the existing Gradle task on the hosted runner, outside this sandbox's download restriction.
+
+`PublicCorpusDeviceTest` runs **two separate real paths** for each image:
+
+- `OfflineWineScanner.scan`: normal FILE-input rectification, engines, shared deadline, ensemble and fill; production reports saved as JSON.
+- `TextLabRunner.recognize` plus `TextLabWineExtraction.append`: actual full-image OCR Lab, ML Kit reference and Medium detector/recognizer, normal lab budgets, production-combined and experimental evidence previews; standard CSV checkpoints.
+
+It does not pretend the OCR Lab's diagnostic budget is the production deadline. It does not emulate camera capture or picker copy time. Images are staged into private app storage, never packaged into the APK. Expected answers are not supplied to recognition. Individual JSON/CSV checkpoints retain failures/partial results and bound retained rows. No text/accuracy assertion is made against unreviewed targets. Native failures, timeouts and failed/missing lab extraction summaries cannot pass the smoke test silently. Production deadline results are retained separately, not silently replaced by lab results.
+
+The emulator uses the shipped arm64 libraries through the Google APIs native bridge; a preflight rejects an image that does not advertise arm64 support. Translation is a runtime difference, **not phone performance validation**. No production ABI, model or OpenCV build setting is changed. Artifact retention is seven days and excludes input photos. A small diagnostics check is also published so execution can be inspected through the GitHub API even when artifact downloads are unavailable in this sandbox.
+
+Status: runner authored; Android compilation and genuine inference must be verified by CI before claiming success. Corpus annotation, bottle grouping and holdout remain unfinished.

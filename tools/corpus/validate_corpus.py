@@ -7,7 +7,7 @@ from pathlib import Path
 
 FIELDS={'producer','wine_name','country','region','subregion','vintage'}
 
-def validate(folder, require_evaluation_ready=False):
+def validate(folder, require_evaluation_ready=False, private_test=False):
     folder=Path(folder).resolve()
     manifest=json.loads((folder/'manifest.json').read_text())
     seen=set(); hashes={}; groups={}; reviewed=0
@@ -30,7 +30,7 @@ def validate(folder, require_evaluation_ready=False):
                 store[key]=split
         if row['annotation_status']=='reviewed': reviewed+=1
         if require_evaluation_ready:
-            if row['license_status']!='cleared': raise ValueError('Source rights not cleared')
+            if not private_test and row['license_status']!='cleared': raise ValueError('Source rights not cleared')
             if row['annotation_status']!='reviewed' or not row['bottle_group'] or split=='unassigned':
                 raise ValueError('Evaluation needs reviewed annotations and bottle-level split')
     return dict(records=len(seen),reviewed=reviewed,split_bottle_groups=len(groups))
@@ -39,5 +39,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('folder',type=Path)
     p.add_argument('--require-evaluation-ready',action='store_true')
+    p.add_argument('--private-test', action='store_true', help='User-authorized private testing only; does not clear redistribution rights or relax annotation/split checks')
     a=p.parse_args()
-    print(json.dumps(validate(a.folder,a.require_evaluation_ready),indent=2))
+    print(json.dumps(validate(a.folder,a.require_evaluation_ready,a.private_test),indent=2))

@@ -39,3 +39,12 @@ class PublicCorpusTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'group'):module.validate(folder)
             r['split']='unassigned';self.write(folder,[r,r])
             with self.assertRaisesRegex(ValueError,'Duplicate'):module.validate(folder)
+
+    def test_private_test_retains_reference_and_split_gates(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d);r=self.setup_corpus(folder)
+            with self.assertRaisesRegex(ValueError,'reviewed'):module.validate(folder,True,True)
+            r.update(annotation_status='reviewed',bottle_group='bottle-a',split='development')
+            self.write(folder,[r])
+            self.assertEqual(module.validate(folder,True,True)['reviewed'],1)
+            with self.assertRaisesRegex(ValueError,'rights'):module.validate(folder,True)
