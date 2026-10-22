@@ -1,0 +1,13 @@
+{
+  "images": 168,
+  "variants": [
+    "producer-direct-2",
+    "producer-direct-1",
+    "producer-compose-1",
+    "producer-consensus-2"
+  ],
+  "corpus_budget_ms": 60000,
+  "baseline_executions": 0,
+  "old_experimental_executions": 0,
+  "failures": []
+}
