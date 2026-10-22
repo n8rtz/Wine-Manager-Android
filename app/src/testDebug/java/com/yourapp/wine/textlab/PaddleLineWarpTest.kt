@@ -6,10 +6,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import kotlin.math.abs
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk=[26],manifest=Config.NONE)
+// Real Skia Matrix/Canvas behavior is required for four-point perspective warps;
+// legacy graphics shadows do not implement the full Android transform contract.
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk=[35],manifest=Config.NONE)
 class PaddleLineWarpTest {
     @Test fun detectorGeometry()=PaddleDetectionChecks.run()
     @Test fun perspectiveInverseAndTwoBitmapBudget() {

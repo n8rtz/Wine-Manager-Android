@@ -10,10 +10,13 @@ import com.yourapp.wine.capture.SelectedLabelPhotoImporter
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Before
+import org.junit.After
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.util.ReflectionHelpers
 import java.io.File
 import java.io.RandomAccessFile
 
@@ -21,6 +24,14 @@ import java.io.RandomAccessFile
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class SelectedLabelPhotoImporterTest {
+    // AndroidX caches paths by authority across provider instances. Robolectric gives
+    // each test a different cacheDir while retaining the same app authority; discard
+    // only this test fixture's authority, never broaden the app's FileProvider roots.
+    @Before @After fun clearTestProviderPathCache() {
+        val strategies=ReflectionHelpers.getStaticField<MutableMap<String,Any>>(FileProvider::class.java,"sCache")
+        synchronized(strategies) { strategies.remove("${context.packageName}.provider") }
+    }
+
     private val context get() = RuntimeEnvironment.getApplication()
     private fun privateCopies() = context.cacheDir.listFiles().orEmpty().filter { it.name.startsWith("wine-selected-label-") }.toSet()
     private fun uri(file: File): Uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
