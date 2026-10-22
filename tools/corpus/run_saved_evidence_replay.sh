@@ -10,8 +10,16 @@ adb shell run-as "$pkg" cp /data/local/tmp/evidence-input.json files/saved-evide
 expected=$(sha256sum "$root/input.json" | awk '{print $1}')
 actual=$(adb shell run-as "$pkg" sha256sum files/saved-evidence/input.json | awk '{print $1}')
 test "$expected" = "$actual"
+class=com.yourapp.wine.textlab.SavedEvidenceReplayTest
+flag=savedEvidenceReplay
+seconds=$((168 * 60 + 180))
+if [[ "${SEARCH_SWEEP:-false}" == true ]]; then
+  class=com.yourapp.wine.textlab.SearchSweepDeviceTest
+  flag=searchSweep
+  seconds=$((6 * 168 * 60 + 180))
+fi
 set +e
-timeout --signal=TERM "$((168 * 60 + 180))" adb shell am instrument -w -r -e savedEvidenceReplay true -e class com.yourapp.wine.textlab.SavedEvidenceReplayTest "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
+timeout --signal=TERM "$seconds" adb shell am instrument -w -r -e "$flag" true -e class "$class" "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$root/instrumentation.txt" 2>&1
 result=$?
 set -e
 adb exec-out run-as "$pkg" tar -cf - -C files/saved-evidence . > "$root/device-results.tar"

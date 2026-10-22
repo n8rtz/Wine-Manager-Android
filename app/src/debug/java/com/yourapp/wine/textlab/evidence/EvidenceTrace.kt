@@ -4,6 +4,11 @@ package com.yourapp.wine.textlab.evidence
 internal class EvidenceTrace(private val limit:Int=512) {
     val rows=mutableListOf<String>()
     val counts=linkedMapOf<String,Int>()
+    fun count(reason:String,amount:Int) { counts[reason]=(counts[reason] ?: 0)+amount }
+    fun add(reason:String,details:()->String) {
+        count(reason,1)
+        if(rows.size<limit) rows+="$reason; ${details()}"
+    }
     fun add(reason:String,details:String="") {
         counts[reason]=(counts[reason] ?: 0)+1
         if(rows.size<limit) rows+="$reason; $details"
