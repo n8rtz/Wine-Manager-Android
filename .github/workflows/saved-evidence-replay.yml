@@ -54,7 +54,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 4096 -feature -Vulkan
           script: bash tools/corpus/run_saved_evidence_replay.sh
-      - name: Score only after exact baseline and v2 reproduction
+      - name: Score revised outputs against frozen baseline and v2 results
         run: |
           dest="tools/evaluation/saved-evidence-${{ github.run_id }}"
           python3 tools/corpus/replay_saved_evidence.py collect "$RUNNER_TEMP/replay" "$dest" --sha '${{ github.sha }}'

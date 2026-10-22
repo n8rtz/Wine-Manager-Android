@@ -19,13 +19,13 @@ def prepare(path):
                 groups[row['image_name']].append(row)
     items=[]
     for image,rows in sorted(groups.items()):
-        items.append(dict(image=image,rows=rows,**{key:{f:dict(value=pred[p][image][f][0],state=pred[p][image][f][1]) for f in FIELDS}
-                     for key,p in [('expected_baseline','lab_baseline'),('expected_v2','experimental')]}))
+        items.append(dict(image=image,rows=rows))
     path.write_text(json.dumps(items,ensure_ascii=False))
 
 def collect(root,out,sha):
     validation=json.loads((root/'validation.json').read_text())
-    assert validation['images']==168 and validation['mismatches']==[],validation
+    assert validation.get('images')==168 and validation.get('execution_policy')=='revised_experimental_only',validation
+    assert validation.get('baseline_executions')==0 and validation.get('old_experimental_executions')==0,validation
     records=[json.loads(line) for line in (root/'results.jsonl').read_text().splitlines()]
     ref,pred,prod=load(REF,RUN)
     assert len(records)==168 and {r['image'] for r in records}==set(prod)
@@ -37,7 +37,7 @@ def collect(root,out,sha):
     new,rows=score(ref,pred,prod)
     out.mkdir(parents=True,exist_ok=True)
     data=dict(source_commit=sha,reference_sha256=digest(REF/'reference.json'),
-              input_sha256=digest(root/'input.json'),baseline_and_v2_exact_replay=validation,
+              input_sha256=digest(root/'input.json'),execution_validation=validation,
               old_experimental=old['pipelines']['experimental'],new_experimental=new['pipelines']['experimental'],
               unchanged_lab_baseline=old['pipelines']['lab_baseline'])
     (out/'scores.json').write_text(json.dumps(data,indent=2)+'\n')
@@ -45,7 +45,7 @@ def collect(root,out,sha):
     with (out/'field-results.csv').open('w',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(r for r in rows if r['pipeline']=='experimental')
     lines=['# Saved-OCR identity-role iteration','',
-           'Real Android/Kotlin replay of all 168 frozen lab OCR inputs. Production untouched. Baseline and v2 values/states reproduced exactly before scoring v3. This is development-set feedback, not held-out accuracy.','',
+           'Real Android/Kotlin replay of all 168 frozen lab OCR inputs. Production untouched. Only the revised experimental extractor executes. Baseline and v2 outputs are reused from the frozen run, not re-executed. This is development-set feedback, not held-out accuracy.','',
            '| Extractor | Correct | Wrong | Abstained | Six fields correct / eligible |','|---|---:|---:|---:|---:|']
     for label,key in [('Lab baseline','unchanged_lab_baseline'),('Experimental v2','old_experimental'),('Experimental v3','new_experimental')]:
         p=data[key];s=p['all_fields'];i=p['image_results']

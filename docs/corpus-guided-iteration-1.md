@@ -29,11 +29,15 @@ to solve all of them.
 
 ## Evaluation, not a claim of improvement
 
-The dedicated Android instrumentation replay executes the actual Kotlin production
-FillEngine, traced v2 control, and v3 extractor on all 168 saved lab OCR inputs.
-It must reproduce all original baseline and v2 field **values and states** exactly
-before accepting a v3 comparison. Reference answers are not sent to the device;
-expected old predictions are used only for the reproduction assertions.
+The dedicated Android instrumentation replay executes **only the revised experimental
+extractor** on all 168 saved lab OCR inputs. It does not rerun production scanning,
+OCR engines, the production FillEngine, or the old experimental extractor. Frozen
+baseline and v2 predictions are read by the host scorer for comparison only.
+Neither reference answers nor expected old predictions are sent to the device.
+Small synthetic role regression checks remain separate from the corpus loop.
+
+This is the standing policy for future iterations: reuse unchanged baseline outputs
+and saved OCR. Do not repeat baseline execution merely to compare a revised version.
 
 The CI job will preserve per-field outcomes and bounded traces on this branch.
 An improvement is not established until that execution and scoring succeed.
