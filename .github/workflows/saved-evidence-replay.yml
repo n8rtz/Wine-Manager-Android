@@ -9,7 +9,7 @@ permissions:
   checks: write
 concurrency:
   group: saved-evidence-replay-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   replay:
     runs-on: ubuntu-24.04
