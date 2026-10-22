@@ -1,0 +1,9 @@
+{
+  "production_budget_ms": 60000,
+  "baseline_budget_ms": 15000,
+  "source_commit": "c7205a44b3fe786418d7abd10c975c2b71c24421",
+  "baseline_run": "39716483937",
+  "source_modification": "CI-only replacement of ScanDeadline.BUDGET_MS; no normal app change",
+  "original_sha256": "6987fec99aed73d2a879dd63db741865281bd8c1c3b43a9d8f865e36ce4fce9d",
+  "modified_sha256": "ad2133daa576111c1b36b39832ecbae7a78cf1e0e4d0aafe4869fa91ee01fccd"
+}
