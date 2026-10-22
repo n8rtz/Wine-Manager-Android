@@ -54,7 +54,7 @@ The user need not individually supply all those additional labels. However, acqu
 
 ## Authorized Android execution
 
-The user authorized GitHub-hosted Android emulation for private corpus testing, superseding the prior no-emulator restriction for this task. `.github/workflows/private-corpus.yml` first runs a three-image smoke test; manual dispatch accepts up to 168 distinct images. It builds the same app code/models plus an opt-in instrumentation test; see the explicit CI ABI exception below. Genuine Medium weights are fetched and checksum-checked by the existing Gradle task on the hosted runner, outside this sandbox's download restriction.
+The user authorized GitHub-hosted Android emulation for private corpus testing, superseding the prior no-emulator restriction for this task. `.github/workflows/private-corpus.yml` now defaults to 168 distinct images after the initial smoke investigations; manual dispatch can select three for a smoke run. It builds the same app code/models plus an opt-in instrumentation test; see the explicit CI ABI exception below. Genuine Medium weights are fetched and checksum-checked by the existing Gradle task on the hosted runner, outside this sandbox's download restriction.
 
 `PublicCorpusDeviceTest` runs **two separate real paths** for each image:
 
@@ -85,3 +85,9 @@ Run `39713113648` executed all three selected photos through the normal scanner 
 The next CI run must demonstrate actual text from **both** engines before expanding to the full corpus. Budgets are not increased to conceal failed translated inference.
 
 Run `39714385936` passed the native-x86 execution gate (three production reports and three lab CSVs, at least one line from both engines, no lab timeouts). However, only one line was recognized by each engine and device input hashes differed from the local candidate derivatives. Acquisition-library differences have not been ruled out; more importantly, raw `adb exec-in` transport had no device-side integrity gate. These outputs are **not accepted as validated corpus results**. Staging now uses `adb push` sync plus an app-private copy, then requires host/device SHA-256 equality for every photo before any inference. The hash pairs are retained in diagnostics. The smoke test must pass again on verified input bytes before expanding the run.
+
+### Verified-byte execution and full-run launch
+
+Run `39715424090` demonstrated actual OCR on a SHA-256-verified photo: 10 Medium lines and 9 ML Kit lines, complete lab engines and baseline/experimental suggestions. Its coverage report exposed another harness issue: although three photos were selected, only the first was staged because ADB inherited the input stream of the shell's `while read` loop. Therefore its successful JUnit status is **not accepted as a three-image pass**.
+
+The staging loop now reads filenames into a Bash array before invoking ADB. Instrumentation requires an explicit expected image count and fails before inference if any selected image is missing; final coverage checks also require a production report and lab CSV for every selected image. These are harness corrections, not OCR changes. The next workflow defaults to all **168 byte-distinct candidate photos**. It retains failures and unknowns; completing inference does not establish annotation correctness or independent bottle count. The whole-corpus run remains pending until its published coverage/status report is inspected.

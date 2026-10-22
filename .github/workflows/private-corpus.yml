@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: 'Distinct images (1–168); first prove both engines with 3'
-        default: '3'
+        description: 'Distinct images (1–168); 3 for smoke tests, 168 for full candidate replay'
+        default: '168'
         required: true
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
-      CORPUS_LIMIT: ${{ inputs.limit || '3' }}
+      CORPUS_LIMIT: ${{ inputs.limit || '168' }}
       CORPUS_ABI: x86_64
     steps:
       - name: Set private working directories
@@ -79,7 +79,7 @@ jobs:
           script: bash tools/corpus/run_android_corpus.sh
       - name: Summarize execution coverage without inventing accuracy
         if: always()
-        run: python3 tools/corpus/summarize_android.py "$CORPUS_RESULTS"
+        run: python3 tools/corpus/summarize_android.py "$CORPUS_RESULTS" --require-complete
       - name: Retain diagnostics, never corpus photos
         if: always()
         uses: actions/upload-artifact@v5

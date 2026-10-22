@@ -23,7 +23,8 @@ rows=json.loads((root/'manifest.json').read_text())['records']
 # Source identity remains recoverable from the manifest; exact duplicate files run only once.
 for name in sorted({r['file'] for r in rows})[:limit]: print(root/name)
 PY
-while IFS= read -r file; do
+mapfile -t files < "$CORPUS_RESULTS/selected-images.txt"
+for file in "${files[@]}"; do
   name=$(basename "$file")
   # adb's raw exec-in stream can close before a remote writer has drained all bytes.
   # Use the sync protocol, then copy into app-private storage and verify before decoding.
@@ -35,10 +36,10 @@ while IFS= read -r file; do
   actual=$(adb shell run-as "$pkg" sha256sum "files/private-corpus/images/$name" | awk '{print $1}')
   printf '%s\t%s\t%s\n' "$name" "$expected" "$actual" >> "$CORPUS_RESULTS/input-hashes.tsv"
   test "$actual" = "$expected" || { echo "Device input hash mismatch: $name" >&2; exit 1; }
-done < "$CORPUS_RESULTS/selected-images.txt"
+done
 set +e
 timeout --signal=TERM "$((CORPUS_LIMIT * 150 + 180))" adb shell am instrument -w -r -e class com.yourapp.wine.textlab.PublicCorpusDeviceTest \
-  -e privateCorpus true "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$CORPUS_RESULTS/instrumentation.txt" 2>&1
+  -e privateCorpus true -e expectedImages "${#files[@]}" "$pkg.test/androidx.test.runner.AndroidJUnitRunner" > "$CORPUS_RESULTS/instrumentation.txt" 2>&1
 result=$?
 set -e
 adb exec-out run-as "$pkg" tar -cf - -C files/private-corpus results > "$CORPUS_RESULTS/results.tar"

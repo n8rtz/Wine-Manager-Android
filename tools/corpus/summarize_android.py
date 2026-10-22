@@ -37,8 +37,14 @@ def summarize(root):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('results', type=Path)
+    parser.add_argument('--require-complete', action='store_true')
     args = parser.parse_args()
-    result = json.dumps(summarize(args.results), indent=2) + '\n'
+    summary = summarize(args.results)
+    result = json.dumps(summary, indent=2) + '\n'
     args.results.mkdir(parents=True, exist_ok=True)
     (args.results/'corpus-summary.json').write_text(result)
     print(result, end='')
+    if args.require_complete:
+        expected = summary['expected_distinct_images']
+        if not expected or summary['lab_images_with_rows'] != expected or summary['production_reports'] != expected:
+            raise SystemExit('Incomplete corpus coverage; requested images must all have production and lab reports')

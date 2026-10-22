@@ -28,7 +28,8 @@ class PublicCorpusDeviceTest {
             val root = File(context.filesDir, "private-corpus")
             val images = File(root, "images").listFiles().orEmpty()
                 .filter { it.isFile && it.extension == "jpg" }.sortedBy { it.name }
-            assertTrue("No corpus images staged", images.isNotEmpty())
+            val expectedImages = requireNotNull(args.getString("expectedImages")?.toIntOrNull()) { "Expected image count required" }
+            assertTrue("Staged ${images.size} images, expected $expectedImages", expectedImages > 0 && images.size == expectedImages)
             val output = File(root, "results").apply { mkdirs() }
             // One image per checkpoint limits retained rows/memory and preserves partial runs.
             var failures = 0
