@@ -9,7 +9,7 @@ internal class EvidenceAnchorHybrid(kb:WineKnowledgeBase) {
     data class Config(val roleGuard:Boolean,val appellationEngines:Int=0) {
         val id get()=if(!roleGuard) "anchors-only" else if(appellationEngines==0) "anchors-role-guard" else "anchors-role-guard-appellation-$appellationEngines"
     }
-    companion object { val experiments=listOf(Config(false),Config(true),Config(true,1),Config(true,2)) }
+    companion object { const val VERSION="anchor-hybrid-v1"; val experiments=listOf(Config(false),Config(true),Config(true,1),Config(true,2)) }
     private val fallback=AppellationFallback(kb)
     fun combine(baseline:Map<FieldId,String>,revised:Map<FieldId,String>,records:List<TokenRecord>,config:Config):Map<FieldId,String> {
         require(baseline.keys==FieldId.entries.toSet() && revised.keys==baseline.keys)

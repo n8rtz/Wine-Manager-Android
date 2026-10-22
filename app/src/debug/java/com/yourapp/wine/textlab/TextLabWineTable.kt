@@ -31,7 +31,7 @@ internal object TextLabWineTable {
     fun formRows(journals:List<TextLabJournal>):List<List<String>> = journals.flatMap { journal ->
         journal.rows.filter { it["stage"] in setOf("form_summary","evidence_summary") }.map { row ->
             listOf("${journal.metadata["image_index"]}: ${journal.metadata["image_name"]}",
-                (if(row["stage"]=="evidence_summary") "Experimental · " else "Production · ")+when(row["status"]) { "failed" -> "Preview failed"; "no_fields" -> "No fields"; "partial_suggestions" -> "Partial — confirm";else -> "Confirm suggestions" })+
+                (if(row["stage"]!="evidence_summary") "Production · " else if(row["post_processing_version"]==com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid.VERSION) "Guarded hybrid · " else "Experimental · ")+when(row["status"]) { "failed" -> "Preview failed"; "no_fields" -> "No fields"; "partial_suggestions" -> "Partial — confirm";else -> "Confirm suggestions" })+
                 fields.map { row[it].orEmpty().ifBlank { "—" } }
         }
     }

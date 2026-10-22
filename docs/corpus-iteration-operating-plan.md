@@ -99,3 +99,34 @@ combines all four new appellation policies and four anchor policies in one emula
 with a 600-second boot allowance and separate, hashed inputs/results for each batch. It
 clears stale device result files before each test so a preflight failure cannot reuse prior
 outputs. This is an infrastructure retry, not an accuracy observation.
+
+## Measured advancement and lab integration
+
+Combined run **39834118734** (source **fc02b11**) succeeded on Android, including synthetic
+assertions and all 168×8 new selector outputs. Together with the earlier rule batch, 17
+candidates have now executed. Standalone appellation repairs added three correct fields but
+also two/three wrong fills, reaching 24 complete; none passed the strict gate.
+
+`anchors-role-guard` measured **627 correct / 82 wrong / 185 abstained, 24/103 complete**,
+with **5 complete gains and 4 losses** against baseline; deduplicated complete **22/87**
+versus baseline 21/87. The unguarded anchor design had 86 wrong. One-engine appellation
+fallback on top was 628/83/183, still 24 complete; two-engine was 627/83/184, also 24.
+Three passed the predeclared further-test gate. Select the **simpler guarded architecture**:
+lowest wrong fills, no extra fallback, same completed-entry count. This is not production
+promotion and does not erase its regressions: 32 previously correct baseline fields become
+wrong/blank, and the four lost complete entries all involve Saint-Émilion Grand Cru.
+
+The chosen policy is now wired as an explicit **default-off** lab option, leaving the
+previous evidence option and production defaults intact. Lab routing reuses its existing
+successful baseline summary, computes only rules-001 for the experimental component, and
+applies the exact guarded selector that ran in the corpus batch. It never computes a second
+baseline. Missing/failed baseline is an explicit preview failure, not a silent architecture
+fallback. Baseline rows remain intact; the hybrid row/CSV version is labeled `anchor-hybrid-v1`,
+and all nonblank hybrid suggestions are YELLOW. No intake fields are changed.
+
+The integration CI uses synthetic readings, not another run of the 168-case corpus. It checks
+mode/defaults, actual preview routing, baseline preservation, cuvée role, heading abstention,
+vintage anchor, YELLOW/RED states, idempotency and fail-closed missing-baseline behavior.
+Its result will be recorded after execution. Next validation must use fresh grouped labels
+and specifically exercise designation-rich appellations and producer/legal-line ambiguity;
+all current measurements are provisional development-set evidence, not held-out accuracy.

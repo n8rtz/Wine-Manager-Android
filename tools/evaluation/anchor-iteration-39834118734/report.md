@@ -11,8 +11,6 @@ Actual Android/Kotlin hybrid selection over frozen baseline and rules-001 compon
 | anchors-role-guard-appellation-1 | 628 / 83 / 183 | 24 / 103 | 5 / 4 |
 | anchors-role-guard-appellation-2 | 627 / 83 / 184 | 24 / 103 | 5 / 4 |
 
-Actual Android/Kotlin hybrid selection over frozen baseline and rules-001 component outputs. Every image uses baseline producer/vintage and the entire revised wine/geography group; no reference-dependent selection. Four policies ablate structural abstention on heading-only producers and exact appellation fallback with one/two engines. No baseline, prior extractor, or OCR rerun. Defaults unchanged; development data only.
-
 ## Automatic next-step gate
 
 {
@@ -26,4 +24,4 @@ Actual Android/Kotlin hybrid selection over frozen baseline and rules-001 compon
   "next_action": "Validate candidate on fresh grouped labels and Android regression suite."
 }
 
-This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure. Hybrid elapsed times in raw output reuse the shared extraction time, not an additional baseline execution.
+This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure. Elapsed times cover only the new Kotlin selection/repair logic, excluding frozen component extraction and OCR. These are emulator timings, not phone performance. (Timing caption corrected after collection; scores and raw outputs unchanged.)

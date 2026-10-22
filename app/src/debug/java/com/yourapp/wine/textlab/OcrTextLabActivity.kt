@@ -102,6 +102,13 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Checkbox(state.compareEvidence,{vm.compareEvidence(it)},enabled=!state.busy)
                 Text("Compare experimental evidence pipeline (keeps production baseline)")
             }
+            if(state.compareEvidence) {
+                Row {
+                    Checkbox(state.anchorHybrid,{vm.anchorHybrid(it)},enabled=!state.busy)
+                    Text("Use guarded hybrid (baseline producer/vintage + revised wine/origin)")
+                }
+                Text("Off: previous evidence architecture. On: development candidate, not validated on fresh labels. Incomplete producer headings remain blank. Production is unchanged.",style=MaterialTheme.typography.bodySmall)
+            }
             Text("Experimental extraction uses the same OCR readings, not another model run. Requires text-line detection. Both results are exported; no intake fields are changed.",style=MaterialTheme.typography.bodySmall)
             Text("Images and candidates run sequentially. Each candidate and each image's ML Kit reference gets ${TextLabBudgets.OCR_MS / 1000} seconds. Allow up to about ${(state.selectedCandidates.size+1)} minutes PER IMAGE plus preparation; native calls may overrun. Stop preserves partial and unrun results.",style=MaterialTheme.typography.bodySmall)
             Text("Sessions start fresh; files may be cached. Scores are not directly comparable. With detection off, crop every image to one line. The field table uses shared local rules and is not production autofill.",style=MaterialTheme.typography.bodySmall)

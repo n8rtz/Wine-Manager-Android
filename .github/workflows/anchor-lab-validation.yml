@@ -1,0 +1,75 @@
+name: Guarded hybrid lab integration validation
+on:
+  push:
+    branches: ['arena/fd8dc3be-wine-manager-android']
+    paths: ['.github/workflows/anchor-lab-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  checks: write
+concurrency:
+  group: anchor-lab-validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Validate host tooling
+        run: |
+          mkdir -p "$RUNNER_TEMP/replay"
+          python3 -m unittest discover -s tools/tests
+      - name: Compile real Android app and replay test
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --console=plain -PprivateCorpusX86=true :app:assembleDebug :app:assembleDebugAndroidTest 2>&1 | tee "$RUNNER_TEMP/replay/build.txt"
+      - name: Reserve emulator disk space and enable KVM
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/swift "$ANDROID_HOME/ndk"
+          free_kib=$(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 {print $4}')
+          test "$free_kib" -gt 12582912
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger
+      - name: Validate real lab routing on Android (synthetic, no corpus rerun)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 3G
+          ram-size: 4096M
+          heap-size: 256M
+          emulator-boot-timeout: 600
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 4096 -feature -Vulkan
+          script: bash tools/corpus/run_anchor_lab_validation.sh
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: anchor-lab-validation
+          retention-days: 14
+          path: ${{ runner.temp }}/replay
+      - name: Publish accessible diagnostics
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let text = 'Actual Android lab routing on synthetic readings. No corpus, baseline extractor or OCR rerun.\n';
+            for (const name of ['build.txt', 'instrumentation.txt']) {
+              const p = `${process.env.RUNNER_TEMP}/replay/${name}`;
+              if (fs.existsSync(p)) text += `\n${name}\n${fs.readFileSync(p, 'utf8').slice(-12000)}\n`;
+            }
+            await github.rest.checks.create({...context.repo, name:'Anchor lab validation diagnostics', head_sha:context.sha,
+              status:'completed', conclusion:'neutral', output:{title:'Android guarded hybrid lab validation',summary:text.slice(0,60000)}});

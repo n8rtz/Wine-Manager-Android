@@ -85,9 +85,11 @@ def collect(root,out,sha,variants=None,description=None,prepare_input=None):
         f=p['all_fields'];i=p['image_results'];pair=p.get('paired',{}).get('lab_baseline',{})
         paired_display="—" if name=="saved v3" else f"{len(pair.get('complete_gained',[]))} / {len(pair.get('complete_lost',[]))}"
         lines.append(f"| {name} | {f['correct']} / {f['wrong']} / {f['abstained']} | {i['six_field_fully_correct']} / {i['six_field_eligible']} | {paired_display} |")
-    lines+=['',description or 'Rules bits: equivalence of name typography / independent-engine name agreement / explicit cuvée role. Rules-000 is the saved v3 result and is not rerun. The two hybrid strategies use rules-111 results with saved baseline fields, preserving baseline geography and vintage. They require two-engine direct support for changes; a stricter variant only repairs missing/head-only identities, while the other can replace an exact appellation wine name with an explicitly named cuvée.','',
+    lines+=['',description and 'Each policy is evaluated on all 168 saved cases; no reference answers enter Android.' or 'Rules bits: equivalence of name typography / independent-engine name agreement / explicit cuvée role. Rules-000 is the saved v3 result and is not rerun. The two hybrid strategies use rules-111 results with saved baseline fields, preserving baseline geography and vintage. They require two-engine direct support for changes; a stricter variant only repairs missing/head-only identities, while the other can replace an exact appellation wine name with an explicitly named cuvée.','',
         '## Automatic next-step gate','',json.dumps(result['decision'],indent=2),'',
-        'This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure. Hybrid elapsed times in raw output reuse the shared extraction time, not an additional baseline execution.','']
+        'This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure.',
+        'Hybrid elapsed times in raw output reuse the shared extraction time, not an additional baseline execution.' if description is None else
+        'Elapsed times cover only the new Kotlin selection/repair logic, excluding frozen component extraction and OCR. These are emulator timings, not phone performance.','']
     (out/'report.md').write_text('\n'.join(lines))
 
 if __name__=='__main__':
