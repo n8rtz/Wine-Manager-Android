@@ -1,0 +1,6 @@
+{
+  "advance_candidates": [],
+  "production_promoted": false,
+  "rule": "Advance for further testing only if full entries exceed both controls, wrong fills <= v3, correct fields >= baseline, deduplicated full entries >= baseline.",
+  "next_action": "Do not promote. Use paired losses and hypothesis traces to target the next general rule change."
+}
