@@ -6,8 +6,8 @@ import producer_roles as suite
 
 class ProducerRoleTests(unittest.TestCase):
     def test_experiment_is_separate_and_archive_free(self):
-        workflow=(ROOT/'.github/workflows/producer-roles.yml').read_text()
-        self.assertNotIn('actions/upload-artifact',workflow)
+        workflow=(ROOT/'.github/workflows/producer-refinement.yml').read_text()
+        self.assertIn('&& !inputs.producer_roles',workflow)
         self.assertIn('PRODUCER_ROLES=true',workflow)
         source=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/ProducerRoleDeviceTest.kt').read_text()
         self.assertIn('val alternatives=emptyList<String>()',source)

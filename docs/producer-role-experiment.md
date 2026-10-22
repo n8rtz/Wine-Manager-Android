@@ -43,8 +43,8 @@ expansion and bounded spelling correction remain separate, unfinished work.
 ## Execution
 
 Run host checks here with `bash tools/run-host-checks.sh`. The manually dispatched
-`producer-roles.yml` runs the actual Kotlin policies on Android, 168 x 4 predictions,
-with 60 seconds per image/policy. There is no artifact-upload step. Scores, compressed
+`producer-refinement.yml` with `producer_roles=true` runs the actual Kotlin policies on Android, 168 x 4 predictions,
+with 60 seconds per image/policy. Artifact upload is unconditionally disabled in this mode. Scores, compressed
 prediction traces, paired comparison and diagnostics use the existing branch/check
 publication path. Compute availability remains necessary. No production promotion
 is automatic, even if development metrics improve.
