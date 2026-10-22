@@ -14,7 +14,7 @@ permissions:
   checks: write
 concurrency:
   group: private-corpus-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   android-corpus:
     runs-on: ubuntu-24.04
