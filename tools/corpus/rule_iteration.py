@@ -20,9 +20,10 @@ def prepare(path):
     for item in items:item['baseline_fields']={f:pred['lab_baseline'][item['image']][f][0] for f in FIELDS}
     path.write_text(json.dumps(items,ensure_ascii=False))
 
-def collect(root,out,sha):
+def collect(root,out,sha,variants=None,description=None):
+    variants=VARIANTS if variants is None else variants
     validation=json.loads((root/'validation.json').read_text())
-    assert validation['images']==168 and set(validation['variants'])==set(VARIANTS)
+    assert validation['images']==168 and set(validation['variants'])==set(variants)
     assert validation['failures']==[] and validation['corpus_budget_ms']==60000
     assert validation['baseline_executions']==validation['old_experimental_executions']==0
     with tempfile.TemporaryDirectory() as d:
@@ -33,11 +34,11 @@ def collect(root,out,sha):
     for r in old:pred['experimental'][r['image']]={f:(r['fields'][f]['value'],r['fields'][f]['state']) for f in FIELDS}
     prior,priorrows=score(ref,pred,prod)
     records=[json.loads(line) for line in (root/'results.jsonl').read_text().splitlines()]
-    assert len(records)==168*len(VARIANTS)
+    assert len(records)==168*len(variants)
     seen=set()
     for r in records:
         key=r['variant'],r['image'];assert key not in seen;seen.add(key)
-        assert r['variant'] in VARIANTS and r['image'] in prod and r['status']=='complete' and r['build']==sha[:12]
+        assert r['variant'] in variants and r['image'] in prod and r['status']=='complete' and r['build']==sha[:12]
         assert set(r['fields'])==set(FIELDS)
         for f in r['fields'].values():
             assert isinstance(f['value'],str) and f['state'] in ('RED','YELLOW')
@@ -46,7 +47,7 @@ def collect(root,out,sha):
             'saved_v3_sha256':digest(V3),'saved_baseline_sha256':digest(RUN/'ocr-comparison.csv'),
             'execution':validation,'v3':prior['pipelines']['experimental'],'baseline':prior['pipelines']['lab_baseline'],'variants':{}}
     outputrows=[]
-    for name in VARIANTS:
+    for name in variants:
         predicted=copy.deepcopy(pred)
         for r in records:
             if r['variant']==name:predicted['experimental'][r['image']]={f:(r['fields'][f]['value'],r['fields'][f]['state']) for f in FIELDS}
@@ -77,12 +78,12 @@ def collect(root,out,sha):
     with (out/'field-results.csv').open('w',newline='') as f:
         w=csv.DictWriter(f,fieldnames=list(outputrows[0]));w.writeheader();w.writerows(outputrows)
     lines=['# Corpus-guided rule/architecture iteration','',
-        'Actual Android/Kotlin execution; seven rule combinations plus two targeted baseline correction strategies. Saved OCR and all old comparisons reused. No production change.','',
+        description or 'Actual Android/Kotlin execution; seven rule combinations plus two targeted baseline correction strategies. Saved OCR and all old comparisons reused. No production change.','',
         '| Variant | Correct / wrong / abstained | Complete / eligible | Complete gained / lost vs baseline |','|---|---:|---:|---:|']
     for name,p in [('saved baseline',base),('saved v3',v3)]+list(result['variants'].items()):
         f=p['all_fields'];i=p['image_results'];pair=p.get('paired',{}).get('lab_baseline',{})
         lines.append(f"| {name} | {f['correct']} / {f['wrong']} / {f['abstained']} | {i['six_field_fully_correct']} / {i['six_field_eligible']} | {len(pair.get('complete_gained',[]))} / {len(pair.get('complete_lost',[]))} |")
-    lines+=['','Rules bits: equivalence of name typography / independent-engine name agreement / explicit cuvée role. Rules-000 is the saved v3 result and is not rerun. The two hybrid strategies use rules-111 results with saved baseline fields, preserving baseline geography and vintage. They require two-engine direct support for changes; a stricter variant only repairs missing/head-only identities, while the other can replace an exact appellation wine name with an explicitly named cuvée.','',
+    lines+=['',description or 'Rules bits: equivalence of name typography / independent-engine name agreement / explicit cuvée role. Rules-000 is the saved v3 result and is not rerun. The two hybrid strategies use rules-111 results with saved baseline fields, preserving baseline geography and vintage. They require two-engine direct support for changes; a stricter variant only repairs missing/head-only identities, while the other can replace an exact appellation wine name with an explicitly named cuvée.','',
         '## Automatic next-step gate','',json.dumps(result['decision'],indent=2),'',
         'This is a development-set result, not held-out validation. Reference judgments remain provisional. The gate selects further testing only; it never changes production or claims a cure. Hybrid elapsed times in raw output reuse the shared extraction time, not an additional baseline execution.','']
     (out/'report.md').write_text('\n'.join(lines))

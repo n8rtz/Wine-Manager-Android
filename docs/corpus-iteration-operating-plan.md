@@ -49,3 +49,28 @@ and unresolved candidate-selection cases for the next general rule intervention.
 If a candidate qualifies, prioritize actual Android regressions and fresh grouped
 labels before promotion. Current references are provisional single-agent review;
 all of these 168 photos are development data, not held-out generalization proof.
+
+## Measured first batch → second implementation (2026-10-22)
+
+Android run 39828977215 completed all nine candidates. Rules-001 (explicit cuvée role only)
+was 602 correct / 82 wrong / 210 abstained, 19 complete. Rules-111 was 613 / 93 / 188,
+20 complete, gaining 6 but losing 9 complete entries relative to the saved baseline.
+Both baseline repair designs were 601 / 100 / 193, 23 complete: four useful fills,
+no additional completed entry. No candidate met the predeclared advancement gate.
+Production and default lab behavior remain unchanged.
+
+Paired near-complete baseline failures motivated the next implemented experiment, not
+another rank sweep: exact printed appellation fallback for missing wine names. Four
+Android policies compare one versus two co-located independent OCR engines, and blank-only
+versus also replacing administrative-text wine values. They require understood saved
+country and region, consistency with all selected origin fields, an exact whole observed
+appellation form, no visible cuvée marker, and no competing qualifying appellations.
+They preserve the other five baseline fields; the host collector enforces that invariant.
+The two-engine policy does not count repeated runs of the same engine as independent.
+No baseline, previous extractor, or OCR engine executes. Only new fallback logic runs,
+using saved baseline fields and observations; references stay on the scoring host.
+
+The same strict advancement gate is retained, even though baseline-preserving variants
+cannot remove the baseline's non-wine errors. A local component improvement is not sufficient
+for promotion or evidence that an architecture beats both controls. Android synthetic
+regressions run before the four-policy corpus batch. All 168 photos remain development data.
