@@ -9,11 +9,11 @@ import java.util.UUID
 
 /** Image descriptors contain no expected OCR text. Each image owns its own metadata and row sequence. */
 internal data class TextLabImageKey(val id:String,val name:String)
-internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false) {
+internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false) {
     val id:String=UUID.randomUUID().toString()
     val journals=images.mapIndexed { index,image ->
         TextLabJournal(selected,build,detectLines).apply {
-            metadata.putAll(mapOf("schema_version" to "2","batch_id" to this@TextLabBatch.id,
+            metadata.putAll(mapOf("gazetteer_enabled" to compareGazetteer.toString(),"schema_version" to "2","batch_id" to this@TextLabBatch.id,
                 "image_id" to image.id,"image_name" to image.name,"image_index" to (index+1).toString(),"image_count" to images.size.toString(),"batch_status" to "running","extraction_mode" to if(compareEvidence && anchorHybrid && repairProducer) "baseline_and_producer_repair_v2" else if(compareEvidence && anchorHybrid) "baseline_and_anchor_hybrid_v1" else if(compareEvidence) "baseline_and_evidence_v1" else "baseline"))
             add("shared","image_queued","queued")
         }

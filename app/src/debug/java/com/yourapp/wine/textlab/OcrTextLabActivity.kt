@@ -102,6 +102,11 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Checkbox(state.compareEvidence,{vm.compareEvidence(it)},enabled=!state.busy)
                 Text("Compare experimental evidence pipeline (keeps production baseline)")
             }
+            Row {
+                Checkbox(state.compareGazetteer,{vm.compareGazetteer(it)},enabled=!state.busy)
+                Text("Compare SQLite trigram gazetteer (experimental, keeps baseline)")
+            }
+            if(state.compareGazetteer) Text("Appellation role tags before producer rules; YELLOW suggestions only. Dataset provenance and real OCR accuracy are not yet validated.",style=MaterialTheme.typography.bodySmall)
             if(state.compareEvidence) {
                 Row {
                     Checkbox(state.anchorHybrid,{vm.anchorHybrid(it)},enabled=!state.busy)

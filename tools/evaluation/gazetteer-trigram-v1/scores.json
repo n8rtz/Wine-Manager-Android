@@ -1,0 +1,24 @@
+{
+  "database_sha256": "dc8c6d8ecaa87f6e26480f2557ad238e771e1e387d37ce04fd42658708b6c5b3",
+  "cases": 443,
+  "positive_cases": 429,
+  "top1_recall": 0.9813519813519813,
+  "standard_recall": 1.0,
+  "synthetic_cases": 420,
+  "synthetic_recall": 0.9809523809523809,
+  "negative_cases": 14,
+  "false_positives": 0,
+  "elapsed_seconds": 3.5310073470000134,
+  "accepted_similarity": {
+    "min": 0.8333333333333334,
+    "median": 0.9166666666666666,
+    "max": 1.0
+  },
+  "accepted_bm25": {
+    "min": -215.95913207577672,
+    "median": -55.798670438170916,
+    "max": -5.486623979284784
+  },
+  "note": "Synthetic lexical development benchmark, not real OCR accuracy or calibrated confidence. Ch\u00e2teau Margaux is not an appellation and is rejected. Ambiguous multi-region identities abstain.",
+  "passes_lexical_target": true
+}
