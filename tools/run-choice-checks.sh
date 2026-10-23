@@ -12,7 +12,7 @@ for name in WineKnowledgeBase FixtureKnowledgeBase PlaceGazetteer PlaceHierarchy
  sources+=("$root/kb/$name.kt")
 done
 bash "$KOTLIN_HOME/bin/kotlinc" "${sources[@]}" "$root/ocr/Tokens.kt" \
- "$root/ui/ScanFormState.kt" "$root/ui/ScanChoicePolicy.kt" \
+ "$root/ui/ScanStats.kt" "$root/ui/ScanFormState.kt" "$root/ui/ScanChoicePolicy.kt" \
  tools/logic-checks/AndroidGeometry.kt tools/logic-checks/AndroidLog.kt tools/logic-checks/ScanChoiceChecks.kt \
  -include-runtime -d "$tmp/choices.jar"
 "$JAVA_HOME/bin/java" -jar "$tmp/choices.jar"

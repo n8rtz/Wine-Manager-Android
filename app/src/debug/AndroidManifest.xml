@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <activity android:name="com.yourapp.wine.phonecorpus.PhoneCorpusActivity" android:exported="false" />
         <activity android:name="com.yourapp.wine.textlab.OcrTextLabActivity" android:exported="false" />
         <activity android:name="com.yourapp.wine.benchmark.OcrLabActivity" android:exported="false" />
     </application>

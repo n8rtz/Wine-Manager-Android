@@ -303,6 +303,14 @@ fun ProfileScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 if (BuildConfig.DEBUG) {
                     ListItem(
+                        headlineContent = { Text("Run bundled 168-photo benchmark") },
+                        supportingContent = { Text("Fresh phone OCR, scored stats, Stop/Resume and CSV export — private test build") },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            context.startActivity(android.content.Intent().setClassName(context,
+                                "com.yourapp.wine.phonecorpus.PhoneCorpusActivity"))
+                        }
+                    )
+                    ListItem(
                         headlineContent = { Text("OCR Text Lab — draw a crop") },
                         supportingContent = { Text("Choose a photo, box a word or phrase, and inspect raw OCR") },
                         modifier = Modifier.fillMaxWidth().clickable {

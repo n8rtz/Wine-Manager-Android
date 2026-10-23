@@ -25,6 +25,8 @@ object ScanDiagnosticFormatter {
         out.line("device=${safe(environment.manufacturer)} ${safe(environment.model)} hardware=${safe(environment.hardware)}")
         out.line("device_abis=${safe(environment.deviceAbis.joinToString())} packaged_abis=${safe(environment.packagedAbis)}")
         out.line()
+        com.yourapp.wine.ui.ScanStats.text(report.fill,report.elapsedMs).lineSequence().forEach { out.line(it) }
+        out.line()
         out.line("[Pipeline]")
         out.line("elapsed_ms=${report.elapsedMs} budget_ms=${com.yourapp.wine.ocr.ScanDeadline.BUDGET_MS} deadline_cancelled=${report.deadlineCancelled} deadline_stage=${trace.deadlineStage} last_stage=${trace.lastStage}")
         out.line("input_bytes=${trace.inputBytes} import_ms=${trace.importMs}")

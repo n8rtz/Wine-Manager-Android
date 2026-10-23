@@ -31,6 +31,8 @@ internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,bu
     }
     fun writeCsv(writer:Writer) = TextLabCsv.write(writer,journals.asSequence().flatMap { journal ->
         journal.rows.asSequence().map { journal.metadata+it }
+    } + TextLabStats.rows(journals).asSequence().map { stats ->
+        mapOf("batch_id" to id,"build" to journals.firstOrNull()?.build.orEmpty())+stats
     })
     fun save(folder:File):File {
         check(folder.isDirectory || folder.mkdirs())
@@ -43,6 +45,7 @@ internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,bu
         } finally { temp.delete() }
     }
     fun summary():String=buildString {
+        appendLine(TextLabStats.text(journals))
         appendLine(TextLabWineTable.formText(journals))
         appendLine(TextLabResidualPreview.text(journals))
         appendLine(TextLabWineTable.text(journals))

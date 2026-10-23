@@ -81,5 +81,10 @@ fun main() {
     val engine=FillEngine(FixtureKnowledgeBase())
     val production=engine.fill(a.sources.flatMap { it.members },2026)
     verify(production.fields.keys==FieldId.entries.toSet())
+    verify(ScanStats.rows(result,2026).size==6)
+    verify(ScanStats.rows(result,2026).first { it[0]=="producer" }[3]=="2")
+    verify(ScanStats.text(result,123L,2026).contains("Filled: 0/6"))
+    verify(ScanStats.text(result,123L,2026).contains("not accuracy"))
+    verify(ScanStats.rows(retake,2026).first { it[0]=="producer" }[1]==b.value)
     println("PASS: $checks actual Kotlin assignment/policy/form-state checks; host geometry fixtures, not Android UI")
 }

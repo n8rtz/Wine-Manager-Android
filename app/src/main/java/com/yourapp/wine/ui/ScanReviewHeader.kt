@@ -57,6 +57,7 @@ fun ScanReviewHeader(
                 if (pending == 1) "1 field needs your confirmation below."
                 else "$pending fields need your confirmation below.",
                 style = MaterialTheme.typography.bodySmall)
+            ScanStatsTable(report)
             report.fill.overallHint?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall)
             }
