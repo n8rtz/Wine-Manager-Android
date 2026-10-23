@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -34,8 +35,9 @@ class PhoneCorpusActivity:ComponentActivity() {
         val clipboard=LocalClipboardManager.current
         var newRun by remember { mutableStateOf(false) }
         var showDetails by remember { mutableStateOf(false) }
-        val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::export) }
-        val exportRaw=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::exportDiagnostics) }
+        var exportIndex by rememberSaveable { mutableStateOf(0) }
+        val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let { vm.saveExportPart(it,exportIndex) } }
+        val importCsv=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::splitExistingCsv) }
         DisposableEffect(state.busy) {
             if(state.busy) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
@@ -78,10 +80,19 @@ class PhoneCorpusActivity:ComponentActivity() {
                         }
                     }
                     TextButton(onClick={clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n"+board.text))}) { Text("Copy scored stats") }
-                    Button(onClick={export.launch("wine-168-${state.mode.name.lowercase()}-${BuildConfig.BUILD_COMMIT}.csv")},enabled=!state.busy && state.csv!=null) { Text("Export scored CSV") }
-                    TextButton(onClick={exportRaw.launch("wine-168-raw-${state.mode.name.lowercase()}-${BuildConfig.BUILD_COMMIT}.csv")},enabled=!state.busy && state.completed>0) { Text("Export raw diagnostics CSV") }
+                    Button(onClick={vm.prepareExport(false)},enabled=!state.busy && state.csv!=null) { Text("Prepare scored CSV export") }
+                    TextButton(onClick={vm.prepareExport(true)},enabled=!state.busy && state.completed>0) { Text("Prepare raw diagnostics CSV export") }
                     Text("CSV includes every scored field and its expected/recognized value, failures, and saved baseline comparisons. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
                 }
+            }
+            item {
+                TextButton(onClick={importCsv.launch(arrayOf("text/*","application/csv","application/octet-stream"))},enabled=!state.busy) { Text("Split an existing CSV for upload") }
+                state.exportParts.forEachIndexed { index,file ->
+                    OutlinedButton(onClick={exportIndex=index;export.launch(file.name)},enabled=!state.busy) {
+                        Text("Save ${if(state.exportParts.size>1) "part ${index+1}/${state.exportParts.size}" else "CSV"} · ${"%.2f".format(file.length()/1_000_000.0)} MB")
+                    }
+                }
+                Text("Exports over 25 MB are split into numbered CSVs, each with a header and complete records. Save and upload every part. A 35 MB export normally produces two files. Existing exports can be split without rerunning the test.",style=MaterialTheme.typography.bodySmall)
             }
             item { TextButton(onClick={showDetails=!showDetails}) { Text(if(showDetails) "Hide per-photo results" else "Show per-photo results") } }
             if(showDetails) items(state.board?.details.orEmpty()) { detail ->

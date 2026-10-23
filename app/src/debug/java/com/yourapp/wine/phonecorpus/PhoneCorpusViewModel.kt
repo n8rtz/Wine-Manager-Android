@@ -20,7 +20,7 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.util.UUID
 
 internal data class CorpusState(val busy:Boolean=false,val mode:PhoneCorpusRunner.Mode=PhoneCorpusRunner.Mode.PRODUCTION,
-    val message:String="Loading bundled benchmark…",val completed:Int=0,val board:PhoneCorpusScoreboard.Board?=null,val csv:File?=null)
+    val message:String="Loading bundled benchmark…",val completed:Int=0,val board:PhoneCorpusScoreboard.Board?=null,val csv:File?=null,val exportParts:List<File> = emptyList())
 internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
     private val mutable=MutableStateFlow(CorpusState());val state=mutable.asStateFlow()
     @Volatile private var stopping=false
@@ -56,7 +56,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
     fun load(mode:PhoneCorpusRunner.Mode,fresh:Boolean=false) {
         if(mutable.value.busy) return
         folder=null
-        mutable.update { it.copy(busy=true,mode=mode,completed=0,board=null,csv=null,message="Loading checkpoints…") }
+        mutable.update { it.copy(busy=true,mode=mode,completed=0,board=null,csv=null,exportParts=emptyList(),message="Loading checkpoints…") }
         viewModelScope.launch(Dispatchers.Default) {
             try { val dir=selectFolder(mode,fresh);folder=dir;refresh(dir,mode);mutable.update { it.copy(message="Ready. Resume skips all checkpointed photos. Retry failures is explicit.") } }
             catch(e:Exception) { folder=null;mutable.update { it.copy(message="Cannot load benchmark: ${e.message}") } }
@@ -103,45 +103,79 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
             finally { if(locked) lock.unlock();mutable.update { it.copy(busy=false) } }
         }
     }
-    fun export(uri:Uri) {
+    fun saveExportPart(uri:Uri,index:Int) {
         if(mutable.value.busy) return
-        val file=mutable.value.csv ?: return
+        val file=mutable.value.exportParts.getOrNull(index) ?: run {
+            mutable.update { it.copy(message="Export session expired. Prepare the CSV again, then save its parts.") };return
+        }
+        mutable.update { it.copy(busy=true,message="Saving ${file.name}…") }
         viewModelScope.launch(Dispatchers.IO) {
             try { app.contentResolver.openOutputStream(uri,"w").use { out -> requireNotNull(out);file.inputStream().use { it.copyTo(out) } }
-                mutable.update { it.copy(message="Scored CSV exported.") }
-            } catch(e:Exception) { mutable.update { it.copy(message="Export failed: ${e.message}") } }
+                mutable.update { it.copy(message="Saved ${file.name}. Save each listed part before uploading.") }
+            } catch(cancel:CancellationException) { throw cancel }
+            catch(e:Exception) { mutable.update { it.copy(message="Export failed: ${e.message}") } }
+            finally { mutable.update { it.copy(busy=false) } }
         }
     }
-    fun exportDiagnostics(uri:Uri) {
+    fun prepareExport(raw:Boolean) {
         if(mutable.value.busy) return
         val dir=folder ?: return
-        mutable.update { it.copy(busy=true,message="Exporting raw diagnostic rows…") }
+        val scored=mutable.value.csv ?: return
+        val mode=mutable.value.mode
+        val previousParts=mutable.value.exportParts
+        mutable.update { it.copy(busy=true,exportParts=emptyList(),message="Preparing upload-sized CSV files…") }
         viewModelScope.launch(Dispatchers.IO) {
+            val exportDir=File(app.cacheDir,"phone-corpus-exports/${UUID.randomUUID()}")
             try {
-                val files=File(dir,"attempts").listFiles().orEmpty().filter { it.extension=="json" }.sortedBy { it.name }
-                // Reiterable, one photo at a time: the CSV writer scans keys, then writes rows.
-                val records=sequence {
-                    for(file in files) {
-                        ensureActive()
-                        val p=JSONObject(file.readText())
-                        val meta=mapOf("build" to p.optString("build"),"mode" to p.optString("mode"),"run_id" to dir.name,
-                            "image" to p.optString("image"),"attempt" to p.optString("attempt"))
-                        yield(meta+mapOf("row_type" to "image_summary","status" to p.optString("status"),"elapsed_ms" to p.optString("total_elapsed_ms"),"error" to p.optString("error"),"engine_incomplete" to p.optBoolean("engine_incomplete").toString(),"diagnostics" to p.optString("diagnostics")))
-                        for(key in listOf("tokens","engine_timings","trace","pipelines")) {
-                            val rows=p.optJSONArray(key) ?: continue
-                            for(i in 0 until rows.length()) {
-                                val row=rows.getJSONObject(i)
-                                yield(meta+mapOf("row_type" to key)+row.keys().asSequence().associateWith { row.optString(it) })
+                check(exportDir.mkdirs())
+                val target=File(exportDir,"wine-168-${if(raw) "raw-" else ""}${mode.name.lowercase()}-${BuildConfig.BUILD_COMMIT}.csv")
+                if(raw) {
+                    val files=File(dir,"attempts").listFiles().orEmpty().filter { it.extension=="json" }.sortedBy { it.name }
+                    // Reiterable, one photo at a time: the CSV writer scans keys, then writes rows.
+                    val records=sequence {
+                        for(file in files) {
+                            ensureActive()
+                            val p=JSONObject(file.readText())
+                            val meta=mapOf("build" to p.optString("build"),"mode" to p.optString("mode"),"run_id" to dir.name,
+                                "image" to p.optString("image"),"attempt" to p.optString("attempt"))
+                            yield(meta+mapOf("row_type" to "image_summary","status" to p.optString("status"),"elapsed_ms" to p.optString("total_elapsed_ms"),"error" to p.optString("error"),"engine_incomplete" to p.optBoolean("engine_incomplete").toString(),"diagnostics" to p.optString("diagnostics")))
+                            for(key in listOf("tokens","engine_timings","trace","pipelines")) {
+                                val rows=p.optJSONArray(key) ?: continue
+                                for(i in 0 until rows.length()) {
+                                    val row=rows.getJSONObject(i)
+                                    yield(meta+mapOf("row_type" to key)+row.keys().asSequence().associateWith { row.optString(it) })
+                                }
                             }
                         }
                     }
-                }
-                requireNotNull(app.contentResolver.openOutputStream(uri,"w")).bufferedWriter().use { writer ->
-                    com.yourapp.wine.textlab.TextLabCsv.write(writer,records)
-                }
-                mutable.update { it.copy(message="Raw diagnostics CSV exported, including retained earlier attempts.") }
-            } catch(cancel:CancellationException) { throw cancel }
-            catch(e:Exception) { mutable.update { it.copy(message="Diagnostic export failed: ${e.message}") } }
+                    target.bufferedWriter(Charsets.UTF_8).use { writer ->
+                        com.yourapp.wine.textlab.TextLabCsv.write(writer,records)
+                    }
+                } else scored.copyTo(target)
+                val parts=CsvUploadParts.split(target,exportDir)
+                if(parts.size>1) target.delete()
+                previousParts.mapNotNull { it.parentFile }.distinct().filter { it.parentFile==exportDir.parentFile }.forEach { it.deleteRecursively() }
+                mutable.update { it.copy(exportParts=parts,message="${parts.size} CSV file(s) ready, each at most 25 MB. Tap each Save button below. Complete rows and headers are preserved.") }
+            } catch(cancel:CancellationException) { exportDir.deleteRecursively();throw cancel }
+            catch(e:Exception) { exportDir.deleteRecursively();mutable.update { it.copy(message="CSV preparation failed: ${e.message}. Original run data is unchanged.") } }
+            finally { mutable.update { it.copy(busy=false) } }
+        }
+    }
+    /** Allows already-saved 35 MB exports from older builds to be split without rerunning OCR. */
+    fun splitExistingCsv(uri:Uri) {
+        if(mutable.value.busy) return
+        mutable.update { it.copy(busy=true,exportParts=emptyList(),message="Splitting selected CSV for upload…") }
+        viewModelScope.launch(Dispatchers.IO) {
+            val exportDir=File(app.cacheDir,"phone-corpus-exports/${UUID.randomUUID()}")
+            try {
+                check(exportDir.mkdirs())
+                val source=File(exportDir,"wine-existing.csv")
+                requireNotNull(app.contentResolver.openInputStream(uri)).use { input -> source.outputStream().use { input.copyTo(it) } }
+                val parts=CsvUploadParts.split(source,exportDir)
+                if(parts.size>1) source.delete()
+                mutable.update { it.copy(exportParts=parts,message="${parts.size} upload-sized CSV file(s) ready. Save every part below. Original file unchanged; no OCR rerun.") }
+            } catch(cancel:CancellationException) { exportDir.deleteRecursively();throw cancel }
+            catch(e:Exception) { exportDir.deleteRecursively();mutable.update { it.copy(message="Cannot split CSV: ${e.message}. Original file unchanged.") } }
             finally { mutable.update { it.copy(busy=false) } }
         }
     }

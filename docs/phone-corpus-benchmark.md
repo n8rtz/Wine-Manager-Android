@@ -76,3 +76,11 @@ bash tools/run-host-checks.sh
 ```
 
 Build on the normal Android/Code on the Go setup with `./gradlew :app:assembleDebug`. Required device smoke checks: compile/install; Settings launch; one-photo checkpoint; Stop/Resume; background/rotation/process-death recovery; failed-engine reporting; CSV opening; then the full 168-photo pass. No accuracy improvement is claimed before that run.
+
+## Upload-size export update
+
+Benchmark exports now use **Prepare scored CSV export** / **Prepare raw diagnostics CSV export**, followed by a **Save** button for each prepared file. Files over **25,000,000 bytes** are split at CSV record boundaries, with the exact header repeated in every numbered part. A typical 35 MB file produces two parts; larger exports can produce more so every file stays below the upload cap. Quoted newlines, escaped quotes and UTF-8 bytes are preserved. A single record too large to fit is an explicit error, never silently truncated. The original checkpoint data is unchanged.
+
+**Split an existing CSV for upload** opens Android's document picker and can split a previously saved 35 MB export from an older build, without rerunning OCR or accessing that build's run namespace. Save and upload all resulting parts. No broad storage permission or uploads are added. Both preparation and file copying run off the UI thread. Prepared parts are temporary cache files; if the app is killed or cache cleared, prepare/select the source again.
+
+Validation: 77 actual Kotlin JVM split checks pass, including a ~35 MB file → two parts, exact byte boundaries, multiline/escaped/unicode fields, header repetition, multiple parts and byte-for-byte reconstruction. Android SAF/Compose integration still requires a device smoke test; this sandbox cannot establish APK build success.

@@ -1,0 +1,1009 @@
+image,review_number,field,reference_status,expected,lab-combined-60s_output,lab-combined-60s_outcome,lab-guarded-producer_output,lab-guarded-producer_outcome,lab-trigram_output,lab-trigram_outcome,Frozen baseline · same attempted photos_output,Frozen baseline · same attempted photos_outcome
+01ad85537783130833bca5f46deeeef8223b8720.jpg,1,producer,expected_value,La Cave d'Augustin Florent,LACAvE D'AUGUSTIN FLORENT,correct_value,LACAvE D'AUGUSTIN FLORENT,correct_value,LACAvE D'AUGUSTIN FLORENT,correct_value,LCAvE D'AUGUSTIN FLORENT,wrong_value
+01ad85537783130833bca5f46deeeef8223b8720.jpg,1,wine_name,expected_value,Médoc,MISENBOUTEILLEPARMAISONJOHANESBOUBE,wrong_value,MEDOC,correct_value,MISENBOUTEILLEPARMAISONJOHANESBOUBE,wrong_value,MISENBOUTEILLEPARMAISONJOHANESBOUBE,wrong_value
+01ad85537783130833bca5f46deeeef8223b8720.jpg,1,country,expected_value,France,,missing_value,France,correct_value,France,correct_value,,missing_value
+01ad85537783130833bca5f46deeeef8223b8720.jpg,1,region,expected_value,Bordeaux,,missing_value,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value
+01ad85537783130833bca5f46deeeef8223b8720.jpg,1,subregion,expected_value,Médoc,,missing_value,Médoc,correct_value,Médoc,correct_value,,missing_value
+01ad85537783130833bca5f46deeeef8223b8720.jpg,1,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+03110ad18731d0f11fadf9b86725d69202f08cff.jpg,2,producer,expected_value,Domaine Drouhin,Domaine Drouhin,correct_value,Domaine Drouhin,correct_value,Domaine Drouhin,correct_value,Domaine Drouhin,correct_value
+03110ad18731d0f11fadf9b86725d69202f08cff.jpg,2,wine_name,expected_value,Pinot Noir,DROUHIN·FAMILY·ESTATE ESTATE,wrong_value,Pinot Noir,correct_value,DROUHIN·FAMILY·ESTATE ESTATE,wrong_value,DROUHIN·FAMILY·ESTATE ESTATE,wrong_value
+03110ad18731d0f11fadf9b86725d69202f08cff.jpg,2,country,expected_value,Oregon,Oregon,correct_value,Oregon,correct_value,Oregon,correct_value,Oregon,correct_value
+03110ad18731d0f11fadf9b86725d69202f08cff.jpg,2,region,expected_value,Willamette Valley,Willamette Valley,correct_value,Willamette Valley,correct_value,Willamette Valley,correct_value,Willamette Valley,correct_value
+03110ad18731d0f11fadf9b86725d69202f08cff.jpg,2,subregion,expected_value,Dundee Hills,Dundee Hills,correct_value,Dundee Hills,correct_value,Dundee Hills,correct_value,Dundee Hills,correct_value
+03110ad18731d0f11fadf9b86725d69202f08cff.jpg,2,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+043674fb7de97f7596cca3af689c3ed23f9c0a09.jpg,3,producer,expected_value,La Cave d'Augustin Florent,,missing_value,,missing_value,,missing_value,,missing_value
+043674fb7de97f7596cca3af689c3ed23f9c0a09.jpg,3,wine_name,expected_value,Brouilly,Brouilly,correct_value,Brouilly,correct_value,,missing_value,Brouilly,correct_value
+043674fb7de97f7596cca3af689c3ed23f9c0a09.jpg,3,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+043674fb7de97f7596cca3af689c3ed23f9c0a09.jpg,3,region,expected_value,Beaujolais,Beaujolais,correct_value,Beaujolais,correct_value,Beaujolais,correct_value,Beaujolais,correct_value
+043674fb7de97f7596cca3af689c3ed23f9c0a09.jpg,3,subregion,expected_value,Brouilly,Brouilly,correct_value,Brouilly,correct_value,Brouilly,correct_value,Brouilly,correct_value
+043674fb7de97f7596cca3af689c3ed23f9c0a09.jpg,3,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+0519fcaa47207b5bf3ca465ec3f47ba122d05cdd.jpg,4,producer,expected_value,Domaine de l'A,DOMAINE DE L,wrong_value,,missing_value,DOMAINE DE L,wrong_value,DOMAINE DE L,wrong_value
+0519fcaa47207b5bf3ca465ec3f47ba122d05cdd.jpg,4,wine_name,unresolved,,DERENONCOURT VICNERONS,unscored_filled,,unscored_blank,DERENONCOURT VICNERONS,unscored_filled,DERENONCOURT VICNERONS,unscored_filled
+0519fcaa47207b5bf3ca465ec3f47ba122d05cdd.jpg,4,country,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+0519fcaa47207b5bf3ca465ec3f47ba122d05cdd.jpg,4,region,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+0519fcaa47207b5bf3ca465ec3f47ba122d05cdd.jpg,4,subregion,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+0519fcaa47207b5bf3ca465ec3f47ba122d05cdd.jpg,4,vintage,expected_value,2006,2006,correct_value,2006,correct_value,2006,correct_value,2006,correct_value
+0832df82586e830d99d16e7c0ba1321bf5939052.jpg,5,producer,expected_value,Château Haute Brande,Château Haute Brande,correct_value,Château Haute Brande,correct_value,Château Haute Brande,correct_value,Château Haute Brande,correct_value
+0832df82586e830d99d16e7c0ba1321bf5939052.jpg,5,wine_name,expected_value,Côtes de Bergerac Moelleux,Côtes de Bergerac,correct_value,COTES DE BERGERAC,correct_value,MOELLEUX,wrong_value,Côtes de Bergerac,correct_value
+0832df82586e830d99d16e7c0ba1321bf5939052.jpg,5,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+0832df82586e830d99d16e7c0ba1321bf5939052.jpg,5,region,expected_value,South West France,South West France,correct_value,South West France,correct_value,Sud-Ouest,correct_value,South West France,correct_value
+0832df82586e830d99d16e7c0ba1321bf5939052.jpg,5,subregion,expected_value,Côtes de Bergerac,Côtes de Bergerac,correct_value,Côtes de Bergerac,correct_value,Côtes de Bergerac,correct_value,Côtes de Bergerac,correct_value
+0832df82586e830d99d16e7c0ba1321bf5939052.jpg,5,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+0993cacc7be690f2720b8183edaa6a7970f0f114.jpg,6,producer,expected_value,Château Ambe Tour Pourret,CHATEAU AMBU TOUR POURRET,wrong_value,CHATEAU AMBU TOUR POURRET,wrong_value,CHATEAU AMBU TOUR POURRET,wrong_value,CHATEAU AMBU TOUR POURRET,wrong_value
+0993cacc7be690f2720b8183edaa6a7970f0f114.jpg,6,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,SAINT-EMILION Grand Cru,correct_value,Françoise et Philippe Lannoye,wrong_value,Saint-Émilion Grand Cru,correct_value
+0993cacc7be690f2720b8183edaa6a7970f0f114.jpg,6,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+0993cacc7be690f2720b8183edaa6a7970f0f114.jpg,6,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+0993cacc7be690f2720b8183edaa6a7970f0f114.jpg,6,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+0993cacc7be690f2720b8183edaa6a7970f0f114.jpg,6,vintage,expected_value,2009,2009,correct_value,2009,correct_value,2009,correct_value,2009,correct_value
+0a26c39e3f26ec4d636c0bde3e02e49b2139c490.jpg,7,producer,expected_value,Château Amélisse,Château Améliss,wrong_value,Château Améliss,wrong_value,Château Améliss,wrong_value,Château Améliss,wrong_value
+0a26c39e3f26ec4d636c0bde3e02e49b2139c490.jpg,7,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,EARL DES VIGNOBLES THIERRY COURRECHE,wrong_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+0a26c39e3f26ec4d636c0bde3e02e49b2139c490.jpg,7,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+0a26c39e3f26ec4d636c0bde3e02e49b2139c490.jpg,7,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+0a26c39e3f26ec4d636c0bde3e02e49b2139c490.jpg,7,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+0a26c39e3f26ec4d636c0bde3e02e49b2139c490.jpg,7,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+0b50bc2ae5aec19613adafe03ecc0cd59a981e49.jpg,8,producer,expected_value,Château Margaux,Château Margaux,correct_value,Château Margaux,correct_value,HATEAU,wrong_value,Château Margaux,correct_value
+0b50bc2ae5aec19613adafe03ecc0cd59a981e49.jpg,8,wine_name,unresolved,,,unscored_blank,MARGAUX,unscored_filled,,unscored_blank,,unscored_blank
+0b50bc2ae5aec19613adafe03ecc0cd59a981e49.jpg,8,country,unresolved,,France,unscored_filled,France,unscored_filled,France,unscored_filled,France,unscored_filled
+0b50bc2ae5aec19613adafe03ecc0cd59a981e49.jpg,8,region,unresolved,,Bordeaux,unscored_filled,Bordeaux,unscored_filled,Bordeaux,unscored_filled,Bordeaux,unscored_filled
+0b50bc2ae5aec19613adafe03ecc0cd59a981e49.jpg,8,subregion,unresolved,,Margaux,unscored_filled,Margaux,unscored_filled,Margaux,unscored_filled,Margaux,unscored_filled
+0b50bc2ae5aec19613adafe03ecc0cd59a981e49.jpg,8,vintage,expected_value,2012,2012,correct_value,2012,correct_value,2012,correct_value,2012,correct_value
+0b70689fae76974f71587346b5330151cb1a34a2.jpg,9,producer,unresolved,,SOMMELIERS,unscored_filled,SOMMELIERS,unscored_filled,SOMMELIERS,unscored_filled,SOMMELIERS,unscored_filled
+0b70689fae76974f71587346b5330151cb1a34a2.jpg,9,wine_name,expected_value,Médoc,Médoc,correct_value,MÉDOC,correct_value,,missing_value,Médoc,correct_value
+0b70689fae76974f71587346b5330151cb1a34a2.jpg,9,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+0b70689fae76974f71587346b5330151cb1a34a2.jpg,9,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+0b70689fae76974f71587346b5330151cb1a34a2.jpg,9,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+0b70689fae76974f71587346b5330151cb1a34a2.jpg,9,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+0c16e028e0864e2eb6c37503df7d4061b625ef6d.jpg,10,producer,expected_value,Château La Sauvageonne,CHÂTEAU LA,wrong_value,,missing_value,CHÂTEAU LA,wrong_value,CHÂTEAU LA,wrong_value
+0c16e028e0864e2eb6c37503df7d4061b625ef6d.jpg,10,wine_name,expected_value,Volcanie Rosé,GÉRARD BERTRAND,wrong_value,LANGUEDOc,wrong_value,GÉRARD BERTRAND,wrong_value,GÉRARD BERTRAND,wrong_value
+0c16e028e0864e2eb6c37503df7d4061b625ef6d.jpg,10,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+0c16e028e0864e2eb6c37503df7d4061b625ef6d.jpg,10,region,expected_value,Languedoc,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+0c16e028e0864e2eb6c37503df7d4061b625ef6d.jpg,10,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+0c16e028e0864e2eb6c37503df7d4061b625ef6d.jpg,10,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+0cdcf44ef13642a764ba532f473df40bca586a09.jpg,11,producer,expected_value,Château Alcée,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value
+0cdcf44ef13642a764ba532f473df40bca586a09.jpg,11,wine_name,expected_value,Castillon Côtes de Bordeaux,,missing_value,,missing_value,NICOLAS THIENPONT,wrong_value,,missing_value
+0cdcf44ef13642a764ba532f473df40bca586a09.jpg,11,country,expected_value,France,,missing_value,,missing_value,,missing_value,,missing_value
+0cdcf44ef13642a764ba532f473df40bca586a09.jpg,11,region,expected_value,Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+0cdcf44ef13642a764ba532f473df40bca586a09.jpg,11,subregion,expected_value,Castillon Côtes de Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+0cdcf44ef13642a764ba532f473df40bca586a09.jpg,11,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,12,producer,expected_value,La Francette,,missing_value,,missing_value,,missing_value,,missing_value
+0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,12,wine_name,expected_value,Cabernet Sauvignon,Cabernet Sauvignon,correct_value,Cabernet Sauvignon,correct_value,Cabernet Sauvignon,correct_value,Cabernet Sauvignon,correct_value
+0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,12,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,12,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,12,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,12,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+127dabca2115e60936586c92c7fd81df18a8d019.jpg,13,producer,expected_value,Château de Beaupré,CHÀTEAU DE BEAUPRÉ,correct_value,CHÀTEAU DE BEAUPRÉ,correct_value,CHÀTEAU DE BEAUPRÉ,correct_value,CHÀTEAU DE BEAUPRÉ,correct_value
+127dabca2115e60936586c92c7fd81df18a8d019.jpg,13,wine_name,expected_value,Coteaux d'Aix-en-Provence,Coteaux d'Aix-en-Provence,correct_value,COTEAUX D'AIX-EN-PROVENCE,correct_value,,missing_value,Coteaux d'Aix-en-Provence,correct_value
+127dabca2115e60936586c92c7fd81df18a8d019.jpg,13,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+127dabca2115e60936586c92c7fd81df18a8d019.jpg,13,region,expected_value,Provence,Provence,correct_value,Provence,correct_value,Provence,correct_value,Provence,correct_value
+127dabca2115e60936586c92c7fd81df18a8d019.jpg,13,subregion,expected_value,Coteaux d'Aix-en-Provence,Coteaux d'Aix-en-Provence,correct_value,Coteaux d'Aix-en-Provence,correct_value,Coteaux d'Aix-en-Provence,correct_value,Coteaux d'Aix-en-Provence,correct_value
+127dabca2115e60936586c92c7fd81df18a8d019.jpg,13,vintage,expected_value,2012,2012,correct_value,2012,correct_value,2012,correct_value,2012,correct_value
+1312f082dcbacf739b6edcc04b4a55d731254782.jpg,14,producer,expected_value,Club des Sommeliers,,missing_value,,missing_value,,missing_value,,missing_value
+1312f082dcbacf739b6edcc04b4a55d731254782.jpg,14,wine_name,expected_value,Crozes-Hermitage,Crozes-Hermitage,correct_value,CROZES-HERMITAGE,correct_value,Appellotion Controle,wrong_value,Crozes-Hermitage,correct_value
+1312f082dcbacf739b6edcc04b4a55d731254782.jpg,14,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+1312f082dcbacf739b6edcc04b4a55d731254782.jpg,14,region,expected_value,Rhône,Rhône,correct_value,,missing_value,Rhône,correct_value,Rhône,correct_value
+1312f082dcbacf739b6edcc04b4a55d731254782.jpg,14,subregion,expected_value,Crozes-Hermitage,Crozes-Hermitage,correct_value,,missing_value,Crozes-Hermitage,correct_value,Crozes-Hermitage,correct_value
+1312f082dcbacf739b6edcc04b4a55d731254782.jpg,14,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+17e6154f4689e66187a9b5a1395788463188aa50.jpg,15,producer,expected_value,La Cave d'Augustin Florent,,missing_value,,missing_value,,missing_value,,missing_value
+17e6154f4689e66187a9b5a1395788463188aa50.jpg,15,wine_name,expected_value,Costières de Nîmes,DETIMES,wrong_value,,missing_value,DETIMES,wrong_value,DETIMES,wrong_value
+17e6154f4689e66187a9b5a1395788463188aa50.jpg,15,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,,missing_value
+17e6154f4689e66187a9b5a1395788463188aa50.jpg,15,region,expected_value,Rhône,,missing_value,,missing_value,,missing_value,,missing_value
+17e6154f4689e66187a9b5a1395788463188aa50.jpg,15,subregion,expected_value,Costières de Nîmes,,missing_value,,missing_value,,missing_value,,missing_value
+17e6154f4689e66187a9b5a1395788463188aa50.jpg,15,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,16,producer,expected_value,A. Kolb,,missing_value,,missing_value,,missing_value,,missing_value
+196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,16,wine_name,expected_value,Crémant d'Alsace Brut,,missing_value,Brut,wrong_value,,missing_value,,missing_value
+196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,16,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,16,region,expected_value,Alsace,Alsace,correct_value,Alsace,correct_value,Alsace,correct_value,Alsace,correct_value
+196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,16,subregion,expected_blank,,Crémant d'Alsace,unsupported_fill,Crémant d'Alsace,unsupported_fill,Crémant d'Alsace,unsupported_fill,Crémant d'Alsace,unsupported_fill
+196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,16,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+19baa54e476e220e97e7575070746ad8a8526558.jpg,17,producer,expected_value,Malesan,,missing_value,,missing_value,,missing_value,,missing_value
+19baa54e476e220e97e7575070746ad8a8526558.jpg,17,wine_name,expected_value,Bordeaux Cuvée Sélectionnée,,missing_value,Cuvée Sélectionnée,correct_value,,missing_value,,missing_value
+19baa54e476e220e97e7575070746ad8a8526558.jpg,17,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+19baa54e476e220e97e7575070746ad8a8526558.jpg,17,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+19baa54e476e220e97e7575070746ad8a8526558.jpg,17,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+19baa54e476e220e97e7575070746ad8a8526558.jpg,17,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6.jpg,18,producer,expected_value,Château d'Agassac,CHÂTEAU D'AGASSAO,wrong_value,CHÂTEAU D'AGASSAO,wrong_value,CHÂTEAU D'AGASSAO,wrong_value,CHÂTEAU D'AGASSAO,wrong_value
+1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6.jpg,18,wine_name,expected_value,Haut-Médoc,Haut-Médoc,correct_value,HAUT-MÉDOC,correct_value,,missing_value,Haut-Médoc,correct_value
+1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6.jpg,18,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6.jpg,18,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6.jpg,18,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6.jpg,18,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+1d7a6e9f954f5f79a591e500f53b4d47af9ac443.jpg,19,producer,expected_value,Delor,,missing_value,,missing_value,,missing_value,,missing_value
+1d7a6e9f954f5f79a591e500f53b4d47af9ac443.jpg,19,wine_name,expected_value,Impérial Médoc,,missing_value,,missing_value,,missing_value,,missing_value
+1d7a6e9f954f5f79a591e500f53b4d47af9ac443.jpg,19,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+1d7a6e9f954f5f79a591e500f53b4d47af9ac443.jpg,19,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+1d7a6e9f954f5f79a591e500f53b4d47af9ac443.jpg,19,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+1d7a6e9f954f5f79a591e500f53b4d47af9ac443.jpg,19,vintage,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+1dbb24dc23d4b2aee47d710e06e8b81a696e021d.jpg,20,producer,expected_value,Lalande,LALANDE,correct_value,LALANDE,correct_value,LALANDE,correct_value,LALANDE,correct_value
+1dbb24dc23d4b2aee47d710e06e8b81a696e021d.jpg,20,wine_name,expected_value,Bordeaux Rosé,Bordeaux,wrong_value,BORDEAUX,wrong_value,,missing_value,Bordeaux,wrong_value
+1dbb24dc23d4b2aee47d710e06e8b81a696e021d.jpg,20,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+1dbb24dc23d4b2aee47d710e06e8b81a696e021d.jpg,20,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+1dbb24dc23d4b2aee47d710e06e8b81a696e021d.jpg,20,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+1dbb24dc23d4b2aee47d710e06e8b81a696e021d.jpg,20,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+1e1f4a10e73eecd502c71bb651188be104c20814.jpg,21,producer,expected_value,Château de l'Abbaye,CHATEAU de LABBA,wrong_value,CHATEAU de LABBA,wrong_value,CHATEAU de LABBA,wrong_value,CHATEAU de LABBA,wrong_value
+1e1f4a10e73eecd502c71bb651188be104c20814.jpg,21,wine_name,expected_value,Haut-Médoc,Haut-Médoc,correct_value,HAUT-MÉDOC,correct_value,,missing_value,Haut-Médoc,correct_value
+1e1f4a10e73eecd502c71bb651188be104c20814.jpg,21,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+1e1f4a10e73eecd502c71bb651188be104c20814.jpg,21,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+1e1f4a10e73eecd502c71bb651188be104c20814.jpg,21,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+1e1f4a10e73eecd502c71bb651188be104c20814.jpg,21,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+1fa4e22d42db84cd7e2a212d8d754e2c28e11f13.jpg,22,producer,expected_value,Viguerie Royale,CAVE DE GAN Jurançon,wrong_value,CAVE DE GAN Jurançon,wrong_value,CAVE DE GAN Jurançon,wrong_value,CAVE DE GAN Jurançon,wrong_value
+1fa4e22d42db84cd7e2a212d8d754e2c28e11f13.jpg,22,wine_name,expected_value,Cuvée du Baptême,,missing_value,Cuvée du Baptême,correct_value,,missing_value,,missing_value
+1fa4e22d42db84cd7e2a212d8d754e2c28e11f13.jpg,22,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+1fa4e22d42db84cd7e2a212d8d754e2c28e11f13.jpg,22,region,expected_value,South West France,South West France,correct_value,South West France,correct_value,,missing_value,South West France,correct_value
+1fa4e22d42db84cd7e2a212d8d754e2c28e11f13.jpg,22,subregion,expected_value,Jurançon,Jurançon,correct_value,Jurançon,correct_value,,missing_value,Jurançon,correct_value
+1fa4e22d42db84cd7e2a212d8d754e2c28e11f13.jpg,22,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+20ff2d19cce7ebe42f322beba3070a8a7a684464.jpg,23,producer,expected_value,Viguerie Royale,CAVE DE GAN Jurançon,wrong_value,CAVE DE GAN Jurançon,wrong_value,CAVE DE GAN Jurançon,wrong_value,CAVE DE GAN Jurançon,wrong_value
+20ff2d19cce7ebe42f322beba3070a8a7a684464.jpg,23,wine_name,expected_value,Cuvée du Baptême,,missing_value,Cuvée du Baptême,correct_value,,missing_value,,missing_value
+20ff2d19cce7ebe42f322beba3070a8a7a684464.jpg,23,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+20ff2d19cce7ebe42f322beba3070a8a7a684464.jpg,23,region,expected_value,South West France,South West France,correct_value,South West France,correct_value,,missing_value,South West France,correct_value
+20ff2d19cce7ebe42f322beba3070a8a7a684464.jpg,23,subregion,expected_value,Jurançon,Jurançon,correct_value,Jurançon,correct_value,,missing_value,Jurançon,correct_value
+20ff2d19cce7ebe42f322beba3070a8a7a684464.jpg,23,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+220b2abb1f84571f4926040bbadd7f52d4a5d9c5.jpg,24,producer,expected_value,Château Amélisse,Chateau Amelto,wrong_value,Chateau Amelto,wrong_value,Chateau Amelto,wrong_value,Chateau Amelto,wrong_value
+220b2abb1f84571f4926040bbadd7f52d4a5d9c5.jpg,24,wine_name,expected_value,Saint-Émilion Grand Cru,,missing_value,Grand Cru CONTROLE,wrong_value,,missing_value,,missing_value
+220b2abb1f84571f4926040bbadd7f52d4a5d9c5.jpg,24,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+220b2abb1f84571f4926040bbadd7f52d4a5d9c5.jpg,24,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+220b2abb1f84571f4926040bbadd7f52d4a5d9c5.jpg,24,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+220b2abb1f84571f4926040bbadd7f52d4a5d9c5.jpg,24,vintage,expected_value,2016,,missing_value,,missing_value,,missing_value,,missing_value
+22a4c150835d5a8d390d8d4398e3f83a87a3063d.jpg,25,producer,expected_value,Moulin du Paradis,,missing_value,,missing_value,,missing_value,,missing_value
+22a4c150835d5a8d390d8d4398e3f83a87a3063d.jpg,25,wine_name,expected_value,Montagne Saint-Émilion,Patricia & Pierre Bernault,wrong_value,,missing_value,Patricia & Pierre Bernault,wrong_value,Patricia & Pierre Bernault,wrong_value
+22a4c150835d5a8d390d8d4398e3f83a87a3063d.jpg,25,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+22a4c150835d5a8d390d8d4398e3f83a87a3063d.jpg,25,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+22a4c150835d5a8d390d8d4398e3f83a87a3063d.jpg,25,subregion,expected_value,Montagne Saint-Émilion,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value
+22a4c150835d5a8d390d8d4398e3f83a87a3063d.jpg,25,vintage,expected_value,2006,2006,correct_value,2006,correct_value,2006,correct_value,2006,correct_value
+22a571fd006a919948985e8fc3af8103de8a1f99.jpg,26,producer,expected_value,Château Abelyce,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value
+22a571fd006a919948985e8fc3af8103de8a1f99.jpg,26,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,Grand Cru,wrong_value,WINEMAKER Grand Cru,wrong_value,Saint-Émilion Grand Cru,correct_value
+22a571fd006a919948985e8fc3af8103de8a1f99.jpg,26,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+22a571fd006a919948985e8fc3af8103de8a1f99.jpg,26,region,expected_value,Bordeaux,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value,Bordeaux,correct_value
+22a571fd006a919948985e8fc3af8103de8a1f99.jpg,26,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,,missing_value,Saint-Émilion,correct_value,Saint-Émilion Grand Cru,correct_value
+22a571fd006a919948985e8fc3af8103de8a1f99.jpg,26,vintage,expected_value,2016,,missing_value,,missing_value,,missing_value,,missing_value
+22be27efb68419e63ef680d5a129745f18e3d045.jpg,27,producer,expected_value,La Cave d'Augustin Florent,LACAVE D'AUGUSTIN FLORENT,correct_value,LACAVE D'AUGUSTIN FLORENT,correct_value,LACAVE D'AUGUSTIN FLORENT,correct_value,LACAVE D'AUGUSTIN FLORENT,correct_value
+22be27efb68419e63ef680d5a129745f18e3d045.jpg,27,wine_name,expected_value,Beaujolais-Villages,PRODUIT DE,wrong_value,LACAVE D'AUGUSTIN FLORENT,wrong_value,PRODUIT DE,wrong_value,PRODUIT DE,wrong_value
+22be27efb68419e63ef680d5a129745f18e3d045.jpg,27,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+22be27efb68419e63ef680d5a129745f18e3d045.jpg,27,region,expected_value,Beaujolais,,missing_value,Beaujolais,correct_value,Beaujolais,correct_value,,missing_value
+22be27efb68419e63ef680d5a129745f18e3d045.jpg,27,subregion,expected_value,Beaujolais-Villages,,missing_value,,missing_value,Beaujolais-Villages,correct_value,,missing_value
+22be27efb68419e63ef680d5a129745f18e3d045.jpg,27,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg,28,producer,expected_value,Château Margaux,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value
+23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg,28,wine_name,expected_value,Margaux,Margaux,correct_value,MARGAUX,correct_value,MERACE OF,wrong_value,Margaux,correct_value
+23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg,28,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg,28,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg,28,subregion,expected_value,Margaux,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value
+23aab97419703ecf3b2b058a2b49c8a35bb875ac.jpg,28,vintage,expected_value,2000,2000,correct_value,2000,correct_value,2000,correct_value,2000,correct_value
+23b88f8fe9577ea46ca467ed80bd966fde516ab6.jpg,29,producer,expected_value,La Cave d'Augustin Florent,CAVE D'AUGUSTIN FLORENT,correct_value,CAVE D'AUGUSTIN FLORENT,correct_value,CAVE D'AUGUSTIN FLORENT,correct_value,CAVE D'AUGUSTIN FLORENT,correct_value
+23b88f8fe9577ea46ca467ed80bd966fde516ab6.jpg,29,wine_name,expected_value,Rosé d'Anjou,APELATION Rosé D'ANOU CONTROL,wrong_value,Rosé D'ANJOU,correct_value,APELATION Rosé D'ANOU CONTROL,wrong_value,,missing_value
+23b88f8fe9577ea46ca467ed80bd966fde516ab6.jpg,29,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+23b88f8fe9577ea46ca467ed80bd966fde516ab6.jpg,29,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,,missing_value,Loire,correct_value
+23b88f8fe9577ea46ca467ed80bd966fde516ab6.jpg,29,subregion,expected_value,Anjou,Rosé d'Anjou,correct_value,,missing_value,,missing_value,Rosé d'Anjou,correct_value
+23b88f8fe9577ea46ca467ed80bd966fde516ab6.jpg,29,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+285fec9613de9bcb3beb7770e88611641608a5bb.jpg,30,producer,expected_value,Maison Chandesais,Maison Chandesais,correct_value,Maison Chandesais,correct_value,Maison Chandesais,correct_value,Maison Chandesais,correct_value
+285fec9613de9bcb3beb7770e88611641608a5bb.jpg,30,wine_name,expected_value,Les Guillottes,,missing_value,BOURGOGNE,wrong_value,,missing_value,,missing_value
+285fec9613de9bcb3beb7770e88611641608a5bb.jpg,30,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+285fec9613de9bcb3beb7770e88611641608a5bb.jpg,30,region,expected_value,Burgundy,Burgundy,correct_value,,missing_value,Bourgogne,correct_value,Burgundy,correct_value
+285fec9613de9bcb3beb7770e88611641608a5bb.jpg,30,subregion,expected_value,Hautes Côtes de Beaune,Bourgogne Hautes-Côtes de Beaune,correct_value,,missing_value,Bourgogne Hautes-Côtes de Beaune,correct_value,Bourgogne Hautes-Côtes de Beaune,correct_value
+285fec9613de9bcb3beb7770e88611641608a5bb.jpg,30,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+29ea6458e0ce20b341287e5e59589a94d6c0ae94.jpg,31,producer,expected_value,Château La Tour de By,,missing_value,,missing_value,,missing_value,,missing_value
+29ea6458e0ce20b341287e5e59589a94d6c0ae94.jpg,31,wine_name,expected_value,Médoc,Médoc,correct_value,MÉDOC,correct_value,,missing_value,Médoc,correct_value
+29ea6458e0ce20b341287e5e59589a94d6c0ae94.jpg,31,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+29ea6458e0ce20b341287e5e59589a94d6c0ae94.jpg,31,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+29ea6458e0ce20b341287e5e59589a94d6c0ae94.jpg,31,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+29ea6458e0ce20b341287e5e59589a94d6c0ae94.jpg,31,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+2cb7319977123bb12c0a8f349b304034da35d91f.jpg,32,producer,expected_value,Bertrand Ravache,,missing_value,,missing_value,LÉO,wrong_value,,missing_value
+2cb7319977123bb12c0a8f349b304034da35d91f.jpg,32,wine_name,expected_value,Léo by Léo,BERTRAND RAVACHE AUDACE PAR AUD A C E PA,wrong_value,,missing_value,BERTRAND RAVACHE AUDACE PAR AUD A C E PA,wrong_value,BERTRAND RAVACHE AUDACE PAR AUD A C E PA,wrong_value
+2cb7319977123bb12c0a8f349b304034da35d91f.jpg,32,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+2cb7319977123bb12c0a8f349b304034da35d91f.jpg,32,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+2cb7319977123bb12c0a8f349b304034da35d91f.jpg,32,subregion,expected_value,Fronsac,,missing_value,,missing_value,Fronsac,correct_value,,missing_value
+2cb7319977123bb12c0a8f349b304034da35d91f.jpg,32,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+300e16922f8692be7d9cb9de26254b5770caf170.jpg,33,producer,expected_value,Château d'Agassac,CHÂTEAU D'AGASSAC,correct_value,CHÂTEAU D'AGASSAC,correct_value,CHÂTEAU D'AGASSAC,correct_value,CHÂTEAU D'AGASSAC,correct_value
+300e16922f8692be7d9cb9de26254b5770caf170.jpg,33,wine_name,expected_value,Haut-Médoc,Cru Bourgeois ExceptionNel,wrong_value,HAUT-MÉDOC,correct_value,Cru Bourgeois ExceptionNel,wrong_value,Cru Bourgeois ExceptionNel,wrong_value
+300e16922f8692be7d9cb9de26254b5770caf170.jpg,33,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+300e16922f8692be7d9cb9de26254b5770caf170.jpg,33,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+300e16922f8692be7d9cb9de26254b5770caf170.jpg,33,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+300e16922f8692be7d9cb9de26254b5770caf170.jpg,33,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+31348bab31b100df983d8abe19a3fe62463446b5.jpg,34,producer,expected_value,Château Abelyce,CHÂTEAU ABELYCE,correct_value,CHÂTEAU ABELYCE,correct_value,CHÂTEAU ABELYCE,correct_value,CHÂTEAU ABELYCE,correct_value
+31348bab31b100df983d8abe19a3fe62463446b5.jpg,34,wine_name,expected_value,Saint-Émilion Grand Cru,,missing_value,AB BELY YCE,wrong_value,,missing_value,,missing_value
+31348bab31b100df983d8abe19a3fe62463446b5.jpg,34,country,expected_value,France,,missing_value,,missing_value,,missing_value,,missing_value
+31348bab31b100df983d8abe19a3fe62463446b5.jpg,34,region,expected_value,Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+31348bab31b100df983d8abe19a3fe62463446b5.jpg,34,subregion,expected_value,Saint-Émilion,,missing_value,,missing_value,,missing_value,,missing_value
+31348bab31b100df983d8abe19a3fe62463446b5.jpg,34,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+321476784f2d9d0371e42bb214fcc3d8068eb110.jpg,35,producer,expected_value,Château Adaugusta,CHATEAU ADAUGUSTA,correct_value,CHATEAU ADAUGUSTA,correct_value,CHATEAU ADAUGUSTA,correct_value,CHATEAU ADAUGUSTA,correct_value
+321476784f2d9d0371e42bb214fcc3d8068eb110.jpg,35,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,SAINT-EMILION Grand Cru,correct_value,GÉRARD ET CATHERINE CANUEL,wrong_value,Saint-Émilion Grand Cru,correct_value
+321476784f2d9d0371e42bb214fcc3d8068eb110.jpg,35,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+321476784f2d9d0371e42bb214fcc3d8068eb110.jpg,35,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+321476784f2d9d0371e42bb214fcc3d8068eb110.jpg,35,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+321476784f2d9d0371e42bb214fcc3d8068eb110.jpg,35,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+32de58f835d470029d884f122dd17a6a83cc16d6.jpg,36,producer,expected_value,Château La Croix,,missing_value,,missing_value,,missing_value,,missing_value
+32de58f835d470029d884f122dd17a6a83cc16d6.jpg,36,wine_name,expected_value,Pomerol,,missing_value,,missing_value,,missing_value,,missing_value
+32de58f835d470029d884f122dd17a6a83cc16d6.jpg,36,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+32de58f835d470029d884f122dd17a6a83cc16d6.jpg,36,region,expected_value,Bordeaux,,missing_value,Bordeaux,correct_value,,missing_value,,missing_value
+32de58f835d470029d884f122dd17a6a83cc16d6.jpg,36,subregion,expected_value,Pomerol,,missing_value,Pomerol,correct_value,,missing_value,,missing_value
+32de58f835d470029d884f122dd17a6a83cc16d6.jpg,36,vintage,expected_value,2005,2005,correct_value,2005,correct_value,2005,correct_value,2005,correct_value
+36696e653a3c97bbe0bb83d3b4f757f348fc26a3.jpg,37,producer,expected_value,Blard & Fils,,missing_value,,missing_value,BLARD&FILS,correct_value,,missing_value
+36696e653a3c97bbe0bb83d3b4f757f348fc26a3.jpg,37,wine_name,expected_value,Mondeuse Noire,Mondeuse Noire,correct_value,Mondeuse Noire,correct_value,Mondeuse Noire,correct_value,Mondeuse Noire,correct_value
+36696e653a3c97bbe0bb83d3b4f757f348fc26a3.jpg,37,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+36696e653a3c97bbe0bb83d3b4f757f348fc26a3.jpg,37,region,expected_value,Savoie,,missing_value,,missing_value,Savoie,correct_value,,missing_value
+36696e653a3c97bbe0bb83d3b4f757f348fc26a3.jpg,37,subregion,expected_value,Arbin,,missing_value,,missing_value,Vin de Savoie Arbin,wrong_value,,missing_value
+36696e653a3c97bbe0bb83d3b4f757f348fc26a3.jpg,37,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+368c91c77d24d8abd30301374c2e4cf4f0725467.jpg,38,producer,unresolved,,CHATEAU CANTON LA BRILLET Bordeaux Supérieur,unscored_filled,CHATEAU CANTON LA BRILLET Bordeaux Supérieur,unscored_filled,CHATEAU CANTON LA BRILLET,unscored_filled,CHATEAU CANTON LA BRILLET Bordeaux Supérieur,unscored_filled
+368c91c77d24d8abd30301374c2e4cf4f0725467.jpg,38,wine_name,expected_value,Bordeaux Supérieur,IS EN BOUTEILLEAU HATEU,wrong_value,BORDEAUX SUPÉRIEUR,correct_value,IS EN BOUTEILLEAU HATEU,wrong_value,IS EN BOUTEILLEAU HATEU,wrong_value
+368c91c77d24d8abd30301374c2e4cf4f0725467.jpg,38,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+368c91c77d24d8abd30301374c2e4cf4f0725467.jpg,38,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+368c91c77d24d8abd30301374c2e4cf4f0725467.jpg,38,subregion,expected_blank,,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill
+368c91c77d24d8abd30301374c2e4cf4f0725467.jpg,38,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+36fac584780bdce64ea941f83d2642c252eb80fd.jpg,39,producer,expected_value,Château d'Aiguilhe,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value
+36fac584780bdce64ea941f83d2642c252eb80fd.jpg,39,wine_name,expected_blank,,Comtes von Neipperg,unsupported_fill,,correct_blank,Comtes von Neipperg,unsupported_fill,Comtes von Neipperg,unsupported_fill
+36fac584780bdce64ea941f83d2642c252eb80fd.jpg,39,country,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+36fac584780bdce64ea941f83d2642c252eb80fd.jpg,39,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+36fac584780bdce64ea941f83d2642c252eb80fd.jpg,39,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+36fac584780bdce64ea941f83d2642c252eb80fd.jpg,39,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+39483a1abfc472a4e06a638727d63996d52eef80.jpg,40,producer,expected_value,La Cave d'Augustin Florent,,missing_value,,missing_value,,missing_value,,missing_value
+39483a1abfc472a4e06a638727d63996d52eef80.jpg,40,wine_name,expected_value,Les Pierrasques,,missing_value,,missing_value,,missing_value,,missing_value
+39483a1abfc472a4e06a638727d63996d52eef80.jpg,40,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+39483a1abfc472a4e06a638727d63996d52eef80.jpg,40,region,expected_value,Rhône,,missing_value,,missing_value,Rhône,correct_value,,missing_value
+39483a1abfc472a4e06a638727d63996d52eef80.jpg,40,subregion,expected_value,Côtes du Rhône,,missing_value,,missing_value,Côtes du Rhône,correct_value,,missing_value
+39483a1abfc472a4e06a638727d63996d52eef80.jpg,40,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+3a8b1c80be852a44357895609db8e35f333d6dce.jpg,41,producer,expected_value,La Cave d'Augustin Florent,,missing_value,,missing_value,,missing_value,,missing_value
+3a8b1c80be852a44357895609db8e35f333d6dce.jpg,41,wine_name,expected_value,Touraine Sauvignon,,missing_value,,missing_value,,missing_value,,missing_value
+3a8b1c80be852a44357895609db8e35f333d6dce.jpg,41,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+3a8b1c80be852a44357895609db8e35f333d6dce.jpg,41,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,,missing_value,Loire,correct_value
+3a8b1c80be852a44357895609db8e35f333d6dce.jpg,41,subregion,expected_value,Touraine,Touraine,correct_value,,missing_value,,missing_value,Touraine,correct_value
+3a8b1c80be852a44357895609db8e35f333d6dce.jpg,41,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+3af799f9ef7ef15e98a25d038393d3842b558667.jpg,42,producer,expected_value,La Petite Chapelle de Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+3af799f9ef7ef15e98a25d038393d3842b558667.jpg,42,wine_name,expected_value,Bordeaux,VIGNOBLE DE TALENT TALENT,wrong_value,BORDEAUX,correct_value,VIGNOBLE DE TALENT TALENT,wrong_value,VIGNOBLE DE TALENT TALENT,wrong_value
+3af799f9ef7ef15e98a25d038393d3842b558667.jpg,42,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+3af799f9ef7ef15e98a25d038393d3842b558667.jpg,42,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+3af799f9ef7ef15e98a25d038393d3842b558667.jpg,42,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+3af799f9ef7ef15e98a25d038393d3842b558667.jpg,42,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+3b6eacfe3c55b88fd361bd266a02b05776370415.jpg,43,producer,expected_value,Domaine de Cassan,DOMAINE DE,wrong_value,,missing_value,DOMAINE DE,wrong_value,DOMAINE DE,wrong_value
+3b6eacfe3c55b88fd361bd266a02b05776370415.jpg,43,wine_name,expected_value,Tradition,Beaumes-de-Venise,wrong_value,Tradition,correct_value,Beaumes-de-Venise,wrong_value,Beaumes-de-Venise,wrong_value
+3b6eacfe3c55b88fd361bd266a02b05776370415.jpg,43,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+3b6eacfe3c55b88fd361bd266a02b05776370415.jpg,43,region,expected_value,Rhône,Rhône,correct_value,Rhône,correct_value,Rhône,correct_value,Rhône,correct_value
+3b6eacfe3c55b88fd361bd266a02b05776370415.jpg,43,subregion,expected_value,Beaumes-de-Venise,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value
+3b6eacfe3c55b88fd361bd266a02b05776370415.jpg,43,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff.jpg,44,producer,expected_value,Roche Mazet,,missing_value,,missing_value,,missing_value,,missing_value
+3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff.jpg,44,wine_name,expected_value,Cabernet Sauvignon,,missing_value,Cabernet Sauvignon,correct_value,,missing_value,,missing_value
+3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff.jpg,44,country,expected_value,France,,missing_value,France,correct_value,France,correct_value,,missing_value
+3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff.jpg,44,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,Languedoc,correct_value,,missing_value
+3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff.jpg,44,subregion,expected_blank,,,correct_blank,,correct_blank,Pays d'Oc,unsupported_fill,,correct_blank
+3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff.jpg,44,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+3e2e56b18069c4227cf9d95a286011c3ad00aa12.jpg,45,producer,expected_value,La Chapelle de Calon,La Chapelle de Caler,wrong_value,La Chapelle de Caler,wrong_value,La Chapelle de Caler,wrong_value,La Chapelle de Caler,wrong_value
+3e2e56b18069c4227cf9d95a286011c3ad00aa12.jpg,45,wine_name,expected_value,Saint-Estèphe,Saint-Estèphe,correct_value,SAINT-ESTÈPHE,correct_value,,missing_value,Saint-Estèphe,correct_value
+3e2e56b18069c4227cf9d95a286011c3ad00aa12.jpg,45,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+3e2e56b18069c4227cf9d95a286011c3ad00aa12.jpg,45,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+3e2e56b18069c4227cf9d95a286011c3ad00aa12.jpg,45,subregion,expected_value,Saint-Estèphe,Saint-Estèphe,correct_value,Saint-Estèphe,correct_value,Saint-Estèphe,correct_value,Saint-Estèphe,correct_value
+3e2e56b18069c4227cf9d95a286011c3ad00aa12.jpg,45,vintage,expected_value,2011,2011,correct_value,2011,correct_value,2011,correct_value,2011,correct_value
+40a6b88cae2f0c595be3d0655e7ef7e70d951862.jpg,46,producer,expected_value,Château Vieux Bonneau,CHATEAU VIEUX BONNEAU,correct_value,CHATEAU VIEUX BONNEAU,correct_value,CHATEAU VIEUX BONNEAU,correct_value,CHATEAU VIEUX BONNEAU,correct_value
+40a6b88cae2f0c595be3d0655e7ef7e70d951862.jpg,46,wine_name,expected_value,Montagne Saint-Émilion,,missing_value,,missing_value,,missing_value,,missing_value
+40a6b88cae2f0c595be3d0655e7ef7e70d951862.jpg,46,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+40a6b88cae2f0c595be3d0655e7ef7e70d951862.jpg,46,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+40a6b88cae2f0c595be3d0655e7ef7e70d951862.jpg,46,subregion,expected_value,Montagne Saint-Émilion,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value
+40a6b88cae2f0c595be3d0655e7ef7e70d951862.jpg,46,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg,47,producer,expected_value,Château Peyrouquet,CHÂTEAU PEYROUQUET,correct_value,CHÂTEAU PEYROUQUET,correct_value,CHÂTEAU PEYROUQUET,correct_value,CHÂTEAU PEYROUQUET,correct_value
+41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg,47,wine_name,expected_value,Saint-Émilion,,missing_value,SAINT-ĒMILION,correct_value,,missing_value,,missing_value
+41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg,47,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg,47,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg,47,subregion,expected_value,Saint-Émilion,Saint-Émilion,correct_value,Saint-Émilion,correct_value,Saint-Émilion,correct_value,Saint-Émilion,correct_value
+41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a.jpg,47,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+4355bb0d7e1ba4cc627ed4b978ae185db94d031c.jpg,48,producer,expected_value,Château Peyrouquet,,missing_value,CHÁTEAU PEYROUQUET,correct_value,,missing_value,,missing_value
+4355bb0d7e1ba4cc627ed4b978ae185db94d031c.jpg,48,wine_name,expected_value,Saint-Émilion,,missing_value,PROPRIÉTAIRE - RÉCOLTANT DES RÉCOLTAN,wrong_value,,missing_value,,missing_value
+4355bb0d7e1ba4cc627ed4b978ae185db94d031c.jpg,48,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+4355bb0d7e1ba4cc627ed4b978ae185db94d031c.jpg,48,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+4355bb0d7e1ba4cc627ed4b978ae185db94d031c.jpg,48,subregion,expected_value,Saint-Émilion,Saint-Émilion,correct_value,Saint-Émilion,correct_value,Saint-Émilion,correct_value,Saint-Émilion,correct_value
+4355bb0d7e1ba4cc627ed4b978ae185db94d031c.jpg,48,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+441dc491754f6835b121e889ea6a20ffa61da00b.jpg,49,producer,expected_value,Clerico,,missing_value,,missing_value,CLERICO,correct_value,,missing_value
+441dc491754f6835b121e889ea6a20ffa61da00b.jpg,49,wine_name,expected_value,Trevigne,Barbera d'Alba,wrong_value,Barbera D'ALBA,wrong_value,Trevigne,correct_value,Barbera d'Alba,wrong_value
+441dc491754f6835b121e889ea6a20ffa61da00b.jpg,49,country,expected_value,Italy,Italy,correct_value,Italy,correct_value,Italy,correct_value,Italy,correct_value
+441dc491754f6835b121e889ea6a20ffa61da00b.jpg,49,region,expected_value,Piedmont,Piedmont,correct_value,Piedmont,correct_value,Piemonte,correct_value,Piedmont,correct_value
+441dc491754f6835b121e889ea6a20ffa61da00b.jpg,49,subregion,expected_value,Barbera d'Alba,Barbera d'Alba,correct_value,Barbera d'Alba,correct_value,Barbera d'Alba,correct_value,Barbera d'Alba,correct_value
+441dc491754f6835b121e889ea6a20ffa61da00b.jpg,49,vintage,expected_value,2003,2003,correct_value,2003,correct_value,2003,correct_value,2003,correct_value
+46746fe610fce8428d7bff1d7b512293aa9ffe23.jpg,50,producer,expected_value,Gérard Bertrand,,missing_value,,missing_value,GÉRARD BERTRAND CENTIFI,wrong_value,,missing_value
+46746fe610fce8428d7bff1d7b512293aa9ffe23.jpg,50,wine_name,expected_value,Naturae Merlot,,missing_value,,missing_value,SUD DE BIOLOGIQUE,wrong_value,,missing_value
+46746fe610fce8428d7bff1d7b512293aa9ffe23.jpg,50,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+46746fe610fce8428d7bff1d7b512293aa9ffe23.jpg,50,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,Languedoc,correct_value,,missing_value
+46746fe610fce8428d7bff1d7b512293aa9ffe23.jpg,50,subregion,expected_blank,,,correct_blank,,correct_blank,Pays d'Oc,unsupported_fill,,correct_blank
+46746fe610fce8428d7bff1d7b512293aa9ffe23.jpg,50,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg,51,producer,expected_value,Château de l'Abbaye,CHÂTEAU de L'ABBAYE,correct_value,CHÂTEAU de L'ABBAYE,correct_value,CHÂTEAU de L'ABBAYE,correct_value,CHÂTEAU de L'ABBAYE,correct_value
+469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg,51,wine_name,expected_value,Haut-Médoc,,missing_value,HAUT-MÉDOC,correct_value,,missing_value,,missing_value
+469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg,51,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg,51,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg,51,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1.jpg,51,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg,52,producer,expected_value,La Cave d'Augustin Florent,,missing_value,,missing_value,,missing_value,,missing_value
+47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg,52,wine_name,expected_value,Costières de Nîmes,AvGUSTIN FLORENT,wrong_value,,missing_value,AvGUSTIN FLORENT,wrong_value,AvGUSTIN FLORENT,wrong_value
+47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg,52,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg,52,region,expected_value,Rhône,,missing_value,,missing_value,,missing_value,,missing_value
+47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg,52,subregion,expected_value,Costières de Nîmes,,missing_value,,missing_value,,missing_value,,missing_value
+47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg,52,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg,53,producer,expected_value,Château Les Tuileries,CHATEAU LES TUILERIES,correct_value,CHATEAU LES TUILERIES,correct_value,CHATEAU LES TUILERIES,correct_value,CHATEAU LES TUILERIES,correct_value
+4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg,53,wine_name,expected_value,Bordeaux,Bordeaux,correct_value,BORDEAUX,correct_value,,missing_value,MISEN BOUTEILLE AU CHATEAU,wrong_value
+4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg,53,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg,53,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg,53,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+4897ce4882ee6bc305273cfc70d0f9ffbdb629a5.jpg,53,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1.jpg,54,producer,expected_value,Les Chemins d'Onairac,,missing_value,,missing_value,,missing_value,,missing_value
+48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1.jpg,54,wine_name,expected_value,Pays d'Hérault,Pays d'Hérault,correct_value,,missing_value,,missing_value,Pays d'Hérault,correct_value
+48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1.jpg,54,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1.jpg,54,region,expected_value,Languedoc,,missing_value,,missing_value,Languedoc,correct_value,,missing_value
+48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1.jpg,54,subregion,expected_value,Pays d'Hérault,,missing_value,,missing_value,Pays d'Hérault,correct_value,,missing_value
+48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1.jpg,54,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg,55,producer,expected_value,Bertrand Ravache,,missing_value,,missing_value,,missing_value,,missing_value
+5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg,55,wine_name,expected_value,Léo by Léo,RAND RAVACHE,wrong_value,SAINT-EMILION Grand Cru,wrong_value,RAND RAVACHE,wrong_value,RAND RAVACHE,wrong_value
+5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg,55,country,expected_value,France,,missing_value,France,correct_value,France,correct_value,,missing_value
+5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg,55,region,expected_value,Bordeaux,,missing_value,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value
+5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg,55,subregion,expected_value,Saint-Émilion,,missing_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,,missing_value
+5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg,55,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+53a260a1e11084fe646f38bc041c2ff542c0581f.jpg,56,producer,expected_value,Château Margaux,CRUCLASS,wrong_value,CRUCLASS,wrong_value,CRUCLASS,wrong_value,Château Margaux,correct_value
+53a260a1e11084fe646f38bc041c2ff542c0581f.jpg,56,wine_name,expected_value,Margaux,Margaux,correct_value,MARGAUX,correct_value,,missing_value,Margaux,correct_value
+53a260a1e11084fe646f38bc041c2ff542c0581f.jpg,56,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+53a260a1e11084fe646f38bc041c2ff542c0581f.jpg,56,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+53a260a1e11084fe646f38bc041c2ff542c0581f.jpg,56,subregion,expected_value,Margaux,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value
+53a260a1e11084fe646f38bc041c2ff542c0581f.jpg,56,vintage,expected_value,1998,,missing_value,,missing_value,,missing_value,,missing_value
+5448f77afa3ac97e9d499f633b13ad647f011232.jpg,57,producer,expected_value,Domaine Marguerite Carillon,DOMAINE MARGUERITE CARILLON,correct_value,DOMAINE MARGUERITE CARILLON,correct_value,DOMAINE MARGUERITE CARILLON,correct_value,DOMAINE MARGUERITE CARILLON,correct_value
+5448f77afa3ac97e9d499f633b13ad647f011232.jpg,57,wine_name,expected_value,Chablis,'- CÔTE D'OR -,wrong_value,CHABLIS,correct_value,'- CÔTE D'OR -,wrong_value,'- CÔTE D'OR -,wrong_value
+5448f77afa3ac97e9d499f633b13ad647f011232.jpg,57,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+5448f77afa3ac97e9d499f633b13ad647f011232.jpg,57,region,expected_value,Burgundy,Burgundy,correct_value,,missing_value,,missing_value,Burgundy,correct_value
+5448f77afa3ac97e9d499f633b13ad647f011232.jpg,57,subregion,expected_value,Chablis,Meursault,wrong_value,,missing_value,,missing_value,Meursault,wrong_value
+5448f77afa3ac97e9d499f633b13ad647f011232.jpg,57,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+552c0268db871e3d29f31987a612071c3aca511b.jpg,58,producer,expected_value,Les Ormes de Cambras,,missing_value,,missing_value,,missing_value,,missing_value
+552c0268db871e3d29f31987a612071c3aca511b.jpg,58,wine_name,expected_value,Cabernet Sauvignon,,missing_value,Cabernet Sauvignon,correct_value,,missing_value,,missing_value
+552c0268db871e3d29f31987a612071c3aca511b.jpg,58,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+552c0268db871e3d29f31987a612071c3aca511b.jpg,58,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,Languedoc,correct_value,,missing_value
+552c0268db871e3d29f31987a612071c3aca511b.jpg,58,subregion,expected_blank,,,correct_blank,,correct_blank,Pays d'Oc,unsupported_fill,,correct_blank
+552c0268db871e3d29f31987a612071c3aca511b.jpg,58,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+578ac79248bf10b4b1ae872869d555ecfab03087.jpg,59,producer,expected_value,Lalande,LALANDE,correct_value,LALANDE,correct_value,LALANDE,correct_value,LALANDE,correct_value
+578ac79248bf10b4b1ae872869d555ecfab03087.jpg,59,wine_name,expected_value,Bordeaux Supérieur,Merlot- CARERNETSAIGNN,wrong_value,BORDEAUX SUPÉRIEUR,correct_value,Merlot- CARERNETSAIGNN,wrong_value,Merlot- CARERNETSAIGNN,wrong_value
+578ac79248bf10b4b1ae872869d555ecfab03087.jpg,59,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+578ac79248bf10b4b1ae872869d555ecfab03087.jpg,59,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+578ac79248bf10b4b1ae872869d555ecfab03087.jpg,59,subregion,expected_blank,,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill
+578ac79248bf10b4b1ae872869d555ecfab03087.jpg,59,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+5aed17256b106b8ef5e4ed85ac3fe17c0029e84a.jpg,60,producer,expected_value,J. Kieffer,J.Kieffer,correct_value,J.Kieffer,correct_value,J.Kieffer,correct_value,J.Kieffer,correct_value
+5aed17256b106b8ef5e4ed85ac3fe17c0029e84a.jpg,60,wine_name,expected_value,Blanc de Blancs Brut,Blanc de Blancs LANCS,wrong_value,,missing_value,Blanc de Blancs LANCS,wrong_value,Blanc de Blancs LANCS,wrong_value
+5aed17256b106b8ef5e4ed85ac3fe17c0029e84a.jpg,60,country,expected_value,France,,missing_value,France,correct_value,,missing_value,,missing_value
+5aed17256b106b8ef5e4ed85ac3fe17c0029e84a.jpg,60,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+5aed17256b106b8ef5e4ed85ac3fe17c0029e84a.jpg,60,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+5aed17256b106b8ef5e4ed85ac3fe17c0029e84a.jpg,60,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+5d31072933a8d3a9b59d420c112598672d346839.jpg,61,producer,expected_value,La Petite Chapelle de Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+5d31072933a8d3a9b59d420c112598672d346839.jpg,61,wine_name,expected_value,Bordeaux,Bordeaux,correct_value,BORDEAUX,correct_value,,missing_value,Bordeaux,correct_value
+5d31072933a8d3a9b59d420c112598672d346839.jpg,61,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+5d31072933a8d3a9b59d420c112598672d346839.jpg,61,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+5d31072933a8d3a9b59d420c112598672d346839.jpg,61,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+5d31072933a8d3a9b59d420c112598672d346839.jpg,61,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+608a81557d1cc945cce7fce0225771804d4f5e33.jpg,62,producer,expected_value,Château Margaux,PREMIER,wrong_value,PREMIER,wrong_value,Château Margaux,correct_value,PREMIER,wrong_value
+608a81557d1cc945cce7fce0225771804d4f5e33.jpg,62,wine_name,expected_value,Margaux,MARGAUX,correct_value,MARGAUX,correct_value,PREMIER,wrong_value,MARGAUX,correct_value
+608a81557d1cc945cce7fce0225771804d4f5e33.jpg,62,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+608a81557d1cc945cce7fce0225771804d4f5e33.jpg,62,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+608a81557d1cc945cce7fce0225771804d4f5e33.jpg,62,subregion,expected_value,Margaux,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value
+608a81557d1cc945cce7fce0225771804d4f5e33.jpg,62,vintage,expected_value,2002,2002,correct_value,2002,correct_value,2002,correct_value,2002,correct_value
+60e353e003e2211494936b66d477731691c90b18.jpg,63,producer,expected_value,Château La Sauvageonne,CHÂTEAU LA,wrong_value,,missing_value,CHÂTEAU LA,wrong_value,CHÂTEAU LA,wrong_value
+60e353e003e2211494936b66d477731691c90b18.jpg,63,wine_name,expected_value,Volcanie Rosé,,missing_value,LANGUEDOC,wrong_value,,missing_value,,missing_value
+60e353e003e2211494936b66d477731691c90b18.jpg,63,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+60e353e003e2211494936b66d477731691c90b18.jpg,63,region,expected_value,Languedoc,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+60e353e003e2211494936b66d477731691c90b18.jpg,63,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+60e353e003e2211494936b66d477731691c90b18.jpg,63,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg,64,producer,expected_value,La Cave d'Augustin Florent,CAVE D'AUGUSTIN FLORENT PPELLATIC AOC,wrong_value,CAVE D'AUGUSTIN FLORENT PPELLATIC AOC,wrong_value,CAVE D'AUGUSTIN FLORENT PPELLATIC AOC,wrong_value,CAVE D'AUGUSTIN FLORENT PPELLATIC AOC,wrong_value
+60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg,64,wine_name,expected_value,Graves,MAISON JOHANÉS BOUBÉE À F 33750,wrong_value,AOC,wrong_value,MAISON JOHANÉS BOUBÉE À F 33750,wrong_value,MAISON JOHANÉS BOUBÉE À F 33750,wrong_value
+60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg,64,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg,64,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg,64,subregion,expected_value,Graves,Graves,correct_value,Graves,correct_value,Graves,correct_value,Graves,correct_value
+60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg,64,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,65,producer,expected_value,Château Acker-Perreau,CHÂTEAU ACKER-PERREAU,correct_value,CHÂTEAU ACKER-PERREAU,correct_value,CHÂTEAU ACKER-PERREAU,correct_value,CHÂTEAU ACKER-PERREAU,correct_value
+60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,65,wine_name,expected_value,Bordeaux,,missing_value,BORDEAUX,correct_value,,missing_value,,missing_value
+60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,65,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,65,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,65,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,65,vintage,expected_value,2013,2013,correct_value,2013,correct_value,2013,correct_value,2013,correct_value
+645b894ff7240c2defda4b99137192b003f0cebc.jpg,66,producer,expected_value,A. Kolb,,missing_value,,missing_value,,missing_value,,missing_value
+645b894ff7240c2defda4b99137192b003f0cebc.jpg,66,wine_name,expected_value,Crémant d'Alsace Brut,Methode Traditionnelle,wrong_value,Crémant d'Alsace,correct_value,Methode Traditionnelle,wrong_value,Methode Traditionnelle,wrong_value
+645b894ff7240c2defda4b99137192b003f0cebc.jpg,66,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+645b894ff7240c2defda4b99137192b003f0cebc.jpg,66,region,expected_value,Alsace,,missing_value,Alsace,correct_value,Alsace,correct_value,,missing_value
+645b894ff7240c2defda4b99137192b003f0cebc.jpg,66,subregion,expected_blank,,,correct_blank,Crémant d'Alsace,unsupported_fill,Crémant d'Alsace,unsupported_fill,,correct_blank
+645b894ff7240c2defda4b99137192b003f0cebc.jpg,66,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg,67,producer,expected_value,Jean-Christophe Icard,,missing_value,,missing_value,,missing_value,,missing_value
+6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg,67,wine_name,expected_value,Sauvignon Blanc,JEAN-CHRISTOPHE ICARD,wrong_value,,missing_value,JEAN-CHRISTOPHE ICARD PAR,wrong_value,JEAN-CHRISTOPHE ICARD,wrong_value
+6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg,67,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg,67,region,expected_value,South West France,,missing_value,,missing_value,Sud-Ouest,correct_value,,missing_value
+6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg,67,subregion,expected_value,Gascogne,,missing_value,,missing_value,,missing_value,,missing_value
+6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg,67,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg,68,producer,expected_value,Château du Bousquet,,missing_value,CHÂTEAU DU BOUSQUET,correct_value,,missing_value,,missing_value
+659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg,68,wine_name,expected_value,Côtes de Bourg,,missing_value,CÔTES DE BoURG,correct_value,,missing_value,,missing_value
+659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg,68,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg,68,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg,68,subregion,expected_value,Côtes de Bourg,,missing_value,,missing_value,Côtes de Bourg,correct_value,,missing_value
+659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg,68,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+68ced6d9403232e58bd9ff6291846300257d99c1.jpg,69,producer,expected_value,Château Margaux,OKER GRAND CRUCCLASSE,wrong_value,OKER GRAND CRUCCLASSE,wrong_value,OKER GRAND CRUCCLASSE,wrong_value,OKER GRAND CRUCCLASSE,wrong_value
+68ced6d9403232e58bd9ff6291846300257d99c1.jpg,69,wine_name,expected_value,Margaux,HATEAU ATEAU MARGAUY GRAND UMARGAUX,wrong_value,MARGAUX,correct_value,HATEAU ATEAU MARGAUY GRAND,wrong_value,HATEAU GRAND UMARGAUX,wrong_value
+68ced6d9403232e58bd9ff6291846300257d99c1.jpg,69,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+68ced6d9403232e58bd9ff6291846300257d99c1.jpg,69,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+68ced6d9403232e58bd9ff6291846300257d99c1.jpg,69,subregion,expected_value,Margaux,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value
+68ced6d9403232e58bd9ff6291846300257d99c1.jpg,69,vintage,expected_value,1996,1996,correct_value,1996,correct_value,1996,correct_value,1996,correct_value
+6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2.jpg,70,producer,expected_value,Albert Bichot,,missing_value,,missing_value,,missing_value,,missing_value
+6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2.jpg,70,wine_name,expected_value,Les Cailloux Chardonnay,ALBERT BICHOT,wrong_value,Chardonnay,wrong_value,ALBERT BICHOT,wrong_value,ALBERT BICHOT,wrong_value
+6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2.jpg,70,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2.jpg,70,region,expected_value,Burgundy,Burgundy,correct_value,Burgundy,correct_value,Bourgogne,correct_value,Burgundy,correct_value
+6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2.jpg,70,subregion,expected_blank,,Bourgogne,unsupported_fill,Bourgogne,unsupported_fill,,correct_blank,Bourgogne,unsupported_fill
+6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2.jpg,70,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f.jpg,71,producer,expected_value,L'Héritage de Carillan,,missing_value,,missing_value,,missing_value,,missing_value
+6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f.jpg,71,wine_name,expected_value,Gamay,Côtes du Tarn,wrong_value,AMAY,wrong_value,,missing_value,Côtes du Tarn,wrong_value
+6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f.jpg,71,country,expected_value,France,,missing_value,,missing_value,,missing_value,,missing_value
+6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f.jpg,71,region,expected_value,South West France,,missing_value,,missing_value,,missing_value,,missing_value
+6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f.jpg,71,subregion,expected_value,Côtes du Tarn,,missing_value,,missing_value,,missing_value,,missing_value
+6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f.jpg,71,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+6fcb15b923ed44859e9e39e56ac9c44bd79c9e12.jpg,72,producer,expected_value,Moulin de Jaure,MOULIN DE JAURE,correct_value,MOULIN DE JAURE,correct_value,MOULIN DE JAURE,correct_value,MOULIN DE JAURE,correct_value
+6fcb15b923ed44859e9e39e56ac9c44bd79c9e12.jpg,72,wine_name,expected_value,Bordeaux Supérieur,DÉMEURE DU BORDELAIS,wrong_value,BORDEAUX SUPÉRIEUR,correct_value,DÉMEURE DU BORDELAIS,wrong_value,DÉMEURE DU BORDELAIS,wrong_value
+6fcb15b923ed44859e9e39e56ac9c44bd79c9e12.jpg,72,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+6fcb15b923ed44859e9e39e56ac9c44bd79c9e12.jpg,72,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+6fcb15b923ed44859e9e39e56ac9c44bd79c9e12.jpg,72,subregion,expected_blank,,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill
+6fcb15b923ed44859e9e39e56ac9c44bd79c9e12.jpg,72,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+6fec2a232614518ae1500d99a66d081c73b16cd4.jpg,73,producer,expected_value,La Cave d'Augustin Florent,CavE D'AUGUSTIN FLORENT,correct_value,CavE D'AUGUSTIN FLORENT,correct_value,CavE D'AUGUSTIN FLORENT,correct_value,CavE D'AUGUSTIN FLORENT,correct_value
+6fec2a232614518ae1500d99a66d081c73b16cd4.jpg,73,wine_name,expected_value,Fitou,Fitou,correct_value,FITOU,correct_value,,missing_value,Fitou,correct_value
+6fec2a232614518ae1500d99a66d081c73b16cd4.jpg,73,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+6fec2a232614518ae1500d99a66d081c73b16cd4.jpg,73,region,expected_value,Languedoc,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+6fec2a232614518ae1500d99a66d081c73b16cd4.jpg,73,subregion,expected_value,Fitou,Fitou,correct_value,Fitou,correct_value,Fitou,correct_value,Fitou,correct_value
+6fec2a232614518ae1500d99a66d081c73b16cd4.jpg,73,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+701c2f40c15f3865ad65f5475159849ac7509e4e.jpg,74,producer,expected_value,De Luze & Fils,Médoc SUPÉRIEUR,wrong_value,Médoc SUPÉRIEUR,wrong_value,Médoc SUPÉRIEUR,wrong_value,Médoc SUPÉRIEUR,wrong_value
+701c2f40c15f3865ad65f5475159849ac7509e4e.jpg,74,wine_name,expected_value,Médoc Supérieur,A.DE LUZE & FILS,wrong_value,BORDEAUX,wrong_value,A.DE LUZE & FILS,wrong_value,A.DE LUZE & FILS,wrong_value
+701c2f40c15f3865ad65f5475159849ac7509e4e.jpg,74,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+701c2f40c15f3865ad65f5475159849ac7509e4e.jpg,74,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value
+701c2f40c15f3865ad65f5475159849ac7509e4e.jpg,74,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,,missing_value,Médoc,correct_value
+701c2f40c15f3865ad65f5475159849ac7509e4e.jpg,74,vintage,expected_value,1914,1914,correct_value,1914,correct_value,1914,correct_value,1914,correct_value
+70dd815ec4023a81863d68d051410930e144686b.jpg,75,producer,expected_value,Château La Tour de By,CHÂTEAU La Cour de By,wrong_value,CHÂTEAU La Cour de By,wrong_value,CHÂTEAU La Cour de By,wrong_value,CHÂTEAU La Cour de By,wrong_value
+70dd815ec4023a81863d68d051410930e144686b.jpg,75,wine_name,expected_value,Médoc,Médoc,correct_value,MÉDOC,correct_value,,missing_value,Médoc,correct_value
+70dd815ec4023a81863d68d051410930e144686b.jpg,75,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+70dd815ec4023a81863d68d051410930e144686b.jpg,75,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+70dd815ec4023a81863d68d051410930e144686b.jpg,75,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+70dd815ec4023a81863d68d051410930e144686b.jpg,75,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg,76,producer,expected_value,Château d'Agassac,CHÂTEAU D'AGASSAC,correct_value,CHÂTEAU D'AGASSAC,correct_value,CHÂTEAU D'AGASSAC,correct_value,CHÂTEAU D'AGASSAC,correct_value
+72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg,76,wine_name,expected_value,Haut-Médoc,Haut-Médoc,correct_value,HAUT-MÉDOC,correct_value,,missing_value,Haut-Médoc,correct_value
+72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg,76,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg,76,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg,76,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+72164b20ffb5d6b2b4fb29e56799d7d091448ce6.jpg,76,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+7617b51cfb07d27b597e1194dbefe18a693cc091.jpg,77,producer,expected_value,Château Les Tuileries,CHÂTEAU LES TUILERIES,correct_value,CHÂTEAU LES TUILERIES,correct_value,CHÂTEAU LES TUILERIES,correct_value,CHÂTEAU LES TUILERIES,correct_value
+7617b51cfb07d27b597e1194dbefe18a693cc091.jpg,77,wine_name,expected_value,Bordeaux,Bordeaux,correct_value,BORDEAUX,correct_value,S EN BOUTEILLE AU,wrong_value,Bordeaux,correct_value
+7617b51cfb07d27b597e1194dbefe18a693cc091.jpg,77,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+7617b51cfb07d27b597e1194dbefe18a693cc091.jpg,77,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+7617b51cfb07d27b597e1194dbefe18a693cc091.jpg,77,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+7617b51cfb07d27b597e1194dbefe18a693cc091.jpg,77,vintage,expected_value,2006,2006,correct_value,2006,correct_value,2006,correct_value,2006,correct_value
+7636f80a8adb8be0aaf612b0316400f9eccb18b5.jpg,78,producer,expected_value,Château Adaugusta,CHATEAU ADAUGUSTA,correct_value,CHATEAU ADAUGUSTA,correct_value,CHATEAU ADAUGUSTA,correct_value,CHATEAU ADAUGUSTA,correct_value
+7636f80a8adb8be0aaf612b0316400f9eccb18b5.jpg,78,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,SAINT-EMILION Grand Cru,correct_value,GEARD ET CATHERINE CANUEL,wrong_value,Saint-Émilion Grand Cru,correct_value
+7636f80a8adb8be0aaf612b0316400f9eccb18b5.jpg,78,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+7636f80a8adb8be0aaf612b0316400f9eccb18b5.jpg,78,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+7636f80a8adb8be0aaf612b0316400f9eccb18b5.jpg,78,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+7636f80a8adb8be0aaf612b0316400f9eccb18b5.jpg,78,vintage,expected_value,2010,2010,correct_value,2010,correct_value,2010,correct_value,2010,correct_value
+766b0dc50d4bdc14232e8733836cbc349ee0adf2.jpg,79,producer,expected_value,La Cave d'Augustin Florent,CAVE D' AUGUSTIN FLOAENT,wrong_value,CAVE D' AUGUSTIN FLOAENT,wrong_value,CAVE D' AUGUSTIN FLOAENT,wrong_value,CAVE D' AUGUSTIN FLOAENT,wrong_value
+766b0dc50d4bdc14232e8733836cbc349ee0adf2.jpg,79,wine_name,expected_value,Beaumes-de-Venise,BEAUMES de VENISE,correct_value,BEAUMES DE VENISSE,wrong_value,BEAUMES de VENISE,correct_value,BEAUMES de VENISE,correct_value
+766b0dc50d4bdc14232e8733836cbc349ee0adf2.jpg,79,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+766b0dc50d4bdc14232e8733836cbc349ee0adf2.jpg,79,region,expected_value,Rhône,Rhône,correct_value,Rhône,correct_value,Rhône,correct_value,Rhône,correct_value
+766b0dc50d4bdc14232e8733836cbc349ee0adf2.jpg,79,subregion,expected_value,Beaumes-de-Venise,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value
+766b0dc50d4bdc14232e8733836cbc349ee0adf2.jpg,79,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+775e228b8d91400f27086ed8bfeef1774bcbc808.jpg,80,producer,expected_value,La Cave d'Augustin Florent,LA CAVE D'AUGUSTIN FLORENT,correct_value,LA CAVE D'AUGUSTIN FLORENT,correct_value,LA CAVE D'AUGUSTIN FLORENT,correct_value,LA CAVE D'AUGUSTIN FLORENT,correct_value
+775e228b8d91400f27086ed8bfeef1774bcbc808.jpg,80,wine_name,expected_value,Cahors,Cahors,correct_value,CAHORS,correct_value,MAISON JOHANES BOUBE À F 33750,wrong_value,Cahors,correct_value
+775e228b8d91400f27086ed8bfeef1774bcbc808.jpg,80,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+775e228b8d91400f27086ed8bfeef1774bcbc808.jpg,80,region,expected_value,South West France,South West France,correct_value,South West France,correct_value,Sud-Ouest,correct_value,South West France,correct_value
+775e228b8d91400f27086ed8bfeef1774bcbc808.jpg,80,subregion,expected_value,Cahors,Cahors,correct_value,Cahors,correct_value,Cahors,correct_value,Cahors,correct_value
+775e228b8d91400f27086ed8bfeef1774bcbc808.jpg,80,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+79401bddeeca65c035d3b3221a78b3a5dc924c73.jpg,81,producer,expected_value,La Cave d'Augustin Florent,La Cave D'AUgustiN FLORENT,correct_value,La Cave D'AUgustiN FLORENT,correct_value,La Cave D'AUgustiN FLORENT,correct_value,La Cave D'AUgustiN FLORENT,correct_value
+79401bddeeca65c035d3b3221a78b3a5dc924c73.jpg,81,wine_name,expected_value,Côtes de Bourg,,missing_value,CÔTES DE BOURG,correct_value,,missing_value,,missing_value
+79401bddeeca65c035d3b3221a78b3a5dc924c73.jpg,81,country,expected_value,France,,missing_value,France,correct_value,France,correct_value,,missing_value
+79401bddeeca65c035d3b3221a78b3a5dc924c73.jpg,81,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+79401bddeeca65c035d3b3221a78b3a5dc924c73.jpg,81,subregion,expected_value,Côtes de Bourg,,missing_value,,missing_value,Côtes de Bourg,correct_value,,missing_value
+79401bddeeca65c035d3b3221a78b3a5dc924c73.jpg,81,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+7a09465781532a5f23bf3d6956d901d7b5b22d5d.jpg,82,producer,expected_value,La Cave d'Augustin Florent,CAvE D'AUGUSTIN FLONT,wrong_value,CAvE D'AUGUSTIN FLONT,wrong_value,CAvE D'AUGUSTIN FLONT,wrong_value,CAvE D'AUGUSTIN FLONT,wrong_value
+7a09465781532a5f23bf3d6956d901d7b5b22d5d.jpg,82,wine_name,expected_value,Beaumes-de-Venise,,missing_value,MSEBOUTEILLEPARLESCAVESSAINTRO,wrong_value,,missing_value,,missing_value
+7a09465781532a5f23bf3d6956d901d7b5b22d5d.jpg,82,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+7a09465781532a5f23bf3d6956d901d7b5b22d5d.jpg,82,region,expected_value,Rhône,,missing_value,Rhône,correct_value,Rhône,correct_value,,missing_value
+7a09465781532a5f23bf3d6956d901d7b5b22d5d.jpg,82,subregion,expected_value,Beaumes-de-Venise,,missing_value,Beaumes-de-Venise,correct_value,Beaumes-de-Venise,correct_value,,missing_value
+7a09465781532a5f23bf3d6956d901d7b5b22d5d.jpg,82,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+7a90882e8094829eb3a87328ea4a4d2504426c71.jpg,83,producer,expected_value,Baron d'Estey,BAROND'ESTEY,correct_value,BAROND'ESTEY,correct_value,BAROND'ESTEY,correct_value,BAROND'ESTEY,correct_value
+7a90882e8094829eb3a87328ea4a4d2504426c71.jpg,83,wine_name,expected_value,Côtes de Bourg,Bourg,wrong_value,,missing_value,,missing_value,Bourg,wrong_value
+7a90882e8094829eb3a87328ea4a4d2504426c71.jpg,83,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+7a90882e8094829eb3a87328ea4a4d2504426c71.jpg,83,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+7a90882e8094829eb3a87328ea4a4d2504426c71.jpg,83,subregion,expected_value,Côtes de Bourg,,missing_value,,missing_value,Côtes de Bourg,correct_value,,missing_value
+7a90882e8094829eb3a87328ea4a4d2504426c71.jpg,83,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+7fa093f4a99f8a3358ea52ee276cbb236837e65d.jpg,84,producer,expected_value,De Luze,,missing_value,,missing_value,Baron de Luze,wrong_value,,missing_value
+7fa093f4a99f8a3358ea52ee276cbb236837e65d.jpg,84,wine_name,expected_value,Baron de Luze,Bordeaux,wrong_value,BORDEAUX,wrong_value,DE LUZE,wrong_value,Bordeaux,wrong_value
+7fa093f4a99f8a3358ea52ee276cbb236837e65d.jpg,84,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+7fa093f4a99f8a3358ea52ee276cbb236837e65d.jpg,84,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+7fa093f4a99f8a3358ea52ee276cbb236837e65d.jpg,84,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+7fa093f4a99f8a3358ea52ee276cbb236837e65d.jpg,84,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+802ddaa3c300bbb3041cd9faaf1a8775472c5e86.jpg,85,producer,expected_value,Roche Mazet,,missing_value,,missing_value,,missing_value,,missing_value
+802ddaa3c300bbb3041cd9faaf1a8775472c5e86.jpg,85,wine_name,expected_value,Merlot,,missing_value,,missing_value,,missing_value,,missing_value
+802ddaa3c300bbb3041cd9faaf1a8775472c5e86.jpg,85,country,expected_value,France,,missing_value,France,correct_value,,missing_value,,missing_value
+802ddaa3c300bbb3041cd9faaf1a8775472c5e86.jpg,85,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,,missing_value,,missing_value
+802ddaa3c300bbb3041cd9faaf1a8775472c5e86.jpg,85,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+802ddaa3c300bbb3041cd9faaf1a8775472c5e86.jpg,85,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+86a7f73b7595e3a48126bdc84c114d3fdf2621c3.jpg,86,producer,expected_value,De Luze,,missing_value,,missing_value,,missing_value,,missing_value
+86a7f73b7595e3a48126bdc84c114d3fdf2621c3.jpg,86,wine_name,expected_value,Baron de Luze,Merlot-Cabernet Sauvignon,wrong_value,,missing_value,Merlot-Cabernet Sauvignon,wrong_value,Merlot-Cabernet Sauvignon,wrong_value
+86a7f73b7595e3a48126bdc84c114d3fdf2621c3.jpg,86,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+86a7f73b7595e3a48126bdc84c114d3fdf2621c3.jpg,86,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+86a7f73b7595e3a48126bdc84c114d3fdf2621c3.jpg,86,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+86a7f73b7595e3a48126bdc84c114d3fdf2621c3.jpg,86,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+86be67f81b18a9613304a27a6a140c969019b75e.jpg,87,producer,expected_value,La Cave d'Augustin Florent,MAISON JOHANÈS BOUBÉE À F 33750,wrong_value,MAISON JOHANÈS BOUBÉE À F 33750,wrong_value,MAISON JOHANÈS BOUBÉE À F 33750,wrong_value,MAISON JOHANÈS BOUBÉE À F 33750,wrong_value
+86be67f81b18a9613304a27a6a140c969019b75e.jpg,87,wine_name,expected_value,Madiran,LCAv D' AUGUSTIN FLORENT D'AUGUSTIN FLORENT,wrong_value,MADIRAN,correct_value,LCAv D' AUGUSTIN FLORENT D'AUGUSTIN FLORENT,wrong_value,LCAv D' AUGUSTIN FLORENT D'AUGUSTIN FLORENT,wrong_value
+86be67f81b18a9613304a27a6a140c969019b75e.jpg,87,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+86be67f81b18a9613304a27a6a140c969019b75e.jpg,87,region,expected_value,South West France,South West France,correct_value,South West France,correct_value,,missing_value,South West France,correct_value
+86be67f81b18a9613304a27a6a140c969019b75e.jpg,87,subregion,expected_value,Madiran,Madiran,correct_value,Madiran,correct_value,,missing_value,Madiran,correct_value
+86be67f81b18a9613304a27a6a140c969019b75e.jpg,87,vintage,expected_value,2017,2017,correct_value,2017,correct_value,2017,correct_value,2017,correct_value
+874aeb48a827edfb0a0443d74b569819ff741d05.jpg,88,producer,expected_value,Château Ambe Tour Pourret,CHATEAU AMBE TOUR POURRET,correct_value,CHATEAU AMBE TOUR POURRET,correct_value,CHATEAU AMBE TOUR POURRET,correct_value,CHATEAU AMBE TOUR POURRET,correct_value
+874aeb48a827edfb0a0443d74b569819ff741d05.jpg,88,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,SAINT-EMILION Grand Cru,correct_value,,missing_value,Saint-Émilion Grand Cru,correct_value
+874aeb48a827edfb0a0443d74b569819ff741d05.jpg,88,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+874aeb48a827edfb0a0443d74b569819ff741d05.jpg,88,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+874aeb48a827edfb0a0443d74b569819ff741d05.jpg,88,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+874aeb48a827edfb0a0443d74b569819ff741d05.jpg,88,vintage,expected_value,2012,2012,correct_value,2012,correct_value,2012,correct_value,2012,correct_value
+8c42dc70cfa91eb2f80344c4d1b50a010e3bb718.jpg,89,producer,expected_value,Bertrand Ravache,FRONSAC,wrong_value,FRONSAC,wrong_value,BERTRAND RAVACHE AUDACEPAR,wrong_value,FRONSAC,wrong_value
+8c42dc70cfa91eb2f80344c4d1b50a010e3bb718.jpg,89,wine_name,expected_value,Léo by Léo,BERTRAND RAVACHE AUDACEPAR,wrong_value,AUDACEPAR,wrong_value,,missing_value,BERTRAND RAVACHE AUDACEPAR,wrong_value
+8c42dc70cfa91eb2f80344c4d1b50a010e3bb718.jpg,89,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+8c42dc70cfa91eb2f80344c4d1b50a010e3bb718.jpg,89,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+8c42dc70cfa91eb2f80344c4d1b50a010e3bb718.jpg,89,subregion,expected_value,Fronsac,,missing_value,,missing_value,Fronsac,correct_value,,missing_value
+8c42dc70cfa91eb2f80344c4d1b50a010e3bb718.jpg,89,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+8dde033eee9518df9e885e58b442be2a2093f539.jpg,90,producer,expected_value,Château Margaux,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value
+8dde033eee9518df9e885e58b442be2a2093f539.jpg,90,wine_name,expected_blank,,,correct_blank,RONIER Grand Cru LASSE,unsupported_fill,,correct_blank,,correct_blank
+8dde033eee9518df9e885e58b442be2a2093f539.jpg,90,country,expected_blank,,France,unsupported_fill,France,unsupported_fill,France,unsupported_fill,France,unsupported_fill
+8dde033eee9518df9e885e58b442be2a2093f539.jpg,90,region,expected_blank,,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill
+8dde033eee9518df9e885e58b442be2a2093f539.jpg,90,subregion,expected_blank,,Margaux,unsupported_fill,Margaux,unsupported_fill,Margaux,unsupported_fill,Margaux,unsupported_fill
+8dde033eee9518df9e885e58b442be2a2093f539.jpg,90,vintage,expected_value,2007,2007,correct_value,2007,correct_value,2007,correct_value,2007,correct_value
+8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg,91,producer,expected_value,Château Bellevue Figeac,Chateau BellevueFigeac,correct_value,Chateau BellevueFigeac,correct_value,Chateau BellevueFigeac,correct_value,Chateau BellevueFigeac,correct_value
+8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg,91,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,SAINT-ÉMILION Grand Cru,correct_value,Selection J. et C.de Conink,wrong_value,Saint-Émilion Grand Cru,correct_value
+8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg,91,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg,91,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg,91,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+8f4d06a33a95588c38fe5153004a6f3829fd9986.jpg,91,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+900b97646e1167f862aeb05d85eab97e1b1988b9.jpg,92,producer,expected_value,Domaine Allary Haut-Brion,DOMAINE ALLARY,wrong_value,DOMAINE ALLARY,wrong_value,DOMAINE ALLARY,wrong_value,DOMAINE ALLARY,wrong_value
+900b97646e1167f862aeb05d85eab97e1b1988b9.jpg,92,wine_name,expected_value,Pessac-Léognan,,missing_value,Haut-Brion,wrong_value,Haut-Brion,wrong_value,,missing_value
+900b97646e1167f862aeb05d85eab97e1b1988b9.jpg,92,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+900b97646e1167f862aeb05d85eab97e1b1988b9.jpg,92,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+900b97646e1167f862aeb05d85eab97e1b1988b9.jpg,92,subregion,expected_value,Pessac-Léognan,,missing_value,,missing_value,Pessac-Léognan,correct_value,,missing_value
+900b97646e1167f862aeb05d85eab97e1b1988b9.jpg,92,vintage,expected_value,2009,2009,correct_value,2009,correct_value,2009,correct_value,2009,correct_value
+9117b9a4a77361135e0a691196936c6b3c3cff12.jpg,93,producer,expected_value,Château Croix-Mouton,CHÂTEAU CRoIx-MOuTON,correct_value,CHÂTEAU CRoIx-MOuTON,correct_value,CHÂTEAU CRoIx-MOuTON,correct_value,CHÂTEAU CRoIx-MOuTON,correct_value
+9117b9a4a77361135e0a691196936c6b3c3cff12.jpg,93,wine_name,expected_value,Bordeaux Supérieur,,missing_value,BORDEAUX SUPÉRIEUR,correct_value,,missing_value,,missing_value
+9117b9a4a77361135e0a691196936c6b3c3cff12.jpg,93,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+9117b9a4a77361135e0a691196936c6b3c3cff12.jpg,93,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+9117b9a4a77361135e0a691196936c6b3c3cff12.jpg,93,subregion,expected_blank,,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill,Bordeaux Supérieur,unsupported_fill
+9117b9a4a77361135e0a691196936c6b3c3cff12.jpg,93,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9.jpg,94,producer,expected_value,Château Amélisse,,missing_value,CHATEAU AMELISSE,correct_value,CHATEAU AMELISSE,correct_value,,missing_value
+9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9.jpg,94,wine_name,expected_value,Saint-Émilion,.Saint-Émilion,correct_value,,missing_value,MSEN BOUTEILLE AU CHATEAU,wrong_value,.Saint-Émilion,correct_value
+9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9.jpg,94,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9.jpg,94,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9.jpg,94,subregion,expected_value,Saint-Émilion,Saint-Émilion,correct_value,Saint-Émilion,correct_value,Saint-Émilion,correct_value,Saint-Émilion,correct_value
+9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9.jpg,94,vintage,expected_value,2011,2011,correct_value,2011,correct_value,2011,correct_value,2011,correct_value
+91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg,95,producer,expected_value,Château d'Aiguilhe,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value
+91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg,95,wine_name,expected_blank,,Comtes von Neipperg,unsupported_fill,,correct_blank,Comtes von Neipperg,unsupported_fill,Comtes von Neipperg,unsupported_fill
+91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg,95,country,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg,95,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg,95,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+91c66006e38e5a57de29b54da6416a8dddd3b8ec.jpg,95,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg,96,producer,expected_value,Château Margaux,CHATEAU GRAND Margaux,wrong_value,CHATEAU GRAND Margaux,wrong_value,CHATEAU GRAND,wrong_value,CHATEAU GRAND Margaux,wrong_value
+926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg,96,wine_name,expected_value,Margaux,Margaux,correct_value,MARGAUX,correct_value,Jcycles,wrong_value,Margaux,correct_value
+926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg,96,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg,96,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg,96,subregion,expected_value,Margaux,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value
+926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1.jpg,96,vintage,expected_value,1996,,missing_value,,missing_value,,missing_value,1996,correct_value
+932e8a7357562df3bff0502b75a3407d6d9e768d.jpg,97,producer,expected_value,Château Abelyce,,missing_value,,missing_value,,missing_value,,missing_value
+932e8a7357562df3bff0502b75a3407d6d9e768d.jpg,97,wine_name,expected_value,Cuvée Garance,Saint-Émilion Grand Cru,wrong_value,Cuvée Garance,correct_value,Cuvée Garance,correct_value,Saint-Émilion Grand Cru,wrong_value
+932e8a7357562df3bff0502b75a3407d6d9e768d.jpg,97,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+932e8a7357562df3bff0502b75a3407d6d9e768d.jpg,97,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+932e8a7357562df3bff0502b75a3407d6d9e768d.jpg,97,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+932e8a7357562df3bff0502b75a3407d6d9e768d.jpg,97,vintage,expected_value,2017,2017,correct_value,2017,correct_value,2017,correct_value,2017,correct_value
+936ae6bdacdb874362ee4eea6e44a67066c42266.jpg,98,producer,expected_value,Château Moulin Delille,CHÂTEAU MoulinDelille,correct_value,CHÂTEAU MoulinDelille,correct_value,CHÂTEAU MoulinDelille,correct_value,CHÂTEAU MoulinDelille,correct_value
+936ae6bdacdb874362ee4eea6e44a67066c42266.jpg,98,wine_name,expected_value,Saint-Estèphe,Saint-Estèphe,correct_value,SAINT-ESTÈPHE,correct_value,,missing_value,Saint-Estèphe,correct_value
+936ae6bdacdb874362ee4eea6e44a67066c42266.jpg,98,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+936ae6bdacdb874362ee4eea6e44a67066c42266.jpg,98,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+936ae6bdacdb874362ee4eea6e44a67066c42266.jpg,98,subregion,expected_value,Saint-Estèphe,Saint-Estèphe,correct_value,Saint-Estèphe,correct_value,Saint-Estèphe,correct_value,Saint-Estèphe,correct_value
+936ae6bdacdb874362ee4eea6e44a67066c42266.jpg,98,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+9483088b08a6668c1004ed049bfe09786b631a55.jpg,99,producer,expected_value,Château d'Abzac,Chateau d'Abzao,wrong_value,Chateau d'Abzao,wrong_value,Chateau d'Abzao,wrong_value,Chateau d'Abzao,wrong_value
+9483088b08a6668c1004ed049bfe09786b631a55.jpg,99,wine_name,expected_value,Bordeaux Supérieur,Produit de,wrong_value,,missing_value,Produit de,wrong_value,Produit de,wrong_value
+9483088b08a6668c1004ed049bfe09786b631a55.jpg,99,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+9483088b08a6668c1004ed049bfe09786b631a55.jpg,99,region,expected_value,Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+9483088b08a6668c1004ed049bfe09786b631a55.jpg,99,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+9483088b08a6668c1004ed049bfe09786b631a55.jpg,99,vintage,expected_value,2007,2007,correct_value,2007,correct_value,2007,correct_value,2007,correct_value
+95b6d49871e1e906c252b23ed649fcf4eeb5a180.jpg,100,producer,expected_value,La Cave d'Augustin Florent,CAVE D'AUGUSTIN FLORENT,correct_value,CAVE D'AUGUSTIN FLORENT,correct_value,CAVE D'AUGUSTIN FLORENT,correct_value,CAVE D'AUGUSTIN FLORENT,correct_value
+95b6d49871e1e906c252b23ed649fcf4eeb5a180.jpg,100,wine_name,expected_value,Touraine Sauvignon,,missing_value,ouraine Sauvignt,wrong_value,,missing_value,,missing_value
+95b6d49871e1e906c252b23ed649fcf4eeb5a180.jpg,100,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+95b6d49871e1e906c252b23ed649fcf4eeb5a180.jpg,100,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,,missing_value,Loire,correct_value
+95b6d49871e1e906c252b23ed649fcf4eeb5a180.jpg,100,subregion,expected_value,Touraine,Touraine,correct_value,,missing_value,,missing_value,Touraine,correct_value
+95b6d49871e1e906c252b23ed649fcf4eeb5a180.jpg,100,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+9661f672432c5a0455a22fa65ffffa173d1aace2.jpg,101,producer,expected_value,The Straw Hat,,missing_value,,missing_value,,missing_value,,missing_value
+9661f672432c5a0455a22fa65ffffa173d1aace2.jpg,101,wine_name,expected_value,Prestige Collection,,missing_value,,missing_value,,missing_value,,missing_value
+9661f672432c5a0455a22fa65ffffa173d1aace2.jpg,101,country,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+9661f672432c5a0455a22fa65ffffa173d1aace2.jpg,101,region,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+9661f672432c5a0455a22fa65ffffa173d1aace2.jpg,101,subregion,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+9661f672432c5a0455a22fa65ffffa173d1aace2.jpg,101,vintage,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg,102,producer,expected_value,Château Abelyce,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value
+9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg,102,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,,missing_value,Amélie Aubert,wrong_value,Saint-Émilion Grand Cru,correct_value
+9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg,102,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg,102,region,expected_value,Bordeaux,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value,Bordeaux,correct_value
+9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg,102,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,,missing_value,Saint-Émilion,correct_value,Saint-Émilion Grand Cru,correct_value
+9adeb9d97fd50e6e3011a050e5a829e12b883473.jpg,102,vintage,expected_value,2010,2010,correct_value,2010,correct_value,2010,correct_value,2010,correct_value
+9c7ea2d97c71e630babbd5f54ab78fe366bd999b.jpg,103,producer,expected_value,Château Haut La Garde,CHÂTEAU HAUT LA GARDE,correct_value,CHÂTEAU HAUT LA GARDE,correct_value,CHÂTEAU HAUT LA GARDE,correct_value,CHÂTEAU HAUT LA GARDE,correct_value
+9c7ea2d97c71e630babbd5f54ab78fe366bd999b.jpg,103,wine_name,expected_value,Blaye Côtes de Bordeaux,Stéphane Lesparre - Vigneron,wrong_value,,missing_value,Stéphane Lesparre - Vigneron,wrong_value,Stéphane Lesparre - Vigneron,wrong_value
+9c7ea2d97c71e630babbd5f54ab78fe366bd999b.jpg,103,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+9c7ea2d97c71e630babbd5f54ab78fe366bd999b.jpg,103,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value
+9c7ea2d97c71e630babbd5f54ab78fe366bd999b.jpg,103,subregion,expected_value,Blaye Côtes de Bordeaux,Blaye Côtes de Bordeaux,correct_value,,missing_value,,missing_value,Blaye Côtes de Bordeaux,correct_value
+9c7ea2d97c71e630babbd5f54ab78fe366bd999b.jpg,103,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+9de8f334ac3a14849d8ed1a7767c441774836eff.jpg,104,producer,expected_value,Baron de la Varière,,missing_value,,missing_value,VARIÈRE,wrong_value,,missing_value
+9de8f334ac3a14849d8ed1a7767c441774836eff.jpg,104,wine_name,expected_value,Anjou,Anjou,correct_value,ANJOU,correct_value,BARON,wrong_value,Anjou,correct_value
+9de8f334ac3a14849d8ed1a7767c441774836eff.jpg,104,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+9de8f334ac3a14849d8ed1a7767c441774836eff.jpg,104,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,Loire,correct_value,Loire,correct_value
+9de8f334ac3a14849d8ed1a7767c441774836eff.jpg,104,subregion,expected_value,Anjou,Anjou,correct_value,Anjou,correct_value,Anjou,correct_value,Anjou,correct_value
+9de8f334ac3a14849d8ed1a7767c441774836eff.jpg,104,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+9f35852350601c538e8e57277c7ce819b356e35c.jpg,105,producer,expected_value,Domaine de l'Ermitage Lamourous,,missing_value,,missing_value,,missing_value,,missing_value
+9f35852350601c538e8e57277c7ce819b356e35c.jpg,105,wine_name,expected_value,Haut-Médoc,,missing_value,,missing_value,,missing_value,,missing_value
+9f35852350601c538e8e57277c7ce819b356e35c.jpg,105,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+9f35852350601c538e8e57277c7ce819b356e35c.jpg,105,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+9f35852350601c538e8e57277c7ce819b356e35c.jpg,105,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+9f35852350601c538e8e57277c7ce819b356e35c.jpg,105,vintage,expected_value,1989,1989,correct_value,1989,correct_value,1989,correct_value,1989,correct_value
+a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,106,producer,expected_value,Baron Philippe de Rothschild,MOUTONCADET,wrong_value,MOUTONCADET,wrong_value,MOUTONCADET,wrong_value,MOUTONCADET,wrong_value
+a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,106,wine_name,expected_value,Mouton Cadet,BARON PHILIPPE DE ROTHSCHILD,wrong_value,BORDEAUX,wrong_value,BARON PHILIPPE DE ROTHSCHILD,wrong_value,BARON PHILIPPE DE ROTHSCHILD,wrong_value
+a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,106,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,106,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,106,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,106,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,107,producer,expected_value,Lacheteau,,missing_value,,missing_value,,missing_value,,missing_value
+a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,107,wine_name,expected_value,Soupçon de Fruit,Cabernet d'Anjou,wrong_value,,missing_value,Cabernet d'Anjou,wrong_value,Cabernet d'Anjou,wrong_value
+a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,107,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,107,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,Loire,correct_value,Loire,correct_value
+a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,107,subregion,expected_value,Anjou,Cabernet d'Anjou,correct_value,Cabernet d'Anjou,correct_value,Cabernet d'Anjou,correct_value,Cabernet d'Anjou,correct_value
+a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,107,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+a7c1d1ed5545107151c48162125da00767ebe922.jpg,108,producer,expected_value,Club des Sommeliers,,missing_value,,missing_value,,missing_value,,missing_value
+a7c1d1ed5545107151c48162125da00767ebe922.jpg,108,wine_name,expected_value,Médoc,Médoc,correct_value,MÉDOC,correct_value,,missing_value,Médoc,correct_value
+a7c1d1ed5545107151c48162125da00767ebe922.jpg,108,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+a7c1d1ed5545107151c48162125da00767ebe922.jpg,108,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+a7c1d1ed5545107151c48162125da00767ebe922.jpg,108,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+a7c1d1ed5545107151c48162125da00767ebe922.jpg,108,vintage,expected_value,2017,2017,correct_value,2017,correct_value,2017,correct_value,2017,correct_value
+a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,109,producer,unresolved,,,unscored_blank,,unscored_blank,,unscored_blank,,unscored_blank
+a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,109,wine_name,expected_value,Médoc Select,PAR VU.M. À GAILLAN-EN-Médoc,wrong_value,MÉDOC,wrong_value,PAR VU.M. À GAILLAN-EN-Médoc,wrong_value,PAR VU.M. À GAILLAN-EN-Médoc,wrong_value
+a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,109,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,109,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,109,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,109,vintage,expected_value,2007,2007,correct_value,2007,correct_value,2007,correct_value,2007,correct_value
+aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,110,producer,expected_value,Château d'Aiguilhe,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value
+aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,110,wine_name,expected_blank,,Comtes von Neipperg,unsupported_fill,,correct_blank,Comtes von Neipperg,unsupported_fill,Comtes von Neipperg,unsupported_fill
+aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,110,country,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,110,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,110,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,110,vintage,expected_value,2017,2017,correct_value,2017,correct_value,2017,correct_value,2017,correct_value
+ab16e6c541204fd130c05581d990c76220f47e3d.jpg,111,producer,expected_value,Réserve de Padulone,PADULONE,wrong_value,PADULONE,wrong_value,PADULONE,wrong_value,PADULONE,wrong_value
+ab16e6c541204fd130c05581d990c76220f47e3d.jpg,111,wine_name,expected_value,Île de Beauté,Reserve DE,wrong_value,Reserve DE PADULONE,wrong_value,Reserve DE,wrong_value,Reserve DE,wrong_value
+ab16e6c541204fd130c05581d990c76220f47e3d.jpg,111,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+ab16e6c541204fd130c05581d990c76220f47e3d.jpg,111,region,expected_value,Corsica,,missing_value,,missing_value,Corse,correct_value,,missing_value
+ab16e6c541204fd130c05581d990c76220f47e3d.jpg,111,subregion,expected_blank,,,correct_blank,,correct_blank,Île de Beauté,unsupported_fill,,correct_blank
+ab16e6c541204fd130c05581d990c76220f47e3d.jpg,111,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+ac08c402e2b32db2ace37c56bcf1a9764083ddb7.jpg,112,producer,expected_value,Château de l'Abbaye,CHATEAU de L'ABBAYE,correct_value,CHATEAU de L'ABBAYE,correct_value,CHATEAU de L'ABBAYE,correct_value,CHATEAU de L'ABBAYE,correct_value
+ac08c402e2b32db2ace37c56bcf1a9764083ddb7.jpg,112,wine_name,expected_value,Haut-Médoc,Haut-Médoc,correct_value,HAUT-MÉDOC,correct_value,,missing_value,Haut-Médoc,correct_value
+ac08c402e2b32db2ace37c56bcf1a9764083ddb7.jpg,112,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ac08c402e2b32db2ace37c56bcf1a9764083ddb7.jpg,112,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+ac08c402e2b32db2ace37c56bcf1a9764083ddb7.jpg,112,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+ac08c402e2b32db2ace37c56bcf1a9764083ddb7.jpg,112,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+acbc0312f7bdabfdb58fefe8202fa9926266b5b4.jpg,113,producer,expected_value,Château Baudare,CHÂTEAU BAUDARE,correct_value,CHÂTEAU BAUDARE,correct_value,CHÂTEAU BAUDARE,correct_value,CHÂTEAU BAUDARE,correct_value
+acbc0312f7bdabfdb58fefe8202fa9926266b5b4.jpg,113,wine_name,expected_value,Fronton,TRADITION D'EXCELLENCE,correct_value,FRONTON,correct_value,TRADITION D'EXCELLENCE,correct_value,TRADITION D'EXCELLENCE,correct_value
+acbc0312f7bdabfdb58fefe8202fa9926266b5b4.jpg,113,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+acbc0312f7bdabfdb58fefe8202fa9926266b5b4.jpg,113,region,expected_value,South West France,South West France,correct_value,South West France,correct_value,Sud-Ouest,correct_value,South West France,correct_value
+acbc0312f7bdabfdb58fefe8202fa9926266b5b4.jpg,113,subregion,expected_value,Fronton,Fronton,correct_value,Fronton,correct_value,Fronton,correct_value,Fronton,correct_value
+acbc0312f7bdabfdb58fefe8202fa9926266b5b4.jpg,113,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+acce906b357f0554795a353ae0226adad4ddefbc.jpg,114,producer,expected_value,Le Pas du Templier,,missing_value,,missing_value,,missing_value,,missing_value
+acce906b357f0554795a353ae0226adad4ddefbc.jpg,114,wine_name,expected_value,Minervois,Minervois,correct_value,MINERVOIS,correct_value,,missing_value,Minervois,correct_value
+acce906b357f0554795a353ae0226adad4ddefbc.jpg,114,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+acce906b357f0554795a353ae0226adad4ddefbc.jpg,114,region,expected_value,Languedoc,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+acce906b357f0554795a353ae0226adad4ddefbc.jpg,114,subregion,expected_value,Minervois,Minervois,correct_value,Minervois,correct_value,Minervois,correct_value,Minervois,correct_value
+acce906b357f0554795a353ae0226adad4ddefbc.jpg,114,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg,115,producer,expected_value,Château Amélisse,Cháteau Amélisse,correct_value,Cháteau Amélisse,correct_value,Cháteau Amélisse,correct_value,Cháteau Amélisse,correct_value
+ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg,115,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,,missing_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg,115,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg,115,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg,115,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,,missing_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+ae0ff4268cc55ea978f04fad0a1f4890abb31893.jpg,115,vintage,expected_value,2017,2017,correct_value,2017,correct_value,2017,correct_value,2017,correct_value
+ae4f328736c8c3260272a54e466f62cc4438c8bc.jpg,116,producer,expected_value,Château Fabas,,missing_value,,missing_value,,missing_value,,missing_value
+ae4f328736c8c3260272a54e466f62cc4438c8bc.jpg,116,wine_name,expected_value,Payroulière,,missing_value,MINERVOIS,wrong_value,,missing_value,,missing_value
+ae4f328736c8c3260272a54e466f62cc4438c8bc.jpg,116,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ae4f328736c8c3260272a54e466f62cc4438c8bc.jpg,116,region,expected_value,Languedoc,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+ae4f328736c8c3260272a54e466f62cc4438c8bc.jpg,116,subregion,expected_value,Minervois,Minervois,correct_value,Minervois,correct_value,Minervois,correct_value,Minervois,correct_value
+ae4f328736c8c3260272a54e466f62cc4438c8bc.jpg,116,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+aed0bfd1dda2777a63691703ec0fe3909a0c92da.jpg,117,producer,expected_value,La Francette,,missing_value,,missing_value,,missing_value,,missing_value
+aed0bfd1dda2777a63691703ec0fe3909a0c92da.jpg,117,wine_name,expected_value,Merlot,Merlot,correct_value,Merlot,correct_value,Merlot,correct_value,Merlot,correct_value
+aed0bfd1dda2777a63691703ec0fe3909a0c92da.jpg,117,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+aed0bfd1dda2777a63691703ec0fe3909a0c92da.jpg,117,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+aed0bfd1dda2777a63691703ec0fe3909a0c92da.jpg,117,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+aed0bfd1dda2777a63691703ec0fe3909a0c92da.jpg,117,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+b2b425dbcb8ea1095050775498dfc8d70ab24c1d.jpg,118,producer,expected_value,Symbiose,,missing_value,,missing_value,,missing_value,,missing_value
+b2b425dbcb8ea1095050775498dfc8d70ab24c1d.jpg,118,wine_name,expected_value,Languedoc,,missing_value,LANGUEDOC,correct_value,,missing_value,,missing_value
+b2b425dbcb8ea1095050775498dfc8d70ab24c1d.jpg,118,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+b2b425dbcb8ea1095050775498dfc8d70ab24c1d.jpg,118,region,expected_value,Languedoc,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+b2b425dbcb8ea1095050775498dfc8d70ab24c1d.jpg,118,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+b2b425dbcb8ea1095050775498dfc8d70ab24c1d.jpg,118,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+b505b35a41c4096fa54c2c11c3853194fdcfc232.jpg,119,producer,expected_value,Château La Vieille Cure,PROPRIÉTAIRE A SAILLANS (GIRONDE) France S.N.C. CHATEAU LA VIEILLE CURE,wrong_value,PROPRIÉTAIRE A SAILLANS (GIRONDE) France S.N.C. CHATEAU LA VIEILLE CURE,wrong_value,PROPRIÉTAIRE A SAILLANS (GIRONDE) France S.N.C. CHATEAU LA VIEILLE CURE,wrong_value,PROPRIÉTAIRE A SAILLANS (GIRONDE) France S.N.C. CHATEAU LA VIEILLE CURE,wrong_value
+b505b35a41c4096fa54c2c11c3853194fdcfc232.jpg,119,wine_name,expected_value,La Sacristie de la Vieille Cure,DE LA VIEILLE CURE,wrong_value,Fronsac,wrong_value,DE LA VIEILLE CURE,wrong_value,DE LA VIEILLE CURE,wrong_value
+b505b35a41c4096fa54c2c11c3853194fdcfc232.jpg,119,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+b505b35a41c4096fa54c2c11c3853194fdcfc232.jpg,119,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+b505b35a41c4096fa54c2c11c3853194fdcfc232.jpg,119,subregion,expected_value,Fronsac,,missing_value,,missing_value,Fronsac,correct_value,,missing_value
+b505b35a41c4096fa54c2c11c3853194fdcfc232.jpg,119,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+b6901950e73c1a6355ace47a10912b27daa39db4.jpg,120,producer,expected_value,Château La Croix Bertineau,CHATEAU La Croix Bertineau,correct_value,CHATEAU La Croix Bertineau,correct_value,CHATEAU La Croix Bertineau,correct_value,CHATEAU La Croix Bertineau,correct_value
+b6901950e73c1a6355ace47a10912b27daa39db4.jpg,120,wine_name,expected_value,Lalande-de-Pomerol,LALANDE DE/Pomerol,correct_value,,missing_value,,missing_value,LALANDE DE/Pomerol,correct_value
+b6901950e73c1a6355ace47a10912b27daa39db4.jpg,120,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+b6901950e73c1a6355ace47a10912b27daa39db4.jpg,120,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+b6901950e73c1a6355ace47a10912b27daa39db4.jpg,120,subregion,expected_value,Lalande-de-Pomerol,Pomerol,wrong_value,Pomerol,wrong_value,Lalande-de-Pomerol,correct_value,Pomerol,wrong_value
+b6901950e73c1a6355ace47a10912b27daa39db4.jpg,120,vintage,expected_value,2008,2008,correct_value,2008,correct_value,2008,correct_value,2008,correct_value
+b822c333f9c15f208b8f6e542183a27e368234d1.jpg,121,producer,expected_value,Château Margaux,EAU Margaux,wrong_value,EAU Margaux,wrong_value,EAU MARGAU,wrong_value,EAU Margaux,wrong_value
+b822c333f9c15f208b8f6e542183a27e368234d1.jpg,121,wine_name,expected_blank,,,correct_blank,MARGAUX,unsupported_fill,,correct_blank,,correct_blank
+b822c333f9c15f208b8f6e542183a27e368234d1.jpg,121,country,expected_blank,,France,unsupported_fill,France,unsupported_fill,France,unsupported_fill,France,unsupported_fill
+b822c333f9c15f208b8f6e542183a27e368234d1.jpg,121,region,expected_blank,,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill
+b822c333f9c15f208b8f6e542183a27e368234d1.jpg,121,subregion,expected_blank,,Margaux,unsupported_fill,Margaux,unsupported_fill,Margaux,unsupported_fill,Margaux,unsupported_fill
+b822c333f9c15f208b8f6e542183a27e368234d1.jpg,121,vintage,expected_value,2008,2008,correct_value,2008,correct_value,2008,correct_value,2008,correct_value
+b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce.jpg,122,producer,expected_value,Château Vieux Bonneau,CHATEAU VIEUX BONNEAU,correct_value,CHATEAU VIEUX BONNEAU,correct_value,CHATEAU VIEUX BONNEAU,correct_value,CHATEAU VIEUX BONNEAU,correct_value
+b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce.jpg,122,wine_name,expected_value,Montagne Saint-Émilion,,missing_value,,missing_value,,missing_value,,missing_value
+b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce.jpg,122,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce.jpg,122,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce.jpg,122,subregion,expected_value,Montagne Saint-Émilion,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value
+b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce.jpg,122,vintage,expected_value,2012,2012,correct_value,2012,correct_value,2012,correct_value,2012,correct_value
+bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg,123,producer,expected_value,Château Abelyce,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value
+bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg,123,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,,missing_value,Amélie Aubert Séledion,wrong_value,Saint-Émilion Grand Cru,correct_value
+bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg,123,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg,123,region,expected_value,Bordeaux,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value,Bordeaux,correct_value
+bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg,123,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,,missing_value,Saint-Émilion,correct_value,Saint-Émilion Grand Cru,correct_value
+bb76c992d273ed2772ac8996b958823a1fe4bc67.jpg,123,vintage,expected_value,2012,2012,correct_value,2012,correct_value,2012,correct_value,2012,correct_value
+bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg,124,producer,expected_value,Château Margaux,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value
+bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg,124,wine_name,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg,124,country,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg,124,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg,124,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+bda41cc3ee2eaa0fc30feee7e82dc5693b308836.jpg,124,vintage,expected_value,2008,2008,correct_value,2008,correct_value,2008,correct_value,2008,correct_value
+bf050731c5595a6b55df87c0fc10cb774bf269be.jpg,125,producer,expected_value,Château Peyfaures,Chateau PEYFAURES,correct_value,Chateau PEYFAURES,correct_value,Chateau PEYFAURES,correct_value,Chateau PEYFAURES,correct_value
+bf050731c5595a6b55df87c0fc10cb774bf269be.jpg,125,wine_name,unresolved,,LIVING THE GOURMET,unscored_filled,LIVING THE GOURMET,unscored_filled,LIVING THE GOURMET,unscored_filled,LIVING THE GOURMET,unscored_filled
+bf050731c5595a6b55df87c0fc10cb774bf269be.jpg,125,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+bf050731c5595a6b55df87c0fc10cb774bf269be.jpg,125,region,expected_value,Bordeaux,,missing_value,,missing_value,,missing_value,,missing_value
+bf050731c5595a6b55df87c0fc10cb774bf269be.jpg,125,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+bf050731c5595a6b55df87c0fc10cb774bf269be.jpg,125,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+c371f2e145798d732f53f4110040c8cb997f3d7c.jpg,126,producer,expected_value,L'Héritage de Carillan,L'HÉRITAGE CARILLAN DE,wrong_value,L'HÉRITAGE CARILLAN DE,wrong_value,CARILLAN DE,wrong_value,L'HÉRITAGE CARILLAN DE,wrong_value
+c371f2e145798d732f53f4110040c8cb997f3d7c.jpg,126,wine_name,expected_value,Cabernet Sauvignon,PAYS DOC,wrong_value,Cabernet Sauvignon,correct_value,Cabernet Sauvignon,correct_value,PAYS DOC,wrong_value
+c371f2e145798d732f53f4110040c8cb997f3d7c.jpg,126,country,expected_value,France,,missing_value,,missing_value,,missing_value,,missing_value
+c371f2e145798d732f53f4110040c8cb997f3d7c.jpg,126,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,,missing_value,,missing_value
+c371f2e145798d732f53f4110040c8cb997f3d7c.jpg,126,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c371f2e145798d732f53f4110040c8cb997f3d7c.jpg,126,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c3736a461d020e7003c886790b6a4f999e054f1e.jpg,127,producer,expected_value,Domaine Georges Bertrand,DOMAINE GEORGES BERTRAND,correct_value,DOMAINE GEORGES BERTRAND,correct_value,DOMAINE GEORGES BERTRAND,correct_value,DOMAINE GEORGES BERTRAND,correct_value
+c3736a461d020e7003c886790b6a4f999e054f1e.jpg,127,wine_name,expected_value,Corbières,SUD DE,wrong_value,CORBIERES,correct_value,SUD DE,wrong_value,Corbières,correct_value
+c3736a461d020e7003c886790b6a4f999e054f1e.jpg,127,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+c3736a461d020e7003c886790b6a4f999e054f1e.jpg,127,region,expected_value,Languedoc,,missing_value,Languedoc,correct_value,Languedoc,correct_value,Languedoc,correct_value
+c3736a461d020e7003c886790b6a4f999e054f1e.jpg,127,subregion,expected_value,Corbières,,missing_value,Corbières,correct_value,Corbières,correct_value,Corbières,correct_value
+c3736a461d020e7003c886790b6a4f999e054f1e.jpg,127,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+c4c006c5404752ebfecaf1f4364e91dcb9c30b18.jpg,128,producer,expected_value,Vega Sicilia,,missing_value,,missing_value,,missing_value,,missing_value
+c4c006c5404752ebfecaf1f4364e91dcb9c30b18.jpg,128,wine_name,expected_value,Único,,missing_value,Ribera del Duero,wrong_value,,missing_value,,missing_value
+c4c006c5404752ebfecaf1f4364e91dcb9c30b18.jpg,128,country,expected_value,Spain,Spain,correct_value,Spain,correct_value,Spain,correct_value,Spain,correct_value
+c4c006c5404752ebfecaf1f4364e91dcb9c30b18.jpg,128,region,expected_value,Ribera del Duero,Ribera del Duero,correct_value,Ribera del Duero,correct_value,Castilla y León,wrong_value,Ribera del Duero,correct_value
+c4c006c5404752ebfecaf1f4364e91dcb9c30b18.jpg,128,subregion,expected_blank,,,correct_blank,,correct_blank,Ribera del Duero,unsupported_fill,,correct_blank
+c4c006c5404752ebfecaf1f4364e91dcb9c30b18.jpg,128,vintage,expected_value,1991,1991,correct_value,1991,correct_value,1991,correct_value,1991,correct_value
+c5becc42e876f81fedd46eaac542181cb69c0aeb.jpg,129,producer,expected_value,Cave de Roquebrun,Rogue CAVE DE run,wrong_value,Rogue CAVE DE run,wrong_value,Rogue CAVE DE run,wrong_value,Rogue CAVE DE run,wrong_value
+c5becc42e876f81fedd46eaac542181cb69c0aeb.jpg,129,wine_name,expected_value,Chemin des Olivettes,Chemin des Olivelts,wrong_value,ITERNA,wrong_value,Chemin des Olivelts,wrong_value,Chemin des Olivelts,wrong_value
+c5becc42e876f81fedd46eaac542181cb69c0aeb.jpg,129,country,expected_value,France,,missing_value,France,correct_value,France,correct_value,,missing_value
+c5becc42e876f81fedd46eaac542181cb69c0aeb.jpg,129,region,expected_value,Languedoc,,missing_value,Languedoc,correct_value,Languedoc,correct_value,,missing_value
+c5becc42e876f81fedd46eaac542181cb69c0aeb.jpg,129,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c5becc42e876f81fedd46eaac542181cb69c0aeb.jpg,129,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+c6e21e77c08fd9af98cf8ca34628ad3772bed8dc.jpg,130,producer,expected_value,La Cave d'Augustin Florent,,missing_value,,missing_value,,missing_value,,missing_value
+c6e21e77c08fd9af98cf8ca34628ad3772bed8dc.jpg,130,wine_name,expected_value,Large Malartic,,missing_value,BORDEAUX,wrong_value,,missing_value,,missing_value
+c6e21e77c08fd9af98cf8ca34628ad3772bed8dc.jpg,130,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+c6e21e77c08fd9af98cf8ca34628ad3772bed8dc.jpg,130,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+c6e21e77c08fd9af98cf8ca34628ad3772bed8dc.jpg,130,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c6e21e77c08fd9af98cf8ca34628ad3772bed8dc.jpg,130,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg,131,producer,expected_value,Château d'Aiguilhe,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value,CHATEAU D'AIGUILHE,correct_value
+c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg,131,wine_name,expected_blank,,Comtes von Neipperg,unsupported_fill,,correct_blank,Comtes von Neipperg,unsupported_fill,Comtes von Neipperg,unsupported_fill
+c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg,131,country,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg,131,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg,131,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c7c278615b5e757ec95965615a6c6ae64806f8c9.jpg,131,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+c7d852d8e6de445b1d3dbfab1fd40adb9264ea31.jpg,132,producer,expected_value,La Cave d'Augustin Florent,CAvE D'AUGUSTIN FLORENT,correct_value,CAvE D'AUGUSTIN FLORENT,correct_value,CAvE D'AUGUSTIN FLORENT,correct_value,CAvE D'AUGUSTIN FLORENT,correct_value
+c7d852d8e6de445b1d3dbfab1fd40adb9264ea31.jpg,132,wine_name,expected_value,Mâcon,Mâcon,correct_value,Mâcon,correct_value,PRODUIT DE,wrong_value,Mâcon,correct_value
+c7d852d8e6de445b1d3dbfab1fd40adb9264ea31.jpg,132,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+c7d852d8e6de445b1d3dbfab1fd40adb9264ea31.jpg,132,region,expected_value,Burgundy,Burgundy,correct_value,Burgundy,correct_value,Bourgogne,correct_value,Burgundy,correct_value
+c7d852d8e6de445b1d3dbfab1fd40adb9264ea31.jpg,132,subregion,expected_value,Mâcon,Mâcon,correct_value,Mâcon,correct_value,Mâcon,correct_value,Mâcon,correct_value
+c7d852d8e6de445b1d3dbfab1fd40adb9264ea31.jpg,132,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg,133,producer,expected_value,Cavalier,CAVALIER,correct_value,CAVALIER,correct_value,CAVALIER,correct_value,CAVALIER,correct_value
+c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg,133,wine_name,expected_value,Terre de Provence,Terre de Prorence,wrong_value,cÔTES DE PROVENCE,wrong_value,Terre de Prorence,wrong_value,Terre de Prorence,wrong_value
+c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg,133,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg,133,region,expected_value,Provence,Provence,correct_value,Provence,correct_value,Provence,correct_value,Provence,correct_value
+c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg,133,subregion,expected_value,Côtes de Provence,Côtes de Provence,correct_value,Côtes de Provence,correct_value,Côtes de Provence,correct_value,Côtes de Provence,correct_value
+c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg,133,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+c9f0738ccd268978cb96d637b4c854f076240718.jpg,134,producer,expected_value,Hawk's Shadow Estate,,missing_value,,missing_value,,missing_value,,missing_value
+c9f0738ccd268978cb96d637b4c854f076240718.jpg,134,wine_name,expected_value,Orange Muscat,,missing_value,,missing_value,,missing_value,,missing_value
+c9f0738ccd268978cb96d637b4c854f076240718.jpg,134,country,expected_value,Texas,Texas,correct_value,Texas,correct_value,Texas,correct_value,Texas,correct_value
+c9f0738ccd268978cb96d637b4c854f076240718.jpg,134,region,expected_value,Texas High Plains,Texas High Plains,correct_value,Texas High Plains,correct_value,Texas High Plains,correct_value,Texas High Plains,correct_value
+c9f0738ccd268978cb96d637b4c854f076240718.jpg,134,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+c9f0738ccd268978cb96d637b4c854f076240718.jpg,134,vintage,expected_value,2011,2011,correct_value,2011,correct_value,2011,correct_value,2011,correct_value
+caecb8358eb01441352efa62d5b17ad7498e129f.jpg,135,producer,expected_value,Hawk's Shadow Estate,,missing_value,,missing_value,,missing_value,,missing_value
+caecb8358eb01441352efa62d5b17ad7498e129f.jpg,135,wine_name,expected_value,Orange Muscat,,missing_value,,missing_value,,missing_value,,missing_value
+caecb8358eb01441352efa62d5b17ad7498e129f.jpg,135,country,expected_value,Texas,Texas,correct_value,Texas,correct_value,Texas,correct_value,Texas,correct_value
+caecb8358eb01441352efa62d5b17ad7498e129f.jpg,135,region,expected_value,Texas High Plains,Texas High Plains,correct_value,Texas High Plains,correct_value,Texas High Plains,correct_value,Texas High Plains,correct_value
+caecb8358eb01441352efa62d5b17ad7498e129f.jpg,135,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+caecb8358eb01441352efa62d5b17ad7498e129f.jpg,135,vintage,expected_value,2011,2011,correct_value,2011,correct_value,2011,correct_value,2011,correct_value
+cb8f6c69eca2dbad8b65a2b5766cf02710f17c97.jpg,136,producer,expected_value,Domaine Allary Haut-Brion,DOMAINE ALLARY,wrong_value,DOMAINE ALLARY,wrong_value,DOMAINE ALLARY,wrong_value,DOMAINE ALLARY,wrong_value
+cb8f6c69eca2dbad8b65a2b5766cf02710f17c97.jpg,136,wine_name,expected_value,Pessac-Léognan,Pessac-Léognan,correct_value,PESSAC-LEOGNAN,correct_value,Haut-Brion,wrong_value,Pessac-Léognan,correct_value
+cb8f6c69eca2dbad8b65a2b5766cf02710f17c97.jpg,136,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+cb8f6c69eca2dbad8b65a2b5766cf02710f17c97.jpg,136,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+cb8f6c69eca2dbad8b65a2b5766cf02710f17c97.jpg,136,subregion,expected_value,Pessac-Léognan,Pessac-Léognan,correct_value,Pessac-Léognan,correct_value,Pessac-Léognan,correct_value,Pessac-Léognan,correct_value
+cb8f6c69eca2dbad8b65a2b5766cf02710f17c97.jpg,136,vintage,expected_value,2010,2010,correct_value,2010,correct_value,2010,correct_value,2010,correct_value
+d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba.jpg,137,producer,expected_value,Château Dupeyrat Plouget,CHÂTEAU DUPEYRAT PLOUGET,correct_value,CHÂTEAU DUPEYRAT PLOUGET,correct_value,CHÂTEAU DUPEYRAT PLOUGET,correct_value,CHÂTEAU DUPEYRAT PLOUGET,correct_value
+d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba.jpg,137,wine_name,expected_value,Cru de Plouget,CRU de PLOUGET,correct_value,COTES-DE-BOURG,wrong_value,CRU de PLOUGET,correct_value,CRU de PLOUGET,correct_value
+d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba.jpg,137,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba.jpg,137,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba.jpg,137,subregion,expected_value,Côtes de Bourg,,missing_value,,missing_value,Côtes de Bourg,correct_value,,missing_value
+d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba.jpg,137,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+d1d3910f820b7e75f2b0427646ab76814ea51479.jpg,138,producer,expected_value,La Cave d'Augustin Florent,LA Cave D'AUguStiN FLORENT,correct_value,LA Cave D'AUguStiN FLORENT,correct_value,LA Cave D'AUguStiN FLORENT,correct_value,LA Cave D'AUguStiN FLORENT,correct_value
+d1d3910f820b7e75f2b0427646ab76814ea51479.jpg,138,wine_name,expected_value,Large Malartic,,missing_value,BORDEAUX,wrong_value,,missing_value,,missing_value
+d1d3910f820b7e75f2b0427646ab76814ea51479.jpg,138,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+d1d3910f820b7e75f2b0427646ab76814ea51479.jpg,138,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+d1d3910f820b7e75f2b0427646ab76814ea51479.jpg,138,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+d1d3910f820b7e75f2b0427646ab76814ea51479.jpg,138,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+d5bac319aaa6b0a41ac6330b03fb944d384c0029.jpg,139,producer,expected_value,Château Guillaume Blanc,GUILLAUME BLANG CHẤTE DE CHEN,wrong_value,GUILLAUME BLANG CHẤTE DE CHEN,wrong_value,GUILLAUME BLANG CHẤTE,wrong_value,GUILLAUME BLANG CHẤTE DE CHEN,wrong_value
+d5bac319aaa6b0a41ac6330b03fb944d384c0029.jpg,139,wine_name,expected_value,Bordeaux Supérieur,Bordeaux,wrong_value,BORDEAUX,wrong_value,DE CHEN,wrong_value,Bordeaux,wrong_value
+d5bac319aaa6b0a41ac6330b03fb944d384c0029.jpg,139,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+d5bac319aaa6b0a41ac6330b03fb944d384c0029.jpg,139,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+d5bac319aaa6b0a41ac6330b03fb944d384c0029.jpg,139,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+d5bac319aaa6b0a41ac6330b03fb944d384c0029.jpg,139,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+d65336e744e008a080c194ab4c29d64d1e28fa8d.jpg,140,producer,expected_value,Château Amélisse,Cháteau Améli,wrong_value,Cháteau Améli,wrong_value,Cháteau Améli,wrong_value,Cháteau Améli,wrong_value
+d65336e744e008a080c194ab4c29d64d1e28fa8d.jpg,140,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,EARL DES VIGNOBLES THIERRY COURRECHE,wrong_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+d65336e744e008a080c194ab4c29d64d1e28fa8d.jpg,140,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+d65336e744e008a080c194ab4c29d64d1e28fa8d.jpg,140,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+d65336e744e008a080c194ab4c29d64d1e28fa8d.jpg,140,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+d65336e744e008a080c194ab4c29d64d1e28fa8d.jpg,140,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg,141,producer,expected_value,Malesan,,missing_value,,missing_value,,missing_value,,missing_value
+d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg,141,wine_name,expected_value,Bordeaux Cuvée Sélectionnée,,missing_value,Cuvée Sélectionnée,correct_value,,missing_value,,missing_value
+d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg,141,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg,141,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg,141,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64.jpg,141,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg,142,producer,expected_value,Château Abelyce,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value,CHATEAU ABELYCE,correct_value
+db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg,142,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,,missing_value,RED WINE Grand Cru,wrong_value,Saint-Émilion Grand Cru,correct_value
+db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg,142,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg,142,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg,142,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,,missing_value,Saint-Émilion,correct_value,Saint-Émilion Grand Cru,correct_value
+db6a82cbb2269f22e371729eb8c55f4d659aa8f3.jpg,142,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+df540dc916f6460c1ea06da2cab02ff8382302f4.jpg,143,producer,expected_value,La Cave d'Augustin Florent,CAVE D AUGUSTIN FLORENT,correct_value,CAVE D AUGUSTIN FLORENT,correct_value,CAVE D AUGUSTIN FLORENT,correct_value,CAVE D AUGUSTIN FLORENT,correct_value
+df540dc916f6460c1ea06da2cab02ff8382302f4.jpg,143,wine_name,expected_value,Touraine Sauvignon,,missing_value,Duraine Sauvigno,wrong_value,,missing_value,,missing_value
+df540dc916f6460c1ea06da2cab02ff8382302f4.jpg,143,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+df540dc916f6460c1ea06da2cab02ff8382302f4.jpg,143,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,,missing_value,Loire,correct_value
+df540dc916f6460c1ea06da2cab02ff8382302f4.jpg,143,subregion,expected_value,Touraine,Touraine,correct_value,,missing_value,,missing_value,Touraine,correct_value
+df540dc916f6460c1ea06da2cab02ff8382302f4.jpg,143,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+e370b6418a1534159b74caaf2f44d0d949a9a079.jpg,144,producer,expected_value,Domaine du Manay,MISE EN BOUTEILLE À LA PROPRIÉTÉ DOMAINE DU MANAY,wrong_value,DOMAINE DU MANAY,correct_value,MISE EN BOUTEILLE À LA PROPRIÉTÉ DOMAINE DU MANAY,wrong_value,MISE EN BOUTEILLE À LA PROPRIÉTÉ DOMAINE DU MANAY,wrong_value
+e370b6418a1534159b74caaf2f44d0d949a9a079.jpg,144,wine_name,expected_value,Menetou-Salon,LES JACQUELINS,wrong_value,MENEToU-SALON,correct_value,LES JACQUELINS,wrong_value,LES JACQUELINS,wrong_value
+e370b6418a1534159b74caaf2f44d0d949a9a079.jpg,144,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+e370b6418a1534159b74caaf2f44d0d949a9a079.jpg,144,region,expected_value,Loire Valley,Loire,correct_value,Loire,correct_value,Loire,correct_value,Loire,correct_value
+e370b6418a1534159b74caaf2f44d0d949a9a079.jpg,144,subregion,expected_value,Menetou-Salon,Menetou-Salon,correct_value,Menetou-Salon,correct_value,Menetou-Salon,correct_value,Menetou-Salon,correct_value
+e370b6418a1534159b74caaf2f44d0d949a9a079.jpg,144,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c.jpg,145,producer,expected_value,La Cave d'Augustin Florent,La Cave D'AUGUSTIN FLORENT,correct_value,La Cave D'AUGUSTIN FLORENT,correct_value,La Cave D'AUGUSTIN FLORENT,correct_value,La Cave D'AUGUSTIN FLORENT,correct_value
+e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c.jpg,145,wine_name,expected_value,Blaye Côtes de Bordeaux,FOUR UNE,wrong_value,,missing_value,FOUR UNE,wrong_value,FOUR UNE,wrong_value
+e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c.jpg,145,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c.jpg,145,region,expected_value,Bordeaux,Bordeaux,correct_value,,missing_value,,missing_value,Bordeaux,correct_value
+e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c.jpg,145,subregion,expected_value,Blaye Côtes de Bordeaux,Côtes de Bordeaux,wrong_value,,missing_value,,missing_value,Côtes de Bordeaux,wrong_value
+e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c.jpg,145,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+e5ba22a3d4506a8723587808d7d83d709ac2d340.jpg,146,producer,expected_value,Citran,,missing_value,,missing_value,CITRAN,correct_value,,missing_value
+e5ba22a3d4506a8723587808d7d83d709ac2d340.jpg,146,wine_name,expected_value,Bordeaux,Bordeaux,correct_value,BORDEAUX,correct_value,,missing_value,Bordeaux,correct_value
+e5ba22a3d4506a8723587808d7d83d709ac2d340.jpg,146,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+e5ba22a3d4506a8723587808d7d83d709ac2d340.jpg,146,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+e5ba22a3d4506a8723587808d7d83d709ac2d340.jpg,146,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+e5ba22a3d4506a8723587808d7d83d709ac2d340.jpg,146,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+e6185c107176ade12e6d6721882913a1fc9c903a.jpg,147,producer,expected_value,Château Ambe Tour Pourret,CHATEAU AMBE TOUR POURRET,correct_value,CHATEAU AMBE TOUR POURRET,correct_value,CHATEAU AMBE TOUR POURRET,correct_value,CHATEAU AMBE TOUR POURRET,correct_value
+e6185c107176ade12e6d6721882913a1fc9c903a.jpg,147,wine_name,expected_value,Saint-Émilion Grand Cru,Saint-Émilion Grand Cru,correct_value,SAINT-EMILION Grand Cru,correct_value,Françoise et Philippe Lannoe,wrong_value,Saint-Émilion Grand Cru,correct_value
+e6185c107176ade12e6d6721882913a1fc9c903a.jpg,147,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+e6185c107176ade12e6d6721882913a1fc9c903a.jpg,147,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+e6185c107176ade12e6d6721882913a1fc9c903a.jpg,147,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+e6185c107176ade12e6d6721882913a1fc9c903a.jpg,147,vintage,expected_value,2010,2010,correct_value,2010,correct_value,2010,correct_value,2010,correct_value
+e7416b88d2129be208ce2d9ca6f0767a37dfdb91.jpg,148,producer,expected_value,Château de l'Abbaye,CHATEAU de L'ABBAYE,correct_value,CHATEAU de L'ABBAYE,correct_value,CHATEAU de L'ABBAYE,correct_value,CHATEAU de L'ABBAYE,correct_value
+e7416b88d2129be208ce2d9ca6f0767a37dfdb91.jpg,148,wine_name,expected_value,Haut-Médoc,AATION HAuT-MDOC CONTR,wrong_value,HAUT-MÉDOC,correct_value,AATION HAuT-MDOC CONTR,wrong_value,Haut-Médoc,correct_value
+e7416b88d2129be208ce2d9ca6f0767a37dfdb91.jpg,148,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+e7416b88d2129be208ce2d9ca6f0767a37dfdb91.jpg,148,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+e7416b88d2129be208ce2d9ca6f0767a37dfdb91.jpg,148,subregion,expected_value,Haut-Médoc,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value,Haut-Médoc,correct_value
+e7416b88d2129be208ce2d9ca6f0767a37dfdb91.jpg,148,vintage,expected_value,2011,2011,correct_value,2011,correct_value,2011,correct_value,2011,correct_value
+e75efd85c0d44b91633b375fdbc28b30e672d889.jpg,149,producer,expected_value,Château Margaux,Château Margaux,correct_value,Château Margaux,correct_value,,missing_value,Château Margaux,correct_value
+e75efd85c0d44b91633b375fdbc28b30e672d889.jpg,149,wine_name,expected_blank,,,correct_blank,MARGAUX,unsupported_fill,,correct_blank,,correct_blank
+e75efd85c0d44b91633b375fdbc28b30e672d889.jpg,149,country,expected_blank,,France,unsupported_fill,France,unsupported_fill,France,unsupported_fill,France,unsupported_fill
+e75efd85c0d44b91633b375fdbc28b30e672d889.jpg,149,region,expected_blank,,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill,Bordeaux,unsupported_fill
+e75efd85c0d44b91633b375fdbc28b30e672d889.jpg,149,subregion,expected_blank,,Margaux,unsupported_fill,Margaux,unsupported_fill,Margaux,unsupported_fill,Margaux,unsupported_fill
+e75efd85c0d44b91633b375fdbc28b30e672d889.jpg,149,vintage,expected_value,2006,2006,correct_value,2006,correct_value,2006,correct_value,2006,correct_value
+e7724f8998f06eff94832b1615979ac7ab80aff1.jpg,150,producer,expected_value,Spottswoode,Spottswoode Estate Vineyard &Winery,correct_value,Spottswoode Estate Vineyard &Winery,correct_value,Spottswoode Estate Vineyard &Winery,correct_value,Spottswoode Estate Vineyard &Winery,correct_value
+e7724f8998f06eff94832b1615979ac7ab80aff1.jpg,150,wine_name,expected_value,Cabernet Sauvignon,Family Estate Grown,wrong_value,Cabernet Sauvignon,correct_value,Family Estate Grown,wrong_value,Family Estate Grown,wrong_value
+e7724f8998f06eff94832b1615979ac7ab80aff1.jpg,150,country,expected_value,California,United States,wrong_value,California,correct_value,United States,wrong_value,United States,wrong_value
+e7724f8998f06eff94832b1615979ac7ab80aff1.jpg,150,region,expected_value,Napa Valley,California,wrong_value,,missing_value,California,wrong_value,California,wrong_value
+e7724f8998f06eff94832b1615979ac7ab80aff1.jpg,150,subregion,expected_value,St. Helena,Napa Valley,wrong_value,,missing_value,Napa Valley,wrong_value,Napa Valley,wrong_value
+e7724f8998f06eff94832b1615979ac7ab80aff1.jpg,150,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f.jpg,151,producer,expected_value,Château Alcée,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value
+eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f.jpg,151,wine_name,expected_value,Castillon Côtes de Bordeaux,NICOLAS THIENPONT,wrong_value,COTES DE BORDEAUX,wrong_value,NICOLAS THIENPONT,wrong_value,NICOLAS THIENPONT,wrong_value
+eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f.jpg,151,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f.jpg,151,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value
+eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f.jpg,151,subregion,expected_value,Castillon Côtes de Bordeaux,Castillon Côtes de Bordeaux,correct_value,Côtes de Bordeaux,wrong_value,,missing_value,Castillon Côtes de Bordeaux,correct_value
+eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f.jpg,151,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
+ebfc449814c968c87ceb09e263cda1fb1206acf8.jpg,152,producer,expected_value,Gérard Bertrand,,missing_value,,missing_value,,missing_value,,missing_value
+ebfc449814c968c87ceb09e263cda1fb1206acf8.jpg,152,wine_name,expected_value,Naturae Syrah Rosé,,missing_value,,missing_value,,missing_value,,missing_value
+ebfc449814c968c87ceb09e263cda1fb1206acf8.jpg,152,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ebfc449814c968c87ceb09e263cda1fb1206acf8.jpg,152,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,Languedoc,correct_value,,missing_value
+ebfc449814c968c87ceb09e263cda1fb1206acf8.jpg,152,subregion,expected_blank,,,correct_blank,,correct_blank,Pays d'Oc,unsupported_fill,,correct_blank
+ebfc449814c968c87ceb09e263cda1fb1206acf8.jpg,152,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+ecc1f232af0ba2f136a5f449e332450ade00a273.jpg,153,producer,expected_value,J. Kieffer,,missing_value,,missing_value,,missing_value,,missing_value
+ecc1f232af0ba2f136a5f449e332450ade00a273.jpg,153,wine_name,expected_value,Blanc de Blancs Brut,Brut,wrong_value,,missing_value,Brut,wrong_value,Brut,wrong_value
+ecc1f232af0ba2f136a5f449e332450ade00a273.jpg,153,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ecc1f232af0ba2f136a5f449e332450ade00a273.jpg,153,region,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+ecc1f232af0ba2f136a5f449e332450ade00a273.jpg,153,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+ecc1f232af0ba2f136a5f449e332450ade00a273.jpg,153,vintage,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3.jpg,154,producer,expected_value,Cockburn's,,missing_value,,missing_value,,missing_value,,missing_value
+ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3.jpg,154,wine_name,expected_value,Late Bottled Vintage Port,Porto,wrong_value,Porto,wrong_value,,missing_value,Porto,wrong_value
+ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3.jpg,154,country,expected_value,Portugal,Portugal,correct_value,Portugal,correct_value,Portugal,correct_value,Portugal,correct_value
+ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3.jpg,154,region,expected_value,Douro,Douro,correct_value,Douro,correct_value,Douro,correct_value,Douro,correct_value
+ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3.jpg,154,subregion,expected_blank,,Porto,unsupported_fill,Porto,unsupported_fill,Porto,unsupported_fill,Porto,unsupported_fill
+ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3.jpg,154,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg,155,producer,expected_value,La Cave d'Augustin Florent,LA CavE D'AUGUSTIN FLORENT PPELL,wrong_value,LA CavE D'AUGUSTIN FLORENT PPELL,wrong_value,LA CavE D'AUGUSTIN FLORENT PPELL,wrong_value,LA CavE D'AUGUSTIN FLORENT PPELL,wrong_value
+ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg,155,wine_name,expected_value,Médoc,PRODUIT DE,wrong_value,MEDOC,correct_value,PRODUIT DE,wrong_value,PRODUIT DE,wrong_value
+ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg,155,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg,155,region,expected_value,Bordeaux,,missing_value,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value
+ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg,155,subregion,expected_value,Médoc,,missing_value,Médoc,correct_value,Médoc,correct_value,,missing_value
+ee7ae4288d06d6c6263fd8b838243a3ddf3a227c.jpg,155,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+ef747f369bd51180437a7758da7113b4fe906001.jpg,156,producer,expected_value,La Cave d'Augustin Florent,LA CAVE D'AUGUSTIN FLORENT,correct_value,LA CAVE D'AUGUSTIN FLORENT,correct_value,LA CAVE D'AUGUSTIN FLORENT,correct_value,LA CAVE D'AUGUSTIN FLORENT,correct_value
+ef747f369bd51180437a7758da7113b4fe906001.jpg,156,wine_name,expected_value,Large Malartic,LARGE MALARTIC,correct_value,BORDEAUX,wrong_value,LARGE MALARTIC,correct_value,LARGE MALARTIC,correct_value
+ef747f369bd51180437a7758da7113b4fe906001.jpg,156,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ef747f369bd51180437a7758da7113b4fe906001.jpg,156,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+ef747f369bd51180437a7758da7113b4fe906001.jpg,156,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+ef747f369bd51180437a7758da7113b4fe906001.jpg,156,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+f04e270dbe29511b7bed0e6bb69ab68486814b4f.jpg,157,producer,expected_value,Château Fleur Cardinale,CHATEAU FLEURCARDINALE,correct_value,CHATEAU FLEURCARDINALE,correct_value,CHATEAU FLEURCARDINALE,correct_value,CHATEAU FLEURCARDINALE,correct_value
+f04e270dbe29511b7bed0e6bb69ab68486814b4f.jpg,157,wine_name,expected_value,Saint-Émilion Grand Cru,,missing_value,JERCARDNAD Grand Cru Classé,wrong_value,Classé Grand Cru,wrong_value,,missing_value
+f04e270dbe29511b7bed0e6bb69ab68486814b4f.jpg,157,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+f04e270dbe29511b7bed0e6bb69ab68486814b4f.jpg,157,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+f04e270dbe29511b7bed0e6bb69ab68486814b4f.jpg,157,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+f04e270dbe29511b7bed0e6bb69ab68486814b4f.jpg,157,vintage,expected_value,2014,2014,correct_value,2014,correct_value,2014,correct_value,2014,correct_value
+f185ff4a05f2568be765d708d853ef0dc647fff4.jpg,158,producer,expected_value,Roche Mazet,,missing_value,,missing_value,,missing_value,,missing_value
+f185ff4a05f2568be765d708d853ef0dc647fff4.jpg,158,wine_name,expected_value,Les Accords Syrah Marselan,,missing_value,,missing_value,,missing_value,,missing_value
+f185ff4a05f2568be765d708d853ef0dc647fff4.jpg,158,country,expected_value,France,,missing_value,,missing_value,,missing_value,,missing_value
+f185ff4a05f2568be765d708d853ef0dc647fff4.jpg,158,region,expected_value,Languedoc-Roussillon,,missing_value,,missing_value,,missing_value,,missing_value
+f185ff4a05f2568be765d708d853ef0dc647fff4.jpg,158,subregion,expected_blank,,,correct_blank,,correct_blank,,correct_blank,,correct_blank
+f185ff4a05f2568be765d708d853ef0dc647fff4.jpg,158,vintage,expected_value,2020,2020,correct_value,2020,correct_value,2020,correct_value,2020,correct_value
+f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg,159,producer,expected_value,Domaine Georges Bertrand,GEORGES BERTRAN bEORGES BERTRAM DOMAINE,wrong_value,GEORGES BERTRAN bEORGES BERTRAM DOMAINE,wrong_value,GEORGES BERTRAN bEORGES BERTRAM DOMAINE,wrong_value,GEORGES BERTRAN bEORGES BERTRAM DOMAINE,wrong_value
+f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg,159,wine_name,expected_value,Corbières,SUD DE,wrong_value,CORBIÈRES,correct_value,SUD DE,wrong_value,SUD DE,wrong_value
+f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg,159,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg,159,region,expected_value,Languedoc,,missing_value,Languedoc,correct_value,Languedoc,correct_value,,missing_value
+f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg,159,subregion,expected_value,Corbières,,missing_value,Corbières,correct_value,Corbières,correct_value,,missing_value
+f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg,159,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+f51d07a5970fee8612ddab599caa9f3816fcd1c8.jpg,160,producer,expected_value,Château des Roches,,missing_value,,missing_value,,missing_value,,missing_value
+f51d07a5970fee8612ddab599caa9f3816fcd1c8.jpg,160,wine_name,expected_value,Loupiac,,missing_value,LOUPIAC,correct_value,,missing_value,,missing_value
+f51d07a5970fee8612ddab599caa9f3816fcd1c8.jpg,160,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+f51d07a5970fee8612ddab599caa9f3816fcd1c8.jpg,160,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+f51d07a5970fee8612ddab599caa9f3816fcd1c8.jpg,160,subregion,expected_value,Loupiac,Loupiac,correct_value,Loupiac,correct_value,Loupiac,correct_value,Loupiac,correct_value
+f51d07a5970fee8612ddab599caa9f3816fcd1c8.jpg,160,vintage,expected_value,2020,,missing_value,,missing_value,,missing_value,,missing_value
+f6099807854facc1d6ea7e765720feb9aba22a8d.jpg,161,producer,expected_value,La Cave d'Augustin Florent,LA CAvE D'AUGUSTIN FLORENT PPELLA,wrong_value,LA CAvE D'AUGUSTIN FLORENT PPELLA,wrong_value,LA CAvE D'AUGUSTIN FLORENT,correct_value,LA CAvE D'AUGUSTIN FLORENT PPELLA,wrong_value
+f6099807854facc1d6ea7e765720feb9aba22a8d.jpg,161,wine_name,expected_value,Côtes de Bergerac Moelleux,MAISON JOHANÈS BOUBÉE,wrong_value,Cotes de Bergerai,wrong_value,MAISON JOHANÈS BOUBÉE,wrong_value,MAISON JOHANÈS BOUBÉE,wrong_value
+f6099807854facc1d6ea7e765720feb9aba22a8d.jpg,161,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+f6099807854facc1d6ea7e765720feb9aba22a8d.jpg,161,region,expected_value,South West France,,missing_value,,missing_value,,missing_value,,missing_value
+f6099807854facc1d6ea7e765720feb9aba22a8d.jpg,161,subregion,expected_value,Bergerac,,missing_value,,missing_value,,missing_value,,missing_value
+f6099807854facc1d6ea7e765720feb9aba22a8d.jpg,161,vintage,expected_value,2021,2021,correct_value,2021,correct_value,2021,correct_value,2021,correct_value
+f860e501fbe7591a18338df7ba962f2a49aec382.jpg,162,producer,expected_value,Château Vangelys,CHATEAU VANGELYS,correct_value,CHATEAU VANGELYS,correct_value,CHATEAU VANGELYS,correct_value,CHATEAU VANGELYS,correct_value
+f860e501fbe7591a18338df7ba962f2a49aec382.jpg,162,wine_name,expected_value,Lalande-de-Pomerol,Lalande-de-Pomerol,correct_value,LALANDE-DE-POMEROL,correct_value,LALAND DE-DEP,wrong_value,Lalande-de-Pomerol,correct_value
+f860e501fbe7591a18338df7ba962f2a49aec382.jpg,162,country,expected_value,France,France,correct_value,France,correct_value,,missing_value,France,correct_value
+f860e501fbe7591a18338df7ba962f2a49aec382.jpg,162,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,,missing_value,Bordeaux,correct_value
+f860e501fbe7591a18338df7ba962f2a49aec382.jpg,162,subregion,expected_value,Lalande-de-Pomerol,Lalande-de-Pomerol,correct_value,Lalande-de-Pomerol,correct_value,,missing_value,Lalande-de-Pomerol,correct_value
+f860e501fbe7591a18338df7ba962f2a49aec382.jpg,162,vintage,expected_value,2015,2015,correct_value,2015,correct_value,2015,correct_value,2015,correct_value
+f9b66c39ad0cabe43444cad701aab74088688e77.jpg,163,producer,expected_value,Château Alcée,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value,CHATEAU ALCÉE,correct_value
+f9b66c39ad0cabe43444cad701aab74088688e77.jpg,163,wine_name,expected_value,Castillon Côtes de Bordeaux,NICOLAS THIENPONT,wrong_value,COTES DE BORDEAUX,wrong_value,NICOLAS THIENPONT,wrong_value,NICOLAS THIENPONT,wrong_value
+f9b66c39ad0cabe43444cad701aab74088688e77.jpg,163,country,expected_value,France,,missing_value,France,correct_value,,missing_value,,missing_value
+f9b66c39ad0cabe43444cad701aab74088688e77.jpg,163,region,expected_value,Bordeaux,,missing_value,Bordeaux,correct_value,,missing_value,,missing_value
+f9b66c39ad0cabe43444cad701aab74088688e77.jpg,163,subregion,expected_value,Castillon Côtes de Bordeaux,,missing_value,Côtes de Bordeaux,wrong_value,,missing_value,,missing_value
+f9b66c39ad0cabe43444cad701aab74088688e77.jpg,163,vintage,expected_value,2012,2012,correct_value,2012,correct_value,2012,correct_value,2012,correct_value
+fb4d30feb5e408bf844ccaec5e312904a29e814e.jpg,164,producer,expected_value,Château du Bousquet,,missing_value,CHATEAU DU BOUSQUET,correct_value,BOUSQUET CHÂTEAU DU,wrong_value,,missing_value
+fb4d30feb5e408bf844ccaec5e312904a29e814e.jpg,164,wine_name,expected_value,Côtes de Bourg,,missing_value,CÔTES DE BOURG,correct_value,MIS EN BOUTEILL)E AU CHÂTEAU DURG,wrong_value,,missing_value
+fb4d30feb5e408bf844ccaec5e312904a29e814e.jpg,164,country,expected_value,France,,missing_value,,missing_value,France,correct_value,,missing_value
+fb4d30feb5e408bf844ccaec5e312904a29e814e.jpg,164,region,expected_value,Bordeaux,,missing_value,,missing_value,Bordeaux,correct_value,,missing_value
+fb4d30feb5e408bf844ccaec5e312904a29e814e.jpg,164,subregion,expected_value,Côtes de Bourg,,missing_value,,missing_value,Côtes de Bourg,correct_value,,missing_value
+fb4d30feb5e408bf844ccaec5e312904a29e814e.jpg,164,vintage,expected_value,2019,2019,correct_value,2019,correct_value,2019,correct_value,2019,correct_value
+fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg,165,producer,expected_value,Château de Bensse,CHATEAU DE BENSSE,correct_value,CHATEAU DE BENSSE,correct_value,CHATEAU DE BENSSE,correct_value,CHATEAU DE BENSSE,correct_value
+fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg,165,wine_name,expected_value,Médoc Cru Bourgeois,ÉDAILLE ON2018 ÉLEVÉ EN FUT DE CHÊNE CRU BOURGEOIS,wrong_value,MÉDOC,correct_value,ÉDAILLE ON2018 ÉLEVÉ EN FUT DE CHÊNE CRU BOURGEOIS,wrong_value,ÉDAILLE ON2018 ÉLEVÉ EN FUT DE CHÊNE CRU BOURGEOIS,wrong_value
+fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg,165,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg,165,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg,165,subregion,expected_value,Médoc,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value,Médoc,correct_value
+fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e.jpg,165,vintage,expected_value,2016,2016,correct_value,2016,correct_value,2016,correct_value,2016,correct_value
+fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg,166,producer,expected_value,Château Margaux,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value,Château Margaux,correct_value
+fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg,166,wine_name,expected_value,Margaux,Margaux,correct_value,MARGAUX,correct_value,,missing_value,Margaux,correct_value
+fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg,166,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg,166,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg,166,subregion,expected_value,Margaux,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value,Margaux,correct_value
+fbc8b7587eb531abb53a58d5359ec6604ce878d9.jpg,166,vintage,expected_value,1997,1997,correct_value,1997,correct_value,1997,correct_value,1997,correct_value
+fcb8183af5c40e7eb17b0b88cbd6994082d0176d.jpg,167,producer,expected_value,De Luze,DE LUZE,correct_value,DE LUZE,correct_value,DE LUZE,correct_value,DE LUZE,correct_value
+fcb8183af5c40e7eb17b0b88cbd6994082d0176d.jpg,167,wine_name,expected_value,Montagne Saint-Émilion,,missing_value,,missing_value,,missing_value,,missing_value
+fcb8183af5c40e7eb17b0b88cbd6994082d0176d.jpg,167,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+fcb8183af5c40e7eb17b0b88cbd6994082d0176d.jpg,167,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+fcb8183af5c40e7eb17b0b88cbd6994082d0176d.jpg,167,subregion,expected_value,Montagne Saint-Émilion,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value,Montagne-Saint-Émilion,correct_value
+fcb8183af5c40e7eb17b0b88cbd6994082d0176d.jpg,167,vintage,expected_value,1985,1985,correct_value,1985,correct_value,1985,correct_value,1985,correct_value
+ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg,168,producer,expected_value,Bertrand Ravache,,missing_value,,missing_value,,missing_value,,missing_value
+ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg,168,wine_name,expected_value,Léo by Léo,Saint-Émilion Grand Cru,wrong_value,SAINT-EMILION Grand Cru,wrong_value,,missing_value,Saint-Émilion Grand Cru,wrong_value
+ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg,168,country,expected_value,France,France,correct_value,France,correct_value,France,correct_value,France,correct_value
+ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg,168,region,expected_value,Bordeaux,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value,Bordeaux,correct_value
+ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg,168,subregion,expected_value,Saint-Émilion,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value,Saint-Émilion Grand Cru,correct_value
+ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg,168,vintage,expected_value,2018,2018,correct_value,2018,correct_value,2018,correct_value,2018,correct_value
