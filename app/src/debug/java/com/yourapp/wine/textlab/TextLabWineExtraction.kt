@@ -76,14 +76,15 @@ internal object TextLabWineExtraction {
                 val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
                 batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
             }
-            if(batch.compareGazetteer) {
+            if(batch.compareGazetteer || batch.residualCandidates) {
                 var resolver:com.yourapp.wine.gazetteer.TrigramGazetteer?=null
                 var error=setupError
                 try {
                     try { if(!skip) resolver=com.yourapp.wine.gazetteer.TrigramGazetteer.open(context.applicationContext) }
                     catch(cancel:CancellationException) { throw cancel }
                     catch(e:Exception) { error="${e.javaClass.simpleName}: ${e.message}" }
-                    batch.journals.forEach { TextLabGazetteerPreview.append(it,resolver,production,Year.now().value,error) }
+                    if(batch.compareGazetteer) batch.journals.forEach { TextLabGazetteerPreview.append(it,resolver,production,Year.now().value,error) }
+                    if(batch.residualCandidates) batch.journals.forEach { TextLabResidualPreview.append(it,resolver,Year.now().value,error) }
                 } finally { resolver?.close() }
             }
         } finally { kb?.close() }

@@ -107,6 +107,11 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 Text("Compare SQLite trigram gazetteer (experimental, keeps baseline)")
             }
             if(state.compareGazetteer) Text("Appellation role tags before producer rules; YELLOW suggestions only. Dataset provenance and real OCR accuracy are not yet validated.",style=MaterialTheme.typography.bodySmall)
+            Row {
+                Checkbox(state.residualCandidates,{vm.residualCandidates(it)},enabled=!state.busy)
+                Text("Find residual producer/cuvée candidates (experimental)")
+            }
+            if(state.residualCandidates) Text("Tags known text and retains the remaining fragments for review. Not automatic producer or wine-name assignment. Raw text and qualifiers remain in CSV.",style=MaterialTheme.typography.bodySmall)
             if(state.compareEvidence) {
                 Row {
                     Checkbox(state.anchorHybrid,{vm.anchorHybrid(it)},enabled=!state.busy)
