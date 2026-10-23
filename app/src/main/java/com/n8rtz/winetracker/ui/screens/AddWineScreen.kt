@@ -124,7 +124,18 @@ fun AddWineScreen(
     }
     val fieldStatus: @Composable (FieldId) -> Unit = { field ->
         ScanFieldStatus(scanForm.fields.getValue(field),
-            onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake)
+            onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake,
+            enabled = !labelScanState.isBusy,
+            onSelectChoice = { value ->
+                scanForm = scanForm.selectChoice(field,value)
+                maker = scanForm.fields.getValue(FieldId.PRODUCER).value
+                name = scanForm.fields.getValue(FieldId.WINE_NAME).value
+                vintage = scanForm.fields.getValue(FieldId.VINTAGE).value
+                selectedCountry = scanForm.fields.getValue(FieldId.COUNTRY).value
+                selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
+                selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
+            },
+            onDismissChoices = { scanForm = scanForm.dismissChoices(field) })
     }
     LaunchedEffect(showLabelCamera) {
         if (showLabelCamera) {

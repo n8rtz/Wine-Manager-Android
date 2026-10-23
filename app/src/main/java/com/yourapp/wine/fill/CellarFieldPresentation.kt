@@ -9,6 +9,7 @@ object CellarFieldPresentation {
     /** Validated fields in/out: never maps contradictory/non-US geography or manufactures a missing state. */
     fun apply(result: FillResult): FillResult {
         val fields = result.fields.toMutableMap()
+        val intentional=result.intentionalBlankFields.toMutableSet()
         val producer = fields.getValue(FieldId.PRODUCER)
         if (producer.state != UiState.RED) {
             val short = producer.value.replace(Regex("(?i)\\s+winery$"), "").trim()
@@ -23,6 +24,7 @@ object CellarFieldPresentation {
             fields[FieldId.COUNTRY] = state.copy(field = FieldId.COUNTRY,
                 state = if (country.state == UiState.YELLOW || state.state == UiState.YELLOW) UiState.YELLOW else UiState.GREEN,
                 reason = state.reason + "; U.S. state displayed in Country by cellar convention")
+            intentional+=FieldId.REGION
             fields[FieldId.REGION] = FieldCandidate(FieldId.REGION,"",UiState.RED,
                 "State moved to Country; no separate regional candidate supplied",emptyList())
         }
@@ -43,10 +45,13 @@ object CellarFieldPresentation {
         if(!geographyConflicts && currentSub.state!=UiState.RED && currentSub.value.isNotBlank() && valley!=null) {
             fields[FieldId.REGION]=currentSub.copy(field=FieldId.REGION,value=valley.name,
                 reason=currentSub.reason+"; valley-level Region from the local hierarchy")
-            if(TextNorm.normalize(currentSub.value)==TextNorm.normalize(valley.name))
+            if(TextNorm.normalize(currentSub.value)==TextNorm.normalize(valley.name)) {
+                intentional+=FieldId.SUBREGION
                 fields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,"",UiState.RED,"Valley displayed in Region; no finer locality read",emptyList())
+            }
         } else if(!geographyConflicts && currentSub.state!=UiState.RED && isValley(currentSub.value)) {
             fields[FieldId.REGION]=currentSub.copy(field=FieldId.REGION,reason=currentSub.reason+"; valley-level Region")
+            intentional+=FieldId.SUBREGION
             fields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,"",UiState.RED,"Valley moved to Region",emptyList())
         }
         // Global presentation invariant: retain a known locality by promotion, never invent its parent.
@@ -55,10 +60,11 @@ object CellarFieldPresentation {
         if((region.state==UiState.RED || region.value.isBlank()) && remaining.state!=UiState.RED && remaining.value.isNotBlank()) {
             if(!geographyConflicts) fields[FieldId.REGION]=remaining.copy(field=FieldId.REGION,state=UiState.YELLOW,
                 reason=remaining.reason+"; no parent Region available; locality promoted for confirmation")
+            intentional+=FieldId.SUBREGION
             fields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,"",UiState.RED,
                 "Subregion requires a Region; no unsupported parent supplied",emptyList())
         }
-        return result.copy(fields = fields)
+        return result.copy(fields = fields,intentionalBlankFields=intentional.filter { fields.getValue(it).value.isBlank() }.toSet())
     }
     private fun isValley(name:String):Boolean = Regex("\\b(valley|valle|vallee)\\b").containsMatchIn(TextNorm.normalize(name))
 }

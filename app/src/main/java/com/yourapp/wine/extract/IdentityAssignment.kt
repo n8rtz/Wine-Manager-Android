@@ -5,7 +5,7 @@ import com.yourapp.wine.merge.TextNorm
 
 /** Interpretable ranking units, NOT probabilities. At most (4+unknown)^2 assignments. */
 data class IdentityOption(val candidate:FieldCandidate,val priority:Double)
-data class IdentitySelection(val fields:Map<FieldId,List<FieldCandidate>>,val alternatives:Map<FieldId,List<FieldCandidate>>)
+data class IdentitySelection(val fields:Map<FieldId,List<FieldCandidate>>,val alternatives:Map<FieldId,List<FieldCandidate>>,val fallbackCandidates:Map<FieldId,List<FieldCandidate>> = emptyMap())
 object IdentityAssignment {
     const val VERSION="identity-v6-wrapped-brand"
     fun select(producers:List<IdentityOption>,names:List<IdentityOption>):IdentitySelection {
@@ -21,6 +21,7 @@ object IdentityAssignment {
             Pairing(a,b,(a?.priority ?: 0.0)+(b?.priority ?: 0.0)-penalty)
         } }.sortedByDescending { it.score }
         val best=pairs.first()
+        val fallback=mutableMapOf<FieldId,List<FieldCandidate>>()
         fun chosen(field:FieldId):List<FieldCandidate> {
             fun option(pair:Pairing)=if(field==FieldId.PRODUCER) pair.producer else pair.name
             val winner=option(best)
@@ -28,6 +29,7 @@ object IdentityAssignment {
                 TextNorm.normalize(option(it)?.candidate?.value.orEmpty())!=TextNorm.normalize(winner?.candidate?.value.orEmpty()) }
             if(winner==null || rivals.isNotEmpty()) {
                 val options=(listOfNotNull(winner)+rivals.mapNotNull(::option)).map { it.candidate }
+                if(rivals.isNotEmpty()) fallback[field]=options.distinctBy { TextNorm.normalize(it.value) }
                 return listOf(FieldCandidate(field,"",UiState.RED,
                     "$VERSION: "+if(rivals.isEmpty()) "No supported assignment" else "Ambiguous assignment; confirm: "+options.joinToString(" / ") { it.value },
                     options.flatMap { it.sources }.distinct()))
@@ -35,6 +37,6 @@ object IdentityAssignment {
             return listOf(winner.candidate.copy(reason=winner.candidate.reason+"; $VERSION rank=${winner.priority}; bounded joint selection"))
         }
         return IdentitySelection(listOf(FieldId.PRODUCER,FieldId.WINE_NAME).associateWith(::chosen),
-            mapOf(FieldId.PRODUCER to p.map { it.candidate },FieldId.WINE_NAME to n.map { it.candidate }))
+            mapOf(FieldId.PRODUCER to p.map { it.candidate },FieldId.WINE_NAME to n.map { it.candidate }),fallback)
     }
 }

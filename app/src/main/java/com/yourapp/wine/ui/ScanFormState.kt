@@ -5,13 +5,14 @@ import com.yourapp.wine.merge.TextNorm
 
 /** No image ownership: a user's edits are protected from subsequent scanner suggestions. */
 data class ReviewedField(val value: String = "", val state: UiState? = null, val confirmed: Boolean = true,
-    val edited: Boolean = false, val reason: String = "")
+    val edited: Boolean = false, val reason: String = "", val choices:List<ScanChoicePolicy.Choice> = emptyList(),
+    val intentionallyBlank:Boolean=false)
 
 data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entries.associateWith { ReviewedField() }) {
     val hasPendingConfirmation: Boolean get() = fields.values.any { !it.confirmed && it.value.isNotBlank() }
 
     /** No coordinates: apply non-RED suggestions only; never overwrite any field the user edited (including GREEN). */
-    fun apply(result: FillResult, currentValues: Map<FieldId, String>): ScanFormState {
+    fun apply(result: FillResult, currentValues: Map<FieldId, String>, currentYear:Int=java.time.Year.now().value): ScanFormState {
         val conflicts = FieldId.entries.filter { field ->
             val previous = fields.getValue(field)
             val incoming = result.fields.getValue(field)
@@ -33,7 +34,11 @@ data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entri
             if (field in related && next.state == UiState.GREEN) next.copy(state = UiState.YELLOW, confirmed = false,
                 reason = next.reason + "; kept edited ${conflicts.joinToString()} differs — confirm associated fields") else next
         }
-        return copy(fields = updated)
+        val values=updated.mapValues { it.value.value }
+        return copy(fields = updated.mapValues { (field,review) ->
+            if(review.edited || review.value.isNotBlank() || field in related) review.copy(choices=emptyList())
+            else review.copy(choices=ScanChoicePolicy.choices(field,result,values,currentYear),intentionallyBlank=field in result.intentionalBlankFields)
+        })
     }
 
     /** No coordinates: manual changes are protected; changing origin/producer invalidates related GREEN validation. */
@@ -49,9 +54,24 @@ data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entri
             else -> emptySet()
         }
         return copy(fields = (fields + (field to edited)).mapValues { (id, review) ->
-            if (id in related && review.state == UiState.GREEN) review.copy(state = UiState.YELLOW, confirmed = false,
+            if(id in related && review.choices.isNotEmpty()) review.copy(choices=emptyList())
+            else if (id in related && review.state == UiState.GREEN) review.copy(state = UiState.YELLOW, confirmed = false,
                 reason = review.reason + "; $field edited — confirm associated hierarchy/name") else review
         })
+    }
+
+    /** Selecting a currently offered choice is an explicit user edit, not algorithmic validation. */
+    fun selectChoice(field:FieldId,value:String):ScanFormState {
+        val current=fields.getValue(field)
+        if(current.value.isNotBlank() || current.edited || current.choices.none { it.value==value }) return this
+        val edited=edit(field,value)
+        return edited.copy(fields=edited.fields+(field to edited.fields.getValue(field).copy(
+            state=UiState.YELLOW,confirmed=true,reason="User selected OCR alternative — kept on retakes",choices=emptyList())))
+    }
+    fun dismissChoices(field:FieldId):ScanFormState {
+        if(fields.getValue(field).value.isNotBlank()) return this
+        return edit(field,"").let { it.copy(fields=it.fields+(field to it.fields.getValue(field).copy(
+            reason="User kept this field blank — kept on retakes",intentionallyBlank=true))) }
     }
 
     /** No coordinates: one tap acknowledges a populated YELLOW field without pretending a KB match occurred. */

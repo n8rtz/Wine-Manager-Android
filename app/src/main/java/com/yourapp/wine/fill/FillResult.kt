@@ -30,6 +30,10 @@ data class FillResult(
     val postProcessing:List<String> = emptyList(),
     val spellingSuggestions:List<SpellingSuggestion> = emptyList(),
     val geographyPath:List<com.yourapp.wine.kb.Place> = emptyList(),
+    /** Only unresolved, supported rival assignments; not a catalogue/browser suggestion list. */
+    val fallbackCandidates:Map<FieldId,List<FieldCandidate>> = emptyMap(),
+    /** Meaningful blanks must never be turned into a forced choice. */
+    val intentionalBlankFields:Set<FieldId> = emptySet(),
 )
 
 /** No coordinates: global conditions can only downgrade otherwise validated suggestions. */

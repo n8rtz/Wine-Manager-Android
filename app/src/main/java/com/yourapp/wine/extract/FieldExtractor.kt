@@ -16,7 +16,7 @@ import com.yourapp.wine.ocr.MergedToken
 /** Place claims preserve explicit OCR contradictions instead of silently correcting a country. */
 data class PlaceClaim(val place: Place, val sources: List<MergedToken>)
 data class ExtractionResult(val candidates: Map<FieldId, List<FieldCandidate>>, val placeClaims: List<PlaceClaim>, val roles:List<RoleEvidence> = emptyList(),
-    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),val spellingSuggestions:List<SpellingSuggestion> = emptyList(),val geographyPath:List<Place> = emptyList())
+    val alternatives:Map<FieldId,List<FieldCandidate>> = emptyMap(),val spellingSuggestions:List<SpellingSuggestion> = emptyList(),val geographyPath:List<Place> = emptyList(),val fallbackCandidates:Map<FieldId,List<FieldCandidate>> = emptyMap())
 
 class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: VintageExtractor = VintageExtractor(),
                      private val hierarchy: PlaceHierarchy = PlaceHierarchy(kb),
@@ -291,7 +291,7 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
                 reason = candidate.reason + "; expanded reference-catalog origin — confirm; not a legal certification")
             else candidate
         } }
-        return ExtractionResult(result, claims,roles,selection.alternatives,spellingSuggestions.distinct().take(64),primary?.let { geography.ancestors(it.place) }.orEmpty())
+        return ExtractionResult(result, claims,roles,selection.alternatives,spellingSuggestions.distinct().take(64),primary?.let { geography.ancestors(it.place) }.orEmpty(),selection.fallbackCandidates)
     }
 
     /** Only two adjacent observed pieces whose entire combined text is a verified appellation. */
