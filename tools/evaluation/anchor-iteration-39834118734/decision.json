@@ -1,0 +1,10 @@
+{
+  "advance_candidates": [
+    "anchors-role-guard",
+    "anchors-role-guard-appellation-1",
+    "anchors-role-guard-appellation-2"
+  ],
+  "production_promoted": false,
+  "rule": "Advance for further testing only if full entries exceed both controls, wrong fills <= v3, correct fields >= baseline, deduplicated full entries >= baseline.",
+  "next_action": "Validate candidate on fresh grouped labels and Android regression suite."
+}

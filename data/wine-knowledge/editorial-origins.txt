@@ -1,0 +1,842 @@
+# Project-authored reference additions, NOT an exhaustive legal register.
+# Header: ISO|country|broad wine region|name role (appellation or geography)
+# Subsequent entries: name optionally followed by ~ alias1 ; alias2.
+FR|France|Burgundy|appellation
+Bourgogne
+Bourgogne Aligoté
+Bourgogne Hautes-Côtes de Beaune
+Bourgogne Hautes-Côtes de Nuits
+Bourgogne Passe-tout-grains
+Petit Chablis
+Chablis Grand Cru
+Chablis Premier Cru
+Aloxe-Corton
+Auxey-Duresses
+Beaune
+Blagny
+Bouzeron
+Chassagne-Montrachet
+Chorey-lès-Beaune
+Corton
+Corton-Charlemagne
+Fixin
+Givry
+Irancy
+Ladoix
+Maranges
+Marsannay
+Mercurey
+Montagny
+Monthélie
+Morey-Saint-Denis
+Nuits-Saint-Georges
+Pernand-Vergelesses
+Pommard
+Rully
+Saint-Aubin
+Saint-Romain
+Santenay
+Savigny-lès-Beaune
+Volnay
+Vougeot
+Chambertin
+Chambertin-Clos de Bèze
+Chapelle-Chambertin
+Charmes-Chambertin
+Griotte-Chambertin
+Latricières-Chambertin
+Mazis-Chambertin
+Mazoyères-Chambertin
+Ruchottes-Chambertin
+Clos de la Roche
+Clos de Tart
+Clos des Lambrays
+Clos Saint-Denis
+Bonnes-Mares
+Musigny
+Clos de Vougeot
+Échezeaux
+Grands Échezeaux
+La Grande Rue
+La Romanée
+La Tâche
+Richebourg
+Romanée-Conti
+Romanée-Saint-Vivant
+Montrachet
+Bâtard-Montrachet
+Bienvenues-Bâtard-Montrachet
+Chevalier-Montrachet
+Criots-Bâtard-Montrachet
+Mâcon
+Mâcon-Villages
+Pouilly-Loché
+Pouilly-Vinzelles
+Saint-Véran
+Viré-Clessé
+Crémant de Bourgogne
+FR|France|Beaujolais|appellation
+Beaujolais-Villages
+Brouilly
+Chénas
+Chiroubles
+Côte de Brouilly
+Juliénas
+Moulin-à-Vent
+Régnié
+Saint-Amour
+FR|France|Bordeaux|appellation
+Bordeaux
+Bordeaux Supérieur
+Bordeaux Clairet
+Bordeaux Rosé
+Crémant de Bordeaux
+Entre-deux-Mers
+Côtes de Bordeaux
+Blaye
+Blaye Côtes de Bordeaux
+Bourg~Côtes de Bourg
+Cadillac
+Cadillac Côtes de Bordeaux
+Castillon Côtes de Bordeaux
+Francs Côtes de Bordeaux
+Sainte-Foy Côtes de Bordeaux
+Côtes de Bordeaux Saint-Macaire
+Côtes de Bordeaux Francs
+Graves Supérieures
+Listrac-Médoc
+Moulis~Moulis-en-Médoc
+Saint-Émilion Grand Cru
+Lalande-de-Pomerol
+Lussac-Saint-Émilion
+Montagne-Saint-Émilion
+Puisseguin-Saint-Émilion
+Saint-Georges-Saint-Émilion
+Barsac
+Cérons
+Loupiac
+Sainte-Croix-du-Mont
+Premières Côtes de Bordeaux
+FR|France|Rhone|appellation
+Saint-Joseph
+Cornas
+Saint-Péray
+Château-Grillet
+Lirac
+Tavel
+Vacqueyras
+Vinsobres
+Rasteau
+Cairanne
+Beaumes-de-Venise
+Muscat de Beaumes-de-Venise
+Ventoux
+Luberon
+Grignan-les-Adhémar
+Costières de Nîmes
+Côtes du Vivarais
+Clairette de Die
+Crémant de Die
+Châtillon-en-Diois
+FR|France|Loire|appellation
+Anjou
+Anjou-Villages
+Anjou-Villages Brissac
+Cabernet d'Anjou
+Rosé d'Anjou
+Rosé de Loire
+Saumur
+Saumur-Champigny
+Saumur Puy-Notre-Dame
+Coteaux du Layon
+Bonnezeaux
+Quarts de Chaume
+Savennières
+Savennières Roche aux Moines
+Coulée de Serrant
+Touraine
+Touraine Amboise
+Touraine Azay-le-Rideau
+Touraine Chenonceaux
+Touraine Oisly
+Bourgueil
+Saint-Nicolas-de-Bourgueil
+Montlouis-sur-Loire
+Cheverny
+Cour-Cheverny
+Valençay
+Menetou-Salon
+Quincy
+Reuilly
+Coteaux du Giennois
+Orléans
+Orléans-Cléry
+Coteaux du Loir
+Jasnières
+Coteaux d'Ancenis
+Muscadet Sèvre et Maine
+Muscadet Coteaux de la Loire
+Muscadet Côtes de Grandlieu
+Gros Plant du Pays Nantais
+Saint-Pourçain
+Côte Roannaise
+Côtes du Forez
+Côtes d'Auvergne
+Crémant de Loire
+FR|France|Alsace|appellation
+Alsace
+Alsace Grand Cru
+Crémant d'Alsace
+FR|France|Jura|appellation
+Arbois
+Château-Chalon
+Côtes du Jura
+L'Étoile
+Crémant du Jura
+Macvin du Jura
+FR|France|Savoie|appellation
+Savoie~Vin de Savoie
+Roussette de Savoie
+Seyssel
+Crémant de Savoie
+FR|France|Provence|appellation
+Côtes de Provence
+Coteaux d'Aix-en-Provence
+Coteaux Varois en Provence
+Cassis
+Bellet
+Palette
+Les Baux de Provence
+Pierrevert
+FR|France|Corsica|appellation
+Ajaccio
+Patrimonio
+Corse~Vin de Corse
+Muscat du Cap Corse
+FR|France|Languedoc|appellation
+Languedoc
+Corbières
+Corbières-Boutenac
+Minervois
+Minervois-La Livinière
+Saint-Chinian
+Faugères
+Fitou
+La Clape
+Pic Saint-Loup
+Terrasses du Larzac
+Picpoul de Pinet
+Limoux
+Blanquette de Limoux
+Crémant de Limoux
+Cabardès
+Malepère
+Clairette du Languedoc
+Muscat de Frontignan
+Muscat de Lunel
+Muscat de Mireval
+Muscat de Saint-Jean-de-Minervois
+FR|France|Roussillon|appellation
+Côtes du Roussillon
+Côtes du Roussillon Villages
+Collioure
+Banyuls
+Banyuls Grand Cru
+Maury
+Rivesaltes
+Muscat de Rivesaltes
+FR|France|South West France|appellation
+Bergerac
+Côtes de Bergerac
+Monbazillac
+Pécharmant
+Rosette
+Saussignac
+Montravel
+Cahors
+Madiran
+Pacherenc du Vic-Bilh
+Jurançon
+Irouléguy
+Béarn
+Gaillac
+Fronton
+Marcillac
+Buzet
+Brulhois
+Côtes de Duras
+Côtes du Marmandais
+Saint-Mont
+Tursan
+Entraygues-Le Fel
+Estaing
+IT|Italy|Piedmont|appellation
+Asti~Asti Spumante
+Moscato d'Asti
+Alta Langa
+Roero
+Dogliani
+Dolcetto di Diano d'Alba
+Dolcetto di Ovada Superiore
+Gattinara
+Ghemme
+Erbaluce di Caluso
+Ruchè di Castagnole Monferrato
+Nizza
+Barbera del Monferrato Superiore
+Brachetto d'Acqui
+Colli Tortonesi
+Langhe
+Monferrato
+Nebbiolo d'Alba
+Dolcetto d'Alba
+Dolcetto d'Asti
+Boca
+Bramaterra
+Carema
+Fara
+Lessona
+Sizzano
+Valli Ossolane
+IT|Italy|Tuscany|appellation
+Morellino di Scansano
+Montecucco Sangiovese
+Carmignano
+Suvereto
+Val di Cornia Rosso
+Vernaccia di San Gimignano
+Elba Aleatico Passito
+Bolgheri Sassicaia
+Maremma Toscana
+Sant'Antimo
+Rosso di Montepulciano
+Vin Santo del Chianti
+Vin Santo del Chianti Classico
+Vin Santo di Montepulciano
+Pomino
+Montecarlo
+IT|Italy|Veneto|appellation
+Amarone della Valpolicella
+Recioto della Valpolicella
+Recioto di Soave
+Recioto di Gambellara
+Soave Superiore
+Bardolino Superiore
+Bardolino
+Breganze
+Colli Euganei Fior d'Arancio
+Colli Euganei
+Colli Berici
+Montello Rosso
+Piave Malanotte
+Piave
+Conegliano Valdobbiadene Prosecco
+Asolo Prosecco
+IT|Italy||appellation
+Lison~Lison DOCG
+San Martino della Battaglia
+Colli di Luni
+Orvieto
+Prosecco
+Lugana
+Lison-Pramaggiore
+IT|Italy|Lombardy|appellation
+Oltrepò Pavese Metodo Classico
+Oltrepò Pavese
+Sforzato di Valtellina~Sfursat di Valtellina
+Valtellina Superiore
+Valtellina Rosso
+Curtefranca
+IT|Italy|Emilia-Romagna|appellation
+Romagna Albana
+Romagna Sangiovese
+Colli Bolognesi Pignoletto
+Lambrusco di Sorbara
+Lambrusco Grasparossa di Castelvetro
+Lambrusco Salamino di Santa Croce
+Reggiano
+Colli Piacentini
+Gutturnio
+IT|Italy|Friuli-Venezia Giulia|appellation
+Collio~Collio Goriziano
+Friuli Colli Orientali
+Colli Orientali del Friuli Picolit
+Ramandolo
+Rosazzo
+Friuli Isonzo
+Friuli Grave
+IT|Italy|Trentino-Alto Adige|appellation
+Alto Adige~Südtirol;Sudtirol
+Trentino
+Trento
+Teroldego Rotaliano
+Lago di Caldaro~Kalterersee
+IT|Italy|Liguria|appellation
+Cinque Terre
+Cinque Terre Sciacchetrà
+Riviera Ligure di Ponente
+IT|Italy|Aosta Valley|appellation
+Valle d'Aosta~Vallée d'Aoste
+IT|Italy|Umbria|appellation
+Montefalco Sagrantino
+Montefalco Rosso
+Torgiano Rosso Riserva
+Torgiano
+IT|Italy|Marche|appellation
+Verdicchio dei Castelli di Jesi
+Castelli di Jesi Verdicchio Riserva
+Verdicchio di Matelica
+Verdicchio di Matelica Riserva
+Conero
+Rosso Conero
+Rosso Piceno
+Offida
+Vernaccia di Serrapetrona
+IT|Italy|Lazio|appellation
+Frascati
+Frascati Superiore
+Cannellino di Frascati
+Cesanese del Piglio
+Est! Est!! Est!!! di Montefiascone
+IT|Italy|Abruzzo|appellation
+Montepulciano d'Abruzzo
+Montepulciano d'Abruzzo Colline Teramane
+Trebbiano d'Abruzzo
+Cerasuolo d'Abruzzo
+IT|Italy|Campania|appellation
+Fiano di Avellino
+Greco di Tufo
+Aglianico del Taburno
+Falerno del Massico
+Lacryma Christi del Vesuvio
+IT|Italy|Basilicata|appellation
+Aglianico del Vulture Superiore
+IT|Italy|Apulia|appellation
+Primitivo di Manduria
+Primitivo di Manduria Dolce Naturale
+Gioia del Colle
+Salice Salentino
+Castel del Monte
+Castel del Monte Bombino Nero
+Castel del Monte Nero di Troia Riserva
+Castel del Monte Rosso Riserva
+Copertino
+Brindisi
+Locorotondo
+IT|Italy|Sicily|appellation
+Etna
+Etna Bianco
+Vittoria
+Cerasuolo di Vittoria
+Marsala
+Pantelleria
+Malvasia delle Lipari
+Faro
+IT|Italy|Sardinia|appellation
+Vermentino di Gallura
+Cannonau di Sardegna
+Carignano del Sulcis
+Vernaccia di Oristano
+Vermentino di Sardegna
+IT|Italy|Calabria|appellation
+Cirò
+Greco di Bianco
+ES|Spain|Galicia|appellation
+Ribeiro
+Ribeira Sacra
+Valdeorras
+Monterrei
+ES|Spain|Castilla y Leon|appellation
+Bierzo
+Cigales
+Arribes
+Arlanza
+Tierra de León~León
+Tierra del Vino de Zamora
+Sierra de Salamanca
+Cebreros
+ES|Spain|Catalonia|appellation
+Montsant
+Costers del Segre
+Terra Alta
+Empordà
+Alella
+Conca de Barberà
+Pla de Bages
+Tarragona
+ES|Spain||appellation
+Cava
+ES|Spain|Rioja|appellation
+Rioja
+ES|Spain|Aragon|appellation
+Somontano
+Cariñena
+Calatayud
+Campo de Borja
+ES|Spain|Castilla-La Mancha|appellation
+La Mancha
+Valdepeñas
+Almansa
+Manchuela
+Méntrida
+Mondéjar
+Ribera del Júcar
+Uclés
+ES|Spain||appellation
+Jumilla
+ES|Spain|Murcia|appellation
+Yecla
+Bullas
+ES|Spain|Valencia|appellation
+Alicante
+Valencia
+Utiel-Requena
+ES|Spain|Andalusia|appellation
+Montilla-Moriles
+Málaga
+Sierras de Málaga
+Condado de Huelva
+Manzanilla-Sanlúcar de Barrameda
+Granada
+ES|Spain|Basque Country|appellation
+Getariako Txakolina
+Bizkaiko Txakolina
+Arabako Txakolina
+ES|Spain|Canary Islands|appellation
+Lanzarote
+La Palma
+El Hierro
+Valle de Güímar
+Valle de la Orotava
+Tacoronte-Acentejo
+Abona
+Ycoden-Daute-Isora
+Gran Canaria
+Islas Canarias
+ES|Spain|Balearic Islands|appellation
+Binissalem
+Pla i Llevant
+ES|Spain|Madrid|appellation
+Vinos de Madrid
+ES|Spain|Asturias|appellation
+Cangas
+ES|Spain|Cantabria|geography
+Costa de Cantabria
+Liébana
+PT|Portugal|Dao|appellation
+Dão
+PT|Portugal|Bairrada|appellation
+Bairrada
+PT|Portugal|Lisboa|appellation
+Bucelas
+Carcavelos
+Colares
+Alenquer
+Arruda
+Torres Vedras
+Óbidos
+PT|Portugal|Península de Setúbal|appellation
+Palmela
+Setúbal
+PT|Portugal|Algarve|appellation
+Lagos
+Lagoa
+Portimão
+Tavira
+PT|Portugal|Tejo|geography
+Tejo
+PT|Portugal|Trás-os-Montes|geography
+Trás-os-Montes
+PT|Portugal|Beira Interior|geography
+Beira Interior
+PT|Portugal|Azores|appellation
+Pico
+Biscoitos
+Graciosa
+DE|Germany||geography
+Ahr
+Mittelrhein
+Hessische Bergstraße
+Franken
+Württemberg
+Baden
+Saale-Unstrut
+Sachsen
+AT|Austria||geography
+Wachau
+Kremstal
+Kamptal
+Traisental
+Wagram
+Weinviertel
+Carnuntum
+Thermenregion
+Wien~Vienna
+Neusiedlersee
+Leithaberg
+Mittelburgenland
+Eisenberg
+Rosalia
+Vulkanland Steiermark
+Südsteiermark
+Weststeiermark
+HU|Hungary||geography
+Tokaj
+Eger
+Villány
+Szekszárd
+Somló
+Badacsony
+Balatonfüred-Csopak
+Balatonboglár
+Mátra
+Sopron
+CH|Switzerland||geography
+Valais~Wallis
+Vaud
+Genève~Geneva
+Ticino~Tessin
+Neuchâtel
+Graubünden~Grisons
+GR|Greece||appellation
+Naoussa
+Amyndeon
+Rapsani
+Goumenissa
+Mantinia
+Patras
+Mavrodaphne of Patras
+Robola of Cephalonia
+Samos
+Muscat of Samos
+Dafnes
+Peza
+Archanes
+Sitia
+GE|Georgia|Kakheti|appellation
+Tsinandali
+Mukuzani
+Kindzmarauli
+Akhasheni
+Napareuli
+Kvareli
+Manavi
+GE|Georgia|Racha|appellation
+Khvanchkara
+CA|Canada|Ontario|geography
+Niagara Peninsula
+Niagara Escarpment
+Niagara-on-the-Lake
+Twenty Mile Bench
+Beamsville Bench
+Short Hills Bench
+St. David's Bench
+Prince Edward County
+Lake Erie North Shore
+CA|Canada|British Columbia|geography
+Okanagan Valley
+Similkameen Valley
+Fraser Valley
+Vancouver Island
+Gulf Islands
+Thompson Valley
+Shuswap
+Lillooet
+Kootenays
+CA|Canada|Nova Scotia|geography
+Annapolis Valley
+AU|Australia|South Australia|geography
+Adelaide Hills
+Adelaide Plains
+Clare Valley
+Eden Valley
+High Eden
+Langhorne Creek
+Padthaway
+Wrattonbully
+Mount Benson
+Robe
+Currency Creek
+Southern Fleurieu
+Riverland
+Kangaroo Island
+AU|Australia|Victoria|geography
+Mornington Peninsula
+Geelong
+Macedon Ranges
+Sunbury
+Bendigo
+Heathcote
+Goulburn Valley
+Nagambie Lakes
+Strathbogie Ranges
+Upper Goulburn
+King Valley
+Alpine Valleys
+Beechworth
+Rutherglen
+Glenrowan
+Grampians
+Henty
+Pyrenees
+AU|Australia|New South Wales|geography
+Mudgee
+Orange
+Cowra
+Hilltops
+Riverina
+Tumbarumba
+Gundagai
+Hastings River
+Southern Highlands
+Shoalhaven Coast
+New England Australia
+AU|Australia|Western Australia|geography
+Great Southern
+Albany
+Denmark
+Frankland River
+Mount Barker
+Porongurup
+Geographe
+Blackwood Valley
+Manjimup
+Pemberton
+Peel
+Perth Hills
+Swan District
+AU|Australia|Queensland|geography
+Granite Belt
+South Burnett
+AU|Australia||geography
+Canberra District
+Tasmania
+NZ|New Zealand||geography
+Auckland
+Waiheke Island
+Kumeu
+Matakana
+Northland
+Gisborne
+Wairarapa
+Martinborough
+Gladstone
+Nelson
+Canterbury
+North Canterbury
+Waipara Valley
+Waitaki Valley
+ZA|South Africa|Western Cape|geography
+Paarl
+Franschhoek Valley
+Wellington
+Darling
+Tulbagh
+Cape Town
+Durbanville
+Elgin
+Walker Bay
+Hemel-en-Aarde Valley
+Upper Hemel-en-Aarde Valley
+Hemel-en-Aarde Ridge
+Bot River
+Cape Agulhas
+Robertson
+Worcester
+Breedekloof
+Swartberg
+Cederberg
+Olifants River
+ZA|South Africa|Northern Cape|geography
+Douglas
+Sutherland-Karoo
+CL|Chile||geography
+Elqui Valley
+Limarí Valley
+Choapa Valley
+Aconcagua Valley
+San Antonio Valley
+Leyda Valley
+Cachapoal Valley
+Rapel Valley
+Curicó Valley
+Maule Valley
+Itata Valley
+Bío-Bío Valley
+Malleco Valley
+AR|Argentina|Mendoza|geography
+Luján de Cuyo
+Maipú
+San Rafael
+Tupungato
+Tunuyán
+San Carlos
+AR|Argentina|Salta|geography
+Cafayate
+AR|Argentina||geography
+Salta
+San Juan
+La Rioja Argentina
+Catamarca
+Neuquén
+Río Negro
+UY|Uruguay||geography
+Canelones
+Maldonado
+Colonia
+Montevideo
+Rivera
+BR|Brazil|Rio Grande do Sul|geography
+Vale dos Vinhedos
+Pinto Bandeira
+Serra Gaúcha
+Campanha Gaúcha
+MX|Mexico|Baja California|geography
+Valle de Guadalupe
+Valle de Santo Tomás
+Valle de San Vicente
+MX|Mexico|Coahuila|geography
+Valle de Parras
+SI|Slovenia||geography
+Goriška Brda
+Vipavska Dolina
+Slovenska Istra
+Podravje
+Posavje
+HR|Croatia||geography
+Istria
+Slavonia
+Dingač
+Postup
+RO|Romania||geography
+Dealu Mare
+Murfatlar
+Cotnari
+Drăgășani
+Târnave
+BG|Bulgaria||geography
+Thracian Valley
+Danubian Plain
+GB|United Kingdom|England|geography
+Sussex
+Kent
+Surrey
+Hampshire
+Dorset
+Cornwall
+LB|Lebanon||geography
+Bekaa Valley~Beqaa Valley
+AM|Armenia||geography
+Vayots Dzor
+Aragatsotn
+CN|China||geography
+Ningxia
+Shandong
+Xinjiang
+Hebei
+Yunnan
+JP|Japan||geography
+Yamanashi
+Nagano
+Hokkaido
+Yamagata

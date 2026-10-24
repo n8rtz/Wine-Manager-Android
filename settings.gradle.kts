@@ -45,4 +45,4 @@ gradle.settingsEvaluated {
 }
 
 rootProject.name = "Wine Tracker"
-include(":app")
+include(":app", ":opencv-minimal")

@@ -1,0 +1,2660 @@
+[
+  {
+    "query": "Pauilac",
+    "expected_id": 36,
+    "host_id": 36,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "Pauillca",
+    "expected_id": 36,
+    "host_id": 36,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "Barolo Risrva",
+    "expected_id": 578,
+    "host_id": 578,
+    "host_reason": "exact alias"
+  },
+  {
+    "query": "Cotes du Rhone",
+    "expected_id": 300,
+    "host_id": 300,
+    "host_reason": "exact alias"
+  },
+  {
+    "query": "St Julien",
+    "expected_id": 37,
+    "host_id": 37,
+    "host_reason": "exact alias"
+  },
+  {
+    "query": "Chatau Margux",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "Château Margaux",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "13.5% ALC BY VOL",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "CONTAINS SULFITES",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "750ml",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "Government warning",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "Bottled in Bordeaux",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "Merlot",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "Prosecco",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "Jumilla",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "Snake River Valley",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "Napa Valley",
+    "expected_id": 2024,
+    "host_id": 2024,
+    "host_reason": "exact alias"
+  },
+  {
+    "query": "Oakville",
+    "expected_id": 2122,
+    "host_id": 2122,
+    "host_reason": "exact alias"
+  },
+  {
+    "query": "California",
+    "expected_id": 2018,
+    "host_id": 2018,
+    "host_reason": "exact alias"
+  },
+  {
+    "query": "Appellation Pauilac Controlee",
+    "expected_id": 36,
+    "host_id": 36,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "\" OR * NOT (",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "weak lexical evidence"
+  },
+  {
+    "query": "ab",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "",
+    "expected_id": null,
+    "host_id": null,
+    "host_reason": "filtered"
+  },
+  {
+    "query": "cotes de bordeax saint macaire",
+    "expected_id": 13,
+    "host_id": 13,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cotes de bordeaxu saint macaire",
+    "expected_id": 13,
+    "host_id": 13,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "graves suerieures",
+    "expected_id": 26,
+    "host_id": 26,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "graves sueprieures",
+    "expected_id": 26,
+    "host_id": 26,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "libounais",
+    "expected_id": 39,
+    "host_id": 39,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "libounrais",
+    "expected_id": 39,
+    "host_id": 39,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bourgogne pase tout grains",
+    "expected_id": 52,
+    "host_id": 52,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bourgogne pases tout grains",
+    "expected_id": 52,
+    "host_id": 52,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bourgogne cot saint jacques",
+    "expected_id": 65,
+    "host_id": 65,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cote d nuits",
+    "expected_id": 78,
+    "host_id": 78,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ruchottes hambertin",
+    "expected_id": 91,
+    "host_id": 91,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ruchottes hcambertin",
+    "expected_id": 91,
+    "host_id": 91,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "la roanee",
+    "expected_id": 104,
+    "host_id": 104,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "la roamnee",
+    "expected_id": 104,
+    "host_id": 104,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "corton chrlemagne",
+    "expected_id": 117,
+    "host_id": 117,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "corton chralemagne",
+    "expected_id": 117,
+    "host_id": 117,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "puligny mntrachet",
+    "expected_id": 130,
+    "host_id": 130,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "puligny mnotrachet",
+    "expected_id": 130,
+    "host_id": 130,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mercrey",
+    "expected_id": 143,
+    "host_id": 143,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mercruey",
+    "expected_id": 143,
+    "host_id": 143,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "broully",
+    "expected_id": 156,
+    "host_id": 156,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "broulily",
+    "expected_id": 156,
+    "host_id": 156,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "montagn de reims",
+    "expected_id": 169,
+    "host_id": 169,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cu bruderthal",
+    "expected_id": 182,
+    "host_id": 182,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cur bruderthal",
+    "expected_id": 182,
+    "host_id": 182,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cu kanzlerberg",
+    "expected_id": 195,
+    "host_id": 195,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cur kanzlerberg",
+    "expected_id": 195,
+    "host_id": 195,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cu pfersigberg",
+    "expected_id": 208,
+    "host_id": 208,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cur pfersigberg",
+    "expected_id": 208,
+    "host_id": 208,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alsace grand cr steingrubler",
+    "expected_id": 221,
+    "host_id": 221,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "pays nntais",
+    "expected_id": 234,
+    "host_id": 234,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "pays nnatais",
+    "expected_id": 234,
+    "host_id": 234,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "anjou musseux",
+    "expected_id": 247,
+    "host_id": 247,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "anjou muosseux",
+    "expected_id": 247,
+    "host_id": 247,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "saumur puy otre dame",
+    "expected_id": 260,
+    "host_id": 260,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "saumur puy ontre dame",
+    "expected_id": 260,
+    "host_id": 260,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "saint nicola de bourgueil",
+    "expected_id": 273,
+    "host_id": 273,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sancrre",
+    "expected_id": 286,
+    "host_id": 286,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sancrere",
+    "expected_id": 286,
+    "host_id": 286,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cotes du rhone villags rousset les vignes",
+    "expected_id": 312,
+    "host_id": 312,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cotes du rhone villagse rousset les vignes",
+    "expected_id": 312,
+    "host_id": 312,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "northen rhone",
+    "expected_id": 325,
+    "host_id": 325,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "northenr rhone",
+    "expected_id": 325,
+    "host_id": 325,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "southen rhone",
+    "expected_id": 338,
+    "host_id": 338,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "southenr rhone",
+    "expected_id": 338,
+    "host_id": 338,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "costiere de nimes",
+    "expected_id": 351,
+    "host_id": 351,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coteaux varos en provence",
+    "expected_id": 364,
+    "host_id": 364,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coteaux varosi en provence",
+    "expected_id": 364,
+    "host_id": 364,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "languedoc abrieres",
+    "expected_id": 377,
+    "host_id": 377,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "languedoc acbrieres",
+    "expected_id": 377,
+    "host_id": 377,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "saint chinan berlou",
+    "expected_id": 390,
+    "host_id": 390,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "saint chinain berlou",
+    "expected_id": 390,
+    "host_id": 390,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "muscat de fontignan",
+    "expected_id": 403,
+    "host_id": 403,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "muscat de forntignan",
+    "expected_id": 403,
+    "host_id": 403,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coteaux d peyriac",
+    "expected_id": 416,
+    "host_id": 416,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cotes du roussillon vilages latour de france",
+    "expected_id": 429,
+    "host_id": 429,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sud oest",
+    "expected_id": 442,
+    "host_id": 442,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sud oeust",
+    "expected_id": 442,
+    "host_id": 442,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coteaux e glanes",
+    "expected_id": 455,
+    "host_id": 455,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coteaux ed glanes",
+    "expected_id": 455,
+    "host_id": 455,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cotes d duras",
+    "expected_id": 468,
+    "host_id": 468,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "entrayges le fel",
+    "expected_id": 481,
+    "host_id": 481,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "entraygeus le fel",
+    "expected_id": 481,
+    "host_id": 481,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vin de savoe chignin",
+    "expected_id": 507,
+    "host_id": 507,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vin de savoei chignin",
+    "expected_id": 507,
+    "host_id": 507,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vin de savoie sait jeoire prieure",
+    "expected_id": 520,
+    "host_id": 520,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vin de savoie saitn jeoire prieure",
+    "expected_id": 520,
+    "host_id": 520,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bugey mnicle",
+    "expected_id": 533,
+    "host_id": 533,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bugey mnaicle",
+    "expected_id": 533,
+    "host_id": 533,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "moslle",
+    "expected_id": 546,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "moslele",
+    "expected_id": 546,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "piemnte",
+    "expected_id": 572,
+    "host_id": 572,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "piemnote",
+    "expected_id": 572,
+    "host_id": 572,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "gattnara",
+    "expected_id": 585,
+    "host_id": 585,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "gattniara",
+    "expected_id": 585,
+    "host_id": 585,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "calsso",
+    "expected_id": 598,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "calsoso",
+    "expected_id": 598,
+    "host_id": 598,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "dolcett di ovada",
+    "expected_id": 611,
+    "host_id": 611,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "nebbioo d alba",
+    "expected_id": 624,
+    "host_id": 624,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "nebbiool d alba",
+    "expected_id": 624,
+    "host_id": 624,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle d asta nus",
+    "expected_id": 637,
+    "host_id": 637,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle d asota nus",
+    "expected_id": 637,
+    "host_id": 637,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "colline avonesi",
+    "expected_id": 650,
+    "host_id": 650,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "colline asvonesi",
+    "expected_id": 650,
+    "host_id": 650,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "celltica",
+    "expected_id": 663,
+    "host_id": 663,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "celltaica",
+    "expected_id": 663,
+    "host_id": 663,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sangue di giuda del oltrepo pavese",
+    "expected_id": 676,
+    "host_id": 676,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alto adige coli di bolzano",
+    "expected_id": 689,
+    "host_id": 689,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vallaarina",
+    "expected_id": 702,
+    "host_id": 702,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vallaagrina",
+    "expected_id": 702,
+    "host_id": 702,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "piave maanotte",
+    "expected_id": 715,
+    "host_id": 715,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "piave maalnotte",
+    "expected_id": 715,
+    "host_id": 715,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lessini urello",
+    "expected_id": 728,
+    "host_id": 728,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lessini udrello",
+    "expected_id": 728,
+    "host_id": 728,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "roszzo",
+    "expected_id": 754,
+    "host_id": 754,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "roszazo",
+    "expected_id": 754,
+    "host_id": 754,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alto lvenza",
+    "expected_id": 767,
+    "host_id": 767,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alto lvienza",
+    "expected_id": 767,
+    "host_id": 767,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "guttrnio",
+    "expected_id": 780,
+    "host_id": 780,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "guttrunio",
+    "expected_id": 780,
+    "host_id": 780,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tosana",
+    "expected_id": 793,
+    "host_id": 793,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tosacna",
+    "expected_id": 793,
+    "host_id": 793,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "barco reale d carmignano",
+    "expected_id": 806,
+    "host_id": 806,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "maremma oscana",
+    "expected_id": 819,
+    "host_id": 819,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "maremma otscana",
+    "expected_id": 819,
+    "host_id": 819,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sant atimo",
+    "expected_id": 832,
+    "host_id": 832,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sant atnimo",
+    "expected_id": 832,
+    "host_id": 832,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vin santo di mntepulciano",
+    "expected_id": 845,
+    "host_id": 845,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vin santo di mnotepulciano",
+    "expected_id": 845,
+    "host_id": 845,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "colli mrtani",
+    "expected_id": 858,
+    "host_id": 858,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "colli mratani",
+    "expected_id": 858,
+    "host_id": 858,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "conro",
+    "expected_id": 871,
+    "host_id": 871,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "conreo",
+    "expected_id": 871,
+    "host_id": 871,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rosso iceno",
+    "expected_id": 884,
+    "host_id": 884,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rosso ipceno",
+    "expected_id": 884,
+    "host_id": 884,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bianco apena",
+    "expected_id": 897,
+    "host_id": 897,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bianco acpena",
+    "expected_id": 897,
+    "host_id": 897,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "genazano",
+    "expected_id": 910,
+    "host_id": 910,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tulum",
+    "expected_id": 923,
+    "host_id": 923,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tululm",
+    "expected_id": 923,
+    "host_id": 923,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tintilia el molise",
+    "expected_id": 936,
+    "host_id": 936,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tintilia edl molise",
+    "expected_id": 936,
+    "host_id": 936,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cilnto",
+    "expected_id": 949,
+    "host_id": 949,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cilneto",
+    "expected_id": 949,
+    "host_id": 949,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "paetum",
+    "expected_id": 962,
+    "host_id": 962,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "paetsum",
+    "expected_id": 962,
+    "host_id": 962,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "primitivo di manduia dolce naturale",
+    "expected_id": 975,
+    "host_id": 975,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "primitivo di manduira dolce naturale",
+    "expected_id": 975,
+    "host_id": 975,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lizano",
+    "expected_id": 988,
+    "host_id": 988,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lizazno",
+    "expected_id": 988,
+    "host_id": 988,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "squizano",
+    "expected_id": 1001,
+    "host_id": 1001,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "squiznano",
+    "expected_id": 1001,
+    "host_id": 1001,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "melssa",
+    "expected_id": 1014,
+    "host_id": 1014,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "melsisa",
+    "expected_id": 1014,
+    "host_id": 1014,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sambuca d sicilia",
+    "expected_id": 1040,
+    "host_id": 1040,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "caglari",
+    "expected_id": 1053,
+    "host_id": 1053,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "caglairi",
+    "expected_id": 1053,
+    "host_id": 1053,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vermentino i sardegna",
+    "expected_id": 1066,
+    "host_id": 1066,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vermentino id sardegna",
+    "expected_id": 1066,
+    "host_id": 1066,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "prado d irache",
+    "expected_id": 1079,
+    "host_id": 1079,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valdealon",
+    "expected_id": 1092,
+    "host_id": 1092,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valdeajlon",
+    "expected_id": 1092,
+    "host_id": 1092,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tarrgona",
+    "expected_id": 1105,
+    "host_id": 1105,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tarrgaona",
+    "expected_id": 1105,
+    "host_id": 1105,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tierra e leon",
+    "expected_id": 1118,
+    "host_id": 1118,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tierra ed leon",
+    "expected_id": 1118,
+    "host_id": 1118,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ribiro",
+    "expected_id": 1131,
+    "host_id": 1131,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ribiero",
+    "expected_id": 1131,
+    "host_id": 1131,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "canas",
+    "expected_id": 1144,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "canags",
+    "expected_id": 1144,
+    "host_id": 1144,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mancuela",
+    "expected_id": 1157,
+    "host_id": 1157,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mancuhela",
+    "expected_id": 1157,
+    "host_id": 1157,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "calzailla",
+    "expected_id": 1170,
+    "host_id": 1170,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "calzaidlla",
+    "expected_id": 1170,
+    "host_id": 1170,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "el mlar",
+    "expected_id": 1183,
+    "host_id": 1183,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "el mloar",
+    "expected_id": 1183,
+    "host_id": 1183,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "el tererazo",
+    "expected_id": 1196,
+    "host_id": 1196,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "el tererrazo",
+    "expected_id": 1196,
+    "host_id": 1196,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "manzanilla sanlcar de barrameda",
+    "expected_id": 1209,
+    "host_id": 1209,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "manzanilla sanlcuar de barrameda",
+    "expected_id": 1209,
+    "host_id": 1209,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "laderas el genil",
+    "expected_id": 1222,
+    "host_id": 1222,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "laderas edl genil",
+    "expected_id": 1222,
+    "host_id": 1222,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mallrca",
+    "expected_id": 1235,
+    "host_id": 1235,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mallroca",
+    "expected_id": 1235,
+    "host_id": 1235,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tacoront acentejo",
+    "expected_id": 1248,
+    "host_id": 1248,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vinho vede paiva",
+    "expected_id": 1261,
+    "host_id": 1261,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vinho vedre paiva",
+    "expected_id": 1261,
+    "host_id": 1261,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "beias",
+    "expected_id": 1274,
+    "host_id": 1274,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "beiars",
+    "expected_id": 1274,
+    "host_id": 1274,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "beira interio cova da beira",
+    "expected_id": 1287,
+    "host_id": 1287,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "encosts d aire",
+    "expected_id": 1300,
+    "host_id": 1300,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "encostsa d aire",
+    "expected_id": 1300,
+    "host_id": 1300,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "do tej tomar",
+    "expected_id": 1313,
+    "host_id": 1313,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alentejo vdigueira",
+    "expected_id": 1326,
+    "host_id": 1326,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alentejo vdiigueira",
+    "expected_id": 1326,
+    "host_id": 1326,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "badische landwein",
+    "expected_id": 1352,
+    "host_id": 1352,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "starkenburer landwein",
+    "expected_id": 1365,
+    "host_id": 1365,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "starkenburegr landwein",
+    "expected_id": 1365,
+    "host_id": 1365,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bernkasteer doctor",
+    "expected_id": 1378,
+    "host_id": 1378,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bernkasteelr doctor",
+    "expected_id": 1378,
+    "host_id": 1378,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "wiltinger raune kupp",
+    "expected_id": 1391,
+    "host_id": 1391,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "wiltinger rbaune kupp",
+    "expected_id": 1391,
+    "host_id": 1391,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mittelhaardt deusche weinstraße",
+    "expected_id": 1404,
+    "host_id": 1404,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mittelhaardt deustche weinstraße",
+    "expected_id": 1404,
+    "host_id": 1404,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "steiberg",
+    "expected_id": 1417,
+    "host_id": 1417,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "steibnerg",
+    "expected_id": 1417,
+    "host_id": 1417,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "nackenheime rothenberg",
+    "expected_id": 1430,
+    "host_id": 1430,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sachsischr landwein",
+    "expected_id": 1443,
+    "host_id": 1443,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sachsischre landwein",
+    "expected_id": 1443,
+    "host_id": 1443,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "brandenburer landwein",
+    "expected_id": 1456,
+    "host_id": 1456,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "brandenburegr landwein",
+    "expected_id": 1456,
+    "host_id": 1456,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "kamtal",
+    "expected_id": 1469,
+    "host_id": 1469,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "kamtpal",
+    "expected_id": 1469,
+    "host_id": 1469,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mittelbugenland",
+    "expected_id": 1482,
+    "host_id": 1482,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mittelbugrenland",
+    "expected_id": 1482,
+    "host_id": 1482,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vorarberg",
+    "expected_id": 1495,
+    "host_id": 1495,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vorarblerg",
+    "expected_id": 1495,
+    "host_id": 1495,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mores",
+    "expected_id": 1521,
+    "host_id": 1521,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "moregs",
+    "expected_id": 1521,
+    "host_id": 1521,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "genve",
+    "expected_id": 1534,
+    "host_id": 1534,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "genvee",
+    "expected_id": 1534,
+    "host_id": 1534,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "deutschchweiz",
+    "expected_id": 1547,
+    "host_id": 1547,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "deutschcshweiz",
+    "expected_id": 1547,
+    "host_id": 1547,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bielrsee",
+    "expected_id": 1560,
+    "host_id": 1560,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bielresee",
+    "expected_id": 1560,
+    "host_id": 1560,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "zemlen",
+    "expected_id": 1573,
+    "host_id": 1573,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "zemlpen",
+    "expected_id": 1573,
+    "host_id": 1573,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "etye buda",
+    "expected_id": 1586,
+    "host_id": 1586,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "slovcka",
+    "expected_id": 1612,
+    "host_id": 1612,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "slovcaka",
+    "expected_id": 1612,
+    "host_id": 1612,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vinohradnick oblast tokaj",
+    "expected_id": 1625,
+    "host_id": 1625,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "marbor",
+    "expected_id": 1638,
+    "host_id": 1638,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "marbior",
+    "expected_id": 1638,
+    "host_id": 1638,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "posup",
+    "expected_id": 1651,
+    "host_id": 1651,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "posutp",
+    "expected_id": 1651,
+    "host_id": 1651,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vrbik",
+    "expected_id": 1664,
+    "host_id": 1664,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "vrbink",
+    "expected_id": 1664,
+    "host_id": 1664,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "barnja",
+    "expected_id": 1677,
+    "host_id": 1677,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "barnaja",
+    "expected_id": 1677,
+    "host_id": 1677,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "imahia",
+    "expected_id": 1690,
+    "host_id": 1690,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "imahtia",
+    "expected_id": 1690,
+    "host_id": 1690,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ismros",
+    "expected_id": 1703,
+    "host_id": 1703,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ismraos",
+    "expected_id": 1703,
+    "host_id": 1703,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "magnsia",
+    "expected_id": 1716,
+    "host_id": 1716,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "magnseia",
+    "expected_id": 1716,
+    "host_id": 1716,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "opounti lokris",
+    "expected_id": 1729,
+    "host_id": 1729,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "robola of efalonia",
+    "expected_id": 1755,
+    "host_id": 1755,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "robola of ekfalonia",
+    "expected_id": 1755,
+    "host_id": 1755,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sifos",
+    "expected_id": 1781,
+    "host_id": 1781,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sifons",
+    "expected_id": 1781,
+    "host_id": 1781,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "moldova omania",
+    "expected_id": 1794,
+    "host_id": 1794,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "moldova ormania",
+    "expected_id": 1794,
+    "host_id": 1794,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "dealurile asluiului",
+    "expected_id": 1807,
+    "host_id": 1807,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "dealurile avsluiului",
+    "expected_id": 1807,
+    "host_id": 1807,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "terasel dunarii",
+    "expected_id": 1820,
+    "host_id": 1820,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alba ulia",
+    "expected_id": 1833,
+    "host_id": 1833,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alba uilia",
+    "expected_id": 1833,
+    "host_id": 1833,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "dealurile atmarului",
+    "expected_id": 1846,
+    "host_id": 1846,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "dealurile astmarului",
+    "expected_id": 1846,
+    "host_id": 1846,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "shivahevo",
+    "expected_id": 1859,
+    "host_id": 1859,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "shivahcevo",
+    "expected_id": 1859,
+    "host_id": 1859,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "pomrie",
+    "expected_id": 1872,
+    "host_id": 1872,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "pomroie",
+    "expected_id": 1872,
+    "host_id": 1872,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cheven",
+    "expected_id": 1885,
+    "host_id": 1885,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "chevren",
+    "expected_id": 1885,
+    "host_id": 1885,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lovch",
+    "expected_id": 1898,
+    "host_id": 1898,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lovceh",
+    "expected_id": 1898,
+    "host_id": 1898,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "wels wine",
+    "expected_id": 1924,
+    "host_id": 1924,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "kotkhi",
+    "expected_id": 1937,
+    "host_id": 1937,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "kotkehi",
+    "expected_id": 1937,
+    "host_id": 1937,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "adjra",
+    "expected_id": 1963,
+    "host_id": 1963,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "adjraa",
+    "expected_id": 1963,
+    "host_id": 1963,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "kheson",
+    "expected_id": 1976,
+    "host_id": 1976,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "khesron",
+    "expected_id": 1976,
+    "host_id": 1976,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bozcada",
+    "expected_id": 1989,
+    "host_id": 1989,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "jezine",
+    "expected_id": 2015,
+    "host_id": 2015,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "jezizne",
+    "expected_id": 2015,
+    "host_id": 2015,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "montere county",
+    "expected_id": 2028,
+    "host_id": 2028,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "clea lake",
+    "expected_id": 2041,
+    "host_id": 2041,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "santa claa valley",
+    "expected_id": 2054,
+    "host_id": 2054,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "santa claar valley",
+    "expected_id": 2054,
+    "host_id": 2054,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "santa luci highlands",
+    "expected_id": 2067,
+    "host_id": 2067,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "santa mara valley",
+    "expected_id": 2080,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "santa marai valley",
+    "expected_id": 2080,
+    "host_id": 2080,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sierra pelna valley",
+    "expected_id": 2093,
+    "host_id": 2093,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sierra pelnoa valley",
+    "expected_id": 2093,
+    "host_id": 2093,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tracy ills",
+    "expected_id": 2106,
+    "host_id": 2106,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tracy ihlls",
+    "expected_id": 2106,
+    "host_id": 2106,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mount eeder",
+    "expected_id": 2119,
+    "host_id": 2119,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mount eveder",
+    "expected_id": 2119,
+    "host_id": 2119,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sonoma alley",
+    "expected_id": 2132,
+    "host_id": 2132,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sonoma avlley",
+    "expected_id": 2132,
+    "host_id": 2132,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bennet valley",
+    "expected_id": 2145,
+    "host_id": 2145,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "covlo",
+    "expected_id": 2158,
+    "host_id": 2158,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "covleo",
+    "expected_id": 2158,
+    "host_id": 2158,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "santa margrita ranch",
+    "expected_id": 2171,
+    "host_id": 2171,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "santa margraita ranch",
+    "expected_id": 2171,
+    "host_id": 2171,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "nort yuba",
+    "expected_id": 2184,
+    "host_id": 2184,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mcminville",
+    "expected_id": 2197,
+    "host_id": 2197,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mcminvnille",
+    "expected_id": 2197,
+    "host_id": 2197,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "naches eights",
+    "expected_id": 2223,
+    "host_id": 2223,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "naches ehights",
+    "expected_id": 2223,
+    "host_id": 2223,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "long iland",
+    "expected_id": 2236,
+    "host_id": 2236,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "long ilsand",
+    "expected_id": 2236,
+    "host_id": 2236,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rock knob",
+    "expected_id": 2249,
+    "host_id": 2249,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "warre hills",
+    "expected_id": 2262,
+    "host_id": 2262,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "north crolina",
+    "expected_id": 2275,
+    "host_id": 2275,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "north craolina",
+    "expected_id": 2275,
+    "host_id": 2275,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alaama",
+    "expected_id": 2288,
+    "host_id": 2288,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alaabma",
+    "expected_id": 2288,
+    "host_id": 2288,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lorami creek",
+    "expected_id": 2301,
+    "host_id": 2301,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "loess hill district",
+    "expected_id": 2314,
+    "host_id": 2314,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "texas hil country",
+    "expected_id": 2327,
+    "host_id": 2327,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sonita",
+    "expected_id": 2340,
+    "host_id": 2340,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "soniota",
+    "expected_id": 2340,
+    "host_id": 2340,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lake erie nrth shore",
+    "expected_id": 2353,
+    "host_id": 2353,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lake erie nroth shore",
+    "expected_id": 2353,
+    "host_id": 2353,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "twenty mle bench",
+    "expected_id": 2366,
+    "host_id": 2366,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "twenty mlie bench",
+    "expected_id": 2366,
+    "host_id": 2366,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "golden mle bench",
+    "expected_id": 2379,
+    "host_id": 2379,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "golden mlie bench",
+    "expected_id": 2379,
+    "host_id": 2379,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "olier",
+    "expected_id": 2392,
+    "host_id": 2392,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "olievr",
+    "expected_id": 2392,
+    "host_id": 2392,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle de sn vicente",
+    "expected_id": 2405,
+    "host_id": 2405,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle de sna vicente",
+    "expected_id": 2405,
+    "host_id": 2405,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "zacaecas",
+    "expected_id": 2418,
+    "host_id": 2418,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "zacaetcas",
+    "expected_id": 2418,
+    "host_id": 2418,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle e uco",
+    "expected_id": 2431,
+    "host_id": 2431,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle ed uco",
+    "expected_id": 2431,
+    "host_id": 2431,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "godo cruz",
+    "expected_id": 2444,
+    "host_id": 2444,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "el carizal",
+    "expected_id": 2457,
+    "host_id": 2457,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "el carirzal",
+    "expected_id": 2457,
+    "host_id": 2457,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "la arbleda",
+    "expected_id": 2470,
+    "host_id": 2470,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "la arbloeda",
+    "expected_id": 2470,
+    "host_id": 2470,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "los idios",
+    "expected_id": 2483,
+    "host_id": 2483,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "los idnios",
+    "expected_id": 2483,
+    "host_id": 2483,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle d zonda",
+    "expected_id": 2496,
+    "host_id": 2496,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sarmient san juan",
+    "expected_id": 2509,
+    "host_id": 2509,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "aniana",
+    "expected_id": 2522,
+    "host_id": 2522,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "aniamna",
+    "expected_id": 2522,
+    "host_id": 2522,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "amaicha el valle",
+    "expected_id": 2548,
+    "host_id": 2548,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "amaicha edl valle",
+    "expected_id": 2548,
+    "host_id": 2548,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "picun eufu",
+    "expected_id": 2561,
+    "host_id": 2561,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "picun elufu",
+    "expected_id": 2561,
+    "host_id": 2561,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sarmieno chubut",
+    "expected_id": 2574,
+    "host_id": 2574,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sarmienot chubut",
+    "expected_id": 2574,
+    "host_id": 2574,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "sierra chicas",
+    "expected_id": 2587,
+    "host_id": 2587,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle de opiapo",
+    "expected_id": 2600,
+    "host_id": 2600,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "valle de ocpiapo",
+    "expected_id": 2600,
+    "host_id": 2600,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "illpel",
+    "expected_id": 2613,
+    "host_id": 2613,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "illpael",
+    "expected_id": 2613,
+    "host_id": 2613,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "algarobo",
+    "expected_id": 2626,
+    "host_id": 2626,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "maria into",
+    "expected_id": 2639,
+    "host_id": 2639,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "maria ipnto",
+    "expected_id": 2639,
+    "host_id": 2639,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "san fenando",
+    "expected_id": 2652,
+    "host_id": 2652,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "san fenrando",
+    "expected_id": 2652,
+    "host_id": 2652,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cheica",
+    "expected_id": 2665,
+    "host_id": 2665,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cheipca",
+    "expected_id": 2665,
+    "host_id": null,
+    "host_reason": "weak lexical evidence"
+  },
+  {
+    "query": "penchue",
+    "expected_id": 2678,
+    "host_id": 2678,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "penchaue",
+    "expected_id": 2678,
+    "host_id": 2678,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "chaco",
+    "expected_id": 2691,
+    "host_id": 2691,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "chacno",
+    "expected_id": 2691,
+    "host_id": 2691,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "nacimento",
+    "expected_id": 2704,
+    "host_id": 2704,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "nacimeinto",
+    "expected_id": 2704,
+    "host_id": 2704,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lago anco",
+    "expected_id": 2717,
+    "host_id": 2717,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "lago arnco",
+    "expected_id": 2717,
+    "host_id": 2717,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "campos de cma da serra",
+    "expected_id": 2743,
+    "host_id": 2743,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "campos de cmia da serra",
+    "expected_id": 2743,
+    "host_id": 2743,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "areqipa",
+    "expected_id": 2756,
+    "host_id": 2756,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "areqiupa",
+    "expected_id": 2756,
+    "host_id": 2756,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "limestoe coast",
+    "expected_id": 2769,
+    "host_id": 2769,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "limestoen coast",
+    "expected_id": 2769,
+    "host_id": 2769,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coonaarra",
+    "expected_id": 2782,
+    "host_id": 2782,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "coonaawrra",
+    "expected_id": 2782,
+    "host_id": 2782,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "victria",
+    "expected_id": 2795,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "victroia",
+    "expected_id": 2795,
+    "host_id": null,
+    "host_reason": "ambiguous entities"
+  },
+  {
+    "query": "alpine alleys",
+    "expected_id": 2808,
+    "host_id": 2808,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "alpine avlleys",
+    "expected_id": 2808,
+    "host_id": 2808,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "great wstern",
+    "expected_id": 2821,
+    "host_id": 2821,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "great wsetern",
+    "expected_id": 2821,
+    "host_id": 2821,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "perrioota",
+    "expected_id": 2834,
+    "host_id": 2834,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "perriocota",
+    "expected_id": 2834,
+    "host_id": 2834,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "southern ighlands",
+    "expected_id": 2847,
+    "host_id": 2847,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "southern ihghlands",
+    "expected_id": 2847,
+    "host_id": 2847,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "perth ills",
+    "expected_id": 2860,
+    "host_id": 2860,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "perth ihlls",
+    "expected_id": 2860,
+    "host_id": 2860,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "pembrton",
+    "expected_id": 2873,
+    "host_id": 2873,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "pembreton",
+    "expected_id": 2873,
+    "host_id": 2873,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "new zeland",
+    "expected_id": 2886,
+    "host_id": 2886,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "new zelaand",
+    "expected_id": 2886,
+    "host_id": 2886,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "wairrapa",
+    "expected_id": 2899,
+    "host_id": 2899,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "wairraapa",
+    "expected_id": 2899,
+    "host_id": 2899,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bendgo nz",
+    "expected_id": 2912,
+    "host_id": 2912,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "bendgio nz",
+    "expected_id": 2912,
+    "host_id": 2912,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cape oast",
+    "expected_id": 2925,
+    "host_id": 2925,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "cape ocast",
+    "expected_id": 2925,
+    "host_id": 2925,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "groenkloof",
+    "expected_id": 2938,
+    "host_id": 2938,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "groenkeloof",
+    "expected_id": 2938,
+    "host_id": 2938,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "simonsberg sellenbosch",
+    "expected_id": 2951,
+    "host_id": 2951,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "simonsberg setllenbosch",
+    "expected_id": 2951,
+    "host_id": 2951,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tygeberg",
+    "expected_id": 2964,
+    "host_id": 2964,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "tygebrerg",
+    "expected_id": 2964,
+    "host_id": 2964,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "robetson",
+    "expected_id": 2977,
+    "host_id": 2977,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "robetrson",
+    "expected_id": 2977,
+    "host_id": 2977,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "zandrvier",
+    "expected_id": 2990,
+    "host_id": 2990,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "zandrviier",
+    "expected_id": 2990,
+    "host_id": 2990,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "klein iver",
+    "expected_id": 3003,
+    "host_id": 3003,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "klein irver",
+    "expected_id": 3003,
+    "host_id": 3003,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "stanford oothills",
+    "expected_id": 3016,
+    "host_id": 3016,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "stanford ofothills",
+    "expected_id": 3016,
+    "host_id": 3016,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "upper lagkloof",
+    "expected_id": 3029,
+    "host_id": 3029,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "upper lagnkloof",
+    "expected_id": 3029,
+    "host_id": 3029,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "grobleshoop",
+    "expected_id": 3042,
+    "host_id": 3042,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "groblesrhoop",
+    "expected_id": 3042,
+    "host_id": 3042,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rietriier fs",
+    "expected_id": 3055,
+    "host_id": 3055,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rietriiver fs",
+    "expected_id": 3055,
+    "host_id": 3055,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "penlai",
+    "expected_id": 3068,
+    "host_id": 3068,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "penlgai",
+    "expected_id": 3068,
+    "host_id": 3068,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "limurg",
+    "expected_id": 3094,
+    "host_id": 3094,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "limubrg",
+    "expected_id": 3094,
+    "host_id": 3094,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ortna",
+    "expected_id": 3107,
+    "host_id": 3107,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ortnoa",
+    "expected_id": 3107,
+    "host_id": 3107,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "costa iola",
+    "expected_id": 3120,
+    "host_id": 3120,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "costa ivola",
+    "expected_id": 3120,
+    "host_id": 3120,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "marmlla",
+    "expected_id": 3133,
+    "host_id": 3133,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "marmlila",
+    "expected_id": 3133,
+    "host_id": 3133,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "colline del enovesato",
+    "expected_id": 3146,
+    "host_id": 3146,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "colline del egnovesato",
+    "expected_id": 3146,
+    "host_id": 3146,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "utrcht",
+    "expected_id": 3159,
+    "host_id": 3159,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "utrceht",
+    "expected_id": 3159,
+    "host_id": 3159,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "costa etruco romana",
+    "expected_id": 3172,
+    "host_id": 3172,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "costa etrucso romana",
+    "expected_id": 3172,
+    "host_id": 3172,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "quisello",
+    "expected_id": 3185,
+    "host_id": 3185,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "quisetllo",
+    "expected_id": 3185,
+    "host_id": 3185,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "mergeland",
+    "expected_id": 3198,
+    "host_id": 3198,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ile de rance",
+    "expected_id": 3211,
+    "host_id": 3211,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "ile de rfance",
+    "expected_id": 3211,
+    "host_id": 3211,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rosaejo",
+    "expected_id": 3224,
+    "host_id": 3224,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "rosaeljo",
+    "expected_id": 3224,
+    "host_id": 3224,
+    "host_reason": "bounded fuzzy suggestion"
+  },
+  {
+    "query": "paulsel valley",
+    "expected_id": 3237,
+    "host_id": 3237,
+    "host_reason": "bounded fuzzy suggestion"
+  }
+]

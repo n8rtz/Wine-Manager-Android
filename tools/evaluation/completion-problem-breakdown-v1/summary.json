@@ -1,0 +1,200 @@
+{
+  "actual": {
+    "labels": 160,
+    "complete": 32,
+    "two_or_more_errors": 82,
+    "passes": false,
+    "minimum_complete": 128,
+    "maximum_two_or_more_errors": 7
+  },
+  "unscorable_labels": 8,
+  "field_priorities": [
+    {
+      "field": "producer",
+      "missing_required_values": 60,
+      "wrong_values": 34,
+      "unsupported_fills": 0,
+      "total_problems": 94
+    },
+    {
+      "field": "wine_name",
+      "missing_required_values": 35,
+      "wrong_values": 45,
+      "unsupported_fills": 3,
+      "total_problems": 83
+    },
+    {
+      "field": "subregion",
+      "missing_required_values": 34,
+      "wrong_values": 3,
+      "unsupported_fills": 11,
+      "total_problems": 48
+    },
+    {
+      "field": "region",
+      "missing_required_values": 37,
+      "wrong_values": 0,
+      "unsupported_fills": 3,
+      "total_problems": 40
+    },
+    {
+      "field": "country",
+      "missing_required_values": 15,
+      "wrong_values": 0,
+      "unsupported_fills": 3,
+      "total_problems": 18
+    },
+    {
+      "field": "vintage",
+      "missing_required_values": 4,
+      "wrong_values": 0,
+      "unsupported_fills": 0,
+      "total_problems": 4
+    }
+  ],
+  "opportunity_triage": {
+    "producer": {
+      "literal_witness_without_correct_saved_candidate": 14,
+      "no_exact_saved_witness_cause_not_established": 32,
+      "correct_value_only_in_saved_candidates": 39,
+      "correct_value_in_saved_component_output": 9
+    },
+    "wine_name": {
+      "correct_value_in_saved_component_output": 13,
+      "no_exact_saved_witness_cause_not_established": 28,
+      "correct_value_only_in_saved_candidates": 28,
+      "literal_witness_without_correct_saved_candidate": 11,
+      "unsupported_fill_expected_blank": 3
+    },
+    "country": {
+      "geographic_evidence_or_path_needs_review": 15,
+      "unsupported_fill_expected_blank": 3
+    },
+    "region": {
+      "geographic_evidence_or_path_needs_review": 30,
+      "correct_value_in_saved_component_output": 7,
+      "unsupported_fill_expected_blank": 3
+    },
+    "subregion": {
+      "geographic_evidence_or_path_needs_review": 22,
+      "correct_value_in_saved_component_output": 12,
+      "unsupported_fill_expected_blank": 11,
+      "correct_value_only_in_saved_candidates": 3
+    },
+    "vintage": {
+      "no_exact_saved_witness_cause_not_established": 3,
+      "literal_witness_without_correct_saved_candidate": 1
+    }
+  },
+  "oracle_scenarios": [
+    {
+      "assumed_perfect_fields": [],
+      "labels": 160,
+      "complete": 32,
+      "two_or_more_errors": 82,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "producer"
+      ],
+      "labels": 160,
+      "complete": 63,
+      "two_or_more_errors": 50,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "wine_name"
+      ],
+      "labels": 160,
+      "complete": 42,
+      "two_or_more_errors": 46,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "country"
+      ],
+      "labels": 160,
+      "complete": 32,
+      "two_or_more_errors": 82,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "region"
+      ],
+      "labels": 160,
+      "complete": 32,
+      "two_or_more_errors": 77,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "subregion"
+      ],
+      "labels": 160,
+      "complete": 36,
+      "two_or_more_errors": 70,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "producer",
+        "wine_name"
+      ],
+      "labels": 160,
+      "complete": 101,
+      "two_or_more_errors": 33,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "producer",
+        "wine_name",
+        "country"
+      ],
+      "labels": 160,
+      "complete": 101,
+      "two_or_more_errors": 30,
+      "passes": false,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    },
+    {
+      "assumed_perfect_fields": [
+        "producer",
+        "wine_name",
+        "region",
+        "subregion"
+      ],
+      "labels": 160,
+      "complete": 138,
+      "two_or_more_errors": 0,
+      "passes": true,
+      "minimum_complete": 128,
+      "maximum_two_or_more_errors": 7
+    }
+  ],
+  "cautions": [
+    "Oracle scenarios replace errors using reference answers; they are not predicted attainable results.",
+    "Candidate coverage uses historical saved outputs/alternatives. It does not prove runtime compatibility or isolate ranking versus generation failure.",
+    "Literal witnesses are normalized text-match proxies, not proof of correct OCR; absent witnesses do not establish OCR failure.",
+    "All results remain provisional development-set results, not fresh held-out validation."
+  ]
+}

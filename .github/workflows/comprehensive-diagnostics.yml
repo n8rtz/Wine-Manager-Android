@@ -1,0 +1,36 @@
+name: Saved workflow diagnostic suite
+on:
+  push:
+    branches: ['arena/fd8dc3be-wine-manager-android']
+    paths:
+      - '.github/workflows/comprehensive-diagnostics.yml'
+      - 'tools/corpus/comprehensive_diagnostics.py'
+      - 'tools/corpus/selection_policies.py'
+      - 'tools/tests/test_comprehensive_diagnostics.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: comprehensive-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  diagnostics:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Verify reference isolation and frozen-result reproducibility
+        run: python3 -m unittest discover -s tools/tests -p 'test_comprehensive_diagnostics.py'
+      - name: Execute 107 saved-output policies without rerunning any extractor
+        run: |
+          python3 tools/corpus/comprehensive_diagnostics.py --output "$RUNNER_TEMP/diagnostics"
+          cat "$RUNNER_TEMP/diagnostics/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v5
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
+        with:
+          name: comprehensive-workflow-diagnostics
+          path: ${{ runner.temp }}/diagnostics
+          retention-days: 1

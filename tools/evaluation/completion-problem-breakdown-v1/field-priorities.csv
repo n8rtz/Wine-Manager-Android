@@ -1,0 +1,7 @@
+﻿field,missing_required_values,wrong_values,unsupported_fills,total_problems
+producer,60,34,0,94
+wine_name,35,45,3,83
+subregion,34,3,11,48
+region,37,0,3,40
+country,15,0,3,18
+vintage,4,0,0,4

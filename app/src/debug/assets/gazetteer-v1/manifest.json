@@ -1,0 +1,110 @@
+{
+  "records": 3244,
+  "levels": {
+    "region": 230,
+    "appellation": 2989,
+    "sub_region": 25
+  },
+  "duplicate_country_names": [
+    {
+      "country": "Australia",
+      "name": "murray darling",
+      "records": 2
+    },
+    {
+      "country": "Australia",
+      "name": "swan hill",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "colli di luni",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "delle venezie",
+      "records": 3
+    },
+    {
+      "country": "Italy",
+      "name": "garda",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "lison",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "lugana",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "orvieto",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "prosecco",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "san martino della battaglia",
+      "records": 2
+    },
+    {
+      "country": "Italy",
+      "name": "valdadige",
+      "records": 2
+    },
+    {
+      "country": "Spain",
+      "name": "jumilla",
+      "records": 2
+    },
+    {
+      "country": "United States",
+      "name": "columbia gorge",
+      "records": 2
+    },
+    {
+      "country": "United States",
+      "name": "lake erie",
+      "records": 2
+    },
+    {
+      "country": "United States",
+      "name": "lewis clark valley",
+      "records": 2
+    },
+    {
+      "country": "United States",
+      "name": "mesilla valley",
+      "records": 2
+    },
+    {
+      "country": "United States",
+      "name": "ohio river valley",
+      "records": 2
+    },
+    {
+      "country": "United States",
+      "name": "snake river valley",
+      "records": 2
+    }
+  ],
+  "missing_official_codes": 1535,
+  "source_sha256": "42e5509047fabc1561228f25cffa66b5c5eb15100664762302ca0a4aab01a70b",
+  "database_sha256": "dc8c6d8ecaa87f6e26480f2557ad238e771e1e387d37ce04fd42658708b6c5b3",
+  "database_bytes": 2043904,
+  "sqlite_version": "3.40.1",
+  "source_url": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/wine-app-global-wine-appellation.zip",
+  "source_git_blob": "f9a91093b97fd8a65d6f020733fa498628012c7b",
+  "archive_sha256": "cdaf9b6c47fc19293e12725c9f7327e51d967bf94223d1c1c13e13b5372009a7",
+  "license_status": "No dataset license found in supplied archive; user-provided development evaluation only; redistribution review required",
+  "source_status": "Registry labels are supplied claims, not independent verification"
+}

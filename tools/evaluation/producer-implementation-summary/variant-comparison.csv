@@ -1,0 +1,12 @@
+﻿variant,producer_correct,producer_wrong,producer_missing,complete_forms,scorable_forms,multi_error_forms,complete_gained_vs_hybrid,complete_lost_vs_hybrid,meets_user_target
+baseline,71,38,56,26,160,85,5,11,False
+previous_v3,55,34,76,24,160,88,3,11,False
+guarded_hybrid,71,34,60,32,160,82,0,0,False
+producer-direct-2,71,35,59,32,160,82,0,0,False
+producer-direct-1,73,36,56,32,160,80,0,0,False
+producer-compose-1,76,39,50,31,160,78,0,1,False
+producer-consensus-2,76,35,54,33,160,80,1,0,False
+producer-refined-2,76,33,56,33,160,80,1,0,False
+producer-refined-1,77,35,53,32,160,78,0,0,False
+producer-title-2,77,39,49,32,160,77,0,0,False
+producer-title-1,77,46,42,33,160,79,1,0,False

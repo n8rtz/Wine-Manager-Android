@@ -1,0 +1,297 @@
+{
+  "baseline_15s": {
+    "fields": {
+      "correct": 480,
+      "wrong": 143,
+      "abstained": 271,
+      "unscored_filled": 16,
+      "unscored_blank": 98,
+      "scored": 894,
+      "unscored": 114,
+      "total": 1008,
+      "filled": 639,
+      "correct_over_scored_pct": 53.69,
+      "correct_over_scored_fills_pct": 77.05
+    },
+    "per_field": {
+      "producer": {
+        "correct": 35,
+        "wrong": 71,
+        "abstained": 59,
+        "unscored_filled": 2,
+        "unscored_blank": 1,
+        "scored": 165,
+        "unscored": 3,
+        "total": 168,
+        "filled": 108,
+        "correct_over_scored_pct": 21.21,
+        "correct_over_scored_fills_pct": 33.02
+      },
+      "wine_name": {
+        "correct": 49,
+        "wrong": 63,
+        "abstained": 45,
+        "unscored_filled": 5,
+        "unscored_blank": 6,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 117,
+        "correct_over_scored_pct": 31.21,
+        "correct_over_scored_fills_pct": 43.75
+      },
+      "country": {
+        "correct": 114,
+        "wrong": 1,
+        "abstained": 42,
+        "unscored_filled": 1,
+        "unscored_blank": 10,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 116,
+        "correct_over_scored_pct": 72.61,
+        "correct_over_scored_fills_pct": 99.13
+      },
+      "region": {
+        "correct": 94,
+        "wrong": 1,
+        "abstained": 58,
+        "unscored_filled": 1,
+        "unscored_blank": 14,
+        "scored": 153,
+        "unscored": 15,
+        "total": 168,
+        "filled": 96,
+        "correct_over_scored_pct": 61.44,
+        "correct_over_scored_fills_pct": 98.95
+      },
+      "subregion": {
+        "correct": 65,
+        "wrong": 5,
+        "abstained": 42,
+        "unscored_filled": 7,
+        "unscored_blank": 49,
+        "scored": 112,
+        "unscored": 56,
+        "total": 168,
+        "filled": 77,
+        "correct_over_scored_pct": 58.04,
+        "correct_over_scored_fills_pct": 92.86
+      },
+      "vintage": {
+        "correct": 123,
+        "wrong": 2,
+        "abstained": 25,
+        "unscored_filled": 0,
+        "unscored_blank": 18,
+        "scored": 150,
+        "unscored": 18,
+        "total": 168,
+        "filled": 125,
+        "correct_over_scored_pct": 82.0,
+        "correct_over_scored_fills_pct": 98.4
+      }
+    },
+    "images": {
+      "images": 168,
+      "six_field_eligible": 103,
+      "six_field_ineligible": 65,
+      "six_field_fully_correct": 6,
+      "all_known_fields_correct_not_full_six": 15,
+      "images_with_scored_wrong_fill": 108,
+      "images_with_scored_abstention": 113
+    },
+    "one_photo_per_identity": {
+      "selection": "lowest review number (source hash order); fixed independently of outputs",
+      "all_fields": {
+        "correct": 417,
+        "wrong": 114,
+        "abstained": 231,
+        "unscored_filled": 16,
+        "unscored_blank": 80,
+        "scored": 762,
+        "unscored": 96,
+        "total": 858,
+        "filled": 547,
+        "correct_over_scored_pct": 54.72,
+        "correct_over_scored_fills_pct": 78.53
+      },
+      "image_results": {
+        "images": 143,
+        "six_field_eligible": 87,
+        "six_field_ineligible": 56,
+        "six_field_fully_correct": 6,
+        "all_known_fields_correct_not_full_six": 14,
+        "images_with_scored_wrong_fill": 86,
+        "images_with_scored_abstention": 93
+      }
+    },
+    "deadline_cancelled": 95,
+    "elapsed_ms": {
+      "median": 15231.0,
+      "p95": 17989,
+      "maximum": 22834
+    }
+  },
+  "comparison_60s": {
+    "fields": {
+      "correct": 486,
+      "wrong": 139,
+      "abstained": 269,
+      "unscored_filled": 16,
+      "unscored_blank": 98,
+      "scored": 894,
+      "unscored": 114,
+      "total": 1008,
+      "filled": 641,
+      "correct_over_scored_pct": 54.36,
+      "correct_over_scored_fills_pct": 77.76
+    },
+    "per_field": {
+      "producer": {
+        "correct": 35,
+        "wrong": 70,
+        "abstained": 60,
+        "unscored_filled": 2,
+        "unscored_blank": 1,
+        "scored": 165,
+        "unscored": 3,
+        "total": 168,
+        "filled": 107,
+        "correct_over_scored_pct": 21.21,
+        "correct_over_scored_fills_pct": 33.33
+      },
+      "wine_name": {
+        "correct": 46,
+        "wrong": 61,
+        "abstained": 50,
+        "unscored_filled": 5,
+        "unscored_blank": 6,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 112,
+        "correct_over_scored_pct": 29.3,
+        "correct_over_scored_fills_pct": 42.99
+      },
+      "country": {
+        "correct": 118,
+        "wrong": 1,
+        "abstained": 38,
+        "unscored_filled": 1,
+        "unscored_blank": 10,
+        "scored": 157,
+        "unscored": 11,
+        "total": 168,
+        "filled": 120,
+        "correct_over_scored_pct": 75.16,
+        "correct_over_scored_fills_pct": 99.16
+      },
+      "region": {
+        "correct": 96,
+        "wrong": 1,
+        "abstained": 56,
+        "unscored_filled": 1,
+        "unscored_blank": 14,
+        "scored": 153,
+        "unscored": 15,
+        "total": 168,
+        "filled": 98,
+        "correct_over_scored_pct": 62.75,
+        "correct_over_scored_fills_pct": 98.97
+      },
+      "subregion": {
+        "correct": 65,
+        "wrong": 5,
+        "abstained": 42,
+        "unscored_filled": 7,
+        "unscored_blank": 49,
+        "scored": 112,
+        "unscored": 56,
+        "total": 168,
+        "filled": 77,
+        "correct_over_scored_pct": 58.04,
+        "correct_over_scored_fills_pct": 92.86
+      },
+      "vintage": {
+        "correct": 126,
+        "wrong": 1,
+        "abstained": 23,
+        "unscored_filled": 0,
+        "unscored_blank": 18,
+        "scored": 150,
+        "unscored": 18,
+        "total": 168,
+        "filled": 127,
+        "correct_over_scored_pct": 84.0,
+        "correct_over_scored_fills_pct": 99.21
+      }
+    },
+    "images": {
+      "images": 168,
+      "six_field_eligible": 103,
+      "six_field_ineligible": 65,
+      "six_field_fully_correct": 6,
+      "all_known_fields_correct_not_full_six": 15,
+      "images_with_scored_wrong_fill": 105,
+      "images_with_scored_abstention": 114
+    },
+    "one_photo_per_identity": {
+      "selection": "lowest review number (source hash order); fixed independently of outputs",
+      "all_fields": {
+        "correct": 422,
+        "wrong": 112,
+        "abstained": 228,
+        "unscored_filled": 16,
+        "unscored_blank": 80,
+        "scored": 762,
+        "unscored": 96,
+        "total": 858,
+        "filled": 550,
+        "correct_over_scored_pct": 55.38,
+        "correct_over_scored_fills_pct": 79.03
+      },
+      "image_results": {
+        "images": 143,
+        "six_field_eligible": 87,
+        "six_field_ineligible": 56,
+        "six_field_fully_correct": 6,
+        "all_known_fields_correct_not_full_six": 14,
+        "images_with_scored_wrong_fill": 84,
+        "images_with_scored_abstention": 94
+      }
+    },
+    "deadline_cancelled": 1,
+    "elapsed_ms": {
+      "median": 16676.0,
+      "p95": 24218,
+      "maximum": 65664
+    }
+  },
+  "field_transitions": {
+    "abstained -> wrong": 6,
+    "abstained -> correct": 14,
+    "wrong -> wrong": 128,
+    "wrong -> abstained": 11,
+    "correct -> correct": 468,
+    "abstained -> abstained": 251,
+    "unscored_blank -> unscored_blank": 98,
+    "unscored_filled -> unscored_filled": 16,
+    "correct -> wrong": 5,
+    "correct -> abstained": 7,
+    "wrong -> correct": 4
+  },
+  "build": {
+    "production_budget_ms": 60000,
+    "baseline_budget_ms": 15000,
+    "source_commit": "c7205a44b3fe786418d7abd10c975c2b71c24421",
+    "baseline_run": "39716483937",
+    "source_modification": "CI-only replacement of ScanDeadline.BUDGET_MS; no normal app change",
+    "original_sha256": "6987fec99aed73d2a879dd63db741865281bd8c1c3b43a9d8f865e36ce4fce9d",
+    "modified_sha256": "ad2133daa576111c1b36b39832ecbae7a78cf1e0e4d0aafe4869fa91ee01fccd"
+  },
+  "reference_sha256": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+  "baseline_production_sha256": "fe8e9c8ead79bff0060de11cd53f77a660b526a482228048d75fc5e19df861c2",
+  "comparison_production_sha256": "2db00a7bf9c556104282a6694b8056020806f26cbf1fadc67f565e61db6b4458"
+}

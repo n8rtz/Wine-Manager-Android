@@ -5,6 +5,7 @@ import com.n8rtz.winetracker.network.ImageMeta
 import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import com.n8rtz.winetracker.network.OpenFoodFactsProduct
 import com.n8rtz.winetracker.network.OpenFoodFactsResponse
+import com.n8rtz.winetracker.network.OpenFoodFactsProductResponse
 import com.n8rtz.winetracker.network.ProductImages
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -103,6 +104,9 @@ class OpenFoodFactsWineImageProviderTest {
         private val response: OpenFoodFactsResponse
     ) : OpenFoodFactsApi {
         var lastQuery: String? = null
+
+        override suspend fun product(barcode: String, fields: String): OpenFoodFactsProductResponse =
+            error("Image searches must not invoke barcode product lookup")
 
         override suspend fun search(
             query: String,

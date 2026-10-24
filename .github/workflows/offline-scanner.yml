@@ -1,0 +1,98 @@
+name: Offline scanner Android checks
+on:
+  pull_request:
+  push:
+    branches: ['arena/**', 'main', 'master']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: offline-scanner-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-and-unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Test build environment setup policies
+        run: python3 -m unittest discover -s tools/tests -p 'test_*.py'
+      - name: Guard local recognition against recurring wine-network calls
+        run: python3 tools/check-offline-recognition-boundary.py
+      - name: Check production import SQL on host SQLite FTS5
+        run: python3 tools/check-kb-import-sql.py
+      - name: Use the hosted runner's genuine Android SDK
+        shell: bash
+        run: |
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$sdk" || ( ! -x "$sdk/cmdline-tools/latest/bin/sdkmanager" && ! -x "$sdk/cmdline-tools/latest/bin/android" ) ]]; then
+            echo '::error::Hosted runner Android SDK is missing; no substitute SDK is permitted.'
+            exit 1
+          fi
+          export ANDROID_HOME="$sdk" ANDROID_SDK_ROOT="$sdk"
+          echo "ANDROID_HOME=$sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$sdk" >> "$GITHUB_ENV"
+          echo "$sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          if [[ ! -x "$sdk/cmdline-tools/latest/bin/android" ]]; then
+            bash tools/run-ci-check.sh 'Legacy Android SDK license acceptance' bash -c 'yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses'
+          fi
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ vars.WINE_ENABLE_CI_CACHE_WRITES != 'true' }}
+      - name: Install Android platform and build tools
+        shell: bash
+        run: |
+          android="$ANDROID_HOME/cmdline-tools/latest/bin/android"
+          if [[ -x "$android" ]]; then
+            bash tools/run-ci-check.sh 'Android SDK installation' "$android" "--sdk=$ANDROID_HOME" --no-metrics sdk install 'platforms/android-36' 'build-tools/36.0.0'
+          else
+            bash tools/run-ci-check.sh 'Legacy Android SDK installation' sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          fi
+      - name: Prepare pinned NDK and CMake through the app's setup task
+        run: bash tools/run-ci-check.sh 'Pinned native toolchain setup' ./gradlew --no-daemon --console=plain -PopencvFromSource=true :opencv-minimal:prepareOpenCvToolchain
+      - name: Restore reproducible OpenCV source and arm64 outputs
+        id: opencv-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            opencv-minimal/build/vendor
+            opencv-minimal/build/native
+            opencv-minimal/build/generated
+          key: opencv-4.12.0-ndk28.2-${{ runner.os }}-${{ hashFiles('tools/build-opencv-minimal.py', 'tools/android_native_toolchain.py', 'opencv-minimal/build.gradle.kts') }}
+      - name: Compile real Android app
+        run: bash tools/run-ci-check.sh 'Android debug compilation' ./gradlew --no-daemon --console=plain :app:assembleDebug
+      - name: Cache the completed native build before later tests
+        if: vars.WINE_ENABLE_CI_CACHE_WRITES == 'true' && (steps.opencv-cache.outputs.cache-hit != 'true' && hashFiles('opencv-minimal/build/generated/opencv/jniLibs/arm64-v8a/libopencv_java4.so') != '')
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            opencv-minimal/build/vendor
+            opencv-minimal/build/native
+            opencv-minimal/build/generated
+          key: ${{ steps.opencv-cache.outputs.cache-primary-key }}
+      - name: Compile instrumented scanner tests (device execution is separate)
+        run: bash tools/run-ci-check.sh 'Android instrumentation test compilation' ./gradlew --no-daemon --console=plain :app:assembleDebugAndroidTest
+      - name: Scanner Robolectric and deadline tests
+        run: bash tools/run-ci-check.sh 'Scanner Robolectric tests' ./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
+      - name: Measure arm64 release APK budget
+        run: bash tools/run-ci-check.sh 'Arm64 release APK budget' ./gradlew --no-daemon --console=plain :app:checkArm64ApkBudget
+      - name: Upload test results and release APK
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
+        uses: actions/upload-artifact@v5
+        with:
+          retention-days: 1
+          name: scanner-check-results
+          if-no-files-found: ignore
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
+            app/build/outputs/apk/release/*.apk

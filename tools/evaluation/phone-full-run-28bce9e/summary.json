@@ -1,0 +1,351 @@
+{
+  "source_name": "wine-168-lab-28bce9e81cc3 (1).csv",
+  "source_sha256": "6c987e2d8ba84050d2481256494635b270509adf5a0beb84033ffc7fd11962df",
+  "build": "28bce9e81cc3",
+  "qualification": "Provisional development reference. Scored fields do not establish the raw OCR/extraction root cause. No OCR rerun.",
+  "systems": {
+    "lab-combined-60s": {
+      "images": 168,
+      "eligible": 160,
+      "complete": 25,
+      "one_error": 47,
+      "multi_error": 88,
+      "outcomes": {
+        "correct_value": 594,
+        "wrong_value": 102,
+        "missing_value": 198,
+        "unscored_filled": 7,
+        "unscored_blank": 10,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "by_field": {
+        "producer": {
+          "correct_value": 71,
+          "missing_value": 56,
+          "wrong_value": 38,
+          "unscored_filled": 2,
+          "unscored_blank": 1
+        },
+        "wine_name": {
+          "wrong_value": 58,
+          "correct_value": 53,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "missing_value": 46,
+          "unsupported_fill": 4,
+          "correct_blank": 4
+        },
+        "country": {
+          "missing_value": 23,
+          "correct_value": 133,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 5,
+          "unsupported_fill": 3,
+          "wrong_value": 1
+        },
+        "region": {
+          "missing_value": 40,
+          "correct_value": 112,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 9,
+          "unsupported_fill": 3,
+          "wrong_value": 1
+        },
+        "subregion": {
+          "missing_value": 28,
+          "correct_value": 80,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 43,
+          "unsupported_fill": 10,
+          "wrong_value": 4
+        },
+        "vintage": {
+          "correct_value": 145,
+          "correct_blank": 16,
+          "unscored_blank": 2,
+          "missing_value": 5
+        }
+      },
+      "sole_error_fields": {
+        "wine_name": 24,
+        "producer": 21,
+        "vintage": 1,
+        "subregion": 1
+      }
+    },
+    "lab-guarded-producer": {
+      "images": 168,
+      "eligible": 160,
+      "complete": 34,
+      "one_error": 43,
+      "multi_error": 83,
+      "outcomes": {
+        "correct_value": 630,
+        "missing_value": 184,
+        "unscored_blank": 10,
+        "wrong_value": 80,
+        "unscored_filled": 7,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "by_field": {
+        "producer": {
+          "correct_value": 76,
+          "missing_value": 56,
+          "wrong_value": 33,
+          "unscored_filled": 2,
+          "unscored_blank": 1
+        },
+        "wine_name": {
+          "correct_value": 77,
+          "unscored_blank": 1,
+          "wrong_value": 44,
+          "unscored_filled": 2,
+          "missing_value": 36,
+          "correct_blank": 5,
+          "unsupported_fill": 3
+        },
+        "country": {
+          "correct_value": 142,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "missing_value": 15,
+          "correct_blank": 5,
+          "unsupported_fill": 3
+        },
+        "region": {
+          "correct_value": 116,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "missing_value": 37,
+          "correct_blank": 9,
+          "unsupported_fill": 3
+        },
+        "subregion": {
+          "correct_value": 74,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 42,
+          "missing_value": 35,
+          "unsupported_fill": 11,
+          "wrong_value": 3
+        },
+        "vintage": {
+          "correct_value": 145,
+          "correct_blank": 16,
+          "unscored_blank": 2,
+          "missing_value": 5
+        }
+      },
+      "sole_error_fields": {
+        "producer": 28,
+        "wine_name": 11,
+        "subregion": 4
+      }
+    },
+    "lab-trigram": {
+      "images": 168,
+      "eligible": 160,
+      "complete": 6,
+      "one_error": 55,
+      "multi_error": 99,
+      "outcomes": {
+        "correct_value": 580,
+        "wrong_value": 122,
+        "missing_value": 192,
+        "unscored_filled": 7,
+        "unscored_blank": 10,
+        "correct_blank": 71,
+        "unsupported_fill": 26
+      },
+      "by_field": {
+        "producer": {
+          "correct_value": 75,
+          "missing_value": 48,
+          "wrong_value": 42,
+          "unscored_filled": 2,
+          "unscored_blank": 1
+        },
+        "wine_name": {
+          "wrong_value": 75,
+          "missing_value": 69,
+          "unscored_filled": 2,
+          "correct_value": 13,
+          "unscored_blank": 1,
+          "unsupported_fill": 4,
+          "correct_blank": 4
+        },
+        "country": {
+          "correct_value": 134,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "missing_value": 22,
+          "correct_blank": 5,
+          "unsupported_fill": 3,
+          "wrong_value": 1
+        },
+        "region": {
+          "correct_value": 125,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "missing_value": 26,
+          "correct_blank": 9,
+          "unsupported_fill": 3,
+          "wrong_value": 2
+        },
+        "subregion": {
+          "correct_value": 88,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 37,
+          "missing_value": 22,
+          "unsupported_fill": 16,
+          "wrong_value": 2
+        },
+        "vintage": {
+          "correct_value": 145,
+          "correct_blank": 16,
+          "unscored_blank": 2,
+          "missing_value": 5
+        }
+      },
+      "sole_error_fields": {
+        "wine_name": 48,
+        "producer": 6,
+        "subregion": 1
+      }
+    },
+    "Frozen baseline · same attempted photos": {
+      "images": 168,
+      "eligible": 160,
+      "complete": 26,
+      "one_error": 49,
+      "multi_error": 85,
+      "outcomes": {
+        "wrong_value": 100,
+        "missing_value": 197,
+        "correct_value": 597,
+        "unscored_filled": 7,
+        "unscored_blank": 10,
+        "correct_blank": 77,
+        "unsupported_fill": 20
+      },
+      "by_field": {
+        "producer": {
+          "wrong_value": 38,
+          "correct_value": 71,
+          "missing_value": 56,
+          "unscored_filled": 2,
+          "unscored_blank": 1
+        },
+        "wine_name": {
+          "wrong_value": 56,
+          "correct_value": 54,
+          "unscored_filled": 2,
+          "unscored_blank": 1,
+          "missing_value": 47,
+          "unsupported_fill": 4,
+          "correct_blank": 4
+        },
+        "country": {
+          "missing_value": 24,
+          "correct_value": 132,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 5,
+          "unsupported_fill": 3,
+          "wrong_value": 1
+        },
+        "region": {
+          "missing_value": 39,
+          "correct_value": 113,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 9,
+          "unsupported_fill": 3,
+          "wrong_value": 1
+        },
+        "subregion": {
+          "missing_value": 27,
+          "correct_value": 81,
+          "unscored_blank": 2,
+          "unscored_filled": 1,
+          "correct_blank": 43,
+          "unsupported_fill": 10,
+          "wrong_value": 4
+        },
+        "vintage": {
+          "correct_value": 146,
+          "correct_blank": 16,
+          "unscored_blank": 2,
+          "missing_value": 4
+        }
+      },
+      "sole_error_fields": {
+        "wine_name": 24,
+        "producer": 22,
+        "vintage": 2,
+        "subregion": 1
+      }
+    }
+  },
+  "guarded_paired_changes": {
+    "Frozen baseline · same attempted photos": {
+      "complete_gains": [
+        1,
+        2,
+        33,
+        39,
+        47,
+        51,
+        53,
+        65,
+        95,
+        110,
+        131,
+        144,
+        165
+      ],
+      "complete_losses": [
+        102,
+        115,
+        123,
+        142,
+        156
+      ]
+    },
+    "lab-combined-60s": {
+      "complete_gains": [
+        1,
+        2,
+        33,
+        39,
+        47,
+        51,
+        65,
+        95,
+        110,
+        127,
+        131,
+        144,
+        148,
+        165
+      ],
+      "complete_losses": [
+        102,
+        115,
+        123,
+        142,
+        156
+      ]
+    }
+  },
+  "guarded_oracle_upper_bounds": {
+    "producer_only": 62,
+    "producer_and_wine_name": 99
+  }
+}

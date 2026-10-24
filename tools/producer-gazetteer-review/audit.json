@@ -1,0 +1,221 @@
+{
+  "source_blob_sha1": "3749baa923a12efdb28b2bb03119a734c4faac58",
+  "zip_sha256": "c65bb4d8804ccd380a1271ada84e0e44c76ee5793c90edc2290572901f8bec3a",
+  "zip_bytes": 182426,
+  "archive_files": [
+    "drizzle.config.json",
+    "eslint.config.mjs",
+    "next.config.ts",
+    "package.json",
+    "pipeline/fetch_ttb_producers.py",
+    "pipeline/query_gazetteer.py",
+    "postcss.config.mjs",
+    "src/app/api/gazetteer/ingest/route.ts",
+    "src/app/api/gazetteer/normalize/route.ts",
+    "src/app/api/gazetteer/overview/route.ts",
+    "src/app/api/gazetteer/search/route.ts",
+    "src/app/api/health/route.ts",
+    "src/app/globals.css",
+    "src/app/layout.tsx",
+    "src/app/page.tsx",
+    "src/db/index.ts",
+    "src/db/schema.ts",
+    "src/lib/gazetteer.ts",
+    "tsconfig.json"
+  ],
+  "raw_registry_present": false,
+  "database_present": false,
+  "license_file_present": false,
+  "live_downloads_enabled": false,
+  "curated_rows": 128,
+  "actual_producers": 128,
+  "actual_fts_rows": 128,
+  "database_bytes": 118784,
+  "countries": {
+    "Argentina": 2,
+    "Australia": 2,
+    "Chile": 2,
+    "France": 23,
+    "Germany": 3,
+    "Italy": 5,
+    "New Zealand": 1,
+    "Portugal": 1,
+    "South Africa": 1,
+    "Spain": 3,
+    "United States": 85
+  },
+  "search_probes": [
+    {
+      "query": "Chatau Montelena",
+      "top_results": [
+        {
+          "name": "Château Montelena Winery",
+          "id": "TTB-BW-CA-00001",
+          "rank": -35.538742
+        },
+        {
+          "name": "Château Montelena Jade Lake Vintners",
+          "id": "TTB-BW-CA-00086",
+          "rank": -28.512913
+        },
+        {
+          "name": "Château Montelena Estate Vineyards",
+          "id": "TTB-BW-CA-00084",
+          "rank": -28.434124
+        }
+      ]
+    },
+    {
+      "query": "Margaux",
+      "top_results": [
+        {
+          "name": "Château Margaux",
+          "id": "TTB-IMP-FR-00054",
+          "rank": -7.796691
+        }
+      ]
+    },
+    {
+      "query": "Pavillon Rouge",
+      "top_results": [
+        {
+          "name": "Château Margaux",
+          "id": "TTB-IMP-FR-00054",
+          "rank": -9.704208
+        }
+      ]
+    },
+    {
+      "query": "Cristal",
+      "top_results": [
+        {
+          "name": "Champagne Louis Roederer",
+          "id": "TTB-IMP-FR-00068",
+          "rank": -4.456961
+        }
+      ]
+    },
+    {
+      "query": "Domaine Drouhin",
+      "top_results": [
+        {
+          "name": "Domaine Drouhin Oregon",
+          "id": "TTB-BW-OR-00038",
+          "rank": -11.676444
+        }
+      ]
+    },
+    {
+      "query": "La Cave d’Augustin Florent",
+      "top_results": [
+        {
+          "name": "Justin Vineyards & Winery",
+          "id": "TTB-BW-CA-00027",
+          "rank": -14.030606
+        },
+        {
+          "name": "Austin Hope Winery",
+          "id": "TTB-BW-CA-00113",
+          "rank": -12.846361
+        },
+        {
+          "name": "Mt. Brave Vineyards",
+          "id": "TTB-BW-CA-00015",
+          "rank": -5.871907
+        }
+      ]
+    },
+    {
+      "query": "Château Amélisse",
+      "top_results": [
+        {
+          "name": "Château Montelena Calistoga Cellars",
+          "id": "TTB-BW-CA-00085",
+          "rank": -10.972829
+        },
+        {
+          "name": "Château Montelena Estate Vineyards",
+          "id": "TTB-BW-CA-00084",
+          "rank": -8.859102
+        },
+        {
+          "name": "Château d'Yquem",
+          "id": "TTB-IMP-FR-00058",
+          "rank": -9.117142
+        }
+      ]
+    },
+    {
+      "query": "Estate",
+      "top_results": [
+        {
+          "name": "Harlan Estate",
+          "id": "TTB-BW-CA-00018",
+          "rank": -4.018059
+        },
+        {
+          "name": "Kanonkop Wine Estate",
+          "id": "TTB-IMP-ZA-00083",
+          "rank": -3.908472
+        },
+        {
+          "name": "Château Montelena Estate Vineyards",
+          "id": "TTB-BW-CA-00084",
+          "rank": -3.789305
+        }
+      ]
+    },
+    {
+      "query": "PRODUCT OF FRANCE",
+      "top_results": [
+        {
+          "name": "Francis Ford Coppola Winery",
+          "id": "TTB-BW-CA-00103",
+          "rank": -3.9897
+        },
+        {
+          "name": "Frank Family Vineyards",
+          "id": "TTB-BW-CA-00107",
+          "rank": -2.466869
+        },
+        {
+          "name": "Dr. Konstantin Frank Winery",
+          "id": "TTB-BW-NY-00045",
+          "rank": -2.412104
+        }
+      ]
+    },
+    {
+      "query": "zzqxv zzqxv",
+      "top_results": []
+    }
+  ],
+  "lexical_reference_coverage": {
+    "matched_photos": 14,
+    "known_producer_photos": 165,
+    "distinct_reference_names": [
+      "Château Margaux",
+      "Domaine Drouhin",
+      "Spottswoode",
+      "Vega Sicilia"
+    ],
+    "review_numbers": [
+      2,
+      8,
+      28,
+      56,
+      62,
+      69,
+      90,
+      96,
+      121,
+      124,
+      128,
+      149,
+      150,
+      166
+    ],
+    "note": "Exact normalized accepted-alias presence, NOT OCR accuracy, validated identity coverage or held-out evaluation."
+  },
+  "disposition": "REVIEW ONLY: missing bulk data, unverified curated identities/aliases, seeded UI metrics. Not bundled into Android or enabled in Lab."
+}

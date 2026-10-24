@@ -1,0 +1,32 @@
+{
+  "primary_eligible_codes": 184924,
+  "mirror_wine_rows": 184842,
+  "matching_producer_name_rows": 184821,
+  "changed_producer_names": [],
+  "mirror_codes_not_admitted_by_strict_primary_filter": [
+    "1731714",
+    "1212716",
+    "1212729",
+    "1400960",
+    "1637638",
+    "3067679",
+    "3067682",
+    "1395954",
+    "3115527",
+    "1386451",
+    "3091731",
+    "1149052",
+    "1545883",
+    "1499678",
+    "1609581",
+    "3068722",
+    "3071760",
+    "1832798",
+    "1637465",
+    "3111402",
+    "1494338"
+  ],
+  "primary_codes_not_in_mirror": 103,
+  "note": "Comparison of name fields by LWIN7, not proof of every entity identity or of source authenticity. Primary fields exclusively drive runtime names.",
+  "database_sha256": "4e5a50c9dae33d122ba4c8f02f1a4b5792e2a1e724bfb2084512f6c5e0d2345f"
+}

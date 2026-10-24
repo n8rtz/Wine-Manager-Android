@@ -1,0 +1,8 @@
+# Pinned production OCR dictionary must remain byte-exact.
+app/src/main/assets/text-lab-paddle-v1/ppocrv6_dict.utf8 -text
+
+# CI-sealed OpenCV files and build recipes are hashed byte-for-byte. Never apply
+# Windows CRLF checkout conversion, even to the Java/license/Python text files.
+opencv-minimal/prebuilt/** -text
+tools/build-opencv-minimal.py -text
+tools/android_native_toolchain.py -text

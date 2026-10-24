@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,13 +30,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.isBusy
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
+import com.n8rtz.winetracker.BuildConfig
+import com.yourapp.wine.capture.ScanReport
+import com.yourapp.wine.fill.FieldId
+import com.yourapp.wine.ui.ScanFormState
+import com.yourapp.wine.ui.ScanFieldStatus
+import com.yourapp.wine.ui.ScanReviewHeader
+import com.yourapp.wine.ui.LabelScanActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +55,9 @@ fun AddWineScreen(
     onWineAdded: () -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val focusManager = LocalFocusManager.current
+    val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
     var cameraPermissionGranted by remember {
@@ -67,8 +81,21 @@ fun AddWineScreen(
         }
     }
 
-    DisposableEffect(scannerViewModel) {
-        onDispose { scannerViewModel.cancelActiveLabelScan() }
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            cameraError = null
+            if (!scannerViewModel.onLabelPhotoSelected(uri)) cameraError = "Wait for the previous scan to finish, then choose the photo again."
+        }
+    }
+    DisposableEffect(lifecycleOwner, scannerViewModel) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            scannerViewModel.cancelActiveLabelScan()
+        }
     }
     
     var maker by remember { mutableStateOf("") }
@@ -84,6 +111,57 @@ fun AddWineScreen(
     var selectedCountry by remember { mutableStateOf("") }
     var selectedRegion by remember { mutableStateOf("") }
     var selectedAppellation by remember { mutableStateOf("") }
+
+    var scanForm by remember { mutableStateOf(ScanFormState()) }
+    var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
+    var lastScanId by remember { mutableStateOf(0L) }
+    val retake: () -> Unit = {
+        if (!labelScanState.isBusy) {
+            cameraError = null
+            if (cameraPermissionGranted) showLabelCamera = true
+            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+    val fieldStatus: @Composable (FieldId) -> Unit = { field ->
+        ScanFieldStatus(scanForm.fields.getValue(field),
+            onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake,
+            enabled = !labelScanState.isBusy,
+            onSelectChoice = { value ->
+                scanForm = scanForm.selectChoice(field,value)
+                maker = scanForm.fields.getValue(FieldId.PRODUCER).value
+                name = scanForm.fields.getValue(FieldId.WINE_NAME).value
+                vintage = scanForm.fields.getValue(FieldId.VINTAGE).value
+                selectedCountry = scanForm.fields.getValue(FieldId.COUNTRY).value
+                selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
+                selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
+            },
+            onDismissChoices = { scanForm = scanForm.dismissChoices(field) })
+    }
+    LaunchedEffect(showLabelCamera) {
+        if (showLabelCamera) {
+            focusManager.clearFocus()
+            scannerViewModel.warmLabelScanner()
+        }
+    }
+    LaunchedEffect(lastScanId) {
+        if (lastScanId != 0L) formScrollState.scrollTo(0)
+    }
+    LaunchedEffect((labelScanState as? LabelScanState.Review)?.requestId) {
+        val review = labelScanState as? LabelScanState.Review ?: return@LaunchedEffect
+        val values = mapOf(FieldId.PRODUCER to maker, FieldId.WINE_NAME to name, FieldId.VINTAGE to vintage,
+            FieldId.COUNTRY to selectedCountry, FieldId.REGION to selectedRegion, FieldId.SUBREGION to selectedAppellation)
+        scanForm = scanForm.apply(review.result.fill, values)
+        maker = scanForm.fields.getValue(FieldId.PRODUCER).value
+        name = scanForm.fields.getValue(FieldId.WINE_NAME).value
+        vintage = scanForm.fields.getValue(FieldId.VINTAGE).value
+        selectedCountry = scanForm.fields.getValue(FieldId.COUNTRY).value
+        selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
+        selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
+        lastScanReport = review.result
+        lastScanId = review.requestId
+        showLabelCamera = false
+        scannerViewModel.dismissLabelScan(review.requestId)
+    }
 
     val availableCountries = (
         WineRepository.Companion.locationData.keys +
@@ -113,7 +191,7 @@ fun AddWineScreen(
     } else emptyList()
 
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    val vintages = (currentYear downTo 1950).map { it.toString() } + listOf("NV")
+    val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
     Scaffold(
         topBar = { TopAppBar(title = { Text("Add New Wine") }) }
     ) { padding ->
@@ -121,26 +199,29 @@ fun AddWineScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(formScrollState)
         ) {
             // Form Section
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(
-                    onClick = {
+                LabelScanActions(busy = labelScanState.isBusy,
+                    progressMessage = if (showLabelCamera) null else when (labelScanState) {
+                        is LabelScanState.ImportingPhoto -> "Opening selected photo…"
+                        is LabelScanState.Processing -> "Reading selected photo on this device…"
+                        is LabelScanState.FinishingCancelledScan -> "Finishing the previous scan…"
+                        else -> null
+                    }, onCamera = retake, onChoosePhoto = {
                         cameraError = null
-                        if (cameraPermissionGranted) {
-                            showLabelCamera = true
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Camera, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Scan label with camera")
+                        scannerViewModel.warmLabelScanner()
+                        runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                            .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
+                    })
+                if (BuildConfig.DEBUG) {
+                    OutlinedButton(enabled = !labelScanState.isBusy && !showLabelCamera, onClick = {
+                        context.startActivity(android.content.Intent().setClassName(context,
+                            "com.yourapp.wine.benchmark.OcrLabActivity"))
+                    }) { Text("OCR Lab — test production stack") }
                 }
-                cameraError?.let { message ->
+                (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
                         modifier = Modifier.fillMaxWidth(),
@@ -149,8 +230,13 @@ fun AddWineScreen(
                     )
                 }
 
+                lastScanReport?.takeUnless { labelScanState.isBusy }?.let { report ->
+                    ScanReviewHeader(report = report, form = scanForm, scanId = lastScanId,
+                        allowDebugOverlay = BuildConfig.DEBUG, canRetake = !labelScanState.isBusy, onRetake = retake)
+                }
+                fieldStatus(FieldId.PRODUCER)
                 // Autocomplete Producer Search
-                var producerSearchExpanded by remember { mutableStateOf(false) }
+                var producerSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = producerSearchExpanded,
                     onExpandedChange = { producerSearchExpanded = !producerSearchExpanded },
@@ -160,6 +246,7 @@ fun AddWineScreen(
                         value = maker,
                         onValueChange = { 
                             maker = it
+                            scanForm = scanForm.edit(FieldId.PRODUCER, it)
                             producerSearchExpanded = true
                         },
                         label = { Text("Producer / Winery") },
@@ -179,10 +266,13 @@ fun AddWineScreen(
                                     text = { Text(def.maker) },
                                     onClick = {
                                         maker = def.maker
+                                        scanForm = scanForm.edit(FieldId.PRODUCER, def.maker)
                                         // Auto-fill location if known
                                         selectedCountry = def.country
                                         selectedRegion = def.region ?: ""
                                         selectedAppellation = def.subregion ?: ""
+                                        scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
+                                            .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
                                         producerSearchExpanded = false
                                     }
@@ -192,8 +282,9 @@ fun AddWineScreen(
                     }
                 }
 
+                fieldStatus(FieldId.WINE_NAME)
                 // Autocomplete Wine Name Search
-                var nameSearchExpanded by remember { mutableStateOf(false) }
+                var nameSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = nameSearchExpanded,
                     onExpandedChange = { nameSearchExpanded = !nameSearchExpanded },
@@ -203,6 +294,7 @@ fun AddWineScreen(
                         value = name,
                         onValueChange = { 
                             name = it
+                            scanForm = scanForm.edit(FieldId.WINE_NAME, it)
                             nameSearchExpanded = true
                         },
                         label = { Text("Wine Name") },
@@ -228,11 +320,17 @@ fun AddWineScreen(
                                     text = { Text(def.name) },
                                     onClick = {
                                         name = def.name
+                                        scanForm = scanForm.edit(FieldId.WINE_NAME, def.name)
                                         // Auto-fill other details if not already set or if selecting this name provides them
-                                        if (maker.isBlank()) maker = def.maker
+                                        if (maker.isBlank()) {
+                                            maker = def.maker
+                                            scanForm = scanForm.edit(FieldId.PRODUCER, def.maker)
+                                        }
                                         selectedCountry = def.country
                                         selectedRegion = def.region ?: ""
                                         selectedAppellation = def.subregion ?: ""
+                                        scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
+                                            .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
                                         nameSearchExpanded = false
                                     }
@@ -242,9 +340,10 @@ fun AddWineScreen(
                     }
                 }
                 
+                fieldStatus(FieldId.VINTAGE)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Vintage Dropdown
-                    var vintageExpanded by remember { mutableStateOf(false) }
+                    var vintageExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = vintageExpanded,
                         onExpandedChange = { vintageExpanded = !vintageExpanded },
@@ -252,7 +351,7 @@ fun AddWineScreen(
                     ) {
                         OutlinedTextField(
                             value = vintage,
-                            onValueChange = { vintage = it },
+                            onValueChange = { vintage = it; scanForm = scanForm.edit(FieldId.VINTAGE, it) },
                             label = { Text("Vintage") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = vintageExpanded) },
                             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true),
@@ -268,6 +367,7 @@ fun AddWineScreen(
                                     text = { Text(year) },
                                     onClick = {
                                         vintage = year
+                                        scanForm = scanForm.edit(FieldId.VINTAGE, year)
                                         vintageExpanded = false
                                     }
                                 )
@@ -276,7 +376,7 @@ fun AddWineScreen(
                     }
                     
                     // Simple Type Dropdown
-                    var typeExpanded by remember { mutableStateOf(false) }
+                    var typeExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = typeExpanded,
                         onExpandedChange = { typeExpanded = !typeExpanded },
@@ -307,8 +407,9 @@ fun AddWineScreen(
                 // Cascading Geography Section
                 Text("Geography", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
                 
+                fieldStatus(FieldId.COUNTRY)
                 // Country Dropdown
-                var countryExpanded by remember { mutableStateOf(false) }
+                var countryExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = countryExpanded,
                     onExpandedChange = { countryExpanded = !countryExpanded },
@@ -316,11 +417,10 @@ fun AddWineScreen(
                 ) {
                     OutlinedTextField(
                         value = selectedCountry,
-                        onValueChange = {},
-                        readOnly = true,
+                        onValueChange = { selectedCountry = it; scanForm = scanForm.edit(FieldId.COUNTRY, it) },
                         label = { Text("Country") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = countryExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
                     ExposedDropdownMenu(
                         expanded = countryExpanded, 
@@ -333,8 +433,10 @@ fun AddWineScreen(
                                 onClick = {
                                     if (selectedCountry != country.toString()) {
                                         selectedCountry = country.toString()
+                                        scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                         selectedRegion = "" // Reset children
                                         selectedAppellation = ""
+                                        scanForm = scanForm.edit(FieldId.REGION, "").edit(FieldId.SUBREGION, "")
                                     }
                                     countryExpanded = false
                                 }
@@ -343,9 +445,10 @@ fun AddWineScreen(
                     }
                 }
 
-                // Region Dropdown (Only show if Regions exist for selected Country)
-                if (availableRegions.isNotEmpty()) {
-                    var regionExpanded by remember { mutableStateOf(false) }
+                // Region stays visible and editable even when the fixture gazetteer has no suggestions.
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    fieldStatus(FieldId.REGION)
+                    var regionExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = regionExpanded,
                         onExpandedChange = { regionExpanded = !regionExpanded },
@@ -353,11 +456,10 @@ fun AddWineScreen(
                     ) {
                         OutlinedTextField(
                             value = selectedRegion,
-                            onValueChange = {},
-                            readOnly = true,
+                            onValueChange = { selectedRegion = it; scanForm = scanForm.edit(FieldId.REGION, it) },
                             label = { Text("Region") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = regionExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                         )
                         ExposedDropdownMenu(
                             expanded = regionExpanded, 
@@ -370,7 +472,9 @@ fun AddWineScreen(
                                     onClick = {
                                         if (selectedRegion != region.toString()) {
                                             selectedRegion = region.toString()
+                                            scanForm = scanForm.edit(FieldId.REGION, selectedRegion)
                                             selectedAppellation = "" // Reset child
+                                            scanForm = scanForm.edit(FieldId.SUBREGION, "")
                                         }
                                         regionExpanded = false
                                     }
@@ -380,9 +484,13 @@ fun AddWineScreen(
                     }
                 }
 
-                // Appellation Dropdown (Only show if Appellations exist for selected Region)
-                if (availableAppellations.isNotEmpty()) {
-                    var appellationExpanded by remember { mutableStateOf(false) }
+                if(selectedAppellation.isNotBlank() && selectedRegion.isBlank()) {
+                    Text("Select or enter a Region before saving a Subregion.",color=MaterialTheme.colorScheme.error)
+                }
+                // Subregion stays visible and editable for boutique/unknown wines.
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    fieldStatus(FieldId.SUBREGION)
+                    var appellationExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = appellationExpanded,
                         onExpandedChange = { appellationExpanded = !appellationExpanded },
@@ -390,11 +498,10 @@ fun AddWineScreen(
                     ) {
                         OutlinedTextField(
                             value = selectedAppellation,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Appellation") },
+                            onValueChange = { selectedAppellation = it; scanForm = scanForm.edit(FieldId.SUBREGION, it) },
+                            label = { Text("Subregion / Appellation") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = appellationExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                         )
                         ExposedDropdownMenu(
                             expanded = appellationExpanded, 
@@ -406,6 +513,7 @@ fun AddWineScreen(
                                     text = { Text(appellation) },
                                     onClick = {
                                         selectedAppellation = appellation
+                                        scanForm = scanForm.edit(FieldId.SUBREGION, selectedAppellation)
                                         appellationExpanded = false
                                     }
                                 )
@@ -452,7 +560,7 @@ fun AddWineScreen(
                     )
                 }
                 Button(
-                    enabled = isWindowValid,
+                    enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
                     onClick = {
                         viewModel.addWine(
                             maker = maker,
@@ -496,72 +604,7 @@ fun AddWineScreen(
         )
     }
 
-    (labelScanState as? LabelScanState.Review)?.let { review ->
-        AlertDialog(
-            onDismissRequest = { scannerViewModel.dismissLabelScan(review.requestId) },
-            title = { Text("Review scanned label") },
-            text = {
-                Column(
-                    modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text("These are suggestions. They will not be saved until you save the wine.")
-                    review.result.maker?.let { Text("Producer: $it") }
-                    review.result.name?.let { Text("Wine: $it") }
-                    review.result.vintage?.let { Text("Vintage: $it") }
-                    review.result.type?.let { Text("Type: $it") }
-                    val origin = listOfNotNull(
-                        review.result.country,
-                        review.result.region,
-                        review.result.subregion
-                    ).distinct().joinToString(" · ")
-                    if (origin.isNotBlank()) Text("Origin: $origin")
-                    review.result.correctedText
-                        ?.takeIf { it.isNotBlank() && it != review.result.rawText }
-                        ?.let { corrected ->
-                            Text("Wine dictionary correction", style = MaterialTheme.typography.labelLarge)
-                            Text(
-                                corrected,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    review.result.rawText?.let { rawText ->
-                        Text("Original OCR text", style = MaterialTheme.typography.labelLarge)
-                        Text(
-                            rawText,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 5,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        review.result.maker?.takeIf(String::isNotBlank)?.let { maker = it }
-                        review.result.name?.takeIf(String::isNotBlank)?.let { name = it }
-                        review.result.vintage?.takeIf(String::isNotBlank)?.let { vintage = it }
-                        review.result.type?.takeIf(String::isNotBlank)?.let { type = it }
-                        review.result.country?.takeIf(String::isNotBlank)?.let { selectedCountry = it }
-                        review.result.region?.takeIf(String::isNotBlank)?.let { selectedRegion = it }
-                        review.result.subregion?.takeIf(String::isNotBlank)?.let { selectedAppellation = it }
-                        scannerViewModel.dismissLabelScan(review.requestId)
-                        showLabelCamera = false
-                    }
-                ) {
-                    Text("Use Suggestions")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { scannerViewModel.dismissLabelScan(review.requestId) }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+
 }
 
 @Composable
@@ -663,6 +706,10 @@ private fun LabelScanCameraDialog(
                         )
                     }
 
+                    if (scanState is LabelScanState.Error || cameraError != null) {
+                        Text("RED · No fields filled", color = Color(0xffffb4ab), style = MaterialTheme.typography.labelLarge)
+                        TextButton(onClick = onDismiss) { Text("Enter manually", color = Color.White) }
+                    }
                     when (scanState) {
                         LabelScanState.Idle, is LabelScanState.Error -> Button(
                             enabled = cameraReady && cameraError == null,
@@ -671,10 +718,11 @@ private fun LabelScanCameraDialog(
                         ) {
                             Icon(Icons.Default.Camera, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text(if (scanState is LabelScanState.Error) "Try Again" else "Take Label Photo")
+                            Text(if (scanState is LabelScanState.Error) "Retake Label" else "Take Label Photo")
                         }
+                        is LabelScanState.ImportingPhoto -> LabelScanProgress("Opening selected photo…")
                         is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
-                        is LabelScanState.Processing -> LabelScanProgress("Enhancing the label and reading the photo… This may take a few seconds.")
+                        is LabelScanState.Processing -> LabelScanProgress("Reading offline… 8-second budget, then review any partial results.")
                         is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
                         is LabelScanState.Review -> Text(
                             "Scan complete. Review the suggestions.",

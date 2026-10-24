@@ -1,0 +1,15 @@
+{
+  "kotlin_checks": 38,
+  "host_tests": 146,
+  "android_executed": false,
+  "compose_ui_verified": false,
+  "github_actions_started": false,
+  "execution": "Actual Kotlin logic, host geometry/log fixtures; not Android UI",
+  "stdout": "PASS: 38 actual Kotlin assignment/policy/form-state checks; host geometry fixtures, not Android UI\n",
+  "sha256": {
+    "app/src/main/java/com/yourapp/wine/ui/ScanFormState.kt": "cd3d2ed2beab687a51a554bd626131bdf65fcd970e0b8f68cf88dcfead6ea5af",
+    "app/src/main/java/com/yourapp/wine/ui/ScanChoicePolicy.kt": "9bf2bfef5b897ac6fb0443ff7b6acce8d4ff987397911f8f6fe10a85c961508e",
+    "app/src/main/java/com/yourapp/wine/extract/IdentityAssignment.kt": "8019fb73f27c1b599743cde6de041d20e06c576b09ded8a5f2a5839546405242",
+    "tools/logic-checks/ScanChoiceChecks.kt": "82064c89c1a6ac1ae050f406a0683b5bcd2d1b39603ecc6d9dc6d46e85fb2bcc"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "acquisition": "official_download_user_supplied",
+  "source_url": "https://www.liv-ex.com/lwin-database-download/",
+  "supplied_url": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/LWINdatabase.zip",
+  "zip_git_blob": "8e7457ee74946622c5858aa36ac609cf32e63ab6",
+  "sha256": "0d918086ad37631fab15d15ec05e8f9f8dec38979fa538b09e788309fb4349f3",
+  "retrieved_at": "2026-10-24",
+  "review_note": "User supplied workbook in response to request for primary Liv-ex export. Workbook schema and live wine producer fields inspected; GitHub bytes verified. Not independently downloaded from Liv-ex or cryptographically signed by Liv-ex."
+}

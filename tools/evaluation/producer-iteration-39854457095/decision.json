@@ -1,0 +1,5 @@
+{
+  "meets_user_target": [],
+  "production_promoted": false,
+  "rule": "At least 80% complete and strictly fewer than 5% with two or more errors. Component improvements are not release acceptance."
+}

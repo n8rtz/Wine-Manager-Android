@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "status": "SOURCE_SEPARATED_CANDIDATES_NOT_ANDROID_ASSETS",
+  "layers": {
+    "ttb": {
+      "file": "ttb-wine-only.jsonl.gz",
+      "records": 16793,
+      "bytes": 474363,
+      "sha256": "17028f0fe0c1599222bf6bc898048bd8bdf0432f78b111e7a84cb45efb59c0c5",
+      "input_records": 84689,
+      "excluded": {
+        "non_wine_producer_role": 66537,
+        "non_grape_name_requires_review": 1359
+      },
+      "excluded_industries": {
+        "Importer (Alcohol)": 21657,
+        "Wholesaler (Alcohol)": 39179,
+        "Distilled Spirits Plant": 5701,
+        "Wine Producer": 1359
+      },
+      "input_git_blob": "8bf9737463092b0a2ef233139dee8e88a0f6fae8",
+      "source_url": "https://www.ttb.gov/public-information/foia/list-of-permittees",
+      "license_status": "Source authenticity/freshness and reuse provenance require verification; supplied archive claims public-domain/CC0"
+    },
+    "lwin": {
+      "file": "lwin-wine-producers.jsonl.gz",
+      "records": 33146,
+      "bytes": 1866496,
+      "sha256": "425cd0f7ef1c574cd5825fa31f9a4f4216dd6ce22b4f4392dd245d8a3058f5a6",
+      "input_groups": 33146,
+      "linked_wine_records": 184842,
+      "excluded": {},
+      "input_git_blobs": {
+        "producers.json": "0e7960726eb369085124cb3c8bc1896bf2cab60c",
+        "wines.json": "6fd1a612d9c0460c6f13b27575272011a582c068"
+      },
+      "source_metadata": {
+        "name": "LWIN, the Liv-ex Wine Identification Number",
+        "licence": "CC BY 4.0",
+        "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "LWIN by Liv-ex",
+        "url": "https://www.liv-ex.com/lwin/",
+        "changes": "Wine names kept as published; each wine placed on an atlas appellation or region by its region, sub-region and site; spirits, beer and retired codes left out."
+      },
+      "snapshot_date": "2026-10-21",
+      "mirror_commit": "92ee7f1ea991cca862a86b86173e1c28ab5d57b6",
+      "mirror_url": "https://github.com/doma17-wc/open-wine-atlas",
+      "changes": "Producer/country groups and linked LWIN7 IDs retained; wine names and atlas geography discarded; no aliases inferred"
+    },
+    "osm": {
+      "file": "osm-wineries.jsonl.gz",
+      "records": 15316,
+      "bytes": 436866,
+      "sha256": "716d62289ac025f53e17e4b04d54bf2a666771a80f3b03d3609a7b0684ca0b00",
+      "input_features": 42333,
+      "excluded": {
+        "not_explicit_winery": 25223,
+        "unnamed": 1731,
+        "non_grape_name_requires_review": 62,
+        "duplicate_osm_id": 1
+      },
+      "input_archive_sha256": "abe1502aecc089226e6bd73d59e04f0d87554448c87f46f0b776427b3b2b9cf5",
+      "input_files": {
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/AL.geojson": "7e9521df2651d9d68e3803037374a4db3116bb2c3fd89b2dd5c036f5d9973372",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/AM.geojson": "d150a874409cdfb4119ffebc29a66fd6cb781bdaebb63fa9cb02ed0cf887ed90",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/AR.geojson": "5172e753c1646ae128691e314c6835ebe89e22b804b6584cae45699b28360eed",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/AT.geojson": "e068a128537fbeddc01618336f8d6f0131c76f4981bd2e4840053489a0c0e41c",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/AU.geojson": "c2d3a418ee30fea50b150e4d70b4eb78a20f60ab3f3779039de24122a82e16ca",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/BA.geojson": "ea289ab916f97e207deaabb01debb104946ed44171512b3c8cdabb4e262c04dc",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/BG.geojson": "563affb3a4a7f558c0d113deaf69a77faa0e1f1e00c96519411f2937f2798d70",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/BR.geojson": "23b5409822119aff405ac06afee81243d3dbc8c79539ab3e729e75ed5eecb9b9",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/CA.geojson": "2bbf6624bea615350bb1501e3e3aad8fd101810a6a0f0fb6b7f718afffcf964b",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/CH.geojson": "8c48d4258688452554623937b4f7ffb9bf473d7a1c3d08771b751bf5205887b5",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/CL.geojson": "dc4616c36a300b1f02e12d4548d49853493f5b039db5248b74f28daad693903f",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/CN.geojson": "2a19989a72423dac37f6b8abcd32f9bcb4f0875f1cb32ce0edf582b503e85d74",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/CY.geojson": "7499d9618e69be10a352ace28dc5d566143e8f10bad65c87bf69106d1cfaad84",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/CZ.geojson": "743fe65ef54049500c7ff1808ea7377b508ab797ac174e26793ef2b3ff218d11",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/DE.geojson": "91de47973db430a260ed9204adf49d0f9265b299859f67731e5b1b058783db9f",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/ES.geojson": "070b484fdfd516f9c3aef334354d7683c68abdd60bea3852686c5660372fc8a0",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/FR.geojson": "8cd3fa605e6450dec96a77904fb1c0538b08243621c95cb56c7ec278120a030d",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/GB.geojson": "c17f7e0de8fe61e7c139d4bd0405d86a4cfe5ca0f2952a12f4b0d310fcf88b16",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/GE.geojson": "15bee5d1af87b57c92c3ace6f802390942307c80867f7e8a809561339c64d1cf",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/GR.geojson": "46b5ecae46af707b6c5aea5cd97708342da3253476aafeac7b4215841168d68a",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/HR.geojson": "2485eb2bd603afafb763e31db73b62f886c56603313415d930997f766e3ae954",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/HU.geojson": "2d713ba2ff84310d8a8ade8e1b88d4db637e2450d24053e82788cb14928fe514",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/IL.geojson": "fb92518d1bcd85d551a836789a11860e353c737eb786a709a83671bb463baa5d",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/IT.geojson": "b99eb049894d616c7f55a16029b5f88a6e254deb136c2115c0ffeb57992f4e54",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/JP.geojson": "91f350511e679ed8c76ca4cb0d848bb9f296b26d2b2f3b9273bd80a9a6d8ac20",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/LB.geojson": "fe928a99bd1f630705fd7125961e87bcc7ee5f012ab53243d6388a99fd5d4d63",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/LU.geojson": "a12abd330b26289c3180f1fb039f037702f88f85b4d58e33d2c95151f88d52cc",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/MA.geojson": "9644c419542c3fd27a05efabbf30dfe0f8e9ac2636d56610b06a6a93845ac72e",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/MD.geojson": "3a0477f4a92a6df6a27df1644a010e6b8a9049dd8383a9eb3e922100c2606a41",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/ME.geojson": "ad032617cc56810cca011e6f51aa6312bac19536cf53e71242ae26a9f5a9dd00",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/MK.geojson": "ce1b58a1e756fffced7e761cf1d629298642f09554fa491d88b8a55f7e228eee",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/MX.geojson": "ddd2f887a17258d0cfc94ca37136d1efe4c133261d92c5572b5f0ba0d3a4f134",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/NZ.geojson": "c66a5a75e4743b5118ab54e78432627945f8d01602375f8389210dbf46de1cf8",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/PT.geojson": "b25f025da0d47298ce2078c77f09a44c265a50f0c1320312e9c7eeb9071b9a11",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/RO.geojson": "10f42a575d0eedd0cfbf30fcabba6570dc63a9f7d5798bd79fc1563a8f81e42e",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/RS.geojson": "89c61831b3503b594fd5266a8f1bfc90dedf84f565019fb696e15a7a63b4c23d",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/SI.geojson": "1deb2ad2178f37a90d1e2211f6bb4341f4b9b10e90653c44880884f1054a71eb",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/SK.geojson": "afccc9c6ee80fc5fb4be8c2c40e2a4a8497b15f4a08db75686b74e89f872ac1b",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/TN.geojson": "747c04001d4f6e0d8b50b4b9206653598d86903b5f432b067a29bf9ae55654cb",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/TR.geojson": "86ed05cea06eafb7212bf013bbfe91044aeb91745c296837f14b9a7921c57bc1",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/UA.geojson": "6ad7a6ade28c120a8b087eea9b8784e867d8ed416f1b240ec0bfd56c2902f55f",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/US.geojson": "135c5290244e478afd3277b7ee500d5a812c3805886325687a485f787f962bee",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/UY.geojson": "bab459770ebcacf5b54fd21eb0c37daf3d46d1522c71ffe6cd9dfa875946271b",
+        "openwinemap-98a5bf983abd23b1f6255bcb60bc73bd99b6b69e/data/countries/ZA.geojson": "e8ca5a4c2708dbeb5ab269e6a7c53de2a5daccd5a37ba5e56a46a1e332648d91"
+      },
+      "attribution": "© OpenStreetMap contributors; derivative snapshot by OpenHistoryMap/openwinemap",
+      "license": "ODbL-1.0",
+      "mirror_commit": "98a5bf983abd23b1f6255bcb60bc73bd99b6b69e",
+      "mirror_url": "https://github.com/openhistorymap/openwinemap",
+      "changes": "Named explicit craft/industrial wineries only; non-producer venues, unnamed and non-grape-name records excluded; no alias generation"
+    }
+  },
+  "caveats": [
+    "No cross-source identity merging or wine-name aliases.",
+    "Filters remove known non-producer roles; they do not establish every surviving record as a verified grape-wine producer.",
+    "Source jurisdiction, map country and wine country groups must not fill label origin fields.",
+    "ODbL layer remains separate; separation alone is not a legal determination for future combined products."
+  ]
+}

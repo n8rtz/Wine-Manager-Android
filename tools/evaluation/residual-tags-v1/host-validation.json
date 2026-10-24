@@ -1,0 +1,25 @@
+{
+  "kotlin": "2.2.10",
+  "jdk_package": "jdk4py==21.0.8.2",
+  "execution": "actual Kotlin core on local JVM; not Android",
+  "contrastive_cases": 46,
+  "bundled_vocabulary_checks": 6,
+  "guard_checks": [
+    "line_character_cap",
+    "per_line_query_cap",
+    "budget_callback"
+  ],
+  "geography_lookup": "explicit fixture; no Android or FTS parity claim",
+  "host_python_tests": 143,
+  "android_executed": false,
+  "github_actions_started": false,
+  "ocr_executions": 0,
+  "baseline_executions": 0,
+  "identity_predictions_generated": false,
+  "stdout": "PASS: bundled grape, qualifier and producer vocabulary checks\nPASS: 46 residual cases plus character/query/deadline guards; actual Kotlin on JVM, fixture FTS only\n",
+  "sha256": {
+    "app/src/debug/java/com/yourapp/wine/textlab/residual/ResidualTagger.kt": "803eca74a7c814304b8a79b21c4834434931ba98d413f2d38462b80f5249c5ff",
+    "tools/logic-checks/ResidualTaggerCheck.kt": "dabbbe6693aa85d4e363974819052ca1ae431800cdf5b64315b9ec263bb556b5",
+    "tools/run-residual-checks.sh": "4ef76307bf809e0268ddf447aa69c76922509e051bbef3061977ddba69da47bd"
+  }
+}

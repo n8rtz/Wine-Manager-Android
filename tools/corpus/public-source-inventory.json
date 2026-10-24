@@ -1,0 +1,2899 @@
+{
+  "schema_version": 1,
+  "source": "AntoninLeroy/wine_label_reader_toolkit",
+  "revision": "eb2c14ba4f9a1b6efaa476696439754a9abde8ce",
+  "license_status": "no license declared; not cleared for redistribution",
+  "purpose": "Candidate acquisition inventory, not an annotated benchmark. Original labels/photos are not bundled.",
+  "records": [
+    {
+      "id": "e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c-8726bbdf",
+      "source_path": "img/to_read/121.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/121.jpg",
+      "source_blob_sha1": "e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c",
+      "source_sha256": "22303cc39a916d007c13213ea6710580483b7c18cc731f8772b920f685172f3c",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "0143103c1d2210ddfd6dda4bb357bf7424ea90dcd59db9e2ce8e95e380b4908f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "6078c4c1e1e81c08"
+    },
+    {
+      "id": "6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2-49ee23b4",
+      "source_path": "img/to_read/15032022_105917.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/15032022_105917.jpg",
+      "source_blob_sha1": "6abcf5b70ddf106bbb3ac4a7e70542815cf7b2f2",
+      "source_sha256": "e94e27348299f1717751434acd3cf552b66f9d65fc2a41a1af412125e3d2b7dc",
+      "original_dimensions": [
+        3000,
+        4000
+      ],
+      "image_sha256": "d8e38ffdcd7447e1a37f86a7b4222acf0937f0576baf5f39610e142f9a014177",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "87b06c646464e087"
+    },
+    {
+      "id": "9661f672432c5a0455a22fa65ffffa173d1aace2-f7e4e985",
+      "source_path": "img/to_read/15032022_123907.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/15032022_123907.jpg",
+      "source_blob_sha1": "9661f672432c5a0455a22fa65ffffa173d1aace2",
+      "source_sha256": "88155378c978cfa56c3d572cd29562d1c116305a72e4ddb14ba04182551d89a7",
+      "original_dimensions": [
+        1800,
+        4000
+      ],
+      "image_sha256": "b52587daa5865564a92b70c58250fcadb880d2f02e82fb7f3c7a7bdcef6540ab",
+      "dimensions": [
+        720,
+        1600
+      ],
+      "dhash": "143379f9f1f01632"
+    },
+    {
+      "id": "23b88f8fe9577ea46ca467ed80bd966fde516ab6-ce017898",
+      "source_path": "img/to_read/15032022_192814.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/15032022_192814.jpg",
+      "source_blob_sha1": "23b88f8fe9577ea46ca467ed80bd966fde516ab6",
+      "source_sha256": "6160c4bd234756adc9b98783afacceddb89436f33eb19c1bc1232189b82eeb6d",
+      "original_dimensions": [
+        3096,
+        4128
+      ],
+      "image_sha256": "1b00ffaa07974a85b3074e705b77da36020d68741b006b60f8cb4577ccaae669",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "f3f0e060c2606226"
+    },
+    {
+      "id": "caecb8358eb01441352efa62d5b17ad7498e129f-8b6a0fbc",
+      "source_path": "img/to_read/15032022_211301.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/15032022_211301.jpg",
+      "source_blob_sha1": "caecb8358eb01441352efa62d5b17ad7498e129f",
+      "source_sha256": "249c2d3538c49d178a668a343481266c12cfaef875ce455badb3823963ef265f",
+      "original_dimensions": [
+        878,
+        1440
+      ],
+      "image_sha256": "05a658185f10a1be4bafe9e3e7873dedf07d4311814f93a1b9e91ddb4962dc23",
+      "dimensions": [
+        878,
+        1440
+      ],
+      "dhash": "e080c0a0a8a0d0f0"
+    },
+    {
+      "id": "c9f0738ccd268978cb96d637b4c854f076240718-cc365536",
+      "source_path": "img/to_read/15032022_211547.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/15032022_211547.jpg",
+      "source_blob_sha1": "c9f0738ccd268978cb96d637b4c854f076240718",
+      "source_sha256": "adcb2e0c4c5d744b3edc89fa6907b16083a97dcab15fa7aba5d638f4f8e2fb68",
+      "original_dimensions": [
+        872,
+        1440
+      ],
+      "image_sha256": "d64ede914f52af037428c5fae3bc805f7b96fe90ace876e63f7d3e89da51bb6b",
+      "dimensions": [
+        872,
+        1440
+      ],
+      "dhash": "e0c0e0c080e080e0"
+    },
+    {
+      "id": "ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3-c96304d8",
+      "source_path": "img/to_read/15032022_211928.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/to_read/15032022_211928.jpg",
+      "source_blob_sha1": "ee0bb1c6a7c08a0ac92ed3c7c76fa48dda0385c3",
+      "source_sha256": "e80d62b97c85f8c0dde93fe212b74d31a09a4e16261d0b07c220810b205e6e73",
+      "original_dimensions": [
+        3000,
+        4000
+      ],
+      "image_sha256": "162389d6102c7a04d7d84045ea7b28a68f63e23ed184fe3b410d7c15cbdf7d6f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "5961c9c9cccce88c"
+    },
+    {
+      "id": "6555b2de6eefa99d5ce9bdcef06b8a700d1dc780-1923f82e",
+      "source_path": "img/train_and_valid/X/000.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/000.jpg",
+      "source_blob_sha1": "6555b2de6eefa99d5ce9bdcef06b8a700d1dc780",
+      "source_sha256": "bfdabb63691276f9cd4c1379152f3e3e353e544758d3b1af796fa5368d07b2dc",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "84982e263302dcba533da989992e317e081a808421c036c48dd2cbad52760497",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "360c23707070098c"
+    },
+    {
+      "id": "220b2abb1f84571f4926040bbadd7f52d4a5d9c5-709930c8",
+      "source_path": "img/train_and_valid/X/001.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/001.jpg",
+      "source_blob_sha1": "220b2abb1f84571f4926040bbadd7f52d4a5d9c5",
+      "source_sha256": "540b959faa4e1a73b6bc023bc633155a9d10932014e675a68748d3831f673c3a",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "0a11e4b6f82491f59984bd069e14a598b49c9b95ff92f63244de509a8a2471ce",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "e1c0c0c0c08081c0"
+    },
+    {
+      "id": "b2b425dbcb8ea1095050775498dfc8d70ab24c1d-7935cd17",
+      "source_path": "img/train_and_valid/X/0010.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0010.jpg",
+      "source_blob_sha1": "b2b425dbcb8ea1095050775498dfc8d70ab24c1d",
+      "source_sha256": "8b2cfe49b66497120419d11be187f27501ad82c7b50db0f15c79d6fe886cbcfe",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "4c809b20d3aceed68dcb8657e86f641c4334753519a42f94ba11c0d050c1577a",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8c0ef6c04048e397"
+    },
+    {
+      "id": "86a7f73b7595e3a48126bdc84c114d3fdf2621c3-55bcc8dd",
+      "source_path": "img/train_and_valid/X/0011.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0011.jpg",
+      "source_blob_sha1": "86a7f73b7595e3a48126bdc84c114d3fdf2621c3",
+      "source_sha256": "14314bc8991c24ce5c0f0787b545d28a263359ca4c2f0447b7b6a93b31291cab",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "d0f4c1fb008074b8d7da71e042d1461b3533a59a4deb9d0b858adc27fbd655e5",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "a76decc4c4c06525"
+    },
+    {
+      "id": "0ff9ea33887ddd65e6c601286c9df6b6581ecf35-3817304a",
+      "source_path": "img/train_and_valid/X/0012.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0012.jpg",
+      "source_blob_sha1": "0ff9ea33887ddd65e6c601286c9df6b6581ecf35",
+      "source_sha256": "d17a21e710f6e2f8e936ebe16fb982af8b890a6563293348a4e484e3ba4c7707",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "37c638705be8844a0d86085a173c50ac35953e5d715bb2b607bdb92135fa0383",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "87867379f978328b"
+    },
+    {
+      "id": "a722f8a82285db1174d13bac9ae3c1d01ebb3982-2f861769",
+      "source_path": "img/train_and_valid/X/0013.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0013.jpg",
+      "source_blob_sha1": "a722f8a82285db1174d13bac9ae3c1d01ebb3982",
+      "source_sha256": "e877b5a5875a73b194fa53322d7e8d6ea619aae8b89200143326f41a068a736f",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "9dd480a5726dc81ef10ad9a6f18be504b9fcb2366694b9b6bec428dc54eabead",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0637626061703235"
+    },
+    {
+      "id": "20ff2d19cce7ebe42f322beba3070a8a7a684464-a4491c4c",
+      "source_path": "img/train_and_valid/X/0014.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0014.jpg",
+      "source_blob_sha1": "20ff2d19cce7ebe42f322beba3070a8a7a684464",
+      "source_sha256": "432f1ecca61c8e75e7f9023e4417c44f7fa64cbe616fabc540ed771cf5df8396",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "b486b9183e868e4461d607ac78098289e2acee69a16ceea5f2d4c850cfaf5a0d",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "f674616969f17155"
+    },
+    {
+      "id": "a1f980591b02be70ccd4b67c7a56c7e97a742836-7726e039",
+      "source_path": "img/train_and_valid/X/0015.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0015.jpg",
+      "source_blob_sha1": "a1f980591b02be70ccd4b67c7a56c7e97a742836",
+      "source_sha256": "b5069d317d9139b709d2c819df460ae9b88471d112286823331f650fb785e0ed",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "e0e1f065a1b15f9ddd1dc4c8b6736ea3c208eef749c3335a7d1cdac0a9e45340",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9999b8f8f9f0998f"
+    },
+    {
+      "id": "0832df82586e830d99d16e7c0ba1321bf5939052-51ee38bb",
+      "source_path": "img/train_and_valid/X/0016.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0016.jpg",
+      "source_blob_sha1": "0832df82586e830d99d16e7c0ba1321bf5939052",
+      "source_sha256": "fc5593d4b36f26e466ac9dd3320c5eb2be968280f1bc4f730df2c1805bd7d3d4",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "4458b3de5c0077dacfcc4cc3d07c684f4839a933b5d378d5ef0c8b02405dac1e",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "4b71e9f1f1717171"
+    },
+    {
+      "id": "acce906b357f0554795a353ae0226adad4ddefbc-ce5a11bf",
+      "source_path": "img/train_and_valid/X/0017.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0017.jpg",
+      "source_blob_sha1": "acce906b357f0554795a353ae0226adad4ddefbc",
+      "source_sha256": "a0c58ec11612864a423318e4b146bf32589654f726abee3a66d44b3fdc3fb1ba",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "e8825c043ca0ad366652c0c013eac738b13a6881c163a7757792cc6eff9609b3",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8e9e3879787973cf"
+    },
+    {
+      "id": "60eded164ec14a9ff7d5cbf81335a3c9df9feae6-2adb6bdf",
+      "source_path": "img/train_and_valid/X/0018.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0018.jpg",
+      "source_blob_sha1": "60eded164ec14a9ff7d5cbf81335a3c9df9feae6",
+      "source_sha256": "1709caa1226eed4de91831b51c35890b42bd91beff4fe54d96b15a06cd34a735",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "eb62b909874f9802b50ff7d3477510586d294e9706f1b447984c100b6143cc1f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8f0771607070b296"
+    },
+    {
+      "id": "ae4f328736c8c3260272a54e466f62cc4438c8bc-84f7f86a",
+      "source_path": "img/train_and_valid/X/0019.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0019.jpg",
+      "source_blob_sha1": "ae4f328736c8c3260272a54e466f62cc4438c8bc",
+      "source_sha256": "101ad92dcab1c2590fcae763c19dc5cb316b3059ef6b57c6b974f363184d4d1e",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "df80536aa386ad56936f70821ec0062e491fb33b3ea3487aeb285578bce7a183",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9731606060e1330f"
+    },
+    {
+      "id": "1fa4e22d42db84cd7e2a212d8d754e2c28e11f13-3ded6c1a",
+      "source_path": "img/train_and_valid/X/002.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/002.jpg",
+      "source_blob_sha1": "1fa4e22d42db84cd7e2a212d8d754e2c28e11f13",
+      "source_sha256": "64ef729e8569582ca58762f11b27b3ab8e1c82c93136dc215f20a098bf1dd775",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "95d8a0ecaaddb6642adacf9c422b89ada1f7510ce01e6f73c2c86182e5622ddb",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "b230606060e0b090"
+    },
+    {
+      "id": "3a8b1c80be852a44357895609db8e35f333d6dce-3a6b5e2f",
+      "source_path": "img/train_and_valid/X/0020.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0020.jpg",
+      "source_blob_sha1": "3a8b1c80be852a44357895609db8e35f333d6dce",
+      "source_sha256": "ab91506031f5b07ed8991855bff958f28585ba73134cc60e8389cd5fa5952aaa",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "0fdad286bc69590da5c9576c1ea1b7e339ec2eb4200f5713226ec283acdd0c5f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "050761696161b2d2"
+    },
+    {
+      "id": "19baa54e476e220e97e7575070746ad8a8526558-91d07454",
+      "source_path": "img/train_and_valid/X/0021.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0021.jpg",
+      "source_blob_sha1": "19baa54e476e220e97e7575070746ad8a8526558",
+      "source_sha256": "e8bbb1f7963fd99f5949f8c7dcc818bb5ee2398ff4603c6e78821acd2f9ae259",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "a953bec5a8dc19e61fb735d3c2c4ba56fc83bf51de80813d72d27a22683f4afa",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "87636060e0612687"
+    },
+    {
+      "id": "48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1-954cd9da",
+      "source_path": "img/train_and_valid/X/0022.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0022.jpg",
+      "source_blob_sha1": "48b49736fbaae5c02e4f9cf1e3181f0116ee2fe1",
+      "source_sha256": "4b50feefa7dcbf32477357f8c90c363685692ccbd640326fc3bea09899dd6feb",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "9f838bf02c5bfee7adafd4b515e1fefe8d60e8ed5b76954a3d4f7ef562af7e54",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8f33f979f8f97826"
+    },
+    {
+      "id": "acbc0312f7bdabfdb58fefe8202fa9926266b5b4-b1f84119",
+      "source_path": "img/train_and_valid/X/0023.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0023.jpg",
+      "source_blob_sha1": "acbc0312f7bdabfdb58fefe8202fa9926266b5b4",
+      "source_sha256": "8c6658dee6f8004bd9df55ce2246e1b765c0cbb6444a5e8040ec233afb28df0d",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "3079ae0ac60e0c244ba7627659b054985cbace8b23b7a4e8317203bfac5753b2",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8e262e79f978964e"
+    },
+    {
+      "id": "bf050731c5595a6b55df87c0fc10cb774bf269be-3f53ec58",
+      "source_path": "img/train_and_valid/X/0024.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0024.jpg",
+      "source_blob_sha1": "bf050731c5595a6b55df87c0fc10cb774bf269be",
+      "source_sha256": "c54ded057c8eb8828f6c65b597bdfaf6789854e4ac7151658ef55b9d36511971",
+      "original_dimensions": [
+        2666,
+        4000
+      ],
+      "image_sha256": "1fea9f05256b46c7ce8a644e059666ff0ecc47a05d3e919ef33a5c9de884208a",
+      "dimensions": [
+        1066,
+        1600
+      ],
+      "dhash": "272140c1c1c1e066"
+    },
+    {
+      "id": "a89d64f59b5cad9568525e5d9236743a95c7694c-7246a8e6",
+      "source_path": "img/train_and_valid/X/0025.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0025.jpg",
+      "source_blob_sha1": "a89d64f59b5cad9568525e5d9236743a95c7694c",
+      "source_sha256": "a5266db5cb633b16077889767e56acca691e526025a8db8974cb9c0ab3806e05",
+      "original_dimensions": [
+        348,
+        620
+      ],
+      "image_sha256": "53f7cbbc25ccd289cefe221481c7f2ff9d129ca7c548194d6c334a49ac9d18f8",
+      "dimensions": [
+        348,
+        620
+      ],
+      "dhash": "0f0f2b7cfcfc7c5b"
+    },
+    {
+      "id": "f860e501fbe7591a18338df7ba962f2a49aec382-dfb02b63",
+      "source_path": "img/train_and_valid/X/0026.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0026.jpg",
+      "source_blob_sha1": "f860e501fbe7591a18338df7ba962f2a49aec382",
+      "source_sha256": "9cc9bd1896d4033d70a6ec1bcb61c0b477b6360a0e42c8971e7b4ce45bc4c3ec",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "5369651bbec367ecc1a40921832409bede15fa437efbff4f94be4358072f07af",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "33c0c0832323c220"
+    },
+    {
+      "id": "22a4c150835d5a8d390d8d4398e3f83a87a3063d-3dcfe24b",
+      "source_path": "img/train_and_valid/X/0027.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0027.jpg",
+      "source_blob_sha1": "22a4c150835d5a8d390d8d4398e3f83a87a3063d",
+      "source_sha256": "6d4f49c6252833ee4315d038f376a97b6bccd12bb90fff446cc71679354b1914",
+      "original_dimensions": [
+        463,
+        620
+      ],
+      "image_sha256": "1d09410b4d0c17c4cde95d5aca0816c8be442cf4f82c9633e532f0cea72a8c6a",
+      "dimensions": [
+        463,
+        620
+      ],
+      "dhash": "6060707060607078"
+    },
+    {
+      "id": "0519fcaa47207b5bf3ca465ec3f47ba122d05cdd-3e244afc",
+      "source_path": "img/train_and_valid/X/0028.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0028.jpg",
+      "source_blob_sha1": "0519fcaa47207b5bf3ca465ec3f47ba122d05cdd",
+      "source_sha256": "3fb92c48dc0d05be921df97311698126e126ab54602400a0c76356210943d211",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "dcf64044e0642515374b702f964828d19265a437ecd19075463ae2a320875b00",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "b470c0c0e0c8e1a7"
+    },
+    {
+      "id": "7fa093f4a99f8a3358ea52ee276cbb236837e65d-8639b3c4",
+      "source_path": "img/train_and_valid/X/0029.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0029.jpg",
+      "source_blob_sha1": "7fa093f4a99f8a3358ea52ee276cbb236837e65d",
+      "source_sha256": "aee0be11fb4191c046f4a4817394fbbc6ce6f01a4866d388884ddce7dcc0b0e7",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "cc1b8ba8ffa2c040344b91e289d507a598b160a5aa34123177e2a29df18d9fe9",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "03031e3c3c390f86"
+    },
+    {
+      "id": "5448f77afa3ac97e9d499f633b13ad647f011232-ba048964",
+      "source_path": "img/train_and_valid/X/003.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/003.jpg",
+      "source_blob_sha1": "5448f77afa3ac97e9d499f633b13ad647f011232",
+      "source_sha256": "e5c891b099d95caa4d006ad04011d17cae246f29c296c7d62f3b2c2e5c8a9b7c",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "3a43310254c896782682656d7fa83597a9961b08439311e6e9095c68d1c862d6",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8d0d74707994968e"
+    },
+    {
+      "id": "70dd815ec4023a81863d68d051410930e144686b-e18f902a",
+      "source_path": "img/train_and_valid/X/0030.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0030.jpg",
+      "source_blob_sha1": "70dd815ec4023a81863d68d051410930e144686b",
+      "source_sha256": "eaa4e669f2bd829a76fec184116f6ed03accfae6ab8519ef294d907ad7cc99bf",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "90f909e8bfcc5099c21832b476daea4d933b3277490d9059cb005df7d6585366",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "bbf8f8f8f8f878f0"
+    },
+    {
+      "id": "9f35852350601c538e8e57277c7ce819b356e35c-73fbf413",
+      "source_path": "img/train_and_valid/X/0031.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0031.jpg",
+      "source_blob_sha1": "9f35852350601c538e8e57277c7ce819b356e35c",
+      "source_sha256": "24fc607d17b4c37ab214d101642801bdbd38012d92df602bd55c6f50292a4001",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "25b7c36877d134683abc246e56892d55ef0e805fc55fd7943464d706c4b33401",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "2261c10101c0c060"
+    },
+    {
+      "id": "4897ce4882ee6bc305273cfc70d0f9ffbdb629a5-0de74582",
+      "source_path": "img/train_and_valid/X/0032.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0032.jpg",
+      "source_blob_sha1": "4897ce4882ee6bc305273cfc70d0f9ffbdb629a5",
+      "source_sha256": "1518c56821cc58cd10a33e110a9ada46c17adb0622fb7a92365de1a01ff7a785",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "cb3a0a5b8020e010c8f81f14202811e2b9ee0f3ec490611a491d19c187ad59ec",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "e1e0e0e0e1e1b3c6"
+    },
+    {
+      "id": "7617b51cfb07d27b597e1194dbefe18a693cc091-762a64ee",
+      "source_path": "img/train_and_valid/X/0033.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0033.jpg",
+      "source_blob_sha1": "7617b51cfb07d27b597e1194dbefe18a693cc091",
+      "source_sha256": "3197dff2b637bd1047c3c60a7b951f148856b6cc9a13d93a9537bd9baf976b06",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "a25b200051e2b8ed6e42349bbbbb06637785f86fd1213e1959645a408ea28609",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "070f79fcfcfcff1f"
+    },
+    {
+      "id": "701c2f40c15f3865ad65f5475159849ac7509e4e-9de03ca4",
+      "source_path": "img/train_and_valid/X/0034.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0034.jpg",
+      "source_blob_sha1": "701c2f40c15f3865ad65f5475159849ac7509e4e",
+      "source_sha256": "7c44a8fb1f613d0d0c2e565733b8333a8869688598e524ef445715b281aa5540",
+      "original_dimensions": [
+        349,
+        620
+      ],
+      "image_sha256": "deeefec4ba432a60bfaa4044b89437379d0eee77316a851b1925bc04098bc8f8",
+      "dimensions": [
+        349,
+        620
+      ],
+      "dhash": "f0f8f0f0e4e4f0f0"
+    },
+    {
+      "id": "fcb8183af5c40e7eb17b0b88cbd6994082d0176d-9890eeb9",
+      "source_path": "img/train_and_valid/X/0035.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0035.jpg",
+      "source_blob_sha1": "fcb8183af5c40e7eb17b0b88cbd6994082d0176d",
+      "source_sha256": "c1029ffd9f14beb63117a5d0f39625b6db49c27f8216fafc4884636faf872ddb",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "2c4ca57ded1f54d4748ab27568145b3ff456ea137320a308355838b2041f8d4c",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "736061616155f1b1"
+    },
+    {
+      "id": "3e2e56b18069c4227cf9d95a286011c3ad00aa12-de45f707",
+      "source_path": "img/train_and_valid/X/0036.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0036.jpg",
+      "source_blob_sha1": "3e2e56b18069c4227cf9d95a286011c3ad00aa12",
+      "source_sha256": "c9949f3605b42f74237dc8c0ab121ee3fbc6423cbf132aa0255ced307fb9986f",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "360d622b87db130b648e2ed905be43bd4aa3d9ce9d722aa3c493b374770fc81c",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "8ad3e3a1e1e1079c"
+    },
+    {
+      "id": "a7c1d1ed5545107151c48162125da00767ebe922-1612a318",
+      "source_path": "img/train_and_valid/X/0037.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0037.jpg",
+      "source_blob_sha1": "a7c1d1ed5545107151c48162125da00767ebe922",
+      "source_sha256": "173062d27932da0311f3b26c2b40a07ae8a32ce2a3ec0f701e76f1e52b2e4371",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "52a6e2a9b6dcfbd3f239b9d8571f4dcdbac6fb20de1ac5eff954fcaa4208638b",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "9acdcd4d4c6d1306"
+    },
+    {
+      "id": "0b70689fae76974f71587346b5330151cb1a34a2-80af900c",
+      "source_path": "img/train_and_valid/X/0038.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0038.jpg",
+      "source_blob_sha1": "0b70689fae76974f71587346b5330151cb1a34a2",
+      "source_sha256": "ebfc06d5124ab1eed190befb6ca07ae0f433bf555ff180d42a962885ebb0ab0d",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "014a4e30f78ad96fac183010d0c3aac664b00a77fad07f193f7a22429ac2de3d",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "1b130b8302cac660"
+    },
+    {
+      "id": "1d7a6e9f954f5f79a591e500f53b4d47af9ac443-1bc6f8e4",
+      "source_path": "img/train_and_valid/X/0039.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0039.jpg",
+      "source_blob_sha1": "1d7a6e9f954f5f79a591e500f53b4d47af9ac443",
+      "source_sha256": "a0f1d4b6962e5c64d2b4dc1061517e7e0723a694ef7149b012762e1d2252ba62",
+      "original_dimensions": [
+        348,
+        620
+      ],
+      "image_sha256": "d27a59357fc7d2186162651560728f80b93abd6c35901f5b8dd95a16b7192482",
+      "dimensions": [
+        348,
+        620
+      ],
+      "dhash": "0371c0e080c87131"
+    },
+    {
+      "id": "9de8f334ac3a14849d8ed1a7767c441774836eff-7b0137e8",
+      "source_path": "img/train_and_valid/X/004.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/004.jpg",
+      "source_blob_sha1": "9de8f334ac3a14849d8ed1a7767c441774836eff",
+      "source_sha256": "0a99cfadcb6e8e7a2695c75d1aa99637bd65069021509467499ca18ab6de333f",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "1e64cd09dba3cba6ae495bba75c195cfa948287ccf84d79c5c4d196ef3e5e85b",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "ccade1f0f8f9330e"
+    },
+    {
+      "id": "b6901950e73c1a6355ace47a10912b27daa39db4-c9065a76",
+      "source_path": "img/train_and_valid/X/0040.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0040.jpg",
+      "source_blob_sha1": "b6901950e73c1a6355ace47a10912b27daa39db4",
+      "source_sha256": "6173810a14237e48db0c49731529ba86c5e283fd025f1e7a27af1b686e9dd7da",
+      "original_dimensions": [
+        463,
+        620
+      ],
+      "image_sha256": "c748d6ba9397d6cfd488f4f42cf8b189e0cf3f029748f4cf2848ed501cd6179a",
+      "dimensions": [
+        463,
+        620
+      ],
+      "dhash": "c667e2f27276c6f2"
+    },
+    {
+      "id": "29ea6458e0ce20b341287e5e59589a94d6c0ae94-c886b725",
+      "source_path": "img/train_and_valid/X/0041.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0041.jpg",
+      "source_blob_sha1": "29ea6458e0ce20b341287e5e59589a94d6c0ae94",
+      "source_sha256": "036da28b7ba2681c9a88db1f98903ad5f0f4fc075d8862a3a2f24cc42380d47f",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "17c9d43904513bc317f88a6920a4c24667352d7a6c30d0ea4f0e14facb00d41b",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8e91c9c1e161711e"
+    },
+    {
+      "id": "32de58f835d470029d884f122dd17a6a83cc16d6-577d7bf1",
+      "source_path": "img/train_and_valid/X/0042.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0042.jpg",
+      "source_blob_sha1": "32de58f835d470029d884f122dd17a6a83cc16d6",
+      "source_sha256": "31d04bbd07bf49847c6fc9ca758d7f9b93a7bb67ad7ea7233fd0c5922fd53137",
+      "original_dimensions": [
+        460,
+        1024
+      ],
+      "image_sha256": "33e25063dad9fc01b2d43feda8129c90749cbafc95d93b34d25a89598ffa15b2",
+      "dimensions": [
+        460,
+        1024
+      ],
+      "dhash": "0733e0c0c0c88810"
+    },
+    {
+      "id": "1dbb24dc23d4b2aee47d710e06e8b81a696e021d-126c873b",
+      "source_path": "img/train_and_valid/X/0043.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0043.jpg",
+      "source_blob_sha1": "1dbb24dc23d4b2aee47d710e06e8b81a696e021d",
+      "source_sha256": "29282927c27058552b27d9d64a9bc6d1a90ac6ea379cf1b041e34eaac9beac3b",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "d2e75b13266e56f3da488f38722746852bea12fe3567e93b9cc6361e291b185b",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "38b070b8e8888a8e"
+    },
+    {
+      "id": "578ac79248bf10b4b1ae872869d555ecfab03087-8b579fdf",
+      "source_path": "img/train_and_valid/X/0044.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0044.jpg",
+      "source_blob_sha1": "578ac79248bf10b4b1ae872869d555ecfab03087",
+      "source_sha256": "9dac5a9be9371e28e1f41c7b8dc58f12da036fa58547f7ea8e84012817a18f17",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "0b407ad756af63c4812fd3f3f63cee6405e8b2b28c99d55e4ae288ead13dd290",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "cc4dcdb3f3b097d7"
+    },
+    {
+      "id": "0b50bc2ae5aec19613adafe03ecc0cd59a981e49-e3581e3c",
+      "source_path": "img/train_and_valid/X/0045.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0045.jpg",
+      "source_blob_sha1": "0b50bc2ae5aec19613adafe03ecc0cd59a981e49",
+      "source_sha256": "2f7c6b39cfd8bd36855f712ad46712c97f2c3b70dc5ec5ffd33d178c931ede07",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "186729121ba969dc7a8edb7a94578ae699f2daecc8befc6f4c5cf681dcc5f0ce",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "96b93979d70e0a09"
+    },
+    {
+      "id": "b822c333f9c15f208b8f6e542183a27e368234d1-ab05c574",
+      "source_path": "img/train_and_valid/X/0046.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0046.jpg",
+      "source_blob_sha1": "b822c333f9c15f208b8f6e542183a27e368234d1",
+      "source_sha256": "e84927b57dc8139bb6971a4934adfd094ef4b41ac307a1d90c757e55f308fdf6",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "f643fb694576da4e1ab9918f0aecbd482275836bcde5f74d7125e1546778dc73",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "9fb6edec6c7a5a5b"
+    },
+    {
+      "id": "8dde033eee9518df9e885e58b442be2a2093f539-cd3ee070",
+      "source_path": "img/train_and_valid/X/0047.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0047.jpg",
+      "source_blob_sha1": "8dde033eee9518df9e885e58b442be2a2093f539",
+      "source_sha256": "79f922978a6775a5bf222d6b81354ef9ed03b545034f64d1b4bfeaa8106f26fd",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "8bd676c5c57bb994a65e9128d91de99e6a1eb4628ccadaa242f9b798be991eec",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "878f07616107870d"
+    },
+    {
+      "id": "e75efd85c0d44b91633b375fdbc28b30e672d889-a3818eda",
+      "source_path": "img/train_and_valid/X/0048.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0048.jpg",
+      "source_blob_sha1": "e75efd85c0d44b91633b375fdbc28b30e672d889",
+      "source_sha256": "ec9e546a926a838ac6129adfcecf50a60ef78dfc404d523d9dd751196e58f30d",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "d74367105069e1874aa5766fb1bc94dfefd414643f9efcd4adde88ea32d53688",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "0f3b796ce8a88eac"
+    },
+    {
+      "id": "608a81557d1cc945cce7fce0225771804d4f5e33-1448105a",
+      "source_path": "img/train_and_valid/X/0049.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0049.jpg",
+      "source_blob_sha1": "608a81557d1cc945cce7fce0225771804d4f5e33",
+      "source_sha256": "96f27010fa1927b7f15d28e5e4138f622ae4cc75db2af21c5f0983286330b01a",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "7a53b5865605fa3d0a12941b0449f07c8ac50cb7cad4640e820921ff7e62337c",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "db7cfcfcfcfc9999"
+    },
+    {
+      "id": "6fec2a232614518ae1500d99a66d081c73b16cd4-712f04e9",
+      "source_path": "img/train_and_valid/X/005.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/005.jpg",
+      "source_blob_sha1": "6fec2a232614518ae1500d99a66d081c73b16cd4",
+      "source_sha256": "32655f22cc8f2c9ecd99a1bea8ab7180571d5a80d550c4a9a9fc376bec12ff4b",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "c857c0101f52d026b83b4edbea5dc7e3dca495b0dc75a0b8b8eb6b8b5c59a68d",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "170e1e7979f1c686"
+    },
+    {
+      "id": "bda41cc3ee2eaa0fc30feee7e82dc5693b308836-888549b0",
+      "source_path": "img/train_and_valid/X/0050.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0050.jpg",
+      "source_blob_sha1": "bda41cc3ee2eaa0fc30feee7e82dc5693b308836",
+      "source_sha256": "e8bca4efbea12f80edf349078423183d94542419af8002ce206f286ca324e46b",
+      "original_dimensions": [
+        301,
+        620
+      ],
+      "image_sha256": "962370f7c4c705bb36757f4780fca650e098632d14a59d5d675aaa7868e81dc8",
+      "dimensions": [
+        301,
+        620
+      ],
+      "dhash": "0727f0ccccf04912"
+    },
+    {
+      "id": "23aab97419703ecf3b2b058a2b49c8a35bb875ac-4810a4d9",
+      "source_path": "img/train_and_valid/X/0051.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0051.jpg",
+      "source_blob_sha1": "23aab97419703ecf3b2b058a2b49c8a35bb875ac",
+      "source_sha256": "935c290c964a8e0859c6e14ef14fc1e8572e4814539c5755ff36ae9c352250a2",
+      "original_dimensions": [
+        464,
+        620
+      ],
+      "image_sha256": "39c1600b950cbd53c129c50c15aedbfa455133b9f63685293d813fae630afaad",
+      "dimensions": [
+        464,
+        620
+      ],
+      "dhash": "3060e06042c0c045"
+    },
+    {
+      "id": "53a260a1e11084fe646f38bc041c2ff542c0581f-c4f5bb8a",
+      "source_path": "img/train_and_valid/X/0052.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0052.jpg",
+      "source_blob_sha1": "53a260a1e11084fe646f38bc041c2ff542c0581f",
+      "source_sha256": "9b420faa7ca0c3a86f38dad078973089adefad9dd3222f20d97a7572cdec032a",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "8b36fe0904c58bf251e7350f47b6bed93398dd45e7cfe3aee5f4cbc0ba7a71d4",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "0733e1c0c0c0e123"
+    },
+    {
+      "id": "fbc8b7587eb531abb53a58d5359ec6604ce878d9-35f6500a",
+      "source_path": "img/train_and_valid/X/0053.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0053.jpg",
+      "source_blob_sha1": "fbc8b7587eb531abb53a58d5359ec6604ce878d9",
+      "source_sha256": "db8d2f8fc345be635e83f235ea3cc6d0238453fcfc4472406aa895cf96900a0d",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "7fab04cd2eb946d4998b67e2710e2ddfe5b809f5613b1cd44042a934056bf234",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "2b5fffceccdcf88b"
+    },
+    {
+      "id": "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1-d1c53b44",
+      "source_path": "img/train_and_valid/X/0054.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0054.jpg",
+      "source_blob_sha1": "926ba70d9ea28c2a0bef73f7dd5d69e53d002fe1",
+      "source_sha256": "7e6cb1e022600e8bf9eb883519483fc83f2e8a0d4a030103fd3cb4161f072c8f",
+      "original_dimensions": [
+        464,
+        620
+      ],
+      "image_sha256": "35331d24523377850e40a1e84191aa453792a2f3f82e7382f0a437d30d9c2158",
+      "dimensions": [
+        464,
+        620
+      ],
+      "dhash": "07030f0f8f1f1f2f"
+    },
+    {
+      "id": "68ced6d9403232e58bd9ff6291846300257d99c1-81c6da74",
+      "source_path": "img/train_and_valid/X/0055.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0055.jpg",
+      "source_blob_sha1": "68ced6d9403232e58bd9ff6291846300257d99c1",
+      "source_sha256": "5c8ddecb85a8a21157dff7eb37c6c991c080c97e318f51a5f37df09da19984a9",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "caba0edc1ac902c8884e18bed8407c08937953e0e7cb51349dea8f61374a7cc2",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "2c20c1c0e027378d"
+    },
+    {
+      "id": "469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1-cc019c9c",
+      "source_path": "img/train_and_valid/X/0056.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0056.jpg",
+      "source_blob_sha1": "469ea7986eff3f38ffadd2fc2dbfbd5a5dc693f1",
+      "source_sha256": "df58de7d98b618ad0cb51992bf95d4427cc61c186d2a7ca393b2c212a71e9f82",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "ae12b09867c51290635acf5c5ef16dc91c555e749e9f20452db21b7c00233421",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "2d21e1c1e1e16123"
+    },
+    {
+      "id": "ac08c402e2b32db2ace37c56bcf1a9764083ddb7-b1545960",
+      "source_path": "img/train_and_valid/X/0057.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0057.jpg",
+      "source_blob_sha1": "ac08c402e2b32db2ace37c56bcf1a9764083ddb7",
+      "source_sha256": "1c6db152294b6762d93fb296acfd25b83392524c5ef4bbc1271cf1f72498b684",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "00cb0d7d28bd2bddf6c5d234ab61494af95c41ed5f596e2eb32a322aaf3e76e5",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "5f71606040c84809"
+    },
+    {
+      "id": "1e1f4a10e73eecd502c71bb651188be104c20814-d15c6823",
+      "source_path": "img/train_and_valid/X/0058.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0058.jpg",
+      "source_blob_sha1": "1e1f4a10e73eecd502c71bb651188be104c20814",
+      "source_sha256": "0ac4b8d8ca610972bfe7f5a92e0d90d1f01d1255293ebdb8d0a88a7197931fde",
+      "original_dimensions": [
+        464,
+        620
+      ],
+      "image_sha256": "d8af4dfcca5bfa7c36631d837f3cd595a10a0c785c108434999273ce321df579",
+      "dimensions": [
+        464,
+        620
+      ],
+      "dhash": "8e8c8cc8cd8e8f87"
+    },
+    {
+      "id": "e7416b88d2129be208ce2d9ca6f0767a37dfdb91-03502ba4",
+      "source_path": "img/train_and_valid/X/0059.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0059.jpg",
+      "source_blob_sha1": "e7416b88d2129be208ce2d9ca6f0767a37dfdb91",
+      "source_sha256": "7c38fc5dbfe6ab2730efec68d8a79b075a010ff20c42a2fd001947ec7f28f104",
+      "original_dimensions": [
+        348,
+        620
+      ],
+      "image_sha256": "d753e392a404944a8862e188273c521f28743262bf312758ee6692d94ccfaf6c",
+      "dimensions": [
+        348,
+        620
+      ],
+      "dhash": "037cbcbebcbcbc3b"
+    },
+    {
+      "id": "c7d852d8e6de445b1d3dbfab1fd40adb9264ea31-5525cc65",
+      "source_path": "img/train_and_valid/X/006.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/006.jpg",
+      "source_blob_sha1": "c7d852d8e6de445b1d3dbfab1fd40adb9264ea31",
+      "source_sha256": "ae71e11c0d4c8714de9a8ec749f7b3814d47c8ec84f38eea3cbc3db7aed0f4dd",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "9c2aea9b1494894d9901b158017ce84a892a8ac57687cd5cf89b98ebfc4bb8b6",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "730e76786878398b"
+    },
+    {
+      "id": "932e8a7357562df3bff0502b75a3407d6d9e768d-e190af54",
+      "source_path": "img/train_and_valid/X/0060.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0060.jpg",
+      "source_blob_sha1": "932e8a7357562df3bff0502b75a3407d6d9e768d",
+      "source_sha256": "7362bc98f23b00a0c44f0a8a2792d24dd8e6ee544ec86f2284d1bfb5dfcf717b",
+      "original_dimensions": [
+        1024,
+        1024
+      ],
+      "image_sha256": "763c29453dac3af75e0cb91df65711f0df9d7d0f0a7e6e95f60f2e93dd4ed071",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "dhash": "e1e0e0e0e0e0e161"
+    },
+    {
+      "id": "db6a82cbb2269f22e371729eb8c55f4d659aa8f3-2905fc4d",
+      "source_path": "img/train_and_valid/X/0061.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0061.jpg",
+      "source_blob_sha1": "db6a82cbb2269f22e371729eb8c55f4d659aa8f3",
+      "source_sha256": "6a7fffbeba8636eafe4a0952656ef8fe20c75cd9977d8c8d9843eec717c0542b",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "ada0094b4e88d9686306ed85dc5fce6671baa09fe4ddf66967225f0d013ea528",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "4763a26061616165"
+    },
+    {
+      "id": "df540dc916f6460c1ea06da2cab02ff8382302f4-1e26029f",
+      "source_path": "img/train_and_valid/X/0062.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0062.jpg",
+      "source_blob_sha1": "df540dc916f6460c1ea06da2cab02ff8382302f4",
+      "source_sha256": "db5d2bcd2415d420ddddffd2dd4a6ce4324e71cae8723cd83dca4528e007d1a5",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "8e335984cf99d33e6bda38d2a5ecb203440ac407c43d2fb387ef529f06983da6",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "c28f3dbc7cfcee66"
+    },
+    {
+      "id": "22a571fd006a919948985e8fc3af8103de8a1f99-c4f89be7",
+      "source_path": "img/train_and_valid/X/0063.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0063.jpg",
+      "source_blob_sha1": "22a571fd006a919948985e8fc3af8103de8a1f99",
+      "source_sha256": "f281cc62aa3ffcc409164cb57b2deabdc03e8c82a6c8b1bc4e9c7046f0c6740c",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "7243ac790bdf8e45d15c2e4630ca0e3ffb27e84d42e52824415d2ad10cc22680",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "1b31746d6ded191b"
+    },
+    {
+      "id": "31348bab31b100df983d8abe19a3fe62463446b5-64896212",
+      "source_path": "img/train_and_valid/X/0064.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0064.jpg",
+      "source_blob_sha1": "31348bab31b100df983d8abe19a3fe62463446b5",
+      "source_sha256": "0c94622f6ffb34d2cc5f2dd0a83d7e4f59dd7ac5f7d61bac22f735d193f776b2",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "041040c5dd726fa1778aeced7c635d283821cefa6509af804c8992a3b3a75c60",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "4787312064606303"
+    },
+    {
+      "id": "bb76c992d273ed2772ac8996b958823a1fe4bc67-8b1cff51",
+      "source_path": "img/train_and_valid/X/0065.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0065.jpg",
+      "source_blob_sha1": "bb76c992d273ed2772ac8996b958823a1fe4bc67",
+      "source_sha256": "62f986b6c0c8cca264bccda2d5baeb18ce04f403d83eee1d07441cdc7281ad1a",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "e07f0d235a361adc00958056fc034b51ad2f53ea6ea5e3317d98aa0c3170bf84",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "0b1397939293968e"
+    },
+    {
+      "id": "9adeb9d97fd50e6e3011a050e5a829e12b883473-7ce183b6",
+      "source_path": "img/train_and_valid/X/0066.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0066.jpg",
+      "source_blob_sha1": "9adeb9d97fd50e6e3011a050e5a829e12b883473",
+      "source_sha256": "3e104474f6693aabb5ff664f7d7e1e2175eef5fcf4366243386b76294e36533c",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "b7ed9090254b992ddbe4a42e1e50a7afcff0acb87f2c734f781886b6aeaae800",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "616161606061f193"
+    },
+    {
+      "id": "9483088b08a6668c1004ed049bfe09786b631a55-04f25a69",
+      "source_path": "img/train_and_valid/X/0067.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0067.jpg",
+      "source_blob_sha1": "9483088b08a6668c1004ed049bfe09786b631a55",
+      "source_sha256": "d386ffc7ed0bc52d88f6f7cc648f28b62f6135bde8db23c82d51494718cf1d85",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "73ca80db96d671eb5bc3ed1daf652776f50141cd9e36faebabbb378e7e652409",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "173965e525edb993"
+    },
+    {
+      "id": "60f32c1cae4fb186ae16fd16ea44209da217e2c2-e0eff262",
+      "source_path": "img/train_and_valid/X/0068.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0068.jpg",
+      "source_blob_sha1": "60f32c1cae4fb186ae16fd16ea44209da217e2c2",
+      "source_sha256": "69864e4338bc85ae108f76d7f1beb2e1b855d7a01a8ff2b2f78debf26a7f20fc",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "5a4c99106516132a6ef2d081887413c63e635522118d16764388bb4faf73c6f2",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "b7f979797979f114"
+    },
+    {
+      "id": "7636f80a8adb8be0aaf612b0316400f9eccb18b5-4e6d1a7b",
+      "source_path": "img/train_and_valid/X/0069.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0069.jpg",
+      "source_blob_sha1": "7636f80a8adb8be0aaf612b0316400f9eccb18b5",
+      "source_sha256": "42e491845177df7939a422f945153db67feb615446f01f8156ff5ce89a308958",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "8adbe8a4ab5d7b9ce5e4aff28e179d5181b89aaec37eac0c8d9f54dc94732946",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "0f9d9cbc34343c0a"
+    },
+    {
+      "id": "e5ba22a3d4506a8723587808d7d83d709ac2d340-d629fa07",
+      "source_path": "img/train_and_valid/X/007.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/007.jpg",
+      "source_blob_sha1": "e5ba22a3d4506a8723587808d7d83d709ac2d340",
+      "source_sha256": "20d1407ff1e121aed5abf77975d0a0639c0cdea93b8d62ff1404d15b3c44c01f",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "f9442317b8b15ec0d542d4245336c2c939547fa3a1dc2ba28c951745d2752a89",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "490f82a2adcc0e8f"
+    },
+    {
+      "id": "321476784f2d9d0371e42bb214fcc3d8068eb110-4bfc5833",
+      "source_path": "img/train_and_valid/X/0070.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0070.jpg",
+      "source_blob_sha1": "321476784f2d9d0371e42bb214fcc3d8068eb110",
+      "source_sha256": "d064e084d5900093f8ef02ca6dd7c16863410e377c7c171f1ff1193b91dca77f",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "5d19098044fc00cd104195af97ead6e7687098bf45d00793232264199a033f57",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "b1716161616171b3"
+    },
+    {
+      "id": "300e16922f8692be7d9cb9de26254b5770caf170-fdf149f9",
+      "source_path": "img/train_and_valid/X/0071.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0071.jpg",
+      "source_blob_sha1": "300e16922f8692be7d9cb9de26254b5770caf170",
+      "source_sha256": "4529487ef6ebc8421f82b4f96d4f3c689d099245754287b7683e1e8f08b80f18",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "6622b7bad30556c853c45bb43fb5e7a305a4ad8025fc62e34a07017f103544d6",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "6560c0c2c083c2d1"
+    },
+    {
+      "id": "1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6-d6380690",
+      "source_path": "img/train_and_valid/X/0072.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0072.jpg",
+      "source_blob_sha1": "1b01bca28dee816f1ef0fe7b91cf0257a43a0ec6",
+      "source_sha256": "dff07877f8cc6a1f5d2e94278372adbd9a7c602366143556194fbb08aa9d4659",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "b5153fa600aa7f5d6ac62319ec1e5846e4aee36c386afee66ad67f9067bb7362",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "41c0c0c0808180e0"
+    },
+    {
+      "id": "72164b20ffb5d6b2b4fb29e56799d7d091448ce6-c33711bc",
+      "source_path": "img/train_and_valid/X/0073.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0073.jpg",
+      "source_blob_sha1": "72164b20ffb5d6b2b4fb29e56799d7d091448ce6",
+      "source_sha256": "8a8c989045593d6edfcfa0bc451ce572f97632e7de761c78878daaa848d10ee2",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "2ae6498f802da8472cf2fa6afeb49b0d876ffdd4c6c13220741ca462a4c33666",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "07277870198eec31"
+    },
+    {
+      "id": "91c66006e38e5a57de29b54da6416a8dddd3b8ec-1f98558d",
+      "source_path": "img/train_and_valid/X/0074.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0074.jpg",
+      "source_blob_sha1": "91c66006e38e5a57de29b54da6416a8dddd3b8ec",
+      "source_sha256": "f029de9ba3e4a2b13f0a15d758639ab97c118af92f43ab07b032de73dada9a68",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "7da8ef525907bc2d2021f93c2d9e8b564bc04cfa47d2a16607f98a396d5ae0a6",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "0f03016366666018"
+    },
+    {
+      "id": "aab5566af0cb4816f9c448bf2a65401a3653dbcf-0cdbbbc1",
+      "source_path": "img/train_and_valid/X/0075.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0075.jpg",
+      "source_blob_sha1": "aab5566af0cb4816f9c448bf2a65401a3653dbcf",
+      "source_sha256": "6d3694993707e39fd1ab1da0d44c334fc41cb3e5c2b142b7af2f4300fae1570a",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "d0e6241c701409239c95142a6ed979c4dfede98fd317f410f69e101ee3a04f18",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "0d0f444c4c4c6103"
+    },
+    {
+      "id": "36fac584780bdce64ea941f83d2642c252eb80fd-f1b5f62a",
+      "source_path": "img/train_and_valid/X/0076.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0076.jpg",
+      "source_blob_sha1": "36fac584780bdce64ea941f83d2642c252eb80fd",
+      "source_sha256": "067cd7a79665882a0d89b67925e654c520879188a699024f0c7029db03f1af56",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "b5b54ae90df545750b79798916c47afe50536bc3b56c26262a6a2e5bce065c7b",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "0378fcecccecfcf8"
+    },
+    {
+      "id": "c7c278615b5e757ec95965615a6c6ae64806f8c9-8eff3c1c",
+      "source_path": "img/train_and_valid/X/0077.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0077.jpg",
+      "source_blob_sha1": "c7c278615b5e757ec95965615a6c6ae64806f8c9",
+      "source_sha256": "95c65d25992fdcb3a2f33d0bdc84ef7d6e451e3f2568cc46bbc269447bb4e652",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "3eaacdf06885363b913df7668943c5f3977b5f5fd2d90d30982b85017cc4f5dc",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "8707cfcccccc1f07"
+    },
+    {
+      "id": "b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce-174d14ee",
+      "source_path": "img/train_and_valid/X/0078.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0078.jpg",
+      "source_blob_sha1": "b976d65f284303aafa5e8c1a86ed9f9fcf09c9ce",
+      "source_sha256": "4cc9f2b274489006d3e0cd24d21f730dbe001df845bb8df595ef105bc46d5e62",
+      "original_dimensions": [
+        464,
+        620
+      ],
+      "image_sha256": "e412aee675e413c6dc482cb4324457e72efe3a203bc09741c392cb946e2874e3",
+      "dimensions": [
+        464,
+        620
+      ],
+      "dhash": "90b2b2b0b0878406"
+    },
+    {
+      "id": "40a6b88cae2f0c595be3d0655e7ef7e70d951862-25f08053",
+      "source_path": "img/train_and_valid/X/0079.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0079.jpg",
+      "source_blob_sha1": "40a6b88cae2f0c595be3d0655e7ef7e70d951862",
+      "source_sha256": "7272de8b9706fb40ef43b161867b0882113edd21453a0ae801518bb19dd30642",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "15c8169b4b0b36748ab6af80338ebcf3ffa17cc07a7e21b16f5bbdeafcc4e037",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "8fc7212161616116"
+    },
+    {
+      "id": "aed0bfd1dda2777a63691703ec0fe3909a0c92da-2d563fed",
+      "source_path": "img/train_and_valid/X/008.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/008.jpg",
+      "source_blob_sha1": "aed0bfd1dda2777a63691703ec0fe3909a0c92da",
+      "source_sha256": "cb1b99303cc767cfbedfe5087fb4b408e48c58bde0a07a1d66d8e9115aba0234",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "0203366b1d1dbeeef3484b4ac1c71c1346c7dac89041341365435941f3e09d0f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0e0686e2e0909e8f"
+    },
+    {
+      "id": "eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f-dc170e40",
+      "source_path": "img/train_and_valid/X/0080.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0080.jpg",
+      "source_blob_sha1": "eb4c7e03d9b7778185e9e2fbd1a9d4c280b45c3f",
+      "source_sha256": "22658c53eebec209f41e98cb17c039947712649e3362c5732d1839eb18015fc3",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "f2ab52f70342cea28ef2b36f870887d788a8f21bc4c635629a726cf8338ba9b4",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "e0c080c3838380c2"
+    },
+    {
+      "id": "0cdcf44ef13642a764ba532f473df40bca586a09-561ce844",
+      "source_path": "img/train_and_valid/X/0081.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0081.jpg",
+      "source_blob_sha1": "0cdcf44ef13642a764ba532f473df40bca586a09",
+      "source_sha256": "917b4fd997a52150f61960647b3705297e54489c46ad32036ea373adf3f6dda5",
+      "original_dimensions": [
+        348,
+        620
+      ],
+      "image_sha256": "099041624cf2a03096dbdf9e8eea6b86f74b46664fb11bb9fe45cabdbe5d98f4",
+      "dimensions": [
+        348,
+        620
+      ],
+      "dhash": "8c968261068cc8cb"
+    },
+    {
+      "id": "f9b66c39ad0cabe43444cad701aab74088688e77-6ea45599",
+      "source_path": "img/train_and_valid/X/0082.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0082.jpg",
+      "source_blob_sha1": "f9b66c39ad0cabe43444cad701aab74088688e77",
+      "source_sha256": "d338026103aadf246cb6578423b9fbfd4826bc3226ed8659335abf13d182cb1d",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "d9ee6e4bb662c4b1ccd0b958f753bf90d74893207e8448ca06327da30e91b25f",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "faf9f9fcfcfe7026"
+    },
+    {
+      "id": "cb8f6c69eca2dbad8b65a2b5766cf02710f17c97-0f67fefd",
+      "source_path": "img/train_and_valid/X/0083.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0083.jpg",
+      "source_blob_sha1": "cb8f6c69eca2dbad8b65a2b5766cf02710f17c97",
+      "source_sha256": "91231be5a33b92c97158f26e2bbf2196d6a739ca81d1766378bbad971f6d1e53",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "4e3d4609c0550eecd545ac198f64d02cf63adc527429b3fb997e85aa98bcd433",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "173333713a7a328e"
+    },
+    {
+      "id": "900b97646e1167f862aeb05d85eab97e1b1988b9-0f859470",
+      "source_path": "img/train_and_valid/X/0084.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0084.jpg",
+      "source_blob_sha1": "900b97646e1167f862aeb05d85eab97e1b1988b9",
+      "source_sha256": "f84ce3a09717405e398faf4bd6b46f1928ddb3660d26128a9f4536b6c98a8c55",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "b391e8ededa1385920cec1cc300403acf38d4a384209167282925bba91664127",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "87b361616161a186"
+    },
+    {
+      "id": "7a90882e8094829eb3a87328ea4a4d2504426c71-7df5c5c5",
+      "source_path": "img/train_and_valid/X/0085.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0085.jpg",
+      "source_blob_sha1": "7a90882e8094829eb3a87328ea4a4d2504426c71",
+      "source_sha256": "5db9a4d29e5ab5c0b095928d02cd5a2e698fdae263c55dc6aebc7052cd6322be",
+      "original_dimensions": [
+        463,
+        620
+      ],
+      "image_sha256": "462b4a91c17b38f3c10be56512cd7ec89ec11d590a08f9490d81761c1c0d5877",
+      "dimensions": [
+        463,
+        620
+      ],
+      "dhash": "1db03232729c8d4b"
+    },
+    {
+      "id": "e6185c107176ade12e6d6721882913a1fc9c903a-3a73df9e",
+      "source_path": "img/train_and_valid/X/0086.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0086.jpg",
+      "source_blob_sha1": "e6185c107176ade12e6d6721882913a1fc9c903a",
+      "source_sha256": "e17910839f21563b7e2dbd30d0bfde31afe4986715c738a9126a5377dd83d0cd",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "558059f3b3e0526951822577e9b0481897751153fae4d7d4375eea889a3eb4aa",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "97f9b9f978b1929d"
+    },
+    {
+      "id": "0993cacc7be690f2720b8183edaa6a7970f0f114-fffcfeee",
+      "source_path": "img/train_and_valid/X/0087.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0087.jpg",
+      "source_blob_sha1": "0993cacc7be690f2720b8183edaa6a7970f0f114",
+      "source_sha256": "3f645d7f99a6b60182bef48d5d7ee06221262adea61a51fe44e6c030a559e4d4",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "e2decf54aa6a58aaba79a00403660c70a826d10e1d77d595bc4d769732f466f7",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "f0d8f8c8f8ecf961"
+    },
+    {
+      "id": "874aeb48a827edfb0a0443d74b569819ff741d05-ad948669",
+      "source_path": "img/train_and_valid/X/0088.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0088.jpg",
+      "source_blob_sha1": "874aeb48a827edfb0a0443d74b569819ff741d05",
+      "source_sha256": "63eb825c194e36f041d26f7b63345fbdef812ea5d48fd98048373b89b59d649b",
+      "original_dimensions": [
+        348,
+        620
+      ],
+      "image_sha256": "67c076ca030a1b3e46db4798bde0bd1a1ed4239445443b414ffe18d6c2c6af19",
+      "dimensions": [
+        348,
+        620
+      ],
+      "dhash": "8f1e7179797317ff"
+    },
+    {
+      "id": "d65336e744e008a080c194ab4c29d64d1e28fa8d-b624e249",
+      "source_path": "img/train_and_valid/X/0089.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0089.jpg",
+      "source_blob_sha1": "d65336e744e008a080c194ab4c29d64d1e28fa8d",
+      "source_sha256": "1de8f736c037aea407d809f7ab337535555e18ecf2618f000687f74ef24aec11",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "59acb3c8ef23589049ef96a7f3c1ff64dd8e77491ba90f32fff8c4547a025d5a",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "2df97d79f8786860"
+    },
+    {
+      "id": "043674fb7de97f7596cca3af689c3ed23f9c0a09-58f15d93",
+      "source_path": "img/train_and_valid/X/009.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/009.jpg",
+      "source_blob_sha1": "043674fb7de97f7596cca3af689c3ed23f9c0a09",
+      "source_sha256": "4a9fc066b94accec79ce54303901ec7f0e7417f6d63d79c092dba7c07661d2ba",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "be6bd471e2bd8d7476fedb237b82af06ae14d8334b439d1a97b72f08b3b65d7c",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "cb166061713494a6"
+    },
+    {
+      "id": "ae0ff4268cc55ea978f04fad0a1f4890abb31893-200cab29",
+      "source_path": "img/train_and_valid/X/0090.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0090.jpg",
+      "source_blob_sha1": "ae0ff4268cc55ea978f04fad0a1f4890abb31893",
+      "source_sha256": "251262e35e898858a9a72ec1dc3b5aed2bd33f61f5b8b344d9a286f908b9dcd8",
+      "original_dimensions": [
+        768,
+        1024
+      ],
+      "image_sha256": "85469cee7a29c62bb7423f8ccdf581778350c611cb5dd45a7dcc0fd0f57050af",
+      "dimensions": [
+        768,
+        1024
+      ],
+      "dhash": "0770646070ed2733"
+    },
+    {
+      "id": "0a26c39e3f26ec4d636c0bde3e02e49b2139c490-fff1cd0f",
+      "source_path": "img/train_and_valid/X/0091.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0091.jpg",
+      "source_blob_sha1": "0a26c39e3f26ec4d636c0bde3e02e49b2139c490",
+      "source_sha256": "7aa9c9067f212a155c500b8b6c553fe09abad3f744a58291f08ecd25aa4714b0",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "e2cc37df0b974d918157ccef9b06319ae1fe540074cbf95c0ded44ffe042d1a1",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "43c1818181818103"
+    },
+    {
+      "id": "9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9-213d3b9c",
+      "source_path": "img/train_and_valid/X/0092.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/0092.jpg",
+      "source_blob_sha1": "9179b3bcc50ca7ba06cba24646e64e2bbe57e8d9",
+      "source_sha256": "300e30b03b84c611c4356e965206cc5445b41e1aaafda239f1809536d4ffd241",
+      "original_dimensions": [
+        465,
+        620
+      ],
+      "image_sha256": "fd165ddcae867e14224ba4af5d033eb772246561372d9dd381e822fd5e9930dc",
+      "dimensions": [
+        465,
+        620
+      ],
+      "dhash": "61f9d9d4ddccf874"
+    },
+    {
+      "id": "368c91c77d24d8abd30301374c2e4cf4f0725467-581e806c",
+      "source_path": "img/train_and_valid/X/100.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/100.jpg",
+      "source_blob_sha1": "368c91c77d24d8abd30301374c2e4cf4f0725467",
+      "source_sha256": "1be0e6807a97b71a89d553a121bb19283b51c45a6491861f110113544bb9f54d",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "fc6e005bea80ffb9cb488d65395c678e29a08eb2ae35294e8fc9d94d44ff6cd8",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "1c3c24c080308383"
+    },
+    {
+      "id": "79401bddeeca65c035d3b3221a78b3a5dc924c73-a968a6c2",
+      "source_path": "img/train_and_valid/X/101.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/101.jpg",
+      "source_blob_sha1": "79401bddeeca65c035d3b3221a78b3a5dc924c73",
+      "source_sha256": "fd030a6ed911a4837a33161d519ac7b10e71b5c0a68a225e67e352d41f75e399",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "3538b668870ee65fd38f61515847b7937677ac57e9fde97711f596eb580756db",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8ff762737371719b"
+    },
+    {
+      "id": "936ae6bdacdb874362ee4eea6e44a67066c42266-9cd5015c",
+      "source_path": "img/train_and_valid/X/102.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/102.jpg",
+      "source_blob_sha1": "936ae6bdacdb874362ee4eea6e44a67066c42266",
+      "source_sha256": "a7fa0b892e98e8c613b8c21a2ca0c0723f54ffc39622ed3473bb2e0decd6639d",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "e14bdef37b44bad7431772e22bffd327337b5b83a9490134ff255ff4daf87703",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8d9f737372303296"
+    },
+    {
+      "id": "46746fe610fce8428d7bff1d7b512293aa9ffe23-38f58442",
+      "source_path": "img/train_and_valid/X/103.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/103.jpg",
+      "source_blob_sha1": "46746fe610fce8428d7bff1d7b512293aa9ffe23",
+      "source_sha256": "421f8a360204cee323f766f5b1354f15d87d5a26175e4dd0e5661dc6fbb1f550",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "14fb5db9c2ccd70dc4cb78ccce02e638acf83b6418d898edf3b46b07a7f3833f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9e96f0e069e02c30"
+    },
+    {
+      "id": "d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64-39b4c8a5",
+      "source_path": "img/train_and_valid/X/104.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/104.jpg",
+      "source_blob_sha1": "d80dd5fbcdf19d8ec828eb9edc6844ad23fb5b64",
+      "source_sha256": "2d01d1e8d20c8e3433d5251e604463d788d03fe653fbe17fb877a5c74bc2d048",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "d848059219a6b047d06de442ae1208d9ef238a57033b445847e4fe99a159a215",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "1ef26260616336b7"
+    },
+    {
+      "id": "9117b9a4a77361135e0a691196936c6b3c3cff12-bdf06377",
+      "source_path": "img/train_and_valid/X/105.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/105.jpg",
+      "source_blob_sha1": "9117b9a4a77361135e0a691196936c6b3c3cff12",
+      "source_sha256": "0ac854900d5c95362d861d78b714f76ea56d262af4bedd0cca81eff3dd65cc23",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "62a2403f995abc0206f50e9e29190251af1842663f7e703a23e9d37cc82a9c95",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8e96e6e662f0f28e"
+    },
+    {
+      "id": "ff16be743b4329579aa82341aa5ef68884a8a9b1-ab055095",
+      "source_path": "img/train_and_valid/X/106.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/106.jpg",
+      "source_blob_sha1": "ff16be743b4329579aa82341aa5ef68884a8a9b1",
+      "source_sha256": "bd468b0e8dc0a36aa48da1dfe5ccad149762543e295ca497ae737ad1cd77d8b6",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "7137816051e123ecb3165f6dc51d63b6993550f3787ad319d1eefe8576ee6abe",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8c8d91f363769f3f"
+    },
+    {
+      "id": "5369c23329d9c59e5b42c5de952328191b4ff8ec-e87f4fa6",
+      "source_path": "img/train_and_valid/X/107.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/107.jpg",
+      "source_blob_sha1": "5369c23329d9c59e5b42c5de952328191b4ff8ec",
+      "source_sha256": "b2b929e14267528099b9bd786fa758f7957472ff3b7adbb106092302e254257f",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "87de175f13f9bf89622e118da61dd7b41e87f39756188ef1c55c80231c5ccd55",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "26336fe7713333b9"
+    },
+    {
+      "id": "6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f-1fbe7e9b",
+      "source_path": "img/train_and_valid/X/108.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/108.jpg",
+      "source_blob_sha1": "6f03101fa45ab8e78c6fbf73350fbf527c3d7d5f",
+      "source_sha256": "b3a6af4c2d162cddc9bb6b3ef6672b40a779bc072e06f938d8ed428307238284",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "ab14c60f318ec526a11cf8b78f002e99065b098433b7bd8c6a0008b68956cf9c",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "dcc6def87819cc4c"
+    },
+    {
+      "id": "3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff-911915ed",
+      "source_path": "img/train_and_valid/X/109.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/109.jpg",
+      "source_blob_sha1": "3c247a6b50f632ab5eb12d72e4b6b09fb22c4dff",
+      "source_sha256": "cc16bd98a590151a45e6f3fd58610a44a90803dd180500c1f98272a00f6547e3",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "8d8581461756ad16f15137c365c196251adbffe17556a06b6cb111dbc035cda3",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "c6e67633f2f48dec"
+    },
+    {
+      "id": "802ddaa3c300bbb3041cd9faaf1a8775472c5e86-63726379",
+      "source_path": "img/train_and_valid/X/110.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/110.jpg",
+      "source_blob_sha1": "802ddaa3c300bbb3041cd9faaf1a8775472c5e86",
+      "source_sha256": "b509e9b55ca52ba5a24f63312551e75c3d512b6c76d7f61f81fb00931dab2a03",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "67ae59dea096b3daa37542900a439f98e12665ee54b982b7cd727f15d99fa0ca",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0c0c6260e1e14647"
+    },
+    {
+      "id": "ab16e6c541204fd130c05581d990c76220f47e3d-6165b83c",
+      "source_path": "img/train_and_valid/X/111.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/111.jpg",
+      "source_blob_sha1": "ab16e6c541204fd130c05581d990c76220f47e3d",
+      "source_sha256": "d94c115819867b3091d14aab242f5af9b594c1d5cd4ad94f9c584a2819a889a7",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "cedb87737b4bbaf8a1aa1eea297db740b8974d77081b9f811e8db7f9a9a3413f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8602386960603a66"
+    },
+    {
+      "id": "f6099807854facc1d6ea7e765720feb9aba22a8d-79e8dac7",
+      "source_path": "img/train_and_valid/X/112.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/112.jpg",
+      "source_blob_sha1": "f6099807854facc1d6ea7e765720feb9aba22a8d",
+      "source_sha256": "92bf9629a8b8602f650e7b3274a1d04b685c9ce63613c73915cce6bf17c17712",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "e0675a96616e276f29b35ea273f1d6a17d616da1cb514c98bfb65db7b7cbaeab",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "dfe2737b7270f2ce"
+    },
+    {
+      "id": "f51d07a5970fee8612ddab599caa9f3816fcd1c8-31fefe07",
+      "source_path": "img/train_and_valid/X/113.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/113.jpg",
+      "source_blob_sha1": "f51d07a5970fee8612ddab599caa9f3816fcd1c8",
+      "source_sha256": "822135504cfba9e7ac64b09ca18c9b82eb059116cdb957687d1c089ebe787796",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "9959fdb3fdc396168c45e708232e48b46c43d1ecd78b354a584f505a8ca73f86",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "d6c6f672e870b6fc"
+    },
+    {
+      "id": "e370b6418a1534159b74caaf2f44d0d949a9a079-a7bff455",
+      "source_path": "img/train_and_valid/X/114.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/114.jpg",
+      "source_blob_sha1": "e370b6418a1534159b74caaf2f44d0d949a9a079",
+      "source_sha256": "b6911bf22508b8f4bd3f17ef4800fd9482782373533289962941ae750fa4d53a",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "a75baf7ce6af5e4f71fa0d6e0574a8ca08b101e5638873ce332abd747a073e11",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0e860068699e8c39"
+    },
+    {
+      "id": "ebfc449814c968c87ceb09e263cda1fb1206acf8-63424b02",
+      "source_path": "img/train_and_valid/X/115.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/115.jpg",
+      "source_blob_sha1": "ebfc449814c968c87ceb09e263cda1fb1206acf8",
+      "source_sha256": "8967b410b55a466e3c685af2aba9129aa9c0749f40605dcb25a6cfa78b5256f4",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "ef8ee128ce7062499aa15e3ebd0d29932c2fb937cde7dc43a09c97932c1801bf",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8686b8394969597d"
+    },
+    {
+      "id": "d1d3910f820b7e75f2b0427646ab76814ea51479-91469424",
+      "source_path": "img/train_and_valid/X/116.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/116.jpg",
+      "source_blob_sha1": "d1d3910f820b7e75f2b0427646ab76814ea51479",
+      "source_sha256": "74f5ee5448b92cb67fe3d17eddfa230c9f65af07719e6b242b3a09dcedee2b02",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "132dc0e4a7c05cdbb1014543ea0944762de24cb8f307923788ae9014ece09643",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9f9ee46662f07183"
+    },
+    {
+      "id": "22be27efb68419e63ef680d5a129745f18e3d045-7c51ebb9",
+      "source_path": "img/train_and_valid/X/117.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/117.jpg",
+      "source_blob_sha1": "22be27efb68419e63ef680d5a129745f18e3d045",
+      "source_sha256": "7f4b070097eb19c32aa6c7cf7847933dda19e2bf202d3b98cf6bbc06e9c9f8f7",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "2d612991db7af184865587e5136bb2729c0742a0b20b79a613afe7bf5ac18482",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "f71c6c46a299c183"
+    },
+    {
+      "id": "285fec9613de9bcb3beb7770e88611641608a5bb-a0b76c0c",
+      "source_path": "img/train_and_valid/X/118.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/118.jpg",
+      "source_blob_sha1": "285fec9613de9bcb3beb7770e88611641608a5bb",
+      "source_sha256": "f68c470a03c09e63df6819f68da6c0ee06770171225be2660a2a872302481b21",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "2bf28f95d1e236d0ca46682ae0260baf635f7ca1c3ed756094f11fd0f30f6c75",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0e06c0c1c868aba7"
+    },
+    {
+      "id": "775e228b8d91400f27086ed8bfeef1774bcbc808-68ba54a3",
+      "source_path": "img/train_and_valid/X/119.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/119.jpg",
+      "source_blob_sha1": "775e228b8d91400f27086ed8bfeef1774bcbc808",
+      "source_sha256": "d12bbe85ba6ed03214c169234710ed235907edaaf99db4fb75d809e5a1c265ae",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "cc6d140c022e586aab4bee49a209019697f765946fc09ef766cc24106f11ea97",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8e96f2fcfc78f91b"
+    },
+    {
+      "id": "86be67f81b18a9613304a27a6a140c969019b75e-e64fe43f",
+      "source_path": "img/train_and_valid/X/120.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/120.jpg",
+      "source_blob_sha1": "86be67f81b18a9613304a27a6a140c969019b75e",
+      "source_sha256": "22cc6ba3f94e4fd0f7967604a16bff8a11d2b6ef6cc6dad5122d91192b31e0a2",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "65245a5cbb5cb4cf2c4358c46b69d06c2676a66a990facdbb0e5487019403afb",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "96967973fb7878b8"
+    },
+    {
+      "id": "e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c-bf67754f",
+      "source_path": "img/train_and_valid/X/121.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/121.jpg",
+      "source_blob_sha1": "e3a7788851aec581ebabbc7c9c8b6f2f1f565a5c",
+      "source_sha256": "22303cc39a916d007c13213ea6710580483b7c18cc731f8772b920f685172f3c",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "0143103c1d2210ddfd6dda4bb357bf7424ea90dcd59db9e2ce8e95e380b4908f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "6078c4c1e1e81c08"
+    },
+    {
+      "id": "b505b35a41c4096fa54c2c11c3853194fdcfc232-df375608",
+      "source_path": "img/train_and_valid/X/122.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/122.jpg",
+      "source_blob_sha1": "b505b35a41c4096fa54c2c11c3853194fdcfc232",
+      "source_sha256": "ff1e058da80d24a33c944b952f82abe2137a56897b894005787ea9f3f7d6a80a",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "6c16cf92a90317ac24070c12f57193b184bfcb34eb76d36862d7176419d1eff4",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9c0608c9e8684bc6"
+    },
+    {
+      "id": "41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a-4319adc0",
+      "source_path": "img/train_and_valid/X/123.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/123.jpg",
+      "source_blob_sha1": "41b1c4fcdc2cb59cd7d9a0981eaa1cb80dc5ba4a",
+      "source_sha256": "39ddc1165ca6092e70bacc2cf00061424107056145fe1d0a2900cc262920d1f1",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "c824f088bd20a4e5d386d6156c18785aa04bd203692aecfd67d743380515932c",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "1f023061f1f0304f"
+    },
+    {
+      "id": "2cb7319977123bb12c0a8f349b304034da35d91f-7ed0946b",
+      "source_path": "img/train_and_valid/X/124.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/124.jpg",
+      "source_blob_sha1": "2cb7319977123bb12c0a8f349b304034da35d91f",
+      "source_sha256": "41cd82c3eda06a3450337bd41c33d2bca12b11017a224c6bf9f2e43a3b6d6fb4",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "2eaaf9950fce02f999c11e06055c89268c09b5af410a4b7e8d124a6ff3b72393",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0c1662606160063e"
+    },
+    {
+      "id": "d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba-35a9418b",
+      "source_path": "img/train_and_valid/X/125.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/125.jpg",
+      "source_blob_sha1": "d0f945b0b70b89c93a7a73424885f1e8e3e0a3ba",
+      "source_sha256": "dbf5aa7b08f79f4a2198e2a90a9542b404793e500d3a5badfde80cc283a99689",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "7a64bcaea8970adc98adef672da5198c752eabe24bf7c795ec0d9de3866874dd",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "cb830238f83a140c"
+    },
+    {
+      "id": "c8791cbdef50a92ea13b208eeb2f33538a19e6db-a60e79cb",
+      "source_path": "img/train_and_valid/X/126.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/126.jpg",
+      "source_blob_sha1": "c8791cbdef50a92ea13b208eeb2f33538a19e6db",
+      "source_sha256": "fd172f907f83d5bf6f321c0d487f746e85513f506ad35f04c6b2c22154158c62",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "a770c944e2031e95c2357f0cc9ea9449237243eb9cfbeb2e7202c2d67320d448",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "5c3b62603174ee18"
+    },
+    {
+      "id": "c6e21e77c08fd9af98cf8ca34628ad3772bed8dc-4f120dc3",
+      "source_path": "img/train_and_valid/X/127.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/127.jpg",
+      "source_blob_sha1": "c6e21e77c08fd9af98cf8ca34628ad3772bed8dc",
+      "source_sha256": "4fdfdbb24900034aa1684afda010baf0a8d75996c43329e9e05f332f40714307",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "aefe88842bc489966a4be7968d9692021b0855310699739eb7d1029c6c4c23f1",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0e1439306829b223"
+    },
+    {
+      "id": "c371f2e145798d732f53f4110040c8cb997f3d7c-083c4f84",
+      "source_path": "img/train_and_valid/X/128.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/128.jpg",
+      "source_blob_sha1": "c371f2e145798d732f53f4110040c8cb997f3d7c",
+      "source_sha256": "9a7dfed6e0cfa147a2af416369d3a5769657ad0cdedb5b7428c953825bc42804",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "9bb358389b6af87b8692e94519e175f6c293cca4375bad0000fbb58ae52fad41",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "4303224070380e2a"
+    },
+    {
+      "id": "552c0268db871e3d29f31987a612071c3aca511b-1202d2d5",
+      "source_path": "img/train_and_valid/X/129.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/129.jpg",
+      "source_blob_sha1": "552c0268db871e3d29f31987a612071c3aca511b",
+      "source_sha256": "2e9fcbd0860b9f3a95ded89f0609ce5ae91d382edcddeaeaad6d7e33454d8272",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "9166742d32837c141afc922c997f083a3d87e924fb0298133dbfb1fd051acb94",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "03053171e265a626"
+    },
+    {
+      "id": "f185ff4a05f2568be765d708d853ef0dc647fff4-6f436e74",
+      "source_path": "img/train_and_valid/X/130.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/130.jpg",
+      "source_blob_sha1": "f185ff4a05f2568be765d708d853ef0dc647fff4",
+      "source_sha256": "dc5e6e9e5135a45b0d3ee6d9e46625f2e474091cdd2d99e2c10a9648d53356a4",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "4a3011202bdc4b4acedc7f4392c1fc3a1a8dece011dd8770db60b6b0995d576c",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "00193060606663e8"
+    },
+    {
+      "id": "fb4d30feb5e408bf844ccaec5e312904a29e814e-0885385e",
+      "source_path": "img/train_and_valid/X/131.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/131.jpg",
+      "source_blob_sha1": "fb4d30feb5e408bf844ccaec5e312904a29e814e",
+      "source_sha256": "ea4c4ff3ef029a0b8f7e3580feccacc54d45d919917b8103f930f53208e2ccec",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "c793eb12bfdb0be5f96d2fef33a5875103de2dab15bae9712352167d32ff46fc",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "1e072379e2609cc0"
+    },
+    {
+      "id": "d5bac319aaa6b0a41ac6330b03fb944d384c0029-47b4a7c1",
+      "source_path": "img/train_and_valid/X/132.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/132.jpg",
+      "source_blob_sha1": "d5bac319aaa6b0a41ac6330b03fb944d384c0029",
+      "source_sha256": "8c0896e69d526b7974c496b814801c638acdd0934ee4c1b45059e5762ba83709",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "65f4eaa25658e59b31a35355da7432f842e4e833fd4cdf5c8ab96c850ff9faab",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "803064603131a590"
+    },
+    {
+      "id": "5d31072933a8d3a9b59d420c112598672d346839-d8120a9f",
+      "source_path": "img/train_and_valid/X/133.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/133.jpg",
+      "source_blob_sha1": "5d31072933a8d3a9b59d420c112598672d346839",
+      "source_sha256": "61ccae8daa4eb2077747ed873c8f96768d5b88468632fdaf916999227bb764fd",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "538821839883107962faaa33edfc076802aa9bcc9a03ad61b600f0f06b0faedc",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "e88c8c16180e070b"
+    },
+    {
+      "id": "3af799f9ef7ef15e98a25d038393d3842b558667-c040c146",
+      "source_path": "img/train_and_valid/X/134.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/134.jpg",
+      "source_blob_sha1": "3af799f9ef7ef15e98a25d038393d3842b558667",
+      "source_sha256": "2eeded368ef7be50d707f7a2ce0d1291ed4707c07a000cc1c1b25b1552224378",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "dd559a18800d9832b053aeef4283e6c9e6bcece467db414bb50460c9ef40c6e9",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "36341470718c0080"
+    },
+    {
+      "id": "f26cdfb733a40ad85d1ffd61a60565396adef8d4-5b0d2b18",
+      "source_path": "img/train_and_valid/X/135.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/135.jpg",
+      "source_blob_sha1": "f26cdfb733a40ad85d1ffd61a60565396adef8d4",
+      "source_sha256": "5d0687e19e50b3b3ef8f6b1f2e95930f70ccce2858d968f401260666f823d2f9",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "88adf00a540b8c95f0e172b2e32647189c566f9154b59a81de318a5e428c2b85",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "488c9d10614e16cf"
+    },
+    {
+      "id": "c3736a461d020e7003c886790b6a4f999e054f1e-95265dff",
+      "source_path": "img/train_and_valid/X/136.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/136.jpg",
+      "source_blob_sha1": "c3736a461d020e7003c886790b6a4f999e054f1e",
+      "source_sha256": "1a4bbd2508776bee138eae98169699779fe5764181528cacd51ee09591a86a82",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "4b99a3e28b1fb942d63624c7315252201d370cb60641c2448f1b1e891dd0ce6b",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0c0d2c33616518ba"
+    },
+    {
+      "id": "17e6154f4689e66187a9b5a1395788463188aa50-717aea29",
+      "source_path": "img/train_and_valid/X/137.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/137.jpg",
+      "source_blob_sha1": "17e6154f4689e66187a9b5a1395788463188aa50",
+      "source_sha256": "5f3004e92ce4a119c7ed444ccdfe2bcd70b4fe53cc2d86efc32d68326f9f5d5b",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "4c0caab9c61d4ca735ca66345364d49a2e797e4eae7aec74a1d78efafb0ec667",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0088041330313ecc"
+    },
+    {
+      "id": "47cd327dfffc08ee69570ddadf8ca5f5475b6f63-4df1030c",
+      "source_path": "img/train_and_valid/X/138.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/138.jpg",
+      "source_blob_sha1": "47cd327dfffc08ee69570ddadf8ca5f5475b6f63",
+      "source_sha256": "24867e9a2c312d6da5d4f5d91a5bc541d516ab3f3433a6233006696fb95b1fba",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "c18ee76cc69cdc4acd7a9a85cefbfd9e2c17d6a23fb4e3c512768c03c52ea89f",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "10cc0b3031300eb9"
+    },
+    {
+      "id": "ef747f369bd51180437a7758da7113b4fe906001-b634e518",
+      "source_path": "img/train_and_valid/X/139.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/139.jpg",
+      "source_blob_sha1": "ef747f369bd51180437a7758da7113b4fe906001",
+      "source_sha256": "5e8de6c740641ce3ba771a72a6df9f3f964f7fed23e43e83cae3c537e0113ae3",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "20cb9cf1b30f6246814fa3224cb15928ac860a5ed52782f48a701ebcfaf8c9ab",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "401c2d8781616161"
+    },
+    {
+      "id": "9c7ea2d97c71e630babbd5f54ab78fe366bd999b-612e6086",
+      "source_path": "img/train_and_valid/X/140.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/140.jpg",
+      "source_blob_sha1": "9c7ea2d97c71e630babbd5f54ab78fe366bd999b",
+      "source_sha256": "bfcfe51c4e307d74bb2efc73e331f1da82c469470a9656004320797802e46d42",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "1e8105a231eb8718ec91112ad32404443e20b7550af20d37d6dcdf4d73332e67",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9696f378f8f81314"
+    },
+    {
+      "id": "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e-7531baa2",
+      "source_path": "img/train_and_valid/X/141.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/141.jpg",
+      "source_blob_sha1": "fb6e30a6f9ae946376d5a3a903c8ec686cc22d6e",
+      "source_sha256": "54afba0426f40050269fc69de09a48c6257d42a2d1937f1d130aca5aa762f7b1",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "69860bae315bab68768e55148178e4a5ca214294ece1df0c5c3269307818b589",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0f8666606030950d"
+    },
+    {
+      "id": "441dc491754f6835b121e889ea6a20ffa61da00b-7dbb4449",
+      "source_path": "img/train_and_valid/X/142.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/142.jpg",
+      "source_blob_sha1": "441dc491754f6835b121e889ea6a20ffa61da00b",
+      "source_sha256": "4d40bc0e7c6b9e68442494a17c0ead9ee8c414b28a8e958c5df44fec19867d35",
+      "original_dimensions": [
+        619,
+        885
+      ],
+      "image_sha256": "fe3f899cea21d75cb5312fdde3b7171c015e586dcee4c45ba911bc001b483e4d",
+      "dimensions": [
+        619,
+        885
+      ],
+      "dhash": "86c7b3b2c6c6c4d6"
+    },
+    {
+      "id": "645b894ff7240c2defda4b99137192b003f0cebc-4ffe49ac",
+      "source_path": "img/train_and_valid/X/144.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/144.jpg",
+      "source_blob_sha1": "645b894ff7240c2defda4b99137192b003f0cebc",
+      "source_sha256": "75357f9cde8fe9b577620f7bfdfe99d90ffd266ee9475c51069df56caac52100",
+      "original_dimensions": [
+        2010,
+        4556
+      ],
+      "image_sha256": "761388bda3000974a35ab802f4a3e7ccadc4808e3400403bd353d42cf6d890d1",
+      "dimensions": [
+        706,
+        1600
+      ],
+      "dhash": "9666130f4b677312"
+    },
+    {
+      "id": "196206ba90b4bcec8df902c946dfc3a839e352e8-7ab3b395",
+      "source_path": "img/train_and_valid/X/145.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/145.jpg",
+      "source_blob_sha1": "196206ba90b4bcec8df902c946dfc3a839e352e8",
+      "source_sha256": "19373a6d3c012bef13a35dd9bc23c633537bb6808dd5f170a12e8879bc12efea",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "b2f7531184becc68cf05f23c9407b821c65d327b4144d7152cd887b73cd45552",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "11118806060e4b13"
+    },
+    {
+      "id": "1312f082dcbacf739b6edcc04b4a55d731254782-68baace3",
+      "source_path": "img/train_and_valid/X/146.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/146.jpg",
+      "source_blob_sha1": "1312f082dcbacf739b6edcc04b4a55d731254782",
+      "source_sha256": "f8b7652f2a7fa185222db3fbdcdc6e5a60c4d2005c3679a0cc24a132a969e201",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "45c3f36afa011f3dc54d01eefaa74cf595bda09557fb5291b194d4c2f4e472d6",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "2120004040c0692b"
+    },
+    {
+      "id": "36696e653a3c97bbe0bb83d3b4f757f348fc26a3-6e76f8de",
+      "source_path": "img/train_and_valid/X/147.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/147.jpg",
+      "source_blob_sha1": "36696e653a3c97bbe0bb83d3b4f757f348fc26a3",
+      "source_sha256": "f9176ca43861a1631cb280bb74bfbecbe3d296ec471ed3b0e19e45806e72fa03",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "bebc1c888e716b77dcd05a88a5f4cb862692ebca238f14656c9e3a5a9a0478fe",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9848cc44c4ccc462"
+    },
+    {
+      "id": "8f4d06a33a95588c38fe5153004a6f3829fd9986-c5394320",
+      "source_path": "img/train_and_valid/X/148.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/148.jpg",
+      "source_blob_sha1": "8f4d06a33a95588c38fe5153004a6f3829fd9986",
+      "source_sha256": "b4ca3b2caa1601e5d2688793fdbcc4d9f2010909c49b6d745c2fc40dbbf182b0",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "771a3fefca3db040abbdb86c3caa7a548c1155eb7b9b580f70282a226fbfb117",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8f074242426001cb"
+    },
+    {
+      "id": "0c16e028e0864e2eb6c37503df7d4061b625ef6d-e65b861e",
+      "source_path": "img/train_and_valid/X/149.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/149.jpg",
+      "source_blob_sha1": "0c16e028e0864e2eb6c37503df7d4061b625ef6d",
+      "source_sha256": "19f57cffc14ed8d46fd3b6c9acbbf6e5895b732bb848d4f1a208785f77c7644f",
+      "original_dimensions": [
+        3000,
+        4000
+      ],
+      "image_sha256": "4b18d6a4878ba8414d6c241e4a2cf2c24668d128dea9ca0b94c43315c8538dc2",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "c08c89858084806c"
+    },
+    {
+      "id": "60e353e003e2211494936b66d477731691c90b18-73b6d1f1",
+      "source_path": "img/train_and_valid/X/150.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/150.jpg",
+      "source_blob_sha1": "60e353e003e2211494936b66d477731691c90b18",
+      "source_sha256": "a6641f8aac4b658856a946705d9939402fe588d37c9502f1c69fcbc6d7ecdf10",
+      "original_dimensions": [
+        3000,
+        4000
+      ],
+      "image_sha256": "c339e9fefc3e004b80b99c963e61779a19fd87bba61c04e9aa096b453806df32",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0bc1c0c2c0c64ece"
+    },
+    {
+      "id": "766b0dc50d4bdc14232e8733836cbc349ee0adf2-1df9aa21",
+      "source_path": "img/train_and_valid/X/151.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/151.jpg",
+      "source_blob_sha1": "766b0dc50d4bdc14232e8733836cbc349ee0adf2",
+      "source_sha256": "67242eac16eec2166b6a679c8b3d9598162d8d0f6d6b842a2e3dab3519d706a5",
+      "original_dimensions": [
+        3468,
+        4624
+      ],
+      "image_sha256": "373b7a5b732019fed3d5420729d5c374b7afaa000858c71262846e053e5816f8",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "112163a287e32706"
+    },
+    {
+      "id": "7a09465781532a5f23bf3d6956d901d7b5b22d5d-e167f691",
+      "source_path": "img/train_and_valid/X/152.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/152.jpg",
+      "source_blob_sha1": "7a09465781532a5f23bf3d6956d901d7b5b22d5d",
+      "source_sha256": "a78c85886bcd11641bf59a8c10bd56340ec24c3323dc8cac1d6d277e663b6291",
+      "original_dimensions": [
+        3468,
+        4624
+      ],
+      "image_sha256": "697e505a53aed61e35d4d50122c1aab1fa0308d0fc3b8bde80f589bbc2284b45",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0e22c1414141078f"
+    },
+    {
+      "id": "95b6d49871e1e906c252b23ed649fcf4eeb5a180-37927bf0",
+      "source_path": "img/train_and_valid/X/154.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/154.jpg",
+      "source_blob_sha1": "95b6d49871e1e906c252b23ed649fcf4eeb5a180",
+      "source_sha256": "bae76a467afe13df6bd2f601e7fc083aee905e968665005410e306de22b3c522",
+      "original_dimensions": [
+        3096,
+        4128
+      ],
+      "image_sha256": "c2dafa7c28d445c42af5cf479bdba6630b5699a04d317d42f78a7cfe79561a97",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "19337969f97b1e9e"
+    },
+    {
+      "id": "39483a1abfc472a4e06a638727d63996d52eef80-709c1dae",
+      "source_path": "img/train_and_valid/X/155.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/155.jpg",
+      "source_blob_sha1": "39483a1abfc472a4e06a638727d63996d52eef80",
+      "source_sha256": "764fc4ac270b22dc135049a20134a092c478d40c8f120d14f69e58ce70da80d9",
+      "original_dimensions": [
+        2736,
+        3648
+      ],
+      "image_sha256": "ea7659dda95e309b67f375b31a66f4a31f3faf5520c193a77b22a506ddcd5c30",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "c643616161030726"
+    },
+    {
+      "id": "e7724f8998f06eff94832b1615979ac7ab80aff1-1f3aa89b",
+      "source_path": "img/train_and_valid/X/156.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/156.jpg",
+      "source_blob_sha1": "e7724f8998f06eff94832b1615979ac7ab80aff1",
+      "source_sha256": "7a34e2b529789bf1e54fcbd146538b36965290c6b4ec6c53119b5287c0f747ef",
+      "original_dimensions": [
+        712,
+        708
+      ],
+      "image_sha256": "cb2ae2b156f56285c4b2294cc1542e7736d08bc76f622cf8ee2ee4154e8507f0",
+      "dimensions": [
+        712,
+        708
+      ],
+      "dhash": "3ff3f3f2f2f2f234"
+    },
+    {
+      "id": "c4c006c5404752ebfecaf1f4364e91dcb9c30b18-45329c24",
+      "source_path": "img/train_and_valid/X/157.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/157.jpg",
+      "source_blob_sha1": "c4c006c5404752ebfecaf1f4364e91dcb9c30b18",
+      "source_sha256": "cdd147876467984b89863bb601243967d87a07df83b2936d7907f9f16a9d1174",
+      "original_dimensions": [
+        521,
+        812
+      ],
+      "image_sha256": "5fc17f8d16271ed43ef588fdd15d96c4c081e5afc7b52160117c084d41cd71a8",
+      "dimensions": [
+        521,
+        812
+      ],
+      "dhash": "9919c8c319189010"
+    },
+    {
+      "id": "03110ad18731d0f11fadf9b86725d69202f08cff-6dfb1ee4",
+      "source_path": "img/train_and_valid/X/158.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/158.jpg",
+      "source_blob_sha1": "03110ad18731d0f11fadf9b86725d69202f08cff",
+      "source_sha256": "58b1efa13e8f5c6a72e8a8364c68db9951e381bc7c3a85ba82d1214ec32a98cc",
+      "original_dimensions": [
+        592,
+        879
+      ],
+      "image_sha256": "05065fcd26ecef4501dc1fa3b3e9517c55f479892d65f21524ec7105065f9113",
+      "dimensions": [
+        592,
+        879
+      ],
+      "dhash": "c5a2233c381adf1b"
+    },
+    {
+      "id": "8c42dc70cfa91eb2f80344c4d1b50a010e3bb718-bfafa739",
+      "source_path": "img/train_and_valid/X/159.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/159.jpg",
+      "source_blob_sha1": "8c42dc70cfa91eb2f80344c4d1b50a010e3bb718",
+      "source_sha256": "0995058b2fee68a78c711d7409be867b3f5a38c49c7fedee81b7b1f8d7794cbd",
+      "original_dimensions": [
+        4000,
+        4000
+      ],
+      "image_sha256": "50be1ef3b06df154482213a2a4b60ee81fc3e255d8d74d2c2848855757d2439f",
+      "dimensions": [
+        1600,
+        1600
+      ],
+      "dhash": "8c9c607073300e3e"
+    },
+    {
+      "id": "3b6eacfe3c55b88fd361bd266a02b05776370415-65370d28",
+      "source_path": "img/train_and_valid/X/160.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/160.jpg",
+      "source_blob_sha1": "3b6eacfe3c55b88fd361bd266a02b05776370415",
+      "source_sha256": "4d42b4d198436b80ad576f36ed81c67fa5d45fa25a98d13fd83cb8732ce473fc",
+      "original_dimensions": [
+        3000,
+        4000
+      ],
+      "image_sha256": "acfad76f0acbba92d31a2db94960334b34432470b67b6befc6a1674a619af744",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "43c184808cc00303"
+    },
+    {
+      "id": "f04e270dbe29511b7bed0e6bb69ab68486814b4f-c7e70432",
+      "source_path": "img/train_and_valid/X/161.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/161.jpg",
+      "source_blob_sha1": "f04e270dbe29511b7bed0e6bb69ab68486814b4f",
+      "source_sha256": "f973ab11637980cc4b237182cf298cce6830f05864362971f6eef9542515b5f5",
+      "original_dimensions": [
+        3472,
+        4640
+      ],
+      "image_sha256": "98933a979e8ecb3c9a97603e7c20cbf64ffdd0a9a3854bbf1fe3d1e67dbb0842",
+      "dimensions": [
+        1197,
+        1600
+      ],
+      "dhash": "396ddcecccccba1a"
+    },
+    {
+      "id": "ecc1f232af0ba2f136a5f449e332450ade00a273-e9d6298f",
+      "source_path": "img/train_and_valid/X/162.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/162.jpg",
+      "source_blob_sha1": "ecc1f232af0ba2f136a5f449e332450ade00a273",
+      "source_sha256": "48072688bd5edf9f4e6042de8171b6e8b364c292998d840e70e87051da30e5a8",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "00d50ea056589677245f76c5a8287cbc602f7d19d197ce3a9abea0312646bf8c",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0e0b0c0c4c293b3b"
+    },
+    {
+      "id": "5aed17256b106b8ef5e4ed85ac3fe17c0029e84a-99eb60c3",
+      "source_path": "img/train_and_valid/X/163.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/163.jpg",
+      "source_blob_sha1": "5aed17256b106b8ef5e4ed85ac3fe17c0029e84a",
+      "source_sha256": "8b82dd65b0ce9821aec4731c54f004607fc4970445f7256672cafc8e26957b8f",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "a077eb1c799731945a4180ab36728880e23a1f230b2e7cd01c29802d73a7bbfa",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "9dc9d9c9c953476f"
+    },
+    {
+      "id": "127dabca2115e60936586c92c7fd81df18a8d019-101cef49",
+      "source_path": "img/train_and_valid/X/164.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/164.jpg",
+      "source_blob_sha1": "127dabca2115e60936586c92c7fd81df18a8d019",
+      "source_sha256": "fea0ac0929188fe8cd7a05837727f9b2073dcacad42bd0e4449c6c6480a0ee28",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "b4d2d5ad9024715edccfedb402fe85726e37ce13505d26bc6aae9430ecb7676e",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "4b6060686043a3b3"
+    },
+    {
+      "id": "01ad85537783130833bca5f46deeeef8223b8720-46f225d0",
+      "source_path": "img/train_and_valid/X/93.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/93.jpg",
+      "source_blob_sha1": "01ad85537783130833bca5f46deeeef8223b8720",
+      "source_sha256": "09913588c9019cbe030cdf058ddb3d82ab2f4a653410d8d3e54d624ea26a6a63",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "e88db8ad429505112fbeaa53ed2be86bdb7a61c879b7b4734fbe2f162f3b06bc",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "0f4e636162606660"
+    },
+    {
+      "id": "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c-da6046f4",
+      "source_path": "img/train_and_valid/X/94.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/94.jpg",
+      "source_blob_sha1": "ee7ae4288d06d6c6263fd8b838243a3ddf3a227c",
+      "source_sha256": "c6ec7a224bb125b605fed256f8465232e9ddf0b9275f09125d77062dfaf6f4b0",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "769796562c74f874be4d71cb4d2cb8cc33089a9c8cb0526d0296b4bcec2716c7",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "ceddb17061caf939"
+    },
+    {
+      "id": "b2b425dbcb8ea1095050775498dfc8d70ab24c1d-6cf27e39",
+      "source_path": "img/train_and_valid/X/95.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/95.jpg",
+      "source_blob_sha1": "b2b425dbcb8ea1095050775498dfc8d70ab24c1d",
+      "source_sha256": "8b2cfe49b66497120419d11be187f27501ad82c7b50db0f15c79d6fe886cbcfe",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "4c809b20d3aceed68dcb8657e86f641c4334753519a42f94ba11c0d050c1577a",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8c0ef6c04048e397"
+    },
+    {
+      "id": "c5becc42e876f81fedd46eaac542181cb69c0aeb-8617ab20",
+      "source_path": "img/train_and_valid/X/96.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/96.jpg",
+      "source_blob_sha1": "c5becc42e876f81fedd46eaac542181cb69c0aeb",
+      "source_sha256": "086293477c90f8b95e73408e1a0c9293d3a99b4f32207df3421becedc86d6c51",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "d225a95e601c154f7f6d984c7a1be73f06ba910eab764bb2ac900da367b35c3c",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "1d0c2d36f0820343"
+    },
+    {
+      "id": "659b2c33ce76b4fefb8a3a58e607cdea49e2916a-1f2ce14d",
+      "source_path": "img/train_and_valid/X/97.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/97.jpg",
+      "source_blob_sha1": "659b2c33ce76b4fefb8a3a58e607cdea49e2916a",
+      "source_sha256": "adf299a6842b468c40522f67f7d4f6dfad3d33beb4e73bfdf094f54e7c03c7b6",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "e336a7bd476400b35a5bb3a8c44bf5c57c84fe7956e80c5805d45b24582153ea",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "4687202161700d89"
+    },
+    {
+      "id": "4355bb0d7e1ba4cc627ed4b978ae185db94d031c-1a676064",
+      "source_path": "img/train_and_valid/X/98.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/98.jpg",
+      "source_blob_sha1": "4355bb0d7e1ba4cc627ed4b978ae185db94d031c",
+      "source_sha256": "bcef744cc6ed7133f89ffbc93a08729fc589cc519c905e577c0c518fda2ccdee",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "d1a82bde8f95c47e8da61d57818d1e365aadc468ac47fb4e45ebc96f350d9626",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8f96e6e66060964e"
+    },
+    {
+      "id": "6fcb15b923ed44859e9e39e56ac9c44bd79c9e12-09258232",
+      "source_path": "img/train_and_valid/X/99.jpg",
+      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/99.jpg",
+      "source_blob_sha1": "6fcb15b923ed44859e9e39e56ac9c44bd79c9e12",
+      "source_sha256": "ea745ca056e4c2110de8100e4e3e995c57aec219935468be54e29ff6adac09a5",
+      "original_dimensions": [
+        3024,
+        4032
+      ],
+      "image_sha256": "87e2cd8264da3692d9e6987c69e14b2ac35a223e9d75cb6b5b3dd660eaea5896",
+      "dimensions": [
+        1200,
+        1600
+      ],
+      "dhash": "8c8fb971717062ce"
+    }
+  ]
+}

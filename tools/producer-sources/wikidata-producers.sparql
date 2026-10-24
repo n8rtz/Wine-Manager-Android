@@ -1,0 +1,13 @@
+# Authored, NOT executed successfully: WDQS rejected this environment's proxy.
+# Classes checked against Wikidata documentation. Results still require role review.
+# Export in an authorized environment with a descriptive User-Agent/contact.
+# LIMIT is a sample cap, NOT a full-corpus claim. Use stable item paging for bulk work.
+SELECT DISTINCT ?item ?itemLabel ?class ?country ?website WHERE {
+  VALUES ?class { wd:Q156362 wd:Q3631469 }
+  ?item wdt:P31/wdt:P279* ?class .
+  OPTIONAL { ?item wdt:P17 ?country . }
+  OPTIONAL { ?item wdt:P856 ?website . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,fr,it,es,de,pt" . }
+}
+ORDER BY ?item
+LIMIT 1000
