@@ -1,0 +1,471 @@
+{
+  "source_url": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/build-wine-producer-gazetteer%20(rezip).zip",
+  "source_blob_sha1": "8bf9737463092b0a2ef233139dee8e88a0f6fae8",
+  "archive_sha256": "b7e219175dd864d8c9d2cc99073429fa1221639b01dc2046b384ddb28846a854",
+  "archive_bytes": 5808137,
+  "expanded_bytes": 28712365,
+  "files": {
+    "build-wine-producer-gazetteer (1)/drizzle.config.json": {
+      "bytes": 156,
+      "sha256": "cc44502003e85bb5258a3a5b59522c28238a052d0f19abcf14338c71474467b7"
+    },
+    "build-wine-producer-gazetteer (1)/eslint.config.mjs": {
+      "bytes": 365,
+      "sha256": "c971926abccc506da1532570c55a95d5298b606901c4801866a4862969c13302"
+    },
+    "build-wine-producer-gazetteer (1)/next.config.ts": {
+      "bytes": 104,
+      "sha256": "ab4c61f6ee100ae43610a18512f1ebcec842bb2405431e1009266173f21cf772"
+    },
+    "build-wine-producer-gazetteer (1)/package.json": {
+      "bytes": 742,
+      "sha256": "97d925194c2423ebd433724e8f374e6a1e9b9925c675148acc4df00ce20c93ee"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/28267ca4384ff424_FRL_Spirits_Producers_and_Bottlers_List.csv": {
+      "bytes": 758611,
+      "sha256": "f986b02dda501a94bb6b5cce65eb0cbfeaca5de4caadf3145a83f3779118fa93"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/5406c5d1d87a0cbe_FRL_Basic_Permits_Issued_Since_the_Last_Publication.csv": {
+      "bytes": 9951,
+      "sha256": "5caaeed559fc21187108744aa6b2a7606f920c50e80872c0f77f00ff0bcf7520"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/645440ddfcf9226c_FRL_Puerto_Rico_Basic_Permit_List.csv": {
+      "bytes": 111732,
+      "sha256": "1cd26b74c0b03e1aaf7114b34a221da28866c3aa67e85b98cea51f6b57d877ba"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/7cc98902578fbc4a_FRL_Alcohol_Importer_Permit_List.csv": {
+      "bytes": 2644872,
+      "sha256": "fd3a854d88291afb104a9b5def9334e740127b1b43859421738d8fb20aabefc7"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/8fe67503a4cda748_FRL_Alcohol_Wholesaler_Permit_List.csv": {
+      "bytes": 4917186,
+      "sha256": "abf7042c3e87169c5ad36ee5d29191a45c3814938d88b13e8e3662801a8b32b9"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/af4d168d5e4d1f45_FRL_All_Permits.json": {
+      "bytes": 17868143,
+      "sha256": "c1379a319097182dae3ebc9256736188efb3bdf539b6ab52472b7f111d0aff5a"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/b91569ba6f145fae_FRL_Wine_Producer_and_Blender_Permit_List.csv": {
+      "bytes": 2277675,
+      "sha256": "bb71d794100e0b8d77459f9792366bca1acf47a1b6bd17a592f3ab03535a8fd5"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/.cache/cfb47f4586050fb7_list-of-permittees": {
+      "bytes": 71282,
+      "sha256": "4a9c63d5da08bb7f590c30aa14c148a7756f1d4c4cdc282be68260f9a14445e9"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/README.md": {
+      "bytes": 2637,
+      "sha256": "9d99e8a5caee4b1c110279969df195682a05c1cf511a97c021ffe774150ab756"
+    },
+    "build-wine-producer-gazetteer (1)/pipeline/fetch_ttb_producers.py": {
+      "bytes": 29344,
+      "sha256": "1e87bc75681f7271f343fdbd7b31564cc46d9058731560c7d3732030350fdf0b"
+    },
+    "build-wine-producer-gazetteer (1)/postcss.config.mjs": {
+      "bytes": 108,
+      "sha256": "b8cd36495468ea54e029eb4b2e0e98f0feff6f95d6513e70db37a71c0e3bfba4"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/api/gazetteer/search/route.ts": {
+      "bytes": 927,
+      "sha256": "3824ae94d1c03516db0e3e20938800b56aca7612d688ea94d14fe95c16450187"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/api/gazetteer/stats/route.ts": {
+      "bytes": 628,
+      "sha256": "b81753704ffa2fbb3ee3c30f4c1b0c11bf83a894fed49ecbccdb4308598f87e8"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/api/health/route.ts": {
+      "bytes": 295,
+      "sha256": "85ecde9db86952d444d593f4133df2b517ed768accc487350d35bb0db498357f"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/globals.css": {
+      "bytes": 23,
+      "sha256": "42070e0b45bb201b2b838a52aaaa6e965f964e0b542d97f1fe517fe59c4b75a8"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/layout.tsx": {
+      "bytes": 471,
+      "sha256": "5f2bf3bad8c557c6467d80c2fbe0f140c2693a13f75e05df5563558215428edc"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/page.tsx": {
+      "bytes": 2947,
+      "sha256": "a1097f954720404aec37de309bde8bf73f8b644f2856571005bf351cbcee37fa"
+    },
+    "build-wine-producer-gazetteer (1)/src/app/search-client.tsx": {
+      "bytes": 4277,
+      "sha256": "52fb1725cb2d425f860a9a82642824bffa6efd79f342063718efc5eb60195ddb"
+    },
+    "build-wine-producer-gazetteer (1)/src/db/index.ts": {
+      "bytes": 547,
+      "sha256": "44d8e984cf4d238facb3e984c6a2ffa7abfca11768da1304ff439d2b7246990b"
+    },
+    "build-wine-producer-gazetteer (1)/src/db/schema.ts": {
+      "bytes": 620,
+      "sha256": "40a66a8d2b7b80746a8eddd3badb4c5d4165a3050c61a0137f78c6ede9965f2a"
+    },
+    "build-wine-producer-gazetteer (1)/src/lib/gazetteer.ts": {
+      "bytes": 7999,
+      "sha256": "6d6d314fd23c5b6243381f15655e5c47e214e901fafd7aa78c50c14166346945"
+    },
+    "build-wine-producer-gazetteer (1)/tsconfig.json": {
+      "bytes": 723,
+      "sha256": "4ea5303fb21d01b83151db57d43246ba2ac0bbb4e79b9e83b3a120b2599c4351"
+    }
+  },
+  "hidden_cache_bytes": 28659452,
+  "source_report_header": {
+    "Report Source": "U.S. Department of the Treasury, Alcohol and Tobacco Tax and Trade Bureau",
+    "Report Title": "FOIA List of Permittees",
+    "Report Notes": [
+      "Data that could possibly identify a particular taxpayer is redacted to prevent a disclosure pursuant to IRC 6103"
+    ]
+  },
+  "json_rows": 84689,
+  "raw_rows": 169456,
+  "unique_parsed_records": 84689,
+  "unique_permits": 84689,
+  "industry_rows": {
+    "Importer (Alcohol)": 43339,
+    "Wholesaler (Alcohol)": 78384,
+    "Distilled Spirits Plant": 11414,
+    "Wine Producer": 36319
+  },
+  "unique_record_industries": {
+    "Wholesaler (Alcohol)": 39179,
+    "Importer (Alcohol)": 21657,
+    "Wine Producer": 18152,
+    "Distilled Spirits Plant": 5701
+  },
+  "all_entity_counts": {
+    "producers": 77668,
+    "fts": 77668
+  },
+  "all_database_bytes": 40878080,
+  "entities_with_wine_role": 25559,
+  "wine_only_entities": 25559,
+  "lexical_all": {
+    "photos": 22,
+    "known_photos": 165,
+    "distinct_reference_names": [
+      "Cavalier",
+      "Château La Sauvageonne",
+      "Château Margaux",
+      "Château Peyfaures",
+      "Domaine Georges Bertrand",
+      "Gérard Bertrand",
+      "Hawk's Shadow Estate",
+      "Spottswoode"
+    ],
+    "matches": [
+      {
+        "review_number": 8,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 10,
+        "expected": "Château La Sauvageonne",
+        "matching_canonical_names": [
+          "Gerard Bertrand"
+        ]
+      },
+      {
+        "review_number": 28,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 50,
+        "expected": "Gérard Bertrand",
+        "matching_canonical_names": [
+          "Gerard Bertrand"
+        ]
+      },
+      {
+        "review_number": 56,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 62,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 63,
+        "expected": "Château La Sauvageonne",
+        "matching_canonical_names": [
+          "Gerard Bertrand"
+        ]
+      },
+      {
+        "review_number": 69,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 90,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 96,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 121,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 124,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 125,
+        "expected": "Château Peyfaures",
+        "matching_canonical_names": [
+          "Château Peyfaures"
+        ]
+      },
+      {
+        "review_number": 127,
+        "expected": "Domaine Georges Bertrand",
+        "matching_canonical_names": [
+          "Gerard Bertrand"
+        ]
+      },
+      {
+        "review_number": 133,
+        "expected": "Cavalier",
+        "matching_canonical_names": [
+          "Cavalier Distributing Florida",
+          "Cavalier Spirits",
+          "Cavalier Ventures",
+          "Tarnished Truth Distilling"
+        ]
+      },
+      {
+        "review_number": 134,
+        "expected": "Hawk's Shadow Estate",
+        "matching_canonical_names": [
+          "Hawk'S Shadow",
+          "Hawk'S Shadow Estate"
+        ]
+      },
+      {
+        "review_number": 135,
+        "expected": "Hawk's Shadow Estate",
+        "matching_canonical_names": [
+          "Hawk'S Shadow",
+          "Hawk'S Shadow Estate"
+        ]
+      },
+      {
+        "review_number": 149,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      },
+      {
+        "review_number": 150,
+        "expected": "Spottswoode",
+        "matching_canonical_names": [
+          "Spottswoode",
+          "Spottswoode Winery"
+        ]
+      },
+      {
+        "review_number": 152,
+        "expected": "Gérard Bertrand",
+        "matching_canonical_names": [
+          "Gerard Bertrand"
+        ]
+      },
+      {
+        "review_number": 159,
+        "expected": "Domaine Georges Bertrand",
+        "matching_canonical_names": [
+          "Gerard Bertrand"
+        ]
+      },
+      {
+        "review_number": 166,
+        "expected": "Château Margaux",
+        "matching_canonical_names": [
+          "Margaux",
+          "Margaux and Company Imports"
+        ]
+      }
+    ],
+    "note": "Lexical presence only. Owner aliases, name collisions and incorrect entity roles can create false matches; not verified coverage or OCR accuracy."
+  },
+  "lexical_wine_only": {
+    "photos": 3,
+    "known_photos": 165,
+    "distinct_reference_names": [
+      "Hawk's Shadow Estate",
+      "Spottswoode"
+    ],
+    "matches": [
+      {
+        "review_number": 134,
+        "expected": "Hawk's Shadow Estate",
+        "matching_canonical_names": [
+          "Hawk'S Shadow",
+          "Hawk'S Shadow Estate"
+        ]
+      },
+      {
+        "review_number": 135,
+        "expected": "Hawk's Shadow Estate",
+        "matching_canonical_names": [
+          "Hawk'S Shadow",
+          "Hawk'S Shadow Estate"
+        ]
+      },
+      {
+        "review_number": 150,
+        "expected": "Spottswoode",
+        "matching_canonical_names": [
+          "Spottswoode",
+          "Spottswoode Winery"
+        ]
+      }
+    ],
+    "note": "Lexical presence only. Owner aliases, name collisions and incorrect entity roles can create false matches; not verified coverage or OCR accuracy."
+  },
+  "exact_alias_probes": {
+    "Domaine Drouhin": [],
+    "Chateau Montelena": [
+      {
+        "name": "Standing Journey",
+        "industries": [
+          "Distilled Spirits Plant",
+          "Wine Producer"
+        ],
+        "permits": [
+          "CA-S-20199",
+          "CA-W-21961"
+        ],
+        "aliases": [
+          "Standing Journey",
+          "Chateau Montelena"
+        ]
+      },
+      {
+        "name": "Château Montelena",
+        "industries": [
+          "Wine Producer"
+        ],
+        "permits": [
+          "CA-W-21961"
+        ],
+        "aliases": [
+          "Chateau Montelena",
+          "Standing Journey"
+        ]
+      }
+    ],
+    "Blackstone": [
+      {
+        "name": "Blackstone Spirits",
+        "industries": [
+          "Distilled Spirits Plant"
+        ],
+        "permits": [
+          "IL-S-15024"
+        ],
+        "aliases": [
+          "Blackstone Spirits",
+          "Blackstone",
+          "Thornton Distilling",
+          "Thornton"
+        ]
+      },
+      {
+        "name": "Thornton Distilling",
+        "industries": [
+          "Distilled Spirits Plant"
+        ],
+        "permits": [
+          "IL-S-15024"
+        ],
+        "aliases": [
+          "Thornton Distilling",
+          "Thornton",
+          "Blackstone Spirits",
+          "Blackstone"
+        ]
+      }
+    ],
+    "Ridge Vineyards": [
+      {
+        "name": "Ridge",
+        "industries": [
+          "Importer (Alcohol)",
+          "Wine Producer"
+        ],
+        "permits": [
+          "CA-I-21045",
+          "CA-W-1882",
+          "CA-W-331"
+        ],
+        "aliases": [
+          "Ridge",
+          "Ridge Vineyards"
+        ]
+      },
+      {
+        "name": "Ridge Vineyards",
+        "industries": [
+          "Wine Producer"
+        ],
+        "permits": [
+          "CA-W-1882"
+        ],
+        "aliases": [
+          "Ridge Vineyards",
+          "Ridge"
+        ]
+      }
+    ],
+    "Chateau Margaux": [],
+    "Costco": [],
+    "Walmart": []
+  },
+  "limitations": [
+    "Cached source authenticity/freshness and CC0 claim not independently verified against TTB.",
+    "Supplied writer drops permits and industries from SQLite; owner/operating-name aliases conflate roles.",
+    "Offline source review only; no Android integration, OCR rerun or measured accuracy improvement."
+  ]
+}

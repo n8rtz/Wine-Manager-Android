@@ -1,5 +1,7 @@
 # Producer gazetteer: source audit and Lab integration plan
 
+> **Update:** The second, repacked package contains bulk US permit data. See [the second-package audit and revised integration plan](producer-gazetteer-rezip-review.md). The findings below describe the first ZIP only; its missing-data conclusion must not be applied to the second package.
+
 ## Decision
 
 **Useful prototype/search ideas; not a ready-to-import authoritative producer database.** Import the supplied package into a review-only tools folder, not Android assets. Keep Production v1.0 and v2.0 unchanged. Do not enable its data or ranking in Lab until the data gates below pass.
