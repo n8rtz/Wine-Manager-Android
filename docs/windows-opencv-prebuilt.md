@@ -38,3 +38,15 @@ If `python` is not a working Python 3 installation, check `python --version`. Th
 If verification still fails, provide the output of `python tools/opencv-prebuilt.py`, not only Gradle's wrapper stack trace. Do not use `--seal` locally, edit the pinned hashes or skip the task.
 
 Validation performed on Linux: platform-independent path tests include `PureWindowsPath` with a spaced path; matching, changed, missing, extra and CRLF-modified files are covered; the existing genuine 46-file artifact verifies successfully. This is not an executed Windows Android Studio build.
+
+## When Git restore still leaves the same mismatch
+
+Pull the latest fix, then run:
+
+```powershell
+python tools/opencv-prebuilt.py --repair-line-endings
+```
+
+This explicitly reads each sealed file as bytes, tests whether CRLF-to-LF conversion reproduces its **exact pinned SHA-256**, and writes only verified text repairs. It preflights all manifest entries before writing; missing files, unrelated edits and native binary changes are refused. It never changes hashes, reseals the manifest, or relaxes normal verification. It then runs the complete verifier. If it refuses repair, its output includes expected, actual and LF-only hashes: provide that output rather than repeatedly restoring or rebuilding.
+
+A passing repair is idempotent. The implementation was tested against an isolated copy of the real artifact with Windows-style line endings: 47 text/recipe files were repaired and the complete original manifest passed. This was a simulated checkout on Linux, not a Windows build.

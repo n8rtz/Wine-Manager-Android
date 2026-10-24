@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 from pathlib import Path, PureWindowsPath, PurePosixPath
 import struct
 import tempfile
@@ -39,6 +40,47 @@ class PrebuiltChecks(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'CRLF'):
                 module.verify_manifest({'files': {'Test.java': original}, 'recipes': {}},
                                        {'Test.java': module.digest(path)}, {})
+
+    def test_explicit_repair_reproduces_pinned_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / 'prebuilt'
+            directory.mkdir()
+            original = b'class Test {\n}\n'
+            java = directory / 'Test.java'
+            java.write_bytes(original.replace(b'\n', b'\r\n'))
+            script = root / 'build.py'
+            script.write_bytes(b'print(1)\r\n')
+            record = {'files': {'Test.java': hashlib.sha256(original).hexdigest()},
+                      'recipes': {'build.py': hashlib.sha256(b'print(1)\n').hexdigest()}}
+            self.assertEqual(module.repair_line_endings(record, directory, root), 2)
+            self.assertEqual(java.read_bytes(), original)
+            self.assertEqual(script.read_bytes(), b'print(1)\n')
+            self.assertEqual(module.repair_line_endings(record, directory, root), 0)
+
+    def test_repair_preflight_preserves_real_edits_and_other_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            a = root / 'A.java'
+            b = root / 'B.java'
+            a.write_bytes(b'original\r\n')
+            b.write_bytes(b'intentional edit\r\n')
+            expected = hashlib.sha256(b'original\n').hexdigest()
+            record = {'files': {'A.java': expected, 'B.java': expected}, 'recipes': {}}
+            with self.assertRaisesRegex(ValueError, 'No files repaired'):
+                module.repair_line_endings(record, root, root)
+            self.assertEqual(a.read_bytes(), b'original\r\n')
+            self.assertEqual(b.read_bytes(), b'intentional edit\r\n')
+
+    def test_repair_never_transforms_native_library(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / 'native.so'
+            path.write_bytes(b'not-a-real-library\r\n')
+            record = {'files': {'native.so': hashlib.sha256(b'not-a-real-library\n').hexdigest()}, 'recipes': {}}
+            with self.assertRaisesRegex(ValueError, 'No files repaired'):
+                module.repair_line_endings(record, root, root)
+            self.assertEqual(path.read_bytes(), b'not-a-real-library\r\n')
 
     def test_missing_artifact_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

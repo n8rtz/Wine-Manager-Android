@@ -40,6 +40,40 @@ def verify_manifest(record, files, recipes):
             'from Git to undo CRLF conversion. For intentional content changes, rebuild in CI; '
             'do not bypass verification or reseal locally.')
 
+def repair_line_endings(record, directory, root=ROOT):
+    """Explicit repair, never relaxed verification: only write bytes with the pinned SHA-256.
+
+    Preflight every listed file before writing any. Missing files, native changes and real
+    text edits are refused. Does not delete extra files or modify/reseal the manifest.
+    """
+    planned = []
+    problems = []
+    entries = [(directory, name, expected) for name, expected in record['files'].items()]
+    entries += [(root, name, expected) for name, expected in record['recipes'].items()]
+    for base, name, expected in entries:
+        path = base / name
+        if not path.resolve().is_relative_to(base.resolve()) or path.is_symlink():
+            raise ValueError(f'Refusing unsafe manifest path: {name}')
+        if not path.is_file():
+            problems.append(f'{name}: missing')
+            continue
+        raw = path.read_bytes()
+        actual = hashlib.sha256(raw).hexdigest()
+        if actual == expected:
+            continue
+        normalized = raw.replace(b'\r\n', b'\n')
+        lf_hash = hashlib.sha256(normalized).hexdigest()
+        if path.suffix in ('.java', '.txt', '.py') and raw != normalized and lf_hash == expected:
+            planned.append((path, normalized))
+        else:
+            problems.append(f'{name}: expected={expected}, actual={actual}, LF-only={lf_hash}')
+    if problems:
+        raise ValueError('No files repaired: mismatch is not solely recoverable CRLF conversion. '
+                         + '; '.join(problems[:8]))
+    for path, data in planned:
+        path.write_bytes(data)
+    return len(planned)
+
 def inspect(directory):
     files = {manifest_key(p, directory): digest(p) for p in sorted(directory.rglob('*'))
              if p.is_file() and p.name != 'manifest.json'}
@@ -55,9 +89,15 @@ def inspect(directory):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--seal', action='store_true', help='CI producer only: record build provenance')
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument('--repair-line-endings', action='store_true', help='Repair only CRLF changes that exactly reproduce pinned hashes')
+    actions.add_argument('--seal', action='store_true', help='CI producer only: record build provenance')
     parser.add_argument('--directory', type=Path, default=ROOT / 'opencv-minimal/prebuilt')
     args = parser.parse_args()
+    if args.repair_line_endings:
+        record = json.loads((args.directory / 'manifest.json').read_text(encoding='utf-8'))
+        count = repair_line_endings(record, args.directory)
+        print(f'Repaired line endings in {count} file(s); running full verification now')
     files = inspect(args.directory)
     recipes = {p: digest(ROOT / p) for p in RECIPES}
     manifest = args.directory / 'manifest.json'
