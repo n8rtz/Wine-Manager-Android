@@ -72,7 +72,7 @@ class PhoneCorpusActivity:ComponentActivity() {
             state.board?.let { board ->
                 item {
                     Text("Scored results",style=MaterialTheme.typography.titleMedium)
-                    Text("Swipe sideways to see all metrics. Complete = all six correct; expected blanks count as correct. Failures are not treated as correct blanks.")
+                    Text("Swipe sideways to see all metrics. Saved Production v2.0 is your full phone run from build 28bce9e81cc3; it is not rerun. Compare same-attempted-photo rows when stopping early. The older Frozen baseline is not Production v1.0. Complete = all six correct, including expected blanks; failures get no correct-blank credit.")
                     SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
                             Row { board.headers.forEach { Text(it,Modifier.width(145.dp).padding(6.dp),style=MaterialTheme.typography.labelMedium) } }

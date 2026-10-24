@@ -90,3 +90,16 @@ Validation: 77 actual Kotlin JVM split checks pass, including a ~35 MB file → 
 ## Three-mode update validation
 
 The selected implementation is identified in the run metadata and CSV pipeline ID. Mode/build/install isolation prevents mixing old LAB checkpoints with the new spatial variant. Export earlier runs before updating. Mode labels and scoreboard routing have host wiring checks; 160 host tests, 85 actual Kotlin spatial-merger checks, 12 actual Kotlin spatial-to-guarded integration checks and 2,030 scorer/stat/CSV checks pass. Android Activity/ViewModel wiring and a full APK build still require verification in Android Studio. No phone accuracy improvement is claimed before testing.
+
+## Saved Production v2.0 comparison
+
+Every benchmark mode now displays two additional rows from the user's completed 168-photo phone run on build `28bce9e81cc3`, whose original pipeline ID was `lab-guarded-producer`:
+
+- **Saved Production v2.0 · same attempted photos** — scored only on the image IDs checkpointed in the current run.
+- **Saved Production v2.0 · full corpus** — all 168 photos, 160 fully scorable forms: **34 complete / 43 one-error / 83 multi-error**, 630 correct values, 80 wrong values, 184 missing values, 77 correctly blank and 20 unsupported fills.
+
+The saved predictions are bundled in debug assets as `phone-corpus-v1/saved-production-v2.json`. `tools/corpus/bundle_saved_phone_v2.py` reproduces them from the compact full-run analysis, retaining the source CSV/build/pipeline and hashes. They are loaded only by the scoreboard, never supplied to recognition/extraction, and never rerun. No new photos or models are included.
+
+These rows appear in the on-screen table, copied statistics, and scored CSV (including per-field expected/recognized values). Exported saved-v2 rows include `result_origin`, `source_build`, `source_pipeline` and `source_csv_sha256`, distinct from the current export build. Existing historical frozen-baseline rows remain labeled historical; **they are not Production v1.0**. Running v1.0 or Lab therefore provides a matched-photo comparison against saved v2.0, without running the other contenders. This does not invent a full saved v1.0 result.
+
+163 host tests pass, including all 1,008 saved prediction values against the reproducible bundle, full-run scoring parity, first-19-photo parity (4/15 complete), and empty-subset handling. Android/Compose rendering has not been executed in this sandbox.
