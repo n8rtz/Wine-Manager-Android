@@ -33,11 +33,12 @@ import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import com.yourapp.wine.diagnostics.PipelineFunnel
 
-private fun passFailLabel(passed:Int,failed:Int,passColor:Color,failColor:Color,shared:Boolean=false):AnnotatedString = buildAnnotatedString {
+private fun passFailLabel(passed:Int,failed:Int,passColor:Color,failColor:Color,shared:Boolean=false,notReached:Int=0,notRecorded:Int=0,notApplicable:Int=0):AnnotatedString = buildAnnotatedString {
     if(shared) append("Shared ")
     withStyle(SpanStyle(color=passColor)) { append(passed.toString()) }
     append("/")
     withStyle(SpanStyle(color=failColor)) { append(failed.toString()) }
+    if(notReached+notRecorded+notApplicable>0) append(" · NR $notReached · ? $notRecorded · NA $notApplicable")
 }
 
 class PhoneCorpusActivity:ComponentActivity() {
@@ -105,7 +106,7 @@ class PhoneCorpusActivity:ComponentActivity() {
                 }
                 item {
                     Text("Pipeline bottleneck matrix",style=MaterialTheme.typography.titleMedium)
-                    Text("Each field cell is passed/failed distinct labels from the latest attempt: pass is green, fail is red. Blank cells have no applicable pass/fail count. Shared steps show one count across all fields. Tap + beside a step to read its description.",
+                    Text("Three requirement tables: ML Kit OCR, Paddle OCR, then post-OCR. OCR tables are distinct outputs, not parallel execution (the runner executes ML Kit before Paddle). Post-OCR combines shared assignment and dependent resolver gates; evidence hypotheses are jointly assigned, not a serial per-field chain. Counts are passed/failed; NR, ?, and N/A preserve not-reached, unrecorded, and not-applicable cohorts. Tap + for definitions.",
                         style=MaterialTheme.typography.bodySmall)
                     TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
                     if(showFunnel) SelectionContainer {
@@ -130,7 +131,20 @@ class PhoneCorpusActivity:ComponentActivity() {
                                         style=MaterialTheme.typography.labelMedium,textAlign=TextAlign.Center,maxLines=1,overflow=TextOverflow.Ellipsis)
                                 }
                             }
-                            board.matrix.forEach { row ->
+                            board.matrix.forEachIndexed { index,row ->
+                                val section=when {
+                                    row.step.branch.startsWith("OCR table · ML Kit") -> "OCR 1 · ML Kit"
+                                    row.step.branch.startsWith("OCR table · Paddle") -> "OCR 2 · Paddle"
+                                    else -> "POST-OCR REQUIREMENTS"
+                                }
+                                val previous=board.matrix.getOrNull(index-1)?.step?.branch
+                                val previousSection=when {
+                                    previous?.startsWith("OCR table · ML Kit")==true -> "OCR 1 · ML Kit"
+                                    previous?.startsWith("OCR table · Paddle")==true -> "OCR 2 · Paddle"
+                                    previous==null -> null
+                                    else -> "POST-OCR REQUIREMENTS"
+                                }
+                                if(section!=previousSection) Text(section,Modifier.width(viewportWidth).padding(top=10.dp,bottom=4.dp),style=MaterialTheme.typography.titleSmall)
                                 val expanded=row.step.id in expandedFunnelSteps
                                 Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
                                     Row(Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor),
@@ -143,13 +157,13 @@ class PhoneCorpusActivity:ComponentActivity() {
                                             style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
                                     }
                                     if(row.shared!=null) {
-                                        Text(passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true),
+                                        Text(passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true,notReached=row.shared.notReached,notRecorded=row.shared.notRecorded,notApplicable=row.shared.notApplicable),
                                             Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
                                             style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
                                     } else {
                                         PhoneCorpusMath.fields.forEach { field ->
                                             val cell=row.fields[field]
-                                            Text(cell?.let { passFailLabel(it.passed,it.failed,passColor,failColor) } ?: AnnotatedString(""),
+                                            Text(cell?.let { passFailLabel(it.passed,it.failed,passColor,failColor,notReached=it.notReached,notRecorded=it.notRecorded,notApplicable=it.notApplicable) } ?: AnnotatedString(""),
                                                 Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
                                                 style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
                                         }

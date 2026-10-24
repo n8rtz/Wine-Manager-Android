@@ -12,7 +12,10 @@ internal class PhoneCorpusScoreboard(context:Context) {
     private val savedV2=JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() })
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
-    data class MatrixCell(val passed:Int,val failed:Int)
+    data class MatrixCell(val passed:Int,val failed:Int,val notReached:Int=0,val notRecorded:Int=0,val notApplicable:Int=0) {
+        val observed get() = passed+failed
+        fun label() = "$passed/$failed · NR $notReached · ? $notRecorded · N/A $notApplicable"
+    }
     data class MatrixRow(val step:F.Step,val shared:MatrixCell?,val fields:Map<String,MatrixCell>)
     data class Board(val headers:List<String>,val rows:List<List<String>>,val text:String,val csv:List<Map<String,String>>,val details:List<List<String>>,val funnel:List<F.Count>,val matrix:List<MatrixRow>)
     fun build(predictions:List<JSONObject>,mode:PhoneCorpusRunner.Mode):Board {
@@ -85,19 +88,27 @@ internal class PhoneCorpusScoreboard(context:Context) {
                 (!step.productionOnly || mode!=PhoneCorpusRunner.Mode.LAB)
         }
         val latestFunnelLabels=funnelLabels.groupBy { it.image }.values.map { attempts -> attempts.maxBy { it.attempt } }
-        fun matrixCell(labels:List<F.Label>,stepId:String):MatrixCell? {
-            val gates=labels.mapNotNull { it.gates[stepId] }
-            val passed=gates.count { it.state==F.State.PASSED }
-            val failed=gates.count { it.state==F.State.BLOCKED }
-            return if(passed+failed==0) null else MatrixCell(passed,failed)
+        fun matrixCell(labels:List<F.Label>,stepId:String, prerequisite:String?=null):MatrixCell? {
+            // Funnel denominators are conditional: only labels that passed a true required predecessor
+            // enter the next cohort. Unobserved states remain explicit instead of becoming failures.
+            val cohort=if(prerequisite==null) labels else labels.filter { it.gates[prerequisite]?.state==F.State.PASSED }
+            if(cohort.isEmpty()) return null
+            val gates=cohort.map { it.gates[stepId] ?: F.Gate(F.State.NOT_RECORDED) }
+            return MatrixCell(gates.count { it.state==F.State.PASSED },gates.count { it.state==F.State.BLOCKED },
+                gates.count { it.state==F.State.NOT_REACHED },gates.count { it.state==F.State.NOT_RECORDED },
+                gates.count { it.state==F.State.NOT_APPLICABLE })
         }
         val fieldScoreSteps=PhoneCorpusMath.fields.map { field ->
             F.Step("score.field.$field","Scoring only","Reference-correct: $field",
                 "This field's final output matches its frozen reference, including an expected blank; unresolved references are omitted.")
         }
-        val nonScoringSteps=funnel.map { it.step }.filterNot { it.id.startsWith("score.") }
-        val scoringSteps=funnel.map { it.step }.filter { it.id=="score.at_most_one" || it.id=="score.complete" }
-        val matrixSteps=nonScoringSteps+fieldScoreSteps+scoringSteps
+        // Requirements view: OCR execution/usable-output gates, the common guarded assignment,
+        // the dependent resolver decision gates, and reference scoring. Intermediate evidence
+        // observations/hypothesis counts are diagnostics, not universal requirements.
+        val matrixSteps=funnel.map { it.step }.filter { step ->
+            step.id in setOf("mlkit.started","mlkit.completed","mlkit.mapped","paddle.started","paddle.detected","paddle.regions","paddle.lines","paddle.completed","paddle.mapped","extract.assignment") ||
+                step.id.startsWith("producer.") || step.id.startsWith("wine.") || step.id.startsWith("score.")
+        }.filterNot { it.id.startsWith("score.") }+fieldScoreSteps+funnel.map { it.step }.filter { it.id=="score.at_most_one" || it.id=="score.complete" }
         val producerSuffixes=matrixSteps.filter { it.id.startsWith("producer.") }.map { it.id.removePrefix("producer.") }.toSet()
         fun groupKey(step:F.Step):String {
             if(step.id.startsWith("final.") && step.field!=null) return "field.populated"
@@ -145,12 +156,18 @@ internal class PhoneCorpusScoreboard(context:Context) {
         val matrix=groupedSteps.map { (key,members) ->
             if(members.size==1 && members.single().field==null) {
                 val step=members.single()
-                MatrixRow(step,matrixCell(latestFunnelLabels,step.id),emptyMap())
+                val dependency=if(step.id.startsWith("wine.")) "producer.invoked" else null
+                MatrixRow(step.copy(branch=when {
+                    step.id.startsWith("mlkit.") -> "OCR table · ML Kit"
+                    step.id.startsWith("paddle.") -> "OCR table · Paddle"
+                    else -> "Post-OCR · ${step.branch}"
+                }),matrixCell(latestFunnelLabels,step.id,dependency),emptyMap())
             } else {
                 val fieldMembers=members.filter { it.field!=null }.groupBy { it.field!! }
                 val fieldCells=fieldMembers.mapNotNull { (field,steps) ->
                     check(steps.size==1) { "Matrix group $key repeats field $field" }
-                    matrixCell(latestFunnelLabels,steps.single().id)?.let { field to it }
+                    val dependency=if(steps.single().id.startsWith("wine.")) "producer.invoked" else null
+                    matrixCell(latestFunnelLabels,steps.single().id,dependency)?.let { field to it }
                 }.toMap()
                 val title=groupTitle(key,members)
                 val description=when(key) {
@@ -185,7 +202,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
             appendLine("Production v1.0 uses 15s shared scanning. Production v2.0 and Lab use 60s/engine on full-label crops. Only Lab enables spatial merging. Each mode scores only its selected implementation; timings are not interchangeable.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")
-            appendLine("Field cells show passed/failed distinct labels from the latest attempt. Blank means no field-specific pass/fail measurement. Shared steps are counted once across all fields.")
+            appendLine("Three tables: ML Kit OCR, Paddle OCR (sequential in runner), and post-OCR. Post-OCR evidence hypotheses use joint field assignment; only genuine dependencies are conditional. NR, unrecorded, and N/A remain distinct. Scores are correctness gates, including correct expected blanks.")
             appendLine((listOf("Step")+PhoneCorpusMath.fields).joinToString(" | "))
             matrix.forEach { row ->
                 val values=if(row.shared!=null) listOf("Shared ${row.shared.passed}/${row.shared.failed}")+List(PhoneCorpusMath.fields.size) { "" }
