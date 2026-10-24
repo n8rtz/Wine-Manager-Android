@@ -46,6 +46,7 @@ fun main() {
     val produced=withProducer.rows.single { it["stage"]=="spatial_evidence_summary" }
     verify(produced["producer"]=="Domaine de la Romanée-Conti")
     verify(produced["producer_state"]=="YELLOW")
+    verify(produced["funnel.producer.independent.status"]=="PASSED")
     verify(withProducer.rows.count { it["stage"]=="recognition" }==4)
     verify(withProducer.rows.any { it["stage"]=="producer_gazetteer_candidate" && it["source_observation_ids"].orEmpty().isNotBlank() })
     verify(listOf("wine_name","country","region","subregion","vintage").all { produced.containsKey(it) && summary.containsKey(it) && produced[it]==summary[it] })
@@ -68,10 +69,19 @@ fun main() {
     TextLabSpatialPreview.append(withWine,extractor,hybrid,repair,2026,wineIndex)
     val wineSummary=withWine.rows.single { it["stage"]=="spatial_evidence_summary" }
     verify(wineSummary["wine_gazetteer_status"]=="supported_pair")
+    verify(wineSummary["funnel.wine.independent.status"]=="PASSED")
     verify(wineSummary["wine_name"]=="Moonlight Cuvee" && wineSummary["wine_name_state"]=="YELLOW")
     verify(wineSummary["wine_gazetteer_lwin7"]=="[1234567]")
     verify(withWine.rows.any { it["stage"]=="linked_wine_candidate" && it["source_observation_ids"].orEmpty().isNotBlank() })
     verify(withWine.rows.count { it["stage"]=="recognition" }==4)
+    val lookupFailure=sample()
+    val brokenIndex=object:com.yourapp.wine.gazetteer.ProducerResolver.Index by fixtureIndex {
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit):List<com.yourapp.wine.gazetteer.ProducerResolver.Entity> = error("fixture lookup failure")
+    }
+    TextLabSpatialPreview.append(lookupFailure,extractor,hybrid,repair,2026,brokenIndex)
+    val failureSummary=lookupFailure.rows.single { it["stage"]=="spatial_evidence_summary" }
+    verify(failureSummary["funnel.producer.mlkit.eligible.status"]=="PASSED" && failureSummary["funnel.producer.mlkit.lookup.status"]=="BLOCKED")
+    verify(failureSummary["funnel.producer.execution.status"]=="BLOCKED" && failureSummary["producer"]==failureSummary["producer_before_gazetteer"])
     val count=j.rows.size;TextLabSpatialPreview.append(j,extractor,hybrid,repair,2026);verify(j.rows.size==count)
     val failed=sample();TextLabSpatialPreview.append(failed,null,hybrid,repair,2026)
     verify(failed.rows.single { it["stage"]=="spatial_evidence_summary" }["status"]=="failed")

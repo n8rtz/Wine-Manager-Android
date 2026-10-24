@@ -56,7 +56,6 @@ fun gitOutput(vararg args: String): String? = runCatching {
     if (process.waitFor() == 0) output else null
 }.getOrNull()
 
-val buildCommit = gitOutput("rev-parse", "--short", "HEAD")?.takeIf { it.isNotBlank() } ?: "unknown"
 // True when the working tree has uncommitted changes (the commit hash alone then does not identify the build).
 // The tracked .idea/ folder is ignored here because Android Studio rewrites those files on its own.
 val buildDirty = gitOutput("status", "--porcelain", "--", ".", ":(exclude).idea")?.isNotBlank() == true
@@ -70,7 +69,7 @@ android {
         applicationId = "com.n8rtz.winetracker"
         minSdk = 33
         targetSdk = 36
-        versionCode = 56
+        versionCode = 57
         versionName = "0.5.6"
 
         ndk { abiFilters += packagedNativeAbis }

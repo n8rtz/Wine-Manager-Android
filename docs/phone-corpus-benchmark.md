@@ -103,3 +103,64 @@ The saved predictions are bundled in debug assets as `phone-corpus-v1/saved-prod
 These rows appear in the on-screen table, copied statistics, and scored CSV (including per-field expected/recognized values). Exported saved-v2 rows include `result_origin`, `source_build`, `source_pipeline` and `source_csv_sha256`, distinct from the current export build. Existing historical frozen-baseline rows remain labeled historical; **they are not Production v1.0**. Running v1.0 or Lab therefore provides a matched-photo comparison against saved v2.0, without running the other contenders. This does not invent a full saved v1.0 result.
 
 163 host tests pass, including all 1,008 saved prediction values against the reproducible bundle, full-run scoring parity, first-19-photo parity (4/15 complete), and empty-subset handling. Android/Compose rendering has not been executed in this sandbox.
+
+
+## Pipeline bottleneck table
+
+The benchmark screen now shows **Pipeline bottlenecks** below scored results, with an expand/hide control and horizontal scrolling. **Copy scored stats**, the scored CSV and the raw CSV use the same current/latest-attempt aggregate. The table covers 80 defined steps across:
+
+- Input verification, services, decoding/preparation and production-only native/quality/localization steps.
+- **ML Kit branch:** started, completed, nonblank text, usable mapped observations. ML Kit exposes a combined recognition API; the table does not invent internal detector/recognizer counters.
+- **Paddle Medium branch:** started, detector completion, regions, line-recognition attempts, completion, text and usable mapped observations.
+- Engine rejoin, extraction KB, raw form anchor, evidence observations/hypotheses and guarded assignment.
+- Primary manifest, producer database, wine database and supporting-layer validation.
+- **Producer and linked-wine branches, separately for each OCR engine:** eligibility, lookup completion, returned candidates, distance, plus wine/producer observation separation.
+- Two-engine/disjoint support, identity ambiguity, rival separation, existing-value protection, confirmed/suggested names and actual field changes.
+- Final selected pipeline/field coverage and two explicitly **scoring-only** outcomes (all six correct; at most one error).
+
+### What the numbers mean
+
+Each cell counts **distinct wine-label images**, not spans, regions, variants, joined phrases, database hits or LWIN records. Only the latest checkpointed attempt for each image contributes. A retry replaces that label's contribution; earlier attempts remain in raw evidence only. Unattempted labels are excluded; partial runs show their actual attempted denominator, not 168 fabricated stage failures.
+
+| Column | Meaning |
+|---|---|
+| Passed labels | Label meets the row's documented criterion; for span gates, at least one genuine observation path passes. |
+| Reached | Passed + blocked; the outcome at that step is known. |
+| Blocked | Step was evaluated but its criterion did not pass, with a recorded reason. |
+| Not reached | An earlier stage prevented evaluation of this step. |
+| Not recorded | This run/adapter did not capture enough evidence; **not zero successes**. |
+| N/A | Step is not part of the selected mode, or correctness cannot be scored because reference fields remain unresolved. |
+
+Counts across branches are **not one decreasing chain**. Engine completion and useful text are different facts: successful no-text OCR completes but supplies no useful text; deadline-limited OCR may still supply real usable partial readings. Confirmation of an already-correct name is not a new fill. Final populated fields measure coverage, not correctness; a correctly expected blank is not a coverage success. The definition is shown under each step and exported as `step_definition`.
+
+New debug runs record per-resolver gates without adding queries, OCR passes, reference-name inference, extra votes, or relaxing acceptance safeguards. Asset setup records partial success, so a producer DB that validates before the wine DB fails is visible. Compact stage snapshots remain in current checkpoints after large raw trace arrays are stripped. The two correctness rows are attached only by the scoreboard; reference answers never reach recognition or resolver telemetry.
+
+### CSV schema
+
+Existing summary and field rows, saved-v2 comparisons, split-at-record-boundary behavior and formula-safe encoding are preserved.
+
+- Both exports include aggregate `row_type=pipeline_step` rows with `step_id`, `step_branch`, `step`, `step_definition`, `labels_attempted`, `labels_passed`, `labels_reached`, `labels_blocked`, `labels_not_reached`, `labels_not_recorded`, `labels_not_applicable`, `step_reasons`, and `funnel_version`.
+- New raw exports additionally include per-attempt `row_type=pipeline_funnel` rows (`step_id`, `step_status`, `step_reason`). Fine resolver gates are also flattened into final diagnostic summary fields beginning `funnel.`.
+- Raw CSV retains all attempts; its aggregate table still uses only current/latest attempts, matching the screen/scored CSV. Never sum per-attempt rows to reconstruct a latest-attempt denominator without selecting attempts first.
+- Older checkpoints/exports do not contain the new fine-grained gates. Recover only provable facts from their traces and terminal reasons; show other steps as **not recorded**. Never assume that the absence of a candidate means the database lookup failed. An explicitly recorded early abstention can establish downstream **not reached** states.
+
+### Checks and reuse of existing OCR
+
+`tools/run-pipeline-funnel-checks.sh` compiles actual Kotlin funnel, resolver telemetry, checkpoint JSON, scoreboard and CSV logic with host asset/mode stand-ins. It needs Java 21, Kotlin 2.2.10 and a genuine JSON-java jar/classes directory in `JSON_JAVA_CLASSPATH` (the checks here used upstream JSON-java tag `20250517`). These checks are **not** an Android/Compose/native-runtime build.
+
+```sh
+# Default: bundled saved-v2 prediction fixture, with unrecorded stages correctly unknown.
+bash tools/run-pipeline-funnel-checks.sh
+
+# Optional: validate all raw parts against a saved scored export, then generate a scored CSV + table.
+# No OCR, matching or baseline execution; original field values are preserved.
+bash tools/run-pipeline-funnel-checks.sh \
+  --scored /path/to/wine-168-lab-f9a8891dc192.csv \
+  --raw /path/to/wine-168-raw-lab-f9a8891dc192-part-01.csv \
+  --raw /path/to/wine-168-raw-lab-f9a8891dc192-part-02.csv \
+  --output /private/path/scored-with-pipeline-table.csv
+```
+
+Validation on this branch: 191 Python host tests pass; 52 actual Kotlin funnel checks pass on the default saved-v2 fixture, and 52 pass on all three attached f9 CSVs; 27 spatial integration, 18 producer, 27 linked-wine, 2,030 phone-corpus and 43 assignment/policy checks also pass. Exception tests preserve the original failure while retaining the last reached lookup gate. These are not native-device results.
+
+The added `PipelineFunnelDeviceTest` exercises actual packaged native SQLite through spatial preview, checkpoint, scoreboard and CSV on a **disposable emulator**, without OCR. It is added, **not executed in this workspace**. Full Android build/UI/SAF/stop-resume checks remain required; see this session's section in `_refs/THINGS_TO_CHECK.md`. No recognition or latency improvement is claimed for adding diagnostics.

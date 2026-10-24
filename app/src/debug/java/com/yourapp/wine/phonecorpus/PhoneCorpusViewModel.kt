@@ -41,7 +41,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
         val dir=File(root,prefix+UUID.randomUUID()).apply { mkdirs() }
         val meta=JSONObject().put("build",BuildConfig.BUILD_COMMIT).put("working_tree",BuildConfig.BUILD_WORKING_TREE).put("mode",mode.name)
             .put("pipeline",mode.pipelineId).put("spatial_merging",mode==PhoneCorpusRunner.Mode.LAB)
-            .put("schema_version",2).put("corpus_manifest",JSONObject(app.assets.open("phone-corpus-v1/manifest.json").bufferedReader().use { it.readText() }))
+            .put("schema_version",2).put("pipeline_funnel_version",com.yourapp.wine.diagnostics.PipelineFunnel.VERSION).put("corpus_manifest",JSONObject(app.assets.open("phone-corpus-v1/manifest.json").bufferedReader().use { it.readText() }))
             .put("apk_updated_ms",installId).put("created_ms",System.currentTimeMillis()).put("runtime","phone; fresh OCR")
         atomic(File(dir,"run.json"),meta.toString(2));return dir
     }
@@ -124,6 +124,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
         val scored=mutable.value.csv ?: return
         val mode=mutable.value.mode
         val previousParts=mutable.value.exportParts
+        val funnelRows=mutable.value.board?.csv.orEmpty().filter { it["row_type"]=="pipeline_step" }
         mutable.update { it.copy(busy=true,exportParts=emptyList(),message="Preparing upload-sized CSV files…") }
         viewModelScope.launch(Dispatchers.IO) {
             val exportDir=File(app.cacheDir,"phone-corpus-exports/${UUID.randomUUID()}")
@@ -139,8 +140,8 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
                             val p=JSONObject(file.readText())
                             val meta=mapOf("build" to p.optString("build"),"mode" to p.optString("mode"),"run_id" to dir.name,
                                 "image" to p.optString("image"),"attempt" to p.optString("attempt"))
-                            yield(meta+mapOf("row_type" to "image_summary","status" to p.optString("status"),"elapsed_ms" to p.optString("total_elapsed_ms"),"error" to p.optString("error"),"engine_incomplete" to p.optBoolean("engine_incomplete").toString(),"diagnostics" to p.optString("diagnostics")))
-                            for(key in listOf("tokens","engine_timings","trace","pipelines")) {
+                            yield(meta+mapOf("row_type" to "image_summary","status" to p.optString("status"),"elapsed_ms" to p.optString("total_elapsed_ms"),"error" to p.optString("error"),"engine_incomplete" to p.optBoolean("engine_incomplete").toString(),"diagnostics" to p.optString("diagnostics"),"pipeline_funnel_error" to p.optString("pipeline_funnel_error")))
+                            for(key in listOf("tokens","engine_timings","trace","pipelines","pipeline_funnel")) {
                                 val rows=p.optJSONArray(key) ?: continue
                                 for(i in 0 until rows.length()) {
                                     val row=rows.getJSONObject(i)
@@ -148,6 +149,9 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
                                 }
                             }
                         }
+                        // Same current/latest-attempt aggregate as the screen and scored CSV; old attempts above remain raw evidence only.
+                        for(row in funnelRows)
+                            yield(mapOf("build" to BuildConfig.BUILD_COMMIT,"mode" to mode.name,"run_id" to dir.name)+row)
                     }
                     target.bufferedWriter(Charsets.UTF_8).use { writer ->
                         com.yourapp.wine.textlab.TextLabCsv.write(writer,records)

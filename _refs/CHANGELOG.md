@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Debug benchmark pipeline-bottleneck table in the screen, copied statistics and scored/raw CSVs, with separate OCR branches, distinct-label/latest-attempt counts and explicit unknown/not-reached states. Compact checkpoints retain stage evidence. Host logic validated; Android build/device checks remain pending. No production recognition changes or new accuracy claim.
+
+### Changed
+- Incremented Android `versionCode` from 56 to **57** for the owner-requested diagnostics build; `versionName` remains **0.5.6**. This is a build-number update, not a tagged release.
+
+### Fixed
+- Removed the merged Gradle script's duplicate `buildCommit` declaration while retaining provider-backed 12-character commit metadata and all six BuildConfig fields; complete Android build still pending.
+
 ## [0.5.6] - 2026-10-16
 ### Added
 - **History entry actions:** long-pressing an entry on the Consumption History screen opens a small bottom sheet with **Restore to cellar** (adds the bottle back and removes the entry) and **Delete log entry** (removes the entry only; the cellar is not changed). There is no visible button; both actions ask for confirmation and both keep any tasting note, unlike the snackbar UNDO right after consuming, which still removes the note it just created.

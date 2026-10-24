@@ -4,6 +4,7 @@ import android.content.Context
 import org.json.JSONObject
 import java.io.File
 import com.yourapp.wine.textlab.TextLabCsv
+import com.yourapp.wine.diagnostics.PipelineFunnel as F
 
 /** Scores only committed predictions. Targets are never supplied to the runner. */
 internal class PhoneCorpusScoreboard(context:Context) {
@@ -11,9 +12,11 @@ internal class PhoneCorpusScoreboard(context:Context) {
     private val savedV2=JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() })
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
-    data class Board(val headers:List<String>,val rows:List<List<String>>,val text:String,val csv:List<Map<String,String>>,val details:List<List<String>>)
+    data class Board(val headers:List<String>,val rows:List<List<String>>,val text:String,val csv:List<Map<String,String>>,val details:List<List<String>>,val funnel:List<F.Count>)
     fun build(predictions:List<JSONObject>,mode:PhoneCorpusRunner.Mode):Board {
         val csv=mutableListOf<Map<String,String>>()
+        val funnelLabels=mutableListOf<F.Label>()
+        val currentByImage=predictions.associateBy { it.getString("image") }
         val names=listOf(mode.pipelineId)
         val rows=mutableListOf<List<String>>()
         val headers=listOf("Pipeline","Attempted","Eligible","Complete","One error","2+ errors","Failed","Correct values","Wrong","Missing","Correct blanks","Unsupported","Unresolved","Deadline / partial")
@@ -30,6 +33,14 @@ internal class PhoneCorpusScoreboard(context:Context) {
                 if(prediction.optBoolean("deadline_reached") || prediction.optBoolean("engine_incomplete")) partial++
                 val fields=prediction.optJSONObject("fields") ?: JSONObject()
                 val outcomes=PhoneCorpusMath.fields.associateWith { f -> PhoneCorpusMath.outcome(ts.getValue(f),fields.optString(f),failed) }
+                if(name==mode.pipelineId) {
+                    val label=PhoneCorpusFunnelJson.read(currentByImage.getValue(image),mode.name,mode.pipelineId)
+                    val eligible=PhoneCorpusMath.eligible(ts)
+                    val errors=outcomes.values.count { !PhoneCorpusMath.correct(it) }
+                    fun scored(passed:Boolean)=if(!eligible) F.Gate(F.State.NOT_APPLICABLE,"partly unresolved reference")
+                        else F.Gate(if(passed) F.State.PASSED else F.State.BLOCKED,if(passed) "" else if(failed) "execution failed" else "$errors field error(s)")
+                    funnelLabels+=label.copy(gates=label.gates+mapOf("score.complete" to scored(errors==0),"score.at_most_one" to scored(errors<=1)))
+                }
                 if(PhoneCorpusMath.eligible(ts)) {
                     eligible++;val errors=outcomes.values.count { !PhoneCorpusMath.correct(it) }
                     when(errors) { 0->complete++;1->one++;else->multi++ }
@@ -62,6 +73,8 @@ internal class PhoneCorpusScoreboard(context:Context) {
             }
             score(name,items)
         }
+        val funnel=F.aggregate(funnelLabels)
+        csv.addAll(funnel.map { it.csv(mode.pipelineId) })
         // Frozen v2 predictions are scored only after current predictions, never supplied to OCR.
         val savedPredictions=savedV2.getJSONObject("predictions")
         check(savedPredictions.keys().asSequence().toSet()==targets.keys) { "Saved v2 corpus differs from reference" }
@@ -83,6 +96,11 @@ internal class PhoneCorpusScoreboard(context:Context) {
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
             appendLine("Full-run target: at least 128/160 complete and at most 7/160 multi-error. Partial runs do not establish full-corpus acceptance.")
             appendLine("Production v1.0 uses 15s shared scanning. Production v2.0 and Lab use 60s/engine on full-label crops. Only Lab enables spatial merging. Each mode scores only its selected implementation; timings are not interchangeable.")
+            appendLine()
+            appendLine("PIPELINE BOTTLENECKS · current selected pipeline only")
+            appendLine(F.explanation)
+            appendLine(F.headers.joinToString(" | "))
+            funnel.forEach { appendLine(it.cells().joinToString(" | ")) }
         }
         val details=csv.filter { it["row_type"]=="field" && it["pipeline"] in names }.groupBy { it["pipeline"] to it["image"] }.values.map { group ->
             listOf("Photo #${group.first()["review_number"]} · ${group.first()["pipeline"]} · ${group.first()["form_status"]}")+PhoneCorpusMath.fields.map { field ->
@@ -90,7 +108,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
                 "$field: ${r["recognized"].orEmpty().ifBlank { "(blank)" }} — ${r["outcome"]}\nExpected: ${r["expected"].orEmpty().ifBlank { r["reference_status"].orEmpty() }}"
             }
         }
-        return Board(headers,rows,text,csv,details)
+        return Board(headers,rows,text,csv,details,funnel)
     }
     companion object {
         fun export(board:Board,file:File,metadata:Map<String,String>) {

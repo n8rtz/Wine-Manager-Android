@@ -37,7 +37,8 @@ class PhoneCorpusTests(unittest.TestCase):
         self.assertFalse((ROOT/'app/src/main/assets/phone-corpus-v1').exists())
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text()
         self.assertNotIn('scoring.json',runner);self.assertNotIn('baseline',runner)
-        self.assertIn('WineScannerServices.get(context).scan(input,started)',runner)
+        # The same production scanner/input/shared-budget start is preserved, with setup telemetry between calls.
+        self.assertRegex(runner,r'val scanner=WineScannerServices\.get\(context\)[\s\S]*?val report=scanner\.scan\(input,started\)')
         self.assertIn('TextLabRunner.recognize',runner)
         manifest=(ROOT/'app/src/debug/AndroidManifest.xml').read_text()
         self.assertIn('phonecorpus.PhoneCorpusActivity" android:exported="false"',manifest)

@@ -134,6 +134,17 @@ app/src/test/java/...                  # JVM tests: aromawheel, drinkingwindow, 
 app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
+app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt # Debug-only per-label pipeline gates, definitions and latest-attempt aggregation
+app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusPipelineDiagnostics.kt # Original traces -> label gates, including separate OCR branches
+app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusFunnelJson.kt # Compact funnel checkpoint/raw-export JSON, with honest legacy unknowns
+tools/logic-checks/PipelineFunnelChecks.kt # Actual Kotlin telemetry, legacy evidence, checkpoint/scorer/CSV regression checks
+tools/logic-checks/PipelineFunnelHostContext.kt # Host asset-reader stand-in, not an Android runtime
+tools/logic-checks/PipelineFunnelHostRunner.kt # Host-only mode constants; does not execute OCR
+tools/logic-checks/generate-funnel-fixture.py # Validates/reuses saved scored+raw CSVs as host evaluation inputs
+tools/run-pipeline-funnel-checks.sh       # Runs actual Kotlin funnel/checkpoint/scorer/CSV checks; optional saved-export analysis
+app/src/androidTest/java/com/yourapp/wine/textlab/PipelineFunnelDeviceTest.kt # Disposable-device native SQLite -> preview/checkpoint/scorer/CSV smoke test
+tools/tests/test_pipeline_funnel.py      # Host fixture, debug-only/export wiring and merged-build metadata regression checks
+docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals and proposed staged accuracy plan (not recognition changes)
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
 _backup/                               # Personal cellar JSON backups (source of the debug seed), one-off convert_csv.py (its CSV input was removed)

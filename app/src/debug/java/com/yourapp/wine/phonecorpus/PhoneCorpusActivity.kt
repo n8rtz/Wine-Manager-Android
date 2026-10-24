@@ -22,6 +22,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
+import com.yourapp.wine.diagnostics.PipelineFunnel
 
 class PhoneCorpusActivity:ComponentActivity() {
     private val vm:PhoneCorpusViewModel by viewModels()
@@ -35,6 +36,7 @@ class PhoneCorpusActivity:ComponentActivity() {
         val clipboard=LocalClipboardManager.current
         var newRun by remember { mutableStateOf(false) }
         var showDetails by remember { mutableStateOf(false) }
+        var showFunnel by rememberSaveable { mutableStateOf(true) }
         var exportIndex by rememberSaveable { mutableStateOf(0) }
         val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let { vm.saveExportPart(it,exportIndex) } }
         val importCsv=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::splitExistingCsv) }
@@ -82,7 +84,22 @@ class PhoneCorpusActivity:ComponentActivity() {
                     TextButton(onClick={clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n"+board.text))}) { Text("Copy scored stats") }
                     Button(onClick={vm.prepareExport(false)},enabled=!state.busy && state.csv!=null) { Text("Prepare scored CSV export") }
                     TextButton(onClick={vm.prepareExport(true)},enabled=!state.busy && state.completed>0) { Text("Prepare raw diagnostics CSV export") }
-                    Text("CSV includes every scored field and its expected/recognized value, failures, and saved baseline comparisons. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
+                    Text("CSV includes every scored field, saved comparisons, and pipeline_step bottleneck rows. Raw CSV also retains each label's stage statuses. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
+                }
+                item {
+                    Text("Pipeline bottlenecks",style=MaterialTheme.typography.titleMedium)
+                    Text(PipelineFunnel.explanation,style=MaterialTheme.typography.bodySmall)
+                    TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide pipeline table" else "Show pipeline table") }
+                    if(showFunnel) SelectionContainer {
+                        Column(Modifier.horizontalScroll(rememberScrollState())) {
+                            val widths=listOf(185,290,105,105,105,110,115,80,360)
+                            Row { PipelineFunnel.headers.forEachIndexed { index,title -> Text(title,Modifier.width(widths[index].dp).padding(6.dp),style=MaterialTheme.typography.labelMedium) } }
+                            board.funnel.forEach { count ->
+                                HorizontalDivider(Modifier.width(widths.sum().dp))
+                                Row { count.cells().forEachIndexed { index,value -> Text(if(index==1) "$value\n${count.step.definition}" else value,Modifier.width(widths[index].dp).padding(6.dp),style=MaterialTheme.typography.bodySmall) } }
+                            }
+                        }
+                    }
                 }
             }
             item {
