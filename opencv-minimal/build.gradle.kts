@@ -44,6 +44,7 @@ if (!fromSource) {
         variant.sources.resources?.addStaticSourceDirectory("prebuilt/resources")
     }
     val verifyOpenCvPrebuilt by tasks.registering(Exec::class) {
+        environment("PYTHONUTF8", "1")
         commandLine(pythonExecutable, rootProject.file("tools/opencv-prebuilt.py"))
     }
     tasks.named("preBuild") { dependsOn(verifyOpenCvPrebuilt) }
