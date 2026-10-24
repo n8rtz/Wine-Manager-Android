@@ -18,7 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
@@ -37,6 +39,7 @@ class PhoneCorpusActivity:ComponentActivity() {
         var newRun by remember { mutableStateOf(false) }
         var showDetails by remember { mutableStateOf(false) }
         var showFunnel by rememberSaveable { mutableStateOf(true) }
+        var showFunnelDetails by rememberSaveable { mutableStateOf(false) }
         var exportIndex by rememberSaveable { mutableStateOf(0) }
         val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let { vm.saveExportPart(it,exportIndex) } }
         val importCsv=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::splitExistingCsv) }
@@ -88,15 +91,43 @@ class PhoneCorpusActivity:ComponentActivity() {
                 }
                 item {
                     Text("Pipeline bottlenecks",style=MaterialTheme.typography.titleMedium)
-                    Text(PipelineFunnel.explanation,style=MaterialTheme.typography.bodySmall)
-                    TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide pipeline table" else "Show pipeline table") }
+                    Text(if(showFunnelDetails) PipelineFunnel.explanation else
+                        "Distinct labels, latest attempt only—not accuracy. Swipe for more counts; Show details adds definitions and reasons.",
+                        style=MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
+                        if(showFunnel) TextButton(onClick={showFunnelDetails=!showFunnelDetails}) {
+                            Text(if(showFunnelDetails) "Hide details" else "Show details")
+                        }
+                    }
                     if(showFunnel) SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
-                            val widths=listOf(185,290,105,105,105,110,115,80,360)
-                            Row { PipelineFunnel.headers.forEachIndexed { index,title -> Text(title,Modifier.width(widths[index].dp).padding(6.dp),style=MaterialTheme.typography.labelMedium) } }
+                            // Keep every step and metric in order; collapse only verbose definitions/reasons.
+                            val columnWidths=listOf(96,128,52,52,52,56,60,52,220)
+                            val visibleWidths=if(showFunnelDetails) columnWidths else columnWidths.dropLast(1)
+                            val fontScale=LocalDensity.current.fontScale.coerceAtLeast(1f)
+                            val widths=visibleWidths.mapIndexed { index,width ->
+                                (width * if(index in 2..7) fontScale else 1f).dp
+                            }
+                            val headers=if(showFunnelDetails) PipelineFunnel.headers else PipelineFunnel.headers.dropLast(1)
+                            Row {
+                                headers.forEachIndexed { index,title ->
+                                    Text(title,Modifier.width(widths[index]).padding(horizontal=4.dp,vertical=3.dp),
+                                        style=MaterialTheme.typography.labelMedium,
+                                        textAlign=if(index in 2..7) TextAlign.End else TextAlign.Start)
+                                }
+                            }
                             board.funnel.forEach { count ->
-                                HorizontalDivider(Modifier.width(widths.sum().dp))
-                                Row { count.cells().forEachIndexed { index,value -> Text(if(index==1) "$value\n${count.step.definition}" else value,Modifier.width(widths[index].dp).padding(6.dp),style=MaterialTheme.typography.bodySmall) } }
+                                HorizontalDivider(Modifier.width(widths.reduce { total,width -> total+width }))
+                                val cells=if(showFunnelDetails) count.cells() else count.cells().dropLast(1)
+                                Row {
+                                    cells.forEachIndexed { index,value ->
+                                        Text(if(index==1 && showFunnelDetails) "$value\n${count.step.definition}" else value,
+                                            Modifier.width(widths[index]).padding(horizontal=4.dp,vertical=3.dp),
+                                            style=MaterialTheme.typography.bodySmall,
+                                            textAlign=if(index in 2..7) TextAlign.End else TextAlign.Start)
+                                    }
+                                }
                             }
                         }
                     }

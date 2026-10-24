@@ -107,7 +107,7 @@ These rows appear in the on-screen table, copied statistics, and scored CSV (inc
 
 ## Pipeline bottleneck table
 
-The benchmark screen now shows **Pipeline bottlenecks** below scored results, with an expand/hide control and horizontal scrolling. **Copy scored stats**, the scored CSV and the raw CSV use the same current/latest-attempt aggregate. The table covers 80 defined steps across:
+The benchmark screen shows **Pipeline bottlenecks** below scored results, with an expand/hide control and horizontal scrolling. The mobile view defaults to narrower columns and reduced cell padding, keeping the same 80 steps, branch/metric order and all six numeric status columns. Text remains at the existing theme sizes; counts are right-aligned and numeric columns widen for larger system fonts. **Show details** restores the long step definitions, reasons column and full explanation; **Hide details** returns to the compact view. This is presentation only, not a pipeline-by-field matrix or a change to accepted counts. **Copy scored stats** and both CSV exports always retain the complete diagnostics, regardless of this display toggle. The table covers 80 defined steps across:
 
 - Input verification, services, decoding/preparation and production-only native/quality/localization steps.
 - **ML Kit branch:** started, completed, nonblank text, usable mapped observations. ML Kit exposes a combined recognition API; the table does not invent internal detector/recognizer counters.
@@ -131,7 +131,7 @@ Each cell counts **distinct wine-label images**, not spans, regions, variants, j
 | Not recorded | This run/adapter did not capture enough evidence; **not zero successes**. |
 | N/A | Step is not part of the selected mode, or correctness cannot be scored because reference fields remain unresolved. |
 
-Counts across branches are **not one decreasing chain**. Engine completion and useful text are different facts: successful no-text OCR completes but supplies no useful text; deadline-limited OCR may still supply real usable partial readings. Confirmation of an already-correct name is not a new fill. Final populated fields measure coverage, not correctness; a correctly expected blank is not a coverage success. The definition is shown under each step and exported as `step_definition`.
+Counts across branches are **not one decreasing chain**. Engine completion and useful text are different facts: successful no-text OCR completes but supplies no useful text; deadline-limited OCR may still supply real usable partial readings. Confirmation of an already-correct name is not a new fill. Final populated fields measure coverage, not correctness; a correctly expected blank is not a coverage success. With **Show details** enabled, the definition is shown under each step; it is always exported as `step_definition`.
 
 New debug runs record per-resolver gates without adding queries, OCR passes, reference-name inference, extra votes, or relaxing acceptance safeguards. Asset setup records partial success, so a producer DB that validates before the wine DB fails is visible. Compact stage snapshots remain in current checkpoints after large raw trace arrays are stripped. The two correctness rows are attached only by the scoreboard; reference answers never reach recognition or resolver telemetry.
 
@@ -161,6 +161,6 @@ bash tools/run-pipeline-funnel-checks.sh \
   --output /private/path/scored-with-pipeline-table.csv
 ```
 
-Validation on this branch: 191 Python host tests pass; 52 actual Kotlin funnel checks pass on the default saved-v2 fixture, and 52 pass on all three attached f9 CSVs; 27 spatial integration, 18 producer, 27 linked-wine, 2,030 phone-corpus and 43 assignment/policy checks also pass. Exception tests preserve the original failure while retaining the last reached lookup gate. These are not native-device results.
+Validation on this branch: 193 Python host tests pass, including compact-mobile source/layout constraints (not Android rendering); 52 actual Kotlin funnel checks pass on the default saved-v2 fixture, and 52 pass on all three attached f9 CSVs; 27 spatial integration, 18 producer, 27 linked-wine, 2,030 phone-corpus and 43 assignment/policy checks also pass. Exception tests preserve the original failure while retaining the last reached lookup gate. These are not native-device results.
 
 The added `PipelineFunnelDeviceTest` exercises actual packaged native SQLite through spatial preview, checkpoint, scoreboard and CSV on a **disposable emulator**, without OCR. It is added, **not executed in this workspace**. Full Android build/UI/SAF/stop-resume checks remain required; see this session's section in `_refs/THINGS_TO_CHECK.md`. No recognition or latency improvement is claimed for adding diagnostics.

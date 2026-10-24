@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug benchmark pipeline-bottleneck table in the screen, copied statistics and scored/raw CSVs, with separate OCR branches, distinct-label/latest-attempt counts and explicit unknown/not-reached states. Compact checkpoints retain stage evidence. Host logic validated; Android build/device checks remain pending. No production recognition changes or new accuracy claim.
 
 ### Changed
+- Compact mobile pipeline table: narrower columns, less cell padding and right-aligned counts without shrinking the text. Definitions/reasons are available through **Show details**. The existing steps, counts, copied statistics and CSV format are unchanged; Android visual checks remain pending.
 - Incremented Android `versionCode` from 56 to **57** for the owner-requested diagnostics build; `versionName` remains **0.5.6**. This is a build-number update, not a tagged release.
 
 ### Fixed
