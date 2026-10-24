@@ -12,7 +12,9 @@ internal class PhoneCorpusScoreboard(context:Context) {
     private val savedV2=JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() })
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
-    data class Board(val headers:List<String>,val rows:List<List<String>>,val text:String,val csv:List<Map<String,String>>,val details:List<List<String>>,val funnel:List<F.Count>)
+    data class MatrixCell(val passed:Int,val failed:Int)
+    data class MatrixRow(val step:F.Step,val shared:MatrixCell?,val fields:Map<String,MatrixCell>)
+    data class Board(val headers:List<String>,val rows:List<List<String>>,val text:String,val csv:List<Map<String,String>>,val details:List<List<String>>,val funnel:List<F.Count>,val matrix:List<MatrixRow>)
     fun build(predictions:List<JSONObject>,mode:PhoneCorpusRunner.Mode):Board {
         val csv=mutableListOf<Map<String,String>>()
         val funnelLabels=mutableListOf<F.Label>()
@@ -39,7 +41,12 @@ internal class PhoneCorpusScoreboard(context:Context) {
                     val errors=outcomes.values.count { !PhoneCorpusMath.correct(it) }
                     fun scored(passed:Boolean)=if(!eligible) F.Gate(F.State.NOT_APPLICABLE,"partly unresolved reference")
                         else F.Gate(if(passed) F.State.PASSED else F.State.BLOCKED,if(passed) "" else if(failed) "execution failed" else "$errors field error(s)")
-                    funnelLabels+=label.copy(gates=label.gates+mapOf("score.complete" to scored(errors==0),"score.at_most_one" to scored(errors<=1)))
+                    val fieldScores=PhoneCorpusMath.fields.associate { field ->
+                        "score.field.$field" to if(ts.getValue(field).status=="unresolved") F.Gate(F.State.NOT_APPLICABLE,"field reference unresolved")
+                            else F.Gate(if(PhoneCorpusMath.correct(outcomes.getValue(field))) F.State.PASSED else F.State.BLOCKED,
+                                if(PhoneCorpusMath.correct(outcomes.getValue(field))) "" else outcomes.getValue(field))
+                    }
+                    funnelLabels+=label.copy(gates=label.gates+fieldScores+mapOf("score.complete" to scored(errors==0),"score.at_most_one" to scored(errors<=1)))
                 }
                 if(PhoneCorpusMath.eligible(ts)) {
                     eligible++;val errors=outcomes.values.count { !PhoneCorpusMath.correct(it) }
@@ -73,7 +80,29 @@ internal class PhoneCorpusScoreboard(context:Context) {
             }
             score(name,items)
         }
-        val funnel=F.aggregate(funnelLabels)
+        val funnel=F.aggregate(funnelLabels) { step ->
+            (!step.labOnly || mode==PhoneCorpusRunner.Mode.LAB) &&
+                (!step.productionOnly || mode!=PhoneCorpusRunner.Mode.LAB)
+        }
+        val latestFunnelLabels=funnelLabels.groupBy { it.image }.values.map { attempts -> attempts.maxBy { it.attempt } }
+        fun matrixCell(labels:List<F.Label>,stepId:String):MatrixCell? {
+            val gates=labels.mapNotNull { it.gates[stepId] }
+            val passed=gates.count { it.state==F.State.PASSED }
+            val failed=gates.count { it.state==F.State.BLOCKED }
+            return if(passed+failed==0) null else MatrixCell(passed,failed)
+        }
+        val fieldScoreSteps=PhoneCorpusMath.fields.map { field ->
+            F.Step("score.field.$field","Scoring only","Reference-correct: $field",
+                "This field's final output matches its frozen reference, including an expected blank; unresolved references are omitted.")
+        }
+        val nonScoringSteps=funnel.map { it.step }.filterNot { it.id.startsWith("score.") }
+        val scoringSteps=funnel.map { it.step }.filter { it.id=="score.at_most_one" || it.id=="score.complete" }
+        val matrixSteps=nonScoringSteps+fieldScoreSteps+scoringSteps
+        val matrix=matrixSteps.map { step ->
+            val field=step.field
+            if(field==null) MatrixRow(step,matrixCell(latestFunnelLabels,step.id),emptyMap())
+            else MatrixRow(step,null,matrixCell(latestFunnelLabels,step.id)?.let { mapOf(field to it) }.orEmpty())
+        }
         csv.addAll(funnel.map { it.csv(mode.pipelineId) })
         // Frozen v2 predictions are scored only after current predictions, never supplied to OCR.
         val savedPredictions=savedV2.getJSONObject("predictions")
@@ -97,10 +126,14 @@ internal class PhoneCorpusScoreboard(context:Context) {
             appendLine("Full-run target: at least 128/160 complete and at most 7/160 multi-error. Partial runs do not establish full-corpus acceptance.")
             appendLine("Production v1.0 uses 15s shared scanning. Production v2.0 and Lab use 60s/engine on full-label crops. Only Lab enables spatial merging. Each mode scores only its selected implementation; timings are not interchangeable.")
             appendLine()
-            appendLine("PIPELINE BOTTLENECKS · current selected pipeline only")
-            appendLine(F.explanation)
-            appendLine(F.headers.joinToString(" | "))
-            funnel.forEach { appendLine(it.cells().joinToString(" | ")) }
+            appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")
+            appendLine("Field cells show passed/failed distinct labels from the latest attempt. Blank means no field-specific pass/fail measurement. Shared steps are counted once across all fields.")
+            appendLine((listOf("Step")+PhoneCorpusMath.fields).joinToString(" | "))
+            matrix.forEach { row ->
+                val values=if(row.shared!=null) listOf("Shared ${row.shared.passed}/${row.shared.failed}")+List(PhoneCorpusMath.fields.size) { "" }
+                    else PhoneCorpusMath.fields.map { field -> row.fields[field]?.let { "${it.passed}/${it.failed}" }.orEmpty() }
+                appendLine((listOf(row.step.branch+" · "+row.step.title)+values).joinToString(" | "))
+            }
         }
         val details=csv.filter { it["row_type"]=="field" && it["pipeline"] in names }.groupBy { it["pipeline"] to it["image"] }.values.map { group ->
             listOf("Photo #${group.first()["review_number"]} · ${group.first()["pipeline"]} · ${group.first()["form_status"]}")+PhoneCorpusMath.fields.map { field ->
@@ -108,7 +141,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
                 "$field: ${r["recognized"].orEmpty().ifBlank { "(blank)" }} — ${r["outcome"]}\nExpected: ${r["expected"].orEmpty().ifBlank { r["reference_status"].orEmpty() }}"
             }
         }
-        return Board(headers,rows,text,csv,details,funnel)
+        return Board(headers,rows,text,csv,details,funnel,matrix)
     }
     companion object {
         fun export(board:Board,file:File,metadata:Map<String,String>) {

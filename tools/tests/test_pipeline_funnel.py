@@ -35,44 +35,50 @@ class PipelineFunnelChecks(unittest.TestCase):
         scoreboard = (base / "PhoneCorpusScoreboard.kt").read_text()
         self.assertIn("val funnel=F.aggregate(funnelLabels)", scoreboard)
         self.assertIn("csv.addAll(funnel.map { it.csv(mode.pipelineId) })", scoreboard)
-        self.assertIn("board.funnel.forEach", (base / "PhoneCorpusActivity.kt").read_text())
+        self.assertIn("board.matrix.forEach", (base / "PhoneCorpusActivity.kt").read_text())
+        self.assertIn("csv.addAll(funnel.map { it.csv(mode.pipelineId) })", scoreboard)
         viewmodel = (base / "PhoneCorpusViewModel.kt").read_text()
         self.assertIn('"pipeline_funnel"', viewmodel)
         self.assertIn("for(row in funnelRows)", viewmodel)
         self.assertNotIn('remove("pipeline_funnel")', viewmodel)
         self.assertIn('result.remove("trace")', viewmodel)
 
-    def test_compact_mobile_widths_keep_first_pass_count_visible_without_tiny_fonts(self):
-        # Source/layout contract only; Android rendering and font-scale checks remain device checks.
+    def test_field_matrix_keeps_six_columns_and_each_step_description_collapsed_by_default(self):
         source = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
-        table = source.split('Text("Pipeline bottlenecks"', 1)[1].split('TextButton(onClick={importCsv.launch', 1)[0]
-        match = re.search(r"val columnWidths=listOf\(([\d,\s]+)\)", table)
-        self.assertIsNotNone(match)
-        widths = [int(value) for value in match.group(1).split(",")]
-        self.assertEqual(len(widths), 9)
-        self.assertLessEqual(sum(widths[:-1]), 560)
-        self.assertLessEqual(sum(widths[:3]), 320 - 2 * 16)
-        self.assertGreaterEqual(min(widths[2:8]), 52)
-        self.assertIn("padding(horizontal=4.dp,vertical=3.dp)", table)
-        self.assertIn("style=MaterialTheme.typography.bodySmall", table)
+        table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('TextButton(onClick={importCsv.launch', 1)[0]
+        self.assertIn("val stepWidth=220.dp", table)
+        self.assertIn("val fieldWidth=88.dp", table)
+        self.assertIn("PhoneCorpusMath.fields.forEach", table)
+        self.assertIn("board.matrix.forEach", table)
+        self.assertIn('Text(if(expanded) "−" else "+")', table)
+        self.assertIn("if(expanded) Text(row.step.definition", table)
+        self.assertIn("maxLines=1,overflow=TextOverflow.Ellipsis", table)
+        self.assertIn('"${it.passed}/${it.failed}"', table)
+        self.assertIn("if(row.shared!=null)", table)
+        self.assertIn("rememberSaveable(state.mode)", source)
+        self.assertNotIn("showFunnelDetails", source)
         self.assertNotIn("fontSize", table)
-        self.assertIn("TextAlign.End", table)
-        self.assertIn("LocalDensity.current.fontScale.coerceAtLeast(1f)", table)
-        self.assertIn("(width * if(index in 2..7) fontScale else 1f).dp", table)
 
-    def test_compact_mobile_view_only_collapses_verbose_definitions_and_reasons(self):
+    def test_matrix_uses_only_measured_field_gates_and_preserves_scalar_csv_rows(self):
+        scoreboard = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
+        funnel = (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
+        self.assertIn('id.startsWith("producer.") -> "producer"', funnel)
+        self.assertIn('id.startsWith("wine.") -> "wine_name"', funnel)
+        self.assertIn("val fieldScores=PhoneCorpusMath.fields.associate", scoreboard)
+        self.assertIn("val passed=gates.count { it.state==F.State.PASSED }", scoreboard)
+        self.assertIn("val failed=gates.count { it.state==F.State.BLOCKED }", scoreboard)
+        self.assertIn("MatrixRow(step,matrixCell(latestFunnelLabels,step.id),emptyMap())", scoreboard)
+        self.assertIn("csv.addAll(funnel.map { it.csv(mode.pipelineId) })", scoreboard)
+        self.assertIn('"score.complete"', scoreboard)
+
+    def test_selected_mode_filters_exclusive_steps_and_complete_row_is_bottom(self):
         source = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
-        table = source.split('Text("Pipeline bottlenecks"', 1)[1].split('TextButton(onClick={importCsv.launch', 1)[0]
-        self.assertIn("var showFunnelDetails by rememberSaveable { mutableStateOf(false) }", source)
-        self.assertIn('"Hide details" else "Show details"', table)
-        self.assertIn("val visibleWidths=if(showFunnelDetails) columnWidths else columnWidths.dropLast(1)", table)
-        self.assertIn("val headers=if(showFunnelDetails) PipelineFunnel.headers else PipelineFunnel.headers.dropLast(1)", table)
-        self.assertIn("val cells=if(showFunnelDetails) count.cells() else count.cells().dropLast(1)", table)
-        self.assertIn("index==1 && showFunnelDetails", table)
-        self.assertIn("count.step.definition", table)
-        self.assertIn("board.funnel.forEach", table)
-        self.assertNotIn("board.funnel.filter", table)
-        self.assertNotIn("board.funnel.groupBy", table)
+        scoreboard = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
+        self.assertIn("(!step.labOnly || mode==PhoneCorpusRunner.Mode.LAB)", scoreboard)
+        self.assertIn("(!step.productionOnly || mode!=PhoneCorpusRunner.Mode.LAB)", scoreboard)
+        self.assertIn('it.id != "score.complete"', (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text())
+        self.assertIn("var expandedFunnelSteps by rememberSaveable(state.mode) { mutableStateOf(emptySet<String>()) }", source)
+        self.assertIn("board.matrix.last().step.id == \"score.complete\"", (ROOT / "tools/logic-checks/PipelineFunnelChecks.kt").read_text())
 
     def test_telemetry_does_not_enter_normal_add_wine_or_supply_reference_answers(self):
         pure = (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()

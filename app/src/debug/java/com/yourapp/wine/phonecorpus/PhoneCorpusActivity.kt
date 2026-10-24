@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
@@ -39,7 +40,7 @@ class PhoneCorpusActivity:ComponentActivity() {
         var newRun by remember { mutableStateOf(false) }
         var showDetails by remember { mutableStateOf(false) }
         var showFunnel by rememberSaveable { mutableStateOf(true) }
-        var showFunnelDetails by rememberSaveable { mutableStateOf(false) }
+        var expandedFunnelSteps by rememberSaveable(state.mode) { mutableStateOf(emptySet<String>()) }
         var exportIndex by rememberSaveable { mutableStateOf(0) }
         val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let { vm.saveExportPart(it,exportIndex) } }
         val importCsv=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::splitExistingCsv) }
@@ -90,44 +91,52 @@ class PhoneCorpusActivity:ComponentActivity() {
                     Text("CSV includes every scored field, saved comparisons, and pipeline_step bottleneck rows. Raw CSV also retains each label's stage statuses. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
                 }
                 item {
-                    Text("Pipeline bottlenecks",style=MaterialTheme.typography.titleMedium)
-                    Text(if(showFunnelDetails) PipelineFunnel.explanation else
-                        "Distinct labels, latest attempt only—not accuracy. Swipe for more counts; Show details adds definitions and reasons.",
+                    Text("Pipeline bottleneck matrix",style=MaterialTheme.typography.titleMedium)
+                    Text("Each field cell is passed/failed distinct labels from the latest attempt. Blank cells have no applicable pass/fail count. Shared steps show one count across all fields. Tap + beside a step to read its description.",
                         style=MaterialTheme.typography.bodySmall)
-                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
-                        if(showFunnel) TextButton(onClick={showFunnelDetails=!showFunnelDetails}) {
-                            Text(if(showFunnelDetails) "Hide details" else "Show details")
-                        }
-                    }
+                    TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
                     if(showFunnel) SelectionContainer {
+                        val stepWidth=220.dp
+                        val fieldWidth=88.dp
+                        val tableWidth=stepWidth+fieldWidth*PhoneCorpusMath.fields.size
+                        val fieldTitles=PhoneCorpusMath.fields.map { field -> when(field) {
+                            "wine_name" -> "Wine name"
+                            else -> field.replaceFirstChar { it.uppercase() }
+                        } }
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
-                            // Keep every step and metric in order; collapse only verbose definitions/reasons.
-                            val columnWidths=listOf(96,128,52,52,52,56,60,52,220)
-                            val visibleWidths=if(showFunnelDetails) columnWidths else columnWidths.dropLast(1)
-                            val fontScale=LocalDensity.current.fontScale.coerceAtLeast(1f)
-                            val widths=visibleWidths.mapIndexed { index,width ->
-                                (width * if(index in 2..7) fontScale else 1f).dp
-                            }
-                            val headers=if(showFunnelDetails) PipelineFunnel.headers else PipelineFunnel.headers.dropLast(1)
-                            Row {
-                                headers.forEachIndexed { index,title ->
-                                    Text(title,Modifier.width(widths[index]).padding(horizontal=4.dp,vertical=3.dp),
-                                        style=MaterialTheme.typography.labelMedium,
-                                        textAlign=if(index in 2..7) TextAlign.End else TextAlign.Start)
+                            Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                Text("Pipeline step",Modifier.width(stepWidth).padding(4.dp),style=MaterialTheme.typography.labelMedium)
+                                fieldTitles.forEach { title ->
+                                    Text(title,Modifier.width(fieldWidth).padding(4.dp),style=MaterialTheme.typography.labelMedium,
+                                        textAlign=TextAlign.Center,maxLines=1,overflow=TextOverflow.Ellipsis)
                                 }
                             }
-                            board.funnel.forEach { count ->
-                                HorizontalDivider(Modifier.width(widths.reduce { total,width -> total+width }))
-                                val cells=if(showFunnelDetails) count.cells() else count.cells().dropLast(1)
-                                Row {
-                                    cells.forEachIndexed { index,value ->
-                                        Text(if(index==1 && showFunnelDetails) "$value\n${count.step.definition}" else value,
-                                            Modifier.width(widths[index]).padding(horizontal=4.dp,vertical=3.dp),
-                                            style=MaterialTheme.typography.bodySmall,
-                                            textAlign=if(index in 2..7) TextAlign.End else TextAlign.Start)
+                            board.matrix.forEach { row ->
+                                val expanded=row.step.id in expandedFunnelSteps
+                                Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                    Row(Modifier.width(stepWidth).heightIn(min=48.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                        TextButton(onClick={expandedFunnelSteps=if(expanded) expandedFunnelSteps-row.step.id else expandedFunnelSteps+row.step.id},
+                                            modifier=Modifier.width(44.dp),contentPadding=PaddingValues(0.dp)) {
+                                            Text(if(expanded) "−" else "+")
+                                        }
+                                        Text("${row.step.branch} · ${row.step.title}",Modifier.weight(1f).padding(end=4.dp),
+                                            style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                    }
+                                    if(row.shared!=null) {
+                                        Text("Shared ${row.shared.passed}/${row.shared.failed}",Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).padding(4.dp),
+                                            style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
+                                    } else {
+                                        PhoneCorpusMath.fields.forEach { field ->
+                                            val cell=row.fields[field]
+                                            Text(cell?.let { "${it.passed}/${it.failed}" }.orEmpty(),
+                                                Modifier.width(fieldWidth).padding(4.dp),style=MaterialTheme.typography.bodySmall,
+                                                textAlign=TextAlign.Center,maxLines=1)
+                                        }
                                     }
                                 }
+                                if(expanded) Text(row.step.definition,Modifier.width(tableWidth).padding(start=48.dp,end=8.dp,bottom=6.dp),
+                                    style=MaterialTheme.typography.bodySmall)
+                                HorizontalDivider()
                             }
                         }
                     }

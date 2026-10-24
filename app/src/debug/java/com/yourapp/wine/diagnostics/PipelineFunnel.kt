@@ -5,7 +5,18 @@ internal object PipelineFunnel {
     const val VERSION = 1
     enum class State { PASSED, BLOCKED, NOT_REACHED, NOT_RECORDED, NOT_APPLICABLE }
     data class Gate(val state: State, val reason: String = "")
-    data class Step(val id: String, val branch: String, val title: String, val definition: String, val labOnly: Boolean = false, val productionOnly: Boolean = false)
+    data class Step(val id: String, val branch: String, val title: String, val definition: String, val labOnly: Boolean = false, val productionOnly: Boolean = false) {
+        /** Field attribution exists only where the step actually concerns a single output field. */
+        val field: String? get() = when {
+            id.startsWith("producer.") -> "producer"
+            id in setOf("wine.producer_observed", "wine.producer_compatible", "wine.producer_bound", "wine.producer_consistent") -> "producer"
+            id.startsWith("wine.") -> "wine_name"
+            id.startsWith("final.") -> id.removePrefix("final.").takeIf { it in FIELD_IDS }
+            id.startsWith("score.field.") -> id.removePrefix("score.field.").takeIf { it in FIELD_IDS }
+            else -> null
+        }
+    }
+    val FIELD_IDS = setOf("producer", "wine_name", "country", "region", "subregion", "vintage")
     data class Label(val image: String, val attempt: Int, val gates: Map<String, Gate>)
     data class Count(val step: Step, val labels: Int, val passed: Int, val blocked: Int,
         val notReached: Int, val notRecorded: Int, val notApplicable: Int, val reasons: Map<String, Int>) {
@@ -125,9 +136,12 @@ internal object PipelineFunnel {
         }
     }
 
-    fun aggregate(labels: List<Label>): List<Count> {
+    fun aggregate(labels: List<Label>, includeStep: (Step) -> Boolean = { true }): List<Count> {
         val latest = labels.groupBy { it.image }.values.map { attempts -> attempts.maxBy { it.attempt } }
-        return steps.map { step ->
+        val visibleSteps = steps.filter(includeStep).let { selected ->
+            selected.filter { it.id != "score.complete" } + selected.filter { it.id == "score.complete" }
+        }
+        return visibleSteps.map { step ->
             val outcomes = latest.map { it.gates[step.id] ?: Gate(State.NOT_RECORDED, "Stage telemetry absent") }
             val counts = outcomes.groupingBy { it.state }.eachCount()
             val reasons = outcomes.filter { it.state != State.PASSED && it.state != State.NOT_APPLICABLE && it.reason.isNotBlank() }

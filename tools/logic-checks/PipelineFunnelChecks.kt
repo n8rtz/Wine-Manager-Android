@@ -136,12 +136,33 @@ fun main(args: Array<String>) {
     verify(board.funnel.single { it.step.id == "wine.invoked" }.passed == expected.getInt("wine_invoked"))
     val completeCount = expected.getString("complete").substringBefore('/').toInt()
     verify(board.funnel.single { it.step.id == "score.complete" }.let { it.passed == completeCount && it.blocked == 160-completeCount && it.notApplicable == 8 })
-    verify(board.funnel.single { it.step.id == "producer.mlkit.lookup" }.notRecorded > 0)
+    verify(board.funnel.last().step.id == "score.complete")
+    verify(board.funnel.last().passed == board.rows.first()[3].substringBefore('/').toInt())
+    verify(board.funnel.none { it.step.productionOnly })
+    verify(board.matrix.last().step.id == "score.complete")
+    verify(board.matrix.last().shared?.passed == completeCount)
+    verify(board.matrix.single { it.step.id == "producer.changed" }.step.field == "producer")
+    verify(board.matrix.single { it.step.id == "wine.changed" }.step.field == "wine_name")
+    for (field in PhoneCorpusMath.fields) {
+        val fieldRows=board.csv.filter { it["row_type"] == "field" && it["pipeline"] == PhoneCorpusRunner.Mode.LAB.pipelineId && it["field"] == field }
+        val expectedPassed=fieldRows.count { it["outcome"] in setOf("correct_value","correct_blank") }
+        val expectedFailed=fieldRows.count { it["outcome"] in setOf("wrong_value","missing_value","unsupported_fill","execution_failed") }
+        val actual=board.matrix.single { it.step.id == "score.field.$field" }.fields.getValue(field)
+        verify(actual.passed == expectedPassed && actual.failed == expectedFailed)
+    }
     verify(board.funnel.all { it.labels == 168 })
     verify(board.csv.count { it["row_type"] == "field" } == 5040) // Saved comparisons preserved, not a second live funnel.
-    verify(board.csv.count { it["row_type"] == "pipeline_step" } == F.steps.size)
+    verify(board.csv.count { it["row_type"] == "pipeline_step" } == board.funnel.size)
+    val productionBoard = PhoneCorpusScoreboard(context).build(predictions, PhoneCorpusRunner.Mode.PRODUCTION_V2)
+    verify(productionBoard.funnel.none { it.step.labOnly })
+    verify(productionBoard.funnel.any { it.step.productionOnly })
+    verify(productionBoard.funnel.last().step.id == "score.complete")
+    verify(productionBoard.matrix.none { it.step.labOnly })
+    verify(productionBoard.matrix.any { it.step.productionOnly })
+    verify(productionBoard.matrix.last().step.id == "score.complete")
+    verify(productionBoard.csv.count { it["row_type"] == "pipeline_step" } == productionBoard.funnel.size)
     val metadata = fixture.getJSONObject("metadata")
     val output = File(args[2]);PhoneCorpusScoreboard.export(board, output, metadata.keys().asSequence().associateWith { metadata.optString(it) })
-    verify(output.readText().contains("pipeline_step") && board.text.contains("PIPELINE BOTTLENECKS"))
+    verify(output.readText().contains("pipeline_step") && board.text.contains("PIPELINE BOTTLENECK MATRIX"))
     println("PASS: $checks actual Kotlin funnel, resolver telemetry, checkpoint, scorer and CSV checks; no Android runtime or OCR.")
 }
