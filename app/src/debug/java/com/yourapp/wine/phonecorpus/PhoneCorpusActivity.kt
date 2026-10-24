@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,13 +21,24 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import com.yourapp.wine.diagnostics.PipelineFunnel
+
+private fun passFailLabel(passed:Int,failed:Int,passColor:Color,failColor:Color,shared:Boolean=false):AnnotatedString = buildAnnotatedString {
+    if(shared) append("Shared ")
+    withStyle(SpanStyle(color=passColor)) { append(passed.toString()) }
+    append("/")
+    withStyle(SpanStyle(color=failColor)) { append(failed.toString()) }
+}
 
 class PhoneCorpusActivity:ComponentActivity() {
     private val vm:PhoneCorpusViewModel by viewModels()
@@ -93,7 +105,7 @@ class PhoneCorpusActivity:ComponentActivity() {
                 }
                 item {
                     Text("Pipeline bottleneck matrix",style=MaterialTheme.typography.titleMedium)
-                    Text("Each field cell is passed/failed distinct labels from the latest attempt. Blank cells have no applicable pass/fail count. Shared steps show one count across all fields. Tap + beside a step to read its description.",
+                    Text("Each field cell is passed/failed distinct labels from the latest attempt: pass is green, fail is red. Blank cells have no applicable pass/fail count. Shared steps show one count across all fields. Tap + beside a step to read its description.",
                         style=MaterialTheme.typography.bodySmall)
                     TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
                     if(showFunnel) SelectionContainer {
@@ -105,6 +117,8 @@ class PhoneCorpusActivity:ComponentActivity() {
                         } }
                         val matrixScroll=rememberScrollState()
                         val gridColor=MaterialTheme.colorScheme.outlineVariant
+                        val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+                        val failColor=MaterialTheme.colorScheme.error
                         BoxWithConstraints(Modifier.fillMaxWidth()) {
                             val viewportWidth=maxWidth
                             Column(Modifier.horizontalScroll(matrixScroll)) {
@@ -129,13 +143,13 @@ class PhoneCorpusActivity:ComponentActivity() {
                                             style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
                                     }
                                     if(row.shared!=null) {
-                                        Text("Shared ${row.shared.passed}/${row.shared.failed}",Modifier.width(fieldWidth*PhoneCorpusMath.fields.size)
-                                            .heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                        Text(passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true),
+                                            Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
                                             style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
                                     } else {
                                         PhoneCorpusMath.fields.forEach { field ->
                                             val cell=row.fields[field]
-                                            Text(cell?.let { "${it.passed}/${it.failed}" }.orEmpty(),
+                                            Text(cell?.let { passFailLabel(it.passed,it.failed,passColor,failColor) } ?: AnnotatedString(""),
                                                 Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
                                                 style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
                                         }

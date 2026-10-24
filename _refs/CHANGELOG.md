@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug benchmark pipeline-bottleneck table in the screen, copied statistics and scored/raw CSVs, with separate OCR branches, distinct-label/latest-attempt counts and explicit unknown/not-reached states. Compact checkpoints retain stage evidence. Host logic validated; Android build/device checks remain pending. No production recognition changes or new accuracy claim.
 
 ### Changed
-- Grouped equivalent pipeline stages in the six-field bottleneck matrix: Producer/Wine resolver phases share rows with separate field counts, and final populated/correct stages each use one row across all six fields. Unique link gates and shared OCR/setup steps remain distinct. Descriptions wrap to screen width when expanded; theme-colored cell borders improve separation. CSV schema and recognition behavior remain unchanged; Android visual checks are pending.
+- Grouped equivalent pipeline stages in the six-field bottleneck matrix: Producer/Wine resolver phases share rows with separate field counts, and final populated/correct stages each use one row across all six fields. Unique link gates and shared OCR/setup steps remain distinct. Descriptions wrap to screen width when expanded; theme-colored cell borders improve separation, with passed counts green and failed counts red. CSV schema and recognition behavior remain unchanged; Android visual checks are pending.
 - Incremented Android `versionCode` from 56 to **57** for the owner-requested diagnostics build; `versionName` remains **0.5.6**. This is a build-number update, not a tagged release.
 
 ### Fixed
