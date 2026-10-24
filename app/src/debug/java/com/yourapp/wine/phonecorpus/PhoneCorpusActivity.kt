@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
@@ -98,23 +99,28 @@ class PhoneCorpusActivity:ComponentActivity() {
                     if(showFunnel) SelectionContainer {
                         val stepWidth=220.dp
                         val fieldWidth=88.dp
-                        val tableWidth=stepWidth+fieldWidth*PhoneCorpusMath.fields.size
                         val fieldTitles=PhoneCorpusMath.fields.map { field -> when(field) {
                             "wine_name" -> "Wine name"
                             else -> field.replaceFirstChar { it.uppercase() }
                         } }
-                        Column(Modifier.horizontalScroll(rememberScrollState())) {
+                        val matrixScroll=rememberScrollState()
+                        val gridColor=MaterialTheme.colorScheme.outlineVariant
+                        BoxWithConstraints(Modifier.fillMaxWidth()) {
+                            val viewportWidth=maxWidth
+                            Column(Modifier.horizontalScroll(matrixScroll)) {
                             Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                Text("Pipeline step",Modifier.width(stepWidth).padding(4.dp),style=MaterialTheme.typography.labelMedium)
+                                Text("Pipeline step",Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                    style=MaterialTheme.typography.labelMedium)
                                 fieldTitles.forEach { title ->
-                                    Text(title,Modifier.width(fieldWidth).padding(4.dp),style=MaterialTheme.typography.labelMedium,
-                                        textAlign=TextAlign.Center,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                    Text(title,Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                        style=MaterialTheme.typography.labelMedium,textAlign=TextAlign.Center,maxLines=1,overflow=TextOverflow.Ellipsis)
                                 }
                             }
                             board.matrix.forEach { row ->
                                 val expanded=row.step.id in expandedFunnelSteps
                                 Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                    Row(Modifier.width(stepWidth).heightIn(min=48.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                    Row(Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor),
+                                        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
                                         TextButton(onClick={expandedFunnelSteps=if(expanded) expandedFunnelSteps-row.step.id else expandedFunnelSteps+row.step.id},
                                             modifier=Modifier.width(44.dp),contentPadding=PaddingValues(0.dp)) {
                                             Text(if(expanded) "−" else "+")
@@ -123,20 +129,21 @@ class PhoneCorpusActivity:ComponentActivity() {
                                             style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
                                     }
                                     if(row.shared!=null) {
-                                        Text("Shared ${row.shared.passed}/${row.shared.failed}",Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).padding(4.dp),
+                                        Text("Shared ${row.shared.passed}/${row.shared.failed}",Modifier.width(fieldWidth*PhoneCorpusMath.fields.size)
+                                            .heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
                                             style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
                                     } else {
                                         PhoneCorpusMath.fields.forEach { field ->
                                             val cell=row.fields[field]
                                             Text(cell?.let { "${it.passed}/${it.failed}" }.orEmpty(),
-                                                Modifier.width(fieldWidth).padding(4.dp),style=MaterialTheme.typography.bodySmall,
-                                                textAlign=TextAlign.Center,maxLines=1)
+                                                Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                                style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
                                         }
                                     }
                                 }
-                                if(expanded) Text(row.step.definition,Modifier.width(tableWidth).padding(start=48.dp,end=8.dp,bottom=6.dp),
-                                    style=MaterialTheme.typography.bodySmall)
-                                HorizontalDivider()
+                                if(expanded) Text(row.step.definition,Modifier.width(viewportWidth).border(1.dp,gridColor)
+                                    .padding(start=48.dp,end=8.dp,top=8.dp,bottom=8.dp),style=MaterialTheme.typography.bodySmall)
+                            }
                             }
                         }
                     }

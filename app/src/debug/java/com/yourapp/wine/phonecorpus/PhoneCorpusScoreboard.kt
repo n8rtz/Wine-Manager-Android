@@ -98,10 +98,68 @@ internal class PhoneCorpusScoreboard(context:Context) {
         val nonScoringSteps=funnel.map { it.step }.filterNot { it.id.startsWith("score.") }
         val scoringSteps=funnel.map { it.step }.filter { it.id=="score.at_most_one" || it.id=="score.complete" }
         val matrixSteps=nonScoringSteps+fieldScoreSteps+scoringSteps
-        val matrix=matrixSteps.map { step ->
-            val field=step.field
-            if(field==null) MatrixRow(step,matrixCell(latestFunnelLabels,step.id),emptyMap())
-            else MatrixRow(step,null,matrixCell(latestFunnelLabels,step.id)?.let { mapOf(field to it) }.orEmpty())
+        val producerSuffixes=matrixSteps.filter { it.id.startsWith("producer.") }.map { it.id.removePrefix("producer.") }.toSet()
+        fun groupKey(step:F.Step):String {
+            if(step.id.startsWith("final.") && step.field!=null) return "field.populated"
+            if(step.id.startsWith("score.field.")) return "field.correct"
+            if(step.id.startsWith("producer.")) return "resolver.${step.id.removePrefix("producer.")}"
+            if(step.id.startsWith("wine.") && !step.id.startsWith("wine.producer_")) {
+                val suffix=step.id.removePrefix("wine.")
+                if(suffix in producerSuffixes) return "resolver.$suffix"
+            }
+            return "step.${step.id}"
+        }
+        fun groupTitle(key:String,members:List<F.Step>):String = when(key) {
+            "field.populated" -> "Final field populated"
+            "field.correct" -> "Field correct against reference"
+            else -> when(key.removePrefix("resolver.")) {
+                "invoked" -> "Resolver invoked"
+                "execution" -> "Resolver completed within budget"
+                "primary" -> "Verified primary index available"
+                "spans" -> "Span-count bound passed"
+                "independent" -> "Two-engine + disjoint agreement"
+                "unambiguous" -> "One viable identity/name group"
+                "separated" -> "Separated from competing candidates"
+                "existing" -> "Existing-value protection passed"
+                "selected" -> "Name confirmed / suggested"
+                "changed" -> "Field value changed"
+                else -> {
+                    val parts=key.removePrefix("resolver.").split('.')
+                    val engine=parts.firstOrNull()
+                    val action=parts.drop(1).joinToString(".")
+                    val engineName=when(engine) { "mlkit" -> "ML Kit"; "paddle" -> "Paddle Medium"; else -> null }
+                    val actionName=when(action) {
+                        "eligible" -> "eligible observed span"
+                        "lookup" -> "database lookup completed"
+                        "retrieved" -> "reference candidates returned"
+                        "distance" -> "candidate passed edit distance"
+                        else -> null
+                    }
+                    if(engineName!=null && actionName!=null) "$engineName · $actionName"
+                    else members.single().title
+                }
+            }
+        }
+        val groupedSteps=linkedMapOf<String,MutableList<F.Step>>()
+        matrixSteps.forEach { step -> groupedSteps.getOrPut(groupKey(step)) { mutableListOf() }+=step }
+        val matrix=groupedSteps.map { (key,members) ->
+            if(members.size==1 && members.single().field==null) {
+                val step=members.single()
+                MatrixRow(step,matrixCell(latestFunnelLabels,step.id),emptyMap())
+            } else {
+                val fieldMembers=members.filter { it.field!=null }.groupBy { it.field!! }
+                val fieldCells=fieldMembers.mapNotNull { (field,steps) ->
+                    check(steps.size==1) { "Matrix group $key repeats field $field" }
+                    matrixCell(latestFunnelLabels,steps.single().id)?.let { field to it }
+                }.toMap()
+                val title=groupTitle(key,members)
+                val description=when(key) {
+                    "field.populated" -> "A nonblank final value was produced for this field. Coverage is not correctness."
+                    "field.correct" -> "The final field matches its frozen reference, including an expected blank. Unresolved references are omitted."
+                    else -> members.joinToString("\n") { "${it.field ?: it.branch}: ${it.definition}" }
+                }
+                MatrixRow(F.Step("matrix.$key","Field stages",title,description),null,fieldCells)
+            }
         }
         csv.addAll(funnel.map { it.csv(mode.pipelineId) })
         // Frozen v2 predictions are scored only after current predictions, never supplied to OCR.

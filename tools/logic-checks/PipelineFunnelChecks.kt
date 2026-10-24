@@ -141,13 +141,33 @@ fun main(args: Array<String>) {
     verify(board.funnel.none { it.step.productionOnly })
     verify(board.matrix.last().step.id == "score.complete")
     verify(board.matrix.last().shared?.passed == completeCount)
-    verify(board.matrix.single { it.step.id == "producer.changed" }.step.field == "producer")
-    verify(board.matrix.single { it.step.id == "wine.changed" }.step.field == "wine_name")
+    verify(board.matrix.single { it.step.id == "matrix.resolver.changed" }.fields.isEmpty()) // Saved fixture has no resolver telemetry.
+    verify(board.matrix.count { it.step.id == "matrix.field.populated" } == 1)
+    verify(board.matrix.count { it.step.id == "matrix.field.correct" } == 1)
+    verify(board.matrix.size < board.funnel.size)
+    val instrumentedPredictions=predictions.mapIndexed { index,prediction ->
+        val copy=JSONObject(prediction.toString())
+        val gates=org.json.JSONArray()
+        for(step in F.steps) {
+            val status=when(step.id) {
+                "producer.changed" -> if(index<2) F.State.PASSED else if(index<4) F.State.BLOCKED else F.State.NOT_REACHED
+                "wine.changed" -> if(index<1) F.State.PASSED else if(index<4) F.State.BLOCKED else F.State.NOT_REACHED
+                else -> F.State.NOT_RECORDED
+            }
+            gates.put(JSONObject().put("step_id",step.id).put("step_status",status.name))
+        }
+        copy.put("pipeline_funnel_version",F.VERSION).put("pipeline_funnel",gates)
+        copy
+    }
+    val instrumentedBoard=PhoneCorpusScoreboard(context).build(instrumentedPredictions,PhoneCorpusRunner.Mode.LAB)
+    val changed=instrumentedBoard.matrix.single { it.step.id == "matrix.resolver.changed" }
+    verify(changed.fields.getValue("producer").let { it.passed==2 && it.failed==2 })
+    verify(changed.fields.getValue("wine_name").let { it.passed==1 && it.failed==3 })
     for (field in PhoneCorpusMath.fields) {
         val fieldRows=board.csv.filter { it["row_type"] == "field" && it["pipeline"] == PhoneCorpusRunner.Mode.LAB.pipelineId && it["field"] == field }
         val expectedPassed=fieldRows.count { it["outcome"] in setOf("correct_value","correct_blank") }
         val expectedFailed=fieldRows.count { it["outcome"] in setOf("wrong_value","missing_value","unsupported_fill","execution_failed") }
-        val actual=board.matrix.single { it.step.id == "score.field.$field" }.fields.getValue(field)
+        val actual=board.matrix.single { it.step.id == "matrix.field.correct" }.fields.getValue(field)
         verify(actual.passed == expectedPassed && actual.failed == expectedFailed)
     }
     verify(board.funnel.all { it.labels == 168 })
