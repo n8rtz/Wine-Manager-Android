@@ -56,8 +56,7 @@ internal class LinkedWineResolver(private val index:Index) {
                 checkBudget()
                 if(span.engine.isBlank() || span.observationIds.isEmpty() || !eligible(span.text)) continue
                 val key=ProducerResolver.normalize(span.text)
-                val wines=index.lookupWines(key,candidates.keys,33,checkBudget)
-                if(wines.size>32) continue
+                val wines=index.lookupWines(key,candidates.keys,ProducerResolver.MAX_FUZZY_CANDIDATES,checkBudget)
                 for(wine in wines) {
                     checkBudget()
                     if(wine.producerId !in candidates || wine.key.length>120) continue

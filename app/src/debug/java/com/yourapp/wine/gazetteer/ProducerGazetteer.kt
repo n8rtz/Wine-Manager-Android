@@ -14,7 +14,7 @@ internal class ProducerGazetteer private constructor(
 ):LinkedWineResolver.Index,AutoCloseable {
     override val primaryVerified=true
     override fun lookup(key:String,limit:Int,checkBudget:()->Unit):List<ProducerResolver.Entity> {
-        require(limit in 1..33);checkBudget()
+        require(limit in 1..ProducerResolver.MAX_FUZZY_CANDIDATES);checkBudget()
         fun read(sql:String,arg:String):List<ProducerResolver.Entity> {
             val rows=mutableListOf<ProducerResolver.Entity>()
             db.prepare(sql).use { s ->
@@ -38,7 +38,7 @@ internal class ProducerGazetteer private constructor(
         return read("SELECT p.id,p.name,p.key FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?",query)
     }
     override fun lookupWines(key:String,producerIds:Set<String>,limit:Int,checkBudget:()->Unit):List<LinkedWineResolver.Wine> {
-        require(producerIds.size in 1..8 && limit in 1..33);checkBudget()
+        require(producerIds.size in 1..8 && limit in 1..ProducerResolver.MAX_FUZZY_CANDIDATES);checkBudget()
         val ids=producerIds.sorted();val slots=ids.joinToString(",") { "?" }
         fun query(fuzzy:Boolean,arg:String):List<LinkedWineResolver.Wine> {
             val from=if(fuzzy) "wine_fts JOIN wine_names n ON wine_fts.rowid=n.id" else "wine_names n"

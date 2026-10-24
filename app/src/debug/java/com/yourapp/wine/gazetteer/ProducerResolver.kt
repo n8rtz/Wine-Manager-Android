@@ -19,6 +19,18 @@ internal class ProducerResolver(private val index:Index) {
         const val VERSION="producer-primary-v1"
         const val MAX_SPANS=128
         const val MAX_HITS=32
+
+        /** Fuzzy-lookup candidate bound. This bounds *recall* only; the precision decisions are
+         * the edit-distance gate below plus the two-engine/disjoint-observation rule, the
+         * separation rule and the existing-producer protection, all of which still run on every
+         * candidate this bound returns.
+         *
+         * It replaces the previous `MAX_HITS+1` fetch. That fetch returned 33 rows and was
+         * followed by `if(hits.size > MAX_HITS) continue`, so any lookup whose FTS window was full
+         * dropped the whole span. Measured against the packaged producer index over the owner's
+         * 168-image Lab export, 1 147 of the 1 230 eligible spans had a full FTS window and were
+         * dropped; the fuzzy branch could therefore only ever contribute exact primary-key hits. */
+        const val MAX_FUZZY_CANDIDATES=200
         private val noise=Regex("\\b(?:imported|importer|imports|distributed|distributor|bottled|bottler|embouteille|mis en bouteille|produced by|product of|produit de|appellation|controlee|protegee|alcohol|alc|vol|contains|sulfites|sulphites|government|warning|llc|inc|corp|ltd|www|http)\\b")
         private val generic=setOf("chateau","domaine","domaines","estate","winery","wine","wines","vineyard","vineyards","cellar","cellars","bodega","bodegas","maison","de","du","des","la","le","les","the","and","et","of","family","reserve","reserva","grand","cru")
         fun normalize(text:String):String=Normalizer.normalize(text.lowercase(Locale.ROOT).replace('’','\''),Normalizer.Form.NFKD)
@@ -50,9 +62,7 @@ internal class ProducerResolver(private val index:Index) {
                 checkBudget()
                 if(s.engine.isBlank() || s.observationIds.isEmpty() || !eligible(s.text)) continue
                 val q=normalize(s.text)
-                val hits=index.lookup(q,MAX_HITS+1,checkBudget)
-                // A saturated retrieval is not evidence of uniqueness.
-                if(hits.size>MAX_HITS) continue
+                val hits=index.lookup(q,MAX_FUZZY_CANDIDATES,checkBudget)
                 for(e in hits.distinctBy { it.id }) {
                     checkBudget()
                     if(e.key.length>96) continue
