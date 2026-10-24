@@ -1,5 +1,7 @@
 # Producer-only source staging (not Android recognition assets)
 
+> Update: the user has now supplied the primary LWIN workbook. The debug-only primary asset and Lab resolver are implemented; see `docs/lab-primary-producer-resolver.md`. The acquisition notes below describe the earlier source-staging phase.
+
 ## Executed
 
 Built three separate candidate layers in `/home/user/producer-sources/curated/`:

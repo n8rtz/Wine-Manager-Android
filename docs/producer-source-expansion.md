@@ -1,5 +1,7 @@
 # Producer-source cleanup and expansion
 
+> Update: the user has now supplied the primary LWIN workbook. The debug-only primary asset and Lab resolver are implemented; see `docs/lab-primary-producer-resolver.md`. The acquisition notes below describe the earlier source-staging phase.
+
 ## Completed, not just proposed
 
 The working candidate layers now exclude importer-only, wholesaler-only, spirits-only and other non-producer categories. The original mixed inputs remain historical audit material only; **no mixed permit database is an active recognition asset**.

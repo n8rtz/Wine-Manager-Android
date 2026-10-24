@@ -26,8 +26,13 @@ class ProducerGazetteerReviewChecks(unittest.TestCase):
         self.assertEqual(probes['Margaux'][0]['name'],'Château Margaux')
         self.assertTrue(probes['PRODUCT OF FRANCE']) # demonstrates need for our abstention layer
         self.assertEqual(probes['zzqxv zzqxv'],[])
-    def test_not_packaged_or_enabled_in_app(self):
-        for source_set in ('main','debug'):
-            self.assertFalse((ROOT/f'app/src/{source_set}/assets/producer-gazetteer-v1').exists())
+    def test_original_demo_not_packaged(self):
+        self.assertFalse((ROOT/'app/src/main/assets/producer-gazetteer-v1').exists())
+        # A later user-supplied primary export is now allowed in debug; the 128-row demo is not.
+        manifest=ROOT/'app/src/debug/assets/producer-gazetteer-v1/manifest.json'
+        if manifest.exists():
+            m=json.loads(manifest.read_text())
+            self.assertNotEqual(m['provenance']['zip_git_blob'],'3749baa923a12efdb28b2bb03119a734c4faac58')
+            self.assertEqual(m['verification_kind'],'official-export-acquisition-attested')
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text()
         self.assertNotIn('producer-gazetteer-review',runner)

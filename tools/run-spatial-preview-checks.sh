@@ -13,6 +13,9 @@ for name in WineKnowledgeBase FixtureKnowledgeBase PlaceGazetteer PlaceHierarchy
 done
 bash "$KOTLIN_HOME/bin/kotlinc" "${sources[@]}" "$root/ocr/Tokens.kt" "$root/textlab/PaddleCandidates.kt" \
  "$lab"/{TextLabSpatialPhrases,TextLabSpatialPreview,TextLabEvidencePreview,TextLabFormPreview,TextLabJournal,TextLabWineTable,TextLabChoices}.kt \
- tools/logic-checks/{AndroidGeometry,AndroidLog,AndroidClock,SpatialPreviewChecks}.kt \
+ app/src/debug/java/com/yourapp/wine/gazetteer/ProducerResolver.kt \
+ tools/logic-checks/{AndroidGeometry,AndroidLog,AndroidClock,SpatialPreviewChecks,ProducerResolverChecks}.kt \
  -cp "$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar" -include-runtime -d "$tmp/checks.jar"
 "$JAVA_HOME/bin/java" -cp "$tmp/checks.jar:$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar" SpatialPreviewChecksKt
+
+"$JAVA_HOME/bin/java" -cp "$tmp/checks.jar:$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar" ProducerResolverChecksKt

@@ -7,7 +7,7 @@ LAB=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
 class BenchmarkVersionChecks(unittest.TestCase):
     def test_three_explicit_versions(self):
         runner=(PHONE/'PhoneCorpusRunner.kt').read_text()
-        for label,key in [('Production v1.0','production-v1.0-15s'),('Production v2.0','production-v2.0-guarded'),('Lab · spatial merging','lab-spatial-v1')]:
+        for label,key in [('Production v1.0','production-v1.0-15s'),('Production v2.0','production-v2.0-guarded'),('Lab · producer evidence','lab-producer-v1')]:
             self.assertIn(label,runner);self.assertIn(key,runner)
         ui=(PHONE/'PhoneCorpusActivity.kt').read_text()
         self.assertIn('Mode.entries.forEach',ui);self.assertIn('Text(mode.title,',ui)
@@ -27,7 +27,8 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('if(!batch.benchmarkOnly)',extraction)
         spatial=(LAB/'TextLabSpatialPreview.kt').read_text()
         self.assertIn('recordsOverride=readings',spatial)
-        self.assertIn('val readings=TextLabSpatialPhrases.readings(proposals)',spatial)
+        self.assertIn('val readings=original',spatial)
+        self.assertNotIn('val readings=TextLabSpatialPhrases.readings(proposals)',spatial)
         self.assertNotIn('TextLabRunner.recognize',spatial)
         self.assertNotIn('scoring.json',spatial)
         self.assertIn('"spatial_evidence_summary","failed"',spatial)

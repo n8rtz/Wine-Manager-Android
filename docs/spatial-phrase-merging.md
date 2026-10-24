@@ -1,5 +1,7 @@
 # Step 1: spatial phrase merging
 
+> Current Lab update: original OCR observations now feed guarded extraction unchanged. Spatial joins are alternatives for the producer resolver only, not replacement observations. See `lab-primary-producer-resolver.md`. Older replacement-adapter descriptions below are historical.
+
 Implemented in `merge/SpatialPhraseMerger.kt`, with a Lab-only mapped-token adapter in `textlab/TextLabSpatialPhrases.kt` (debug source set).
 
 ## Contract

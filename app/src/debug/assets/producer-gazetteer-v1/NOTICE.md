@@ -1,0 +1,21 @@
+# Producer reference data — debug Lab only
+
+## Primary producer/brand layer
+
+LWIN by Liv-ex — https://www.liv-ex.com/lwin/
+Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
+
+Derived from the user-supplied LWINdatabase.xlsx. Input SHA-256, supplied GitHub blob and acquisition review are recorded in manifest.json. This records user-supplied primary-export provenance, not an independent download or a digital signature from Liv-ex.
+
+Changes: retain explicit producer title/name and country groups for eligible live wine records; normalize matching keys separately from display names; retain LWIN7 relationships; exclude spirits, beer, cider, other/unknown types, inactive records, explicit mixed/gift packs and missing producer identities. No DISPLAY_NAME fallback, inferred producer aliases or geography autofill. A producer/brand group is not necessarily one physical winery.
+
+## Supporting layers (separate files; never replacement names)
+
+OSM: © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
+ODbL 1.0: https://opendatacommons.org/licenses/odbl/1-0/
+Snapshot via OpenHistoryMap/openwinemap, commit 98a5bf983abd23b1f6255bcb60bc73bd99b6b69e.
+Changes: explicit named craft/industrial wineries only; exclude non-winery, inactive, unnamed and flagged non-grape-name features. Store normalized name and source ID only. Available for attribution/diagnostic support, not independent OCR votes. The separately licensed derived layer remains redistributable under ODbL; review obligations before merging into any other database.
+
+TTB: supplied cached FOIA List of Permittees, Git blob 8bf9737463092b0a2ef233139dee8e88a0f6fae8 in n8rtz/Wine-Reference-Drop. Only filtered Wine Producer operating-name records; no legal-owner alias substitution. The source archive claims public-domain/CC0; its freshness/authenticity has not been independently checked with TTB. Exact source record IDs retained.
+
+Build tools, source revisions and reproduction instructions: tools/producer-sources and docs/lab-primary-producer-resolver.md. No label artwork included. All suggestions require confirmation; reference membership is not proof of identity or wine origin.

@@ -20,7 +20,7 @@ internal object PhoneCorpusRunner {
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
         PRODUCTION_V1("Production v1.0 · 15s shared budget", "production-v1.0-15s", null),
         PRODUCTION_V2("Production v2.0 · guarded producer · 60s per engine", "production-v2.0-guarded", "evidence_summary"),
-        LAB("Lab · spatial merging · 60s per engine", "lab-spatial-v1", "spatial_evidence_summary")
+        LAB("Lab · producer evidence · 60s per engine", "lab-producer-v1", "spatial_evidence_summary")
     }
     fun sha(file:File):String {
         val md=MessageDigest.getInstance("SHA-256")

@@ -75,7 +75,26 @@ internal object TextLabWineExtraction {
                 val hybrid=if(batch.anchorHybrid) kb?.let { com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
                 val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
                 if(batch.spatialPhrases) {
-                    batch.journals.forEach { TextLabSpatialPreview.append(it,experimental,hybrid,repair,Year.now().value) }
+                    batch.journals.forEach { journal ->
+                        // One selected Lab extraction. Primary-data gate fails closed; never run a second contender.
+                        val deadline=android.os.SystemClock.elapsedRealtime()+500L
+                        val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=deadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
+                        var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=null
+                        var unavailable="primary LWIN export required"
+                        try {
+                            try { if(!skip) producers=com.yourapp.wine.gazetteer.ProducerGazetteer.open(context.applicationContext,checkBudget) }
+                            catch(cancel:CancellationException) { throw cancel }
+                            catch(e:Exception) { unavailable="Primary producer gazetteer unavailable: ${e.javaClass.simpleName}; ${e.message}" }
+                            val remaining=(deadline-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+                            var lookupDeadline:Long?=null
+                            val lookupBudget={
+                                val now=android.os.SystemClock.elapsedRealtime()
+                                if(lookupDeadline==null) lookupDeadline=now+remaining
+                                if(now>=lookupDeadline!!) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
+                            }
+                            TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget)
+                        } finally { producers?.close() }
+                    }
                 } else {
                     batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
                 }

@@ -27,11 +27,28 @@ fun main() {
     verify(j.rows.none { it["stage"]=="evidence_summary" }) // v2 contender never executed
     val summary=j.rows.single { it["stage"]=="spatial_evidence_summary" }
     verify(summary["status"]!="failed")
-    verify(summary["spatial_source_count"]=="4" && summary["spatial_reading_count"]=="2")
+    verify(summary["spatial_source_count"]=="4" && summary["spatial_reading_count"]=="4")
     verify(summary["spatial_merged_groups"]=="2")
     verify(j.rows.count { it["stage"]=="recognition" }==4)
-    verify(j.rows.filter { it["stage"]=="spatial_evidence_observation" }.any { it["raw_text"]=="Domaine de la Romanée-Conti" }) // actual extractor input, not just audit text
+    verify(j.rows.filter { it["stage"]=="spatial_evidence_observation" }.any { it["raw_text"]=="Romanée-Conti" }) // originals survive; joins are producer alternatives, not replacements
     verify(j.rows.filter { it["stage"]=="spatial_phrase" }.all { it["source_scores"].orEmpty().isNotBlank() && it["source_original_boxes"].orEmpty().isNotBlank() })
+    verify(summary["producer_gazetteer_status"]=="unavailable")
+    val withProducer=sample()
+    // Simulate a missing initial producer; fixture index exercises actual final-summary wiring.
+    val anchorIndex=withProducer.rows.indexOfFirst { it["stage"]=="form_summary" }
+    withProducer.rows[anchorIndex]=withProducer.rows[anchorIndex]+mapOf("producer" to "","producer_state" to "RED")
+    val fixtureIndex=object:com.yourapp.wine.gazetteer.ProducerResolver.Index {
+        override val version="integration-fixture";override val primaryVerified=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(
+            com.yourapp.wine.gazetteer.ProducerResolver.Entity("fixture-estate","Domaine de la Romanée-Conti","domaine de la romanee conti"))
+    }
+    TextLabSpatialPreview.append(withProducer,extractor,hybrid,repair,2026,fixtureIndex)
+    val produced=withProducer.rows.single { it["stage"]=="spatial_evidence_summary" }
+    verify(produced["producer"]=="Domaine de la Romanée-Conti")
+    verify(produced["producer_state"]=="YELLOW")
+    verify(withProducer.rows.count { it["stage"]=="recognition" }==4)
+    verify(withProducer.rows.any { it["stage"]=="producer_gazetteer_candidate" && it["source_observation_ids"].orEmpty().isNotBlank() })
+    verify(listOf("wine_name","country","region","subregion","vintage").all { produced.containsKey(it) && summary.containsKey(it) && produced[it]==summary[it] })
     val count=j.rows.size;TextLabSpatialPreview.append(j,extractor,hybrid,repair,2026);verify(j.rows.size==count)
     val failed=sample();TextLabSpatialPreview.append(failed,null,hybrid,repair,2026)
     verify(failed.rows.single { it["stage"]=="spatial_evidence_summary" }["status"]=="failed")

@@ -1,0 +1,88 @@
+package com.yourapp.wine.gazetteer
+
+import android.content.Context
+import android.os.Looper
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import org.json.JSONObject
+import java.io.File
+import java.security.MessageDigest
+
+/** No network and no mirror fallback. Missing/invalid primary asset is an explicit unavailable result. */
+internal class ProducerGazetteer private constructor(
+    private val db:SQLiteConnection,private val support:Map<String,SQLiteConnection>,override val version:String
+):ProducerResolver.Index,AutoCloseable {
+    override val primaryVerified=true
+    override fun lookup(key:String,limit:Int,checkBudget:()->Unit):List<ProducerResolver.Entity> {
+        require(limit in 1..33);checkBudget()
+        fun read(sql:String,arg:String):List<ProducerResolver.Entity> {
+            val rows=mutableListOf<ProducerResolver.Entity>()
+            db.prepare(sql).use { s ->
+                s.bindText(1,arg);s.bindLong(2,limit.toLong())
+                while(s.step()) {
+                    checkBudget();val id=s.getText(0);val name=s.getText(1);val normalized=s.getText(2)
+                    val sources=support.mapNotNull { (source,connection) ->
+                        checkBudget()
+                        connection.prepare("SELECT id FROM support WHERE key=? LIMIT 1").use { q ->
+                            q.bindText(1,normalized);if(q.step()) "$source:${q.getText(0)}" else null
+                        }
+                    }.toSet()
+                    rows+=ProducerResolver.Entity(id,name,normalized,sources)
+                }
+            };return rows
+        }
+        val exact=read("SELECT id,name,key FROM producers WHERE key=? ORDER BY id LIMIT ?",key)
+        if(exact.isNotEmpty()) return exact
+        val query=key.windowed(3).filter { it.none(Char::isWhitespace) }.distinct().take(24).joinToString(" OR ") { "\"$it\"" }
+        if(query.isBlank()) return emptyList()
+        return read("SELECT p.id,p.name,p.key FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?",query)
+    }
+    override fun close() { try { support.values.forEach { it.close() } } finally { db.close() } }
+    companion object {
+        const val ASSET="producer-gazetteer-v1"
+        private fun sha(file:File,checkBudget:()->Unit):String {
+            val md=MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input -> val b=ByteArray(65536);while(true) { checkBudget();val n=input.read(b);if(n<0) break;md.update(b,0,n) } }
+            return md.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
+        }
+        fun open(context:Context,checkBudget:()->Unit={}):ProducerGazetteer {
+            check(Looper.myLooper()!=Looper.getMainLooper());checkBudget()
+            val text=context.assets.open("$ASSET/manifest.json").bufferedReader().use { it.readText() }
+            require(text.length<65536)
+            val manifest=JSONObject(text)
+            check(manifest.getInt("schema")==1 && manifest.getBoolean("primary_verified") &&
+                manifest.getString("verification_kind")=="official-export-acquisition-attested") { "Primary LWIN export required" }
+            check(manifest.getJSONObject("provenance").getString("acquisition")=="official_download_user_supplied")
+            fun load(name:String,hash:String):SQLiteConnection {
+                require(name.matches(Regex("[a-z-]+\\.sqlite")) && hash.matches(Regex("[0-9a-f]{64}")))
+                checkBudget();val dir=File(context.cacheDir,ASSET).apply { mkdirs() };val target=File(dir,"$hash.sqlite")
+                if(!target.exists() || sha(target,checkBudget)!=hash) {
+                    val tmp=File.createTempFile("producer-",".tmp",dir)
+                    try {
+                        context.assets.open("$ASSET/$name").use { input -> tmp.outputStream().use { output ->
+                            val b=ByteArray(65536);var total=0
+                            while(true) { checkBudget();val n=input.read(b);if(n<0) break;total+=n;require(total<=16*1024*1024);output.write(b,0,n) }
+                        } }
+                        check(sha(tmp,checkBudget)==hash);checkBudget()
+                        java.nio.file.Files.move(tmp.toPath(),target.toPath(),java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                    } finally { tmp.delete() }
+                }
+                checkBudget();val db=BundledSQLiteDriver().open(target.absolutePath)
+                try { db.prepare("PRAGMA query_only=ON").use { it.step() };return db }
+                catch(e:Exception) { db.close();throw e }
+            }
+            val hash=manifest.getString("database_sha256")
+            val db=load("producers.sqlite",hash);val support=mutableMapOf<String,SQLiteConnection>()
+            try {
+                db.prepare("SELECT COUNT(*) FROM producers").use { check(it.step() && it.getLong(0)==manifest.getLong("records")) }
+                // Exercise the actual native FTS table, not merely a platform SQLite version string.
+                db.prepare("SELECT id FROM names WHERE names MATCH '\"win\"' LIMIT 1").use { it.step() }
+                val layers=manifest.optJSONObject("support")
+                for(source in listOf("ttb","osm")) layers?.optJSONObject(source)?.let { item ->
+                    support[source]=load(item.getString("file"),item.getString("sha256"))
+                }
+                checkBudget();return ProducerGazetteer(db,support,"${manifest.getString("version")}:$hash")
+            } catch(e:Exception) { support.values.forEach { it.close() };db.close();throw e }
+        }
+    }
+}

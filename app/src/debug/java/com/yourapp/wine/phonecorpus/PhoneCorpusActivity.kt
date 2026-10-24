@@ -56,7 +56,7 @@ class PhoneCorpusActivity:ComponentActivity() {
                         Text(mode.title,Modifier.padding(top=10.dp))
                     }
                 }
-                Text("Each option runs only its selected implementation. Production v1.0 is the Add Wine scanner. Production v2.0 retains the guarded-producer path. Lab enables spatial merging before guarded extraction. Saved historical baseline rows are scored, never rerun.",style=MaterialTheme.typography.bodySmall)
+                Text("Each option runs only its selected implementation. Production v1.0 is the Add Wine scanner. Production v2.0 retains the guarded-producer path. Lab preserves raw readings and adds primary-LWIN producer evidence; spatial joins are alternatives only. Saved historical baseline rows are scored, never rerun.",style=MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
