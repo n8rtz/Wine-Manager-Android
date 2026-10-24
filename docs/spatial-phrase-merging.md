@@ -1,6 +1,6 @@
 # Step 1: spatial phrase merging
 
-Implemented in `merge/SpatialPhraseMerger.kt`, with an opt-in mapped-token adapter in `textlab/TextLabSpatialPhrases.kt` (debug source set).
+Implemented in `merge/SpatialPhraseMerger.kt`, with a Lab-only mapped-token adapter in `textlab/TextLabSpatialPhrases.kt` (debug source set).
 
 ## Contract
 
@@ -42,7 +42,9 @@ The adapter groups by **engine ID and variant/pass ID** before merging. ML Kit a
 
 ## Scope and limitations
 
-This is a geometry-only proposal module for the new Lab work. It is **not automatically enabled** in the existing production or guarded-producer pipelines, and it has not yet been added to benchmark output. There is no metadata subtraction, residual cleanup or producer/name assignment in Step 1.
+The **Lab** benchmark option now enables this module before guarded extraction. Production v1.0 and Production v2.0 do not enable it. Each engine/pass phrase becomes one extraction reading (not an extra vote appended to its constituent readings). Multi-source phrases use the minimum source score, are explicitly estimated, and retain original boxes/text/scores in diagnostic rows; singleton readings are unchanged. The Lab variant feeds these readings into the existing evidence extractor, guarded hybrid and producer repair. Its raw form anchor is still computed from unchanged original readings, as required by the guarded algorithm.
+
+Lab executes/scores only this latest variant, not a separate v2.0 contender. The scorer uses `spatial_evidence_summary`, with `spatial_phrase` and `spatial_evidence_*` trace rows available in raw CSV. There is no metadata subtraction or residual-cleanup stage in this update.
 
 Geometry alone cannot distinguish a wrapped producer from a nearby cuvée, legal line or unrelated slogan. Preserve original readings alongside proposals; later semantic stages must be able to reject inappropriate joins. Future residual subtraction must remain a parallel candidate path, not erase evidence from the independent identity pipeline.
 
@@ -51,3 +53,7 @@ Geometry alone cannot distinguish a wrapped producer from a nearby cuvée, legal
 `tools/run-spatial-phrase-checks.sh` compiles the actual merger and debug adapter using Kotlin 2.2.10 / Java 21, with the repository's host Android geometry fixtures. Checks cover the supplied name example, horizontal/vertical strict boundaries, overlap, short continuations, separate columns, multi-line chaining, shuffled input, Unicode, whitespace, invalid boxes, bounds, source preservation and engine/pass separation.
 
 These tests are not Android/Compose compilation, fresh OCR or evidence of accuracy improvement on the 168 images. No baseline OCR was rerun.
+
+## Integration validation
+
+85 Kotlin merger/adapter checks and 12 actual Kotlin extraction integration checks pass. The latter compile and execute the real evidence/guarded/producer-repair path using fixture KB, host geometry and clock fixtures. They verify that merged phrases reach the actual evidence observations, original recognition rows remain intact, Lab emits no standalone v2.0 summary, failures are explicit, and unmodified v2.0 emits no spatial stages. This is not Android compilation or measured full-corpus accuracy.

@@ -7,7 +7,7 @@ import kotlinx.coroutines.CancellationException
 
 internal object TextLabEvidencePreview {
     fun engine(kb:WineKnowledgeBase,useAnchors:Boolean)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(cuveeRole=useAnchors))
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null) {
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null) {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer/vintage, rules-001 wine/origin, heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
@@ -20,7 +20,7 @@ internal object TextLabEvidencePreview {
                 check(hybrid!=null && baseline!=null) { "Guarded hybrid requires an existing successful baseline summary; it will not rerun baseline or silently switch architecture" }
                 check(FieldId.entries.all { baseline.containsKey(it.name.lowercase(java.util.Locale.ROOT)) }) { "Incomplete baseline summary" }
             }
-            val records=TextLabFormPreview.records(journal)
+            val records=recordsOverride ?: TextLabFormPreview.records(journal)
             val result=engine.extract(records,year)
             val fill=result.fill
             for(field in FieldId.entries) {

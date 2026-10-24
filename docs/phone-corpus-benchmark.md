@@ -4,7 +4,7 @@
 
 Build/install **debug** from this branch, then open **Profile / Settings → Run bundled 168-photo benchmark**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
 
-1. Choose **Current production scanner** (shared 15-second budget) or **Lab comparison** (60 seconds per OCR engine, current experimental extraction).
+1. Choose **Production v1.0** (shared 15-second scanner), **Production v2.0** (guarded producer, 60 seconds per OCR engine), or **Lab** (latest spatial-merging variant, 60 seconds per engine). Each option runs only its selected implementation.
 2. Tap **Start / resume remaining photos**. No picker, image download, desktop OCR or saved-text replay is used.
 3. Keep the screen open and the phone powered. The screen stays awake while working; runs can take hours and generate heat. Stop requests take effect after the current photo. Backgrounding requests a stop. Closing the Activity or process death may interrupt the current photo, which will be reattempted on resume.
 4. Read the horizontally scrollable aggregate table and expand **Show per-photo results** for expected/recognized values and outcomes.
@@ -35,9 +35,11 @@ The builder does not fetch anything or change frozen reference hashes. The large
 
 ## Execution, isolation and scoring
 
-Production mode calls the real FILE scanner with its ordinary 15-second budget, localization, confidence gates and automatic form presentation. The per-image clock starts before copying/verifying the packaged photo. Shared scanner preflight initializes services before that clock; these are not cold-start timing measurements.
+Production v1.0 calls the real FILE scanner with its ordinary 15-second budget, localization, confidence gates and automatic form presentation. The per-image clock starts before copying/verifying the packaged photo. Shared scanner preflight initializes services before that clock; these are not cold-start timing measurements.
 
-Lab mode decodes fresh pixels and runs the same full-label crop path used by the prior corpus harness: ML Kit and Medium, each with the existing 60-second experimental budget. It reports combined form, guarded producer and trigram summaries separately. Residual diagnostics stay in raw traces and are not promoted into invented filled fields. Lab mode is **not** a 60-second production scan. Phone timings and emulator timings are not interchangeable.
+Production v2.0 and Lab decode fresh pixels and run the same full-label crop OCR path used by the prior corpus harness: ML Kit and Medium, each with the existing 60-second experimental budget. V2.0 selects the former `lab-guarded-producer` implementation without spatial merging. Lab selects only the latest spatial-merging + guarded extraction implementation; it does not also run v2.0, trigram or residual contenders. Per-engine field comparison work is skipped for these benchmark modes. The original form extraction remains an internal anchor required by the guarded algorithm, not an additional scored contender.
+
+Each mode has exactly one current scored pipeline: `production-v1.0-15s`, `production-v2.0-guarded`, or `lab-spatial-v1`. Saved historical-baseline rows remain and are not rerun. V2.0 and Lab are **not** 60-second production-camera scans. Phone timings and emulator timings are not interchangeable. The normal Add Wine scanner is unchanged (v1.0).
 
 Both expected engines and Medium assets are required at preflight. Execution errors/missing summaries do not receive correct-blank credit. Deadline-limited or truncated executions can retain real partial predictions and are flagged separately. Failed eligible forms conservatively count as multi-error as well as appearing in the explicit failure column. No manual cellar entries are read. Raw tokens/provenance stay in private per-attempt files; lab traces also retain their detailed CSV. Both user-facing exports are text only, not photo uploads. Raw export streams one attempt at a time and uses the same formula-safe CSV encoder.
 
@@ -84,3 +86,7 @@ Benchmark exports now use **Prepare scored CSV export** / **Prepare raw diagnost
 **Split an existing CSV for upload** opens Android's document picker and can split a previously saved 35 MB export from an older build, without rerunning OCR or accessing that build's run namespace. Save and upload all resulting parts. No broad storage permission or uploads are added. Both preparation and file copying run off the UI thread. Prepared parts are temporary cache files; if the app is killed or cache cleared, prepare/select the source again.
 
 Validation: 77 actual Kotlin JVM split checks pass, including a ~35 MB file → two parts, exact byte boundaries, multiline/escaped/unicode fields, header repetition, multiple parts and byte-for-byte reconstruction. Android SAF/Compose integration still requires a device smoke test; this sandbox cannot establish APK build success.
+
+## Three-mode update validation
+
+The selected implementation is identified in the run metadata and CSV pipeline ID. Mode/build/install isolation prevents mixing old LAB checkpoints with the new spatial variant. Export earlier runs before updating. Mode labels and scoreboard routing have host wiring checks; 160 host tests, 85 actual Kotlin spatial-merger checks, 12 actual Kotlin spatial-to-guarded integration checks and 2,030 scorer/stat/CSV checks pass. Android Activity/ViewModel wiring and a full APK build still require verification in Android Studio. No phone accuracy improvement is claimed before testing.

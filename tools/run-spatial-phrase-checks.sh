@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 : "${KOTLIN_HOME:?Set KOTLIN_HOME to Kotlin 2.2.10}"
 export PATH="$JAVA_HOME/bin:$PATH"
 tmp=$(mktemp -d);trap 'rm -rf "$tmp"' EXIT
-bash "$KOTLIN_HOME/bin/kotlinc" app/src/main/java/com/yourapp/wine/merge/SpatialPhraseMerger.kt \
+bash "$KOTLIN_HOME/bin/kotlinc" app/src/main/java/com/yourapp/wine/merge/SpatialPhraseMerger.kt app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
  app/src/debug/java/com/yourapp/wine/textlab/TextLabSpatialPhrases.kt \
  app/src/main/java/com/yourapp/wine/ocr/Tokens.kt tools/logic-checks/AndroidGeometry.kt \
  tools/logic-checks/SpatialPhraseChecks.kt -include-runtime -d "$tmp/checks.jar"

@@ -13,7 +13,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
     data class Board(val headers:List<String>,val rows:List<List<String>>,val text:String,val csv:List<Map<String,String>>,val details:List<List<String>>)
     fun build(predictions:List<JSONObject>,mode:PhoneCorpusRunner.Mode):Board {
         val csv=mutableListOf<Map<String,String>>()
-        val names=if(mode==PhoneCorpusRunner.Mode.PRODUCTION) listOf("production-15s") else listOf("lab-combined-60s","lab-guarded-producer","lab-trigram")
+        val names=listOf(mode.pipelineId)
         val rows=mutableListOf<List<String>>()
         val headers=listOf("Pipeline","Attempted","Eligible","Complete","One error","2+ errors","Failed","Correct values","Wrong","Missing","Correct blanks","Unsupported","Unresolved","Deadline / partial")
         fun score(name:String,items:List<Pair<String,JSONObject>>) {
@@ -72,7 +72,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
             appendLine(headers.joinToString(" | "));rows.forEach { appendLine(it.joinToString(" | ")) }
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
             appendLine("Full-run target: at least 128/160 complete and at most 7/160 multi-error. Partial runs do not establish full-corpus acceptance.")
-            appendLine("Normal mode uses 15s production scanning. Lab mode uses 60s/engine on full-label crops; do not compare their timings as identical pipelines.")
+            appendLine("Production v1.0 uses 15s shared scanning. Production v2.0 and Lab use 60s/engine on full-label crops. Only Lab enables spatial merging. Each mode scores only its selected implementation; timings are not interchangeable.")
         }
         val details=csv.filter { it["row_type"]=="field" && it["pipeline"] in names }.groupBy { it["pipeline"] to it["image"] }.values.map { group ->
             listOf("Photo #${group.first()["review_number"]} · ${group.first()["pipeline"]} · ${group.first()["form_status"]}")+PhoneCorpusMath.fields.map { field ->

@@ -17,7 +17,11 @@ import java.time.Year
 
 /** Fresh pixels only. Receives input identity/hash, NEVER target fields or saved predictions. */
 internal object PhoneCorpusRunner {
-    enum class Mode { PRODUCTION, LAB }
+    enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
+        PRODUCTION_V1("Production v1.0 · 15s shared budget", "production-v1.0-15s", null),
+        PRODUCTION_V2("Production v2.0 · guarded producer · 60s per engine", "production-v2.0-guarded", "evidence_summary"),
+        LAB("Lab · spatial merging · 60s per engine", "lab-spatial-v1", "spatial_evidence_summary")
+    }
     fun sha(file:File):String {
         val md=MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input -> val b=ByteArray(65536);while(true) { val n=input.read(b);if(n<0) break;md.update(b,0,n) } }
@@ -28,6 +32,7 @@ internal object PhoneCorpusRunner {
         work.mkdirs()
         val input=File(work,"input.jpg");val preview=File(work,"preview.png");val crop=File(work,"crop.png")
         val output=JSONObject().put("image",image).put("build",BuildConfig.BUILD_COMMIT).put("mode",mode.name)
+            .put("pipeline",mode.pipelineId).put("spatial_merging",mode==Mode.LAB)
             .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
             .put("runtime","on-device benchmark; fresh OCR; no saved-text replay")
         val started=SystemClock.elapsedRealtime()
@@ -35,7 +40,7 @@ internal object PhoneCorpusRunner {
             context.assets.open("phone-corpus-v1/images/$image").use { stream -> input.outputStream().use { stream.copyTo(it) } }
             check(sha(input)==hash) { "Packaged photo checksum mismatch" }
             val pipelines=JSONArray()
-            if(mode==Mode.PRODUCTION) {
+            if(mode==Mode.PRODUCTION_V1) {
                 // Same FILE entry point and 15-second shared production budget; no experimental override.
                 val report=WineScannerServices.get(context).scan(input,started)
                 check(report.peakWorkingBitmaps<=2 && report.workingBitmapsAfter==0) { "Bitmap lifetime violation" }
@@ -49,7 +54,7 @@ internal object PhoneCorpusRunner {
                 val fatal=report.diagnostics.nativeReady==false || engineFailed || report.diagnostics.failures.isNotEmpty()
                 output.put("engine_incomplete",fatal || report.deadlineCancelled)
                 output.put("engine_timings",JSONArray(report.timings.map { JSONObject().put("engine",it.engineId).put("elapsed_ms",it.ms).put("deadline_reached",it.deadlineCancelled).put("detail",it.detail) }))
-                pipelines.put(JSONObject().put("pipeline","production-15s").put("status",if(fatal) "failed" else "complete").put("fields",fields).put("choices",choices)
+                pipelines.put(JSONObject().put("pipeline",mode.pipelineId).put("status",if(fatal) "failed" else "complete").put("fields",fields).put("choices",choices)
                     .put("error",if(fatal) report.diagnostics.failures.toString()+report.timings.filter { it.detail?.contains("failed:")==true }.toString() else "")
                     .put("deadline_reached",report.deadlineCancelled).put("elapsed_ms",report.elapsedMs))
                 output.put("tokens",JSONArray(report.tokens.map { r -> JSONObject().put("raw",r.textRaw).put("engine",r.engineId).put("variant",r.variantId)
@@ -57,7 +62,8 @@ internal object PhoneCorpusRunner {
                 output.put("diagnostics",report.diagnostics.toString())
             } else {
                 val batch=TextLabBatch(listOf(TextLabImageKey(image,image)),setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true,
-                    compareEvidence=true,anchorHybrid=true,repairProducer=true,compareGazetteer=true,residualCandidates=true)
+                    compareEvidence=true,anchorHybrid=true,repairProducer=true,
+                    spatialPhrases=mode==Mode.LAB,benchmarkOnly=true)
                 val journal=batch.journals.single()
                 val photo=TextLabRunner.preview(input,preview)
                 TextLabRunner.recognize(context,photo,TextCrop(0f,0f,1f,1f),false,crop,journal)
@@ -68,13 +74,13 @@ internal object PhoneCorpusRunner {
                 val finished=setOf("complete","no_text","no_regions")
                 val engineFailed=engineRows.any { it==null || it["status"] !in finished+setOf("timed_out","truncated") }
                 val incomplete=engineRows.any { it==null || it["status"] !in finished }
-                for(row in journal.rows.filter { it["stage"] in setOf("form_summary","evidence_summary","gazetteer_summary") }) {
+                for(row in journal.rows.filter { it["stage"]==mode.summaryStage }) {
                     val fields=JSONObject();PhoneCorpusMath.fields.forEach { f -> fields.put(f,if(row["${f}_state"]=="RED") "" else row[f].orEmpty()) }
-                    val name=when(row["stage"]) { "form_summary"->"lab-combined-60s";"gazetteer_summary"->"lab-trigram";else->"lab-guarded-producer" }
+                    val name=mode.pipelineId
                     pipelines.put(JSONObject().put("pipeline",name).put("status",if(engineFailed || row["status"] !in setOf("suggestions","partial_suggestions","no_fields","complete")) "failed" else "complete").put("fields",fields)
                         .put("error",if(engineFailed) engineRows.joinToString { "${it?.get("candidate")}: ${it?.get("status") ?: "missing"}" } else if(row["status"]=="failed") row["details"].orEmpty() else ""))
                 }
-                for(name in listOf("lab-combined-60s","lab-guarded-producer","lab-trigram"))
+                for(name in listOf(mode.pipelineId))
                     if((0 until pipelines.length()).none { pipelines.getJSONObject(it).getString("pipeline")==name })
                         pipelines.put(JSONObject().put("pipeline",name).put("status","failed").put("fields",JSONObject()))
                 output.put("trace",JSONArray(journal.rows.map { JSONObject(it) }))

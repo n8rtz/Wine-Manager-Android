@@ -19,7 +19,7 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.AtomicMoveNotSupportedException
 import java.util.UUID
 
-internal data class CorpusState(val busy:Boolean=false,val mode:PhoneCorpusRunner.Mode=PhoneCorpusRunner.Mode.PRODUCTION,
+internal data class CorpusState(val busy:Boolean=false,val mode:PhoneCorpusRunner.Mode=PhoneCorpusRunner.Mode.PRODUCTION_V1,
     val message:String="Loading bundled benchmark…",val completed:Int=0,val board:PhoneCorpusScoreboard.Board?=null,val csv:File?=null,val exportParts:List<File> = emptyList())
 internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
     private val mutable=MutableStateFlow(CorpusState());val state=mutable.asStateFlow()
@@ -28,7 +28,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
     private val app get()=getApplication<Application>()
     private val root get()=File(app.noBackupFilesDir,"phone-corpus-v1").apply { mkdirs() }
     private val installId get()=app.packageManager.getPackageInfo(app.packageName,0).lastUpdateTime.toString()
-    init { load(PhoneCorpusRunner.Mode.PRODUCTION) }
+    init { load(PhoneCorpusRunner.Mode.PRODUCTION_V1) }
     private fun atomic(file:File,text:String) {
         val temp=File(file.parentFile,file.name+".tmp")
         temp.writeText(text)
@@ -40,7 +40,8 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
         if(!fresh) root.listFiles().orEmpty().filter { it.isDirectory && it.name.startsWith(prefix) }.maxByOrNull { it.lastModified() }?.let { return it }
         val dir=File(root,prefix+UUID.randomUUID()).apply { mkdirs() }
         val meta=JSONObject().put("build",BuildConfig.BUILD_COMMIT).put("working_tree",BuildConfig.BUILD_WORKING_TREE).put("mode",mode.name)
-            .put("schema_version",1).put("corpus_manifest",JSONObject(app.assets.open("phone-corpus-v1/manifest.json").bufferedReader().use { it.readText() }))
+            .put("pipeline",mode.pipelineId).put("spatial_merging",mode==PhoneCorpusRunner.Mode.LAB)
+            .put("schema_version",2).put("corpus_manifest",JSONObject(app.assets.open("phone-corpus-v1/manifest.json").bufferedReader().use { it.readText() }))
             .put("apk_updated_ms",installId).put("created_ms",System.currentTimeMillis()).put("runtime","phone; fresh OCR")
         atomic(File(dir,"run.json"),meta.toString(2));return dir
     }

@@ -53,10 +53,10 @@ class PhoneCorpusActivity:ComponentActivity() {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
                     Row {
                         RadioButton(selected=state.mode==mode,onClick={vm.load(mode)},enabled=!state.busy)
-                        Text(if(mode==PhoneCorpusRunner.Mode.PRODUCTION) "Current production scanner · 15s shared budget" else "Lab comparison · 60s per engine; guarded producer, trigram and residual diagnostics",Modifier.padding(top=10.dp))
+                        Text(mode.title,Modifier.padding(top=10.dp))
                     }
                 }
-                Text("Normal mode measures the scanner used by Add Wine. Lab mode follows the original full-label lab path and runs the current experimental extractors on those fresh readings. The saved old baseline is scored, not executed again.",style=MaterialTheme.typography.bodySmall)
+                Text("Each option runs only its selected implementation. Production v1.0 is the Add Wine scanner. Production v2.0 retains the guarded-producer path. Lab enables spatial merging before guarded extraction. Saved historical baseline rows are scored, never rerun.",style=MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)

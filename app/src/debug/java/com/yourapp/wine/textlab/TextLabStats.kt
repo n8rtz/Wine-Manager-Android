@@ -2,7 +2,7 @@ package com.yourapp.wine.textlab
 
 /** Aggregate by pipeline, never mix contenders into one accuracy score. No verified answers are assumed. */
 internal object TextLabStats {
-    private val stages=setOf("form_summary","evidence_summary","gazetteer_summary")
+    private val stages=setOf("form_summary","evidence_summary","gazetteer_summary","spatial_evidence_summary")
     fun rows(journals:List<TextLabJournal>):List<Map<String,String>> = summarize(journals.map { it.rows })
     // Pure row contract permits local JVM tests without Android or journal/model dependencies.
     fun summarize(images:List<List<Map<String,String>>>):List<Map<String,String>> {

@@ -46,6 +46,13 @@ fun main() {
     verify(proposals.size==3)
     verify(proposals.single { it.engineId=="mlkit" && it.variantId=="V0" }.phrase.mergedText=="Domaine Test")
     verify(proposals.flatMap { it.sources }.toSet()==tokens.toSet())
+    val stitched=TextLabSpatialPhrases.readings(proposals)
+    verify(stitched.size==3)
+    val joined=stitched.single { it.engineId=="mlkit" && it.variantId=="V0" }
+    verify(joined.textRaw=="Domaine Test" && joined.scoreIsEstimated && joined.score==.8f)
+    verify(joined.bboxRect.left==0f && joined.bboxRect.right==.3f)
+    verify(joined.bboxOrig.right==.3f && joined.polyOrig.isEmpty())
+    verify(stitched.single { it.engineId=="paddle-v6-medium" }===tokens[2])
     // Every input is preserved exactly once, including duplicate observations (no fabricated consensus).
     val duplicate=M.merge(listOf(name[0],name[0]))
     verify(duplicate.flatMap { it.sourceIndices }.sorted()==listOf(0,1))

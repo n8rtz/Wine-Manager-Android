@@ -22,7 +22,7 @@ internal object TextLabWineExtraction {
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) { setupError="${error.javaClass.simpleName}: ${error.message}";null }
         try {
-            for(journal in batch.journals) for((candidate,pass) in TextLabWineTable.groups(journal)) {
+            if(!batch.benchmarkOnly) for(journal in batch.journals) for((candidate,pass) in TextLabWineTable.groups(journal)) {
                 if(journal.rows.any { it["stage"]=="field_summary" && it["candidate"]==candidate && it["pass_id"].orEmpty()==pass }) continue
                 val run=journal.rows.lastOrNull { it["candidate"]==candidate && it["pass_id"].orEmpty()==pass &&
                     it["stage"] in setOf("candidate_summary","pass_summary","summary") }
@@ -74,7 +74,11 @@ internal object TextLabWineExtraction {
                 val experimental=kb?.let { TextLabEvidencePreview.engine(it,batch.anchorHybrid) }
                 val hybrid=if(batch.anchorHybrid) kb?.let { com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
                 val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
-                batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
+                if(batch.spatialPhrases) {
+                    batch.journals.forEach { TextLabSpatialPreview.append(it,experimental,hybrid,repair,Year.now().value) }
+                } else {
+                    batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
+                }
             }
             if(batch.compareGazetteer || batch.residualCandidates) {
                 var resolver:com.yourapp.wine.gazetteer.TrigramGazetteer?=null
