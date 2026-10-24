@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "primary_verified": true,
   "verification_kind": "official-export-acquisition-attested",
   "provenance": {
@@ -11,12 +11,17 @@
     "retrieved_at": "2026-10-24",
     "review_note": "User supplied workbook in response to request for primary Liv-ex export. Workbook schema and live wine producer fields inspected; GitHub bytes verified. Not independently downloaded from Liv-ex or cryptographically signed by Liv-ex."
   },
-  "version": "producer-primary-v1",
+  "version": "producer-wine-primary-v2",
+  "wine_database_sha256": "83ac9248e85efa238c9c95e949396e8d92a057833b3d3ddb929caa06858ba01c",
+  "wine_names": 101326,
+  "wine_links": 154405,
+  "wine_lwin_records": 158946,
   "database_sha256": "4e5a50c9dae33d122ba4c8f02f1a4b5792e2a1e724bfb2084512f6c5e0d2345f",
   "records": 33160,
   "counts": {
     "input": 212689,
     "non_live": 6724,
+    "wine_name_missing": 25978,
     "mixed_or_gift_pack": 643,
     "not_explicit_wine": 20369,
     "missing_identity": 29
@@ -35,6 +40,6 @@
       "license": "ODbL-1.0"
     }
   },
-  "attribution": "LWIN by Liv-ex, CC BY 4.0; producer/title fields and LWIN7 links retained; non-wine/inactive/missing producer records excluded; no inferred aliases",
+  "attribution": "LWIN by Liv-ex, CC BY 4.0; producer/title and explicit WINE fields with LWIN7 relationships retained; non-wine/inactive/missing producer records excluded; no inferred aliases",
   "support_attribution": "OSM: © OpenStreetMap contributors, ODbL 1.0, snapshot via OpenHistoryMap; TTB: supplied FOIA permit snapshot. Separate files; support never supplies producer names or extra OCR votes."
 }

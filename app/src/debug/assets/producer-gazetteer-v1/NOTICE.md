@@ -7,7 +7,7 @@ Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
 
 Derived from the user-supplied LWINdatabase.xlsx. Input SHA-256, supplied GitHub blob and acquisition review are recorded in manifest.json. This records user-supplied primary-export provenance, not an independent download or a digital signature from Liv-ex.
 
-Changes: retain explicit producer title/name and country groups for eligible live wine records; normalize matching keys separately from display names; retain LWIN7 relationships; exclude spirits, beer, cider, other/unknown types, inactive records, explicit mixed/gift packs and missing producer identities. No DISPLAY_NAME fallback, inferred producer aliases or geography autofill. A producer/brand group is not necessarily one physical winery.
+Changes: retain explicit producer title/name and country groups plus explicit WINE names and producer–wine relationships for eligible live wine records; normalize matching keys separately from display names; retain LWIN7 relationships; exclude spirits, beer, cider, other/unknown types, inactive records, explicit mixed/gift packs and missing producer identities. Wine names are stored in a separate index, never as producer aliases. Missing WINE values are not reconstructed. No DISPLAY_NAME fallback, inferred producer aliases or geography autofill. A producer/brand group is not necessarily one physical winery.
 
 ## Supporting layers (separate files; never replacement names)
 

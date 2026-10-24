@@ -5,13 +5,14 @@ import com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid
 import com.yourapp.wine.textlab.evidence.ProducerRepair
 import kotlinx.coroutines.CancellationException
 import com.yourapp.wine.gazetteer.ProducerResolver
+import com.yourapp.wine.gazetteer.LinkedWineResolver
 
 /** Latest Lab only. No second OCR pass and no separate v2.0 contender execution.
  * The raw form summary is an internal anchor required by the existing guarded algorithm.
- * Original observations feed extraction unchanged; spatial alternatives feed only producer lookup.
+ * Original observations feed extraction unchanged; spatial alternatives feed producer and linked wine lookup.
  */
 internal object TextLabSpatialPreview {
-    const val VERSION="raw-plus-producer-v1"
+    const val VERSION="raw-plus-linked-wine-v2"
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={}) {
         if(journal.rows.any { it["stage"]=="spatial_evidence_summary" }) return
@@ -48,6 +49,7 @@ internal object TextLabSpatialPreview {
                     if(producerIndex==null) {
                         row["producer_gazetteer_status"]="unavailable"
                         row["producer_gazetteer_reason"]=producerUnavailable
+                        row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
                         val started=android.os.SystemClock.elapsedRealtime()
                         val decision=try { ProducerResolver(producerIndex).resolve(before,spans,checkProducerBudget) }
@@ -70,11 +72,48 @@ internal object TextLabSpatialPreview {
                             row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
                             row["status"]="suggestions"
                         }
+                        val linkedIndex=producerIndex as? LinkedWineResolver.Index
+                        row["wine_before_gazetteer"]=row["wine_name"].orEmpty()
+                        if(linkedIndex!=null) {
+                            val wineStart=android.os.SystemClock.elapsedRealtime()
+                            val wineBefore=row["wine_name"].orEmpty()
+                            val linked=try { LinkedWineResolver(linkedIndex).resolve(before,wineBefore,decision,spans,checkProducerBudget) }
+                                catch(cancel:CancellationException) { throw cancel }
+                                catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}") }
+                            val wineMs=android.os.SystemClock.elapsedRealtime()-wineStart
+                            row["wine_gazetteer_ms"]=wineMs.toString()
+                            row["work_ms"]=((row["work_ms"]?.toLongOrNull() ?: 0L)+wineMs).toString()
+                            row["wine_gazetteer_status"]=if(linked.wineId!=null) "supported_pair" else "unchanged"
+                            row["wine_gazetteer_reason"]=linked.reason
+                            row["wine_gazetteer_id"]=linked.wineId.orEmpty()
+                            row["wine_gazetteer_producer_id"]=linked.producerId.orEmpty()
+                            row["wine_gazetteer_lwin7"]=linked.lwin7
+                            linked.matches.take(128).forEach { m -> journal.add("spatial_lab","linked_wine_candidate",values=mapOf(
+                                "raw_text" to m.span.text,"source_engine" to m.span.engine,
+                                "source_observation_ids" to m.span.observationIds.sorted().joinToString(" "),
+                                "wine_name_id" to m.wine.id,"wine_display_name" to m.wine.name,"producer_entity_id" to m.wine.producerId,
+                                "lwin7" to m.wine.lwin7,"edit_distance" to m.distance.toString(),"producer_gazetteer_version" to linkedIndex.version)) }
+                            if(linked.wineId!=null) {
+                                if(row["producer"]!=linked.producer) {
+                                    row["producer"]=linked.producer;row["producer_state"]="YELLOW"
+                                    row["producer_reason"]=linked.reason;row["producer_alternatives"]=""
+                                    row["producer_gazetteer_status"]="linked_pair_suggestion"
+                                    row["producer_gazetteer_reason"]=linked.reason
+                                    row["producer_gazetteer_entity_id"]=linked.producerId.orEmpty()
+                                }
+                                row["wine_name"]=linked.wine;row["wine_name_state"]="YELLOW"
+                                row["wine_name_reason"]=linked.reason;row["wine_name_alternatives"]=""
+                                row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
+                                row["status"]="suggestions"
+                            }
+                        } else {
+                            row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]="linked wine index unavailable"
+                        }
                     }
                 }
                 journal.add("spatial_lab","spatial_"+row.getValue("stage"),row.getValue("status"),
                     row.filterKeys { it !in setOf("candidate","stage","status","sequence","details") }+
-                        mapOf("post_processing_version" to "$VERSION+${ProducerRepair.VERSION}+${ProducerResolver.VERSION}",
+                        mapOf("post_processing_version" to "$VERSION+${ProducerRepair.VERSION}+${ProducerResolver.VERSION}+${LinkedWineResolver.VERSION}",
                             "spatial_source_count" to original.size.toString(),"spatial_reading_count" to readings.size.toString(),
                             "spatial_merged_groups" to proposals.count { it.sources.size>1 }.toString()),row["details"].orEmpty())
             }

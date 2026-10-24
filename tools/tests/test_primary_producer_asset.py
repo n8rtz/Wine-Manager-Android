@@ -6,14 +6,14 @@ p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
 class PrimaryProducerAssetChecks(unittest.TestCase):
     def prepare(self,d,rows=None):
         source=d/'primary.csv'
-        header=['LWIN','STATUS','TYPE','PRODUCER_TITLE','PRODUCER_NAME','COUNTRY','DISPLAY_NAME']
+        header=['LWIN','STATUS','TYPE','PRODUCER_TITLE','PRODUCER_NAME','COUNTRY','DISPLAY_NAME','WINE']
         with source.open('w',newline='') as f:
-            w=csv.writer(f);w.writerow(header);w.writerows(rows or [
+            w=csv.writer(f);w.writerow(header);w.writerows([r if len(r)==8 else r+["Cuvée Test"] for r in (rows or [
                 ['1234567','live','Wine','Château','Example','France','Unrelated Wine Name'],
                 ['1234568','live','Spirits','','Distiller','France',''],
                 ['1234569','live','Wine','','','France','Invented Fallback Winery'],
                 ['1234570','retired','Wine','','Old Estate','France',''],
-                ['1234571','live','','','Missing Type','France','']])
+                ['1234571','live','','','Missing Type','France','']])])
         provenance=d/'provenance.json';provenance.write_text(json.dumps(dict(acquisition='official_download_user_supplied',
             source_url='https://www.liv-ex.com/lwin-database-download/',sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
             retrieved_at='fixture-only',review_note='Synthetic test input, never ship')))
@@ -22,6 +22,10 @@ class PrimaryProducerAssetChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             d=Path(tmp);source,provenance=self.prepare(d);m=p.build(source,provenance,d/'out')
             self.assertEqual(m['records'],1)
+            self.assertEqual(m['wine_names'],1)
+            with sqlite3.connect(d/'out/wines.sqlite') as c:
+                self.assertEqual(c.execute('select name from wine_names').fetchall(),[('Cuvée Test',)])
+                self.assertEqual(c.execute('pragma foreign_key_check').fetchall(),[])
             with sqlite3.connect(d/'out/producers.sqlite') as c:
                 self.assertEqual(c.execute('select name from producers').fetchall(),[('Château Example',)])
                 self.assertEqual(c.execute("select count(*) from names where names match '\"exa\"'").fetchone()[0],1)
@@ -47,6 +51,11 @@ class PrimaryProducerAssetChecks(unittest.TestCase):
             self.assertEqual(c.execute('select count(*) from producers').fetchone()[0],m['records'])
             self.assertEqual(c.execute('select count(*) from names').fetchone()[0],m['records'])
             self.assertEqual(c.execute("select count(*) from producers where name like 'NA %'").fetchone()[0],0)
+        self.assertEqual(p.sha(folder/'wines.sqlite'),m['wine_database_sha256'])
+        with sqlite3.connect(folder/'wines.sqlite') as c:
+            self.assertEqual(c.execute('select count(*) from wine_names').fetchone()[0],m['wine_names'])
+            self.assertEqual(c.execute('select count(*) from wine_links').fetchone()[0],m['wine_links'])
+            self.assertEqual(c.execute('pragma foreign_key_check').fetchall(),[])
         for item in m['support'].values():self.assertEqual(p.sha(folder/item['file']),item['sha256'])
         self.assertFalse((ROOT/'app/src/main/assets/producer-gazetteer-v1').exists())
     def test_excel_numeric_and_na_values(self):

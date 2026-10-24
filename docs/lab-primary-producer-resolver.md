@@ -1,5 +1,7 @@
 # Primary LWIN asset and conservative Lab producer resolver
 
+> Extension implemented: Lab now includes a separate producer-linked wine-name index. See [linked wine resolver](lab-linked-wine-resolver.md). The producer-only counts and implementation history below describe the preceding version.
+
 ## Status
 
 **Implemented and packaged for Lab.** Production v1.0, Production v2.0 and normal Add Wine remain unchanged. Lab now has pipeline ID `lab-producer-v1`; saved v2 comparison rows remain. No parallel v2 OCR run is added.

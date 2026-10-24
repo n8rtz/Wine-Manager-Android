@@ -49,6 +49,29 @@ fun main() {
     verify(withProducer.rows.count { it["stage"]=="recognition" }==4)
     verify(withProducer.rows.any { it["stage"]=="producer_gazetteer_candidate" && it["source_observation_ids"].orEmpty().isNotBlank() })
     verify(listOf("wine_name","country","region","subregion","vintage").all { produced.containsKey(it) && summary.containsKey(it) && produced[it]==summary[it] })
+    val withWine=TextLabJournal(setOf("candidate_3"),"linked-host-check",true)
+    for(candidate in listOf("mlkit_reference","candidate_3")) {
+        for((text,box) in listOf("Domaine Example" to "0.1 0.1 0.8 0.2", "Moonlight Cuvee" to "0.1 0.5 0.8 0.6"))
+            withWine.add(candidate,"recognition",values=mapOf("raw_text" to text,"base_box_normalized" to box,"original_box_normalized" to box,
+                "mlkit_confidence" to "0.9","ctc_posterior" to "0.9","confidence_estimated" to "false"))
+        withWine.add(candidate,if(candidate=="mlkit_reference") "summary" else "candidate_summary","complete")
+    }
+    TextLabFormPreview.append(withWine,FillEngine(kb),2026)
+    val wineAnchor=withWine.rows.indexOfFirst { it["stage"]=="form_summary" }
+    withWine.rows[wineAnchor]=withWine.rows[wineAnchor]+mapOf("producer" to "Domaine Example","producer_state" to "YELLOW")
+    val wineIndex=object:com.yourapp.wine.gazetteer.LinkedWineResolver.Index {
+        override val version="linked-integration-fixture";override val primaryVerified=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(com.yourapp.wine.gazetteer.ProducerResolver.Entity("fixture-estate","Domaine Example","domaine example"))
+        override fun lookupWines(key:String,producerIds:Set<String>,limit:Int,checkBudget:()->Unit)=listOf(
+            com.yourapp.wine.gazetteer.LinkedWineResolver.Wine("fixture-wine","Moonlight Cuvee","moonlight cuvee","fixture-estate","[1234567]"))
+    }
+    TextLabSpatialPreview.append(withWine,extractor,hybrid,repair,2026,wineIndex)
+    val wineSummary=withWine.rows.single { it["stage"]=="spatial_evidence_summary" }
+    verify(wineSummary["wine_gazetteer_status"]=="supported_pair")
+    verify(wineSummary["wine_name"]=="Moonlight Cuvee" && wineSummary["wine_name_state"]=="YELLOW")
+    verify(wineSummary["wine_gazetteer_lwin7"]=="[1234567]")
+    verify(withWine.rows.any { it["stage"]=="linked_wine_candidate" && it["source_observation_ids"].orEmpty().isNotBlank() })
+    verify(withWine.rows.count { it["stage"]=="recognition" }==4)
     val count=j.rows.size;TextLabSpatialPreview.append(j,extractor,hybrid,repair,2026);verify(j.rows.size==count)
     val failed=sample();TextLabSpatialPreview.append(failed,null,hybrid,repair,2026)
     verify(failed.rows.single { it["stage"]=="spatial_evidence_summary" }["status"]=="failed")
