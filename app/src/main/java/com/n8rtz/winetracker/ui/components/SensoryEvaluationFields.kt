@@ -1,7 +1,8 @@
-@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.n8rtz.winetracker.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.SensoryData
 import kotlin.math.roundToInt
@@ -84,8 +87,6 @@ fun SensoryEvaluationFields(
 
 private data class OverallScoreBand(val label: String, val color: Color)
 
-private val overallScoreSliderInset = 10.dp
-private val overallScoreMarkerLabelWidth = 24.dp
 private val overallScoreMarkers = listOf(50, 60, 70, 80, 90, 100)
 private val overallScoreGradient = listOf(
     Color(0xFFB94F57),
@@ -113,6 +114,10 @@ fun OverallScoreSlider(
     scoreSelected: Boolean = true,
     onScoreChange: (Float) -> Unit
 ) {
+    // Reserve a font-scaled label width at both endpoints. The explicit thumb
+    // width gives Material's gesture range exactly the same inset as our track.
+    val markerLabelWidth = with(LocalDensity.current) { 32.sp.toDp() }
+    val sliderInset = markerLabelWidth / 2
     val sliderScore = score.coerceIn(50f, 100f)
     val displayedScore = sliderScore.roundToInt()
     val band = overallScoreBand(displayedScore)
@@ -160,7 +165,7 @@ fun OverallScoreSlider(
         Box(modifier = Modifier.fillMaxWidth().height(48.dp)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val trackHeight = 8.dp.toPx()
-                val inset = overallScoreSliderInset.toPx()
+                val inset = sliderInset.toPx()
                 val trackWidth = (size.width - inset * 2).coerceAtLeast(0f)
                 val top = (size.height - trackHeight) / 2f
                 val radius = CornerRadius(trackHeight / 2f, trackHeight / 2f)
@@ -185,6 +190,21 @@ fun OverallScoreSlider(
                 valueRange = 50f..100f,
                 steps = 49,
                 modifier = Modifier.fillMaxWidth(),
+                thumb = {
+                    Box(
+                        modifier = Modifier.width(markerLabelWidth).height(44.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.width(4.dp).height(40.dp)
+                            .background(indicatorColor, RoundedCornerShape(2.dp)))
+                    }
+                },
+                // The track must occupy the available width even though the
+                // gradient is drawn by the Canvas behind it. An empty slot
+                // collapses the measured travel range and pins the thumb.
+                track = {
+                    Spacer(Modifier.fillMaxWidth().height(8.dp))
+                },
                 colors = SliderDefaults.colors(
                     thumbColor = indicatorColor,
                     activeTrackColor = Color.Transparent,
@@ -196,31 +216,18 @@ fun OverallScoreSlider(
         }
 
         Spacer(Modifier.height(2.dp))
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(18.dp)) {
-            val markerTrackWidth = (maxWidth - overallScoreSliderInset * 2).coerceAtLeast(0.dp)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val markerTrackWidth = (maxWidth - markerLabelWidth).coerceAtLeast(0.dp)
             overallScoreMarkers.forEach { marker ->
                 val fraction = (marker - 50) / 50f
-                val labelX = when (marker) {
-                    overallScoreMarkers.first() -> overallScoreSliderInset
-                    overallScoreMarkers.last() ->
-                        overallScoreSliderInset + markerTrackWidth - overallScoreMarkerLabelWidth
-                    else -> overallScoreSliderInset + markerTrackWidth * fraction -
-                        overallScoreMarkerLabelWidth / 2f
-                }
-                val labelAlignment = when (marker) {
-                    overallScoreMarkers.first() -> TextAlign.Start
-                    overallScoreMarkers.last() -> TextAlign.End
-                    else -> TextAlign.Center
-                }
                 Text(
                     text = marker.toString(),
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = labelX)
-                        .width(overallScoreMarkerLabelWidth),
+                        .offset(x = markerTrackWidth * fraction)
+                        .width(markerLabelWidth),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = labelAlignment,
+                    textAlign = TextAlign.Center,
                     maxLines = 1
                 )
             }

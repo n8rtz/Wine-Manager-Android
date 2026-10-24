@@ -24,3 +24,5 @@ local.properties
 # Python tooling bytecode is generated, never a scanner asset.
 __pycache__/
 *.pyc
+# Android Studio project files are per-machine; do not track them
+/.idea/

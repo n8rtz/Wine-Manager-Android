@@ -39,7 +39,8 @@ data class SensoryData(
     val finish: Int = 2,
     val quality: Int = 2,
     val overallScore: Int = 75,
-    val flaws: List<String> = emptyList()
+    val flaws: List<String> = emptyList(),
+    val aromas: List<String> = emptyList()
 )
 
 class Converters {
@@ -57,6 +58,13 @@ class Converters {
         ?.let { json ->
             runCatching {
                 Gson().fromJson(json, SensoryData::class.java)
+            }.map { parsed ->
+                // Gson bypasses Kotlin defaults for keys absent from legacy JSON,
+                // which would leave the non-null lists null at runtime.
+                parsed.copy(
+                    flaws = parsed.flaws.orEmpty(),
+                    aromas = parsed.aromas.orEmpty()
+                )
             }.getOrElse {
                 // If stored json belongs to the float-based sensory model, parse gracefully
                 runCatching {
@@ -66,11 +74,10 @@ class Converters {
                         val doubleVal = obj.optDouble(key, default.toDouble())
                         return if (doubleVal <= 1.0) (doubleVal * 4.0).toInt().coerceIn(0, 4) else doubleVal.toInt()
                     }
-                    val flawsList = mutableListOf<String>()
-                    val flawsArr = obj.optJSONArray("flaws")
-                    if (flawsArr != null) {
-                        for (i in 0 until flawsArr.length()) {
-                            flawsList.add(flawsArr.optString(i))
+                    fun getStringList(key: String): List<String> {
+                        val arr = obj.optJSONArray(key) ?: return emptyList()
+                        return (0 until arr.length()).mapNotNull { i ->
+                            arr.optString(i).takeIf { it.isNotBlank() }
                         }
                     }
                     SensoryData(
@@ -85,7 +92,8 @@ class Converters {
                         finish = getIntFromNumber("finish", getIntFromNumber("finishLength", 2)),
                         quality = getIntFromNumber("quality", 2),
                         overallScore = obj.optInt("overallScore", 75),
-                        flaws = flawsList
+                        flaws = getStringList("flaws"),
+                        aromas = getStringList("aromas")
                     )
                 }.getOrNull()
             }

@@ -1,5 +1,20 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
+
+## [0.5.6] - 2026-10-16
 ### Added
+- **History entry actions:** long-pressing an entry on the Consumption History screen opens a small bottom sheet with **Restore to cellar** (adds the bottle back and removes the entry) and **Delete log entry** (removes the entry only; the cellar is not changed). There is no visible button; both actions ask for confirmation and both keep any tasting note, unlike the snackbar UNDO right after consuming, which still removes the note it just created.
+- **Drinking-window estimate (W-050 Phase 1):** Wine Detail shows an “Est.” drinking window (just the years, e.g. “Est. 2028 – 2038”) when you have not entered one. It reads the maker, wine name, subregion, region, country, and vintage (not the price you paid), so a Côtes du Rhône Villages, a Vacqueyras and a Châteauneuf-du-Pape no longer share one answer, and Rioja Crianza/Reserva/Gran Reserva, Pauillac vs. generic Bordeaux and Spätlese vs. Kabinett Riesling differ. A wine the table does not recognise gets a type-only window labelled “Estimate by type”; non-vintage wines get none. The 61-rule table (new `drinkingwindow` package) was drafted from web sources noted per entry and is unreviewed. Estimates are never saved, exported, or used by the Ready Now / Too Early / Past Peak filters.
+- **Debug-only test data restore:** debug builds can bundle your own JSON backup (`app/src/debug/assets/dev-seed/WineTracker_Backup.json`, in the debug source set only; seeded from `_backup/WineTracker_Backup_SubRegionFix.json` minus one blank placeholder wine that the importer would reject) and restore it automatically on launch when the database is completely empty, so a reinstall during testing no longer starts blank. It never replaces existing data, never runs in release builds, and does not re-apply after **Reset Database**. Failures and successes are shown in a toast and logged.
+- **Install diagnostics:** App Information also shows when the app was first installed, when it was last updated, and a short fingerprint of the signing key, to find out why Android removed the app between test installs.
+- **Build identification:** App Information now shows when the installed app was built (date and time to the second), the Git commit it was built from, and whether the working tree had uncommitted changes, alongside the existing branch. After a wireless-debugging install, a changed “Built” time confirms the latest iteration is running.
+- **Aroma wheel:** Added a zoomable concentric aroma wheel to the tasting-note editor's sensory section: four families, nineteen groups, and 116 descriptors laid out as ring sectors with an outer repeating band. Pinch to zoom, drag to pan, tap a family/group/band label to zoom to that sector (tap again to zoom out), tap the centre to reset, and tap a descriptor to toggle it — cells too small to hit precisely zoom to their group first, and a selected cell fills with a deep variant of its group colour while its label turns white and bold. Selections are capped at 24 with duplicate protection and retired/unknown-ID handling, and persist as stable descriptor IDs inside the existing `sensoryData` JSON (no schema migration; JSON backup/restore carries them). A list + search mode with synonyms over the identical taxonomy and selection state supports TalkBack, small screens, and large font scales. Selected aromas show as group-coloured chips in the editor and on note cards in wine details. Vocabulary supplied per the classic primary/secondary/tertiary/faults wheel model popularised by Wine Folly; colours and layout are original. Filtering notes by aroma remains future scope.
 - **Cellar sorting controls:** Added arrow buttons for quantity, date added, average recorded rating, and price, each toggling between ascending and descending. Unrated wines remain last, and drinking-window sorting is retained.
 - **Event-based consumption history:** Added a `ConsumptionEvent` table and DAO/repository flows to record consumption date, vintage, quantity, price, source bottle, optional linked note, and an import key. New consumption writes the event and decrements inventory in one transaction; it does not create archived bottle rows that would conflict with the unique `(definitionId, vintage, status)` index.
 - **Exact consumption undo:** Undo now addresses the specific event ID, restores that event's quantity to its source or matching cellar row, removes the event, and removes only the note linked to that event.
@@ -19,6 +34,10 @@
 - **Coverage and documentation:** Added tests for NV normalization and date-picker round-tripping across a daylight-saving boundary; updated the architecture and this changelog.
 
 ### Changed
+- **Build toolchain pinned back to AGP 9.1.1:** the project builds with Android Gradle Plugin 9.1.1, Kotlin 2.2.10, KSP 2.3.2 and Gradle 9.3.1 again (the values from before PR #5), because Android Studio syncs the project with AGP 9.1.1 and the 9.3.1 move broke it. The `settings.gradle.kts` Code on the Go repository workaround stays (it has no effect elsewhere). Code on the Go bundles AGP 9.3.1 and may no longer build this project.
+- **Profile tab and Settings:** The Utility Hub screen is now titled **Profile** and shows Price vs. Rating, Wine reviewers and a **Settings** row. The technical items moved into a new **Settings** screen (route `settings`, same `ProfileScreen` host): backup/restore/reset, legacy CSV imports, wine image review and storage, and App Information. Selecting the Profile tab from Settings, App Information or Price vs. Rating now returns to the Profile root.
+- **Project docs consolidated:** `wishes.md`, `wishes-v2.md`, `bugs.md` and `PLAN.md` were merged into `_refs/BACKLOG.md` (open wishes, bugs, decisions, pending verification, cleanup) and `_refs/ARCHIVE.md` (completed wishes with full specs, resolved bugs, completed plan items). Wishes were renumbered `W-nnn` (wishes-v2 #35–38 became W-046–W-049); unnumbered bug entries became Bug-022–Bug-026. Agent instructions now point to the new files.
+- **Aroma wheel launcher:** Replaced the plain outlined button under the overall score with a summary card: a live mini aroma-wheel glyph whose group arcs light up as you tag descriptors, a chevron into the full wheel, and the selected aromas as chips on the card itself (blank until aromas are chosen). Chips support long-press drag reordering, and their order is meaningful — most to least prevalent — and is preserved on the saved note, in wine details, and across the wheel overlay and editor chips (taxonomy re-sorting removed).
 - **Tasting score slider:** Added a color-graded 50–100 scale and badge with the requested bands: 50–59 Unacceptable, 60–69 Below Average, 70–79 Average, 80–85 Good, 86–89 Very Good, 90–93 Excellent, 94–97 Outstanding, and 98–100 Extraordinary. Kept the 50 and 100 endpoint labels inside the colored track.
 - **Tasting-note form:** Overall rating and sensory controls are always shown and saved; removed the rating checkbox and sensory-evaluation add/label UI. Unrated legacy notes require choosing a score before saving.
 - **Cellar note selection:** Removed the redundant vintage field because each cellar wine choice includes its vintage; the selected active cellar bottle’s price is shown and recorded on new notes.
@@ -38,6 +57,16 @@
 - **Date parsing:** Backup `Long` date fields accept epoch values plus strict slash dates with two- or four-digit years (including `1/1/2021`) and supported ISO forms. CSV date parsing requires full input consumption; incomplete or undated legacy rows are skipped rather than assigned guessed dates.
 
 ### Fixed
+- **Profile tab always opens the Profile page:** after going into Settings, App Information or Price vs. Rating, leaving for another tab and tapping **Profile** now shows the standard Profile page. Before, Android restored the submenu you had left open.
+- **+ button on Tasting Notes:** on the Tasting Notes tab, **+** now opens the Add Tasting Note page directly instead of the Add Wine / Add Note submenu. Every other screen keeps the submenu.
+- **Add Note from a wine's detail screen:** tapping **+ → Add Note** while viewing a wine now opens the note editor already set to that wine and vintage (the in-page Add Note button already did). From any other screen the editor still starts blank.
+- **Rankings and Tasting Notes lists stay scrolled after re-sorting:** changing the sort, a filter or the search on **Rankings** or **Tasting Notes** now returns the list to the top. Only Cellar had this behaviour before. Coming back to either tab with nothing changed leaves the list where it was.
+- **Aroma launcher layout (Bug-022):** The launcher's chip strip now wraps (FlowRow) with two-dimensional long-press reordering; the score track, markers, labels and thumb share one inset and font-scaled label space so the 100 label no longer clips. *Device check pending.*
+- **Overall-score thumb stuck (Bug-023):** The custom slider's empty track slot collapsed the thumb's travel range; it now supplies a full-width invisible track spacer. *Device check pending.*
+- **Duplicate aroma editor (Bug-024):** Removed the leftover aroma-descriptor section rendered below the sensory sliders so only the launcher card remains. *Device check pending.*
+- **“Recommended by” label (Bug-026):** The label stays raised from first render instead of jumping on first interaction. *Device check pending.*
+- **Reviewer defaults (Bug-025):** Default reviewers now omit Vinous and Jancis Robinson and add Peter Koff, Konstantin Baum and Costco Wine Blog; saved lists and notes are unchanged.
+- **Verified already fixed (Bug-005, Bug-019):** Reselecting the Cellar tab resets expanded cards, and non-vintage wines display `(NV)` rather than `((NV))` (see *Cellar filter reset* and *Vintage normalization* above). Source-inspected only.
 - **Cellar filter navigation:** Scroll the wine list back to the top whenever filter, sort, or search criteria change.
 - **Cellar navigation from Add Note:** Selecting the Cellar bottom-navigation tab from a tasting-note editor now returns directly to the cellar, with a navigation fallback if the cellar route is not on the active stack.
 - **Windows KSP/Room build:** Use a newer SQLite JDBC native driver only on the Room processor classpath so query verification can load SQLite on Windows x86_64.
@@ -47,11 +76,14 @@
 - **Date-picker timezone handling:** Added UTC-midnight/local-date conversion so the selected calendar day round-trips correctly across daylight-saving changes.
 - **Permissions:** Declared the INTERNET and CAMERA permissions required by network image lookup and camera scanning.
 
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Removed
+- **Dead code:** Deleted the unreachable Archive screen, the CSV and inventory exporters (backup is JSON only), the legacy batch image importer (`WineImageBatchProcessor`, `MetadataScorer`, `WhitespaceAnalyzer`, DuckDuckGo search) and the stub `WineImageFetcher`/`WineApiService`. The add-time image "fetch" never returned a result, so wine-adding behaviour is unchanged; images come from the reviewed Open Food Facts importer. Also removed the unused bundled legacy CSVs from the app's assets and the seven historical image-strategy docs.
+- **Docs:** Added `_refs/PIPELINE.md` (development pipeline, quality gates, release process and release plan) and rewrote the open wishes in `BACKLOG.md` in priority order with complexity ratings against the current architecture. Merged the agent rules into `.agents/instructions.md` and removed `GEMINI_RULES.md` and `ARCH-old.md`; `ARCH.md`'s directory map was regenerated from the real tree.
+- **Docs and repo hygiene:** added a root `README.md`; regrouped `THINGS_TO_CHECK.md` by Git branch (a table at the top, one section per branch, and a template for new branches); recorded the camera, Pareto and Resources entry-point decisions, W-057's priority order and closed decisions, and a plain-language explanation of W-050; untracked the per-machine `.idea/` files (now git-ignored); deleted `_backup/WineTracker_Backup_Master.csv`.
 
 ## [0.5.5] - 2026-03-16
 ### Added
-- **Expandable FAB Menu:** Replaced the static central [+] button in the bottom navigation with a sleek, animated popup menu (Section 44 of WISHES.md).
+- **Expandable FAB Menu:** Replaced the static central [+] button in the bottom navigation with a sleek, animated popup menu (W-044 in `ARCHIVE.md`, formerly Section 44 of WISHES.md).
   - **Dynamic Interactivity:** Tapping the [+] button now toggles a vertical slide-up menu centered over the button.
   - **Dimmed Background:** Implemented a semi-transparent overlay to provide visual depth and focus when the menu is active.
   - **Premium Animations:** Integrated `AnimatedVisibility` with slide and fade transitions for a for a high-end feel.
@@ -188,13 +220,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic navigation scaffolding.
 
 ---
-[0.5.5]: https://github.com/yourusername/winetracker/compare/v0.5.3...v0.5.5
-[0.5.3]: https://github.com/yourusername/winetracker/compare/v0.5.2...v0.5.3
-[0.5.2]: https://github.com/yourusername/winetracker/compare/v0.5.1...v0.5.2
-[0.5.1]: https://github.com/yourusername/winetracker/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/yourusername/winetracker/compare/v0.4.1...v0.5.0
-[0.4.1]: https://github.com/yourusername/winetracker/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/yourusername/winetracker/compare/v0.3.1...v0.4.0
-[0.3.1]: https://github.com/yourusername/winetracker/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/yourusername/winetracker/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/yourusername/winetracker/compare/v0.1.0...v0.2.0
+[0.5.5]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.3...v0.5.5
+[0.5.3]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.1.0...v0.2.0
+[Unreleased]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.6...HEAD
+[0.5.6]: https://github.com/n8rtz/Wine-Manager-Android/compare/v0.5.5...v0.5.6

@@ -13,6 +13,7 @@ import com.n8rtz.winetracker.data.local.normalizeVintage
 import com.n8rtz.winetracker.image.WineImageFileStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.text.ParsePosition
 import java.text.SimpleDateFormat
@@ -24,11 +25,18 @@ class DataImporter(
     private val database: WineDatabase
 ) {
     suspend fun standardImport(uri: Uri) = withContext(Dispatchers.IO) {
-        val backup = context.contentResolver.openInputStream(uri)?.use { input ->
-            InputStreamReader(input, Charsets.UTF_8).use { reader ->
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("The selected file could not be opened.")
+        importFromStream(input)
+    }
+
+    /** Same validated, transactional restore as [standardImport], for a stream that is not a content URI (e.g. a bundled asset). Closes [input]. */
+    suspend fun importFromStream(input: InputStream) = withContext(Dispatchers.IO) {
+        val backup = input.use {
+            InputStreamReader(it, Charsets.UTF_8).use { reader ->
                 backupGson().fromJson(reader, BackupData::class.java)
             }
-        } ?: throw IllegalArgumentException("The selected file could not be opened.")
+        }
 
         requireNotNull(backup) { "The selected file is not a Wine Manager JSON backup." }
         restoreBackup(backup)

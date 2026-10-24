@@ -1,4 +1,9 @@
 [versions]
+# Pinned to AGP 9.1.1 on purpose: it is what the owner's Android Studio syncs with, and moving to
+# AGP 9.3.x broke the project there (owner decision 2026-10-16). Kotlin 2.2.10 and KSP 2.3.2 are the
+# versions this combination was built with. Do not raise these without the owner's say-so.
+# Known trade-off: Code on the Go bundles AGP 9.3.1 / Kotlin 2.3.21 / Gradle 9.6.1 and can fail with
+# "Could not find <x>.jar ... localMvnRepository" on AGP 9.1.1 (see git 79a67ed).
 agp = "9.1.1"
 kotlin = "2.2.10"
 ksp = "2.3.2"

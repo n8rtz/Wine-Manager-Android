@@ -27,6 +27,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.content.pm.PackageManager
+import java.security.MessageDigest
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.data.local.WineDatabase
 import kotlinx.coroutines.Dispatchers
+import java.text.DateFormat
+import java.util.Date
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -58,6 +62,25 @@ fun AppInfoScreen(
 
     val databaseVersionText = databaseVersion?.toString()
         ?: if (databaseVersionUnavailable) "Unavailable" else "Checking…"
+    val branchName = BuildConfig.BUILD_BRANCH.takeIf { it.isNotBlank() } ?: "Unknown"
+    val commitName = BuildConfig.BUILD_COMMIT.takeIf { it.isNotBlank() } ?: "Unknown"
+    val buildCommitText = if (BuildConfig.BUILD_DIRTY) "$commitName + uncommitted changes" else commitName
+    val installInfo = remember {
+        runCatching {
+            val info = context.packageManager.getPackageInfo(
+                context.packageName,
+                PackageManager.PackageInfoFlags.of(PackageManager.GET_SIGNING_CERTIFICATES.toLong())
+            )
+            val dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
+            val signer = info.signingInfo?.apkContentsSigners?.firstOrNull()?.toByteArray()
+            val key = signer?.let { MessageDigest.getInstance("SHA-256").digest(it) }
+                ?.take(6)?.joinToString(":") { "%02X".format(it) }
+            Triple(dateFormat.format(Date(info.firstInstallTime)), dateFormat.format(Date(info.lastUpdateTime)), key ?: "Unavailable")
+        }.getOrNull()
+    }
+    val builtAtText = remember {
+        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(Date(BuildConfig.BUILD_TIME_MILLIS))
+    }
 
     Scaffold(
         topBar = {
@@ -90,9 +113,48 @@ fun AppInfoScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            AppBuildDetails(databaseVersionText = databaseVersionText, applicationId = context.packageName)
+            AppBuildDetails(
+                databaseVersionText = databaseVersionText,
+                applicationId = context.packageName
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = 16.dp,
+                        vertical = 4.dp
+                    )
+                ) {
+                    AppInfoRow("Built", builtAtText)
+                    HorizontalDivider()
+                    AppInfoRow("Build commit", buildCommitText)
+                    HorizontalDivider()
+                    AppInfoRow("Build branch", branchName)
+                    HorizontalDivider()
+                    AppInfoRow(
+                        "First installed",
+                        installInfo?.first ?: "Unavailable"
+                    )
+                    HorizontalDivider()
+                    AppInfoRow(
+                        "Last updated",
+                        installInfo?.second ?: "Unavailable"
+                    )
+                    HorizontalDivider()
+                    AppInfoRow(
+                        "Signing key",
+                        installInfo?.third ?: "Unavailable"
+                    )
+                }
+            }
+
             Text(
-                text = "The commit and source state describe the code used to build this installed app, not the latest code online. After updating Git, rebuild and Run to install the update. The database version comes from the installed database.",
+                text = "Build details describe the source used to build this installed app, not the latest code online. After updating Git, rebuild and install the app, then verify its commit and build time. The database version comes from the installed database. A changed first-install time can indicate a fresh installation; uninstalling normally removes local app data. The signing-key fingerprint helps diagnose update compatibility. Back up your cellar before any uninstall or reinstall that removes app data.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

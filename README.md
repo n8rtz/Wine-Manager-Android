@@ -1,17 +1,166 @@
-# Wine Manager Android
+# Wine Manager
 
-Android wine-cellar manager (`com.n8rtz.winetracker`). The Add Wine camera scanner now uses a local label pipeline: bundled ML Kit Latin OCR plus PP-OCRv6 Medium detection/recognition, perspective rectification, a small on-device knowledge base, and six independently reviewable fields. Recognition does **not** call a wine-database API.
+A personal wine cellar app for Android. It tracks what is in the cellar,
+what has been consumed, and tasting notes and ratings.
 
-- Android 8+ (minSdk 26), targetSdk 35; arm64-v8a only.
-- Ordinary Android/Google components remain supported. The app's Internet permission is still used by unrelated image-import features.
-- No model weights or wine-world database are fabricated. Genuine pinned Paddle models are bundled by the build.
-- **Choose label photo** scans an existing phone image locally without camera permission. **Show scan details → Copy diagnostics** exports bounded text for troubleshooting, without uploading or retaining the photo.
-- **Profile → App Information → Installed build / commit** shows the installed build's 12-character source SHA (long-press to copy), branch and clean/dirty source state. The Profile menu entry also displays the installed build ID. Rebuild/Run after pulling Git to update the installed app.
+Cellar data is stored locally on the device; there is no account or
+application server. Optional external image-import features use the network.
 
-For **“NDK is not installed”** on a desktop development host, see [native toolchain setup](docs/offline-scanner.md#fix-ndk-is-not-installed): the build prepares pinned NDK **28.2.13676358** and CMake **3.22.1** using Android CLI or the legacy SDK manager (accepted licenses required). Native source builds on an Android phone have not been validated.
+> **Private project, no project licence.**
+> Package: `com.n8rtz.winetracker`.
+> Bundled third-party software, models and reference datasets retain their
+> own licences and attribution requirements.
 
-See [offline scanner architecture, build and tests](docs/offline-scanner.md) and [KB import formats](docs/offline-scanner-data.md).
+## What it does
 
-**Current integration:** [production v6 Medium](docs/production-v6-medium.md), [production-engine Text Lab](docs/text-lab-candidates.md), [phone-hosted prebuilt OpenCV](docs/opencv-prebuilt.md), and [post-processing investigation](docs/ocr-postprocessing-review.md). Alternative OCR models and experimental preprocessing recipes have been removed. The prebuilt OpenCV path previously passed a full CI debug build; new changes still need their own build/device checks.
+- **Cellar:** wines and bottles with vintage, quantity, price and location.
+  Filter, sort and group the list, and mark bottles as consumed.
+- **Add Wine:** enter a wine manually or scan a label. The scanner runs
+  locally and suggests six reviewable fields; nothing is saved until you save.
+- **Tasting notes and history:** notes, scores, sensory sliders, aromas,
+  reviewers, value scores and consumption history.
+- **Rankings and Price vs. Rating:** compare wines by score and value.
+- **Wine images:** optionally import reviewed bottle or label images from
+  Open Food Facts and manage their local storage.
+- **Backup:** export the cellar to JSON and restore it with validation and
+  transactional updates.
+- **Profile and Settings:** reviewer management, import/export, image tools
+  and App Information.
 
-**Historical validation (before the new model integration):** [Genuine Android CI passed](https://github.com/n8rtz/Wine-Manager-Android/actions/runs/38661171436) for source commit `4161b12`: debug app and instrumented test APKs compile, scanner Robolectric tests pass, and the shrunk arm64 release APK measures **24.51 MiB** (packed code + libraries **22.20 MiB**, below 40 MiB). The local harness also passes 57 logic groups and two host SQLite/FTS5 groups. Real-device OCR, physical shutter→review timing, and 20-camera-capture heap/OOM acceptance remain unverified. See the test guide for those remaining checks.
+## Local label scanner
+
+The scanner uses bundled ML Kit Latin OCR and PP-OCRv6 Medium
+detection/recognition, perspective rectification and local reference data.
+Wine-label recognition does not call a wine-database recognition API.
+
+- **Choose label photo** scans an existing image locally without camera
+  permission.
+- **Show scan details → Copy diagnostics** provides troubleshooting text.
+- Suggestions require review; reference matches are not guarantees.
+- The normal Add Wine scanner remains separate from experimental Lab changes.
+
+See:
+
+- [Offline scanner architecture, build and tests](docs/offline-scanner.md)
+- [Knowledge-base import formats](docs/offline-scanner-data.md)
+- [Production PP-OCRv6 Medium integration](docs/production-v6-medium.md)
+- [OCR Text Lab](docs/text-lab-candidates.md)
+- [Phone-hosted prebuilt OpenCV](docs/opencv-prebuilt.md)
+- [OCR post-processing investigation](docs/ocr-postprocessing-review.md)
+
+## Experimental scanner benchmark
+
+Debug builds provide three independently selectable modes:
+
+- **Production v1.0:** the normal Add Wine scanner.
+- **Production v2.0:** the guarded-producer benchmark implementation.
+- **Lab:** the latest experimental implementation only.
+
+Lab preserves original OCR observations and uses primary LWIN producer
+names and producer-linked wine names as separate matching evidence.
+Spatial joins are alternatives, not replacements for the original text.
+TTB and winery-map data are supporting evidence, not legal-owner
+substitutions.
+
+Lab does not run v2.0 as another live contender. Saved v2 results remain
+available for comparison without rerunning its OCR.
+
+These changes are experimental and have not been promoted to Add Wine.
+Host and Kotlin logic checks are not substitutes for Android builds or
+phone accuracy testing. The reported phone run with unchanged v2 results
+still needs diagnostic investigation; an accuracy improvement is not
+established.
+
+See:
+
+- [Phone corpus benchmark](docs/phone-corpus-benchmark.md)
+- [Primary producer resolver](docs/lab-primary-producer-resolver.md)
+- [Producer-linked wine-name resolver](docs/lab-linked-wine-resolver.md)
+
+## Building
+
+Use the versions pinned in the merged Gradle configuration and version
+catalogue. Do not upgrade Gradle, AGP, Kotlin, KSP, SDK or native dependencies
+without the owner's approval.
+
+The merged build files are the source of truth for minimum Android version,
+compile/target SDK versions and supported ABIs.
+
+```sh
+./gradlew :app:assembleDebug
+./gradlew :app:testDebugUnitTest
+```
+
+On Windows, use `gradlew.bat`.
+
+For native toolchain setup, see
+[the scanner build guide](docs/offline-scanner.md#fix-ndk-is-not-installed).
+For phone-hosted builds, consult
+[the prebuilt OpenCV instructions](docs/opencv-prebuilt.md).
+Code on the Go compatibility depends on its available toolchain and the
+project's pinned versions; native source builds on a phone are not assumed
+to work.
+
+> **Run instrumented tests only on a disposable emulator/test installation.**
+> The instrumented-test workflow can uninstall the app and erase its data.
+> Never run it against a phone installation holding the real cellar.
+
+### Which build is installed?
+
+Open **Profile → Settings → App Information** to inspect the installed
+build information, including its Git commit and source state.
+
+Pulling source does not update the installed application: rebuild and
+install it afterward.
+
+### Test data in debug builds
+
+Debug builds include the test cellar at
+`app/src/debug/assets/dev-seed/WineTracker_Backup.json`.
+
+On an empty database, the debug seed mechanism restores this file and
+reports that action. It must not overwrite existing cellar data and is not
+part of release builds.
+
+> The seed contains real personal data. Do not share debug APKs publicly.
+
+Debug builds also contain scanner benchmark images and experimental
+reference assets. Their inclusion does not establish redistribution
+rights for every source image. Preserve dataset attribution notices.
+
+## Project layout
+
+```text
+app/src/main/java/com/n8rtz/winetracker/   Main application code
+app/src/main/java/com/yourapp/wine/       Local scanner components
+app/src/debug/                          Debug UI, benchmarks and experiments
+app/src/test, app/src/androidTest         JVM and instrumented tests
+app/src/debug/assets/dev-seed/            Debug-only test cellar
+tools/                                  Host checks and data-build tooling
+docs/                                   Scanner and benchmark documentation
+_refs/                                  General project documentation
+_backup/                                Personal cellar JSON backups
+.agents/instructions.md                  Repository agent instructions
+```
+
+The general architecture and file map are documented in `_refs/ARCH.md`.
+
+## Project documentation
+
+General project documentation is under `_refs/`:
+
+| File | Purpose |
+|---|---|
+| `BACKLOG.md` | Priorities, decisions and pending verification |
+| `PIPELINE.md` | Development and release process |
+| `THINGS_TO_CHECK.md` | Manual test checklists |
+| `CHANGELOG.md` | Changes by version |
+| `ARCH.md` | Architecture and directory map |
+| `LESSONS_LEARNED.md` | Previous issues and lessons |
+| `ARCHIVE.md` | Completed work and declined ideas |
+| `AGENTS.md` | Agent orientation |
+| `major-feature-planning/` | Feature planning briefs |
+
+Consult the changelog for release history and the pending-verification
+lists for remaining checks. Historical successful builds do not certify
+subsequent changes.
