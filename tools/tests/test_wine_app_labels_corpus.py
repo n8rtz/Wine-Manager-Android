@@ -107,6 +107,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("val columnWidth = 88.dp", activity)
         self.assertIn("Unverified TTB, OSM, and X-Wines name lists are excluded", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
+        self.assertIn("Reuse this version's saved per-photo results", viewmodel)
+        self.assertIn('"evaluation_set_sha256", "scoring_sha256"', viewmodel)
+        self.assertIn('metadata.optString("pipeline") != mode.pipelineId', viewmodel)
+        self.assertNotIn('dir.name.startsWith(folderPrefix(mode))', viewmodel)
         runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
         for label in ("Lab v4", "Prod v3.0", "Prod v2.0", "Prod v1.0"):
             self.assertIn(f'("{label}"', runner)

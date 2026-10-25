@@ -63,9 +63,26 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
 
     private fun folderPrefix(mode: PhoneCorpusRunner.Mode) = "${BuildConfig.BUILD_COMMIT}-$installId-${mode.name}-"
 
-    private fun latestFolder(mode: PhoneCorpusRunner.Mode): File? = root.listFiles().orEmpty()
-        .filter { it.isDirectory && it.name.startsWith(folderPrefix(mode)) }
-        .maxByOrNull { it.lastModified() }
+    private fun corpusSignature(manifest: JSONObject): String = listOf(
+        "inputs_sha256", "evaluation_set_sha256", "scoring_sha256",
+    ).joinToString(":") { manifest.getString(it) }
+
+    /** Reuse this version's saved per-photo results across app updates, but never across corpus revisions. */
+    private fun latestFolder(mode: PhoneCorpusRunner.Mode): File? {
+        val expectedCorpus = corpusSignature(assetJson("manifest.json"))
+        return root.listFiles().orEmpty().mapNotNull { dir ->
+            if (!dir.isDirectory) return@mapNotNull null
+            runCatching {
+                val metadata = JSONObject(File(dir, "run.json").readText())
+                val savedCorpus = metadata.optJSONObject("corpus_manifest") ?: return@runCatching null
+                if (metadata.optString("mode") != mode.name ||
+                    metadata.optString("pipeline") != mode.pipelineId ||
+                    corpusSignature(savedCorpus) != expectedCorpus
+                ) return@runCatching null
+                dir to metadata.optLong("created_ms", dir.lastModified())
+            }.getOrNull()
+        }.maxByOrNull { it.second }?.first
+    }
 
     private fun selectFolder(mode: PhoneCorpusRunner.Mode, fresh: Boolean): File {
         val prefix = folderPrefix(mode)
@@ -101,7 +118,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         }
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · ${current.size}/$WINE_APP_LABEL_COUNT attempted in ${mode.title}")
-            appendLine("Comparison results accumulate independently as each version runs on the same $WINE_APP_LABEL_COUNT retained workbook labels.")
+            appendLine("Only the selected version runs fresh OCR. Other rows show saved results for this exact $WINE_APP_LABEL_COUNT-label corpus and persist across app updates.")
             appendLine(currentBoard.headers.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
         }
