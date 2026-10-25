@@ -1,0 +1,17 @@
+{
+  "purpose": "Human review queue; not a fresh independent image adjudication.",
+  "images": 168,
+  "reference_sha256": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+  "scoring_sha256": "beafda0e53fbfe0b1175f15aaa436b21a1bf3cc0e8f386dbe830e7ef77682259",
+  "saved_v2_sha256": "6c0c5750dddfb829ae53b28cea1caa4e823023441157e873980e60abf4c42b46",
+  "saved_v2_outcomes": {
+    "correct_value": 77,
+    "unscored_blank": 1,
+    "wrong_value": 44,
+    "unscored_filled": 2,
+    "missing_value": 36,
+    "correct_blank": 5,
+    "unsupported_fill": 3
+  },
+  "policy": "Exact normalized accepted-alias scoring; review target semantics and image evidence before changing references or extraction behavior."
+}
