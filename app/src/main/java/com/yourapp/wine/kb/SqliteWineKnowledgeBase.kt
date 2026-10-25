@@ -48,6 +48,56 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
         KbMatching.rank(text,producers.map { it.copy(aliases=aliases(it.id)) })
     }
 
+    /** Exhaustive local-catalog lookup for the Settings diagnostic; always returns the closest entries, not corrections. */
+    fun searchDiagnostic(category: DatabaseLookupCategory, query: String, limit: Int = 12): List<DatabaseLookupMatch> = access {
+        require(limit in 1..50)
+        val candidates = when (category) {
+            DatabaseLookupCategory.PRODUCER -> {
+                val grouped = linkedMapOf<Long, DatabaseLookupCandidate>()
+                connection.prepare("SELECT p.id,p.name,p.country_code,COALESCE(r.name,''),a.alias_norm FROM producer p LEFT JOIN place r ON r.id=p.region_id LEFT JOIN producer_alias a ON a.producer_id=p.id ORDER BY p.id").use { s ->
+                    while (s.step()) {
+                        val id = s.getLong(0)
+                        val region = s.getText(3)
+                        val context = listOf(region, s.getText(2)).filter(String::isNotBlank).joinToString(" · ")
+                        val alias = if (s.isNull(4)) null else s.getText(4)
+                        val existing = grouped[id]
+                        grouped[id] = if (existing == null) DatabaseLookupCandidate(
+                            identity = "producer:$id", name = s.getText(1), context = context,
+                            searchTerms = listOfNotNull(s.getText(1), alias)
+                        ) else existing.copy(searchTerms = existing.searchTerms + listOfNotNull(alias))
+                    }
+                }
+                grouped.values.toList()
+            }
+            DatabaseLookupCategory.WINE_NAME -> {
+                val candidates = mutableListOf<DatabaseLookupCandidate>()
+                connection.prepare("SELECT c.producer_id,c.name,p.name FROM cuvee c JOIN producer p ON p.id=c.producer_id ORDER BY c.name").use { s ->
+                    while (s.step()) candidates += DatabaseLookupCandidate(
+                        identity = "cuvee:${s.getLong(0)}:${TextNorm.normalize(s.getText(1))}",
+                        name = s.getText(1), context = "Producer: ${s.getText(2)}"
+                    )
+                }
+                candidates
+            }
+            DatabaseLookupCategory.APPELLATION -> {
+                val byId = gazetteer.associateBy { it.id }
+                gazetteer.asSequence().filter { it.type == "appellation" }.map { place ->
+                    val parents = mutableListOf<String>()
+                    var parent = place.parentId?.let(byId::get)
+                    while (parent != null) {
+                        parents += parent.name
+                        parent = parent.parentId?.let(byId::get)
+                    }
+                    DatabaseLookupCandidate(
+                        identity = "appellation:${place.id}", name = place.name,
+                        context = parents.asReversed().joinToString(" · ")
+                    )
+                }.toList()
+            }
+        }
+        DatabaseNameLookup.rank(query, candidates, limit)
+    }
+
     override fun findCuvee(producerId:Long,text:String):CuveeHit? = findCuvees(producerId,text).firstOrNull()
     override fun findCuvees(producerId:Long,text:String):List<CuveeHit> = access {
         val matches=mutableListOf<CuveeHit>()

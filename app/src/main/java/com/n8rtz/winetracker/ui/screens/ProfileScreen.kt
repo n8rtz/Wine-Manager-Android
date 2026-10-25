@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.WineBar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ScatterPlot
 import androidx.compose.material3.*
@@ -65,6 +66,7 @@ fun ProfileScreen(
     onSettingsClick: () -> Unit = {},
     onBack: () -> Unit = {},
     onAppInfoClick: () -> Unit = {},
+    onDatabaseLookupClick: () -> Unit = {},
     onParetoClick: () -> Unit = {},
     onImportComplete: () -> Unit
 ) {
@@ -528,6 +530,17 @@ fun ProfileScreen(
                         color = bordeauxRed,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                     )
+                    ListItem(
+                        headlineContent = { Text("Database Lookup") },
+                        supportingContent = {
+                            Text("Fuzzy-search producer, wine-name, and appellation entries in the local scan database")
+                        },
+                        leadingContent = {
+                            Icon(Icons.Filled.Search, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onDatabaseLookupClick)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     ListItem(
                         headlineContent = { Text("App Information") },
                         supportingContent = {

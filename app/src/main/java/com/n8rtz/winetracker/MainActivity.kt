@@ -57,6 +57,7 @@ import coil.request.ImageRequest
 import com.n8rtz.winetracker.ui.components.BottomBarLabelSizing
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.AppInfoScreen
+import com.n8rtz.winetracker.ui.screens.DatabaseLookupScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
 import com.n8rtz.winetracker.data.importer.DevSeedRestorer
 import com.n8rtz.winetracker.ui.screens.ProfileScreen
@@ -458,10 +459,14 @@ fun MainAppScaffold(
                     tastingNoteViewModel = tastingNoteViewModel,
                     section = ProfileSection.SETTINGS,
                     onBack = { navController.popBackStack() },
-                    onAppInfoClick = { navController.navigate("app_info") }
+                    onAppInfoClick = { navController.navigate("app_info") },
+                    onDatabaseLookupClick = { navController.navigate("database_lookup") }
                 ) {
                     navigateToTab(navController, "cellar")
                 }
+            }
+            composable("database_lookup") {
+                DatabaseLookupScreen(onBack = { navController.popBackStack() })
             }
             composable("app_info") {
                 AppInfoScreen(
