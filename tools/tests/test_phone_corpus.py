@@ -17,6 +17,18 @@ class PhoneCorpusTests(unittest.TestCase):
         manifest=json.loads((ASSETS/'manifest.json').read_text())
         for name in ('inputs','scoring'):self.assertEqual(hashlib.sha256((ASSETS/f'{name}.json').read_bytes()).hexdigest(),manifest[f'{name}_sha256'])
         self.assertEqual(sum(p.stat().st_size for p in (ASSETS/'images').iterdir()),31163745)
+    def test_user_review_selection_excludes_color_coded_and_omitted_rows(self):
+        selection=json.loads((ASSETS/'evaluation-set.json').read_text())
+        self.assertEqual((selection['included_count'],selection['excluded_count']),(107,61))
+        self.assertEqual(sum(x['review_color']=='red' for x in selection['excluded_images']),55)
+        self.assertEqual(sum(x['review_color']=='yellow' for x in selection['excluded_images']),4)
+        self.assertEqual({x['review_number'] for x in selection['excluded_images'] if x['review_color']=='absent_from_review_workbook'},{27,47})
+        self.assertEqual(len({x['image'] for x in selection['included_images']}),107)
+        self.assertEqual(len({x['image'] for x in selection['excluded_images']}),61)
+        self.assertFalse(({x['image'] for x in selection['included_images']}&{x['image'] for x in selection['excluded_images']}))
+        self.assertEqual({x['image'] for x in selection['included_images']}|{x['image'] for x in selection['excluded_images']},
+            {x['image'] for x in json.loads((ASSETS/'inputs.json').read_text())['images']})
+        self.assertIn('reference-data-168.xlsx',selection['source_workbook'])
     def test_reference_and_frozen_baseline_parity(self):
         scoring=json.loads((ASSETS/'scoring.json').read_text());counts=Counter();states=Counter();eligible=complete=0
         frozen={i['image']:i for i in json.loads((ROOT/'tools/evaluation/public-corpus-reference-v1/reference.json').read_text())['images']}
@@ -37,7 +49,15 @@ class PhoneCorpusTests(unittest.TestCase):
         self.assertFalse((ROOT/'app/src/main/assets/phone-corpus-v1').exists())
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text()
         self.assertNotIn('scoring.json',runner);self.assertNotIn('baseline',runner)
-        self.assertIn('WineScannerServices.get(context).scan(input,started)',runner)
+        # The same production scanner/input/shared-budget start is preserved, with setup telemetry between calls.
+        self.assertRegex(runner,r'val scanner=WineScannerServices\.get\(context\)[\s\S]*?val report=scanner\.scan\(input,started\)')
         self.assertIn('TextLabRunner.recognize',runner)
+        viewmodel=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusViewModel.kt').read_text()
+        self.assertIn('evaluation-set.json',viewmodel)
+        self.assertIn('filter { it.getString("image") in included }',viewmodel)
+        self.assertIn('ACTIVE_IMAGE_COUNT=107', (ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text())
+        scoreboard=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt').read_text()
+        self.assertIn('savedV2Items(includedImages)',scoreboard)
+        self.assertIn('baselineItems(includedImages)',scoreboard)
         manifest=(ROOT/'app/src/debug/AndroidManifest.xml').read_text()
         self.assertIn('phonecorpus.PhoneCorpusActivity" android:exported="false"',manifest)

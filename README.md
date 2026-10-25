@@ -67,15 +67,18 @@ available for comparison without rerunning its OCR.
 
 These changes are experimental and have not been promoted to Add Wine.
 Host and Kotlin logic checks are not substitutes for Android builds or
-phone accuracy testing. The reported phone run with unchanged v2 results
-still needs diagnostic investigation; an accuracy improvement is not
-established.
+phone accuracy testing. The supplied f9a8891 phone exports show nine correct
+producer fills, but complete reads remain 34/160 because other fields still fail.
+The debug benchmark now includes a per-label pipeline bottleneck table, with
+separate OCR branches, in the screen and CSVs. Native validation of the latest
+changes remains outstanding; no new recognition improvement is claimed.
 
 See:
 
 - [Phone corpus benchmark](docs/phone-corpus-benchmark.md)
 - [Primary producer resolver](docs/lab-primary-producer-resolver.md)
 - [Producer-linked wine-name resolver](docs/lab-linked-wine-resolver.md)
+- [Accuracy recovery plan and audited phone results](docs/scanner-accuracy-plan.md)
 
 ## Building
 

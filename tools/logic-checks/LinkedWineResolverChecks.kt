@@ -49,7 +49,9 @@ fun main() {
     val single=index(ps=listOf(entity("a","Example")))
     val singleSpans=listOf(span("Example","mlkit",1),span("Example","paddle",2))+wineSpans
     verify(LinkedWineResolver(single).resolve("Example","",ProducerResolver.Decision("Example","unchanged",emptyList()),singleSpans).wineId==wine.id)
-    verify(LinkedWineResolver(index(ws=List(33) { wine.copy(id=it.toString()) })).resolve("","",pd,producers+wineSpans).wineId==null)
+    // PR #9 removed the old full-33-row skip. Repeated products with the same observed name
+    // remain one name group, not 33 OCR votes; the independent two-engine requirement still applies.
+    verify(LinkedWineResolver(index(ws=List(33) { wine.copy(id=it.toString()) })).resolve("","",pd,producers+wineSpans).wineId!=null)
     verify(resolve(spans=List(129) { producers[0] }).wineId==null)
     println("PASS: $checks producer-linked wine resolver checks (actual Kotlin, fixture data).")
 }

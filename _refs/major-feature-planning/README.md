@@ -12,6 +12,7 @@ Each feature brief has its own numbered root: **1.0** Pareto screen, **2.0** aro
 - [Wine aroma wheel](wine-aroma-wheel.md) — interactive aroma exploration tied to tasting notes.
 - [Wine bottle / label image importer](wine-bottle-label-importer.md) — find, review, and associate bottle or label images.
 - [Camera wine recognition](camera-wine-recognition.md) — scan a label and prefill a wine form for user review.
+- [Scanner accuracy recovery (W-058)](../../docs/scanner-accuracy-plan.md) — measured phone failures, label-level pipeline diagnostics and staged >80% complete / <5% multi-error plan; experimental Lab only until authorized.
 - [Wine resources page](wine-resources-page.md) — educational material, interactive region maps, and grape-variety tasting profiles.
 
 ## Cross-feature boundaries

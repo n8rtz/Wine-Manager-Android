@@ -32,7 +32,9 @@ internal object TextLabRunner {
     suspend fun recognize(context:Context,photo:TextPhoto,selection:TextCrop,enlarge:Boolean,output:File,journal:TextLabJournal,checkpoint:()->Unit={}) {
         require(journal.selected.isNotEmpty())
         val serviceStart=SystemClock.elapsedRealtime()
+        journal.add("shared","service_setup","running")
         val scanner=WineScannerServices.get(context)
+        journal.add("shared","service_setup","complete")
         journal.metadata["services_setup_ms"]=(SystemClock.elapsedRealtime()-serviceStart).toString()
         val lockStart=SystemClock.elapsedRealtime()
         scanner.withBenchmarkEngines { engines,_ ->
@@ -63,9 +65,11 @@ internal object TextLabRunner {
                 }
                 if(prepared==null) { journal.add("shared","preparation","timed_out");error("Shared crop preparation timed out") }
                 val (crop,mapping)=prepared
+                journal.add("shared","preparation","complete")
                 // ML Kit is a shared reference, not rerun or charged against any Paddle candidate.
                 val mlStarted=SystemClock.elapsedRealtime()
                 var mlStatus="failed"
+                journal.add("mlkit_reference","engine_start","running")
                 try {
                     val deadline=ScanDeadline(mlStarted+TextLabBudgets.OCR_MS)
                     val result=deadline.run {

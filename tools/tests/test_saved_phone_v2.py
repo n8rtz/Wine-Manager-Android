@@ -32,6 +32,6 @@ class SavedPhoneV2Checks(unittest.TestCase):
         base=ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus'
         board=(base/'PhoneCorpusScoreboard.kt').read_text()
         self.assertIn('savedV2Items(ids),v2Provenance',board)
-        self.assertIn('savedV2Items(targets.keys),v2Provenance',board)
+        self.assertIn('savedV2Items(includedImages),v2Provenance',board)
         for file in ('PhoneCorpusRunner.kt','PhoneCorpusViewModel.kt'):
             self.assertNotIn('saved-production-v2.json',(base/file).read_text())
