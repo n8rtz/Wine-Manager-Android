@@ -44,6 +44,7 @@ import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanFormState
 import com.yourapp.wine.ui.ScanFieldStatus
+import com.yourapp.wine.ui.ScanFieldChoices
 import com.yourapp.wine.ui.ScanReviewHeader
 import com.yourapp.wine.ui.LabelScanActions
 
@@ -115,6 +116,31 @@ fun AddWineScreen(
     var scanForm by remember { mutableStateOf(ScanFormState()) }
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
     var lastScanId by remember { mutableStateOf(0L) }
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    val syncFormToInputs = {
+        maker = scanForm.fields.getValue(FieldId.PRODUCER).value
+        name = scanForm.fields.getValue(FieldId.WINE_NAME).value
+        vintage = scanForm.fields.getValue(FieldId.VINTAGE).value
+        selectedCountry = scanForm.fields.getValue(FieldId.COUNTRY).value
+        selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
+        selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
+    }
+    val formValues = { mapOf(FieldId.PRODUCER to maker, FieldId.WINE_NAME to name, FieldId.VINTAGE to vintage,
+        FieldId.COUNTRY to selectedCountry, FieldId.REGION to selectedRegion, FieldId.SUBREGION to selectedAppellation) }
+    val selectChoice: (FieldId, String) -> Unit = { field, value ->
+        scanForm = scanForm.selectChoice(field, value)
+        syncFormToInputs()
+    }
+    val dismissChoices: (FieldId) -> Unit = { field -> scanForm = scanForm.dismissChoices(field) }
+    val clearField: (FieldId) -> Unit = { field ->
+        scanForm = scanForm.clearSuggestion(field, lastScanReport?.fill, formValues(), currentYear)
+        syncFormToInputs()
+    }
+    val fieldChoices: @Composable (FieldId) -> Unit = { field ->
+        ScanFieldChoices(scanForm.fields.getValue(field),
+            onSelectChoice = { value -> selectChoice(field, value) },
+            onDismissChoices = { dismissChoices(field) }, enabled = !labelScanState.isBusy)
+    }
     val retake: () -> Unit = {
         if (!labelScanState.isBusy) {
             cameraError = null
@@ -122,20 +148,15 @@ fun AddWineScreen(
             else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
+    val clearIcon: @Composable (FieldId, String) -> Unit = { field, value ->
+        if (value.isNotBlank()) IconButton(onClick = { clearField(field) }, enabled = !labelScanState.isBusy) {
+            Icon(Icons.Default.Close, contentDescription = "Clear ${field.name.lowercase().replace('_', ' ')}")
+        }
+    }
     val fieldStatus: @Composable (FieldId) -> Unit = { field ->
         ScanFieldStatus(scanForm.fields.getValue(field),
             onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake,
-            enabled = !labelScanState.isBusy,
-            onSelectChoice = { value ->
-                scanForm = scanForm.selectChoice(field,value)
-                maker = scanForm.fields.getValue(FieldId.PRODUCER).value
-                name = scanForm.fields.getValue(FieldId.WINE_NAME).value
-                vintage = scanForm.fields.getValue(FieldId.VINTAGE).value
-                selectedCountry = scanForm.fields.getValue(FieldId.COUNTRY).value
-                selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
-                selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
-            },
-            onDismissChoices = { scanForm = scanForm.dismissChoices(field) })
+            enabled = !labelScanState.isBusy, showChoices = false)
     }
     LaunchedEffect(showLabelCamera) {
         if (showLabelCamera) {
@@ -190,7 +211,6 @@ fun AddWineScreen(
             ).distinct().sorted()
     } else emptyList()
 
-    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
     Scaffold(
         topBar = { TopAppBar(title = { Text("Add New Wine") }) }
@@ -250,7 +270,10 @@ fun AddWineScreen(
                             producerSearchExpanded = true
                         },
                         label = { Text("Producer / Winery") },
-                        trailingIcon = { Icon(Icons.Default.Search, null) },
+                        trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                            clearIcon(FieldId.PRODUCER, maker)
+                            Icon(Icons.Default.Search, contentDescription = "Search producers")
+                        } },
                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
                     
@@ -281,6 +304,7 @@ fun AddWineScreen(
                         }
                     }
                 }
+                fieldChoices(FieldId.PRODUCER)
 
                 fieldStatus(FieldId.WINE_NAME)
                 // Autocomplete Wine Name Search
@@ -298,7 +322,10 @@ fun AddWineScreen(
                             nameSearchExpanded = true
                         },
                         label = { Text("Wine Name") },
-                        trailingIcon = { Icon(Icons.Default.Search, null) },
+                        trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                            clearIcon(FieldId.WINE_NAME, name)
+                            Icon(Icons.Default.Search, contentDescription = "Search wine names")
+                        } },
                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
                     
@@ -339,6 +366,7 @@ fun AddWineScreen(
                         }
                     }
                 }
+                fieldChoices(FieldId.WINE_NAME)
                 
                 fieldStatus(FieldId.VINTAGE)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -353,7 +381,10 @@ fun AddWineScreen(
                             value = vintage,
                             onValueChange = { vintage = it; scanForm = scanForm.edit(FieldId.VINTAGE, it) },
                             label = { Text("Vintage") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = vintageExpanded) },
+                            trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                                clearIcon(FieldId.VINTAGE, vintage)
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = vintageExpanded)
+                            } },
                             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
@@ -403,6 +434,7 @@ fun AddWineScreen(
                         }
                     }
                 }
+                fieldChoices(FieldId.VINTAGE)
 
                 // Cascading Geography Section
                 Text("Geography", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
@@ -419,7 +451,10 @@ fun AddWineScreen(
                         value = selectedCountry,
                         onValueChange = { selectedCountry = it; scanForm = scanForm.edit(FieldId.COUNTRY, it) },
                         label = { Text("Country") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = countryExpanded) },
+                        trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                            clearIcon(FieldId.COUNTRY, selectedCountry)
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = countryExpanded)
+                        } },
                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
                     ExposedDropdownMenu(
@@ -444,6 +479,7 @@ fun AddWineScreen(
                         }
                     }
                 }
+                fieldChoices(FieldId.COUNTRY)
 
                 // Region stays visible and editable even when the fixture gazetteer has no suggestions.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -458,7 +494,10 @@ fun AddWineScreen(
                             value = selectedRegion,
                             onValueChange = { selectedRegion = it; scanForm = scanForm.edit(FieldId.REGION, it) },
                             label = { Text("Region") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = regionExpanded) },
+                            trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                                clearIcon(FieldId.REGION, selectedRegion)
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = regionExpanded)
+                            } },
                             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                         )
                         ExposedDropdownMenu(
@@ -482,6 +521,7 @@ fun AddWineScreen(
                             }
                         }
                     }
+                    fieldChoices(FieldId.REGION)
                 }
 
                 if(selectedAppellation.isNotBlank() && selectedRegion.isBlank()) {
@@ -500,7 +540,10 @@ fun AddWineScreen(
                             value = selectedAppellation,
                             onValueChange = { selectedAppellation = it; scanForm = scanForm.edit(FieldId.SUBREGION, it) },
                             label = { Text("Subregion / Appellation") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = appellationExpanded) },
+                            trailingIcon = { Row(verticalAlignment = Alignment.CenterVertically) {
+                                clearIcon(FieldId.SUBREGION, selectedAppellation)
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = appellationExpanded)
+                            } },
                             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                         )
                         ExposedDropdownMenu(
@@ -520,6 +563,7 @@ fun AddWineScreen(
                             }
                         }
                     }
+                    fieldChoices(FieldId.SUBREGION)
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {

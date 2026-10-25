@@ -6,7 +6,7 @@ import com.yourapp.wine.merge.TextNorm
 /** No image ownership: a user's edits are protected from subsequent scanner suggestions. */
 data class ReviewedField(val value: String = "", val state: UiState? = null, val confirmed: Boolean = true,
     val edited: Boolean = false, val reason: String = "", val choices:List<ScanChoicePolicy.Choice> = emptyList(),
-    val intentionallyBlank:Boolean=false)
+    val intentionallyBlank:Boolean=false, val rejectedValues:Set<String> = emptySet(), val clearedByUser:Boolean=false)
 
 data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entries.associateWith { ReviewedField() }) {
     val hasPendingConfirmation: Boolean get() = fields.values.any { !it.confirmed && it.value.isNotBlank() }
@@ -26,8 +26,9 @@ data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entri
             val previous = fields.getValue(field).copy(value = currentValues[field] ?: fields.getValue(field).value)
             val candidate = result.fields.getValue(field)
             val next = when {
+                previous.clearedByUser -> previous.copy(value="", choices=ScanChoicePolicy.choices(field,result,
+                    currentValues + (field to ""),currentYear,previous.rejectedValues,afterExplicitClear=true))
                 previous.edited -> previous
-                // A rejected retake must not leave old automatic text that can be saved as a new reading.
                 candidate.state == UiState.RED -> ReviewedField(state = UiState.RED, reason = candidate.reason)
                 else -> ReviewedField(candidate.value, candidate.state, candidate.state == UiState.GREEN, false, candidate.reason)
             }
@@ -36,12 +37,13 @@ data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entri
         }
         val values=updated.mapValues { it.value.value }
         return copy(fields = updated.mapValues { (field,review) ->
-            if(review.edited || review.value.isNotBlank() || field in related) review.copy(choices=emptyList())
+            if(review.clearedByUser) review
+            else if(review.edited || review.value.isNotBlank() || field in related) review.copy(choices=emptyList())
             else review.copy(choices=ScanChoicePolicy.choices(field,result,values,currentYear),intentionallyBlank=field in result.intentionalBlankFields)
         })
     }
 
-    /** No coordinates: manual changes are protected; changing origin/producer invalidates related GREEN validation. */
+    /** Manual changes are protected on later scans. */
     fun edit(field: FieldId, value: String): ScanFormState {
         val previous = fields.getValue(field)
         val equivalent = TextNorm.normalize(previous.value) == TextNorm.normalize(value)
@@ -60,10 +62,21 @@ data class ScanFormState(val fields: Map<FieldId, ReviewedField> = FieldId.entri
         })
     }
 
-    /** Selecting a currently offered choice is an explicit user edit, not algorithmic validation. */
+    /** Clear the visible suggestion, remember its rejection, and expose only supported alternatives. */
+    fun clearSuggestion(field:FieldId,result:FillResult?,currentValues:Map<FieldId,String>,currentYear:Int):ScanFormState {
+        val previous=fields.getValue(field)
+        val rejected=(previous.rejectedValues + (currentValues[field] ?: previous.value).takeIf { it.isNotBlank() }.orEmpty())
+        val choices=result?.let { ScanChoicePolicy.choices(field,it,currentValues+(field to ""),currentYear,rejected,afterExplicitClear=true) }.orEmpty()
+        val cleared=ReviewedField(value="",state=UiState.RED,confirmed=true,edited=true,
+            reason=if(choices.isEmpty()) "Cleared by user — enter manually or retake" else "Cleared by user — choose an OCR alternative or enter manually",
+            choices=choices,rejectedValues=rejected,clearedByUser=true)
+        return copy(fields=fields+(field to cleared))
+    }
+
+    /** Selecting an offered choice is an explicit user edit, not algorithmic validation. */
     fun selectChoice(field:FieldId,value:String):ScanFormState {
         val current=fields.getValue(field)
-        if(current.value.isNotBlank() || current.edited || current.choices.none { it.value==value }) return this
+        if(current.value.isNotBlank() || (current.edited && !current.clearedByUser) || current.choices.none { it.value==value }) return this
         val edited=edit(field,value)
         return edited.copy(fields=edited.fields+(field to edited.fields.getValue(field).copy(
             state=UiState.YELLOW,confirmed=true,reason="User selected OCR alternative — kept on retakes",choices=emptyList())))

@@ -20,7 +20,7 @@ import com.yourapp.wine.fill.UiState
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ScanFieldStatus(field: ReviewedField, onConfirm: () -> Unit, onRetake: () -> Unit,
-    onSelectChoice:(String)->Unit={},onDismissChoices:()->Unit={},enabled:Boolean=true) {
+    onSelectChoice:(String)->Unit={},onDismissChoices:()->Unit={},enabled:Boolean=true,showChoices:Boolean=true) {
     val state = field.state ?: return
     val color = scanFieldStatusColor(state, MaterialTheme.colorScheme.background.luminance() < .5f,
         MaterialTheme.colorScheme.error)
@@ -37,7 +37,7 @@ fun ScanFieldStatus(field: ReviewedField, onConfirm: () -> Unit, onRetake: () ->
             if (state == UiState.YELLOW && !field.confirmed) TextButton(onClick = onConfirm, enabled=enabled, colors = actionColors) { Text("Confirm") }
             if (state == UiState.RED && !field.intentionallyBlank) TextButton(onClick = onRetake, enabled=enabled, colors = actionColors) { Text("Retake") }
         }
-        if(field.value.isBlank() && !field.edited && field.choices.isNotEmpty() && !field.intentionallyBlank) {
+        if(showChoices && field.value.isBlank() && (!field.edited || field.clearedByUser) && field.choices.isNotEmpty() && !field.intentionallyBlank) {
             Text("Possible matches — select only if correct",style=MaterialTheme.typography.bodySmall)
             FlowRow(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
                 field.choices.forEach { choice ->
