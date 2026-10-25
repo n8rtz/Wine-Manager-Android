@@ -22,6 +22,8 @@ Evidence statuses distinguish:
 - `mapping_required`: the label term is read, but the benchmark target is a broader mapped region.
 - `policy_blank`: the label term is read, but field policy requires an empty subregion.
 
+For a side-by-side inspection of the twelve recognition gaps, see [`12-recognition-gap-raw-comparison.md`](12-recognition-gap-raw-comparison.md). It includes the full imported-reference and final six-field rows plus every raw recognition line from both engines.
+
 The reviewed ledger is not an automatic fuzzy matcher and does not repair OCR. This is intentional: near-matches such as `Cour`/`Tour`, `Caler`/`Calon`, and `Prorence`/`Provence` remain recognition gaps until separately evaluated, avoiding a hidden correction from ground truth.
 
 Run the checked-in regression fixtures with:

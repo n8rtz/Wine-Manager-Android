@@ -62,6 +62,15 @@ class OneErrorOcrDiagnosisTests(unittest.TestCase):
                     self.assertTrue(fragment["text"])
                     self.assertIn(diagnosis.key(fragment["text"]), diagnosis.key(row["raw_evidence"]))
 
+    def test_raw_comparison_includes_all_twelve_complete_engine_traces(self):
+        text = (REVIEW_DIR / "12-recognition-gap-raw-comparison.md").read_text(encoding="utf-8")
+        self.assertEqual(text.count("**Raw ML Kit (`mlkit_reference`)**"), 12)
+        self.assertEqual(text.count("**Raw PP-OCR (`candidate_3`)**"), 12)
+        self.assertEqual(text.count("| Field | Imported reference CSV | Final Lab output |"), 12)
+        for number in (12, 18, 31, 45, 55, 63, 75, 114, 117, 133, 159, 168):
+            with self.subTest(review_number=number):
+                self.assertIn(f"## Review #{number} —", text)
+
     def test_normalization_handles_case_accents_and_punctuation_without_fuzzy_matching(self):
         self.assertEqual(diagnosis.key("Saint-Émilion"), diagnosis.key("SAINT EMILION"))
         self.assertNotEqual(diagnosis.key("La Tour de By"), diagnosis.key("La Cour de By"))
