@@ -29,7 +29,7 @@ class SavedPhoneV2Checks(unittest.TestCase):
             if size==168:
                 for key,value in dict(correct_value=630,wrong_value=80,missing_value=182,correct_blank=77,unsupported_fill=20,unscored_blank=12,unscored_filled=7).items():self.assertEqual(counts[key],value)
     def test_scoring_only_no_recognition_input(self):
-        base=ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus'
+        base=ROOT/'app/src/main/java/com/yourapp/wine/phonecorpus'
         board=(base/'PhoneCorpusScoreboard.kt').read_text()
         self.assertIn('savedV2Items(ids),v2Provenance',board)
         self.assertIn('savedV2Items(includedImages),v2Provenance',board)

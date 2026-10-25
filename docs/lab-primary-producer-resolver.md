@@ -1,12 +1,12 @@
 # Primary LWIN catalog and Lab producer resolver
 
-> Lab now has a separate producer-linked wine-name index and a source-isolated X-Wines supplemental name-candidate index. The former uses the supplied LWIN export; the latter broadens candidate recall but is not a verified producer roster.
+> The normal-app benchmark uses a separate producer-linked wine-name index built from the supplied LWIN export. Unverified TTB, OSM, and X-Wines lists are excluded from packaged assets and runtime producer lookup; their records remain only in offline source-review materials.
 
 ## Status
 
-**The main catalog remains the 33,160 eligible producer groups from the supplied primary LWIN export; it is not a worldwide census.** Coverage is limited to producer groups represented in eligible live LWIN wine records. A separate debug/Lab index now adds **19,085 X-Wines name-candidate rows** (18,945 distinct normalized names not already in LWIN; 18,006 not exact matches in the current LWIN/TTB/OSM sources). They are unverified winery/producer/brand names and remain candidates, never primary truths. The OCR resolver is Lab/debug-only; production OCR and normal Add Wine are unchanged.
+**The packaged producer catalog contains 33,160 eligible producer groups from the supplied primary LWIN export; it is not a worldwide census.** Coverage is limited to producer groups represented in eligible live LWIN wine records. TTB, OSM, and X-Wines lists were reviewed as possible additions but are not verified as label producers, so they are not included in app databases or runtime lookup. This benchmark and its 125 workbook photos are available in the normal app build.
 
-The user supplied `LWINdatabase.zip` from the reference repository. We verified its Git blob, inspected the workbook, reconciled it against the earlier derivative and built the primary database from explicit producer fields. The primary table remains in `app/src/main/assets/producer-gazetteer-v1/`; linked wines, TTB/OSM support and X-Wines candidates are in debug assets. The X-Wines names are stored in a separate index, with no country or aliases inferred and no change to the verified LWIN table.
+The user supplied `LWINdatabase.zip` from the reference repository. We verified its Git blob, inspected the workbook, reconciled it against the earlier derivative and built the primary database from explicit producer fields. The packaged producer table and its linked-wine index are both in `app/src/main/assets/producer-gazetteer-v1/`. There are no TTB, OSM, or X-Wines support databases in app assets. Their source review is separate from the producer database.
 
 This is **user-supplied primary-export provenance**, not an independent download from Liv-ex, vendor signature, or independent verification of every winery. The manifest's `primary_verified` gate refers to that recorded source review and validated build input; it is not a probability or an authority claim about each record.
 
@@ -46,15 +46,15 @@ The differences are retained in `tools/producer-sources/primary-comparison.json`
 
 ## Runtime behavior
 
-- `app/src/main/assets/producer-gazetteer-v1/` packages the verified 33,160-row producer table for the read-only Settings lookup. The producer resolver is still only wired in debug Lab; it does not influence normal scanner output. `wines.sqlite` and TTB/OSM support databases remain in debug assets.
+- `app/src/main/assets/producer-gazetteer-v1/` packages the verified 33,160-row producer table and LWIN-linked `wines.sqlite` for the normal-app benchmark. The benchmark uses only these verified LWIN sources; the standard Add Wine scanner remains unchanged.
 - Lookup uses the bundled SQLite driver and ranks all producer rows in the selected country/catalog in bounded-memory chunks; the Lab resolver uses prepared queries, FTS5 trigram and exact-key lookup. SHA-256, schema, row count and FTS checks gate opening. No online lookups or sample fallback.
 - Original OCR observations now feed guarded extraction unchanged. Spatial joins remain alternative producer lookup spans with original observation IDs, not replacement readings or additional votes. This removes the previously destructive spatial replacement step.
-- Candidate replacements may come from the primary LWIN producer/brand table or the supplemental X-Wines winery-name list. The X-Wines source is explicitly identified in diagnostics and is not treated as verified. Two distinct OCR engines with disjoint source observations must support the same candidate. Multiple variants/joins from one engine do not provide independent votes.
+- Producer replacements come only from the primary LWIN producer/brand table. Two distinct OCR engines with disjoint source observations must support the same producer; multiple variants/joins from one engine do not provide independent votes.
 - Whole-span edit distance is bounded (one edit, or two for long names). Ambiguous identities, close rivals, saturated retrieval, incomplete/generic headings, boilerplate, numeric/vintage contamination and over-budget work abstain.
 - Single-word names are deliberately not filled by this new resolver: they can be geography or generic names. Existing extraction remains responsible for those cases. Fuzzy retrieval may abstain often on saturated broad trigram queries; no recall claim is made.
 - Existing nonblank, different producers are protected. Only a directly observed one-edit correction can replace such a value; normalized-equal existing text is retained as-is.
 - Every new suggestion is **YELLOW / confirm manually**, never GREEN based on dictionary membership. No country, region, subregion, wine name or vintage is changed by this resolver.
-- TTB operating-name and OSM exact-name support remain separate source files. X-Wines exact names can support LWIN entities or appear as separate fallback candidates. These sources are lexical/name evidence, never extra OCR engines or confidence votes; exact normalized name matching does not prove shared legal identity.
+- Only primary LWIN producer/brand names are eligible database matches. TTB, OSM, and X-Wines source lists remain outside app assets and are not used as lexical support or fallback producer candidates.
 - Bounded at 128 spans and 32 candidate hits per span, with a 500 ms producer-stage budget covering setup plus lookup, excluding the existing guarded extractor's time. Deadline exhaustion, missing assets or lookup failure retain the prior producer and log the reason. These bounds are implemented, not yet phone-profiled.
 - Diagnostics preserve before/after producer, source/database version, observed span, engine, observation IDs, matched group ID/name, edit distance, lexical support IDs, decision reason and lookup time. Existing split CSV export remains in use.
 
@@ -66,21 +66,20 @@ Install `openpyxl` in an isolated Python environment for XLSX input. The raw wor
 python tools/producer-sources/prepare_primary.py \
   --primary /path/to/LWINdatabase.xlsx \
   --provenance tools/producer-sources/primary-provenance.json \
-  --support-dir /path/to/filtered/source/layers \
   --out /tmp/producer-gazetteer-v1
 
 # Publish the primary producer table, manifest and NOTICE for the Settings lookup.
 mkdir -p app/src/main/assets/producer-gazetteer-v1
 cp /tmp/producer-gazetteer-v1/{producers.sqlite,manifest.json,NOTICE.md} app/src/main/assets/producer-gazetteer-v1/
-# Keep wine and auxiliary support indexes in the debug-only Lab asset directory.
-cp /tmp/producer-gazetteer-v1/{wines.sqlite,ttb-support.sqlite,osm-support.sqlite} app/src/debug/assets/producer-gazetteer-v1/
+# Package the linked-wine index in main assets with the primary producer database.
+cp /tmp/producer-gazetteer-v1/wines.sqlite app/src/main/assets/producer-gazetteer-v1/
 
 python tools/producer-sources/compare_primary.py \
   --asset /tmp/producer-gazetteer-v1 \
   --mirror /path/to/pinned/mirror/files \
   --out tools/producer-sources/primary-comparison.json
 
-# Refresh latest OpenWineMap and X-Wines candidates in debug assets; primary LWIN stays unchanged.
+# Optional offline source audit only; output is kept outside app assets.
 python tools/producer-sources/refresh_open_candidates.py
 ```
 
@@ -88,7 +87,7 @@ Keep NOTICE.md with the assets; all source licenses and modifications are docume
 
 ## Validation and limits
 
-Host tests exercise real SQLite/FTS asset generation and packaged hashes, strict type/status/name filtering, X-Wines candidate provenance and LWIN non-overlap, numeric Excel IDs, unavailable/mismatched source gates and debug-only wiring. Actual Kotlin checks exercise resolver decisions and the final Lab summary, including original-observation preservation, two-engine evidence, shared-observation rejection, collisions, budget expiry and protection of other fields.
+Host tests exercise real SQLite/FTS asset generation and packaged hashes, strict type/status/name filtering, offline supplemental-source provenance, numeric Excel IDs, unavailable/mismatched source gates, and normal-app benchmark wiring. Actual Kotlin checks exercise resolver decisions and the benchmark summary, including original-observation preservation, two-engine evidence, shared-observation rejection, collisions, budget expiry and protection of other fields.
 
 No Android SDK is installed in this workspace. These checks do **not** constitute a complete Android build, native SQLite execution on a phone or a new recognition benchmark. The next test is the latest Lab on phone with the packaged primary asset, compared with saved v2 results. No accuracy improvement or ≥80% completion result is claimed.
 

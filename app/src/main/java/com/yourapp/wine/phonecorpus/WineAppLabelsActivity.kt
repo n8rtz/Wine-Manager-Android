@@ -95,8 +95,8 @@ class WineAppLabelsActivity : ComponentActivity() {
             item {
                 Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
                 Text("125 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
-                Text("This screen uses all 125 retained rows in the updated workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded. The full legacy 168-photo run is not replayed.", style = MaterialTheme.typography.bodySmall)
-                Text("Private debug test. The source repository declares no image license; do not redistribute these photos beyond authorized project use.", style = MaterialTheme.typography.bodySmall)
+                Text("This normal-app benchmark uses all 125 retained rows in the updated workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded. The full legacy 168-photo run is not replayed.", style = MaterialTheme.typography.bodySmall)
+                Text("Private on-device benchmark. The source repository declares no image license; do not redistribute these photos or an APK containing them beyond authorized project use.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
@@ -105,8 +105,8 @@ class WineAppLabelsActivity : ComponentActivity() {
                         Text(mode.title)
                     }
                 }
-                Text("Prod v3.0 reproduces the pre-supplement Lab pipeline with LWIN-only producer data; Lab v4 includes the later supplemental candidate sources.", style = MaterialTheme.typography.bodySmall)
-                Text("The comparison table keeps one short row per version: Lab v4, Prod v3.0, Prod v2.0, Prod v1.0. Run each option to populate its results on the same 125 workbook photos. Resume skips completed photos; failures and partial runs can be retried.", style = MaterialTheme.typography.bodySmall)
+                Text("Lab v4 uses verified LWIN producer data only. Unverified TTB, OSM, and X-Wines name lists are excluded from the producer database.", style = MaterialTheme.typography.bodySmall)
+                Text("The comparison table keeps one short row per version: Lab v4, Prod v3.0, Prod v2.0, Prod v1.0. Lab v4 and Prod v3.0 both use LWIN-only producer data; run each option on the same 125 workbook photos. Resume skips completed photos; failures and partial runs can be retried.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
@@ -148,7 +148,7 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             item {
                 Text("Gazetteer database coverage", style = MaterialTheme.typography.titleMedium)
-                Text("Known workbook values and accepted aliases are matched exactly after normalization. Counts are distinct test labels present in each database, checked on the scoring side only; none of these reference values are passed to OCR.", style = MaterialTheme.typography.bodySmall)
+                Text("Known workbook values and accepted aliases are matched exactly after normalization. Counts are distinct test labels present in each database, checked on the scoring side only; unverified TTB, OSM, and X-Wines lists are not packaged or passed to OCR.", style = MaterialTheme.typography.bodySmall)
                 SelectionContainer {
                     Column(Modifier.horizontalScroll(rememberScrollState())) {
                         val width = 88.dp

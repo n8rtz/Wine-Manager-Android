@@ -41,4 +41,6 @@ class ProducerIterationTests(unittest.TestCase):
         s=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/ProducerRepairDeviceTest.kt').read_text()
         for forbidden in ['FillEngine','EvidenceExtractor(', 'TextLabFormPreview.append','WineScannerServices']:self.assertNotIn(forbidden,s)
         self.assertIn('repair.repair(',s)
-        for p in (ROOT/'app/src/main').rglob('*.kt'):self.assertNotIn('ProducerRepair',p.read_text())
+        production_roots=[ROOT/'app/src/main/java/com/yourapp/wine/capture',ROOT/'app/src/main/java/com/yourapp/wine/fill']
+        for root in production_roots:
+            for p in root.rglob('*.kt'):self.assertNotIn('ProducerRepair',p.read_text())

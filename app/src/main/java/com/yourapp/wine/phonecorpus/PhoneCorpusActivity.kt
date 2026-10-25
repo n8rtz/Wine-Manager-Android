@@ -77,7 +77,7 @@ class PhoneCorpusActivity:ComponentActivity() {
                         Text(mode.title,Modifier.padding(top=10.dp))
                     }
                 }
-                Text("Each option runs only its selected implementation. Prod v1.0 is the Add Wine scanner; Prod v2.0 is the guarded-producer path; Prod v3.0 reproduces the pre-supplement Lab pipeline with LWIN-only producer data; Lab v4 adds the newer supplemental candidate sources. Saved historical rows are comparisons only, never rerun.",style=MaterialTheme.typography.bodySmall)
+                Text("Each option runs only its selected implementation. Prod v1.0 is the Add Wine scanner; Prod v2.0 is the guarded-producer path; Prod v3.0 reproduces the pre-supplement Lab pipeline with LWIN-only producer data; Lab v4 uses the current spatial pipeline with verified LWIN producer data only. Saved historical rows are comparisons only, never rerun.",style=MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)

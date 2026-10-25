@@ -21,7 +21,7 @@ class LinkedWineAssetChecks(unittest.TestCase):
                 self.assertEqual(c.execute('SELECT count(*) FROM wine_fts WHERE wine_fts MATCH ?',('"crys"',)).fetchone()[0],1)
                 self.assertEqual(c.execute('PRAGMA foreign_key_check').fetchall(),[])
     def test_packaged_links_and_actual_lookup_sql(self):
-        folder=ROOT/'app/src/debug/assets/producer-gazetteer-v1'
+        folder=ROOT/'app/src/main/assets/producer-gazetteer-v1'
         primary=ROOT/'app/src/main/assets/producer-gazetteer-v1'
         manifest=json.loads((primary/'manifest.json').read_text())
         self.assertEqual(manifest['schema'],2)
@@ -40,9 +40,9 @@ class LinkedWineAssetChecks(unittest.TestCase):
             codes=sum(len(json.loads(r[0])) for r in c.execute('SELECT lwin7 FROM wine_links'))
             self.assertEqual(codes,manifest['wine_lwin_records'])
     def test_runtime_scope_and_budget(self):
-        preview=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
+        preview=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
         self.assertRegex(preview,r'LinkedWineResolver\(linkedIndex(?:,onFailureTelemetry=\{[^}]+\})?\)\.resolve\(before,wineBefore,decision,spans,checkProducerBudget\)')
         self.assertIn('wine_gazetteer_lwin7',preview)
         self.assertIn('linked_wine_candidate',preview)
-        v2=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
+        v2=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
         self.assertNotIn('LinkedWineResolver',v2)

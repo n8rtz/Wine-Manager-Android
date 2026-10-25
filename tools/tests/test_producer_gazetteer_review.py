@@ -34,5 +34,5 @@ class ProducerGazetteerReviewChecks(unittest.TestCase):
         self.assertEqual(m['verification_kind'],'official-export-acquisition-attested')
         self.assertEqual(m['records'],33160)
         self.assertFalse((ROOT/'app/src/debug/assets/producer-gazetteer-v1/manifest.json').exists())
-        runner=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text()
+        runner=(ROOT/'app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text()
         self.assertNotIn('producer-gazetteer-review',runner)

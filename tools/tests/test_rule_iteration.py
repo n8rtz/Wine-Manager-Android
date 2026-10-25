@@ -42,7 +42,7 @@ class RuleIterationTests(unittest.TestCase):
             self.assertFalse((p/'bad').exists())
 
     def test_default_rules_remain_off_and_extractor_not_used_for_baseline(self):
-        config=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/evidence/EvidenceRankingConfig.kt').read_text()
+        config=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceRankingConfig.kt').read_text()
         self.assertIn('equivalentNames:Boolean=false',config)
         self.assertIn('engineAgreement:Boolean=false',config)
         self.assertIn('cuveeRole:Boolean=false',config)

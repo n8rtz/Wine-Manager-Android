@@ -11,7 +11,7 @@
     "retrieved_at": "2026-10-24",
     "review_note": "User supplied workbook in response to request for primary Liv-ex export. Workbook schema and live wine producer fields inspected; GitHub bytes verified. Not independently downloaded from Liv-ex or cryptographically signed by Liv-ex."
   },
-  "version": "producer-wine-primary-v2",
+  "version": "producer-wine-primary-v3-lwin-only",
   "wine_database_sha256": "83ac9248e85efa238c9c95e949396e8d92a057833b3d3ddb929caa06858ba01c",
   "wine_names": 101326,
   "wine_links": 154405,
@@ -26,50 +26,5 @@
     "not_explicit_wine": 20369,
     "missing_identity": 29
   },
-  "support": {
-    "ttb": {
-      "file": "ttb-support.sqlite",
-      "sha256": "a90aabae3d71b6ae8febbb52e370f9ea29d3bd0780d94df7afc1c4329fd5285a",
-      "input_sha256": "17028f0fe0c1599222bf6bc898048bd8bdf0432f78b111e7a84cb45efb59c0c5",
-      "license": "TTB provenance pending review"
-    },
-    "osm": {
-      "file": "osm-support.sqlite",
-      "sha256": "f3fe2227885dbb3b9d7f0c83b09d18c45c8504d01b7e3784ca46f212bf72875a",
-      "records": 15354,
-      "support_rows": 15354,
-      "input_archive_sha256": "a3481829930bc58babd71e22e5c31382ba3458c76066e2b42bbc04b29e51ea53",
-      "source_repo": "openhistorymap/openwinemap",
-      "source_commit": "1f4bf605d1938844c275e7ec0ae0e23141b4a61e",
-      "snapshot_date": "2026-10-25T03:00:02Z",
-      "license": "ODbL-1.0",
-      "attribution": "© OpenStreetMap contributors; snapshot via OpenHistoryMap/openwinemap"
-    },
-    "xwines": {
-      "file": "xwines-candidates.sqlite",
-      "sha256": "f1a426ef7f2ccd366ae6a6dc62a17856c3b7c24b480378e280464b59bb88dfce",
-      "candidates": 19085,
-      "unique_candidate_keys": 18945,
-      "new_distinct_names_vs_primary": 18945,
-      "new_distinct_names_vs_current_sources": 18006,
-      "support_rows": 30510,
-      "total_source_names": 30510,
-      "unique_source_names": 30190,
-      "source_wines": 100646,
-      "source_countries": 62,
-      "source_regions": 2160,
-      "input_archive_sha256": "c351759daf841a0cc8d905873698d758abb3d8d263917895964ac4e6f8f47e44",
-      "source_repo": "JamesOH5/Xwines-Atlas",
-      "source_commit": "7f9b50c1241995693d708f5a628a57dae3aee7d5",
-      "source_date": "2026-06-08T20:36:33.403558+00:00",
-      "dataset_repo": "rogerioxavier/X-Wines",
-      "dataset_commit": "5e43c7f38ff4abaee1815f84dbdd2b54aa873b1d",
-      "license": "CC0-1.0",
-      "identity_status": "unverified_candidate_names_only",
-      "atlas_repo_license": null,
-      "citation": "de Azambuja, Morais & Filipe (2023), X-Wines, https://doi.org/10.3390/bdcc7010020"
-    }
-  },
-  "attribution": "LWIN by Liv-ex, CC BY 4.0; producer/title and explicit WINE fields with LWIN7 relationships retained; non-wine/inactive/missing producer records excluded; no inferred aliases",
-  "support_attribution": "OSM: © OpenStreetMap contributors, ODbL 1.0, latest pinned OpenWineMap snapshot; TTB: supplied FOIA permit snapshot, separate; X-Wines: CC0-1.0 upstream dataset, winery-name candidate supplement only, source/citation recorded in manifest. No support source independently establishes label producer identity or votes as an OCR engine."
+  "attribution": "LWIN by Liv-ex, CC BY 4.0; producer/title and explicit WINE fields with LWIN7 relationships retained; non-wine/inactive/missing producer records excluded; no inferred aliases"
 }

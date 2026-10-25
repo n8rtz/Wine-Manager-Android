@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_for": "debug_lab_candidate_lookup_only",
+  "generated_for": "offline_source_review_only",
   "osm": {
     "repo": "openhistorymap/openwinemap",
     "commit": "1f4bf605d1938844c275e7ec0ae0e23141b4a61e",
@@ -107,6 +107,8 @@
   },
   "artifacts": {
     "osm_support_sha256": "f3fe2227885dbb3b9d7f0c83b09d18c45c8504d01b7e3784ca46f212bf72875a",
-    "xwines_candidates_sha256": "f1a426ef7f2ccd366ae6a6dc62a17856c3b7c24b480378e280464b59bb88dfce"
+    "xwines_candidates_sha256": "f1a426ef7f2ccd366ae6a6dc62a17856c3b7c24b480378e280464b59bb88dfce",
+    "app_manifest_modified": false,
+    "packaged_in_app_assets": false
   }
 }

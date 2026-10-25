@@ -24,10 +24,10 @@ from prepare_primary import normalize
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PRIMARY = ROOT / "app/src/main/assets/producer-gazetteer-v1/producers.sqlite"
-DEFAULT_TTB = ROOT / "app/src/debug/assets/producer-gazetteer-v1/ttb-support.sqlite"
-DEFAULT_OLD_OSM = ROOT / "app/src/debug/assets/producer-gazetteer-v1/osm-support.sqlite"
+DEFAULT_TTB = None
 DEFAULT_MANIFEST = ROOT / "app/src/main/assets/producer-gazetteer-v1/manifest.json"
-DEFAULT_OUT = ROOT / "app/src/debug/assets/producer-gazetteer-v1"
+DEFAULT_OUT = Path("/tmp/wine-producer-candidate-review")
+DEFAULT_REPORT = ROOT / "tools/producer-sources/supplemental-source-refresh.json"
 MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
 MAX_HTML_BYTES = 48 * 1024 * 1024
 UA = "Wine-Manager-Android supplemental producer data refresh (GitHub API; no auth)"
@@ -219,10 +219,16 @@ def db_hash(path: Path) -> str:
 
 
 def refresh(out: Path, manifest_path: Path, primary: Path, ttb: Path | None,
-            osm_commit: str | None = None, xwines_commit: str | None = None) -> dict:
+            osm_commit: str | None = None, xwines_commit: str | None = None,
+            report_path: Path = DEFAULT_REPORT) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     if not primary.exists() or not manifest_path.exists():
         raise ValueError("Verified primary LWIN database and manifest are required")
+    if out.resolve().is_relative_to((ROOT / "app/src").resolve()):
+        raise ValueError("Unverified source-review databases cannot be written into packaged app assets")
+    packaged_manifest = json.loads(manifest_path.read_text())
+    if packaged_manifest.get("support") or packaged_manifest.get("support_attribution"):
+        raise ValueError("Remove unverified support sources from the packaged manifest before source review")
     with tempfile.TemporaryDirectory(prefix="wine-source-refresh-") as temporary:
         temp = Path(temporary)
         osm_source = repo_snapshot("openhistorymap/openwinemap", osm_commit, temp)
@@ -260,7 +266,7 @@ def refresh(out: Path, manifest_path: Path, primary: Path, ttb: Path | None,
         osm_renamed_ids = {item for item in set(old_id_to_key) & set(new_id_to_key) if old_id_to_key[item] != new_id_to_key[item]}
         lwin_old_osm = lwin_keys & old_osm_keys
         lwin_new_osm = lwin_keys & new_osm_keys
-        result = dict(schema_version=1, generated_for="debug_lab_candidate_lookup_only",
+        result = dict(schema_version=1, generated_for="offline_source_review_only",
             osm=dict(repo=osm_source["repo"], commit=osm_source["commit"], commit_date=osm_source["commit_date"],
                      archive_sha256=osm_source["archive_sha256"], archive_bytes=osm_source["archive_bytes"],
                      url=osm_source["archive_url"], license="ODbL-1.0", **new_osm_counts,
@@ -281,35 +287,14 @@ def refresh(out: Path, manifest_path: Path, primary: Path, ttb: Path | None,
         xwines_destination = out / "xwines-candidates.sqlite"
         os.replace(new_osm_db, osm_destination)
         os.replace(xwines_db, xwines_destination)
-        manifest = json.loads(manifest_path.read_text())
-        support = manifest.setdefault("support", {})
-        support["osm"] = dict(file=osm_destination.name, sha256=db_hash(osm_destination),
-            records=new_osm_counts["records"], support_rows=new_osm_counts["support_rows"],
-            input_archive_sha256=osm_source["archive_sha256"], source_repo=osm_source["repo"],
-            source_commit=osm_source["commit"], snapshot_date=osm_source["commit_date"],
-            license="ODbL-1.0", attribution="© OpenStreetMap contributors; snapshot via OpenHistoryMap/openwinemap")
-        support["xwines"] = dict(file=xwines_destination.name, sha256=db_hash(xwines_destination),
-            candidates=xwines_counts["candidates"], unique_candidate_keys=xwines_counts["unique_candidate_keys"],
-            new_distinct_names_vs_primary=len(xwines_keys-lwin_keys),
-            new_distinct_names_vs_current_sources=source_not_yet_covered,
-            support_rows=xwines_counts["support_rows"], total_source_names=len(names),
-            unique_source_names=dataset["unique_raw_names"], source_wines=dataset["grand_total_wines"],
-            source_countries=dataset["countries"], source_regions=dataset["regions"],
-            input_archive_sha256=xwines_source["archive_sha256"], source_repo=xwines_source["repo"],
-            source_commit=xwines_source["commit"], source_date=dataset.get("loaded_at"),
-            dataset_repo="rogerioxavier/X-Wines", dataset_commit=xwines_source_commit, license="CC0-1.0",
-            identity_status="unverified_candidate_names_only", atlas_repo_license=xwines_source["repository_license"],
-            citation="de Azambuja, Morais & Filipe (2023), X-Wines, https://doi.org/10.3390/bdcc7010020")
-        manifest["support_attribution"] = (
-            "OSM: © OpenStreetMap contributors, ODbL 1.0, latest pinned OpenWineMap snapshot; "
-            "TTB: supplied FOIA permit snapshot, separate; "
-            "X-Wines: CC0-1.0 upstream dataset, winery-name candidate supplement only, source/citation recorded in manifest. "
-            "No support source independently establishes label producer identity or votes as an OCR engine.")
-        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
-        result["artifacts"] = {"osm_support_sha256": support["osm"]["sha256"],
-                               "xwines_candidates_sha256": support["xwines"]["sha256"]}
-        result_path = out / "supplemental-source-refresh.json"
-        result_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+        result["artifacts"] = {
+            "osm_review_database_sha256": db_hash(osm_destination),
+            "xwines_review_database_sha256": db_hash(xwines_destination),
+            "review_output_directory": str(out.resolve()),
+            "app_manifest_modified": False,
+        }
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
         return result
 
 

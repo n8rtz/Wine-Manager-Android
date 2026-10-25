@@ -154,11 +154,11 @@ def main() -> None:
 
     manifest = json.loads(SOURCE_MANIFEST.read_text())
     manifest["image_count"] = len(records)
-    manifest["status"] = "125 retained workbook rows staged for the debug-only benchmark; owner-removed workbook rows and IMG_2732.jpeg remain excluded"
+    manifest["status"] = "125 retained workbook rows staged for the normal-app benchmark; owner-removed workbook rows and IMG_2732.jpeg remain excluded"
     manifest["repository_images"] = {
         "source_repo": "AntoninLeroy/wine_label_reader_toolkit",
         "source_commit": OLD_SOURCE_COMMIT,
-        "license": "No license declared in repository metadata. Exact workbook-linked images were already present in the legacy debug assets and verified against workbook SHA-256 values; authorized project/test use only.",
+        "license": "No license declared in repository metadata. Exact workbook-linked images are packaged in the main app assets and verified against workbook SHA-256 values; authorized project use only.",
         "image_count": sum(entry["source_repo"] == "AntoninLeroy/wine_label_reader_toolkit" for entry in source_entries),
         "retrieval": "Reused existing local files only after matching every workbook image_sha256; linked upstream image bytes differ from the workbook's frozen image bytes, so the hash-verified workbook image is retained.",
     }
@@ -183,7 +183,8 @@ def main() -> None:
         "new_zip_photos_visually_checked": 22,
     })
     manifest["included_images"] = source_entries
-    manifest["app_debug_asset_root"] = "app/src/debug/assets/wine-app-labels-v1"
+    manifest.pop("app_debug_asset_root", None)
+    manifest["app_main_asset_root"] = "app/src/main/assets/wine-app-labels-v1"
     SOURCE_MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     print(f"Rebuilt {len(records)} labels and verified {len(source_entries)} source images")
 

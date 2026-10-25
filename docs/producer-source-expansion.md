@@ -1,6 +1,6 @@
 # Producer-source cleanup and expansion
 
-> Current expansion: the verified LWIN catalog remains the primary layer. Latest OpenWineMap support and an X-Wines supplemental candidate index are now refreshed automatically into debug/Lab assets. Earlier benchmark-overlap figures below are retired because the owner scrubbed and replaced the former 168-image reference; no source decisions here use those figures.
+> Historical source-expansion audit: OpenWineMap, TTB, and X-Wines lists were evaluated as possible supplements. They were not independently verified as label producers and have been removed from packaged app assets and runtime lookup. The active producer source is verified LWIN only. Earlier benchmark-overlap figures below are retired because the owner scrubbed and replaced the former 168-image reference.
 
 ## Completed, not just proposed
 
@@ -41,7 +41,7 @@ The previous lexical-overlap report used the retired 168-image reference and is 
 
 X-Wines reports 100,646 wines across 62 countries and 2,160 regions. Its dataset repository declares CC0-1.0. The refreshed name list is extracted from XWines-Atlas' precomputed payload; that repository has no separate license declaration, so this is explicitly a candidate-only supplement with both repositories, revisions, hashes and the required dataset paper citation recorded in the asset manifest/NOTICE. The source list has duplicate normalized names and no verified per-name country/role in this extracted table; duplicates remain separate IDs to preserve ambiguity. No country, alias or LWIN identity is inferred.
 
-The current candidate database is `app/src/debug/assets/producer-gazetteer-v1/xwines-candidates.sqlite`. It does not enlarge or alter the 33,160-row primary LWIN table and is not present in release source sets. The existing conservative two-engine/disjoint-observation, separation, edit-distance, and existing-producer gates still apply.
+Historical candidate-database evaluation is documented here, but no TTB, OSM, or X-Wines candidate database is currently packaged in any app source set or used by the resolver. Only the 33,160-row primary LWIN producer table is eligible for producer matching.
 
 ## Requested sources: evidence and actual acquisition status
 

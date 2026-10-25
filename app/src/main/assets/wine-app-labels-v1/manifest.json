@@ -10,9 +10,9 @@
     "main"
   ],
   "updated_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
-  "rights": "No license is declared for the two source repositories. Images are included in this debug-only project/test at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
+  "rights": "No license is declared for the two source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
   "inputs_sha256": "63c14f70914fcfc84c58ae9bc5b18cc77bb31349e46878ab34cb175e608bfa85",
   "evaluation_set_sha256": "3cdf0d56f6472cd4538e1cd633c4073ed12352411064fe136f45727b392a9d3b",
   "scoring_sha256": "f93d8bf27079803687f5e11e8e5529b494bbbe534eb00926f568b135ff03da35",
-  "gazetteer_coverage_sha256": "3de9fdf1484bac21407899169586a226a85231be77f13b64b66c3de0cbed7204"
+  "gazetteer_coverage_sha256": "35224d31530eb356456ff8411a7805b60bf294a87b3e05152b6ca3ef9c1db3f3"
 }

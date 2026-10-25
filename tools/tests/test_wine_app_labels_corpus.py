@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REVIEW = ROOT / "tools/evaluation/wine-app-labels-review-v1"
-ASSETS = ROOT / "app/src/debug/assets/wine-app-labels-v1"
+ASSETS = ROOT / "app/src/main/assets/wine-app-labels-v1"
 
 
 class WineAppLabelsCorpusTests(unittest.TestCase):
@@ -44,12 +44,12 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(coverage["dataset_count"], 125)
         self.assertIn("never provided to the OCR runner", coverage["method"])
         rows = {row["id"]: row for row in coverage["databases"]}
-        self.assertEqual(set(rows), {"lwin_producers", "ttb_support", "osm_support", "xwines_candidates", "lwin_wines", "appellations", "wine_geography"})
+        self.assertEqual(set(rows), {"lwin_producers", "lwin_wines", "appellations", "wine_geography"})
         self.assertEqual(rows["lwin_producers"]["matched_labels"], 86)
         self.assertEqual(rows["lwin_wines"]["matched_labels"], 42)
         self.assertEqual(rows["appellations"]["matched_labels"], 89)
         self.assertTrue(all(0 <= row["matched_labels"] <= 125 for row in rows.values()))
-        activity = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         self.assertIn("Gazetteer database coverage", activity)
         self.assertIn("Known workbook values and accepted aliases", activity)
 
@@ -86,11 +86,11 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertTrue((REVIEW / "reference-data-scrubbed-updated.xlsx").is_file())
         self.assertEqual(len(json.loads((ASSETS / "inputs.json").read_text())["images"]), 125)
 
-    def test_debug_profile_routes_to_the_125_label_test(self):
+    def test_main_profile_routes_to_the_125_label_test(self):
         profile = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/ProfileScreen.kt").read_text()
-        manifest = (ROOT / "app/src/debug/AndroidManifest.xml").read_text()
-        activity = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
-        viewmodel = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         self.assertIn("com.yourapp.wine.phonecorpus.WineAppLabelsActivity", profile)
         self.assertIn("WineAppLabelsActivity\" android:exported=\"false\"", manifest)
         self.assertIn('Text("Large image dataset test"', activity)
@@ -98,10 +98,16 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('PhoneCorpusRunner.runImage(', viewmodel)
         self.assertIn('"wine-app-labels-v1"', viewmodel)
         self.assertIn("125 retained workbook-linked wine labels", activity)
-        self.assertIn("all 125 retained rows in the updated workbook", activity)
+        producer_manifest = json.loads((ROOT / "app/src/main/assets/producer-gazetteer-v1/manifest.json").read_text())
+        self.assertNotIn("support", producer_manifest)
+        self.assertNotIn("support_attribution", producer_manifest)
+        for name in ("ttb-support.sqlite", "osm-support.sqlite", "xwines-candidates.sqlite"):
+            self.assertFalse((ROOT / "app/src/main/assets/producer-gazetteer-v1" / name).exists())
+            self.assertFalse((ROOT / "app/src/debug/assets/producer-gazetteer-v1" / name).exists())
         self.assertIn("val columnWidth = 88.dp", activity)
+        self.assertIn("Unverified TTB, OSM, and X-Wines name lists are excluded", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
-        runner = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
+        runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
         for label in ("Lab v4", "Prod v3.0", "Prod v2.0", "Prod v1.0"):
             self.assertIn(f'("{label}"', runner)
 

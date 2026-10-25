@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package all 125 retained workbook labels as a debug-only phone test corpus."""
+"""Package all 125 retained workbook labels for the normal-app benchmark."""
 from __future__ import annotations
 
 import hashlib
@@ -10,7 +10,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-DEST = ROOT / "app/src/debug/assets/wine-app-labels-v1"
+DEST = ROOT / "app/src/main/assets/wine-app-labels-v1"
 SOURCE_ZIP = "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/Wine%20App%20Labels.zip"
 WORKBOOK = "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/reference-data-scrubbed.xlsx"
 WORKBOOK_BLOB = "5e1e2b0f8938f1ed789c9f2430cd37881a2b2bdc"
@@ -125,7 +125,7 @@ def main() -> None:
         "source_repositories": ["AntoninLeroy/wine_label_reader_toolkit", "n8rtz/Wine-Reference-Drop"],
         "source_commits": sorted({entry["source_url"].split("/blob/")[-1].split("/")[0] for entry in inputs if "/blob/" in entry["source_url"]}),
         "updated_workbook_sha256": updated_workbook_sha256,
-        "rights": "No license is declared for the two source repositories. Images are included in this debug-only project/test at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
+        "rights": "No license is declared for the two source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
         "inputs_sha256": hashlib.sha256(inputs_bytes).hexdigest(),
         "evaluation_set_sha256": hashlib.sha256(eval_bytes).hexdigest(),
         "scoring_sha256": hashlib.sha256(scoring_bytes).hexdigest(),

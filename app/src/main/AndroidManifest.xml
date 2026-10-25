@@ -39,6 +39,7 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.yourapp.wine.phonecorpus.WineAppLabelsActivity" android:exported="false" />
     </application>
 
 </manifest>

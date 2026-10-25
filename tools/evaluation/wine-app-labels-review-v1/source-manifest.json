@@ -7,7 +7,7 @@
   "archive_sha256": "c2eb33faef1f16d8410cb27e98ff04ec4da63d82d22a2737ff8dced1e4c23d2c",
   "image_count": 125,
   "license": "No license declared in repository metadata. Staged only for this user-authorized project/test workflow; do not redistribute beyond authorized use without confirming rights.",
-  "status": "125 retained workbook rows staged for the debug-only benchmark; owner-removed workbook rows and IMG_2732.jpeg remain excluded",
+  "status": "125 retained workbook rows staged for the normal-app benchmark; owner-removed workbook rows and IMG_2732.jpeg remain excluded",
   "source_commit": "920594a3088d42fb83a93b47b1e32c587f7ad174",
   "source_commit_date": "2026-10-25T19:03:26Z",
   "validation": {
@@ -1320,12 +1320,12 @@
   ],
   "updated_workbook": "reference-data-scrubbed-updated.xlsx",
   "workbook_update_audit": "workbook-update-audit.json",
-  "app_debug_asset_root": "app/src/debug/assets/wine-app-labels-v1",
   "repository_images": {
     "source_repo": "AntoninLeroy/wine_label_reader_toolkit",
     "source_commit": "eb2c14ba4f9a1b6efaa476696439754a9abde8ce",
-    "license": "No license declared in repository metadata. Exact workbook-linked images were already present in the legacy debug assets and verified against workbook SHA-256 values; authorized project/test use only.",
+    "license": "No license declared in repository metadata. Exact workbook-linked images are packaged in the main app assets and verified against workbook SHA-256 values; authorized project use only.",
     "image_count": 103,
     "retrieval": "Reused existing local files only after matching every workbook image_sha256; linked upstream image bytes differ from the workbook's frozen image bytes, so the hash-verified workbook image is retained."
-  }
+  },
+  "app_main_asset_root": "app/src/main/assets/wine-app-labels-v1"
 }

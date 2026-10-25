@@ -31,7 +31,7 @@ class PipelineFunnelChecks(unittest.TestCase):
                 fixture.prepare(source, [])
 
     def test_same_aggregate_reaches_screen_scored_and_raw_exports(self):
-        base = ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus"
+        base = ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus"
         scoreboard = (base / "PhoneCorpusScoreboard.kt").read_text()
         self.assertIn("val funnel=F.aggregate(funnelLabels)", scoreboard)
         self.assertIn("csv.addAll(funnel.map { it.csv(mode.pipelineId) })", scoreboard)
@@ -44,7 +44,7 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn('result.remove("trace")', viewmodel)
 
     def test_field_matrix_keeps_six_columns_and_each_step_description_collapsed_by_default(self):
-        source = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
+        source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
         table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('TextButton(onClick={importCsv.launch', 1)[0]
         self.assertIn("val stepWidth=320.dp", table)
         self.assertIn("val fieldWidth=88.dp", table)
@@ -71,7 +71,7 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertNotIn("fontSize", table)
 
     def test_scored_result_import_and_persistence_are_separate_from_upload_splitting(self):
-        base = ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus"
+        base = ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus"
         activity = (base / "PhoneCorpusActivity.kt").read_text()
         viewmodel = (base / "PhoneCorpusViewModel.kt").read_text()
         parser = (base / "PhoneCorpusCsvTable.kt").read_text()
@@ -89,8 +89,8 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn("do not contain per-image pipeline gate telemetry", activity)
 
     def test_matrix_uses_only_measured_field_gates_and_preserves_scalar_csv_rows(self):
-        scoreboard = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
-        funnel = (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
+        scoreboard = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
+        funnel = (ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
         self.assertIn('id.startsWith("producer.") -> "producer"', funnel)
         self.assertIn('id.startsWith("wine.") -> "wine_name"', funnel)
         self.assertIn("val fieldScores=PhoneCorpusMath.fields.associate", scoreboard)
@@ -105,23 +105,25 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn('"score.complete"', scoreboard)
 
     def test_selected_mode_filters_exclusive_steps_and_complete_row_is_bottom(self):
-        source = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
-        scoreboard = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
+        source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
+        scoreboard = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
         self.assertIn("(!step.labOnly || mode.usesSpatialEvidence)", scoreboard)
         self.assertIn("(!step.productionOnly || !mode.usesSpatialEvidence)", scoreboard)
-        self.assertIn('it.id != "score.complete"', (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text())
+        self.assertIn('it.id != "score.complete"', (ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text())
         self.assertIn("var expandedFunnelSteps by rememberSaveable(state.mode) { mutableStateOf(emptySet<String>()) }", source)
         self.assertIn("board.matrix.last().step.id == \"score.complete\"", (ROOT / "tools/logic-checks/PipelineFunnelChecks.kt").read_text())
 
     def test_telemetry_does_not_enter_normal_add_wine_or_supply_reference_answers(self):
-        pure = (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
+        pure = (ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
         self.assertIn("latest attempt only", pure)
         self.assertIn("NOT_RECORDED", pure)
-        self.assertFalse((ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").exists())
-        resolver = (ROOT / "app/src/debug/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
+        self.assertTrue((ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").exists())
+        for path in (ROOT / "app/src/main/java/com/yourapp/wine/capture").rglob("*.kt"):
+            self.assertNotIn("PipelineFunnel", path.read_text())
+        resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
         self.assertIn("MAX_FUZZY_CANDIDATES=200", resolver)
         for name in ("ProducerResolver.kt", "LinkedWineResolver.kt"):
-            source = (ROOT / "app/src/debug/java/com/yourapp/wine/gazetteer" / name).read_text()
+            source = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer" / name).read_text()
             self.assertNotIn("scoring.json", source)
             self.assertNotIn("saved-production-v2", source)
 

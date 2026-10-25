@@ -2,23 +2,23 @@
 import unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-PHONE=ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus'
-LAB=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+PHONE=ROOT/'app/src/main/java/com/yourapp/wine/phonecorpus'
+LAB=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
 class BenchmarkVersionChecks(unittest.TestCase):
     def test_four_explicit_versions_and_short_comparison_names(self):
         runner=(PHONE/'PhoneCorpusRunner.kt').read_text()
-        for label,key in [('Lab v4','lab-v4-expanded-producers'),('Prod v3.0','production-v3.0-lwin-only'),('Prod v2.0','production-v2.0-guarded'),('Prod v1.0','production-v1.0-15s')]:
+        for label,key in [('Lab v4','lab-v4-lwin-only'),('Prod v3.0','production-v3.0-lwin-only'),('Prod v2.0','production-v2.0-guarded'),('Prod v1.0','production-v1.0-15s')]:
             self.assertIn(label,runner);self.assertIn(key,runner)
         self.assertIn('val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V3 || this==LAB',runner)
-        self.assertIn('val lwinOnlyProducerSource:Boolean get()=this==PRODUCTION_V3',runner)
         diagnostics=(PHONE/'PhoneCorpusPipelineDiagnostics.kt').read_text()
         self.assertIn('mode == "LAB" || mode == "PRODUCTION_V3"',diagnostics)
-        self.assertIn('profile=[^;]+;',diagnostics)
+        self.assertIn('producer=[0-9a-f]{64};wine=[0-9a-f]{64}',diagnostics)
         batch=(LAB/'TextLabBatch.kt').read_text()
-        self.assertIn('lwinOnlyProducerSource:Boolean=false',batch)
-        producer=(ROOT/'app/src/debug/java/com/yourapp/wine/gazetteer/ProducerGazetteer.kt').read_text()
-        self.assertIn('includeSupplementalSources:Boolean=true',producer)
-        self.assertIn('if(includeSupplementalSources) listOf("ttb","osm","xwines") else emptyList()',producer)
+        producer=(ROOT/'app/src/main/java/com/yourapp/wine/gazetteer/ProducerGazetteer.kt').read_text()
+        self.assertIn('Unverified supplemental producer sources are not permitted',producer)
+        self.assertNotIn('xwines',producer.lower())
+        self.assertNotIn('ttb-support.sqlite',producer.lower())
+        self.assertNotIn('osm-support.sqlite',producer.lower())
         page=(PHONE/'WineAppLabelsViewModel.kt').read_text()
         self.assertIn('PhoneCorpusRunner.Mode.entries.map { comparedMode ->',page)
         self.assertIn('scoreboard.build(comparisonPredictions, comparedMode).rows.single()',page)
@@ -28,7 +28,6 @@ class BenchmarkVersionChecks(unittest.TestCase):
         runner=(PHONE/'PhoneCorpusRunner.kt').read_text()
         self.assertEqual(runner.count('TextLabRunner.recognize('),1)
         self.assertIn('spatialPhrases=mode.usesSpatialEvidence,benchmarkOnly=true',runner)
-        self.assertIn('lwinOnlyProducerSource=mode.lwinOnlyProducerSource',runner)
         self.assertIn('it["stage"]==mode.summaryStage',runner)
         self.assertNotIn('compareGazetteer=true',runner)
         board=(PHONE/'PhoneCorpusScoreboard.kt').read_text()

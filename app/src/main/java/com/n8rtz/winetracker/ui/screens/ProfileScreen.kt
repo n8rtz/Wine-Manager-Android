@@ -449,7 +449,7 @@ fun ProfileScreen(
                                 Text("Large image dataset test")
                             },
                             supportingContent = {
-                                Text("Fresh OCR over the 22 retained owner-reviewed labels — private debug test")
+                                Text("Fresh OCR over all 125 retained workbook labels — on-device comparison")
                             },
                             modifier = Modifier.fillMaxWidth().clickable {
                                 context.startActivity(

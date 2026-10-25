@@ -29,8 +29,5 @@ fun main() {
     verify(resolver.resolve("keep",List(129) { spans()[0] }).acceptedId==null)
     verify(ProducerResolver(index(List(33) { primary.copy(id=it.toString()) })).resolve("",spans()).acceptedId==null)
     verify(ProducerResolver.normalize("Château d’Example")=="chateau d example")
-    val supplemental=entity("xwines:42","Domaine Example")
-    val supplementalResult=ProducerResolver(index(listOf(supplemental))).resolve("",spans())
-    verify(supplementalResult.acceptedId=="xwines:42" && supplementalResult.reason.contains("X-Wines winery-name candidate"))
     println("PASS: $checks conservative producer resolver checks (actual Kotlin; fixture data, no accuracy claim).")
 }

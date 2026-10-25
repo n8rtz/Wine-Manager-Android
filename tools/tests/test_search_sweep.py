@@ -62,7 +62,7 @@ class SearchSweepTests(unittest.TestCase):
         self.assertNotIn('FillEngine',test)
         self.assertNotIn('TextLabFormPreview.append',test)
         self.assertNotIn('WineScannerServices',test)
-        config=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/evidence/EvidenceSearchConfig.kt').read_text()
+        config=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceSearchConfig.kt').read_text()
         for name in CONFIGS:self.assertIn('"'+name+'"',config)
         self.assertIn('candidateLimit:Int=16,val beamLimit:Int=64',config)
         self.assertIn('diversify:Boolean=false',config)

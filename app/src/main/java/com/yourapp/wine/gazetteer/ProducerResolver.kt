@@ -4,7 +4,7 @@ import java.text.Normalizer
 import java.util.Locale
 import com.yourapp.wine.diagnostics.PipelineFunnel
 
-/** Lab-only candidate resolver. LWIN remains the primary index; supplemental X-Wines names are unverified candidates and always require manual confirmation. */
+/** Conservative resolver over verified primary LWIN producer/brand names; suggestions always require confirmation. */
 internal class ProducerResolver(private val index:Index,
     private val onFailureTelemetry:(Map<String,String>)->Unit={}) {
     data class Entity(val id:String,val name:String,val key:String,val support:Set<String> = emptySet())
@@ -19,7 +19,7 @@ internal class ProducerResolver(private val index:Index,
         val telemetry:Map<String,String> = emptyMap())
     class BudgetExceeded:RuntimeException()
     companion object {
-        const val VERSION="producer-primary-xwines-v2"
+        const val VERSION="producer-primary-lwin-v3"
         const val MAX_SPANS=128
         const val MAX_HITS=32
 
@@ -125,7 +125,6 @@ internal class ProducerResolver(private val index:Index,
         }
         trace.visit("existing",true);trace.visit("selected",true)
         trace.visit("changed",entity.name!=existing,"existing supported producer retained")
-        val sourceDescription=if(id.startsWith("xwines:")) "X-Wines winery-name candidate" else "primary LWIN producer/brand name"
-        return finish(entity.name,"$sourceDescription supported by two engines; confirm manually",matches,id)
+        return finish(entity.name,"primary LWIN producer/brand name supported by two engines; confirm manually",matches,id)
     }
 }

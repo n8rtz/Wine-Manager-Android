@@ -11,7 +11,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 LABELS = HERE / "candidate-labels.json"
-OUT = ROOT / "app/src/debug/assets/wine-app-labels-v1/gazetteer-coverage.json"
+OUT = ROOT / "app/src/main/assets/wine-app-labels-v1/gazetteer-coverage.json"
 DBS = ROOT / "app/src"
 
 
@@ -43,10 +43,7 @@ def main() -> None:
         raise ValueError(f"Expected 125 workbook labels, got {len(records)}")
 
     producer_db = DBS / "main/assets/producer-gazetteer-v1/producers.sqlite"
-    wine_db = DBS / "debug/assets/producer-gazetteer-v1/wines.sqlite"
-    ttb_db = DBS / "debug/assets/producer-gazetteer-v1/ttb-support.sqlite"
-    osm_db = DBS / "debug/assets/producer-gazetteer-v1/osm-support.sqlite"
-    xwines_db = DBS / "debug/assets/producer-gazetteer-v1/xwines-candidates.sqlite"
+    wine_db = DBS / "main/assets/producer-gazetteer-v1/wines.sqlite"
     appellation_db = DBS / "debug/assets/gazetteer-v1/wine_gazetteer.sqlite"
 
     def query_keys(path: Path, sql: str) -> dict[str, set[str]]:
@@ -61,9 +58,6 @@ def main() -> None:
 
     producer_indexes = {
         "lwin_producers": query_keys(producer_db, "SELECT name,key FROM producers"),
-        "ttb_support": query_keys(ttb_db, "SELECT id,key FROM support"),
-        "osm_support": query_keys(osm_db, "SELECT id,key FROM support"),
-        "xwines_candidates": query_keys(xwines_db, "SELECT id,key FROM candidates"),
     }
     wine_index = query_keys(wine_db, "SELECT id,key FROM wine_names")
 
@@ -90,9 +84,6 @@ def main() -> None:
 
     definitions = [
         ("lwin_producers", "LWIN producers", "producer"),
-        ("ttb_support", "TTB candidates", "producer"),
-        ("osm_support", "OSM candidates", "producer"),
-        ("xwines_candidates", "X-Wines candidates", "producer"),
         ("lwin_wines", "LWIN wine names", "wine_name"),
         ("appellations", "Appellations", "appellation"),
         ("wine_geography", "Regions/subregions", "place"),

@@ -6,7 +6,7 @@ import com.yourapp.wine.diagnostics.PipelineFunnel as F
 internal object PhoneCorpusPipelineDiagnostics {
     private val finished = setOf("complete", "no_text", "no_regions")
     private val successfulSummary = setOf("suggestions", "partial_suggestions", "no_fields", "complete")
-    private val verifiedPairVersion = Regex("[^:;]+:(?:profile=[^;]+;)?producer=[0-9a-f]{64};wine=[0-9a-f]{64};support=(?:[0-9a-f]{64}|none)")
+    private val verifiedPairVersion = Regex("[^:;]+:producer=[0-9a-f]{64};wine=[0-9a-f]{64}")
     fun capture(image: String, attempt: Int, mode: String, rows: List<Map<String, String>>,
         recorded: Map<String, F.Gate>, fields: Map<String, String>?, status: String?, fresh: Boolean): F.Label {
         val spatial = mode == "LAB" || mode == "PRODUCTION_V3"

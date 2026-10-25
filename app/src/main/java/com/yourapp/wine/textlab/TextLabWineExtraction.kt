@@ -88,7 +88,7 @@ internal object TextLabWineExtraction {
                         try {
                             try {
                                 if(!skip) producers=com.yourapp.wine.gazetteer.ProducerGazetteer.open(
-                                    context.applicationContext,checkBudget,includeSupplementalSources=!batch.lwinOnlyProducerSource) { step,passed ->
+                                    context.applicationContext,checkBudget) { step,passed ->
                                     setupStep=step;setup.visit(step,passed,"asset validation did not complete")
                                 }
                             }

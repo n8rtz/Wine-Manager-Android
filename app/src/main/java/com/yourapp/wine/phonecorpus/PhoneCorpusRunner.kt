@@ -23,12 +23,11 @@ internal object PhoneCorpusRunner {
     const val PACKAGED_IMAGE_COUNT=168
     const val ACTIVE_IMAGE_COUNT=106
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
-        LAB("Lab v4", "lab-v4-expanded-producers", "spatial_evidence_summary"),
+        LAB("Lab v4", "lab-v4-lwin-only", "spatial_evidence_summary"),
         PRODUCTION_V3("Prod v3.0", "production-v3.0-lwin-only", "spatial_evidence_summary"),
         PRODUCTION_V2("Prod v2.0", "production-v2.0-guarded", "evidence_summary"),
         PRODUCTION_V1("Prod v1.0", "production-v1.0-15s", null);
         val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V3 || this==LAB
-        val lwinOnlyProducerSource:Boolean get()=this==PRODUCTION_V3
     }
     fun sha(file:File):String {
         val md=MessageDigest.getInstance("SHA-256")
@@ -102,8 +101,7 @@ internal object PhoneCorpusRunner {
             } else {
                 val batch=TextLabBatch(listOf(TextLabImageKey(image,image)),setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true,
                     compareEvidence=true,anchorHybrid=true,repairProducer=true,
-                    spatialPhrases=mode.usesSpatialEvidence,benchmarkOnly=true,
-                    lwinOnlyProducerSource=mode.lwinOnlyProducerSource)
+                    spatialPhrases=mode.usesSpatialEvidence,benchmarkOnly=true)
                 val journal=batch.journals.single()
                 diagnosticJournal=journal
                 mark("input.decoded",false,"image decode did not complete")
