@@ -58,6 +58,7 @@ class PhoneCorpusActivity:ComponentActivity() {
         var exportIndex by rememberSaveable { mutableStateOf(0) }
         val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let { vm.saveExportPart(it,exportIndex) } }
         val importCsv=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::splitExistingCsv) }
+        val importResults=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::importResults) }
         DisposableEffect(state.busy) {
             if(state.busy) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             onDispose { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
@@ -82,11 +83,12 @@ class PhoneCorpusActivity:ComponentActivity() {
                 Text(state.message)
                 Text("Checkpointed: ${state.completed}/${state.total}")
                 if(state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                Button(onClick={vm.start()},enabled=!state.busy && state.board!=null && state.completed<state.total) { Text("Start / resume remaining photos") }
+                Button(onClick={vm.start()},enabled=!state.busy && !state.readOnly && state.board!=null && state.completed<state.total) { Text("Start / resume remaining photos") }
                 Row {
                     TextButton(onClick=vm::stop,enabled=state.busy) { Text("Stop after image") }
-                    TextButton(onClick={vm.start(true)},enabled=!state.busy && state.completed>0) { Text("Retry failed / partial") }
+                    TextButton(onClick={vm.start(true)},enabled=!state.busy && !state.readOnly && state.completed>0) { Text("Retry failed / partial") }
                 }
+                if(state.readOnly) Text("This saved or imported result table is persistent and read-only. Start a new run to collect OCR results with the installed build.",style=MaterialTheme.typography.bodySmall)
                 TextButton(onClick={newRun=true},enabled=!state.busy) { Text("New run (keep old results)") }
             }
             state.board?.let { board ->
@@ -101,8 +103,8 @@ class PhoneCorpusActivity:ComponentActivity() {
                     }
                     TextButton(onClick={clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n"+board.text))}) { Text("Copy scored stats") }
                     Button(onClick={vm.prepareExport(false)},enabled=!state.busy && state.csv!=null) { Text("Prepare scored CSV export") }
-                    TextButton(onClick={vm.prepareExport(true)},enabled=!state.busy && state.completed>0) { Text("Prepare raw diagnostics CSV export") }
-                    Text("CSV includes every scored field, saved comparisons, and pipeline_step bottleneck rows. Raw CSV also retains each label's stage statuses. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
+                    TextButton(onClick={vm.prepareExport(true)},enabled=!state.busy && state.completed>0 && !state.readOnly) { Text("Prepare raw diagnostics CSV export") }
+                    Text("Scored CSV includes field outcomes and aggregate pipeline_step bottleneck rows. Imported scored files do not contain per-image pipeline gate telemetry; no gates are inferred. Raw CSV retains stage statuses for on-device runs. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
                 }
                 item {
                     Text("Pipeline bottleneck matrix",style=MaterialTheme.typography.titleMedium)
@@ -110,7 +112,7 @@ class PhoneCorpusActivity:ComponentActivity() {
                         style=MaterialTheme.typography.bodySmall)
                     TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
                     if(showFunnel) SelectionContainer {
-                        val stepWidth=220.dp
+                        val stepWidth=320.dp
                         val fieldWidth=88.dp
                         val fieldTitles=PhoneCorpusMath.fields.map { field -> when(field) {
                             "wine_name" -> "Wine name"
@@ -147,14 +149,17 @@ class PhoneCorpusActivity:ComponentActivity() {
                                 if(section!=previousSection) Text(section,Modifier.width(viewportWidth).padding(top=10.dp,bottom=4.dp),style=MaterialTheme.typography.titleSmall)
                                 val expanded=row.step.id in expandedFunnelSteps
                                 Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                    Row(Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor),
+                                    Row(Modifier.width(stepWidth).heightIn(min=56.dp).border(1.dp,gridColor).padding(4.dp),
                                         verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
                                         TextButton(onClick={expandedFunnelSteps=if(expanded) expandedFunnelSteps-row.step.id else expandedFunnelSteps+row.step.id},
-                                            modifier=Modifier.width(44.dp),contentPadding=PaddingValues(0.dp)) {
+                                            modifier=Modifier.width(40.dp),contentPadding=PaddingValues(0.dp)) {
                                             Text(if(expanded) "−" else "+")
                                         }
-                                        Text("${row.step.branch} · ${row.step.title}",Modifier.weight(1f).padding(end=4.dp),
-                                            style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                        Column(Modifier.weight(1f).padding(end=4.dp)) {
+                                            Text(row.step.title,style=MaterialTheme.typography.bodySmall)
+                                            Text(row.step.branch,style=MaterialTheme.typography.labelSmall,
+                                                color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     }
                                     if(row.shared!=null) {
                                         Text(passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true,notReached=row.shared.notReached,notRecorded=row.shared.notRecorded,notApplicable=row.shared.notApplicable),
@@ -178,6 +183,8 @@ class PhoneCorpusActivity:ComponentActivity() {
                 }
             }
             item {
+                TextButton(onClick={importResults.launch(arrayOf("text/*","application/csv","application/octet-stream"))},enabled=!state.busy) { Text("Import scored results CSV") }
+                Text("Imports a scored Phone Corpus results CSV as a persistent, read-only table. It does not rerun OCR or infer per-photo pipeline gates.",style=MaterialTheme.typography.bodySmall)
                 TextButton(onClick={importCsv.launch(arrayOf("text/*","application/csv","application/octet-stream"))},enabled=!state.busy) { Text("Split an existing CSV for upload") }
                 state.exportParts.forEachIndexed { index,file ->
                     OutlinedButton(onClick={exportIndex=index;export.launch(file.name)},enabled=!state.busy) {

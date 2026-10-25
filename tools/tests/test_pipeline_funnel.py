@@ -46,13 +46,16 @@ class PipelineFunnelChecks(unittest.TestCase):
     def test_field_matrix_keeps_six_columns_and_each_step_description_collapsed_by_default(self):
         source = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
         table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('TextButton(onClick={importCsv.launch', 1)[0]
-        self.assertIn("val stepWidth=220.dp", table)
+        self.assertIn("val stepWidth=320.dp", table)
         self.assertIn("val fieldWidth=88.dp", table)
         self.assertIn("PhoneCorpusMath.fields.forEach", table)
         self.assertIn("board.matrix.forEach", table)
         self.assertIn('Text(if(expanded) "−" else "+")', table)
         self.assertIn("if(expanded) Text(row.step.definition", table)
-        self.assertIn("maxLines=1,overflow=TextOverflow.Ellipsis", table)
+        self.assertIn("Text(row.step.title,style=MaterialTheme.typography.bodySmall)", table)
+        self.assertIn("Text(row.step.branch,style=MaterialTheme.typography.labelSmall", table)
+        self.assertNotIn("Text(row.step.title,style=MaterialTheme.typography.bodySmall,maxLines", table)
+        self.assertNotIn("Text(row.step.branch,style=MaterialTheme.typography.labelSmall,maxLines", table)
         self.assertIn("passFailLabel(it.passed,it.failed,passColor,failColor,notReached=it.notReached", table)
         self.assertIn("if(row.shared!=null)", table)
         self.assertIn("Modifier.width(viewportWidth).border(1.dp,gridColor)", table)
@@ -66,6 +69,24 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn("rememberSaveable(state.mode)", source)
         self.assertNotIn("showFunnelDetails", source)
         self.assertNotIn("fontSize", table)
+
+    def test_scored_result_import_and_persistence_are_separate_from_upload_splitting(self):
+        base = ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus"
+        activity = (base / "PhoneCorpusActivity.kt").read_text()
+        viewmodel = (base / "PhoneCorpusViewModel.kt").read_text()
+        parser = (base / "PhoneCorpusCsvTable.kt").read_text()
+        self.assertIn('Text("Import scored results CSV")', activity)
+        self.assertIn('Text("Split an existing CSV for upload")', activity)
+        self.assertIn("vm::importResults", activity)
+        self.assertIn("fun importResults(uri:Uri)", viewmodel)
+        self.assertIn('"result_origin","imported_scored_csv"', viewmodel)
+        self.assertIn("noBackupFilesDir", viewmodel)
+        self.assertIn("readOnly=true", viewmodel)
+        self.assertIn("PhoneCorpusCsvTable.read(app,savedCsv)", viewmodel)
+        self.assertIn('"pipeline_step"', parser)
+        self.assertIn('"pipeline_funnel"', viewmodel)
+        self.assertIn("emptyList(),matrix", parser)
+        self.assertIn("do not contain per-image pipeline gate telemetry", activity)
 
     def test_matrix_uses_only_measured_field_gates_and_preserves_scalar_csv_rows(self):
         scoreboard = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
