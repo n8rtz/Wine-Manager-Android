@@ -45,14 +45,17 @@ object PostProcessingChecks {
         val empty=scan()
         check(empty.fields.values.all { it.value.isEmpty() && it.state==UiState.RED })
     }
-    fun boundedAssignmentKeepsAlternativesAndAbstains() {
+    fun boundedAssignmentPrefersTopRankedMatchAndKeepsAlternatives() {
         val sources=TokenMerger().merge(listOf(LogicChecks.token("Sample")))
         fun option(field:FieldId,value:String,rank:Double)=IdentityOption(FieldCandidate(field,value,UiState.YELLOW,"test evidence",sources),rank)
         val choice=IdentityAssignment.select(listOf(option(FieldId.PRODUCER,"Maker A",95.0),option(FieldId.PRODUCER,"Maker B",95.0)),emptyList())
-        check(choice.fields.getValue(FieldId.PRODUCER).single().value.isEmpty())
+        check(choice.fields.getValue(FieldId.PRODUCER).single().value=="Maker A")
+        check(choice.fields.getValue(FieldId.PRODUCER).single().state==UiState.YELLOW)
         check(choice.alternatives.getValue(FieldId.PRODUCER).size==2)
         val same=IdentityAssignment.select(listOf(option(FieldId.PRODUCER,"A",65.0)),listOf(option(FieldId.WINE_NAME,"B",65.0)))
-        check(same.fields.values.all { it.single().value.isEmpty() }) // Equally plausible competing roles.
+        check(same.fields.getValue(FieldId.PRODUCER).single().value=="A")
+        check(same.fields.getValue(FieldId.PRODUCER).single().state==UiState.YELLOW)
+        check(same.fields.getValue(FieldId.WINE_NAME).single().value.isEmpty()) // Same evidence is not duplicated across roles.
         val lots=IdentityAssignment.select((1..50).map { option(FieldId.PRODUCER,"Maker $it",it.toDouble()) },emptyList())
         check(lots.alternatives.getValue(FieldId.PRODUCER).size==4)
     }

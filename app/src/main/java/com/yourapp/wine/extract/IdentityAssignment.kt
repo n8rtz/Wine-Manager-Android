@@ -7,7 +7,7 @@ import com.yourapp.wine.merge.TextNorm
 data class IdentityOption(val candidate:FieldCandidate,val priority:Double)
 data class IdentitySelection(val fields:Map<FieldId,List<FieldCandidate>>,val alternatives:Map<FieldId,List<FieldCandidate>>,val fallbackCandidates:Map<FieldId,List<FieldCandidate>> = emptyMap())
 object IdentityAssignment {
-    const val VERSION="identity-v6-wrapped-brand"
+    const val VERSION="identity-v7-prefer-ranked-match"
     fun select(producers:List<IdentityOption>,names:List<IdentityOption>):IdentitySelection {
         fun bounded(input:List<IdentityOption>)=input.sortedWith(compareByDescending<IdentityOption> { it.priority }.thenByDescending { it.candidate.sources.size })
             .distinctBy { TextNorm.normalize(it.candidate.value) }.take(4)
@@ -27,14 +27,17 @@ object IdentityAssignment {
             val winner=option(best)
             val rivals=pairs.drop(1).filter { best.score-it.score<=3.0 &&
                 TextNorm.normalize(option(it)?.candidate?.value.orEmpty())!=TextNorm.normalize(winner?.candidate?.value.orEmpty()) }
-            if(winner==null || rivals.isNotEmpty()) {
-                val options=(listOfNotNull(winner)+rivals.mapNotNull(::option)).map { it.candidate }
-                if(rivals.isNotEmpty()) fallback[field]=options.distinctBy { TextNorm.normalize(it.value) }
-                return listOf(FieldCandidate(field,"",UiState.RED,
-                    "$VERSION: "+if(rivals.isEmpty()) "No supported assignment" else "Ambiguous assignment; confirm: "+options.joinToString(" / ") { it.value },
-                    options.flatMap { it.sources }.distinct()))
-            }
-            return listOf(winner.candidate.copy(reason=winner.candidate.reason+"; $VERSION rank=${winner.priority}; bounded joint selection"))
+            val options=(listOfNotNull(winner)+rivals.mapNotNull(::option)).map { it.candidate }
+                .distinctBy { TextNorm.normalize(it.value) }
+            if(options.size>1) fallback[field]=options
+            if(winner==null) return listOf(FieldCandidate(field,"",UiState.RED,
+                "$VERSION: No supported assignment",emptyList()))
+            // A close rival lowers certainty, but is not a reason to leave a usable field blank.
+            // Keep the best-ranked evidence visible as editable YELLOW; the form offers rivals after clear.
+            return listOf(if(rivals.isNotEmpty()) winner.candidate.copy(state=UiState.YELLOW,
+                reason=winner.candidate.reason+"; $VERSION rank=${winner.priority}; top-ranked match shown despite "+
+                    (options.drop(1).joinToString(" / ").ifBlank { "a near-tied blank assignment" })+"; editable")
+                else winner.candidate.copy(reason=winner.candidate.reason+"; $VERSION rank=${winner.priority}; bounded joint selection"))
         }
         return IdentitySelection(listOf(FieldId.PRODUCER,FieldId.WINE_NAME).associateWith(::chosen),
             mapOf(FieldId.PRODUCER to p.map { it.candidate },FieldId.WINE_NAME to n.map { it.candidate }),fallback)

@@ -79,7 +79,8 @@ fun main() {
     verify(FieldId.SUBREGION in valley.intentionalBlankFields && FieldId.REGION !in valley.intentionalBlankFields)
     // Actual joint selector: ties expose only supported rivals, a clear winner still selects normally.
     val tie=IdentityAssignment.select(listOf(IdentityOption(a,90.0),IdentityOption(b,90.0)),emptyList())
-    verify(tie.fields.getValue(FieldId.PRODUCER).single().value.isBlank())
+    val tiedProducer=tie.fields.getValue(FieldId.PRODUCER).single()
+    verify(tiedProducer.value==a.value && tiedProducer.state==UiState.YELLOW)
     verify(tie.fallbackCandidates.getValue(FieldId.PRODUCER).size==2)
     val winner=IdentityAssignment.select(listOf(IdentityOption(a,95.0),IdentityOption(b,50.0)),emptyList())
     verify(winner.fields.getValue(FieldId.PRODUCER).single().value==a.value)

@@ -12,7 +12,9 @@ class ScanChoiceIntegrationTests(unittest.TestCase):
         self.assertIn('candidates.take(3)',policy)
         self.assertIn('result.intentionalBlankFields',policy)
         selector=(MAIN/'com/yourapp/wine/extract/IdentityAssignment.kt').read_text()
-        self.assertIn('if(rivals.isNotEmpty()) fallback[field]',selector)
+        self.assertIn('if(options.size>1) fallback[field]=options',selector)
+        self.assertIn('state=UiState.YELLOW',selector)
+        self.assertIn('top-ranked match shown despite',selector)
         self.assertIn('fallbackCandidates=extracted.fallbackCandidates',(MAIN/'com/yourapp/wine/fill/FillEngine.kt').read_text())
     def test_ui_wiring_and_review_state_safety(self):
         ui=(MAIN/'com/yourapp/wine/ui/ScanFieldStatus.kt').read_text()
