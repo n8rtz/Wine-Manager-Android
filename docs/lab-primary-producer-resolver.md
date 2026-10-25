@@ -1,12 +1,12 @@
-# Primary LWIN asset and conservative Lab producer resolver
+# Primary LWIN catalog and Lab producer resolver
 
 > Extension implemented: Lab now includes a separate producer-linked wine-name index. See [linked wine resolver](lab-linked-wine-resolver.md). The producer-only counts and implementation history below describe the preceding version.
 
 ## Status
 
-**Implemented and packaged for Lab.** Production v1.0, Production v2.0 and normal Add Wine remain unchanged. Lab now has pipeline ID `lab-producer-v1`; saved v2 comparison rows remain. No parallel v2 OCR run is added.
+**The full producer catalog is now packaged for read-only Settings → Database Lookup; the OCR resolver remains Lab/debug-only.** Production OCR v1.0, v2.0 and normal Add Wine do not use LWIN to fill or correct scan fields. Lab retains pipeline ID `lab-producer-v1`; saved v2 comparison rows remain. No parallel v2 OCR run is added.
 
-The previous work stopped with the primary-data gate closed. The user subsequently supplied `LWINdatabase.zip` from the reference repository. We verified its Git blob, inspected the workbook, reconciled it against the earlier derivative and built the debug-only database directly from its explicit producer fields. No mirror-derived name or DISPLAY_NAME inference supplies runtime producer identities.
+The user supplied `LWINdatabase.zip` from the reference repository. We verified its Git blob, inspected the workbook, reconciled it against the earlier derivative and built the database directly from explicit producer fields. The primary producer table and manifest are in `app/src/main/assets/producer-gazetteer-v1/` for the new lookup UI. The linked-wine and TTB/OSM supporting databases remain debug-only. No mirror-derived name or DISPLAY_NAME inference supplies producer identities.
 
 This is **user-supplied primary-export provenance**, not an independent download from Liv-ex, vendor signature, or independent verification of every winery. The manifest's `primary_verified` gate refers to that recorded source review and validated build input; it is not a probability or an authority claim about each record.
 
@@ -46,8 +46,8 @@ The differences are retained in `tools/producer-sources/primary-comparison.json`
 
 ## Runtime behavior
 
-- Only `app/src/debug/assets/producer-gazetteer-v1/` is packaged for the experimental path. No production asset or scanner integration.
-- Uses the existing bundled SQLite driver, prepared queries, FTS5 trigram and exact-key lookup. SHA-256, schema, row count and FTS table checks gate opening. No online lookups, automatic dataset generation or sample fallback.
+- `app/src/main/assets/producer-gazetteer-v1/` packages the verified 33,160-row producer table for the read-only Settings lookup. The producer resolver is still only wired in debug Lab; it does not influence normal scanner output. `wines.sqlite` and TTB/OSM support databases remain in debug assets.
+- Lookup uses the bundled SQLite driver and ranks all producer rows in the selected country/catalog in bounded-memory chunks; the Lab resolver uses prepared queries, FTS5 trigram and exact-key lookup. SHA-256, schema, row count and FTS checks gate opening. No online lookups or sample fallback.
 - Original OCR observations now feed guarded extraction unchanged. Spatial joins remain alternative producer lookup spans with original observation IDs, not replacement readings or additional votes. This removes the previously destructive spatial replacement step.
 - Candidate replacements must come from the primary producer/brand table. Two distinct OCR engines with disjoint source observations must support the same candidate. Multiple variants/joins from one engine do not provide independent votes.
 - Whole-span edit distance is bounded (one edit, or two for long names). Ambiguous identities, close rivals, saturated retrieval, incomplete/generic headings, boilerplate, numeric/vintage contamination and over-budget work abstain.
@@ -67,10 +67,16 @@ python tools/producer-sources/prepare_primary.py \
   --primary /path/to/LWINdatabase.xlsx \
   --provenance tools/producer-sources/primary-provenance.json \
   --support-dir /path/to/filtered/source/layers \
-  --out app/src/debug/assets/producer-gazetteer-v1
+  --out /tmp/producer-gazetteer-v1
+
+# Publish the primary producer table, manifest and NOTICE for the Settings lookup.
+mkdir -p app/src/main/assets/producer-gazetteer-v1
+cp /tmp/producer-gazetteer-v1/{producers.sqlite,manifest.json,NOTICE.md} app/src/main/assets/producer-gazetteer-v1/
+# Keep wine and auxiliary support indexes in the debug-only Lab asset directory.
+cp /tmp/producer-gazetteer-v1/{wines.sqlite,ttb-support.sqlite,osm-support.sqlite} app/src/debug/assets/producer-gazetteer-v1/
 
 python tools/producer-sources/compare_primary.py \
-  --asset app/src/debug/assets/producer-gazetteer-v1 \
+  --asset /tmp/producer-gazetteer-v1 \
   --mirror /path/to/pinned/mirror/files \
   --out tools/producer-sources/primary-comparison.json
 ```

@@ -42,22 +42,24 @@ class PrimaryProducerAssetChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             d=Path(tmp);source,provenance=self.prepare(d,[['1234567','live','Wine','','First Estate','France',''],['1234567','live','Wine','','Other Estate','France','']])
             with self.assertRaises(ValueError):p.build(source,provenance,d/'out')
-    def test_primary_asset_hashes_and_debug_only(self):
-        folder=ROOT/'app/src/debug/assets/producer-gazetteer-v1'
-        m=json.loads((folder/'manifest.json').read_text())
+    def test_primary_asset_hashes_and_packaged_lookup(self):
+        primary=ROOT/'app/src/main/assets/producer-gazetteer-v1'
+        debug=ROOT/'app/src/debug/assets/producer-gazetteer-v1'
+        m=json.loads((primary/'manifest.json').read_text())
         self.assertEqual(m['provenance']['zip_git_blob'],'8e7457ee74946622c5858aa36ac609cf32e63ab6')
-        self.assertEqual(p.sha(folder/'producers.sqlite'),m['database_sha256'])
-        with sqlite3.connect(folder/'producers.sqlite') as c:
+        self.assertEqual(p.sha(primary/'producers.sqlite'),m['database_sha256'])
+        with sqlite3.connect(primary/'producers.sqlite') as c:
             self.assertEqual(c.execute('select count(*) from producers').fetchone()[0],m['records'])
             self.assertEqual(c.execute('select count(*) from names').fetchone()[0],m['records'])
             self.assertEqual(c.execute("select count(*) from producers where name like 'NA %'").fetchone()[0],0)
-        self.assertEqual(p.sha(folder/'wines.sqlite'),m['wine_database_sha256'])
-        with sqlite3.connect(folder/'wines.sqlite') as c:
+        self.assertTrue((primary/'NOTICE.md').exists())
+        self.assertFalse((debug/'producers.sqlite').exists())
+        self.assertEqual(p.sha(debug/'wines.sqlite'),m['wine_database_sha256'])
+        with sqlite3.connect(debug/'wines.sqlite') as c:
             self.assertEqual(c.execute('select count(*) from wine_names').fetchone()[0],m['wine_names'])
             self.assertEqual(c.execute('select count(*) from wine_links').fetchone()[0],m['wine_links'])
             self.assertEqual(c.execute('pragma foreign_key_check').fetchall(),[])
-        for item in m['support'].values():self.assertEqual(p.sha(folder/item['file']),item['sha256'])
-        self.assertFalse((ROOT/'app/src/main/assets/producer-gazetteer-v1').exists())
+        for item in m['support'].values():self.assertEqual(p.sha(debug/item['file']),item['sha256'])
     def test_excel_numeric_and_na_values(self):
         self.assertEqual(p.clean(1000001.0),'1000001')
         for v in ('NA','n/a',None,'-'):self.assertEqual(p.clean(v),'')

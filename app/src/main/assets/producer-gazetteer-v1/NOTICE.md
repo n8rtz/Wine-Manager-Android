@@ -1,4 +1,4 @@
-# Producer reference data — debug Lab only
+# Producer reference data — Settings lookup and debug Lab
 
 ## Primary producer/brand layer
 

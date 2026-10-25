@@ -22,12 +22,13 @@ class LinkedWineAssetChecks(unittest.TestCase):
                 self.assertEqual(c.execute('PRAGMA foreign_key_check').fetchall(),[])
     def test_packaged_links_and_actual_lookup_sql(self):
         folder=ROOT/'app/src/debug/assets/producer-gazetteer-v1'
-        manifest=json.loads((folder/'manifest.json').read_text())
+        primary=ROOT/'app/src/main/assets/producer-gazetteer-v1'
+        manifest=json.loads((primary/'manifest.json').read_text())
         self.assertEqual(manifest['schema'],2)
         for file in folder.glob('*.sqlite'):self.assertLessEqual(file.stat().st_size,32*1024*1024)
         self.assertEqual(hashlib.sha256((folder/'wines.sqlite').read_bytes()).hexdigest(),manifest['wine_database_sha256'])
         with sqlite3.connect(folder/'wines.sqlite') as c:
-            c.execute('ATTACH DATABASE ? AS primary_db',(str(folder/'producers.sqlite'),))
+            c.execute('ATTACH DATABASE ? AS primary_db',(str(primary/'producers.sqlite'),))
             self.assertEqual(c.execute('SELECT count(*) FROM wine_producers w LEFT JOIN primary_db.producers p ON p.id=w.producer_id WHERE p.id IS NULL').fetchone()[0],0)
             name,key,pid=c.execute('SELECT n.name,n.key,p.producer_id FROM wine_names n JOIN wine_links l ON n.id=l.wine_id JOIN wine_producers p ON p.id=l.producer_id WHERE length(n.key)>8 LIMIT 1').fetchone()
             exact='SELECT n.id,n.name,n.key,p.producer_id,l.lwin7 FROM wine_names n JOIN wine_links l ON l.wine_id=n.id JOIN wine_producers p ON p.id=l.producer_id WHERE n.key=? AND p.producer_id IN (?) ORDER BY n.id,p.producer_id LIMIT ?'
