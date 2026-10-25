@@ -446,7 +446,7 @@ fun ProfileScreen(
 
                         ListItem(
                             headlineContent = {
-                                Text("Run bundled 168-photo benchmark")
+                                Text("Large image dataset test")
                             },
                             supportingContent = {
                                 Text("Fresh phone OCR, scored stats, Stop/Resume and CSV export — private test build")

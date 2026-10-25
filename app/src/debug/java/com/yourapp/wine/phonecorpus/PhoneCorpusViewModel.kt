@@ -21,7 +21,7 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.util.UUID
 
 internal data class CorpusState(val busy:Boolean=false,val mode:PhoneCorpusRunner.Mode=PhoneCorpusRunner.Mode.PRODUCTION_V1,
-    val message:String="Loading curated 107-photo benchmark…",val completed:Int=0,val total:Int=PhoneCorpusRunner.ACTIVE_IMAGE_COUNT,
+    val message:String="Loading large image dataset test…",val completed:Int=0,val total:Int=PhoneCorpusRunner.ACTIVE_IMAGE_COUNT,
     val board:PhoneCorpusScoreboard.Board?=null,val csv:File?=null,val exportParts:List<File> = emptyList(),val readOnly:Boolean=false)
 internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
     private val mutable=MutableStateFlow(CorpusState());val state=mutable.asStateFlow()

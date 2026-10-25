@@ -1,8 +1,8 @@
-# Curated 107-photo phone benchmark (debug only)
+# Large image dataset test (debug only)
 
 ## Use on the phone
 
-Build/install **debug** from this branch, then open **Profile / Settings → Run curated 107-photo benchmark**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
+Build/install **debug** from this branch, then open **Profile / Settings → Large image dataset test**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
 
 The full 168-image bundle remains for provenance and hash checks, but only 107 uncolored labels from the user's review workbook are sent through OCR. The 55 red and 4 yellow rows are excluded, as are review numbers 27 and 47, which were absent from the workbook and explicitly excluded by the user. Thus 61 images never enter OCR. The 107 included rows contain 106 fully scorable forms and one partly unresolved form; the former 160-label acceptance target is retired pending review of the curated reference set.
 

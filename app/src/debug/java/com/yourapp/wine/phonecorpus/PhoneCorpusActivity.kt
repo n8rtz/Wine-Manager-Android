@@ -65,7 +65,7 @@ class PhoneCorpusActivity:ComponentActivity() {
         }
         LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             item {
-                Text("Curated 107-photo benchmark",style=MaterialTheme.typography.headlineSmall)
+                Text("Large image dataset test",style=MaterialTheme.typography.headlineSmall)
                 Text("Build ${BuildConfig.BUILD_COMMIT} · 107 uncolored labels are run. 55 red, 4 yellow, and 2 omitted labels are excluded from OCR. All 168 source photos remain packaged for provenance.")
                 Text("Private test corpus; image redistribution rights are unresolved. Do not publish this APK. Frozen references are provisional development judgments, not held-out accuracy.",style=MaterialTheme.typography.bodySmall)
                 Text("Fresh ML Kit + Medium OCR. Plug in your phone and keep this screen open; long runs can take hours and generate heat. Going to the background requests a stop after the current image. Abrupt process death preserves completed checkpoints.")
