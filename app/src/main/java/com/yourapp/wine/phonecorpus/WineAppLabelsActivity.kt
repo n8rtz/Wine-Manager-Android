@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +89,8 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
         }
         val fieldRows = state.board?.csv.orEmpty().filter { it["row_type"] == "field" }.groupBy { it["image"] }
+        var showDiagnostics by remember { mutableStateOf(true) }
+        var expandedDiagnostics by remember(state.mode) { mutableStateOf(emptySet<String>()) }
 
         LazyColumn(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -106,14 +110,17 @@ class WineAppLabelsActivity : ComponentActivity() {
                     }
                 }
                 Text("Lab v4 uses verified LWIN producer data only. Unverified TTB, OSM, and X-Wines name lists are excluded from the producer database.", style = MaterialTheme.typography.bodySmall)
-                Text("The comparison table keeps one short row per version: Lab v4, Prod v3.0, Prod v2.0, Prod v1.0. Lab v4 and Prod v3.0 both use LWIN-only producer data; run each option on the same 125 workbook photos. Resume skips completed photos; failures and partial runs can be retried.", style = MaterialTheme.typography.bodySmall)
+                Text("The first Lab v4 run backfills any missing Prod v1.0, v2.0, and v3.0 results once, then stores them for later comparisons. Existing per-photo production results are reused; only missing photos are run. Later Lab v4 runs retrieve saved production rows. Resume skips completed photos; failures and partial runs can be retried.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
                 Text("Checkpointed: ${state.completed}/${state.total}")
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                Button(onClick = { vm.start() }, enabled = !state.busy && state.completed < state.total) {
-                    Text("Start / resume remaining photos")
+                Button(
+                    onClick = { vm.start() },
+                    enabled = !state.busy && (state.completed < state.total || (state.mode == PhoneCorpusRunner.Mode.LAB && state.baselinePending)),
+                ) {
+                    Text(if (state.completed >= state.total && state.baselinePending) "Fill missing production baselines" else "Start / resume remaining photos")
                 }
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
@@ -141,6 +148,111 @@ class WineAppLabelsActivity : ComponentActivity() {
                             board.rows.forEach { row ->
                                 HorizontalDivider(Modifier.width((88 * board.headers.size).dp))
                                 Row { row.forEach { Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.bodySmall) } }
+                            }
+                        }
+                    }
+                }
+            }
+            state.board?.let { board ->
+                item {
+                    Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Step-level diagnostics for the selected version only. ML Kit runs before Paddle; post-OCR rows describe the selected pipeline. Counts show passed/failed plus not-reached, not-recorded, and not-applicable cases. Tap + for step definitions.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
+                        Text(if (showDiagnostics) "Hide diagnostics table" else "Show diagnostics table")
+                    }
+                    if (showDiagnostics) SelectionContainer {
+                        val stepWidth = 320.dp
+                        val fieldWidth = 88.dp
+                        val fieldTitles = PhoneCorpusMath.fields.map { field ->
+                            if (field == "wine_name") "Wine name" else field.replaceFirstChar { it.uppercase() }
+                        }
+                        val gridColor = MaterialTheme.colorScheme.outlineVariant
+                        BoxWithConstraints(Modifier.fillMaxWidth()) {
+                            val viewportWidth = maxWidth
+                            Column(Modifier.horizontalScroll(rememberScrollState())) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Pipeline step",
+                                        Modifier.width(stepWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(4.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                    )
+                                    fieldTitles.forEach { title ->
+                                        Text(
+                                            title,
+                                            Modifier.width(fieldWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(4.dp),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                                board.matrix.forEachIndexed { index, row ->
+                                    val section = when {
+                                        row.step.branch.startsWith("OCR table · ML Kit") -> "OCR 1 · ML KIT"
+                                        row.step.branch.startsWith("OCR table · Paddle") -> "OCR 2 · PADDLE"
+                                        else -> "POST-OCR REQUIREMENTS"
+                                    }
+                                    val previous = board.matrix.getOrNull(index - 1)?.step?.branch
+                                    val previousSection = when {
+                                        previous?.startsWith("OCR table · ML Kit") == true -> "OCR 1 · ML KIT"
+                                        previous?.startsWith("OCR table · Paddle") == true -> "OCR 2 · PADDLE"
+                                        previous == null -> null
+                                        else -> "POST-OCR REQUIREMENTS"
+                                    }
+                                    if (section != previousSection) {
+                                        Text(section, Modifier.width(viewportWidth).padding(top = 10.dp, bottom = 4.dp), style = MaterialTheme.typography.titleSmall)
+                                    }
+                                    val expanded = row.step.id in expandedDiagnostics
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Row(
+                                            Modifier.width(stepWidth).heightIn(min = 56.dp).border(1.dp, gridColor).padding(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            TextButton(
+                                                onClick = {
+                                                    expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
+                                                },
+                                                modifier = Modifier.width(40.dp),
+                                                contentPadding = PaddingValues(0.dp),
+                                            ) { Text(if (expanded) "−" else "+") }
+                                            Column(Modifier.weight(1f).padding(end = 4.dp)) {
+                                                Text(row.step.title, style = MaterialTheme.typography.bodySmall)
+                                                Text(row.step.branch, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                        if (row.shared != null) {
+                                            Text(
+                                                "${row.shared.passed}/${row.shared.failed} · NR ${row.shared.notReached} · ? ${row.shared.notRecorded} · N/A ${row.shared.notApplicable}",
+                                                Modifier.width(fieldWidth * PhoneCorpusMath.fields.size).heightIn(min = 48.dp).border(1.dp, gridColor).padding(4.dp),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                textAlign = TextAlign.Center,
+                                                maxLines = 1,
+                                            )
+                                        } else {
+                                            PhoneCorpusMath.fields.forEach { field ->
+                                                val cell = row.fields[field]
+                                                Text(
+                                                    cell?.let { "${it.passed}/${it.failed} · NR ${it.notReached} · ? ${it.notRecorded} · N/A ${it.notApplicable}" } ?: "—",
+                                                    Modifier.width(fieldWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(4.dp),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    textAlign = TextAlign.Center,
+                                                    maxLines = 1,
+                                                )
+                                            }
+                                        }
+                                    }
+                                    if (expanded) {
+                                        Text(
+                                            row.step.definition,
+                                            Modifier.width(viewportWidth).border(1.dp, gridColor).padding(start = 48.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                                            style = MaterialTheme.typography.bodySmall,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

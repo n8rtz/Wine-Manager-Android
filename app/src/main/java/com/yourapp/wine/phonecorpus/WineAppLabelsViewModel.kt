@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.json.JSONObject
 import java.io.File
+import java.security.MessageDigest
 import java.util.UUID
 
 private const val WINE_APP_LABEL_COUNT = 125
@@ -25,6 +26,7 @@ internal data class WineAppLabelsState(
     val message: String = "Loading the 125 retained wine labels…",
     val completed: Int = 0,
     val total: Int = WINE_APP_LABEL_COUNT,
+    val baselinePending: Boolean = false,
     val board: PhoneCorpusScoreboard.Board? = null,
 )
 
@@ -84,6 +86,82 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         }.maxByOrNull { it.second }?.first
     }
 
+    private fun seedMarker(signature: String): File {
+        val digest = MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
+            .joinToString("") { "%02x".format(it.toInt() and 255) }
+        return File(root, "production-baselines-$digest.json")
+    }
+
+    private fun seededModes(signature: String): JSONObject {
+        val file = seedMarker(signature)
+        val saved = if (file.isFile) runCatching { JSONObject(file.readText()) }.getOrNull() else null
+        return if (saved != null && saved.optString("corpus_signature") == signature) {
+            saved.optJSONObject("modes") ?: JSONObject()
+        } else JSONObject()
+    }
+
+    private fun productionBaselinesSeeded(): Boolean {
+        val signature = corpusSignature(assetJson("manifest.json"))
+        val modes = seededModes(signature)
+        return listOf(
+            PhoneCorpusRunner.Mode.PRODUCTION_V1,
+            PhoneCorpusRunner.Mode.PRODUCTION_V2,
+            PhoneCorpusRunner.Mode.PRODUCTION_V3,
+        ).all { modes.optString(it.name).isNotBlank() }
+    }
+
+    private fun markSeeded(signature: String, mode: PhoneCorpusRunner.Mode, result: String) {
+        val modes = seededModes(signature).put(mode.name, result)
+        seedMarker(signature).writeText(JSONObject().put("corpus_signature", signature).put("modes", modes).toString(2))
+    }
+
+    private fun persistResult(dir: File, image: String, result: JSONObject, previousAttempt: Int) {
+        result.put("attempt", previousAttempt + 1)
+        File(dir, "attempts").apply { mkdirs() }
+            .resolve("$image-${System.currentTimeMillis()}.json").writeText(result.toString())
+        result.remove("trace")
+        result.remove("tokens")
+        result.remove("diagnostics")
+        File(dir, "current").apply { mkdirs() }.resolve("$image.json").writeText(result.toString())
+    }
+
+    private suspend fun seedProductionBaselines(inputs: List<JSONObject>, labDir: File): Boolean {
+        val signature = corpusSignature(assetJson("manifest.json"))
+        for (baselineMode in listOf(
+            PhoneCorpusRunner.Mode.PRODUCTION_V1,
+            PhoneCorpusRunner.Mode.PRODUCTION_V2,
+            PhoneCorpusRunner.Mode.PRODUCTION_V3,
+        )) {
+            if (seededModes(signature).optString(baselineMode.name).isNotBlank()) continue
+            val dir = latestFolder(baselineMode) ?: selectFolder(baselineMode, fresh = false)
+            val existing = predictions(dir).associateBy { it.getString("image") }
+            val missing = inputs.filter { it.getString("image") !in existing }
+            try {
+                for ((index, input) in missing.withIndex()) {
+                    if (stopping) return false
+                    val image = input.getString("image")
+                    mutable.update {
+                        it.copy(message = "First Lab v4 run: saving ${baselineMode.title} baseline ${index + 1}/${missing.size} · $image")
+                    }
+                    val result = PhoneCorpusRunner.runImage(
+                        app, image, input.getString("sha256"), baselineMode, File(dir, "work"), "wine-app-labels-v1",
+                    )
+                    persistResult(dir, image, result, existing[image]?.optInt("attempt") ?: 0)
+                    refresh(labDir, PhoneCorpusRunner.Mode.LAB)
+                    if (result.optBoolean("abort_run")) return false
+                }
+                markSeeded(signature, baselineMode, "seeded")
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (error: Exception) {
+                // A production baseline can be unavailable without preventing the selected Lab run.
+                markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
+            }
+        }
+        if (!stopping) mutable.update { it.copy(baselinePending = false) }
+        return !stopping
+    }
+
     private fun selectFolder(mode: PhoneCorpusRunner.Mode, fresh: Boolean): File {
         val prefix = folderPrefix(mode)
         if (!fresh) latestFolder(mode)?.let { return it }
@@ -118,7 +196,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         }
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · ${current.size}/$WINE_APP_LABEL_COUNT attempted in ${mode.title}")
-            appendLine("Only the selected version runs fresh OCR. Other rows show saved results for this exact $WINE_APP_LABEL_COUNT-label corpus and persist across app updates.")
+            appendLine("On the first Lab v4 run, missing Prod v1/v2/v3 per-photo baselines are backfilled once if available. Afterwards only the selected version runs fresh OCR; other rows reuse saved results for this exact corpus.")
             appendLine(currentBoard.headers.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
         }
@@ -129,14 +207,22 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     fun load(mode: PhoneCorpusRunner.Mode, fresh: Boolean = false) {
         if (mutable.value.busy) return
         folder = null
-        mutable.update { it.copy(busy = true, mode = mode, completed = 0, total = WINE_APP_LABEL_COUNT, board = null, message = "Loading saved 125-label results…") }
+        mutable.update { it.copy(busy = true, mode = mode, completed = 0, total = WINE_APP_LABEL_COUNT, baselinePending = false, board = null, message = "Loading saved 125-label results…") }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val dir = selectFolder(mode, fresh)
                 folder = dir
                 preferences.edit().putString("last_run", dir.name).apply()
                 refresh(dir, mode)
-                mutable.update { it.copy(message = "Ready. Only the 125 retained workbook labels are eligible for this test.") }
+                val baselinePending = mode == PhoneCorpusRunner.Mode.LAB && !productionBaselinesSeeded()
+                mutable.update {
+                    it.copy(
+                        baselinePending = baselinePending,
+                        message = if (baselinePending) {
+                            "Saved production comparisons need a one-time baseline fill. Start Lab v4 to run only missing Prod v1/v2/v3 photos."
+                        } else "Ready. Only the 125 retained workbook labels are eligible for this test.",
+                    )
+                }
             } catch (e: Exception) {
                 folder = null
                 mutable.update { it.copy(message = "Cannot load the 125-label test: ${e.message}") }
@@ -180,6 +266,10 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     .sortedBy { it.getInt("review_number") }
                 check(manifest.size == WINE_APP_LABEL_COUNT && manifest.map { it.getString("image") }.toSet() == included) {
                     "The packaged inputs do not match the selected workbook set"
+                }
+                if (mode == PhoneCorpusRunner.Mode.LAB && !seedProductionBaselines(manifest, dir)) {
+                    mutable.update { it.copy(message = "Baseline preparation paused. Start Lab v4 again to resume before its OCR run.") }
+                    return@launch
                 }
                 val existing = predictions(dir).associateBy { it.getString("image") }
                 File(dir, "current").mkdirs()
