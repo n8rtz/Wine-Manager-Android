@@ -1,0 +1,781 @@
+{
+  "version": 2,
+  "title": "Large image dataset test",
+  "source_workbook": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/reference-data-scrubbed.xlsx",
+  "source_workbook_blob_sha": "5e1e2b0f8938f1ed789c9f2430cd37881a2b2bdc",
+  "updated_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
+  "updated_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
+  "source_zip": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/Wine%20App%20Labels.zip",
+  "review_decision": "Run all 125 retained rows in the updated owner-reviewed workbook. The owner-removed workbook rows and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run.",
+  "included_count": 125,
+  "excluded_count": 10,
+  "included_images": [
+    {
+      "review_number": 2,
+      "image": "fa02ff37350880d8b127ba9e8a98b6b1396fa3fd.jpg",
+      "source_filename": "158.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 5,
+      "image": "4eea6952f397795d178534d6ec3c81be2f1cf05a.jpg",
+      "source_filename": "0016.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 7,
+      "image": "e98861ddfe83f5d5e27a06a522dec99bcf8d1cfd.jpg",
+      "source_filename": "0091.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 10,
+      "image": "15c4e556cdd75a735ddf8477a4a97d68efb299cf.jpg",
+      "source_filename": "149.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 12,
+      "image": "66ac7cb1c690905a29c2844ef837363a37bfadfe.jpg",
+      "source_filename": "0012.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 13,
+      "image": "9119c26ffe684ea424e540cdd49907440c5ea313.jpg",
+      "source_filename": "164.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 17,
+      "image": "dc2dde5ad7fbcf8a90b74a813b20a660fc181317.jpg",
+      "source_filename": "0021.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 18,
+      "image": "0745531b81830b27b14927b46c857e32cdaa6126.jpg",
+      "source_filename": "0072.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 26,
+      "image": "b6c7e6ecff24d5f413a1b74905115780267aeaf2.jpg",
+      "source_filename": "0063.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 30,
+      "image": "7ec47562e79bd594b2a7804d338739d42553db91.jpg",
+      "source_filename": "118.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 31,
+      "image": "9925ccc8729ba37168f246f2a19712c16f03af12.jpg",
+      "source_filename": "0041.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 32,
+      "image": "83e980c3c77dbde7284b56ed3e12b5fe879d4ccc.jpg",
+      "source_filename": "124.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 33,
+      "image": "effacef9bca28b2796b0193f999a006e7fcbc94a.jpg",
+      "source_filename": "0071.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 34,
+      "image": "1568537668f72fefbf848c15676c6d03ca914441.jpg",
+      "source_filename": "0064.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 35,
+      "image": "1b118d36267ccc66578ecff61739fe85eb4de8fa.jpg",
+      "source_filename": "0070.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 36,
+      "image": "057a782c7abe8947bcc5cb71c0f5843373c6f4e6.jpg",
+      "source_filename": "0042.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 42,
+      "image": "9be943a985e9bb5954c6d230dc1be2eac24d592e.jpg",
+      "source_filename": "134.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 43,
+      "image": "7401555a328c6b22476d515bb166c2aac5ad0824.jpg",
+      "source_filename": "160.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 44,
+      "image": "d4dac287403c33152db8b5f2f75407aac6b2d391.jpg",
+      "source_filename": "109.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 45,
+      "image": "db9d9ec4ff86a473d9ffbb4698e6423db3d9e8d3.jpg",
+      "source_filename": "0036.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 46,
+      "image": "5a97d36321e4fff9d4424ff2764671fd0bf205f4.jpg",
+      "source_filename": "0079.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 48,
+      "image": "45fd1c696766c76721b734c1c7aa8e52e6bfcdfc.jpg",
+      "source_filename": "98.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 50,
+      "image": "732ede1efd68c2b4a5b8c8f8eaec073f42b7f961.jpg",
+      "source_filename": "103.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 51,
+      "image": "e2f5e7251baef50b8fde53398930bb7a5bdec7a4.jpg",
+      "source_filename": "0056.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 53,
+      "image": "33ab63dbd6570effa12e2db62c6274fac3c25bfb.jpg",
+      "source_filename": "0032.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 54,
+      "image": "56bdcb858f3c861237d50b0602f71b6f4076fbdb.jpg",
+      "source_filename": "0022.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 56,
+      "image": "048b56522359f87663a66b47cec02d9f63b8ea58.jpg",
+      "source_filename": "0052.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 57,
+      "image": "6508c395d80dd85825cb437dd7d74c8af39ad9b8.jpg",
+      "source_filename": "003.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 58,
+      "image": "8ba065c0f159dde55578555d96a4b87d1501cd2e.jpg",
+      "source_filename": "129.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 59,
+      "image": "9ea06b46a73aca34865420193c73fde60e9f9c39.jpg",
+      "source_filename": "0044.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 60,
+      "image": "c91a8a2439e173c0ce3dca74092b24e574278ee0.jpg",
+      "source_filename": "163.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 61,
+      "image": "793c0327b15fcc72fcf414f5985ee658e93c7c17.jpg",
+      "source_filename": "133.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 62,
+      "image": "447db7af7a913abe316e2a99c39bef8dd7189173.jpg",
+      "source_filename": "0049.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 63,
+      "image": "37b32af44ea0b373136d2ed722f2f5fc605f8912.jpg",
+      "source_filename": "150.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 65,
+      "image": "124cc0ea947a1bae9e89ee1ea043f796cb44ea5d.jpg",
+      "source_filename": "0068.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 66,
+      "image": "274621fc56a805f64d0cc0a2e3902db10b88a275.jpg",
+      "source_filename": "144.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 67,
+      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
+      "source_filename": "000.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 68,
+      "image": "378ab5b4ee821ac346f104411908796ee907230c.jpg",
+      "source_filename": "97.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 69,
+      "image": "469465c756d7339f4cdda41a0b329432d645fce6.jpg",
+      "source_filename": "0055.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 70,
+      "image": "fc506334b1010731e7e73e877ac933284b2acf20.jpg",
+      "source_filename": "15032022_105917.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 71,
+      "image": "95496ab2640658c6e6f34e575ddfb56d61d1cdb0.jpg",
+      "source_filename": "108.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 72,
+      "image": "94fec8b9c287ae763c9b6295b371a36d832b6049.jpg",
+      "source_filename": "99.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 74,
+      "image": "a4f5e980fa8716d8b0879985e3cbe0e68792538f.jpg",
+      "source_filename": "0034.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 75,
+      "image": "267386938b4b0c026ee1920aecc4929d4e457fd2.jpg",
+      "source_filename": "0030.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 76,
+      "image": "fdfabb0aa4b90b98464edfa3a76dd987c5e7caf4.jpg",
+      "source_filename": "0073.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 77,
+      "image": "72bdc20913c77b0acea0b407f91a44e891b0d2e8.jpg",
+      "source_filename": "0033.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 78,
+      "image": "a936f53234f32c7d71b95e2e392963bc5aa20801.jpg",
+      "source_filename": "0069.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 83,
+      "image": "bfe29d112dd036f77336f4871a8322ffe5334b62.jpg",
+      "source_filename": "0085.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 85,
+      "image": "7a721d5e7082f50d3a8d5b1e3da49d3635474378.jpg",
+      "source_filename": "110.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 86,
+      "image": "897b2a6b6023d3bcba78eafe8366ff7a5082b8fe.jpg",
+      "source_filename": "0011.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 88,
+      "image": "8623ea3006f120e3392232bf74c952db11f69f04.jpg",
+      "source_filename": "0088.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 89,
+      "image": "e9029d92b518ca9429b367ca5e0775aa8d982100.jpg",
+      "source_filename": "159.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 90,
+      "image": "2d1619d9c3a30339f2a94c14052553b35ace26ec.jpg",
+      "source_filename": "0047.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 91,
+      "image": "74f212c48019b45fe67ea43a2afb76e37087124e.jpg",
+      "source_filename": "148.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 92,
+      "image": "5bc7bf5fbed1f97eb03a5c292eb8c7f39d75ba44.jpg",
+      "source_filename": "0084.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 93,
+      "image": "23b34fda468d17669b49a2882576846709f19b9e.jpg",
+      "source_filename": "105.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 94,
+      "image": "bbc5b6873fe8ec8e28b072fe2386095b359cd87b.jpg",
+      "source_filename": "0092.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 96,
+      "image": "e8e049d425e563d2452657409e63577e7c760187.jpg",
+      "source_filename": "0054.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 97,
+      "image": "a4778fe210bd084b2854e6f429b2bfec8bb60ff8.jpg",
+      "source_filename": "0060.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 98,
+      "image": "05e4b7eca36ed4dfb6a3c17c6994e8d141eeb8a2.jpg",
+      "source_filename": "102.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 99,
+      "image": "b87ca31f798edb05da02e35cefc483e5573ad648.jpg",
+      "source_filename": "0067.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 102,
+      "image": "299fd5f2ec65ec621fbd9973c2aaa671775c259c.jpg",
+      "source_filename": "0066.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 103,
+      "image": "81ae36f1b4238e878b0871fe284c59212ae95d18.jpg",
+      "source_filename": "140.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 104,
+      "image": "cc94f76f1d16ce337b97df1c43023af464cfe3a7.jpg",
+      "source_filename": "004.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 105,
+      "image": "eb94a0d67d5415d80b5afc91be1bb24d5d9417fc.jpg",
+      "source_filename": "0031.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 106,
+      "image": "8a76af29bf8d2c00fbfd6146e77f941e1f3de726.jpg",
+      "source_filename": "0015.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 113,
+      "image": "77726e0fe83acedbd8b058768d16d785a6ed0551.jpg",
+      "source_filename": "0023.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 114,
+      "image": "30cacb85b4b85b60888ea38cc493169080ce34ad.jpg",
+      "source_filename": "0017.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 115,
+      "image": "a81af4f7d3a94291fb683101a63d05d3bd35e1a4.jpg",
+      "source_filename": "0090.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 116,
+      "image": "21844d6ea902cb788d150cd4390f6d6ea3da0693.jpg",
+      "source_filename": "0019.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 117,
+      "image": "781c41b767b22281370c8c55669842d3ef6921c6.jpg",
+      "source_filename": "008.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 118,
+      "image": "382ab4eaeff62f6e4234df5536382ba783f56588.jpg",
+      "source_filename": "95.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 119,
+      "image": "685b760118a72cddf6f4859572a1030846a38a2a.jpg",
+      "source_filename": "122.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 122,
+      "image": "fe56d23fcb75036e5a848dcdde48b450a053d252.jpg",
+      "source_filename": "0078.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 123,
+      "image": "808059b6a18bc493bb6eae9c694acc5e1999b6af.jpg",
+      "source_filename": "0065.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 125,
+      "image": "ee636b8711ebab2d43c0196ea531a351be0530b2.jpg",
+      "source_filename": "0024.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 126,
+      "image": "a1946895e5540cd9a206b4d37a73d4e63a9b0a86.jpg",
+      "source_filename": "128.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 127,
+      "image": "25b1497dd224f47c3b0a5a436276df13857a0e05.jpg",
+      "source_filename": "136.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 128,
+      "image": "10025b033895175ca84e9b27b7e2fe012fd946ff.jpg",
+      "source_filename": "157.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 129,
+      "image": "04b3d1e4abdb81a66c5dd65883aca59fc0abbd84.jpg",
+      "source_filename": "96.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 135,
+      "image": "08d7bb58ad708ac9ff04e19e82996d1b2b7a8222.jpg",
+      "source_filename": "15032022_211301.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 136,
+      "image": "cb8b1fb878884b98afc5fac0136c8758c7bf0a18.jpg",
+      "source_filename": "0083.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 137,
+      "image": "e4dc501bc4e83580bf0f931009d2a3d539b9420c.jpg",
+      "source_filename": "125.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 139,
+      "image": "f2642411fc961e98ec285131de095565892f0397.jpg",
+      "source_filename": "132.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 140,
+      "image": "0b882dea564133e7a10b4e7baaa1fdeb2a2367f2.jpg",
+      "source_filename": "0089.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 141,
+      "image": "bdbd1e1c6261f851ed6d7605633c5e3182dcb751.jpg",
+      "source_filename": "104.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 142,
+      "image": "8cf0a44f74b2f0c0f1d5b5b51ec27b0022ac6efe.jpg",
+      "source_filename": "0061.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 144,
+      "image": "2566b1eb9485eb7343497f5c05481d4b17ef9f46.jpg",
+      "source_filename": "114.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 146,
+      "image": "32528341058b1b9b327f7b31651f380832e17770.jpg",
+      "source_filename": "007.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 147,
+      "image": "da6e38c8075b5f619e8b7c01e53d6d7a466b753d.jpg",
+      "source_filename": "0086.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 148,
+      "image": "768762e3a0986d4848e2e7c3476dde72b13628aa.jpg",
+      "source_filename": "0059.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 150,
+      "image": "3638eb5d3ebcda5059ba4165c05b8189820a9d41.jpg",
+      "source_filename": "156.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 151,
+      "image": "671e26b515b1a2e2d27af679739bd0de8e48d9e9.jpg",
+      "source_filename": "0080.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 152,
+      "image": "f1a822e02f61ad7bfcc256c4f206d66b0b605e4e.jpg",
+      "source_filename": "115.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 154,
+      "image": "aaef7ae815ab9b42e6d2365965666b1eb9dba43c.jpg",
+      "source_filename": "15032022_211928.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 157,
+      "image": "a71ba19710d489723a8a1076f0c7fa53e569ad04.jpg",
+      "source_filename": "161.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 160,
+      "image": "8b96c1e4f424021e9b44e235dd1095df358963c8.jpg",
+      "source_filename": "113.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 162,
+      "image": "ff03bf0bb7ff79096dfa7aae0187f083eac60abe.jpg",
+      "source_filename": "0026.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 163,
+      "image": "15cbbbbcf45e645f94e0abf9a0c33845242a363a.jpg",
+      "source_filename": "0082.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 164,
+      "image": "4c9cd06a808f07aa88933b20979b4a877c727c7d.jpg",
+      "source_filename": "131.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 165,
+      "image": "1b08d7b41e939d01b7a2ad1952de8fd46dd97184.jpg",
+      "source_filename": "141.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 166,
+      "image": "276a427a6bf13778b2ef39531053e9906d8a4c85.jpg",
+      "source_filename": "0053.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 167,
+      "image": "4771870c2063c29f444e7182f5571dc6fa733eac.jpg",
+      "source_filename": "0035.jpg",
+      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
+    },
+    {
+      "review_number": 169,
+      "image": "9a856b8269aadc7fec650b096fef2327b9b0c165.jpg",
+      "source_filename": "IMG_2164-1774x2048.jpg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 170,
+      "image": "50937908e0070bec683d5e4a5b2f6dee4bab1af8.jpg",
+      "source_filename": "IMG_2211-1772x2048.jpg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 171,
+      "image": "ea64b06225435b49e3e7e8969f80316b9a2fc748.jpg",
+      "source_filename": "IMG_2217-1968x2048.jpg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 172,
+      "image": "8b5b1fe41d8bc53d7e98574ddb66bb95fc5e1884.jpg",
+      "source_filename": "IMG_2237-1794x2048.jpg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 173,
+      "image": "f2393cb645ae94d58c7acbe2b6aa97b55ce67fa8.jpg",
+      "source_filename": "IMG_2446.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 174,
+      "image": "27d788a54a3702473447fa3b8979623e9dc47285.jpg",
+      "source_filename": "IMG_2477.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 175,
+      "image": "45d7c3ebe60e25a42f1e190f4d7a85b82576178d.jpg",
+      "source_filename": "IMG_2741.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 176,
+      "image": "5fcf8f44a86ad37b82d93b69f1b13c29bce9acec.jpg",
+      "source_filename": "IMG_2850-1739x2048.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 177,
+      "image": "cecce77323fac582a84de78156c28e770cc95480.jpg",
+      "source_filename": "IMG_3076-1682x2048.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 178,
+      "image": "ce5afaa4582dcfe78c2a8983cd9bd195e836fca5.jpg",
+      "source_filename": "IMG_3100.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 179,
+      "image": "6860c91d34b44147ddcdf9947cd0f2c49aaa2c75.jpg",
+      "source_filename": "IMG_3112.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 180,
+      "image": "bf476b5822e28e5e8b567424b06c9db424cdcf73.jpg",
+      "source_filename": "IMG_3155-1640x2048.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 181,
+      "image": "a887c984aa1782d3db13dfaf659492a0fdd04b4c.jpg",
+      "source_filename": "IMG_3609-1843x2048.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 182,
+      "image": "544d07e0801d9efc3bc4cc7bf604aaa7bd08bd09.jpg",
+      "source_filename": "IMG_3645.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 183,
+      "image": "ebe149b5dd8aba96752725857be77ddcadb593aa.jpg",
+      "source_filename": "IMG_3732-1862x2048.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 184,
+      "image": "6140756eb428858729e1a2eb25949a6280bd9220.jpg",
+      "source_filename": "IMG_3759-2048x1843.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 185,
+      "image": "97d9c9749caa13ec5c38a9355c2c71290abaecc5.jpg",
+      "source_filename": "IMG_3761.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 186,
+      "image": "72221751f8c08ab5a3df4c2205c8ab3c69c58851.jpg",
+      "source_filename": "IMG_3763.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 187,
+      "image": "d95bea0cdf29836162bf845f54110531c00fc9bb.jpg",
+      "source_filename": "IMG_3765.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 188,
+      "image": "e3563fb60897a5ba43e941a25e9c3df2c6ee6a8c.jpg",
+      "source_filename": "IMG_3819.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 189,
+      "image": "e39e2b81ad6ee22c51763a3858dbd907ce82f32e.jpg",
+      "source_filename": "IMG_3856-1.jpeg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 190,
+      "image": "a3da97fef7642c7ccee9817f89da3011a628174c.jpg",
+      "source_filename": "IMG_9703.jpg",
+      "source_repo": "n8rtz/Wine-Reference-Drop"
+    }
+  ],
+  "excluded_review_numbers": [
+    14,
+    49,
+    52,
+    55,
+    64,
+    73,
+    133,
+    159,
+    168
+  ],
+  "excluded_images": [
+    {
+      "source_filename": "IMG_2732.jpeg",
+      "reason": "Owner-directed removal from the added candidate photo set; not packaged or sent to OCR."
+    }
+  ]
+}

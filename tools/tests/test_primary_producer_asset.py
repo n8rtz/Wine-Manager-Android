@@ -60,6 +60,16 @@ class PrimaryProducerAssetChecks(unittest.TestCase):
             self.assertEqual(c.execute('select count(*) from wine_links').fetchone()[0],m['wine_links'])
             self.assertEqual(c.execute('pragma foreign_key_check').fetchall(),[])
         for item in m['support'].values():self.assertEqual(p.sha(debug/item['file']),item['sha256'])
+        xwines=m['support']['xwines']
+        with sqlite3.connect(debug/xwines['file']) as c:
+            self.assertEqual(c.execute('select count(*) from support').fetchone()[0],xwines['support_rows'])
+            self.assertEqual(c.execute('select count(*) from candidates').fetchone()[0],xwines['candidates'])
+            self.assertEqual(c.execute('select count(*) from candidate_names').fetchone()[0],xwines['candidates'])
+            primary_keys={r[0] for r in c.execute('select key from candidates')}
+            with sqlite3.connect(primary/'producers.sqlite') as primary_db:
+                self.assertFalse(primary_keys & {r[0] for r in primary_db.execute('select distinct key from producers')})
+            key=c.execute('select key from candidates limit 1').fetchone()[0]
+            self.assertTrue(c.execute('select 1 from candidate_names where candidate_names match ? limit 1',(f'"{key[:3]}"',)).fetchone())
     def test_excel_numeric_and_na_values(self):
         self.assertEqual(p.clean(1000001.0),'1000001')
         for v in ('NA','n/a',None,'-'):self.assertEqual(p.clean(v),'')

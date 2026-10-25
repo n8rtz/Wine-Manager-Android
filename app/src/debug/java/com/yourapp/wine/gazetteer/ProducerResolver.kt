@@ -4,7 +4,7 @@ import java.text.Normalizer
 import java.util.Locale
 import com.yourapp.wine.diagnostics.PipelineFunnel
 
-/** Lab-only, primary producer/brand names only. Supporting layers never supply replacement names. */
+/** Lab-only candidate resolver. LWIN remains the primary index; supplemental X-Wines names are unverified candidates and always require manual confirmation. */
 internal class ProducerResolver(private val index:Index,
     private val onFailureTelemetry:(Map<String,String>)->Unit={}) {
     data class Entity(val id:String,val name:String,val key:String,val support:Set<String> = emptySet())
@@ -19,20 +19,13 @@ internal class ProducerResolver(private val index:Index,
         val telemetry:Map<String,String> = emptyMap())
     class BudgetExceeded:RuntimeException()
     companion object {
-        const val VERSION="producer-primary-v1"
+        const val VERSION="producer-primary-xwines-v2"
         const val MAX_SPANS=128
         const val MAX_HITS=32
 
-        /** Fuzzy-lookup candidate bound. This bounds *recall* only; the precision decisions are
-         * the edit-distance gate below plus the two-engine/disjoint-observation rule, the
-         * separation rule and the existing-producer protection, all of which still run on every
-         * candidate this bound returns.
-         *
-         * It replaces the previous `MAX_HITS+1` fetch. That fetch returned 33 rows and was
-         * followed by `if(hits.size > MAX_HITS) continue`, so any lookup whose FTS window was full
-         * dropped the whole span. Measured against the packaged producer index over the owner's
-         * 168-image Lab export, 1 147 of the 1 230 eligible spans had a full FTS window and were
-         * dropped; the fuzzy branch could therefore only ever contribute exact primary-key hits. */
+        /** Fuzzy-lookup candidate bound. This bounds recall only; precision is still gated by
+         * edit distance, independent OCR observations, candidate separation and protection of an
+         * existing producer. Candidates are not truth merely because a source lists them. */
         const val MAX_FUZZY_CANDIDATES=200
         private val noise=Regex("\\b(?:imported|importer|imports|distributed|distributor|bottled|bottler|embouteille|mis en bouteille|produced by|product of|produit de|appellation|controlee|protegee|alcohol|alc|vol|contains|sulfites|sulphites|government|warning|llc|inc|corp|ltd|www|http)\\b")
         private val generic=setOf("chateau","domaine","domaines","estate","winery","wine","wines","vineyard","vineyards","cellar","cellars","bodega","bodegas","maison","de","du","des","la","le","les","the","and","et","of","family","reserve","reserva","grand","cru")
@@ -132,6 +125,7 @@ internal class ProducerResolver(private val index:Index,
         }
         trace.visit("existing",true);trace.visit("selected",true)
         trace.visit("changed",entity.name!=existing,"existing supported producer retained")
-        return finish(entity.name,"primary producer/brand name supported by two engines; confirm manually",matches,id)
+        val sourceDescription=if(id.startsWith("xwines:")) "X-Wines winery-name candidate" else "primary LWIN producer/brand name"
+        return finish(entity.name,"$sourceDescription supported by two engines; confirm manually",matches,id)
     }
 }

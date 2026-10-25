@@ -77,7 +77,7 @@ class PhoneCorpusActivity:ComponentActivity() {
                         Text(mode.title,Modifier.padding(top=10.dp))
                     }
                 }
-                Text("Each option runs only its selected implementation. Production v1.0 is the Add Wine scanner. Production v2.0 retains the guarded-producer path. Lab preserves raw readings and adds linked primary-LWIN producer and wine evidence; spatial joins are alternatives only. Saved historical baseline rows are scored, never rerun.",style=MaterialTheme.typography.bodySmall)
+                Text("Each option runs only its selected implementation. Prod v1.0 is the Add Wine scanner; Prod v2.0 is the guarded-producer path; Prod v3.0 reproduces the pre-supplement Lab pipeline with LWIN-only producer data; Lab v4 adds the newer supplemental candidate sources. Saved historical rows are comparisons only, never rerun.",style=MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
@@ -203,7 +203,7 @@ class PhoneCorpusActivity:ComponentActivity() {
             item { TextButton(onClick={vm.stop();finish()}) { Text("Close — keep checkpoints") } }
         }
         if(newRun) AlertDialog(onDismissRequest={newRun=false},title={Text("Start a new benchmark?")},
-            text={Text("Existing runs are kept on the device. Export this run before changing runs or installing another APK. A new run starts the 107 included images again; 61 review-excluded images are not run.")},
+            text={Text("Existing runs are kept on the device. Export this run before changing runs or installing another APK. A new run starts the 106 included images again; 62 excluded images are not run.")},
             confirmButton={TextButton(onClick={newRun=false;vm.load(state.mode,true)}) { Text("New run") }},
             dismissButton={TextButton(onClick={newRun=false}) { Text("Cancel") }})
     }

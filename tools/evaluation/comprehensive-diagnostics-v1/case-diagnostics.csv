@@ -12,7 +12,7 @@ review_number,image,identity_group,eligible,baseline_fields_remaining,v3_fields_
 11,0cdcf44ef13642a764ba532f473df40bca586a09.jpg,identity-011,True,4,4,wine_name;country;region;subregion,wine_name;country;region;subregion,False,False,False
 12,0ff9ea33887ddd65e6c601286c9df6b6581ecf35.jpg,identity-012,False,1,1,producer,producer,False,False,False
 13,127dabca2115e60936586c92c7fd81df18a8d019.jpg,identity-013,True,0,0,,,True,True,True
-14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,True,1,3,producer,producer;region;subregion,False,False,False
+14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,False,0,2,,region;subregion,False,False,False
 15,17e6154f4689e66187a9b5a1395788463188aa50.jpg,identity-015,True,5,4,producer;wine_name;country;region;subregion,producer;wine_name;region;subregion,False,False,False
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,False,2,2,producer;wine_name,producer;wine_name,False,False,False
 17,19baa54e476e220e97e7575070746ad8a8526558.jpg,identity-017,False,2,1,producer;wine_name,producer,False,False,False
@@ -106,7 +106,7 @@ review_number,image,identity_group,eligible,baseline_fields_remaining,v3_fields_
 105,9f35852350601c538e8e57277c7ce819b356e35c.jpg,identity-105,True,2,2,producer;wine_name,producer;wine_name,False,False,True
 106,a1f980591b02be70ccd4b67c7a56c7e97a742836.jpg,identity-106,False,2,2,producer;wine_name,producer;wine_name,False,False,False
 107,a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,identity-107,True,2,3,producer;wine_name,producer;wine_name;vintage,False,False,False
-108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,True,1,1,producer,producer,False,False,False
+108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,False,0,0,,,False,False,False
 109,a89d64f59b5cad9568525e5d9236743a95c7694c.jpg,identity-109,False,1,1,wine_name,wine_name,False,False,False
 110,aab5566af0cb4816f9c448bf2a65401a3653dbcf.jpg,identity-110,False,0,0,,,False,False,False
 111,ab16e6c541204fd130c05581d990c76220f47e3d.jpg,identity-111,False,4,4,producer;wine_name;country;region,producer;wine_name;country;region,False,False,False

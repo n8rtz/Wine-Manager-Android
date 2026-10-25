@@ -99,8 +99,8 @@ internal object PhoneCorpusCsvTable {
             PhoneCorpusScoreboard.MatrixCell(row.int("labels_passed"),row.int("labels_blocked"),
                 row.int("labels_not_reached"),row.int("labels_not_recorded"),row.int("labels_not_applicable"))
         } ?: PhoneCorpusScoreboard.MatrixCell(0,0,notRecorded=attempted)
-        fun visible(step:F.Step)=(!step.labOnly || mode==PhoneCorpusRunner.Mode.LAB) &&
-            (!step.productionOnly || mode!=PhoneCorpusRunner.Mode.LAB)
+        fun visible(step:F.Step)=(!step.labOnly || mode.usesSpatialEvidence) &&
+            (!step.productionOnly || !mode.usesSpatialEvidence)
         val mainSteps=F.steps.filter { step ->
             visible(step) && !step.id.startsWith("score.") &&
                 (step.id in setOf("mlkit.started","mlkit.completed","mlkit.mapped","paddle.started","paddle.detected","paddle.regions","paddle.lines","paddle.completed","paddle.mapped","extract.assignment") ||

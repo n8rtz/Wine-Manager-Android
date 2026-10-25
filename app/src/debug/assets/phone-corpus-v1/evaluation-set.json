@@ -2,9 +2,9 @@
   "version": 1,
   "source_workbook": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/reference-data-168.xlsx",
   "source_workbook_sha256": "f7b79d5760892c2e36297af96ac96351ea5f7469d8fdf9c4b9d9d63f30bc1e0b",
-  "review_decision": "Run only uncolored rows present in the workbook. Exclude red rows; exclude yellow marginal rows; exclude review numbers 27 and 47, which are absent from the workbook, per user direction. Excluded photos remain packaged but are not sent to OCR.",
-  "included_count": 107,
-  "excluded_count": 61,
+  "review_decision": "Run only uncolored rows present in the workbook. Exclude red rows; exclude yellow marginal rows; exclude review numbers 27 and 47, which are absent from the workbook, per user direction. Excluded photos remain packaged but are not sent to OCR. Review 14 is additionally excluded at the owner's request because Club des Sommeliers is branding rather than an established producer.",
+  "included_count": 106,
+  "excluded_count": 62,
   "included_images": [
     {
       "review_number": 2,
@@ -29,10 +29,6 @@
     {
       "review_number": 13,
       "image": "127dabca2115e60936586c92c7fd81df18a8d019.jpg"
-    },
-    {
-      "review_number": 14,
-      "image": "1312f082dcbacf739b6edcc04b4a55d731254782.jpg"
     },
     {
       "review_number": 17,
@@ -477,6 +473,13 @@
       "image": "0cdcf44ef13642a764ba532f473df40bca586a09.jpg",
       "disposition": "exclude",
       "review_color": "yellow"
+    },
+    {
+      "review_number": 14,
+      "image": "1312f082dcbacf739b6edcc04b4a55d731254782.jpg",
+      "disposition": "exclude",
+      "review_color": "owner_excluded",
+      "reason": "Owner requested exclusion: Club des Sommeliers is label branding, not an established producer."
     },
     {
       "review_number": 15,

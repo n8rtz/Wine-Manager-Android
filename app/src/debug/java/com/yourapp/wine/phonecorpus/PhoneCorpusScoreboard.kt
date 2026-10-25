@@ -7,16 +7,20 @@ import com.yourapp.wine.textlab.TextLabCsv
 import com.yourapp.wine.diagnostics.PipelineFunnel as F
 
 /** Scores only committed predictions. Targets are never supplied to the runner. */
-internal class PhoneCorpusScoreboard(context:Context) {
-    private val reference=JSONObject(context.assets.open("phone-corpus-v1/scoring.json").bufferedReader().use { it.readText() })
-    private val savedV2=JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() })
+internal class PhoneCorpusScoreboard(
+    context:Context,
+    private val assetRoot:String="phone-corpus-v1",
+    private val includeLegacyComparisons:Boolean=assetRoot=="phone-corpus-v1"
+) {
+    private val reference=JSONObject(context.assets.open("$assetRoot/scoring.json").bufferedReader().use { it.readText() })
+    private val savedV2=if(includeLegacyComparisons) JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() }) else JSONObject()
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
     private val includedImages=run {
-        val selection=JSONObject(context.assets.open("phone-corpus-v1/evaluation-set.json").bufferedReader().use { it.readText() })
+        val selection=JSONObject(context.assets.open("$assetRoot/evaluation-set.json").bufferedReader().use { it.readText() })
         val list=selection.getJSONArray("included_images")
         (0 until list.length()).map { list.getJSONObject(it).getString("image") }.toSet().also {
-            check(it.size==PhoneCorpusRunner.ACTIVE_IMAGE_COUNT && it.all { id -> id in targets }) { "Curated evaluation set does not match packaged references" }
+            check(it.size==selection.optInt("included_count",list.length()) && it.all { id -> id in targets }) { "Curated evaluation set does not match packaged references" }
         }
     }
     data class MatrixCell(val passed:Int,val failed:Int,val notReached:Int=0,val notRecorded:Int=0,val notApplicable:Int=0) {
@@ -32,7 +36,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
         val names=listOf(mode.pipelineId)
         val rows=mutableListOf<List<String>>()
         val headers=listOf("Pipeline","Attempted","Eligible","Complete","One error","2+ errors","Failed","Correct values","Wrong","Missing","Correct blanks","Unsupported","Unresolved","Deadline / partial")
-        fun score(name:String,items:List<Pair<String,JSONObject>>,provenance:Map<String,String> = emptyMap()) {
+        fun score(name:String,items:List<Pair<String,JSONObject>>,provenance:Map<String,String> = emptyMap(),displayName:String=name) {
             var eligible=0;var complete=0;var one=0;var multi=0;var failedCount=0;var partial=0;var unresolvedCount=0
             val counts=mutableMapOf<String,Int>()
             for((image,prediction) in items) {
@@ -71,7 +75,7 @@ internal class PhoneCorpusScoreboard(context:Context) {
                         "fallback_choices" to (prediction.optJSONObject("choices")?.optJSONArray(f)?.toString() ?: "[]"))+provenance
                 }
             }
-            val row=listOf(name,items.size.toString(),eligible.toString(),"$complete/$eligible",one.toString(),multi.toString(),failedCount.toString(),
+            val row=listOf(displayName,items.size.toString(),eligible.toString(),"$complete/$eligible",one.toString(),multi.toString(),failedCount.toString(),
                 (counts["correct_value"] ?: 0).toString(),(counts["wrong_value"] ?: 0).toString(),(counts["missing_value"] ?: 0).toString(),
                 (counts["correct_blank"] ?: 0).toString(),(counts["unsupported_fill"] ?: 0).toString(),unresolvedCount.toString(),partial.toString())
             rows+=row
@@ -88,11 +92,11 @@ internal class PhoneCorpusScoreboard(context:Context) {
                 if(p.optString("error").isNotBlank()) current.put("error",p.optString("error"))
                 p.getString("image") to current
             }
-            score(name,items)
+            score(name,items,displayName=mode.title)
         }
         val funnel=F.aggregate(funnelLabels) { step ->
-            (!step.labOnly || mode==PhoneCorpusRunner.Mode.LAB) &&
-                (!step.productionOnly || mode!=PhoneCorpusRunner.Mode.LAB)
+            (!step.labOnly || mode.usesSpatialEvidence) &&
+                (!step.productionOnly || !mode.usesSpatialEvidence)
         }
         val latestFunnelLabels=funnelLabels.groupBy { it.image }.values.map { attempts -> attempts.maxBy { it.attempt } }
         fun matrixCell(labels:List<F.Label>,stepId:String, prerequisite:String?=null):MatrixCell? {
@@ -186,27 +190,35 @@ internal class PhoneCorpusScoreboard(context:Context) {
             }
         }
         csv.addAll(funnel.map { it.csv(mode.pipelineId) })
-        // Frozen v2 predictions are scored only after current predictions, never supplied to OCR.
-        val savedPredictions=savedV2.getJSONObject("predictions")
-        check(savedPredictions.keys().asSequence().toSet()==targets.keys) { "Saved v2 corpus differs from reference" }
-        val v2Provenance=mapOf("result_origin" to "saved_phone_run", "source_build" to savedV2.getString("source_build"),
-            "source_pipeline" to savedV2.getString("source_pipeline"),"source_csv_sha256" to savedV2.getString("source_csv_sha256"))
-        fun savedV2Items(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",savedPredictions.getJSONObject(im)) }
-        score("Saved Production v2.0 · same attempted photos",savedV2Items(ids),v2Provenance)
-        score("Saved Production v2.0 · same curated set",savedV2Items(includedImages),v2Provenance)
-        val baseline=reference.getJSONObject("baseline")
-        fun baselineItems(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",baseline.getJSONObject(im)) }
-        score("Frozen baseline · same attempted photos",baselineItems(ids))
-        score("Frozen baseline · same curated set",baselineItems(includedImages))
+        if(includeLegacyComparisons) {
+            // Frozen legacy predictions are scored only after current predictions, never supplied to OCR.
+            val savedPredictions=savedV2.getJSONObject("predictions")
+            check(savedPredictions.keys().asSequence().toSet()==targets.keys) { "Saved v2 corpus differs from reference" }
+            val v2Provenance=mapOf("result_origin" to "saved_phone_run", "source_build" to savedV2.getString("source_build"),
+                "source_pipeline" to savedV2.getString("source_pipeline"),"source_csv_sha256" to savedV2.getString("source_csv_sha256"))
+            fun savedV2Items(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",savedPredictions.getJSONObject(im)) }
+            score("Saved Production v2.0 · same attempted photos",savedV2Items(ids),v2Provenance)
+            score("Saved Production v2.0 · same curated set",savedV2Items(includedImages),v2Provenance)
+            val baseline=reference.getJSONObject("baseline")
+            fun baselineItems(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",baseline.getJSONObject(im)) }
+            score("Frozen baseline · same attempted photos",baselineItems(ids))
+            score("Frozen baseline · same curated set",baselineItems(includedImages))
+        }
         val text=buildString {
-            appendLine("CURATED PHONE CORPUS · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
-            appendLine("107 uncolored labels are run. Red/yellow/omitted labels remain out of OCR. The selected set has 106 fully scorable forms and one partly unresolved form; reference judgments are provisional.")
-            appendLine("Saved Production v2.0 comes from the full phone run on build ${savedV2.getString("source_build")} (then named lab-guarded-producer). Saved result rows are loaded, NOT rerun.")
-            appendLine("The older Frozen baseline is historical, NOT Production v1.0. For partial runs, compare same-attempted-photo rows.")
+            appendLine("${if(includeLegacyComparisons) "CURATED PHONE CORPUS" else "WINE APP LABELS"} · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
+            if(includeLegacyComparisons) {
+                appendLine("106 selected labels are run. Red/yellow/omitted/owner-excluded labels remain out of OCR. The selected set has 105 fully scorable forms and one partly unresolved form; reference judgments are provisional.")
+                appendLine("Saved Production v2.0 comes from the full phone run on build ${savedV2.getString("source_build")} (then named lab-guarded-producer). Saved result rows are loaded, NOT rerun.")
+                appendLine("The older Frozen baseline is historical, NOT Production v1.0. For partial runs, compare same-attempted-photo rows.")
+            } else {
+                appendLine("This test uses all 125 retained rows in the updated, owner-reviewed workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded. The full legacy 168-photo run is not replayed.")
+                appendLine("Unresolved workbook references remain unscorable; other unknown locations/vintages are expected blank. These development references are not held-out accuracy.")
+            }
             appendLine(headers.joinToString(" | "));rows.forEach { appendLine(it.joinToString(" | ")) }
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
-            appendLine("The former 168-photo acceptance threshold is retired for this curated subset. Set new acceptance thresholds only after reviewing the remaining reference data; partial runs do not establish full-set acceptance.")
-            appendLine("Production v1.0 uses 15s shared scanning. Production v2.0 and Lab use 60s/engine on full-label crops. Only Lab enables spatial merging. Each mode scores only its selected implementation; timings are not interchangeable.")
+            if(includeLegacyComparisons) appendLine("The former 168-photo acceptance threshold is retired for this curated subset. Set new acceptance thresholds only after reviewing the remaining reference data; partial runs do not establish full-set acceptance.")
+            else appendLine("This screen scores the 125 retained workbook rows; it does not replay the full legacy 168-photo run.")
+            appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v3.0 uses the prior spatial Lab pipeline with an LWIN-only producer source; Lab v4 uses the current spatial pipeline with supplemental candidate sources. Each mode runs and scores only its selected implementation.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")
             appendLine("Three tables: ML Kit OCR, Paddle OCR (sequential in runner), and post-OCR. Post-OCR evidence hypotheses use joint field assignment; only genuine dependencies are conditional. NR, unrecorded, and N/A remain distinct. Scores are correctness gates, including correct expected blanks.")

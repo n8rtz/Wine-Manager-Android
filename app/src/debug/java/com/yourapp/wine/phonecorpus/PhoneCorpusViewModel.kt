@@ -56,7 +56,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
         }.maxByOrNull { it.lastModified() }?.let { return it }
         val dir=File(root,prefix+UUID.randomUUID()).apply { mkdirs() }
         val meta=JSONObject().put("build",BuildConfig.BUILD_COMMIT).put("working_tree",BuildConfig.BUILD_WORKING_TREE).put("mode",mode.name)
-            .put("pipeline",mode.pipelineId).put("spatial_merging",mode==PhoneCorpusRunner.Mode.LAB)
+            .put("pipeline",mode.pipelineId).put("spatial_merging",mode.usesSpatialEvidence)
             .put("schema_version",3).put("pipeline_funnel_version",com.yourapp.wine.diagnostics.PipelineFunnel.VERSION).put("corpus_manifest",JSONObject(app.assets.open("phone-corpus-v1/manifest.json").bufferedReader().use { it.readText() }))
             .put("apk_updated_ms",installId).put("created_ms",System.currentTimeMillis()).put("runtime","phone; fresh OCR").put("result_origin","on_device")
         atomic(File(dir,"run.json"),meta.toString(2));return dir
@@ -118,7 +118,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
                 check(packaged.length()==PhoneCorpusRunner.PACKAGED_IMAGE_COUNT)
                 val selection=JSONObject(app.assets.open("phone-corpus-v1/evaluation-set.json").bufferedReader().use { it.readText() })
                 val included=(0 until selection.getJSONArray("included_images").length()).map { selection.getJSONArray("included_images").getJSONObject(it).getString("image") }.toSet()
-                check(included.size==PhoneCorpusRunner.ACTIVE_IMAGE_COUNT && selection.optInt("excluded_count")==61)
+                check(included.size==PhoneCorpusRunner.ACTIVE_IMAGE_COUNT && selection.optInt("excluded_count")==62)
                 val manifest=(0 until packaged.length()).map { packaged.getJSONObject(it) }.filter { it.getString("image") in included }
                 check(manifest.size==included.size)
                 val old=predictions(dir).associateBy { it.getString("image") }

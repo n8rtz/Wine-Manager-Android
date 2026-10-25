@@ -34,8 +34,21 @@ internal class ProducerGazetteer private constructor(
         val exact=read("SELECT id,name,key FROM producers WHERE key=? ORDER BY id LIMIT ?",key)
         if(exact.isNotEmpty()) return exact
         val query=key.windowed(3).filter { it.none(Char::isWhitespace) }.distinct().take(24).joinToString(" OR ") { "\"$it\"" }
-        if(query.isBlank()) return emptyList()
-        return read("SELECT p.id,p.name,p.key FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?",query)
+        val primaryFuzzy=if(query.isBlank()) emptyList() else read(
+            "SELECT p.id,p.name,p.key FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?",query)
+        val supplemental=support["xwines"] ?: return primaryFuzzy
+        fun readCandidates(sql:String,arg:String):List<ProducerResolver.Entity> {
+            val rows=mutableListOf<ProducerResolver.Entity>()
+            supplemental.prepare(sql).use { s ->
+                s.bindText(1,arg);s.bindLong(2,limit.toLong())
+                while(s.step()) { checkBudget();rows+=ProducerResolver.Entity(s.getText(0),s.getText(1),s.getText(2),setOf("xwines")) }
+            }
+            return rows
+        }
+        val exactSupplement=readCandidates("SELECT id,name,key FROM candidates WHERE key=? ORDER BY id LIMIT ?",key)
+        val fuzzySupplement=if(query.isBlank() || exactSupplement.isNotEmpty()) emptyList() else readCandidates(
+            "SELECT c.id,c.name,c.key FROM candidate_names n JOIN candidates c ON n.id=c.id WHERE candidate_names MATCH ? ORDER BY bm25(candidate_names),c.id LIMIT ?",query)
+        return (primaryFuzzy+exactSupplement+fuzzySupplement).distinctBy { it.id }
     }
     override fun lookupWines(key:String,producerIds:Set<String>,limit:Int,checkBudget:()->Unit):List<LinkedWineResolver.Wine> {
         require(producerIds.size in 1..8 && limit in 1..ProducerResolver.MAX_FUZZY_CANDIDATES);checkBudget()
@@ -64,7 +77,7 @@ internal class ProducerGazetteer private constructor(
             file.inputStream().use { input -> val b=ByteArray(65536);while(true) { checkBudget();val n=input.read(b);if(n<0) break;md.update(b,0,n) } }
             return md.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
         }
-        fun open(context:Context,checkBudget:()->Unit={},onStep:(String,Boolean)->Unit={ _,_ -> }):ProducerGazetteer {
+        fun open(context:Context,checkBudget:()->Unit={},includeSupplementalSources:Boolean=true,onStep:(String,Boolean)->Unit={ _,_ -> }):ProducerGazetteer {
             check(Looper.myLooper()!=Looper.getMainLooper());checkBudget()
             onStep("asset.manifest",false)
             val text=context.assets.open("$ASSET/manifest.json").bufferedReader().use { it.readText() }
@@ -109,10 +122,21 @@ internal class ProducerGazetteer private constructor(
                 onStep("asset.wine",true)
                 onStep("asset.support",false)
                 val layers=manifest.optJSONObject("support")
-                for(source in listOf("ttb","osm")) layers?.optJSONObject(source)?.let { item ->
+                val sourceLayers=if(includeSupplementalSources) listOf("ttb","osm","xwines") else emptyList()
+                for(source in sourceLayers) layers?.optJSONObject(source)?.let { item ->
                     support[source]=load(item.getString("file"),item.getString("sha256"))
+                    if(source=="xwines") {
+                        val candidateCount=item.getLong("candidates")
+                        support.getValue(source).prepare("SELECT COUNT(*) FROM candidates").use { check(it.step() && it.getLong(0)==candidateCount) }
+                        support.getValue(source).prepare("SELECT COUNT(*) FROM candidate_names").use { check(it.step() && it.getLong(0)==candidateCount) }
+                        support.getValue(source).prepare("SELECT id FROM candidate_names WHERE candidate_names MATCH '\"win\"' LIMIT 1").use { it.step() }
+                    }
                 }
-                checkBudget();onStep("asset.support",true);return ProducerGazetteer(db,loadedWines,support,"${manifest.getString("version")}:producer=$hash;wine=$wineHash")
+                if(includeSupplementalSources) check(support.containsKey("xwines")) { "X-Wines supplemental candidate index required" }
+                val supportHashes=support.keys.sorted().joinToString("") { layers!!.getJSONObject(it).getString("sha256") }
+                val supportHash=if(supportHashes.isEmpty()) "none" else MessageDigest.getInstance("SHA-256").digest(supportHashes.toByteArray()).joinToString("") { "%02x".format(it.toInt() and 255) }
+                val sourceProfile=if(includeSupplementalSources) "supplemental-v2" else "lwin-only-v1"
+                checkBudget();onStep("asset.support",true);return ProducerGazetteer(db,loadedWines,support,"${manifest.getString("version")}:profile=$sourceProfile;producer=$hash;wine=$wineHash;support=$supportHash")
             } catch(e:Exception) { support.values.forEach { it.close() };wineDb?.close();db.close();throw e }
         }
     }

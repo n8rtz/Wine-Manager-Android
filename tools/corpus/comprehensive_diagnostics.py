@@ -141,19 +141,20 @@ def run(output):
     (output/'summary.json').write_text(json.dumps(summary,indent=2,ensure_ascii=False)+'\n')
     def csvwrite(path,rows):
         with path.open('w',newline='') as file:
-            writer=csv.DictWriter(file,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+            writer=csv.DictWriter(file,fieldnames=list(rows[0]),lineterminator="\n");writer.writeheader();writer.writerows(rows)
     csvwrite(output/'field-diagnostics.csv',diagnostic);csvwrite(output/'case-diagnostics.csv',case_rows)
     with gzip.open(output/'policy-outputs.json.gz','wt') as file:json.dump(policy_outputs,file,ensure_ascii=False)
     with gzip.open(output/'policy-decisions.json.gz','wt') as file:
         json.dump(dict(owners=policy_decisions,source_legend={'0':'lab_baseline','1':'experimental_v3','-1':'abstained'},
                        evidence_scores={im:{f:[evidence(baseline[im][f],f,readings[im]),evidence(v3[im][f],f,readings[im])] for f in FIELDS} for im in sorted(names)}),file)
     ranking=sorted(summary['policies'].items(),key=lambda kv:(-kv[1]['images']['six_field_fully_correct'],kv[1]['fields']['wrong'],-kv[1]['fields']['correct'],kv[0]))
+    eligible_count=summary['systems']['lab_baseline']['images']['six_field_eligible']
     lines=['# Comprehensive saved-corpus diagnostic suite','',
         '**Exploratory development-set analysis—not held-out accuracy or an Android implementation of a hybrid.** No OCR, baseline, v2 or v3 extractor was rerun. All selection policies operate on saved outputs only; production unchanged.','',
         '## Existing workflow components','', '| Saved system | Correct / wrong / abstained | Complete / eligible |','|---|---:|---:|']
     for name,s in summary['systems'].items():
         f=s['fields'];i=s['images'];lines.append(f"| {name} | {f['correct']} / {f['wrong']} / {f['abstained']} | {i['six_field_fully_correct']} / {i['six_field_eligible']} |")
-    lines+=['','## Opportunity bounds (use reference answers; NOT runtime policies)','',f'- Either complete entry already correct: **{oracle_whole}/103**.',f'- Every field correct in at least one selected output: **{oracle_fields}/103**.',f'- Every field correct somewhere in selected outputs / baseline alternatives / v3 hypotheses: **{oracle_pools}/103**.',
+    lines+=['','## Opportunity bounds (use reference answers; NOT runtime policies)','',f'- Either complete entry already correct: **{oracle_whole}/{eligible_count}**.',f'- Every field correct in at least one selected output: **{oracle_fields}/{eligible_count}**.',f'- Every field correct somewhere in selected outputs / baseline alternatives / v3 hypotheses: **{oracle_pools}/{eligible_count}**.',
         'The latter two can require incompatible choices. They locate potential opportunity, not an achievable guarantee. Candidate traces are limited to what was saved.','',
         '## Stage triage','', '| Category | Fields |','|---|---:|']
     for name,n in sorted(stage_counts.items()):lines.append(f'| {name} | {n} |')
@@ -165,14 +166,14 @@ def run(output):
     for name,s in ranking[:12]:
         f=s['fields'];i=s['images'];lines.append(f"| {name} | {i['six_field_fully_correct']} / {i['six_field_eligible']} | {f['correct']} / {f['wrong']} / {f['abstained']} | {len(s['complete_gained'])} / {len(s['complete_lost'])} | {s['mixed_geography_sources']} |")
     lines+=['','## Near-complete entries','',
-        'Number of unresolved known fields on the 103 six-known photos (wrong fills and blanks both count):','']
+        f'Number of unresolved known fields on the {eligible_count} six-known photos (wrong fills and blanks both count):','']
     for system,counts in summary['near_complete_eligible'].items():
         lines.append(f'- {system}: '+', '.join(f'{n} fields remaining: {counts[n]} photos' for n in sorted(counts,key=int)))
     lines+=['','## Lower-error shortlist (not automatically safe to deploy)','',
         'These group-preserving policies have no more total wrong fills than the saved baseline. Complete-entry gains and losses still need inspection; a lower error total does not mean zero new errors.','']
     for name in summary['safer_shortlist'][:5]:
         s=summary['policies'][name];f=s['fields']
-        lines.append(f"- `{name}`: {s['images']['six_field_fully_correct']}/103 complete; {f['correct']} correct, {f['wrong']} wrong, {f['abstained']} abstained; {len(s['complete_gained'])} complete entries gained and {len(s['complete_lost'])} lost.")
+        lines.append(f"- `{name}`: {s['images']['six_field_fully_correct']}/{eligible_count} complete; {f['correct']} correct, {f['wrong']} wrong, {f['abstained']} abstained; {len(s['complete_gained'])} complete entries gained and {len(s['complete_lost'])} lost.")
     lines+=['','## Review and reproduction','',
         '- `case-diagnostics.csv`: eligible near-complete entries, blocking fields and oracle opportunity flags.',
         '- `field-diagnostics.csv`: all 1008 targets, outputs, provenance, saved alternatives and stage triage.',

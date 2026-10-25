@@ -26,7 +26,7 @@ class PipelineFunnelChecks(unittest.TestCase):
             with source.open("w", newline="") as stream:
                 writer = csv.DictWriter(stream, fieldnames=["row_type", "pipeline", "image", "field"])
                 writer.writeheader()
-                writer.writerow(dict(row_type="field", pipeline="lab-linked-wine-v1", image="one", field="producer"))
+                writer.writerow(dict(row_type="field", pipeline="lab-v4-expanded-producers", image="one", field="producer"))
             with self.assertRaisesRegex(ValueError, "168 distinct"):
                 fixture.prepare(source, [])
 
@@ -107,8 +107,8 @@ class PipelineFunnelChecks(unittest.TestCase):
     def test_selected_mode_filters_exclusive_steps_and_complete_row_is_bottom(self):
         source = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
         scoreboard = (ROOT / "app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt").read_text()
-        self.assertIn("(!step.labOnly || mode==PhoneCorpusRunner.Mode.LAB)", scoreboard)
-        self.assertIn("(!step.productionOnly || mode!=PhoneCorpusRunner.Mode.LAB)", scoreboard)
+        self.assertIn("(!step.labOnly || mode.usesSpatialEvidence)", scoreboard)
+        self.assertIn("(!step.productionOnly || !mode.usesSpatialEvidence)", scoreboard)
         self.assertIn('it.id != "score.complete"', (ROOT / "app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text())
         self.assertIn("var expandedFunnelSteps by rememberSaveable(state.mode) { mutableStateOf(emptySet<String>()) }", source)
         self.assertIn("board.matrix.last().step.id == \"score.complete\"", (ROOT / "tools/logic-checks/PipelineFunnelChecks.kt").read_text())

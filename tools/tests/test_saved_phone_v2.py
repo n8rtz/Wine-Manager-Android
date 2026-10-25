@@ -17,7 +17,7 @@ class SavedPhoneV2Checks(unittest.TestCase):
         saved=json.loads((ASSETS/'saved-production-v2.json').read_text())['predictions']
         targets=json.loads((ASSETS/'scoring.json').read_text())['images']
         self.assertEqual(set(saved),{im['image'] for im in targets})
-        for size,expected_forms in [(168,(34,43,83)),(19,(4,5,6)),(0,(0,0,0))]:
+        for size,expected_forms in [(168,(34,42,82)),(19,(4,5,5)),(0,(0,0,0))]:
             counts=Counter();forms=Counter()
             for im in targets[:size]:
                 outcomes=[]
@@ -27,7 +27,7 @@ class SavedPhoneV2Checks(unittest.TestCase):
                     forms[min(2,sum(o not in ('correct_value','correct_blank') for o in outcomes))]+=1
             self.assertEqual(tuple(forms[i] for i in range(3)),expected_forms)
             if size==168:
-                for key,value in dict(correct_value=630,wrong_value=80,missing_value=184,correct_blank=77,unsupported_fill=20).items():self.assertEqual(counts[key],value)
+                for key,value in dict(correct_value=630,wrong_value=80,missing_value=182,correct_blank=77,unsupported_fill=20,unscored_blank=12,unscored_filled=7).items():self.assertEqual(counts[key],value)
     def test_scoring_only_no_recognition_input(self):
         base=ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus'
         board=(base/'PhoneCorpusScoreboard.kt').read_text()

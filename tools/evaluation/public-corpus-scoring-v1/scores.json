@@ -101,30 +101,30 @@
     "production": {
       "all_fields": {
         "correct": 480,
-        "wrong": 143,
+        "wrong": 141,
         "abstained": 271,
-        "unscored_filled": 16,
+        "unscored_filled": 18,
         "unscored_blank": 98,
-        "scored": 894,
-        "unscored": 114,
+        "scored": 892,
+        "unscored": 116,
         "total": 1008,
         "filled": 639,
-        "correct_over_scored_pct": 53.69,
-        "correct_over_scored_fills_pct": 77.05
+        "correct_over_scored_pct": 53.81,
+        "correct_over_scored_fills_pct": 77.29
       },
       "per_field": {
         "producer": {
           "correct": 35,
-          "wrong": 71,
+          "wrong": 69,
           "abstained": 59,
-          "unscored_filled": 2,
+          "unscored_filled": 4,
           "unscored_blank": 1,
-          "scored": 165,
-          "unscored": 3,
+          "scored": 163,
+          "unscored": 5,
           "total": 168,
           "filled": 108,
-          "correct_over_scored_pct": 21.21,
-          "correct_over_scored_fills_pct": 33.02
+          "correct_over_scored_pct": 21.47,
+          "correct_over_scored_fills_pct": 33.65
         },
         "wine_name": {
           "correct": 49,
@@ -194,35 +194,35 @@
       },
       "image_results": {
         "images": 168,
-        "six_field_eligible": 103,
-        "six_field_ineligible": 65,
+        "six_field_eligible": 101,
+        "six_field_ineligible": 67,
         "six_field_fully_correct": 6,
-        "all_known_fields_correct_not_full_six": 15,
-        "images_with_scored_wrong_fill": 108,
+        "all_known_fields_correct_not_full_six": 17,
+        "images_with_scored_wrong_fill": 106,
         "images_with_scored_abstention": 113
       },
       "one_photo_per_identity": {
         "selection": "lowest review number (source hash order); fixed independently of outputs",
         "all_fields": {
           "correct": 417,
-          "wrong": 114,
+          "wrong": 112,
           "abstained": 231,
-          "unscored_filled": 16,
+          "unscored_filled": 18,
           "unscored_blank": 80,
-          "scored": 762,
-          "unscored": 96,
+          "scored": 760,
+          "unscored": 98,
           "total": 858,
           "filled": 547,
-          "correct_over_scored_pct": 54.72,
-          "correct_over_scored_fills_pct": 78.53
+          "correct_over_scored_pct": 54.87,
+          "correct_over_scored_fills_pct": 78.83
         },
         "image_results": {
           "images": 143,
-          "six_field_eligible": 87,
-          "six_field_ineligible": 56,
+          "six_field_eligible": 85,
+          "six_field_ineligible": 58,
           "six_field_fully_correct": 6,
-          "all_known_fields_correct_not_full_six": 14,
-          "images_with_scored_wrong_fill": 86,
+          "all_known_fields_correct_not_full_six": 16,
+          "images_with_scored_wrong_fill": 84,
           "images_with_scored_abstention": 93
         }
       },
@@ -242,16 +242,16 @@
         },
         "YELLOW": {
           "correct": 473,
-          "wrong": 143,
+          "wrong": 141,
           "abstained": 0,
-          "unscored_filled": 16,
+          "unscored_filled": 18,
           "unscored_blank": 0,
-          "scored": 616,
-          "unscored": 16,
+          "scored": 614,
+          "unscored": 18,
           "total": 632,
           "filled": 632,
-          "correct_over_scored_pct": 76.79,
-          "correct_over_scored_fills_pct": 76.79
+          "correct_over_scored_pct": 77.04,
+          "correct_over_scored_fills_pct": 77.04
         },
         "RED": {
           "correct": 0,
@@ -283,16 +283,16 @@
         },
         "true": {
           "correct": 273,
-          "wrong": 88,
+          "wrong": 86,
           "abstained": 173,
-          "unscored_filled": 5,
+          "unscored_filled": 7,
           "unscored_blank": 31,
-          "scored": 534,
-          "unscored": 36,
+          "scored": 532,
+          "unscored": 38,
           "total": 570,
           "filled": 366,
-          "correct_over_scored_pct": 51.12,
-          "correct_over_scored_fills_pct": 75.62
+          "correct_over_scored_pct": 51.32,
+          "correct_over_scored_fills_pct": 76.04
         }
       },
       "repeat_consistency": [
@@ -534,28 +534,28 @@
       "all_fields": {
         "correct": 597,
         "wrong": 100,
-        "abstained": 197,
+        "abstained": 195,
         "unscored_filled": 27,
-        "unscored_blank": 87,
-        "scored": 894,
-        "unscored": 114,
+        "unscored_blank": 89,
+        "scored": 892,
+        "unscored": 116,
         "total": 1008,
         "filled": 724,
-        "correct_over_scored_pct": 66.78,
+        "correct_over_scored_pct": 66.93,
         "correct_over_scored_fills_pct": 85.65
       },
       "per_field": {
         "producer": {
           "correct": 71,
           "wrong": 38,
-          "abstained": 56,
+          "abstained": 54,
           "unscored_filled": 2,
-          "unscored_blank": 1,
-          "scored": 165,
-          "unscored": 3,
+          "unscored_blank": 3,
+          "scored": 163,
+          "unscored": 5,
           "total": 168,
           "filled": 111,
-          "correct_over_scored_pct": 43.03,
+          "correct_over_scored_pct": 43.56,
           "correct_over_scored_fills_pct": 65.14
         },
         "wine_name": {
@@ -626,36 +626,36 @@
       },
       "image_results": {
         "images": 168,
-        "six_field_eligible": 103,
-        "six_field_ineligible": 65,
+        "six_field_eligible": 101,
+        "six_field_ineligible": 67,
         "six_field_fully_correct": 23,
-        "all_known_fields_correct_not_full_six": 34,
+        "all_known_fields_correct_not_full_six": 36,
         "images_with_scored_wrong_fill": 76,
-        "images_with_scored_abstention": 96
+        "images_with_scored_abstention": 94
       },
       "one_photo_per_identity": {
         "selection": "lowest review number (source hash order); fixed independently of outputs",
         "all_fields": {
           "correct": 515,
           "wrong": 84,
-          "abstained": 163,
+          "abstained": 161,
           "unscored_filled": 26,
-          "unscored_blank": 70,
-          "scored": 762,
-          "unscored": 96,
+          "unscored_blank": 72,
+          "scored": 760,
+          "unscored": 98,
           "total": 858,
           "filled": 625,
-          "correct_over_scored_pct": 67.59,
+          "correct_over_scored_pct": 67.76,
           "correct_over_scored_fills_pct": 85.98
         },
         "image_results": {
           "images": 143,
-          "six_field_eligible": 87,
-          "six_field_ineligible": 56,
+          "six_field_eligible": 85,
+          "six_field_ineligible": 58,
           "six_field_fully_correct": 21,
-          "all_known_fields_correct_not_full_six": 29,
+          "all_known_fields_correct_not_full_six": 31,
           "images_with_scored_wrong_fill": 63,
-          "images_with_scored_abstention": 78
+          "images_with_scored_abstention": 76
         }
       },
       "by_output_state": {
@@ -688,11 +688,11 @@
         "RED": {
           "correct": 0,
           "wrong": 0,
-          "abstained": 197,
+          "abstained": 195,
           "unscored_filled": 0,
-          "unscored_blank": 87,
-          "scored": 197,
-          "unscored": 87,
+          "unscored_blank": 89,
+          "scored": 195,
+          "unscored": 89,
           "total": 284,
           "filled": 0,
           "correct_over_scored_pct": 0.0,
@@ -716,14 +716,14 @@
         "true": {
           "correct": 338,
           "wrong": 58,
-          "abstained": 138,
+          "abstained": 136,
           "unscored_filled": 7,
-          "unscored_blank": 29,
-          "scored": 534,
-          "unscored": 36,
+          "unscored_blank": 31,
+          "scored": 532,
+          "unscored": 38,
           "total": 570,
           "filled": 403,
-          "correct_over_scored_pct": 63.3,
+          "correct_over_scored_pct": 63.53,
           "correct_over_scored_fills_pct": 85.35
         }
       },
@@ -966,28 +966,28 @@
       "all_fields": {
         "correct": 566,
         "wrong": 121,
-        "abstained": 207,
+        "abstained": 205,
         "unscored_filled": 26,
-        "unscored_blank": 88,
-        "scored": 894,
-        "unscored": 114,
+        "unscored_blank": 90,
+        "scored": 892,
+        "unscored": 116,
         "total": 1008,
         "filled": 713,
-        "correct_over_scored_pct": 63.31,
+        "correct_over_scored_pct": 63.45,
         "correct_over_scored_fills_pct": 82.39
       },
       "per_field": {
         "producer": {
           "correct": 24,
           "wrong": 70,
-          "abstained": 71,
+          "abstained": 69,
           "unscored_filled": 2,
-          "unscored_blank": 1,
-          "scored": 165,
-          "unscored": 3,
+          "unscored_blank": 3,
+          "scored": 163,
+          "unscored": 5,
           "total": 168,
           "filled": 96,
-          "correct_over_scored_pct": 14.55,
+          "correct_over_scored_pct": 14.72,
           "correct_over_scored_fills_pct": 25.53
         },
         "wine_name": {
@@ -1058,36 +1058,36 @@
       },
       "image_results": {
         "images": 168,
-        "six_field_eligible": 103,
-        "six_field_ineligible": 65,
+        "six_field_eligible": 101,
+        "six_field_ineligible": 67,
         "six_field_fully_correct": 8,
-        "all_known_fields_correct_not_full_six": 10,
+        "all_known_fields_correct_not_full_six": 11,
         "images_with_scored_wrong_fill": 97,
-        "images_with_scored_abstention": 106
+        "images_with_scored_abstention": 105
       },
       "one_photo_per_identity": {
         "selection": "lowest review number (source hash order); fixed independently of outputs",
         "all_fields": {
           "correct": 480,
           "wrong": 99,
-          "abstained": 183,
+          "abstained": 181,
           "unscored_filled": 25,
-          "unscored_blank": 71,
-          "scored": 762,
-          "unscored": 96,
+          "unscored_blank": 73,
+          "scored": 760,
+          "unscored": 98,
           "total": 858,
           "filled": 604,
-          "correct_over_scored_pct": 62.99,
+          "correct_over_scored_pct": 63.16,
           "correct_over_scored_fills_pct": 82.9
         },
         "image_results": {
           "images": 143,
-          "six_field_eligible": 87,
-          "six_field_ineligible": 56,
+          "six_field_eligible": 85,
+          "six_field_ineligible": 58,
           "six_field_fully_correct": 6,
-          "all_known_fields_correct_not_full_six": 8,
+          "all_known_fields_correct_not_full_six": 9,
           "images_with_scored_wrong_fill": 80,
-          "images_with_scored_abstention": 92
+          "images_with_scored_abstention": 91
         }
       },
       "by_output_state": {
@@ -1120,11 +1120,11 @@
         "RED": {
           "correct": 0,
           "wrong": 0,
-          "abstained": 207,
+          "abstained": 205,
           "unscored_filled": 0,
-          "unscored_blank": 88,
-          "scored": 207,
-          "unscored": 88,
+          "unscored_blank": 90,
+          "scored": 205,
+          "unscored": 90,
           "total": 295,
           "filled": 0,
           "correct_over_scored_pct": 0.0,
@@ -1148,14 +1148,14 @@
         "true": {
           "correct": 336,
           "wrong": 65,
-          "abstained": 133,
+          "abstained": 131,
           "unscored_filled": 6,
-          "unscored_blank": 30,
-          "scored": 534,
-          "unscored": 36,
+          "unscored_blank": 32,
+          "scored": 532,
+          "unscored": 38,
           "total": 570,
           "filled": 407,
-          "correct_over_scored_pct": 62.92,
+          "correct_over_scored_pct": 63.16,
           "correct_over_scored_fills_pct": 83.79
         }
       },
@@ -1396,9 +1396,9 @@
     }
   },
   "provenance": {
-    "tools/evaluation/public-corpus-reference-v1/reference.json": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+    "tools/evaluation/public-corpus-reference-v1/reference.json": "cdb584e0ef38fce331c0c8c7833989b8d91b53f0bd0f9ccf305f108a91f2d41d",
     "tools/evaluation/public-corpus-run-39716483937/production.json": "fe8e9c8ead79bff0060de11cd53f77a660b526a482228048d75fc5e19df861c2",
     "tools/evaluation/public-corpus-run-39716483937/ocr-comparison.csv": "1ebb9b432bc0b6843c6336341d7aa3ba6fea0b021b26d6f0127cf7ec367b93b5",
-    "tools/corpus/score_public_corpus.py": "8db1863be8889d0fd9530076489fddc026a9ec570b95f597ef129af5b072e11f"
+    "tools/corpus/score_public_corpus.py": "621c95f732fb9632e0c672fea72ecda69f67408ce20e960604b2f928fde68c01"
   }
 }

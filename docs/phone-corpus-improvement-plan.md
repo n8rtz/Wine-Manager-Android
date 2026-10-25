@@ -1,5 +1,7 @@
 # Plan to exceed 80% complete forms on the curated phone corpus
 
+> **Historical analysis:** This plan and its OCR metrics refer to the previous 107-photo selection. At the owner’s request, review #14 is now excluded because Club des Sommeliers is branding rather than an established producer; the active set is 106 images (105 eligible, one partly unresolved). Re-run OCR before using the historical counts below as a current baseline.
+
 ## Target and evidence
 
 The current frozen curated set contains 107 included photos. One form has an unresolved reference and is not scoreable, leaving **106 eligible forms**. This plan is grounded in the latest supplied **OCR Text Lab** run (`build=7b69cedff5bf`, device `CPH2583`), not in the older frozen baseline or a production-only result. That Lab export scored **22/106 complete (20.8%)**: 37 forms have exactly one field error and 47 have two or more. A strict result above 80% therefore requires at least **85/106 complete forms**—a net gain of 63 complete forms from the current Lab result. Correct blanks count as correct; forms and fields with unresolved references remain outside the score.

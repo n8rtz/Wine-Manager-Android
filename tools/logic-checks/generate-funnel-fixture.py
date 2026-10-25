@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FIELDS = ("producer", "wine_name", "country", "region", "subregion", "vintage")
-PIPELINE = "lab-linked-wine-v1"
+PIPELINE = "lab-v4-expanded-producers"
 
 
 def prepare(scored=None, raw=()):

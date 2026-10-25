@@ -15,11 +15,11 @@ class ProducerGazetteerReviewChecks(unittest.TestCase):
         spec=importlib.util.spec_from_file_location('producer_review_audit',REVIEW/'audit.py')
         audit=importlib.util.module_from_spec(spec);spec.loader.exec_module(audit)
         result=audit.audit();saved=json.loads((REVIEW/'audit.json').read_text())
-        for field in ('source_blob_sha1','zip_sha256','actual_producers','actual_fts_rows','curated_rows','countries','lexical_reference_coverage'):
+        for field in ('source_blob_sha1','zip_sha256','actual_producers','actual_fts_rows','curated_rows','countries','reference_evaluation'):
             self.assertEqual(result[field],saved[field])
         self.assertEqual(result['actual_producers'],128)
-        self.assertEqual(result['lexical_reference_coverage']['matched_photos'],14)
-        self.assertEqual(len(result['lexical_reference_coverage']['distinct_reference_names']),4)
+        self.assertEqual(result['reference_evaluation']['status'],'not_performed')
+        self.assertNotIn('lexical_reference_coverage',result)
         self.assertFalse(result['live_downloads_enabled'])
         probes={p['query']:p['top_results'] for p in result['search_probes']}
         self.assertEqual(probes['Cristal'][0]['name'],'Champagne Louis Roederer')

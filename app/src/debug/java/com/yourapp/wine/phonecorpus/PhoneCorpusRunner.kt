@@ -21,23 +21,26 @@ import java.time.Year
 /** Fresh pixels only. Receives input identity/hash, NEVER target fields or saved predictions. */
 internal object PhoneCorpusRunner {
     const val PACKAGED_IMAGE_COUNT=168
-    const val ACTIVE_IMAGE_COUNT=107
+    const val ACTIVE_IMAGE_COUNT=106
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
-        PRODUCTION_V1("Production v1.0 · 15s shared budget", "production-v1.0-15s", null),
-        PRODUCTION_V2("Production v2.0 · guarded producer · 60s per engine", "production-v2.0-guarded", "evidence_summary"),
-        LAB("Lab · producer + wine evidence · 60s per engine", "lab-linked-wine-v1", "spatial_evidence_summary")
+        LAB("Lab v4", "lab-v4-expanded-producers", "spatial_evidence_summary"),
+        PRODUCTION_V3("Prod v3.0", "production-v3.0-lwin-only", "spatial_evidence_summary"),
+        PRODUCTION_V2("Prod v2.0", "production-v2.0-guarded", "evidence_summary"),
+        PRODUCTION_V1("Prod v1.0", "production-v1.0-15s", null);
+        val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V3 || this==LAB
+        val lwinOnlyProducerSource:Boolean get()=this==PRODUCTION_V3
     }
     fun sha(file:File):String {
         val md=MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input -> val b=ByteArray(65536);while(true) { val n=input.read(b);if(n<0) break;md.update(b,0,n) } }
         return md.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
     }
-    suspend fun runImage(context:Context,image:String,hash:String,mode:Mode,work:File):JSONObject {
+    suspend fun runImage(context:Context,image:String,hash:String,mode:Mode,work:File,assetRoot:String="phone-corpus-v1"):JSONObject {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         work.mkdirs()
         val input=File(work,"input.jpg");val preview=File(work,"preview.png");val crop=File(work,"crop.png")
         val output=JSONObject().put("image",image).put("build",BuildConfig.BUILD_COMMIT).put("mode",mode.name)
-            .put("pipeline",mode.pipelineId).put("spatial_merging",mode==Mode.LAB)
+            .put("pipeline",mode.pipelineId).put("spatial_merging",mode.usesSpatialEvidence)
             .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
             .put("runtime","on-device benchmark; fresh OCR; no saved-text replay")
         val started=SystemClock.elapsedRealtime()
@@ -46,7 +49,7 @@ internal object PhoneCorpusRunner {
         var diagnosticJournal:TextLabJournal?=null
         try {
             mark("input.verified",false,"input copy / checksum did not complete")
-            context.assets.open("phone-corpus-v1/images/$image").use { stream -> input.outputStream().use { stream.copyTo(it) } }
+            context.assets.open("$assetRoot/images/$image").use { stream -> input.outputStream().use { stream.copyTo(it) } }
             check(sha(input)==hash) { "Packaged photo checksum mismatch" }
             mark("input.verified",true)
             val pipelines=JSONArray()
@@ -99,7 +102,8 @@ internal object PhoneCorpusRunner {
             } else {
                 val batch=TextLabBatch(listOf(TextLabImageKey(image,image)),setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true,
                     compareEvidence=true,anchorHybrid=true,repairProducer=true,
-                    spatialPhrases=mode==Mode.LAB,benchmarkOnly=true)
+                    spatialPhrases=mode.usesSpatialEvidence,benchmarkOnly=true,
+                    lwinOnlyProducerSource=mode.lwinOnlyProducerSource)
                 val journal=batch.journals.single()
                 diagnosticJournal=journal
                 mark("input.decoded",false,"image decode did not complete")

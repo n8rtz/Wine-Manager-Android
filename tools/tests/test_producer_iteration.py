@@ -21,7 +21,7 @@ class ProducerIterationTests(unittest.TestCase):
             self.assertFalse(decision['production_promoted'])
             self.assertEqual(decision['meets_user_target'],[])
             for v in suite.VARIANTS:
-                g=s['systems'][v]['completion'];self.assertEqual(g['complete'],32);self.assertEqual(g['two_or_more_errors'],82);self.assertFalse(g['passes'])
+                g=s['systems'][v]['completion'];self.assertEqual(g['complete'],32);self.assertEqual(g['two_or_more_errors'],81);self.assertFalse(g['passes'])
             rows[0]['fields']['wine_name']['value']='changed'
             (p/'results.jsonl').write_text('\n'.join(map(json.dumps,rows)))
             with self.assertRaises(AssertionError):suite.collect(p,p/'bad','a'*40)

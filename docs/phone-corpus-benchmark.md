@@ -4,7 +4,7 @@
 
 Build/install **debug** from this branch, then open **Profile / Settings → Large image dataset test**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
 
-The full 168-image bundle remains for provenance and hash checks, but only 107 uncolored labels from the user's review workbook are sent through OCR. The 55 red and 4 yellow rows are excluded, as are review numbers 27 and 47, which were absent from the workbook and explicitly excluded by the user. Thus 61 images never enter OCR. The 107 included rows contain 106 fully scorable forms and one partly unresolved form; the former 160-label acceptance target is retired pending review of the curated reference set.
+The full 168-image bundle remains for provenance and hash checks, but 106 selected labels are sent through OCR. The 55 red and 4 yellow rows are excluded, as are review numbers 27 and 47, which were absent from the workbook, and review 14 at the owner's request because Club des Sommeliers is branding rather than an established producer. Thus 62 images never enter OCR. Review 108 is already excluded as red. The 106 included rows contain 105 fully scorable forms and one partly unresolved form; the former 160-label acceptance target is retired pending review of the curated reference set.
 
 1. Choose **Production v1.0** (shared 15-second scanner), **Production v2.0** (guarded producer, 60 seconds per OCR engine), or **Lab** (latest spatial-merging variant, 60 seconds per engine). Each option runs only its selected implementation.
 2. Tap **Start / resume remaining photos**. No picker, image download, desktop OCR or saved-text replay is used.
@@ -22,7 +22,7 @@ New runs preserve old files. Runs are isolated by build SHA, APK install/update 
 
 - Source: `AntoninLeroy/wine_label_reader_toolkit`, commit `eb2c14ba4f9a1b6efaa476696439754a9abde8ce`.
 - `inputs.json`: identities/hashes for all 168 bundled images, used for integrity checks.
-- `evaluation-set.json`: user-reviewed included/excluded image IDs, source workbook URL/hash and decision provenance. Only the 107 included IDs are passed to OCR.
+- `evaluation-set.json`: user-reviewed included/excluded image IDs, source workbook URL/hash and decision provenance. Only the 106 included IDs are passed to OCR.
 - `scoring.json`: frozen provisional references, blank adjudications, accepted normalized aliases and saved baseline predictions. It is read by the scoreboard, not the OCR runner. One user-confirmed visual correction is applied through `reference-adjudications-v1.json`: review #63 wine name is scored as **Volcanic Rosé**, while the imported source transcription **Volcanie Rosé** remains preserved for provenance. The corpus bundler verifies the imported value/aliases before applying that explicit overlay.
 - `manifest.json`: provenance, hashes and private-distribution warning.
 
@@ -48,29 +48,27 @@ Both expected engines and Medium assets are required at preflight. Execution err
 
 A process mutex prevents concurrent corpus workers. Native OCR remains under the existing scanner/native gates. Only one image is processed at a time; full traces are removed from the small checkpoint projection before loading the result set. Checkpoints use same-directory temporary files and atomic rename, with replace fallback. An incomplete temporary checkpoint is ignored after restart. References never enter the recognition/extraction adapter.
 
-Scoring uses normalized exact accepted aliases, not fuzzy target matching. It distinguishes correct values, wrong values, missing values, correct blanks, unsupported fills, unresolved slots and execution failures. In the selected 107-label set, six-field completion currently has 106 eligible forms and one partly unresolved form. No acceptance threshold is set yet for this newly curated subset; the former ≥128/160 and ≤7/160 target is retired. Partial runs do not establish full-set acceptance.
+Scoring uses normalized exact accepted aliases, not fuzzy target matching. It distinguishes correct values, wrong values, missing values, correct blanks, unsupported fills, unresolved slots and execution failures. In the selected 106-label set, six-field completion has 105 eligible forms and one partly unresolved form. No acceptance threshold is set yet for this newly curated subset; the former ≥128/160 and ≤7/160 target is retired. Partial runs do not establish full-set acceptance.
 
-The saved baseline is **not rerun**. The scoreboard shows same-attempted-photo comparisons and a baseline row filtered to the curated 107-label set. This is a provisional development benchmark, not independently adjudicated held-out accuracy. Baseline source: `tools/evaluation/blank-aware-rescore-v1/paired-fields.csv`, `baseline_output`.
+The saved baseline is **not rerun**. The scoreboard shows same-attempted-photo comparisons and a baseline row filtered to the curated 106-label set. This is a provisional development benchmark, not independently adjudicated held-out accuracy. Baseline source: `tools/evaluation/blank-aware-rescore-v1/paired-fields.csv`, `baseline_output`.
 
 Frozen parity oracle:
 
 | Metric | Saved baseline |
 |---|---:|
-| Fully correct eligible forms | 26/160 |
+| Fully correct eligible forms | 26/158 |
 | Correct values | 597 |
 | Correct blanks | 77 |
 | Wrong values | 100 |
 | Unsupported fills | 20 |
-| Missing values | 197 |
-| Reference slots: values / blanks / unresolved | 894 / 97 / 17 |
+| Missing values | 195 |
+| Reference slots: values / blanks / unresolved | 892 / 97 / 19 |
 
 ## Validation performed here
 
-- **149 host tests pass**, including all 168 bundled image hashes, manifest hashes, reference disposition/alias parity and saved-baseline counts; recognition-network boundary and SQLite import checks pass.
-- **2,030 actual Kotlin JVM checks pass**: all 1,008 baseline field outcomes and normalization parity, complete-form denominator/result, failure/blank/unresolved cases, real lab statistics and CSV formula escaping. These compile the actual math, journal, lab stats and CSV encoder, not Android UI.
-- **43 actual Kotlin assignment/policy/state/scan-stat checks pass**, with the existing host geometry fixtures.
+- **205 host tests pass**: `python -m unittest discover -s tools/tests`, including bundled-image hashes, corrected reference dispositions and aliases, the 106/62 selection, saved-score parity, and reproducible derived reports.
 - `git diff --check` passes.
-- **Android/Compose/runner/ViewModel compilation and device execution remain unverified.** `./gradlew :app:compileDebugKotlin --offline` failed before compilation because the Gradle wrapper distribution could not be downloaded in this sandbox (`SSLHandshakeException` at services.gradle.org). No APK was produced here. The earlier authorized GitHub workflow dispatch also returned HTTP 403; no emulator run started.
+- **Android APK compilation/device execution remain unverified.** `./gradlew :app:assembleDebug` could not start because this sandbox has no Java executable or `JAVA_HOME`; no APK was produced and no phone run was performed. The attached latest OCR export is still historical for the prior 107-image selection.
 
 Re-run JVM checks with Java 21 and Kotlin 2.2.10:
 
@@ -80,7 +78,7 @@ bash tools/run-choice-checks.sh
 bash tools/run-host-checks.sh
 ```
 
-Build on the normal Android/Code on the Go setup with `./gradlew :app:assembleDebug`. Required device smoke checks: compile/install; Settings launch; one-photo checkpoint; Stop/Resume; background/rotation/process-death recovery; failed-engine reporting; CSV opening; then the full 107-photo curated pass. The excluded 61 are not run. No accuracy improvement is claimed before that run.
+Build on the normal Android/Code on the Go setup with `./gradlew :app:assembleDebug`. Required device smoke checks: compile/install; Settings launch; one-photo checkpoint; Stop/Resume; background/rotation/process-death recovery; failed-engine reporting; CSV opening; then the full 106-photo curated pass. The excluded 62 are not run. No accuracy improvement is claimed before that run.
 
 ## Upload-size export update
 
@@ -99,13 +97,13 @@ The selected implementation is identified in the run metadata and CSV pipeline I
 Every benchmark mode now displays two additional rows from the user's completed 168-photo phone run on build `28bce9e81cc3`, whose original pipeline ID was `lab-guarded-producer`:
 
 - **Saved Production v2.0 · same attempted photos** — scored only on the image IDs checkpointed in the current run.
-- **Saved Production v2.0 · same curated set** — the historical 168-photo predictions are filtered to the same 107 included image IDs. This is the valid matched reference for current runs; the original all-168 historical totals below are context only and must not be compared directly to the curated denominator.
+- **Saved Production v2.0 · same curated set** — the historical 168-photo predictions are filtered to the same 106 included image IDs. This is the valid matched reference for current runs; the original all-168 historical totals below are context only and must not be compared directly to the curated denominator.
 
 The saved predictions are bundled in debug assets as `phone-corpus-v1/saved-production-v2.json`. `tools/corpus/bundle_saved_phone_v2.py` reproduces them from the compact full-run analysis, retaining the source CSV/build/pipeline and hashes. They are loaded only by the scoreboard, never supplied to recognition/extraction, and never rerun. No new photos or models are included.
 
 These rows appear in the on-screen table, copied statistics, and scored CSV (including per-field expected/recognized values). Exported saved-v2 rows include `result_origin`, `source_build`, `source_pipeline` and `source_csv_sha256`, distinct from the current export build. Existing historical frozen-baseline rows remain labeled historical; **they are not Production v1.0**. Running v1.0 or Lab therefore provides a matched-photo comparison against saved v2.0, without running the other contenders. This does not invent a full saved v1.0 result.
 
-163 host tests pass, including all 1,008 saved prediction values against the reproducible bundle, full-run scoring parity, first-19-photo parity (4/15 complete), and empty-subset handling. Android/Compose rendering has not been executed in this sandbox.
+205 host tests pass, including all 1,008 saved prediction values against the reproducible bundle, full-run scoring parity, first-19-photo parity (4/14 complete), and empty-subset handling. Android/Compose rendering has not been executed in this sandbox.
 
 
 ## Pipeline bottleneck table

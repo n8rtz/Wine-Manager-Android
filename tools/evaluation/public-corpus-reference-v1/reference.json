@@ -795,12 +795,10 @@
       "identity_group": "identity-014",
       "fields": {
         "producer": {
-          "status": "known",
-          "value": "Club des Sommeliers",
-          "accepted": [
-            "Club des Sommeliers"
-          ],
-          "basis": "visible_label"
+          "status": "unknown",
+          "value": null,
+          "accepted": [],
+          "basis": "not_established_from_photo"
         },
         "wine_name": {
           "status": "known",
@@ -845,7 +843,7 @@
           "basis": "visible_label"
         }
       },
-      "notes": "Cave de Tain explicitly bottler; France printed; Rhône parent inferred."
+      "notes": "Club des Sommeliers is visible branding; Cave de Tain is named as bottler; actual producer is not established."
     },
     {
       "review_number": 15,
@@ -923,7 +921,6 @@
           "value": "A. Kolb",
           "accepted": [
             "A. Kolb",
-            "Club des Sommeliers",
             "A Kolb",
             "Kolb"
           ],
@@ -967,7 +964,7 @@
           "basis": "not_established_from_photo"
         }
       },
-      "notes": "Club des Sommeliers also printed as brand; no year; Crémant regional sparkling designation not a distinct geographic subregion."
+      "notes": "A. Kolb is the separately printed producer/brand; Club des Sommeliers is separate label branding; no year; Crémant regional sparkling designation is not a distinct geographic subregion."
     },
     {
       "review_number": 17,
@@ -3931,7 +3928,6 @@
           "value": "A. Kolb",
           "accepted": [
             "A. Kolb",
-            "Club des Sommeliers",
             "A Kolb",
             "Kolb"
           ],
@@ -3975,7 +3971,7 @@
           "basis": "not_established_from_photo"
         }
       },
-      "notes": "Same visible undated product identity as 016; Club des Sommeliers also branded."
+      "notes": "A. Kolb is the separately printed producer/brand; Club des Sommeliers is separate label branding; same undated product identity as review 16."
     },
     {
       "review_number": 67,
@@ -6455,12 +6451,10 @@
       "identity_group": "identity-108",
       "fields": {
         "producer": {
-          "status": "known",
-          "value": "Club des Sommeliers",
-          "accepted": [
-            "Club des Sommeliers"
-          ],
-          "basis": "visible_label"
+          "status": "unknown",
+          "value": null,
+          "accepted": [],
+          "basis": "not_established_from_photo"
         },
         "wine_name": {
           "status": "known",
@@ -6503,7 +6497,7 @@
           "basis": "visible_label"
         }
       },
-      "notes": "Unlike 009, complete brand visible; Maison Delor is bottler."
+      "notes": "Club des Sommeliers is visible branding; Maison Delor is named as bottler; actual producer is not established."
     },
     {
       "review_number": 109,

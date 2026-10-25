@@ -6,7 +6,7 @@
   "source_csv": "wine-168-lab-28bce9e81cc3 (1).csv",
   "source_csv_sha256": "6c987e2d8ba84050d2481256494635b270509adf5a0beb84033ffc7fd11962df",
   "paired_fields_sha256": "b417ad3aaa43eb5dfd8e51f621f1e2367d13fe70787a4a498dcbbbca7302b2a3",
-  "scoring_sha256": "681e3431ea20e6e98edf552e0cae3bb1af32d22c93886354a7b971c70e46cce7",
+  "scoring_sha256": "c2b70708f78fb5c1794667db42aaa471b3a8bd3e58f7a14b4901f8172f0fa787",
   "execution_note": "168 first attempts; all extraction statuses complete; no engine-incomplete flags. Frozen predictions, not a new OCR run.",
   "predictions": {
     "01ad85537783130833bca5f46deeeef8223b8720.jpg": {

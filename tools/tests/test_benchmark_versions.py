@@ -5,16 +5,30 @@ ROOT=Path(__file__).resolve().parents[2]
 PHONE=ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus'
 LAB=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
 class BenchmarkVersionChecks(unittest.TestCase):
-    def test_three_explicit_versions(self):
+    def test_four_explicit_versions_and_short_comparison_names(self):
         runner=(PHONE/'PhoneCorpusRunner.kt').read_text()
-        for label,key in [('Production v1.0','production-v1.0-15s'),('Production v2.0','production-v2.0-guarded'),('Lab · producer + wine evidence','lab-linked-wine-v1')]:
+        for label,key in [('Lab v4','lab-v4-expanded-producers'),('Prod v3.0','production-v3.0-lwin-only'),('Prod v2.0','production-v2.0-guarded'),('Prod v1.0','production-v1.0-15s')]:
             self.assertIn(label,runner);self.assertIn(key,runner)
+        self.assertIn('val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V3 || this==LAB',runner)
+        self.assertIn('val lwinOnlyProducerSource:Boolean get()=this==PRODUCTION_V3',runner)
+        diagnostics=(PHONE/'PhoneCorpusPipelineDiagnostics.kt').read_text()
+        self.assertIn('mode == "LAB" || mode == "PRODUCTION_V3"',diagnostics)
+        self.assertIn('profile=[^;]+;',diagnostics)
+        batch=(LAB/'TextLabBatch.kt').read_text()
+        self.assertIn('lwinOnlyProducerSource:Boolean=false',batch)
+        producer=(ROOT/'app/src/debug/java/com/yourapp/wine/gazetteer/ProducerGazetteer.kt').read_text()
+        self.assertIn('includeSupplementalSources:Boolean=true',producer)
+        self.assertIn('if(includeSupplementalSources) listOf("ttb","osm","xwines") else emptyList()',producer)
+        page=(PHONE/'WineAppLabelsViewModel.kt').read_text()
+        self.assertIn('PhoneCorpusRunner.Mode.entries.map { comparedMode ->',page)
+        self.assertIn('scoreboard.build(comparisonPredictions, comparedMode).rows.single()',page)
         ui=(PHONE/'PhoneCorpusActivity.kt').read_text()
         self.assertIn('Mode.entries.forEach',ui);self.assertIn('Text(mode.title,',ui)
     def test_one_scored_contender_and_one_fresh_ocr_run(self):
         runner=(PHONE/'PhoneCorpusRunner.kt').read_text()
         self.assertEqual(runner.count('TextLabRunner.recognize('),1)
-        self.assertIn('spatialPhrases=mode==Mode.LAB,benchmarkOnly=true',runner)
+        self.assertIn('spatialPhrases=mode.usesSpatialEvidence,benchmarkOnly=true',runner)
+        self.assertIn('lwinOnlyProducerSource=mode.lwinOnlyProducerSource',runner)
         self.assertIn('it["stage"]==mode.summaryStage',runner)
         self.assertNotIn('compareGazetteer=true',runner)
         board=(PHONE/'PhoneCorpusScoreboard.kt').read_text()

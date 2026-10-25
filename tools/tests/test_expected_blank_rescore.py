@@ -29,7 +29,7 @@ class ExpectedBlankTests(unittest.TestCase):
             for field,t in item['fields'].items():
                 status,_=score.disposition(item,field);counts[status]=counts.get(status,0)+1
                 if t['status']=='known':self.assertEqual(status,'expected_value')
-        self.assertEqual(counts,dict(expected_value=894,expected_blank=97,unresolved=17))
+        self.assertEqual(counts,dict(expected_value=892,expected_blank=97,unresolved=19))
         by={i['review_number']:i for i in items}
         self.assertEqual(score.disposition(by[12],'region')[0],'expected_blank')
         self.assertEqual(score.disposition(by[9],'producer')[0],'unresolved')

@@ -29,11 +29,11 @@ internal data class TextLabSavedBatch(val id:String,val build:String,val status:
         appendLine("\nExport this run's CSV for raw OCR text, coordinates, timings and full diagnostics.")
     }
 }
-internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val spatialPhrases:Boolean=false,val benchmarkOnly:Boolean=false) {
+internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val spatialPhrases:Boolean=false,val benchmarkOnly:Boolean=false,val lwinOnlyProducerSource:Boolean=false) {
     val id:String=UUID.randomUUID().toString()
     val journals=images.mapIndexed { index,image ->
         TextLabJournal(selected,build,detectLines).apply {
-            metadata.putAll(mapOf("spatial_phrases_enabled" to spatialPhrases.toString(),"benchmark_selected_only" to benchmarkOnly.toString(),"residual_enabled" to residualCandidates.toString(),"gazetteer_enabled" to compareGazetteer.toString(),"schema_version" to "2","batch_id" to this@TextLabBatch.id,
+            metadata.putAll(mapOf("spatial_phrases_enabled" to spatialPhrases.toString(),"benchmark_selected_only" to benchmarkOnly.toString(),"lwin_only_producer_source" to lwinOnlyProducerSource.toString(),"residual_enabled" to residualCandidates.toString(),"gazetteer_enabled" to compareGazetteer.toString(),"schema_version" to "2","batch_id" to this@TextLabBatch.id,
                 "image_id" to image.id,"image_name" to image.name,"image_index" to (index+1).toString(),"image_count" to images.size.toString(),"batch_status" to "running","extraction_mode" to if(compareEvidence && anchorHybrid && repairProducer) "baseline_and_producer_repair_v2" else if(compareEvidence && anchorHybrid) "baseline_and_anchor_hybrid_v1" else if(compareEvidence) "baseline_and_evidence_v1" else "baseline"))
             add("shared","image_queued","queued")
         }

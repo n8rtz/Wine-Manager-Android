@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug benchmark pipeline-bottleneck table in the screen, copied statistics and scored/raw CSVs, with separate OCR branches, distinct-label/latest-attempt counts and explicit unknown/not-reached states. Compact checkpoints retain stage evidence. Host logic validated; Android build/device checks remain pending. No production recognition changes or new accuracy claim.
 
 ### Changed
-- Renamed the debug phone-corpus page to **Large image dataset test** in Settings, the screen heading, loading state and benchmark documentation; the actual curated 107-photo OCR scope is unchanged.
+- Renamed the debug phone-corpus page to **Large image dataset test** in Settings, the screen heading, loading state and benchmark documentation; the active review selection was revised separately afterward.
+- Reduced the active OCR selection to 106 included / 62 excluded labels by owner-excluding review 14, retained review 108's existing red exclusion, corrected producer references for reviews 14/108 and A. Kolb aliases for 16/66, and regenerated reference-based benchmark reports. All 168 source photos remain bundled for provenance.
 - Reframed the benchmark matrix as ordered ML Kit OCR, Paddle OCR, and post-OCR requirement tables. The OCR tables clarify sequential runner execution; post-OCR excludes observation-only hypothesis counters, marks linked-Wine cohorts conditionally after Producer invocation, and preserves not-reached / unrecorded / N/A counts distinctly. Correct-blank reference scoring remains separate from process gates; CSV schema and recognition behavior are unchanged. Android rendering/build checks remain pending.
 - Incremented Android `versionCode` from 56 to **57** for the owner-requested diagnostics build; `versionName` remains **0.5.6**. This is a build-number update, not a tagged release.
 

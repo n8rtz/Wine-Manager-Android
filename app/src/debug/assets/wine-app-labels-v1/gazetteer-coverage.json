@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "dataset_count": 125,
+  "source_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
+  "source_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
+  "method": "Exact normalized match of workbook-known targets and accepted alternatives to each database's canonical normalized keys; appellations and regions are matched to canonical names and aliases. Each label is counted once per database. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
+  "databases": [
+    {
+      "id": "lwin_producers",
+      "label": "LWIN producers",
+      "matched_labels": 86,
+      "total_labels": 125,
+      "unique_known_values_matched": 56,
+      "database_records_matched": 56
+    },
+    {
+      "id": "ttb_support",
+      "label": "TTB candidates",
+      "matched_labels": 1,
+      "total_labels": 125,
+      "unique_known_values_matched": 1,
+      "database_records_matched": 1
+    },
+    {
+      "id": "osm_support",
+      "label": "OSM candidates",
+      "matched_labels": 17,
+      "total_labels": 125,
+      "unique_known_values_matched": 10,
+      "database_records_matched": 10
+    },
+    {
+      "id": "xwines_candidates",
+      "label": "X-Wines candidates",
+      "matched_labels": 19,
+      "total_labels": 125,
+      "unique_known_values_matched": 16,
+      "database_records_matched": 16
+    },
+    {
+      "id": "lwin_wines",
+      "label": "LWIN wine names",
+      "matched_labels": 42,
+      "total_labels": 125,
+      "unique_known_values_matched": 30,
+      "database_records_matched": 32
+    },
+    {
+      "id": "appellations",
+      "label": "Appellations",
+      "matched_labels": 89,
+      "total_labels": 125,
+      "unique_known_values_matched": 55,
+      "database_records_matched": 53
+    },
+    {
+      "id": "wine_geography",
+      "label": "Regions/subregions",
+      "matched_labels": 115,
+      "total_labels": 125,
+      "unique_known_values_matched": 19,
+      "database_records_matched": 18
+    }
+  ]
+}

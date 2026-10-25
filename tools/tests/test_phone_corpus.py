@@ -19,12 +19,16 @@ class PhoneCorpusTests(unittest.TestCase):
         self.assertEqual(sum(p.stat().st_size for p in (ASSETS/'images').iterdir()),31163745)
     def test_user_review_selection_excludes_color_coded_and_omitted_rows(self):
         selection=json.loads((ASSETS/'evaluation-set.json').read_text())
-        self.assertEqual((selection['included_count'],selection['excluded_count']),(107,61))
+        self.assertEqual((selection['included_count'],selection['excluded_count']),(106,62))
         self.assertEqual(sum(x['review_color']=='red' for x in selection['excluded_images']),55)
         self.assertEqual(sum(x['review_color']=='yellow' for x in selection['excluded_images']),4)
         self.assertEqual({x['review_number'] for x in selection['excluded_images'] if x['review_color']=='absent_from_review_workbook'},{27,47})
-        self.assertEqual(len({x['image'] for x in selection['included_images']}),107)
-        self.assertEqual(len({x['image'] for x in selection['excluded_images']}),61)
+        self.assertEqual(len({x['image'] for x in selection['included_images']}),106)
+        self.assertNotIn('1312f082dcbacf739b6edcc04b4a55d731254782.jpg',{x['image'] for x in selection['included_images']})
+        self.assertEqual(len({x['image'] for x in selection['excluded_images']}),62)
+        owner_excluded=[x for x in selection['excluded_images'] if x.get('review_color')=='owner_excluded']
+        self.assertEqual([(x['review_number'],x['image']) for x in owner_excluded],[(14,'1312f082dcbacf739b6edcc04b4a55d731254782.jpg')])
+        self.assertNotIn('a7c1d1ed5545107151c48162125da00767ebe922.jpg',{x['image'] for x in selection['included_images']})
         self.assertFalse(({x['image'] for x in selection['included_images']}&{x['image'] for x in selection['excluded_images']}))
         self.assertEqual({x['image'] for x in selection['included_images']}|{x['image'] for x in selection['excluded_images']},
             {x['image'] for x in json.loads((ASSETS/'inputs.json').read_text())['images']})
@@ -52,9 +56,17 @@ class PhoneCorpusTests(unittest.TestCase):
                 counts[outcome]+=1;states[target['status']]+=1;outcomes.append(outcome)
             if all(t['status']!='unresolved' for t in image['fields'].values()):
                 eligible+=1;complete+=all(o in ('correct_value','correct_blank') for o in outcomes)
-        self.assertEqual(dict(states),{'expected_value':894,'expected_blank':97,'unresolved':17})
-        self.assertEqual((eligible,complete),(160,26))
-        for k,v in dict(correct_value=597,correct_blank=77,wrong_value=100,unsupported_fill=20,missing_value=197).items():self.assertEqual(counts[k],v)
+        self.assertEqual(dict(states),{'expected_value':892,'expected_blank':97,'unresolved':19})
+        self.assertEqual((eligible,complete),(158,26))
+        for number in (14,108):
+            row=next(i for i in frozen.values() if i['review_number']==number)
+            self.assertEqual(row['fields']['producer']['status'],'unknown')
+            self.assertEqual(row['fields']['producer']['accepted'],[])
+        for number in (16,66):
+            row=next(i for i in frozen.values() if i['review_number']==number)
+            self.assertEqual(row['fields']['producer']['value'],'A. Kolb')
+            self.assertNotIn('Club des Sommeliers',row['fields']['producer']['accepted'])
+        for k,v in dict(correct_value=597,correct_blank=77,wrong_value=100,unsupported_fill=20,missing_value=195).items():self.assertEqual(counts[k],v)
     def test_user_adjudication_overrides_only_scored_target_and_is_rebuildable(self):
         adjudication_doc=json.loads((ASSETS/'reference-adjudications-v1.json').read_text())
         self.assertEqual(len(adjudication_doc['adjudications']),1)
@@ -78,7 +90,7 @@ class PhoneCorpusTests(unittest.TestCase):
         viewmodel=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusViewModel.kt').read_text()
         self.assertIn('evaluation-set.json',viewmodel)
         self.assertIn('filter { it.getString("image") in included }',viewmodel)
-        self.assertIn('ACTIVE_IMAGE_COUNT=107', (ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text())
+        self.assertIn('ACTIVE_IMAGE_COUNT=106', (ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text())
         scoreboard=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt').read_text()
         self.assertIn('savedV2Items(includedImages)',scoreboard)
         self.assertIn('baselineItems(includedImages)',scoreboard)

@@ -29,16 +29,11 @@ def audit():
             summary=builder.build_gazetteer_db(str(dbpath),quiet=True)
             con=sqlite3.connect(dbpath)
             countries=dict(con.execute('SELECT country,count(*) FROM producers GROUP BY country ORDER BY country'))
-            normalize=lambda text: ''.join(c for c in builder.strip_diacritics(text).casefold() if c.isalnum())
-            forms={normalize(s) for name,aliases in con.execute('SELECT canonical_name,aliases FROM producers') for s in [name]+aliases.split('|')}
             con.close()
             probes=[]
             for text in QUERIES:
                 result=query.cmd_search(str(dbpath),text,limit=3)
                 probes.append(dict(query=text,top_results=[dict(name=r['canonical_name'],id=r['producer_id'],rank=r['rank']) for r in result['results']]))
-            reference=json.loads((ROOT/'tools/evaluation/public-corpus-reference-v1/reference.json').read_text())['images']
-            known=[r for r in reference if r['fields']['producer']['status']=='known']
-            covered=[r for r in known if any(normalize(a) in forms for a in r['fields']['producer']['accepted'])]
             return dict(source_blob_sha1=BLOB,zip_sha256=hashlib.sha256(data).hexdigest(),zip_bytes=len(data),archive_files=entries,
                 raw_registry_present='pipeline/data/ttb_cola_registry_raw.tsv.gz' in entries,
                 database_present=any(n.endswith(('.sqlite','.db')) for n in entries),
@@ -46,10 +41,7 @@ def audit():
                 live_downloads_enabled=False,curated_rows=len(builder.CURATED_FLAGSHIP_PRODUCERS),
                 actual_producers=summary['total_producers'],actual_fts_rows=summary['total_fts_indexed'],database_bytes=dbpath.stat().st_size,
                 countries=countries,search_probes=probes,
-                lexical_reference_coverage=dict(matched_photos=len(covered),known_producer_photos=len(known),
-                    distinct_reference_names=sorted({r['fields']['producer']['value'] for r in covered}),
-                    review_numbers=[r['review_number'] for r in covered],
-                    note='Exact normalized accepted-alias presence, NOT OCR accuracy, validated identity coverage or held-out evaluation.'),
+                reference_evaluation=dict(status='not_performed',reason='The former 168-image reference is retired and is not used for current source evaluation.'),
                 disposition='REVIEW ONLY: missing bulk data, unverified curated identities/aliases, seeded UI metrics. Not bundled into Android or enabled in Lab.')
         finally:
             sys.path.pop(0)

@@ -115,10 +115,10 @@ fun main(args: Array<String>) {
     val json = JSONObject().put("image", "partial").put("attempt", 3)
     PhoneCorpusFunnelJson.write(json, partial)
     val checkpoint = JSONObject(json.toString())
-    val decoded = PhoneCorpusFunnelJson.read(checkpoint, "LAB", "lab-linked-wine-v1")
+    val decoded = PhoneCorpusFunnelJson.read(checkpoint, "LAB", "lab-v4-expanded-producers")
     verify(decoded.attempt == 3 && decoded.gates == partial.gates)
     verify(decoded.gates.size == F.steps.size)
-    val csv = count(listOf(partial), "paddle.completed").csv("lab-linked-wine-v1")
+    val csv = count(listOf(partial), "paddle.completed").csv("lab-v4-expanded-producers")
     verify(csv["row_type"] == "pipeline_step" && csv["labels_blocked"] == "1" && csv["labels_reached"] == "1")
     verify(count(listOf(partial), "paddle.completed").cells().size == F.headers.size)
 

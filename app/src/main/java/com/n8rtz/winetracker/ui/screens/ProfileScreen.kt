@@ -449,13 +449,13 @@ fun ProfileScreen(
                                 Text("Large image dataset test")
                             },
                             supportingContent = {
-                                Text("Fresh phone OCR, scored stats, Stop/Resume and CSV export — private test build")
+                                Text("Fresh OCR over the 22 retained owner-reviewed labels — private debug test")
                             },
                             modifier = Modifier.fillMaxWidth().clickable {
                                 context.startActivity(
                                     android.content.Intent().setClassName(
                                         context,
-                                        "com.yourapp.wine.phonecorpus.PhoneCorpusActivity"
+                                        "com.yourapp.wine.phonecorpus.WineAppLabelsActivity"
                                     )
                                 )
                             }
