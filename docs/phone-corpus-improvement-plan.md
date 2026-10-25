@@ -2,7 +2,7 @@
 
 ## Target and evidence
 
-The current frozen curated set contains 107 included photos. One form has an unresolved reference and is not scoreable, leaving **106 eligible forms**. The latest supplied OCR Text Lab export scored **22/106 complete (20.8%)**: 37 forms have exactly one field error and 47 have two or more. A strict result above 80% therefore requires at least **85/106 complete forms**—a net gain of 63 complete forms from the current result. Correct blanks count as correct; forms and fields with unresolved references remain outside the score.
+The current frozen curated set contains 107 included photos. One form has an unresolved reference and is not scoreable, leaving **106 eligible forms**. This plan is grounded in the latest supplied **OCR Text Lab** run (`build=7b69cedff5bf`, device `CPH2583`), not in the older frozen baseline or a production-only result. That Lab export scored **22/106 complete (20.8%)**: 37 forms have exactly one field error and 47 have two or more. A strict result above 80% therefore requires at least **85/106 complete forms**—a net gain of 63 complete forms from the current Lab result. Correct blanks count as correct; forms and fields with unresolved references remain outside the score.
 
 Current exact-field error counts on the 106 eligible forms are wine name 48, producer 47, subregion 30, region 26, country 11, and vintage 4. Errors overlap: wine name + subregion co-occur on 21 forms; wine name + producer on 20; region + subregion on 19; wine name + region on 17. These are intersections, not independent recoverable cases. Do not add field counts to estimate the number of forms that can be made complete.
 
