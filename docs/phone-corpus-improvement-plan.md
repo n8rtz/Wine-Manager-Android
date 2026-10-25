@@ -45,6 +45,14 @@ For every candidate, run the identical 107 included images and compare per-image
 
 Do not claim the target is reached until a reproducible run on the frozen 107-photo set has at least **85 complete eligible forms out of the same 106**, with the unresolved form still N/A and no denominator changes. Require no increase in unsupported fills and no regression in correct blanks without an explicit reviewed tradeoff; preserve current execution/deadline safeguards. Re-run from a clean recorded source revision and retain the exports/build metadata. Since this set will become development data after repeated iteration, assemble a separate, rights-cleared, high-resolution held-out label set with human-verified six-field values plus visible/ambiguous/unreadable and correct-blank annotations before making a general accuracy claim.
 
+## Progress: first one-error cohort review
+
+The latest Lab CSV and raw trace were joined by image ID for all 37 eligible one-error forms. Their lone error fields are producer on 20 forms, wine name on 12, subregion on 3, and region on 2. This confirms that fixes must first target producer/wine role and OCR-evidence assignment, while preserving the blank/geography checks.
+
+One high-confidence role error is review #48: the bottle clearly prints **SAINT-ÉMILION** as the appellation/name line and **PROPRIÉTAIRE - RÉCOLTANT** as a legal footer. The run's candidate ranking put an OCR-joined legal footer above the printed name, yielding the wrong wine name. A narrowly anchored debug-Lab rule now rejects only the whole French owner-grower legal phrase (including the clipped/duplicated OCR form in this trace); it does not reject a real identity that merely contains those words. A regression fixture checks both the rejection and the printed name selection. This is a targeted candidate change, not yet a measured corpus gain: a fresh 107-photo phone run is needed.
+
+Review #63 also needs ground-truth adjudication before tuning: the photo visibly reads “Volcanic Rosé,” while the frozen expected value is “Volcanie Rosé.” No reference has been changed; changes to OCR policy must not be used to hide a possible reference issue.
+
 ## Current reading of the result
 
 Lab currently has the same 22 complete forms as saved production v2, but 10 more correct values and 10 fewer missing values; wrong values, correct blanks, and unsupported fills are unchanged. This is useful evidence for targeted work, not evidence that the 80% target is close: 63 additional eligible forms must become fully correct. The arithmetic requires bundled, image-level error correction and careful prevention of blank/geography regressions, not merely improving the most frequent individual field.

@@ -37,7 +37,8 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             val sources=graph.observations.filter { it.id in p.observations }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
             if(!supported) { trace.add("unsupported", "phrase=${p.id}");continue } // original reading retained
-            val administrative=MetadataRules.isBoilerplate(text) || MetadataRules.isPackaging(text) || '%' in text
+            val administrative=MetadataRules.isBoilerplate(text) || MetadataRules.isPackaging(text) ||
+                EvidenceIdentityRoles.ownerGrowerLegalLine(text) || '%' in text
             val paragraph=p.box.width()<.25f && graph.phrases.count { other -> other.id!=p.id &&
                 kotlin.math.abs(other.box.left-p.box.left)<.04f && kotlin.math.abs(other.box.centerY()-p.box.centerY())<.12f }>=3
             val headingOnly=typedIdentity && EvidenceIdentityRoles.headingOnly(text)

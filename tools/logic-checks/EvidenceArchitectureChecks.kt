@@ -45,6 +45,12 @@ object EvidenceArchitectureChecks {
         check(!TextLabBatch(emptyList(),emptySet(),"test",true).compareEvidence)
         check(journal.rows.filter { it["stage"] in setOf("evidence_observation","evidence_phrase","evidence_hypothesis") }.all { !it["evidence_details"].isNullOrBlank() })
         fun t(text:String,y:Float,engineId:String="mlkit")=LogicChecks.token(text,.9f,engine=engineId,y=y,h=.1f)
+        val ownerGrower="PROPRIÉTAIRE - RÉCOLTANT DES RÉCOLTAN"
+        check(EvidenceIdentityRoles.ownerGrowerLegalLine(ownerGrower))
+        check(!EvidenceIdentityRoles.ownerGrowerLegalLine("Domaine du Propriétaire-Récoltant"))
+        val legalFooterLabel=engine.extract(listOf(t("CHÂTEAU PEYROUQUET",.08f),t("SAINT-ÉMILION",.35f),
+            t("2020",.56f),t(ownerGrower,.84f)),2026).fill
+        check(legalFooterLabel.fields.getValue(FieldId.WINE_NAME).value=="SAINT-ÉMILION") { legalFooterLabel.fields }
         // Unrelated names test structure without bottle-name lookups or spelling fixtures.
         val novel=engine.extract(listOf(t("COLINASde",.1f),t("LUNAVISTA",.23f),t("CRIANZA",.4f)),2026).fill
         check(com.yourapp.wine.merge.TextNorm.normalize(novel.fields.getValue(FieldId.PRODUCER).value)=="colinas de lunavista") { novel.fields }
