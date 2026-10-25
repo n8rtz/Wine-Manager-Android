@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "purpose": "Explicit, image-level adjudications that override imported reference values without rewriting the source reference archive.",
+  "adjudications": [
+    {
+      "review_number": 63,
+      "image": "60e353e003e2211494936b66d477731691c90b18.jpg",
+      "field": "wine_name",
+      "imported_target": "Volcanie Rosé",
+      "imported_accepted": ["volcanierose", "volcanie"],
+      "status": "expected_value",
+      "target": "Volcanic Rosé",
+      "accepted": ["volcanicrose"],
+      "basis": "Direct visual reading of the label: the script line reads ‘Volcanic Rosé’. The imported ‘Volcanie Rosé’ transcription was incorrect.",
+      "decision_source": "User-confirmed visual adjudication in Arena, 2026-10-25"
+    }
+  ]
+}

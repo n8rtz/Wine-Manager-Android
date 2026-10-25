@@ -1,8 +1,10 @@
-# Bundled 168-photo phone benchmark (debug only)
+# Curated 107-photo phone benchmark (debug only)
 
 ## Use on the phone
 
-Build/install **debug** from this branch, then open **Profile / Settings → Run bundled 168-photo benchmark**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
+Build/install **debug** from this branch, then open **Profile / Settings → Run curated 107-photo benchmark**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
+
+The full 168-image bundle remains for provenance and hash checks, but only 107 uncolored labels from the user's review workbook are sent through OCR. The 55 red and 4 yellow rows are excluded, as are review numbers 27 and 47, which were absent from the workbook and explicitly excluded by the user. Thus 61 images never enter OCR. The 107 included rows contain 106 fully scorable forms and one partly unresolved form; the former 160-label acceptance target is retired pending review of the curated reference set.
 
 1. Choose **Production v1.0** (shared 15-second scanner), **Production v2.0** (guarded producer, 60 seconds per OCR engine), or **Lab** (latest spatial-merging variant, 60 seconds per engine). Each option runs only its selected implementation.
 2. Tap **Start / resume remaining photos**. No picker, image download, desktop OCR or saved-text replay is used.
@@ -19,8 +21,9 @@ New runs preserve old files. Runs are isolated by build SHA, APK install/update 
 `app/src/debug/assets/phone-corpus-v1/images/` contains **168 JPEGs, 31,163,745 bytes (29.72 MiB)**. Their bytes match the previously evaluated, EXIF-oriented, maximum-1600-edge JPEGs—not newly substituted labels. All transformed SHA-256 hashes match the frozen reference. The builder additionally verified each original source Git blob SHA-1.
 
 - Source: `AntoninLeroy/wine_label_reader_toolkit`, commit `eb2c14ba4f9a1b6efaa476696439754a9abde8ce`.
-- `inputs.json`: image identities and hashes only; the runner receives only these.
-- `scoring.json`: frozen provisional references, blank adjudications, accepted normalized aliases and saved baseline predictions. It is read by the scoreboard, not the OCR runner.
+- `inputs.json`: identities/hashes for all 168 bundled images, used for integrity checks.
+- `evaluation-set.json`: user-reviewed included/excluded image IDs, source workbook URL/hash and decision provenance. Only the 107 included IDs are passed to OCR.
+- `scoring.json`: frozen provisional references, blank adjudications, accepted normalized aliases and saved baseline predictions. It is read by the scoreboard, not the OCR runner. One user-confirmed visual correction is applied through `reference-adjudications-v1.json`: review #63 wine name is scored as **Volcanic Rosé**, while the imported source transcription **Volcanie Rosé** remains preserved for provenance. The corpus bundler verifies the imported value/aliases before applying that explicit overlay.
 - `manifest.json`: provenance, hashes and private-distribution warning.
 
 The upstream images have no declared redistribution license. The user expressly requested private test embedding. **Do not publish this debug APK as a public release.** Release APKs are not inflated by this corpus. Genuine Medium model assets are still supplied by the existing `preparePaddleMedium` build task; no new OCR models were introduced.
@@ -45,9 +48,9 @@ Both expected engines and Medium assets are required at preflight. Execution err
 
 A process mutex prevents concurrent corpus workers. Native OCR remains under the existing scanner/native gates. Only one image is processed at a time; full traces are removed from the small checkpoint projection before loading the result set. Checkpoints use same-directory temporary files and atomic rename, with replace fallback. An incomplete temporary checkpoint is ignored after restart. References never enter the recognition/extraction adapter.
 
-Scoring uses normalized exact accepted aliases, not fuzzy target matching. It distinguishes correct values, wrong values, missing values, correct blanks, unsupported fills, unresolved slots and execution failures. Six-field completion excludes the eight partly unresolved forms. The full-corpus target remains ≥128/160 complete and ≤7/160 multi-error; partial runs do not establish that target.
+Scoring uses normalized exact accepted aliases, not fuzzy target matching. It distinguishes correct values, wrong values, missing values, correct blanks, unsupported fills, unresolved slots and execution failures. In the selected 107-label set, six-field completion currently has 106 eligible forms and one partly unresolved form. No acceptance threshold is set yet for this newly curated subset; the former ≥128/160 and ≤7/160 target is retired. Partial runs do not establish full-set acceptance.
 
-The saved baseline is **not rerun**. Both a same-attempted-photo baseline and full-corpus baseline are displayed. This is a provisional development benchmark, not independently adjudicated held-out accuracy. Baseline source: `tools/evaluation/blank-aware-rescore-v1/paired-fields.csv`, `baseline_output`.
+The saved baseline is **not rerun**. The scoreboard shows same-attempted-photo comparisons and a baseline row filtered to the curated 107-label set. This is a provisional development benchmark, not independently adjudicated held-out accuracy. Baseline source: `tools/evaluation/blank-aware-rescore-v1/paired-fields.csv`, `baseline_output`.
 
 Frozen parity oracle:
 
@@ -77,7 +80,7 @@ bash tools/run-choice-checks.sh
 bash tools/run-host-checks.sh
 ```
 
-Build on the normal Android/Code on the Go setup with `./gradlew :app:assembleDebug`. Required device smoke checks: compile/install; Settings launch; one-photo checkpoint; Stop/Resume; background/rotation/process-death recovery; failed-engine reporting; CSV opening; then the full 168-photo pass. No accuracy improvement is claimed before that run.
+Build on the normal Android/Code on the Go setup with `./gradlew :app:assembleDebug`. Required device smoke checks: compile/install; Settings launch; one-photo checkpoint; Stop/Resume; background/rotation/process-death recovery; failed-engine reporting; CSV opening; then the full 107-photo curated pass. The excluded 61 are not run. No accuracy improvement is claimed before that run.
 
 ## Upload-size export update
 
@@ -96,10 +99,66 @@ The selected implementation is identified in the run metadata and CSV pipeline I
 Every benchmark mode now displays two additional rows from the user's completed 168-photo phone run on build `28bce9e81cc3`, whose original pipeline ID was `lab-guarded-producer`:
 
 - **Saved Production v2.0 · same attempted photos** — scored only on the image IDs checkpointed in the current run.
-- **Saved Production v2.0 · full corpus** — all 168 photos, 160 fully scorable forms: **34 complete / 43 one-error / 83 multi-error**, 630 correct values, 80 wrong values, 184 missing values, 77 correctly blank and 20 unsupported fills.
+- **Saved Production v2.0 · same curated set** — the historical 168-photo predictions are filtered to the same 107 included image IDs. This is the valid matched reference for current runs; the original all-168 historical totals below are context only and must not be compared directly to the curated denominator.
 
 The saved predictions are bundled in debug assets as `phone-corpus-v1/saved-production-v2.json`. `tools/corpus/bundle_saved_phone_v2.py` reproduces them from the compact full-run analysis, retaining the source CSV/build/pipeline and hashes. They are loaded only by the scoreboard, never supplied to recognition/extraction, and never rerun. No new photos or models are included.
 
 These rows appear in the on-screen table, copied statistics, and scored CSV (including per-field expected/recognized values). Exported saved-v2 rows include `result_origin`, `source_build`, `source_pipeline` and `source_csv_sha256`, distinct from the current export build. Existing historical frozen-baseline rows remain labeled historical; **they are not Production v1.0**. Running v1.0 or Lab therefore provides a matched-photo comparison against saved v2.0, without running the other contenders. This does not invent a full saved v1.0 result.
 
 163 host tests pass, including all 1,008 saved prediction values against the reproducible bundle, full-run scoring parity, first-19-photo parity (4/15 complete), and empty-subset handling. Android/Compose rendering has not been executed in this sandbox.
+
+
+## Pipeline bottleneck table
+
+The benchmark screen shows three **requirement tables** below scored results: ML Kit OCR, Paddle OCR, then post-OCR. The OCR tables represent distinct outputs, not concurrent execution: this benchmark runner executes ML Kit before its Paddle candidate loop. Their counts preserve the latest-attempt state categories (passed, blocked, not reached, not recorded, not applicable). Post-OCR shows the guarded assignment and true dependent resolver gates; evidence observation/hypothesis counts are not presented as requirements because hypotheses are jointly assigned across fields. Linked-Wine gates are conditioned on the Producer resolver having run; they are not forced into a universal field-by-field chain. Producer and Wine name resolver phases are combined where semantically equivalent, with separate field counts. Field correctness comes from benchmark scoring only, including correct expected blanks; unresolved references remain N/A. CSV schema and recognition behavior are unchanged.
+
+Every row defaults to one line with its field counts visible. Its own **+** expands only that row's description; **−** collapses it. Expanded descriptions wrap to the screen width rather than the table's scroll width. The wide six-column table scrolls horizontally on narrow screens and uses theme-colored grid lines between every row and column. Cells show `passed/failed` distinct-label counts from latest attempts, with passed counts in green and failed counts in red (using light/dark appropriate colors). Non-applicable, not-reached and not-recorded observations are omitted rather than counted as failures, and a blank means there was no measured pass/fail count for that field/step. Recognition and CSV columns are unchanged. **Copy scored stats** uses the grouped matrix; CSV exports retain the existing scalar `pipeline_step` schema and per-field scoring records.
+
+- Input verification, services, decoding/preparation and production-only native/quality/localization steps.
+- **ML Kit branch:** started, completed, nonblank text, usable mapped observations. ML Kit exposes a combined recognition API; the table does not invent internal detector/recognizer counters.
+- **Paddle Medium branch:** started, detector completion, regions, line-recognition attempts, completion, text and usable mapped observations.
+- Engine rejoin, extraction KB, raw form anchor, evidence observations/hypotheses and guarded assignment.
+- Primary manifest, producer database, wine database and supporting-layer validation.
+- **Producer and linked-wine branches, separately for each OCR engine:** eligibility, lookup completion, returned candidates, distance, plus wine/producer observation separation.
+- Two-engine/disjoint support, identity ambiguity, rival separation, existing-value protection, confirmed/suggested names and actual field changes.
+- Final selected pipeline/field coverage and two explicitly **scoring-only** outcomes (all six correct; at most one error).
+
+### What the matrix counts mean
+
+`X/Y` means **X passed / Y failed** among distinct wine-label images with an observed pass/fail result for that step and field; only the latest attempt contributes. It never counts lines, variants, joined phrases, database hits or reference rows. Shared stages have a single shared count across the six columns. Producer and linked-wine resolver steps are attributed to Producer and Wine name respectively; the wine-link checks specifically about producer compatibility stay under Producer. Other field cells remain blank unless that field had a genuine per-field measurement. Per-field correctness is attached only by the benchmark scorer; reference answers never reach recognition or resolver telemetry.
+
+Not-reached, not-recorded and N/A statuses are intentionally omitted from matrix cells, not reclassified as failures. Thus X+Y may be below attempted labels. Unattempted labels are excluded. The bottom all-fields-correct shared row has the same passed count as the complete total in scored results; unresolved forms are not counted as passed or failed there.
+
+Counts across engine branches are not a single decreasing chain. Engine completion and useful text are different facts: successful no-text OCR completes but supplies no useful text; deadline-limited OCR may still supply real usable partial readings. Confirmation of an already-correct name is not a new fill. Final populated-field rows measure coverage, not correctness; a correctly expected blank is not a coverage success. Tap a row's **+** to read its full step definition.
+
+New debug runs record per-resolver gates without adding queries, OCR passes, reference-name inference, extra votes, or relaxing acceptance safeguards. Asset setup records partial success, so a producer DB that validates before the wine DB fails is visible. Compact stage snapshots remain in current checkpoints after large raw trace arrays are stripped. Aggregate and per-field correctness results are attached only by the scoreboard; reference answers never reach recognition or resolver telemetry.
+
+### CSV schema
+
+Existing summary and field rows, saved-v2 comparisons, split-at-record-boundary behavior and formula-safe encoding are preserved.
+
+- Both exports include aggregate `row_type=pipeline_step` rows with `step_id`, `step_branch`, `step`, `step_definition`, `labels_attempted`, `labels_passed`, `labels_reached`, `labels_blocked`, `labels_not_reached`, `labels_not_recorded`, `labels_not_applicable`, `step_reasons`, and `funnel_version`.
+- New raw exports additionally include per-attempt `row_type=pipeline_funnel` rows (`step_id`, `step_status`, `step_reason`). Fine resolver gates are also flattened into final diagnostic summary fields beginning `funnel.`.
+- Raw CSV retains all attempts; its aggregate table still uses only current/latest attempts, matching the screen/scored CSV. Never sum per-attempt rows to reconstruct a latest-attempt denominator without selecting attempts first.
+- Older checkpoints/exports do not contain the new fine-grained gates. Recover only provable facts from their traces and terminal reasons; show other steps as **not recorded**. Never assume that the absence of a candidate means the database lookup failed. An explicitly recorded early abstention can establish downstream **not reached** states.
+
+### Checks and reuse of existing OCR
+
+`tools/run-pipeline-funnel-checks.sh` compiles actual Kotlin funnel, resolver telemetry, checkpoint JSON, scoreboard and CSV logic with host asset/mode stand-ins. It needs Java 21, Kotlin 2.2.10 and a genuine JSON-java jar/classes directory in `JSON_JAVA_CLASSPATH` (the checks here used upstream JSON-java tag `20250517`). These checks are **not** an Android/Compose/native-runtime build.
+
+```sh
+# Default: bundled saved-v2 prediction fixture, with unrecorded stages correctly unknown.
+bash tools/run-pipeline-funnel-checks.sh
+
+# Optional: validate all raw parts against a saved scored export, then generate a scored CSV + table.
+# No OCR, matching or baseline execution; original field values are preserved.
+bash tools/run-pipeline-funnel-checks.sh \
+  --scored /path/to/wine-168-lab-f9a8891dc192.csv \
+  --raw /path/to/wine-168-raw-lab-f9a8891dc192-part-01.csv \
+  --raw /path/to/wine-168-raw-lab-f9a8891dc192-part-02.csv \
+  --output /private/path/scored-with-pipeline-table.csv
+```
+
+Validation on this branch: 194 Python host tests pass, including grouped-matrix/source-layout contracts (not Android rendering); 75 actual Kotlin funnel, scorer and matrix checks pass on the bundled default fixture. Earlier saved-export validation passed 52 checks on all three attached f9 CSVs before the matrix-only changes. These are not native-device results.
+
+The added `PipelineFunnelDeviceTest` exercises actual packaged native SQLite through spatial preview, checkpoint, scoreboard and CSV on a **disposable emulator**, without OCR. It is added, **not executed in this workspace**. Full Android build/UI/SAF/stop-resume checks remain required; see this session's section in `_refs/THINGS_TO_CHECK.md`. No recognition or latency improvement is claimed for adding diagnostics.

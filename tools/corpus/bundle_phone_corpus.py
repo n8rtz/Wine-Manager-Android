@@ -11,11 +11,14 @@ from rescore_expected_blanks import disposition
 from score_public_corpus import normalize
 ROOT=Path(__file__).resolve().parents[2]
 REF=ROOT/'tools/evaluation/public-corpus-reference-v1/reference.json'
+ADJUDICATIONS=ROOT/'app/src/debug/assets/phone-corpus-v1/reference-adjudications-v1.json'
 DEST=ROOT/'app/src/debug/assets/phone-corpus-v1'
 REV='eb2c14ba4f9a1b6efaa476696439754a9abde8ce'
 def bundle(archive):
     assert hashlib.sha256(REF.read_bytes()).hexdigest()==(REF.parent/'reference.sha256').read_text().split()[0]
     refs=json.loads(REF.read_text())['images'];assert len(refs)==168
+    overrides=json.loads(ADJUDICATIONS.read_text())['adjudications']
+    overrides_by_key={(x['image'],x['field']):x for x in overrides}
     DEST.mkdir(parents=True,exist_ok=True);(DEST/'images').mkdir(exist_ok=True)
     images=[];targets=[]
     with zipfile.ZipFile(archive) as z:
@@ -28,7 +31,18 @@ def bundle(archive):
             assert hashlib.sha256(data).hexdigest()==item['image_sha256'],f"Byte mismatch: {item['image']} — do not change reference hashes"
             (DEST/'images'/item['image']).write_bytes(data)
             images.append(dict(image=item['image'],sha256=item['image_sha256']))
-            targets.append(dict(image=item['image'],review_number=item['review_number'],fields={f:dict(status=disposition(item,f)[0],accepted=[normalize(s) for s in t['accepted']],target=t['value'] or '') for f,t in item['fields'].items()}))
+            fields={}
+            for f,source in item['fields'].items():
+                override=overrides_by_key.get((item['image'],f))
+                if override:
+                    assert override['review_number']==item['review_number']
+                    assert source['value']==override['imported_target']
+                    assert [normalize(s) for s in source['accepted']]==override['imported_accepted']
+                    fields[f]=dict(status=override['status'],accepted=override['accepted'],target=override['target'])
+                else:
+                    fields[f]=dict(status=disposition(item,f)[0],accepted=[normalize(s) for s in source['accepted']],target=source['value'] or '')
+            targets.append(dict(image=item['image'],review_number=item['review_number'],fields=fields))
+    assert set(overrides_by_key)=={(x['image'],x['field']) for x in overrides}
     baseline={}
     with (ROOT/'tools/evaluation/blank-aware-rescore-v1/paired-fields.csv').open(encoding='utf-8-sig') as f:
         for r in csv.DictReader(f):baseline.setdefault(r['image'],{})[r['field']]=r['baseline_output']

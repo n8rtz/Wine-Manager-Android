@@ -1,6 +1,6 @@
 {
   "reference_sha256": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
-  "note": "Frozen development references plus provisional blank overlay; eight partly unresolved forms. Not held-out accuracy.",
+  "note": "Frozen development references plus provisional blank overlay; eight partly unresolved forms. Includes a documented user visual adjudication for review #63. Not held-out accuracy.",
   "images": [
     {
       "image": "01ad85537783130833bca5f46deeeef8223b8720.jpg",
@@ -3060,10 +3060,9 @@
         "wine_name": {
           "status": "expected_value",
           "accepted": [
-            "volcanierose",
-            "volcanie"
+            "volcanicrose"
           ],
-          "target": "Volcanie Rosé"
+          "target": "Volcanic Rosé"
         },
         "country": {
           "status": "expected_value",

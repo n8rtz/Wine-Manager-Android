@@ -14,6 +14,7 @@ internal object TextLabWineExtraction {
     fun append(context:Context,batch:TextLabBatch,skip:Boolean=false) {
         var kb:SqliteWineKnowledgeBase?=null
         var setupError=if(skip) "Skipped after memory pressure" else ""
+        batch.journals.forEach { it.add("shared","knowledge_setup","running") }
         val engine=try {
             if(skip) null else {
                 kb=SqliteWineKnowledgeBase.open(context.applicationContext,0)
@@ -21,6 +22,7 @@ internal object TextLabWineExtraction {
             }
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) { setupError="${error.javaClass.simpleName}: ${error.message}";null }
+        batch.journals.forEach { it.add("shared","knowledge_setup",if(kb!=null) "complete" else "unavailable",details=setupError) }
         try {
             if(!batch.benchmarkOnly) for(journal in batch.journals) for((candidate,pass) in TextLabWineTable.groups(journal)) {
                 if(journal.rows.any { it["stage"]=="field_summary" && it["candidate"]==candidate && it["pass_id"].orEmpty()==pass }) continue
@@ -81,10 +83,20 @@ internal object TextLabWineExtraction {
                         val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=deadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
                         var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=null
                         var unavailable="primary LWIN export required"
+                        val setup=com.yourapp.wine.diagnostics.PipelineFunnel.Recorder()
+                        var setupStep="asset.manifest"
                         try {
-                            try { if(!skip) producers=com.yourapp.wine.gazetteer.ProducerGazetteer.open(context.applicationContext,checkBudget) }
+                            try {
+                                if(!skip) producers=com.yourapp.wine.gazetteer.ProducerGazetteer.open(context.applicationContext,checkBudget) { step,passed ->
+                                    setupStep=step;setup.visit(step,passed,"asset validation did not complete")
+                                }
+                            }
                             catch(cancel:CancellationException) { throw cancel }
-                            catch(e:Exception) { unavailable="Primary producer gazetteer unavailable: ${e.javaClass.simpleName}; ${e.message}" }
+                            catch(e:Exception) {
+                                unavailable="Primary producer gazetteer unavailable: ${e.javaClass.simpleName}; ${e.message}"
+                                setup.visit(setupStep,false,unavailable)
+                            }
+                            journal.add("spatial_lab","gazetteer_setup",if(producers!=null) "complete" else "unavailable",setup.fields(),unavailable.takeIf { producers==null }.orEmpty())
                             val remaining=(deadline-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L)
                             var lookupDeadline:Long?=null
                             val lookupBudget={

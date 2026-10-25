@@ -7,7 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,10 +20,26 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
+import com.yourapp.wine.diagnostics.PipelineFunnel
+
+private fun passFailLabel(passed:Int,failed:Int,passColor:Color,failColor:Color,shared:Boolean=false,notReached:Int=0,notRecorded:Int=0,notApplicable:Int=0):AnnotatedString = buildAnnotatedString {
+    if(shared) append("Shared ")
+    withStyle(SpanStyle(color=passColor)) { append(passed.toString()) }
+    append("/")
+    withStyle(SpanStyle(color=failColor)) { append(failed.toString()) }
+    if(notReached+notRecorded+notApplicable>0) append(" · NR $notReached · ? $notRecorded · NA $notApplicable")
+}
 
 class PhoneCorpusActivity:ComponentActivity() {
     private val vm:PhoneCorpusViewModel by viewModels()
@@ -35,6 +53,8 @@ class PhoneCorpusActivity:ComponentActivity() {
         val clipboard=LocalClipboardManager.current
         var newRun by remember { mutableStateOf(false) }
         var showDetails by remember { mutableStateOf(false) }
+        var showFunnel by rememberSaveable { mutableStateOf(true) }
+        var expandedFunnelSteps by rememberSaveable(state.mode) { mutableStateOf(emptySet<String>()) }
         var exportIndex by rememberSaveable { mutableStateOf(0) }
         val export=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let { vm.saveExportPart(it,exportIndex) } }
         val importCsv=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::splitExistingCsv) }
@@ -44,8 +64,8 @@ class PhoneCorpusActivity:ComponentActivity() {
         }
         LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             item {
-                Text("Bundled 168-photo benchmark",style=MaterialTheme.typography.headlineSmall)
-                Text("Build ${BuildConfig.BUILD_COMMIT} · all 168 photos are inside this debug APK. No photo downloads, picker or desktop required.")
+                Text("Curated 107-photo benchmark",style=MaterialTheme.typography.headlineSmall)
+                Text("Build ${BuildConfig.BUILD_COMMIT} · 107 uncolored labels are run. 55 red, 4 yellow, and 2 omitted labels are excluded from OCR. All 168 source photos remain packaged for provenance.")
                 Text("Private test corpus; image redistribution rights are unresolved. Do not publish this APK. Frozen references are provisional development judgments, not held-out accuracy.",style=MaterialTheme.typography.bodySmall)
                 Text("Fresh ML Kit + Medium OCR. Plug in your phone and keep this screen open; long runs can take hours and generate heat. Going to the background requests a stop after the current image. Abrupt process death preserves completed checkpoints.")
             }
@@ -60,9 +80,9 @@ class PhoneCorpusActivity:ComponentActivity() {
             }
             item {
                 Text(state.message)
-                Text("Checkpointed: ${state.completed}/168")
+                Text("Checkpointed: ${state.completed}/${state.total}")
                 if(state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                Button(onClick={vm.start()},enabled=!state.busy && state.board!=null && state.completed<168) { Text("Start / resume remaining photos") }
+                Button(onClick={vm.start()},enabled=!state.busy && state.board!=null && state.completed<state.total) { Text("Start / resume remaining photos") }
                 Row {
                     TextButton(onClick=vm::stop,enabled=state.busy) { Text("Stop after image") }
                     TextButton(onClick={vm.start(true)},enabled=!state.busy && state.completed>0) { Text("Retry failed / partial") }
@@ -82,7 +102,79 @@ class PhoneCorpusActivity:ComponentActivity() {
                     TextButton(onClick={clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n"+board.text))}) { Text("Copy scored stats") }
                     Button(onClick={vm.prepareExport(false)},enabled=!state.busy && state.csv!=null) { Text("Prepare scored CSV export") }
                     TextButton(onClick={vm.prepareExport(true)},enabled=!state.busy && state.completed>0) { Text("Prepare raw diagnostics CSV export") }
-                    Text("CSV includes every scored field and its expected/recognized value, failures, and saved baseline comparisons. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
+                    Text("CSV includes every scored field, saved comparisons, and pipeline_step bottleneck rows. Raw CSV also retains each label's stage statuses. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
+                }
+                item {
+                    Text("Pipeline bottleneck matrix",style=MaterialTheme.typography.titleMedium)
+                    Text("Three requirement tables: ML Kit OCR, Paddle OCR, then post-OCR. OCR tables are distinct outputs, not parallel execution (the runner executes ML Kit before Paddle). Post-OCR combines shared assignment and dependent resolver gates; evidence hypotheses are jointly assigned, not a serial per-field chain. Counts are passed/failed; NR, ?, and N/A preserve not-reached, unrecorded, and not-applicable cohorts. Tap + for definitions.",
+                        style=MaterialTheme.typography.bodySmall)
+                    TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
+                    if(showFunnel) SelectionContainer {
+                        val stepWidth=220.dp
+                        val fieldWidth=88.dp
+                        val fieldTitles=PhoneCorpusMath.fields.map { field -> when(field) {
+                            "wine_name" -> "Wine name"
+                            else -> field.replaceFirstChar { it.uppercase() }
+                        } }
+                        val matrixScroll=rememberScrollState()
+                        val gridColor=MaterialTheme.colorScheme.outlineVariant
+                        val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+                        val failColor=MaterialTheme.colorScheme.error
+                        BoxWithConstraints(Modifier.fillMaxWidth()) {
+                            val viewportWidth=maxWidth
+                            Column(Modifier.horizontalScroll(matrixScroll)) {
+                            Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                Text("Pipeline step",Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                    style=MaterialTheme.typography.labelMedium)
+                                fieldTitles.forEach { title ->
+                                    Text(title,Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                        style=MaterialTheme.typography.labelMedium,textAlign=TextAlign.Center,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                }
+                            }
+                            board.matrix.forEachIndexed { index,row ->
+                                val section=when {
+                                    row.step.branch.startsWith("OCR table · ML Kit") -> "OCR 1 · ML Kit"
+                                    row.step.branch.startsWith("OCR table · Paddle") -> "OCR 2 · Paddle"
+                                    else -> "POST-OCR REQUIREMENTS"
+                                }
+                                val previous=board.matrix.getOrNull(index-1)?.step?.branch
+                                val previousSection=when {
+                                    previous?.startsWith("OCR table · ML Kit")==true -> "OCR 1 · ML Kit"
+                                    previous?.startsWith("OCR table · Paddle")==true -> "OCR 2 · Paddle"
+                                    previous==null -> null
+                                    else -> "POST-OCR REQUIREMENTS"
+                                }
+                                if(section!=previousSection) Text(section,Modifier.width(viewportWidth).padding(top=10.dp,bottom=4.dp),style=MaterialTheme.typography.titleSmall)
+                                val expanded=row.step.id in expandedFunnelSteps
+                                Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                    Row(Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor),
+                                        verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                        TextButton(onClick={expandedFunnelSteps=if(expanded) expandedFunnelSteps-row.step.id else expandedFunnelSteps+row.step.id},
+                                            modifier=Modifier.width(44.dp),contentPadding=PaddingValues(0.dp)) {
+                                            Text(if(expanded) "−" else "+")
+                                        }
+                                        Text("${row.step.branch} · ${row.step.title}",Modifier.weight(1f).padding(end=4.dp),
+                                            style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                    }
+                                    if(row.shared!=null) {
+                                        Text(passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true,notReached=row.shared.notReached,notRecorded=row.shared.notRecorded,notApplicable=row.shared.notApplicable),
+                                            Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                            style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
+                                    } else {
+                                        PhoneCorpusMath.fields.forEach { field ->
+                                            val cell=row.fields[field]
+                                            Text(cell?.let { passFailLabel(it.passed,it.failed,passColor,failColor,notReached=it.notReached,notRecorded=it.notRecorded,notApplicable=it.notApplicable) } ?: AnnotatedString(""),
+                                                Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                                style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
+                                        }
+                                    }
+                                }
+                                if(expanded) Text(row.step.definition,Modifier.width(viewportWidth).border(1.dp,gridColor)
+                                    .padding(start=48.dp,end=8.dp,top=8.dp,bottom=8.dp),style=MaterialTheme.typography.bodySmall)
+                            }
+                            }
+                        }
+                    }
                 }
             }
             item {
@@ -104,7 +196,7 @@ class PhoneCorpusActivity:ComponentActivity() {
             item { TextButton(onClick={vm.stop();finish()}) { Text("Close — keep checkpoints") } }
         }
         if(newRun) AlertDialog(onDismissRequest={newRun=false},title={Text("Start a new benchmark?")},
-            text={Text("Existing runs are kept on the device. Export this run before changing runs or installing another APK. A new run starts all 168 images again.")},
+            text={Text("Existing runs are kept on the device. Export this run before changing runs or installing another APK. A new run starts the 107 included images again; 61 review-excluded images are not run.")},
             confirmButton={TextButton(onClick={newRun=false;vm.load(state.mode,true)}) { Text("New run") }},
             dismissButton={TextButton(onClick={newRun=false}) { Text("Cancel") }})
     }

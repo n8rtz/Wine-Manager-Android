@@ -6,8 +6,8 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-058**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
-3. **Bugs:** `Bug-nnn`, next free number **Bug-027**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
+2. **Wishes:** `W-nnn`, next free number **W-059**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+3. **Bugs:** `Bug-nnn`, next free number **Bug-028**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
 6. **Status words:** `Open` · `Partial` · `Needs decision` · `Planned (brief only)` · `Fixed – awaiting device check`.
@@ -42,7 +42,18 @@
 
 ## 1. Active bugs
 
-**None open.** Every bug previously logged has been resolved (see `ARCHIVE.md` Part B). Bug-005 and Bug-019 were still listed as active but are already fixed in the source; they are archived with a note asking you to confirm on a device.
+### **[Bug-027]**: Duplicate merged Gradle build-commit declaration
+* **Date Logged:** 2026-10-24
+* **Component/File:** `app/build.gradle.kts`
+* **Severity:** Build configuration
+* **Status:** Fixed – awaiting device check
+* **Description:** The synced script declared `val buildCommit` twice in the same scope, a Kotlin DSL redeclaration. Removed only the redundant legacy short-SHA declaration, preserving provider-backed 12-character metadata, ABI selection and all six BuildConfig fields.
+* **Steps to Reproduce:**
+    1. Evaluate the pre-correction merged app Gradle script.
+    2. Both same-scope declarations are present; the source cannot resolve them as separate variables.
+* **Known Workaround / Notes:** Structural regression check passes. Full Gradle evaluation/Android build has not run: the Gradle 9.3.1 distribution download fails TLS in this workspace, before script compilation. Verify with the real Android toolchain; do not upgrade pinned versions to bypass it.
+
+Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 and Bug-019 are already fixed in source and retain device-confirmation checks.
 
 *(Add new bugs here, newest first.)*
 
@@ -57,6 +68,7 @@
 
 | Rank | ID | Title | Complexity | Status | Target release |
 | --- | --- | --- | --- | --- | --- |
+| Owner priority | W-058 | Scanner accuracy diagnosis and per-label pipeline-bottleneck table | M diagnostics; L phased recognition follow-up | Partial — table wired and host-tested; Android verification pending; recognition plan not implemented | Experimental debug Lab; no normal Add Wine promotion |
 | 1 | W-056 | Automated build-and-test (CI) and tag-based releases | S | Open | 0.5.x |
 | 2 | W-057 | Automatic backup with selectable destinations and options (Settings → Backup: Local/Google Drive/GitHub toggles, auto or manual with “every N days/weeks/months” maximum interval, encryption, keep-newest-N, failure warnings), confirmation, restore | L (Phase 0 = S; 1a = L; 1b and each destination = M) | Open — decisions closed 2026-10-16 | 0.5.x (Phase 0), 0.6.0 (Phase 1) |
 | 3 | W-050 | Drinking window: offline estimates (appellation / grape / designation aware) now, pulled-in data later | M + M per source + L | **Phase 1 written; estimator tests pass standalone, Gradle build and screen not yet run**; the owner reviews the ageing table; Phase 2 (pulled-in data) is next after W-057 | Phase 1: 0.5.6 (this branch); Phase 2: 0.7.0 |
@@ -70,6 +82,14 @@
 **Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased.
 
 ---
+
+### Owner priority: W-058 — Scanner accuracy diagnosis and pipeline bottlenecks
+**Complexity:** M diagnostics; L phased recognition follow-up · **Status:** Partial
+* **Goal:** Diagnose actual phone results toward strictly >80% completely correct forms and <5% with 2+ errors; expose the number of distinct wine labels passing each pipeline gate, including separate ML Kit/Paddle branches, in the in-app benchmark and both CSV outputs.
+* **UI-Trigger / Location:** Debug phone benchmark → **Pipeline bottlenecks**, **Copy scored stats**, scored/raw CSV exports (`row_type=pipeline_step`). New compact per-label checkpoint telemetry preserves stage outcomes; old missing evidence remains unknown.
+* **Scope now:** Owner requested syncing merged main first (done at `8fce0c6`/PR #9, no duplicate lookup fix), then implementing the table. 80 step definitions; latest-attempt label counts; passed/blocked/not reached/not recorded/N/A states; resolver setup, precision/protection gates and final coverage/correctness clearly separated. No OCR/model/budget/reference-asset or normal Add Wine behavior changes.
+* **Evidence / next steps:** [Audited phone results and proposed follow-up plan](../docs/scanner-accuracy-plan.md). Supplied f9 run remains 34/160 complete and 78/160 multi-error; no new OCR result. At 160 eligible forms the strict goal requires ≥129 complete and ≤7 multi-error. Correctness/helper threshold alignment is still pending. Android build/native/UI validation remains open in this branch's `THINGS_TO_CHECK` section. Broader recognition work is proposed, not authorized/implemented by the table request; no guaranteed gains.
+* **Priority:** Owner-directed scanner investigation/table interrupts other wishes; their ordering is otherwise unchanged. Do not promote latest Lab into normal Add Wine without separate authorization.
 
 ### 1. W-056 — Automated build-and-test (CI) and tag-based releases *(new)*
 **Complexity:** S · **Status:** Open
@@ -290,6 +310,7 @@
 `THINGS_TO_CHECK.md` states that Android Studio builds, unit tests and device/emulator checks have **not** been run for the camera OCR, image importer, Manage Offline Images, Pareto and aroma-wheel work. Treat those checklists as the open test plan; they are not copied here.
 
 * [ ] **Build + tests:** `./gradlew :app:assembleDebug`, `:app:testDebugUnitTest`, and (emulator only — it uninstalls the app afterward, wiping a phone's data) `:app:connectedDebugAndroidTest`, including `WineImageImportRepositoryTest`.
+* [ ] **W-058 pipeline table / Bug-027 metadata:** native `PipelineFunnelDeviceTest` and screen/scored/raw parity, retries/stop-resume/legacy unknowns in the `arena/259cc0eb-wine-manager-android` checklist. Host logic is tested; Android/Compose/SAF remains unverified. Do not run instrumentation on the owner's cellar installation.
 * [ ] **Camera scan on Add Wine** — `THINGS_TO_CHECK.md` → *Camera label scan — Add Wine* (rewritten 2026-10-15 for the Take Label Photo flow; not yet run).
 * [ ] **Pareto screen** — *Pareto screen — Price vs. Rating* (deterministic test set; no automated tests exist).
 * [ ] **Open Food Facts reviewed image import** and **Manage Offline Images**.

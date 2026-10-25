@@ -40,7 +40,7 @@ class LinkedWineAssetChecks(unittest.TestCase):
             self.assertEqual(codes,manifest['wine_lwin_records'])
     def test_runtime_scope_and_budget(self):
         preview=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
-        self.assertIn('LinkedWineResolver(linkedIndex).resolve(before,wineBefore,decision,spans,checkProducerBudget)',preview)
+        self.assertRegex(preview,r'LinkedWineResolver\(linkedIndex(?:,onFailureTelemetry=\{[^}]+\})?\)\.resolve\(before,wineBefore,decision,spans,checkProducerBudget\)')
         self.assertIn('wine_gazetteer_lwin7',preview)
         self.assertIn('linked_wine_candidate',preview)
         v2=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()

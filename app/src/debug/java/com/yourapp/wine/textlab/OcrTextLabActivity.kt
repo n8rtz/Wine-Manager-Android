@@ -11,6 +11,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,7 +43,7 @@ class OcrTextLabActivity:ComponentActivity() {
 private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
     val state by vm.state.collectAsState()
     val clipboard=LocalClipboardManager.current
-    val context=LocalContext.current
+    var showPastRuns by remember { mutableStateOf(false) }
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if(uris.isNotEmpty()) vm.choose(uris) }
     val csvExporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri -> uri?.let(vm::exportCsv) }
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp),
@@ -53,9 +54,32 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
             Button(onClick={picker.launch(arrayOf("image/*"))},enabled=!state.busy) { Text("Choose images") }
             Text("Choosing again replaces the image queue, not your saved CSV.",style=MaterialTheme.typography.bodySmall)
             Text(state.message)
+            Text("Saved runs are kept in this app's private storage and restored when Text Lab opens again. Clearing app data removes them.",style=MaterialTheme.typography.bodySmall)
             if(state.busy) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
                 TextButton(onClick=vm::cancel) { Text("Stop") }
+            }
+        }
+        item {
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+                Text("Past runs (${state.savedRuns.size})",style=MaterialTheme.typography.titleMedium)
+                TextButton(onClick={showPastRuns=!showPastRuns},enabled=state.savedRuns.isNotEmpty()) {
+                    Text(if(showPastRuns) "Hide" else "Browse")
+                }
+            }
+            if(state.savedRuns.isEmpty()) Text("No saved runs yet. Completed and checkpointed batches will appear here.",style=MaterialTheme.typography.bodySmall)
+        }
+        if(showPastRuns) items(state.savedRuns,key={it.file.name}) { run ->
+            Card(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth().padding(12.dp),horizontalArrangement=Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) {
+                        Text(if(run.file.nameWithoutExtension==state.viewingRunId) "Currently viewing · ${run.file.nameWithoutExtension}" else run.file.nameWithoutExtension,
+                            style=MaterialTheme.typography.titleSmall)
+                        Text("${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm",java.util.Locale.getDefault()).format(java.util.Date(run.modifiedAt))} · ${run.bytes/1024} KB",
+                            style=MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(enabled=!state.busy,onClick={vm.openSavedRun(run.file)}) { Text("View") }
+                }
             }
         }
         if(state.images.isNotEmpty()) item {
@@ -141,8 +165,8 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                 modifier=Modifier.fillMaxWidth().heightIn(min=80.dp,max=280.dp))
         }
         if(state.lastCsv!=null) item {
-            Button(enabled=!state.busy,onClick={csvExporter.launch("wine-ocr-batch-${state.lastCsv?.name}")}) { Text("Export last batch CSV") }
-            Text("One CSV includes every queued image and enabled candidate, including errors and partial results. Saved batch: ${state.lastCsv?.name}",style=MaterialTheme.typography.bodySmall)
+            Button(enabled=!state.busy,onClick={csvExporter.launch("wine-ocr-batch-${state.lastCsv?.name}")}) { Text(if(state.viewingRunId!=null) "Export displayed run CSV" else "Export last batch CSV") }
+            Text("One CSV includes every queued image and enabled candidate, including errors and partial results. Selected saved run: ${state.lastCsv?.name}",style=MaterialTheme.typography.bodySmall)
         }
         if(state.formTable.isNotEmpty()) item {
             Text("Scanning form preview · combined engines",style=MaterialTheme.typography.titleMedium)

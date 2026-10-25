@@ -9,6 +9,26 @@ import java.util.UUID
 
 /** Image descriptors contain no expected OCR text. Each image owns its own metadata and row sequence. */
 internal data class TextLabImageKey(val id:String,val name:String)
+internal data class TextLabSavedBatch(val id:String,val build:String,val status:String,val journals:List<TextLabJournal>) {
+    fun summary():String=buildString {
+        appendLine("Saved OCR Text Lab run · $id · $status · ${journals.size} images · build $build")
+        appendLine(TextLabStats.text(journals))
+        appendLine(TextLabWineTable.formText(journals))
+        appendLine(TextLabResidualPreview.text(journals))
+        appendLine(TextLabWineTable.text(journals))
+        journals.forEach { journal ->
+            appendLine("\nImage ${journal.metadata["image_index"]}: ${journal.metadata["image_name"]} · ${journal.metadata["image_summary_status"] ?: "checkpointed"}")
+            journal.rows.filter { it["stage"] in setOf("candidate_summary","pass_summary","error","lm_fallback") }.forEach { row ->
+                if(length>50_000) { appendLine("\nOn-screen summary truncated. Export the CSV for complete diagnostics.");return@buildString }
+                appendLine("${row["candidate"]} · ${row["stage"]} · ${row["status"]}"+
+                    (row["pass_id"]?.let { " · $it" } ?: "")+
+                    (row["elapsed_ms"]?.let { " · $it ms" } ?: "")+
+                    (row["details"]?.takeIf(String::isNotEmpty)?.let { " · $it" } ?: ""))
+            }
+        }
+        appendLine("\nExport this run's CSV for raw OCR text, coordinates, timings and full diagnostics.")
+    }
+}
 internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val spatialPhrases:Boolean=false,val benchmarkOnly:Boolean=false) {
     val id:String=UUID.randomUUID().toString()
     val journals=images.mapIndexed { index,image ->
@@ -66,5 +86,47 @@ internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,bu
             }
         }
         appendLine("\nExport last batch CSV for complete per-image timings, coordinates, model IDs and diagnostics.")
+    }
+
+    companion object {
+        private val viewStages=setOf("image_summary","candidate_summary","pass_summary","error","lm_fallback","recognition","field_summary","form_summary","evidence_summary","gazetteer_summary","spatial_evidence_summary","residual_summary")
+
+        /** Rebuilds a read-only in-app view from a checkpoint or completed batch CSV. */
+        fun readSaved(file:File):TextLabSavedBatch {
+            require(file.isFile && file.extension.equals("csv",ignoreCase=true)) { "Saved OCR Text Lab CSV not found" }
+            var headers:List<String>?=null
+            var batchId=file.nameWithoutExtension
+            var build="unknown"
+            var status="checkpointed"
+            val journals=linkedMapOf<String,TextLabJournal>()
+            file.bufferedReader(Charsets.UTF_8).use { reader ->
+                TextLabCsv.read(reader) { cells ->
+                    if(headers==null) {
+                        headers=cells.mapIndexed { index,value -> if(index==0) value.removePrefix("\uFEFF") else value }
+                    } else {
+                        val row=headers.orEmpty().mapIndexedNotNull { index,key -> key.takeIf(String::isNotEmpty)?.let { it to cells.getOrElse(index) { "" } } }.toMap()
+                        val testId=row["test_id"].orEmpty()
+                        if(testId.isNotEmpty()) {
+                            batchId=row["batch_id"]?.takeIf(String::isNotEmpty) ?: batchId
+                            build=row["build"]?.takeIf(String::isNotEmpty) ?: build
+                            status=row["batch_status"]?.takeIf(String::isNotEmpty) ?: status
+                            val journal=journals.getOrPut(testId) {
+                                val selected=row["selected_candidates"].orEmpty().split(Regex("\\s+")).map(String::trim).filter(String::isNotEmpty).toSet()
+                                TextLabJournal(selected,build,row["detection_enabled"]=="true")
+                            }
+                            journal.metadata.putAll(row.filterKeys { it in setOf("batch_id","image_id","image_name","image_index","image_count","batch_status") })
+                            val stage=row["stage"].orEmpty()
+                            if(stage in viewStages) {
+                                journal.rows+=row
+                                if(stage=="image_summary") journal.metadata["image_summary_status"]=row["status"].orEmpty()
+                            }
+                        }
+                    }
+                }
+            }
+            require(journals.isNotEmpty()) { "No per-image OCR rows were found in this saved CSV" }
+            val ordered=journals.values.sortedWith(compareBy({ it.metadata["image_index"]?.toIntOrNull() ?: Int.MAX_VALUE },{ it.metadata["image_name"].orEmpty() }))
+            return TextLabSavedBatch(batchId,build,status,ordered)
+        }
     }
 }
