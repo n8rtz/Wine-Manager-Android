@@ -29,7 +29,7 @@ import sqlite3
 import sys
 import unicodedata
 
-ASSET = "app/src/debug/assets/producer-gazetteer-v1/producers.sqlite"
+ASSET = "app/src/main/assets/producer-gazetteer-v1/producers.sqlite"
 SAVED_V2 = "app/src/debug/assets/phone-corpus-v1/saved-production-v2.json"
 LAB_PIPELINE = "lab-linked-wine-v1"
 V2_PIPELINE = "Saved Production v2.0 · same attempted photos"

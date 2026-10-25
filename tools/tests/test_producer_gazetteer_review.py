@@ -26,13 +26,13 @@ class ProducerGazetteerReviewChecks(unittest.TestCase):
         self.assertEqual(probes['Margaux'][0]['name'],'Château Margaux')
         self.assertTrue(probes['PRODUCT OF FRANCE']) # demonstrates need for our abstention layer
         self.assertEqual(probes['zzqxv zzqxv'],[])
-    def test_original_demo_not_packaged(self):
-        self.assertFalse((ROOT/'app/src/main/assets/producer-gazetteer-v1').exists())
-        # A later user-supplied primary export is now allowed in debug; the 128-row demo is not.
-        manifest=ROOT/'app/src/debug/assets/producer-gazetteer-v1/manifest.json'
-        if manifest.exists():
-            m=json.loads(manifest.read_text())
-            self.assertNotEqual(m['provenance']['zip_git_blob'],'3749baa923a12efdb28b2bb03119a734c4faac58')
-            self.assertEqual(m['verification_kind'],'official-export-acquisition-attested')
+    def test_original_demo_replaced_by_verified_lookup_catalog(self):
+        # The user-supplied primary export is packaged for the Database Lookup page; the old 128-row demo is not.
+        manifest=ROOT/'app/src/main/assets/producer-gazetteer-v1/manifest.json'
+        m=json.loads(manifest.read_text())
+        self.assertNotEqual(m['provenance']['zip_git_blob'],'3749baa923a12efdb28b2bb03119a734c4faac58')
+        self.assertEqual(m['verification_kind'],'official-export-acquisition-attested')
+        self.assertEqual(m['records'],33160)
+        self.assertFalse((ROOT/'app/src/debug/assets/producer-gazetteer-v1/manifest.json').exists())
         runner=(ROOT/'app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt').read_text()
         self.assertNotIn('producer-gazetteer-review',runner)

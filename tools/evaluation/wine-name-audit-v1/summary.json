@@ -1,0 +1,20 @@
+{
+  "purpose": "Human review queue; not a fresh independent image adjudication.",
+  "images": 168,
+  "reference_sha256": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
+  "scoring_sha256": "681e3431ea20e6e98edf552e0cae3bb1af32d22c93886354a7b971c70e46cce7",
+  "adjudications_sha256": "7e7ea9919696c561b7e36306747696f52b484ddaaf19d43146d1b5afcc57a768",
+  "user_confirmed_adjudications": 1,
+  "saved_v2_sha256": "447c7744f4fa526178f6f54cb8bbe64cc63cbefda5aca47e1aeac75da445a50f",
+  "note": "Imported reference values remain preserved; explicit image-level adjudications override only the scored target and are shown separately.",
+  "saved_v2_outcomes": {
+    "correct_value": 77,
+    "unscored_blank": 1,
+    "wrong_value": 44,
+    "unscored_filled": 2,
+    "missing_value": 36,
+    "correct_blank": 5,
+    "unsupported_fill": 3
+  },
+  "policy": "Exact normalized accepted-alias scoring; review target semantics and image evidence before changing references or extraction behavior."
+}

@@ -34,6 +34,19 @@ fun main() {
     verify(dismissed.fields.getValue(FieldId.PRODUCER).intentionallyBlank)
     verify(dismissed.apply(result,blank,2026).fields.getValue(FieldId.PRODUCER).choices.isEmpty())
     verify(form.edit(FieldId.PRODUCER,"Manual").fields.getValue(FieldId.PRODUCER).choices.isEmpty())
+    // The real-form clear action rejects its current OCR reading without auto-filling a rival.
+    val suggested=result.copy(fields=empty+(FieldId.PRODUCER to a),alternatives=mapOf(FieldId.PRODUCER to listOf(a,b)))
+    val populated=ScanFormState().apply(suggested,blank+(FieldId.PRODUCER to a.value),2026)
+    val cleared=populated.clearSuggestion(FieldId.PRODUCER,suggested,blank+(FieldId.PRODUCER to a.value),2026)
+    val clearedProducer=cleared.fields.getValue(FieldId.PRODUCER)
+    verify(clearedProducer.value.isBlank() && clearedProducer.clearedByUser && clearedProducer.edited)
+    verify(clearedProducer.rejectedValues.contains(a.value) && clearedProducer.choices.map { it.value }==listOf(b.value))
+    val brumes=candidate(FieldId.PRODUCER,"Domaine des Brumes")
+    val nextSuggestion=suggested.copy(fields=empty+(FieldId.PRODUCER to b),
+        alternatives=mapOf(FieldId.PRODUCER to listOf(b,brumes)))
+    val afterRetake=cleared.apply(nextSuggestion,blank,2026).fields.getValue(FieldId.PRODUCER)
+    verify(afterRetake.value.isBlank() && afterRetake.choices.map { it.value }==listOf(b.value,brumes.value))
+    verify(cleared.selectChoice(FieldId.PRODUCER,b.value).fields.getValue(FieldId.PRODUCER).value==b.value)
     // Good selected values remain filled: both GREEN and editable YELLOW, regardless of alternatives.
     for(state in listOf(UiState.GREEN,UiState.YELLOW)) {
         val filled=ScanFormState().apply(result.copy(fields=empty+(FieldId.PRODUCER to a.copy(state=state))),blank,2026).fields.getValue(FieldId.PRODUCER)
@@ -66,7 +79,8 @@ fun main() {
     verify(FieldId.SUBREGION in valley.intentionalBlankFields && FieldId.REGION !in valley.intentionalBlankFields)
     // Actual joint selector: ties expose only supported rivals, a clear winner still selects normally.
     val tie=IdentityAssignment.select(listOf(IdentityOption(a,90.0),IdentityOption(b,90.0)),emptyList())
-    verify(tie.fields.getValue(FieldId.PRODUCER).single().value.isBlank())
+    val tiedProducer=tie.fields.getValue(FieldId.PRODUCER).single()
+    verify(tiedProducer.value==a.value && tiedProducer.state==UiState.YELLOW)
     verify(tie.fallbackCandidates.getValue(FieldId.PRODUCER).size==2)
     val winner=IdentityAssignment.select(listOf(IdentityOption(a,95.0),IdentityOption(b,50.0)),emptyList())
     verify(winner.fields.getValue(FieldId.PRODUCER).single().value==a.value)

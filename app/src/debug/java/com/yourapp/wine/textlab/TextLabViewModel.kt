@@ -16,7 +16,9 @@ import com.n8rtz.winetracker.BuildConfig
 
 data class TextLabImage(val id:String,val name:String,val photo:TextPhoto?=null,
     val selection:TextCrop?=TextCrop(0f,0f,1f,1f),val error:String?=null)
+data class TextLabSavedRun(val file:File,val modifiedAt:Long,val bytes:Long)
 data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeImage:Int=0,
+    val savedRuns:List<TextLabSavedRun> = emptyList(),val viewingRunId:String?=null,
     val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
     val busy:Boolean=false,val result:String="",val wineTable:List<List<String>> = emptyList(),val formTable:List<List<String>> = emptyList(),val cropPreview:File?=null,val lastCsv:File?=null,
     val message:String="Choose one or more images. Full images are selected by default.") {
@@ -27,10 +29,50 @@ data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeIm
 }
 class TextLabViewModel(app:Application):AndroidViewModel(app) {
     private val csvFolder=File(app.noBackupFilesDir,"text-lab-tests")
-    private val mutable=MutableStateFlow(TextLabState(lastCsv=csvFolder.listFiles()?.filter { it.extension=="csv" }?.maxByOrNull { it.lastModified() }))
+    private val mutable=MutableStateFlow(TextLabState())
     val state=mutable.asStateFlow()
     private var job:Job?=null
     private var cleared=false
+
+    private fun savedRuns():List<TextLabSavedRun> = csvFolder.listFiles()?.asSequence()
+        ?.filter { it.isFile && it.extension.equals("csv",ignoreCase=true) }
+        ?.sortedByDescending { it.lastModified() }
+        ?.map { TextLabSavedRun(it,it.lastModified(),it.length()) }?.toList().orEmpty()
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val runs=savedRuns()
+            mutable.update { it.copy(savedRuns=runs,lastCsv=runs.firstOrNull()?.file) }
+            runs.firstOrNull()?.let { latest ->
+                runCatching { TextLabBatch.readSaved(latest.file) }.onSuccess { saved ->
+                    if(!cleared) mutable.update { it.copy(result=saved.summary(),wineTable=TextLabWineTable.rows(saved.journals),
+                        formTable=TextLabWineTable.formRows(saved.journals),viewingRunId=saved.id,
+                        message="Restored the latest saved run. Past runs remain available below until their app data is cleared.") }
+                }.onFailure { error ->
+                    if(!cleared) mutable.update { it.copy(message="Saved run ${latest.file.name} is retained, but could not be opened: ${error.message ?: error.javaClass.simpleName}") }
+                }
+            }
+        }
+    }
+
+    fun openSavedRun(file:File) {
+        if(mutable.value.busy || !file.isFile) return
+        clearPreview()
+        mutable.update { it.copy(busy=true,message="Opening saved OCR run…",cropPreview=null) }
+        job=viewModelScope.launch {
+            try {
+                val saved=withContext(Dispatchers.IO) { TextLabBatch.readSaved(file) }
+                if(!cleared) mutable.update { it.copy(busy=false,result=saved.summary(),
+                    wineTable=TextLabWineTable.rows(saved.journals),formTable=TextLabWineTable.formRows(saved.journals),
+                    lastCsv=file,viewingRunId=saved.id,message="Viewing saved run ${file.name}. No OCR was rerun; export downloads this saved CSV.") }
+            } catch(cancel:CancellationException) { throw cancel }
+            catch(error:Exception) {
+                if(!cleared) mutable.update { it.copy(busy=false,message="Could not open ${file.name}: ${error.message ?: error.javaClass.simpleName}") }
+            } finally {
+                if(!cleared) mutable.update { it.copy(busy=false) }
+            }
+        }
+    }
     private fun clearPreview() { mutable.value.cropPreview?.delete() }
     private fun dispose(images:List<TextLabImage>) { images.forEach { it.photo?.let { photo -> photo.input.delete();photo.preview.delete() } } }
     fun select(crop:TextCrop?) {
@@ -175,13 +217,15 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
                     var csv:File?=null
                     var finalSaved=false
                     var summary=""
+                    var history:List<TextLabSavedRun> = emptyList()
                     withContext(Dispatchers.IO) {
                         try { csv=batch.save(csvFolder);finalSaved=true }
                         catch(_:Exception) { csv=File(csvFolder,"${batch.id}.csv").takeIf { it.isFile } }
+                        history=savedRuns()
                         summary=batch.summary()
                     }
-                    if(cleared) retainedPreview?.delete() else mutable.update { it.copy(busy=false,result=summary,wineTable=TextLabWineTable.rows(batch.journals),formTable=TextLabWineTable.formRows(batch.journals),cropPreview=retainedPreview,lastCsv=csv,
-                        message="Batch $finalStatus. Export last batch CSV for every image and selected candidate."+(if(!finalSaved) " Final CSV save failed; any earlier checkpoint and Copy OCR result remain available." else "")) }
+                    if(cleared) retainedPreview?.delete() else mutable.update { it.copy(busy=false,result=summary,wineTable=TextLabWineTable.rows(batch.journals),formTable=TextLabWineTable.formRows(batch.journals),cropPreview=retainedPreview,lastCsv=csv,savedRuns=history,viewingRunId=batch.id,
+                        message="Batch $finalStatus. This run is saved in past runs; export its CSV for every image and selected candidate."+(if(!finalSaved) " Final CSV save failed; any earlier checkpoint and Copy OCR result remain available." else "")) }
                 }
             }
         }

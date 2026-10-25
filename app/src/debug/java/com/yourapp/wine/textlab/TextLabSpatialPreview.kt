@@ -6,6 +6,7 @@ import com.yourapp.wine.textlab.evidence.ProducerRepair
 import kotlinx.coroutines.CancellationException
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.gazetteer.LinkedWineResolver
+import com.yourapp.wine.diagnostics.PipelineFunnel
 
 /** Latest Lab only. No second OCR pass and no separate v2.0 contender execution.
  * The raw form summary is an internal anchor required by the existing guarded algorithm.
@@ -52,9 +53,12 @@ internal object TextLabSpatialPreview {
                         row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
                         val started=android.os.SystemClock.elapsedRealtime()
-                        val decision=try { ProducerResolver(producerIndex).resolve(before,spans,checkProducerBudget) }
+                        var producerFailureTelemetry=emptyMap<String,String>()
+                        val decision=try { ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget) }
                             catch(cancel:CancellationException) { throw cancel }
-                            catch(error:Exception) { ProducerResolver.Decision(before,"lookup failed; unchanged: ${error.javaClass.simpleName}",emptyList()) }
+                            catch(error:Exception) { ProducerResolver.Decision(before,"lookup failed; unchanged: ${error.javaClass.simpleName}",emptyList(),telemetry=
+                                producerFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("producer.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
+                        row.putAll(decision.telemetry)
                         row["producer_gazetteer_status"]=if(decision.acceptedId!=null) "suggestion" else "unchanged"
                         row["producer_gazetteer_reason"]=decision.reason
                         val producerMs=android.os.SystemClock.elapsedRealtime()-started
@@ -77,9 +81,12 @@ internal object TextLabSpatialPreview {
                         if(linkedIndex!=null) {
                             val wineStart=android.os.SystemClock.elapsedRealtime()
                             val wineBefore=row["wine_name"].orEmpty()
-                            val linked=try { LinkedWineResolver(linkedIndex).resolve(before,wineBefore,decision,spans,checkProducerBudget) }
+                            var wineFailureTelemetry=emptyMap<String,String>()
+                            val linked=try { LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget) }
                                 catch(cancel:CancellationException) { throw cancel }
-                                catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}") }
+                                catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}",telemetry=
+                                    wineFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("wine.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
+                            row.putAll(linked.telemetry)
                             val wineMs=android.os.SystemClock.elapsedRealtime()-wineStart
                             row["wine_gazetteer_ms"]=wineMs.toString()
                             row["work_ms"]=((row["work_ms"]?.toLongOrNull() ?: 0L)+wineMs).toString()

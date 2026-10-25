@@ -80,6 +80,45 @@ internal object TextLabCsv {
         }
     }
 
+    /** Streams RFC-4180-style records, including quoted commas, escaped quotes and embedded newlines. */
+    fun read(reader:java.io.Reader,onRecord:(List<String>)->Unit) {
+        val input=java.io.PushbackReader(reader,1)
+        val fields=mutableListOf<String>()
+        val field=StringBuilder()
+        var quoted=false
+        var touched=false
+        fun finishRecord() {
+            fields+=field.toString();field.setLength(0)
+            onRecord(fields.toList());fields.clear();touched=false
+        }
+        while(true) {
+            val code=input.read()
+            if(code<0) {
+                if(quoted) throw IllegalArgumentException("Unterminated quoted CSV field")
+                if(touched || field.isNotEmpty() || fields.isNotEmpty()) finishRecord()
+                break
+            }
+            val ch=code.toChar();touched=true
+            if(quoted) {
+                if(ch=='"') {
+                    val next=input.read()
+                    if(next=='"'.code) field.append('"')
+                    else { quoted=false;if(next>=0) input.unread(next) }
+                } else field.append(ch)
+            } else when(ch) {
+                '"' -> if(field.isEmpty()) quoted=true else field.append(ch)
+                ',' -> { fields+=field.toString();field.setLength(0) }
+                '\n' -> finishRecord()
+                '\r' -> {
+                    val next=input.read()
+                    if(next>=0 && next!='\n'.code) input.unread(next)
+                    finishRecord()
+                }
+                else -> field.append(ch)
+            }
+        }
+    }
+
 }
 
 /** Experimental Text Lab only; never changes the normal scanner deadline. */

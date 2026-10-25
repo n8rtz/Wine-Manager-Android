@@ -1,5 +1,7 @@
 # Why "Lab · producer + wine evidence" barely moved the numbers
 
+> Follow-up audit: [accuracy plan](scanner-accuracy-plan.md) records the successfully read exports and the current pipeline table. In the actual scored export the accepted wine pair was a confirmation, **not a wine-value change**; saved-v2 producer missing count was **56**, not 42. The Python replay includes singleton spatial proposals that the actual Kotlin span path does not add twice, so its span/outcome estimates must not be treated as native-app measurements. PR #9's lookup fix is now on main; the follow-up instruments it rather than re-implementing it.
+
 Scope: the Phone Lab `lab-linked-wine-v1` run (`wine-168-lab-f9a8891dc192.csv`, 168 attempted
 photos, 160 fully scorable) against the target of **>80% of forms completely correct and <5%
 with more than one error**.

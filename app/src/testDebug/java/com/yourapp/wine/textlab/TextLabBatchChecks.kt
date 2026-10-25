@@ -33,6 +33,12 @@ object TextLabBatchChecks {
         try {
             val saved=batch.save(folder)
             check(saved.readText()==csv)
+            val restored=TextLabBatch.readSaved(saved)
+            check(restored.id==batch.id && restored.journals.size==3)
+            check(restored.journals[0].selected==setOf("candidate_3"))
+            check(restored.journals[0].rows.any { it["stage"]=="recognition" && it["raw_text"]=="Merlot" })
+            check(restored.journals[0].rows.any { it["stage"]=="image_summary" })
+            check(restored.journals[2].metadata["image_name"]=="Rhône\n\"2022\".jpg")
             a.add("shared","checkpoint_test",details="updated-checkpoint")
             check(batch.save(folder).readText().contains("updated-checkpoint"))
             check(folder.listFiles()!!.count { it.extension=="csv" }==1)

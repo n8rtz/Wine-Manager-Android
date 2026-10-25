@@ -112,6 +112,10 @@ fun main() {
     com.yourapp.wine.PostProcessingChecks.boundedAssignmentKeepsAlternativesAndAbstains()
     println("PASS: identity-v2 roles, packaging negatives, exact producer priority, appellation joins, geography footer, ambiguity and bounded alternatives")
     com.yourapp.wine.capture.RetiredModelChecks.run()
+    com.yourapp.wine.kb.DatabaseNameLookupChecks.exactAndNearMatchesRankAheadOfUnrelatedEntries()
+    com.yourapp.wine.kb.DatabaseNameLookupChecks.aliasesCanMatchWhileCanonicalNameRemainsVisible()
+    com.yourapp.wine.kb.DatabaseNameLookupChecks.resultsAreBoundedAndEmptyQueriesReturnNothing()
+    println("PASS: local database lookup ranking / aliases / bounded results / empty query")
     com.yourapp.wine.textlab.TextLabFieldChecks.run()
 
 }

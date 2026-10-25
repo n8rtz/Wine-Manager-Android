@@ -64,14 +64,16 @@ internal class ProducerGazetteer private constructor(
             file.inputStream().use { input -> val b=ByteArray(65536);while(true) { checkBudget();val n=input.read(b);if(n<0) break;md.update(b,0,n) } }
             return md.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
         }
-        fun open(context:Context,checkBudget:()->Unit={}):ProducerGazetteer {
+        fun open(context:Context,checkBudget:()->Unit={},onStep:(String,Boolean)->Unit={ _,_ -> }):ProducerGazetteer {
             check(Looper.myLooper()!=Looper.getMainLooper());checkBudget()
+            onStep("asset.manifest",false)
             val text=context.assets.open("$ASSET/manifest.json").bufferedReader().use { it.readText() }
             require(text.length<65536)
             val manifest=JSONObject(text)
             check(manifest.getInt("schema")==2 && manifest.getBoolean("primary_verified") &&
                 manifest.getString("verification_kind")=="official-export-acquisition-attested") { "Primary LWIN export required" }
             check(manifest.getJSONObject("provenance").getString("acquisition")=="official_download_user_supplied")
+            onStep("asset.manifest",true)
             fun load(name:String,hash:String):SQLiteConnection {
                 require(name.matches(Regex("[a-z-]+\\.sqlite")) && hash.matches(Regex("[0-9a-f]{64}")))
                 checkBudget();val dir=File(context.cacheDir,ASSET).apply { mkdirs() };val target=File(dir,"$hash.sqlite")
@@ -91,21 +93,26 @@ internal class ProducerGazetteer private constructor(
                 catch(e:Exception) { db.close();throw e }
             }
             val hash=manifest.getString("database_sha256")
+            onStep("asset.producer",false)
             val db=load("producers.sqlite",hash);var wineDb:SQLiteConnection?=null;val support=mutableMapOf<String,SQLiteConnection>()
             try {
                 db.prepare("SELECT COUNT(*) FROM producers").use { check(it.step() && it.getLong(0)==manifest.getLong("records")) }
                 // Exercise the actual native FTS table, not merely a platform SQLite version string.
                 db.prepare("SELECT id FROM names WHERE names MATCH '\"win\"' LIMIT 1").use { it.step() }
+                onStep("asset.producer",true)
+                onStep("asset.wine",false)
                 val wineHash=manifest.getString("wine_database_sha256")
                 val loadedWines=load("wines.sqlite",wineHash);wineDb=loadedWines
                 loadedWines.prepare("SELECT COUNT(*) FROM wine_names").use { check(it.step() && it.getLong(0)==manifest.getLong("wine_names")) }
                 loadedWines.prepare("SELECT COUNT(*) FROM wine_links").use { check(it.step() && it.getLong(0)==manifest.getLong("wine_links")) }
                 loadedWines.prepare("SELECT rowid FROM wine_fts WHERE wine_fts MATCH '\"win\"' LIMIT 1").use { it.step() }
+                onStep("asset.wine",true)
+                onStep("asset.support",false)
                 val layers=manifest.optJSONObject("support")
                 for(source in listOf("ttb","osm")) layers?.optJSONObject(source)?.let { item ->
                     support[source]=load(item.getString("file"),item.getString("sha256"))
                 }
-                checkBudget();return ProducerGazetteer(db,loadedWines,support,"${manifest.getString("version")}:producer=$hash;wine=$wineHash")
+                checkBudget();onStep("asset.support",true);return ProducerGazetteer(db,loadedWines,support,"${manifest.getString("version")}:producer=$hash;wine=$wineHash")
             } catch(e:Exception) { support.values.forEach { it.close() };wineDb?.close();db.close();throw e }
         }
     }

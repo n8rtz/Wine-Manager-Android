@@ -15,4 +15,12 @@ internal object EvidenceIdentityRoles {
         val words=words(text)
         return words.firstOrNull() in headings && !headingOnly(text) && words.none { w -> w.any(Char::isDigit) }
     }
+
+    /** A French owner-grower legal status is not a wine title or producer name. Restrict this
+     * to the whole phrase (including the observed duplicated/clipped OCR form) so a real name
+     * that merely contains one of these words is not suppressed. */
+    fun ownerGrowerLegalLine(text:String):Boolean {
+        val key=TextNorm.normalize(text).filter(Char::isLetterOrDigit)
+        return key.matches(Regex("proprietairerecoltant(?:desrecoltan(?:t|ts)?)?"))
+    }
 }

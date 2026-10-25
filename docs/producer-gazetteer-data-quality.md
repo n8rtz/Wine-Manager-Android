@@ -6,7 +6,7 @@ the matcher currently refuses.
 
 ## What is actually in the asset
 
-`app/src/debug/assets/producer-gazetteer-v1/producers.sqlite`, 33 160 rows:
+`app/src/main/assets/producer-gazetteer-v1/producers.sqlite`, 33 160 rows (packaged for read-only Database Lookup; the OCR resolver remains debug-only):
 
 | problem | rows | detail |
 |---|---|---|
