@@ -1,6 +1,14 @@
 # Wine-name reference audit queue
 
+This directory includes `reference-data-168.csv`, a one-row-per-photo export of the **original six-field reference data being compared against**, alongside the current blank-aware scoring disposition. It carries source URL, image hash, identity group, review notes, original status/value/aliases/basis, and scored status/target/aliases for Producer, Wine name, Country, Region, Subregion, and Vintage. Alias lists are JSON arrays inside CSV cells. Empty values must be interpreted together with their status.
+
 This is a reproducible **review queue**, not a claim that 168 images have now been independently re-adjudicated. It joins the frozen public-corpus wine-name reference, the blank-aware scoring disposition, the saved Production v2.0 phone predictions, and the frozen baseline. Every row starts `PENDING_VISUAL_REVIEW`; reviewer fields are intentionally blank.
+
+Rebuild the all-fields reference export with:
+
+```sh
+python3 tools/evaluation/wine-name-audit-v1/export_reference_data.py
+```
 
 Build/update from the checked-in inputs:
 
