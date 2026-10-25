@@ -170,15 +170,15 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
             item { Text("Reviewed labels", style = MaterialTheme.typography.titleMedium) }
-            items(cases, key = { it.image }) {
-                val results = fieldRows[item.image].orEmpty().associateBy { it["field"] }
+            items(cases, key = { it.image }) { wineCase ->
+                val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
                 Card(Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        LabelThumbnail(item.image)
+                        LabelThumbnail(wineCase.image)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("#${item.reviewNumber} · ${item.producer} — ${item.wineName}", style = MaterialTheme.typography.titleSmall)
-                            Text(item.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(listOf(item.country, item.region, item.subregion, item.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                            Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
+                            Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(listOf(wineCase.country, wineCase.region, wineCase.subregion, wineCase.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                             if (results.isNotEmpty()) {
                                 HorizontalDivider(Modifier.padding(vertical = 3.dp))
                                 listOf("producer", "wine_name", "country", "region", "subregion", "vintage").forEach { field ->
