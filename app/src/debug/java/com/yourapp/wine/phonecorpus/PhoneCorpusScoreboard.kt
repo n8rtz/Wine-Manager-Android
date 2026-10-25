@@ -12,6 +12,13 @@ internal class PhoneCorpusScoreboard(context:Context) {
     private val savedV2=JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() })
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
+    private val includedImages=run {
+        val selection=JSONObject(context.assets.open("phone-corpus-v1/evaluation-set.json").bufferedReader().use { it.readText() })
+        val list=selection.getJSONArray("included_images")
+        (0 until list.length()).map { list.getJSONObject(it).getString("image") }.toSet().also {
+            check(it.size==PhoneCorpusRunner.ACTIVE_IMAGE_COUNT && it.all { id -> id in targets }) { "Curated evaluation set does not match packaged references" }
+        }
+    }
     data class MatrixCell(val passed:Int,val failed:Int,val notReached:Int=0,val notRecorded:Int=0,val notApplicable:Int=0) {
         val observed get() = passed+failed
         fun label() = "$passed/$failed · NR $notReached · ? $notRecorded · N/A $notApplicable"
@@ -186,19 +193,19 @@ internal class PhoneCorpusScoreboard(context:Context) {
             "source_pipeline" to savedV2.getString("source_pipeline"),"source_csv_sha256" to savedV2.getString("source_csv_sha256"))
         fun savedV2Items(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",savedPredictions.getJSONObject(im)) }
         score("Saved Production v2.0 · same attempted photos",savedV2Items(ids),v2Provenance)
-        score("Saved Production v2.0 · full corpus",savedV2Items(targets.keys),v2Provenance)
+        score("Saved Production v2.0 · same curated set",savedV2Items(includedImages),v2Provenance)
         val baseline=reference.getJSONObject("baseline")
         fun baselineItems(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",baseline.getJSONObject(im)) }
         score("Frozen baseline · same attempted photos",baselineItems(ids))
-        score("Frozen baseline · full corpus",baselineItems(targets.keys))
+        score("Frozen baseline · same curated set",baselineItems(includedImages))
         val text=buildString {
-            appendLine("PHONE CORPUS · ${predictions.size}/168 photos attempted · $mode")
-            appendLine("Blank-aware development reference; 160 fully scorable forms, 8 partly unresolved. Reference judgments are provisional.")
+            appendLine("CURATED PHONE CORPUS · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
+            appendLine("107 uncolored labels are run. Red/yellow/omitted labels remain out of OCR. The selected set has 106 fully scorable forms and one partly unresolved form; reference judgments are provisional.")
             appendLine("Saved Production v2.0 comes from the full phone run on build ${savedV2.getString("source_build")} (then named lab-guarded-producer). Saved result rows are loaded, NOT rerun.")
             appendLine("The older Frozen baseline is historical, NOT Production v1.0. For partial runs, compare same-attempted-photo rows.")
             appendLine(headers.joinToString(" | "));rows.forEach { appendLine(it.joinToString(" | ")) }
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
-            appendLine("Full-run target: at least 128/160 complete and at most 7/160 multi-error. Partial runs do not establish full-corpus acceptance.")
+            appendLine("The former 168-photo acceptance threshold is retired for this curated subset. Set new acceptance thresholds only after reviewing the remaining reference data; partial runs do not establish full-set acceptance.")
             appendLine("Production v1.0 uses 15s shared scanning. Production v2.0 and Lab use 60s/engine on full-label crops. Only Lab enables spatial merging. Each mode scores only its selected implementation; timings are not interchangeable.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")

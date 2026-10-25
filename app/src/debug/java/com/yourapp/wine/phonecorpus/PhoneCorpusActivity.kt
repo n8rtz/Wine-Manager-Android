@@ -64,8 +64,8 @@ class PhoneCorpusActivity:ComponentActivity() {
         }
         LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             item {
-                Text("Bundled 168-photo benchmark",style=MaterialTheme.typography.headlineSmall)
-                Text("Build ${BuildConfig.BUILD_COMMIT} · all 168 photos are inside this debug APK. No photo downloads, picker or desktop required.")
+                Text("Curated 107-photo benchmark",style=MaterialTheme.typography.headlineSmall)
+                Text("Build ${BuildConfig.BUILD_COMMIT} · 107 uncolored labels are run. 55 red, 4 yellow, and 2 omitted labels are excluded from OCR. All 168 source photos remain packaged for provenance.")
                 Text("Private test corpus; image redistribution rights are unresolved. Do not publish this APK. Frozen references are provisional development judgments, not held-out accuracy.",style=MaterialTheme.typography.bodySmall)
                 Text("Fresh ML Kit + Medium OCR. Plug in your phone and keep this screen open; long runs can take hours and generate heat. Going to the background requests a stop after the current image. Abrupt process death preserves completed checkpoints.")
             }
@@ -80,9 +80,9 @@ class PhoneCorpusActivity:ComponentActivity() {
             }
             item {
                 Text(state.message)
-                Text("Checkpointed: ${state.completed}/168")
+                Text("Checkpointed: ${state.completed}/${state.total}")
                 if(state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                Button(onClick={vm.start()},enabled=!state.busy && state.board!=null && state.completed<168) { Text("Start / resume remaining photos") }
+                Button(onClick={vm.start()},enabled=!state.busy && state.board!=null && state.completed<state.total) { Text("Start / resume remaining photos") }
                 Row {
                     TextButton(onClick=vm::stop,enabled=state.busy) { Text("Stop after image") }
                     TextButton(onClick={vm.start(true)},enabled=!state.busy && state.completed>0) { Text("Retry failed / partial") }
@@ -196,7 +196,7 @@ class PhoneCorpusActivity:ComponentActivity() {
             item { TextButton(onClick={vm.stop();finish()}) { Text("Close — keep checkpoints") } }
         }
         if(newRun) AlertDialog(onDismissRequest={newRun=false},title={Text("Start a new benchmark?")},
-            text={Text("Existing runs are kept on the device. Export this run before changing runs or installing another APK. A new run starts all 168 images again.")},
+            text={Text("Existing runs are kept on the device. Export this run before changing runs or installing another APK. A new run starts the 107 included images again; 61 review-excluded images are not run.")},
             confirmButton={TextButton(onClick={newRun=false;vm.load(state.mode,true)}) { Text("New run") }},
             dismissButton={TextButton(onClick={newRun=false}) { Text("Cancel") }})
     }

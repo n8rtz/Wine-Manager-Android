@@ -20,6 +20,8 @@ import java.time.Year
 
 /** Fresh pixels only. Receives input identity/hash, NEVER target fields or saved predictions. */
 internal object PhoneCorpusRunner {
+    const val PACKAGED_IMAGE_COUNT=168
+    const val ACTIVE_IMAGE_COUNT=107
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
         PRODUCTION_V1("Production v1.0 · 15s shared budget", "production-v1.0-15s", null),
         PRODUCTION_V2("Production v2.0 · guarded producer · 60s per engine", "production-v2.0-guarded", "evidence_summary"),

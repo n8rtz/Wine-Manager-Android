@@ -20,7 +20,8 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.util.UUID
 
 internal data class CorpusState(val busy:Boolean=false,val mode:PhoneCorpusRunner.Mode=PhoneCorpusRunner.Mode.PRODUCTION_V1,
-    val message:String="Loading bundled benchmark…",val completed:Int=0,val board:PhoneCorpusScoreboard.Board?=null,val csv:File?=null,val exportParts:List<File> = emptyList())
+    val message:String="Loading curated 107-photo benchmark…",val completed:Int=0,val total:Int=PhoneCorpusRunner.ACTIVE_IMAGE_COUNT,
+    val board:PhoneCorpusScoreboard.Board?=null,val csv:File?=null,val exportParts:List<File> = emptyList())
 internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
     private val mutable=MutableStateFlow(CorpusState());val state=mutable.asStateFlow()
     @Volatile private var stopping=false
@@ -45,7 +46,12 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
             .put("apk_updated_ms",installId).put("created_ms",System.currentTimeMillis()).put("runtime","phone; fresh OCR")
         atomic(File(dir,"run.json"),meta.toString(2));return dir
     }
-    private fun predictions(dir:File)=File(dir,"current").listFiles().orEmpty().filter { it.extension=="json" }.sortedBy { it.name }.map { JSONObject(it.readText()) }
+    private val includedImageIds by lazy {
+        val selection=JSONObject(app.assets.open("phone-corpus-v1/evaluation-set.json").bufferedReader().use { it.readText() }).getJSONArray("included_images")
+        (0 until selection.length()).map { selection.getJSONObject(it).getString("image") }.toSet()
+    }
+    private fun predictions(dir:File)=File(dir,"current").listFiles().orEmpty().filter { it.extension=="json" }.sortedBy { it.name }
+        .map { JSONObject(it.readText()) }.filter { it.getString("image") in includedImageIds }
     private fun refresh(dir:File,mode:PhoneCorpusRunner.Mode) {
         val predictions=predictions(dir)
         val board=PhoneCorpusScoreboard(app).build(predictions,mode)
@@ -77,17 +83,22 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
                 val assets=app.assets.list("text-lab-paddle-v1").orEmpty().toSet()
                 check(listOf(spec.detector.asset,spec.recognizer.asset,spec.dictionary.asset).all { it in assets }) { "Medium model assets missing from APK. Build with the normal model-asset task; benchmark will not silently run ML Kit only." }
                 WineScannerServices.get(app).withBenchmarkEngines { engines,_ -> check(setOf("mlkit","paddle-v6-medium").all { id -> engines.any { it.id==id && it.available } }) { "Both ML Kit and Medium must be available" } }
-                val manifest=JSONObject(app.assets.open("phone-corpus-v1/inputs.json").bufferedReader().use { it.readText() }).getJSONArray("images")
-                check(manifest.length()==168)
+                val packaged=JSONObject(app.assets.open("phone-corpus-v1/inputs.json").bufferedReader().use { it.readText() }).getJSONArray("images")
+                check(packaged.length()==PhoneCorpusRunner.PACKAGED_IMAGE_COUNT)
+                val selection=JSONObject(app.assets.open("phone-corpus-v1/evaluation-set.json").bufferedReader().use { it.readText() })
+                val included=(0 until selection.getJSONArray("included_images").length()).map { selection.getJSONArray("included_images").getJSONObject(it).getString("image") }.toSet()
+                check(included.size==PhoneCorpusRunner.ACTIVE_IMAGE_COUNT && selection.optInt("excluded_count")==61)
+                val manifest=(0 until packaged.length()).map { packaged.getJSONObject(it) }.filter { it.getString("image") in included }
+                check(manifest.size==included.size)
                 val old=predictions(dir).associateBy { it.getString("image") }
                 File(dir,"current").mkdirs();File(dir,"attempts").mkdirs()
-                for(i in 0 until manifest.length()) {
+                for(i in manifest.indices) {
                     ensureActive();if(stopping) break
-                    val input=manifest.getJSONObject(i);val image=input.getString("image");val previous=old[image]
+                    val input=manifest[i];val image=input.getString("image");val previous=old[image]
                     val failed=previous?.let { p -> p.optString("status")!="complete" || p.optBoolean("engine_incomplete") ||
                         p.optJSONArray("pipelines")?.let { a -> (0 until a.length()).any { a.getJSONObject(it).optString("status")!="complete" } }==true } ?: false
                     if(if(retryFailures) !failed else previous!=null) continue
-                    mutable.update { it.copy(message="Photo ${i+1}/168 · $image\n$mode · keep app open, screen on and phone plugged in.") }
+                    mutable.update { it.copy(message="Photo ${i+1}/${manifest.size} · $image\n$mode · keep app open, screen on and phone plugged in.") }
                     val result=PhoneCorpusRunner.runImage(app,image,input.getString("sha256"),mode,File(dir,"work"))
                     result.put("attempt",(previous?.optInt("attempt") ?: 0)+1)
                     atomic(File(File(dir,"attempts"),"$image-${System.currentTimeMillis()}.json"),result.toString())
@@ -130,7 +141,7 @@ internal class PhoneCorpusViewModel(app:Application):AndroidViewModel(app) {
             val exportDir=File(app.cacheDir,"phone-corpus-exports/${UUID.randomUUID()}")
             try {
                 check(exportDir.mkdirs())
-                val target=File(exportDir,"wine-168-${if(raw) "raw-" else ""}${mode.name.lowercase()}-${BuildConfig.BUILD_COMMIT}.csv")
+                val target=File(exportDir,"wine-${PhoneCorpusRunner.ACTIVE_IMAGE_COUNT}-${if(raw) "raw-" else ""}${mode.name.lowercase()}-${BuildConfig.BUILD_COMMIT}.csv")
                 if(raw) {
                     val files=File(dir,"attempts").listFiles().orEmpty().filter { it.extension=="json" }.sortedBy { it.name }
                     // Reiterable, one photo at a time: the CSV writer scans keys, then writes rows.
