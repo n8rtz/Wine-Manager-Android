@@ -115,7 +115,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     }
                 }
                 Text("Lab v4 uses verified LWIN producer data only. Unverified TTB, OSM, and X-Wines name lists are excluded from the producer database.", style = MaterialTheme.typography.bodySmall)
-                Text("The first Lab v4 run backfills any missing Prod v1.0, v2.0, and v3.0 results once, then stores them for later comparisons. Existing per-photo production results are reused; only missing photos are run. The three baselines interleave so all rows start filling promptly. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen Lab v4 and tap Resume.", style = MaterialTheme.typography.bodySmall)
+                Text("Only the selected version runs fresh OCR. Prod v1.0, v2.0, and v3.0 comparison rows use their already-saved results; they are not rerun when Lab v4 is selected. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen Lab v4 and tap Resume.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
@@ -123,9 +123,9 @@ class WineAppLabelsActivity : ComponentActivity() {
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Button(
                     onClick = { vm.start() },
-                    enabled = !state.busy && (state.completed < state.total || (state.mode == PhoneCorpusRunner.Mode.LAB && state.baselinePending)),
+                    enabled = !state.busy && state.completed < state.total,
                 ) {
-                    Text(if (state.completed >= state.total && state.baselinePending) "Fill missing production baselines" else "Start / resume remaining photos")
+                    Text("Start / resume remaining photos")
                 }
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
