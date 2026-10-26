@@ -39,6 +39,17 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertFalse({14, 49, 52, 55, 64, 73, 133, 159, 168} & {row["review_number"] for row in targets})
         self.assertTrue(all(set(row["fields"]) == {"producer", "wine_name", "country", "region", "subregion", "vintage"} for row in targets))
 
+    def test_legacy_saved_photo_map_uses_exact_bytes(self):
+        mapping = json.loads((ASSETS / "legacy-phone-corpus-image-map.json").read_text())
+        old_inputs = json.loads((ROOT / "app/src/debug/assets/phone-corpus-v1/inputs.json").read_text())["images"]
+        new_inputs = json.loads((ASSETS / "inputs.json").read_text())["images"]
+        old_by_hash = {row["sha256"]: row["image"] for row in old_inputs}
+        new_by_hash = {row["sha256"]: row["image"] for row in new_inputs}
+        expected = {digest: (old_by_hash[digest], new_by_hash[digest]) for digest in old_by_hash.keys() & new_by_hash.keys()}
+        actual = {row["sha256"]: (row["legacy_image"], row["image"]) for row in mapping["images"]}
+        self.assertEqual(mapping["mapping_count"], 103)
+        self.assertEqual(actual, expected)
+
     def test_gazetteer_coverage_counts_unique_known_labels_on_scoring_side(self):
         coverage = json.loads((ASSETS / "gazetteer-coverage.json").read_text())
         self.assertEqual(coverage["dataset_count"], 125)
@@ -108,9 +119,11 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("Unverified TTB, OSM, and X-Wines name lists are excluded", activity)
         self.assertIn("Pipeline bottleneck matrix", activity)
         self.assertIn("Only the selected version runs fresh OCR", activity)
-        self.assertIn("Prod v1.0, v2.0, and v3.0 comparison rows use their already-saved results", activity)
+        self.assertIn("Other-version rows use already-saved results for the same photos Lab v4 has attempted", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
-        self.assertIn("val comparisonDir = if (comparedMode == mode) dir else latestFolder(comparedMode)", viewmodel)
+        self.assertIn("private fun savedPredictions(mode: PhoneCorpusRunner.Mode)", viewmodel)
+        self.assertIn('File(app.noBackupFilesDir, "phone-corpus-v1")', viewmodel)
+        self.assertIn("val comparisonPredictions = cohortImages.mapNotNull { byImage[it] }", viewmodel)
         self.assertIn('if (it == "Complete") "Fully correct" else it', viewmodel)
         self.assertIn("Attempted is the saved-photo tally", viewmodel)
         self.assertIn("Fully correct (for example, 2/5) means all six scorable fields matched", activity)

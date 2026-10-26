@@ -115,7 +115,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     }
                 }
                 Text("Lab v4 uses verified LWIN producer data only. Unverified TTB, OSM, and X-Wines name lists are excluded from the producer database.", style = MaterialTheme.typography.bodySmall)
-                Text("Only the selected version runs fresh OCR. Prod v1.0, v2.0, and v3.0 comparison rows use their already-saved results; they are not rerun when Lab v4 is selected. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen Lab v4 and tap Resume.", style = MaterialTheme.typography.bodySmall)
+                Text("Only the selected version runs fresh OCR. Other-version rows use already-saved results for the same photos Lab v4 has attempted; they do not run again. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen Lab v4 and tap Resume.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)

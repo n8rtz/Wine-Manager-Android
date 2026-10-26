@@ -110,19 +110,64 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         .map { JSONObject(it.readText()) }
         .filter { it.optString("image") in includedIds() }
 
+    /** Merge saved Wine App Labels runs and older phone-corpus checkpoints; never runs OCR. */
+    private fun savedPredictions(mode: PhoneCorpusRunner.Mode): Map<String, JSONObject> {
+        val saved = linkedMapOf<String, JSONObject>()
+        val currentIds = includedIds()
+        val legacyMapJson = assetJson("legacy-phone-corpus-image-map.json")
+        val legacyImages = legacyMapJson.getJSONArray("images")
+        val legacyToCurrent = (0 until legacyImages.length()).associate { index ->
+            val row = legacyImages.getJSONObject(index)
+            row.getString("legacy_image") to row.getString("image")
+        }
+
+        // The old 168-photo test used different filenames. Reuse a result only when the
+        // packaged image bytes have an exact SHA-256 mapping to one of these 125 labels.
+        val legacyRoot = File(app.noBackupFilesDir, "phone-corpus-v1")
+        val legacyDirs = legacyRoot.listFiles().orEmpty().filter { it.isDirectory }.sortedBy { it.lastModified() }
+        for (dir in legacyDirs) {
+            val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
+            if (metadata.optString("mode") != mode.name || metadata.optString("pipeline") != mode.pipelineId) continue
+            File(dir, "current").listFiles().orEmpty().filter { it.extension == "json" }.sortedBy { it.name }.forEach { file ->
+                val result = runCatching { JSONObject(file.readText()) }.getOrNull() ?: return@forEach
+                if (result.optString("pipeline") != mode.pipelineId) return@forEach
+                val image = legacyToCurrent[result.optString("image")] ?: return@forEach
+                if (image !in currentIds) return@forEach
+                result.put("image", image)
+                saved[image] = result
+            }
+        }
+
+        // Current 125-label runs take precedence over legacy matches. Aggregate folders so
+        // starting a new run never hides saved per-photo checkpoints from an earlier run.
+        val expectedCorpus = corpusSignature(assetJson("manifest.json"))
+        val currentDirs = root.listFiles().orEmpty().filter { it.isDirectory }.sortedBy { it.lastModified() }
+        for (dir in currentDirs) {
+            val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
+            val corpus = metadata.optJSONObject("corpus_manifest") ?: continue
+            if (metadata.optString("mode") != mode.name || metadata.optString("pipeline") != mode.pipelineId ||
+                corpusSignature(corpus) != expectedCorpus
+            ) continue
+            predictions(dir).forEach { saved[it.getString("image")] = it }
+        }
+        return saved
+    }
+
     private fun refresh(dir: File, mode: PhoneCorpusRunner.Mode) {
         val scoreboard = PhoneCorpusScoreboard(app, "wine-app-labels-v1", includeLegacyComparisons = false)
         val current = predictions(dir)
         val currentBoard = scoreboard.build(current, mode)
+        val currentByImage = current.associateBy { it.getString("image") }
+        val cohortImages = current.map { it.getString("image") }
         val comparisonRows = PhoneCorpusRunner.Mode.entries.map { comparedMode ->
-            val comparisonDir = if (comparedMode == mode) dir else latestFolder(comparedMode)
-            val comparisonPredictions = comparisonDir?.let(::predictions).orEmpty()
+            val byImage = if (comparedMode == mode) currentByImage else savedPredictions(comparedMode)
+            val comparisonPredictions = cohortImages.mapNotNull { byImage[it] }
             scoreboard.build(comparisonPredictions, comparedMode).rows.single()
         }
         val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · ${current.size}/$WINE_APP_LABEL_COUNT attempted in ${mode.title}")
-            appendLine("Only the selected version runs fresh OCR. The other rows show saved per-version results for this exact corpus.")
+            appendLine("Only the selected version runs fresh OCR. Comparison rows use saved results for the same photo cohort; no other version is rerun.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
