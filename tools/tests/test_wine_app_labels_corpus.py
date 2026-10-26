@@ -111,6 +111,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("Prod v1.0, v2.0, and v3.0 comparison rows use their already-saved results", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
         self.assertIn("val comparisonDir = if (comparedMode == mode) dir else latestFolder(comparedMode)", viewmodel)
+        self.assertIn('if (it == "Complete") "Fully correct" else it', viewmodel)
+        self.assertIn("Attempted is the saved-photo tally", viewmodel)
+        self.assertIn("Fully correct (for example, 2/5) means all six scorable fields matched", activity)
+        self.assertIn('"${state.mode.title} checkpointed: ${state.completed}/${state.total}"', activity)
         start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
         self.assertEqual(start_body.count("PhoneCorpusRunner.runImage("), 1)
         self.assertIn('app, image, input.getString("sha256"), mode,', start_body)

@@ -119,13 +119,15 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             val comparisonPredictions = comparisonDir?.let(::predictions).orEmpty()
             scoreboard.build(comparisonPredictions, comparedMode).rows.single()
         }
+        val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · ${current.size}/$WINE_APP_LABEL_COUNT attempted in ${mode.title}")
             appendLine("Only the selected version runs fresh OCR. The other rows show saved per-version results for this exact corpus.")
-            appendLine(currentBoard.headers.joinToString(" | "))
+            appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
+            appendLine(displayHeaders.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
         }
-        val board = currentBoard.copy(rows = comparisonRows, text = comparisonText)
+        val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
         mutable.update { it.copy(completed = current.size, total = WINE_APP_LABEL_COUNT, board = board) }
     }
 

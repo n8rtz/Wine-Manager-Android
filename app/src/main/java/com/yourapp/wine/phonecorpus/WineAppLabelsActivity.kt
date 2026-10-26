@@ -119,7 +119,7 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             item {
                 Text(state.message)
-                Text("Checkpointed: ${state.completed}/${state.total}")
+                Text("${state.mode.title} checkpointed: ${state.completed}/${state.total}")
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Button(
                     onClick = { vm.start() },
@@ -140,7 +140,7 @@ class WineAppLabelsActivity : ComponentActivity() {
             state.board?.let { board ->
                 item {
                     Text("Scored results", style = MaterialTheme.typography.titleMedium)
-                    Text("Expected blanks are scored as blanks; unresolved workbook references remain unscorable. Partial runs do not establish full-set accuracy.", style = MaterialTheme.typography.bodySmall)
+                    Text("Attempted is the saved-photo tally. Fully correct (for example, 2/5) means all six scorable fields matched on that many photos; it is an accuracy score, not run progress. Expected blanks count as correct when matched; unresolved references are unscorable. Partial runs do not establish full-set accuracy.", style = MaterialTheme.typography.bodySmall)
                     SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
                             val columnWidth = 88.dp
