@@ -40,9 +40,11 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private val installId get() = app.packageManager.getPackageInfo(app.packageName, 0).lastUpdateTime.toString()
     private val lock = Mutex()
     @Volatile private var stopping = false
+    @Volatile private var activityForeground = false
+    @Volatile private var resumeAfterBackgroundPause = false
     private var folder: File? = null
 
-    init { load(PhoneCorpusRunner.Mode.PRODUCTION_V1) }
+    init { load(lastMode() ?: PhoneCorpusRunner.Mode.PRODUCTION_V1) }
 
     private fun assetJson(name: String) = JSONObject(app.assets.open("wine-app-labels-v1/$name").bufferedReader().use { it.readText() })
 
@@ -56,6 +58,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     }
 
     private fun lastMode(): PhoneCorpusRunner.Mode? {
+        val saved = preferences.getString("last_mode", null)
+        PhoneCorpusRunner.Mode.entries.firstOrNull { it.name == saved }?.let { return it }
         val dirName = preferences.getString("last_run", null) ?: return null
         val dir = File(root, dirName)
         if (dir.parentFile != root || !File(dir, "run.json").isFile) return null
@@ -127,35 +131,59 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
 
     private suspend fun seedProductionBaselines(inputs: List<JSONObject>, labDir: File): Boolean {
         val signature = corpusSignature(assetJson("manifest.json"))
-        for (baselineMode in listOf(
+        val modes = listOf(
             PhoneCorpusRunner.Mode.PRODUCTION_V1,
             PhoneCorpusRunner.Mode.PRODUCTION_V2,
             PhoneCorpusRunner.Mode.PRODUCTION_V3,
-        )) {
+        )
+        val dirs = mutableMapOf<PhoneCorpusRunner.Mode, File>()
+        val existing = mutableMapOf<PhoneCorpusRunner.Mode, Map<String, JSONObject>>()
+        val missing = mutableMapOf<PhoneCorpusRunner.Mode, List<JSONObject>>()
+
+        for (baselineMode in modes) {
             if (seededModes(signature).optString(baselineMode.name).isNotBlank()) continue
-            val dir = latestFolder(baselineMode) ?: selectFolder(baselineMode, fresh = false)
-            val existing = predictions(dir).associateBy { it.getString("image") }
-            val missing = inputs.filter { it.getString("image") !in existing }
             try {
-                for ((index, input) in missing.withIndex()) {
-                    if (stopping) return false
-                    val image = input.getString("image")
+                val dir = latestFolder(baselineMode) ?: selectFolder(baselineMode, fresh = false)
+                val saved = predictions(dir).associateBy { it.getString("image") }
+                dirs[baselineMode] = dir
+                existing[baselineMode] = saved
+                missing[baselineMode] = inputs.filter { it.getString("image") !in saved }
+                if (missing.getValue(baselineMode).isEmpty()) markSeeded(signature, baselineMode, "seeded")
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (error: Exception) {
+                markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
+            }
+        }
+
+        // Interleave versions by photo so all comparison rows begin filling promptly, and so
+        // a background pause never leaves the table looking like only Prod v1 is being run.
+        val longestBackfill = missing.values.maxOfOrNull { it.size } ?: 0
+        for (index in 0 until longestBackfill) {
+            for (baselineMode in modes) {
+                val photos = missing[baselineMode].orEmpty()
+                if (index >= photos.size || seededModes(signature).optString(baselineMode.name).isNotBlank()) continue
+                if (stopping) return false
+                val dir = dirs.getValue(baselineMode)
+                val input = photos[index]
+                val image = input.getString("image")
+                try {
                     mutable.update {
-                        it.copy(message = "First Lab v4 run: saving ${baselineMode.title} baseline ${index + 1}/${missing.size} · $image")
+                        it.copy(message = "First Lab v4 run: saving ${baselineMode.title} baseline ${index + 1}/${photos.size} · $image")
                     }
                     val result = PhoneCorpusRunner.runImage(
                         app, image, input.getString("sha256"), baselineMode, File(dir, "work"), "wine-app-labels-v1",
                     )
-                    persistResult(dir, image, result, existing[image]?.optInt("attempt") ?: 0)
+                    persistResult(dir, image, result, existing[baselineMode]?.get(image)?.optInt("attempt") ?: 0)
                     refresh(labDir, PhoneCorpusRunner.Mode.LAB)
                     if (result.optBoolean("abort_run")) return false
+                    if (index == photos.lastIndex) markSeeded(signature, baselineMode, "seeded")
+                } catch (cancel: CancellationException) {
+                    throw cancel
+                } catch (error: Exception) {
+                    // An unavailable production baseline must not prevent the selected Lab run.
+                    markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
                 }
-                markSeeded(signature, baselineMode, "seeded")
-            } catch (cancel: CancellationException) {
-                throw cancel
-            } catch (error: Exception) {
-                // A production baseline can be unavailable without preventing the selected Lab run.
-                markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
             }
         }
         if (!stopping) mutable.update { it.copy(baselinePending = false) }
@@ -212,7 +240,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             try {
                 val dir = selectFolder(mode, fresh)
                 folder = dir
-                preferences.edit().putString("last_run", dir.name).apply()
+                preferences.edit().putString("last_run", dir.name).putString("last_mode", mode.name).apply()
                 refresh(dir, mode)
                 val baselinePending = mode == PhoneCorpusRunner.Mode.LAB && !productionBaselinesSeeded()
                 mutable.update {
@@ -228,6 +256,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 mutable.update { it.copy(message = "Cannot load the 125-label test: ${e.message}") }
             } finally {
                 mutable.update { it.copy(busy = false) }
+                resumeIfRequested()
             }
         }
     }
@@ -235,6 +264,26 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     fun stop() {
         stopping = true
         mutable.update { if (it.busy) it.copy(message = "Stopping after the current photo; please wait for OCR to finish.") else it }
+    }
+
+    fun onBackgroundPause(resumeWhenForeground: Boolean) {
+        activityForeground = false
+        if (mutable.value.busy) {
+            resumeAfterBackgroundPause = resumeWhenForeground
+            stop()
+        }
+    }
+
+    fun onForeground() {
+        activityForeground = true
+        resumeIfRequested()
+    }
+
+    private fun resumeIfRequested() {
+        if (resumeAfterBackgroundPause && activityForeground && !mutable.value.busy) {
+            resumeAfterBackgroundPause = false
+            start()
+        }
     }
 
     fun start(retryFailures: Boolean = false) {
@@ -285,7 +334,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                             } == true
                     } ?: false
                     if (if (retryFailures) !failed else previous != null) continue
-                    mutable.update { it.copy(message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\n$mode · keep app open and phone plugged in.") }
+                    mutable.update { it.copy(message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\n$mode · keep the phone plugged in; switching apps pauses after this photo and resumes on return.") }
                     val result = PhoneCorpusRunner.runImage(
                         app, image, input.getString("sha256"), mode, File(dir, "work"), "wine-app-labels-v1"
                     )
@@ -308,6 +357,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             } finally {
                 if (locked) lock.unlock()
                 mutable.update { it.copy(busy = false) }
+                resumeIfRequested()
             }
         }
     }

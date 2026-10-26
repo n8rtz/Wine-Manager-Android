@@ -48,8 +48,13 @@ class WineAppLabelsActivity : ComponentActivity() {
         setContent { WineTrackerTheme { Surface { Screen() } } }
     }
 
+    override fun onStart() {
+        super.onStart()
+        vm.onForeground()
+    }
+
     override fun onStop() {
-        if (!isChangingConfigurations) vm.stop()
+        if (!isChangingConfigurations) vm.onBackgroundPause(resumeWhenForeground = !isFinishing)
         super.onStop()
     }
 
@@ -110,7 +115,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     }
                 }
                 Text("Lab v4 uses verified LWIN producer data only. Unverified TTB, OSM, and X-Wines name lists are excluded from the producer database.", style = MaterialTheme.typography.bodySmall)
-                Text("The first Lab v4 run backfills any missing Prod v1.0, v2.0, and v3.0 results once, then stores them for later comparisons. Existing per-photo production results are reused; only missing photos are run. Later Lab v4 runs retrieve saved production rows. Resume skips completed photos; failures and partial runs can be retried.", style = MaterialTheme.typography.bodySmall)
+                Text("The first Lab v4 run backfills any missing Prod v1.0, v2.0, and v3.0 results once, then stores them for later comparisons. Existing per-photo production results are reused; only missing photos are run. The three baselines interleave so all rows start filling promptly. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen Lab v4 and tap Resume.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
