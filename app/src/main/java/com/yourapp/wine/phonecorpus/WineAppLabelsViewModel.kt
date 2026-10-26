@@ -20,6 +20,13 @@ import java.util.UUID
 
 private const val WINE_APP_LABEL_COUNT = 125
 
+private data class ProductionBaselinePlan(
+    val signature: String,
+    val dirs: Map<PhoneCorpusRunner.Mode, File>,
+    val missing: Map<PhoneCorpusRunner.Mode, MutableSet<String>>,
+    val failedModes: MutableSet<PhoneCorpusRunner.Mode>,
+)
+
 internal data class WineAppLabelsState(
     val busy: Boolean = false,
     val mode: PhoneCorpusRunner.Mode = PhoneCorpusRunner.Mode.PRODUCTION_V1,
@@ -93,8 +100,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         } else JSONObject()
     }
 
-    private fun productionBaselinesSeeded(): Boolean {
-        val signature = corpusSignature(assetJson("manifest.json"))
+    private fun productionBaselinesSeeded(signature: String): Boolean {
         val modes = seededModes(signature)
         return listOf(
             PhoneCorpusRunner.Mode.PRODUCTION_V1,
@@ -103,12 +109,18 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         ).all { modes.optString(it.name) == "seeded" }
     }
 
+    private fun productionBaselinesSeeded(): Boolean =
+        productionBaselinesSeeded(corpusSignature(assetJson("manifest.json")))
+
     private fun markSeeded(signature: String, mode: PhoneCorpusRunner.Mode, result: String) {
         val modes = seededModes(signature).put(mode.name, result)
-        seedMarker(signature).writeText(JSONObject().put("corpus_signature", signature).put("modes", modes).toString(2))
+        // A marker write is only an optimization; its failure must never block Lab v4.
+        runCatching {
+            seedMarker(signature).writeText(JSONObject().put("corpus_signature", signature).put("modes", modes).toString(2))
+        }
     }
 
-    private fun persistResult(dir: File, image: String, result: JSONObject, previousAttempt: Int) {
+    private fun persistResult(dir: File, image: String, result: JSONObject, previousAttempt: Int = 0) {
         result.put("attempt", previousAttempt + 1)
         File(dir, "attempts").apply { mkdirs() }
             .resolve("$image-${System.currentTimeMillis()}.json").writeText(result.toString())
@@ -118,7 +130,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         File(dir, "current").apply { mkdirs() }.resolve("$image.json").writeText(result.toString())
     }
 
-    private suspend fun seedProductionBaselines(inputs: List<JSONObject>, labDir: File): Boolean {
+    private fun prepareProductionBaselinePlan(inputs: List<JSONObject>): ProductionBaselinePlan {
         val signature = corpusSignature(assetJson("manifest.json"))
         val modes = listOf(
             PhoneCorpusRunner.Mode.PRODUCTION_V1,
@@ -126,59 +138,71 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             PhoneCorpusRunner.Mode.PRODUCTION_V3,
         )
         val dirs = mutableMapOf<PhoneCorpusRunner.Mode, File>()
-        val existing = mutableMapOf<PhoneCorpusRunner.Mode, Map<String, JSONObject>>()
-        val missing = mutableMapOf<PhoneCorpusRunner.Mode, List<JSONObject>>()
+        val missing = mutableMapOf<PhoneCorpusRunner.Mode, MutableSet<String>>()
         val failedModes = mutableSetOf<PhoneCorpusRunner.Mode>()
-
         for (baselineMode in modes) {
             if (seededModes(signature).optString(baselineMode.name) == "seeded") continue
             try {
                 val dir = latestFolder(baselineMode) ?: selectFolder(baselineMode, fresh = false)
-                val saved = predictions(dir).associateBy { it.getString("image") }
+                val saved = predictions(dir).mapTo(mutableSetOf()) { it.getString("image") }
                 dirs[baselineMode] = dir
-                existing[baselineMode] = saved
-                missing[baselineMode] = inputs.filter { it.getString("image") !in saved }
+                missing[baselineMode] = inputs.asSequence().map { it.getString("image") }.filterNot { it in saved }.toMutableSet()
                 if (missing.getValue(baselineMode).isEmpty()) markSeeded(signature, baselineMode, "seeded")
-            } catch (cancel: CancellationException) {
-                throw cancel
             } catch (error: Exception) {
                 failedModes += baselineMode
                 markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
             }
         }
+        mutable.update { it.copy(baselinePending = !productionBaselinesSeeded(signature)) }
+        return ProductionBaselinePlan(signature, dirs, missing, failedModes)
+    }
 
-        // Interleave versions by photo so all comparison rows begin filling promptly, and so
-        // a background pause never leaves the table looking like only Prod v1 is being run.
-        val longestBackfill = missing.values.maxOfOrNull { it.size } ?: 0
-        for (index in 0 until longestBackfill) {
-            for (baselineMode in modes) {
-                val photos = missing[baselineMode].orEmpty()
-                if (index >= photos.size || seededModes(signature).optString(baselineMode.name) == "seeded" || baselineMode in failedModes) continue
-                if (stopping) return false
-                val dir = dirs.getValue(baselineMode)
-                val input = photos[index]
-                val image = input.getString("image")
-                try {
-                    mutable.update {
-                        it.copy(message = "First Lab v4 run: saving ${baselineMode.title} baseline ${index + 1}/${photos.size} · $image")
-                    }
-                    val result = PhoneCorpusRunner.runImage(
-                        app, image, input.getString("sha256"), baselineMode, File(dir, "work"), "wine-app-labels-v1",
-                    )
-                    persistResult(dir, image, result, existing[baselineMode]?.get(image)?.optInt("attempt") ?: 0)
-                    refresh(labDir, PhoneCorpusRunner.Mode.LAB)
-                    if (result.optBoolean("abort_run")) return false
-                    if (index == photos.lastIndex) markSeeded(signature, baselineMode, "seeded")
-                } catch (cancel: CancellationException) {
-                    throw cancel
-                } catch (error: Exception) {
-                    // Record the failure, but retry this mode on a later Lab start.
-                    failedModes += baselineMode
-                    markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
+    private fun safeProductionBaselinePlan(inputs: List<JSONObject>): ProductionBaselinePlan? = try {
+        prepareProductionBaselinePlan(inputs)
+    } catch (cancel: CancellationException) {
+        throw cancel
+    } catch (_: Exception) {
+        mutable.update { it.copy(baselinePending = true) }
+        null
+    }
+
+    /** Called after the selected Lab photo is saved, so a baseline failure can never block Lab v4. */
+    private suspend fun backfillProductionForPhoto(input: JSONObject, labDir: File, plan: ProductionBaselinePlan): Boolean {
+        val image = input.getString("image")
+        for (baselineMode in listOf(
+            PhoneCorpusRunner.Mode.PRODUCTION_V1,
+            PhoneCorpusRunner.Mode.PRODUCTION_V2,
+            PhoneCorpusRunner.Mode.PRODUCTION_V3,
+        )) {
+            val missing = plan.missing[baselineMode] ?: continue
+            if (image !in missing || baselineMode in plan.failedModes) continue
+            if (stopping) return false
+            val dir = plan.dirs[baselineMode] ?: continue
+            try {
+                mutable.update {
+                    it.copy(message = "Lab v4 saved photo; backfilling ${baselineMode.title} · $image")
                 }
+                val result = PhoneCorpusRunner.runImage(
+                    app, image, input.getString("sha256"), baselineMode, File(dir, "work"), "wine-app-labels-v1",
+                )
+                persistResult(dir, image, result)
+                missing.remove(image)
+                refresh(labDir, PhoneCorpusRunner.Mode.LAB)
+                if (result.optBoolean("abort_run")) {
+                    plan.failedModes += baselineMode
+                    markSeeded(plan.signature, baselineMode, "unavailable: ${result.optString("error")}")
+                } else if (missing.isEmpty()) {
+                    markSeeded(plan.signature, baselineMode, "seeded")
+                }
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (error: Exception) {
+                plan.failedModes += baselineMode
+                markSeeded(plan.signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
             }
         }
-        if (!stopping) mutable.update { it.copy(baselinePending = !productionBaselinesSeeded(signature)) }
+        val complete = productionBaselinesSeeded(plan.signature)
+        mutable.update { it.copy(baselinePending = !complete) }
         return !stopping
     }
 
@@ -307,10 +331,11 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 check(manifest.size == WINE_APP_LABEL_COUNT && manifest.map { it.getString("image") }.toSet() == included) {
                     "The packaged inputs do not match the selected workbook set"
                 }
-                if (mode == PhoneCorpusRunner.Mode.LAB && !seedProductionBaselines(manifest, dir)) {
-                    mutable.update { it.copy(message = "Baseline preparation paused. Start Lab v4 again to resume before its OCR run.") }
-                    return@launch
-                }
+                // Lab v4 starts first. This only plans missing baselines; no production OCR runs
+                // until after Lab has saved each corresponding photo result.
+                val baselinePlan = if (mode == PhoneCorpusRunner.Mode.LAB) {
+                    safeProductionBaselinePlan(manifest)
+                } else null
                 val existing = predictions(dir).associateBy { it.getString("image") }
                 File(dir, "current").mkdirs()
                 File(dir, "attempts").mkdirs()
@@ -324,19 +349,18 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                                 (0 until rows.length()).any { rows.getJSONObject(it).optString("status") != "complete" }
                             } == true
                     } ?: false
-                    if (if (retryFailures) !failed else previous != null) continue
+                    if (if (retryFailures) !failed else previous != null) {
+                        baselinePlan?.let { backfillProductionForPhoto(input, dir, it) }
+                        continue
+                    }
                     mutable.update { it.copy(message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\n$mode · keep the phone plugged in; switching apps pauses after this photo and resumes on return.") }
                     val result = PhoneCorpusRunner.runImage(
                         app, image, input.getString("sha256"), mode, File(dir, "work"), "wine-app-labels-v1"
                     )
-                    result.put("attempt", (previous?.optInt("attempt") ?: 0) + 1)
-                    File(File(dir, "attempts"), "$image-${System.currentTimeMillis()}.json").writeText(result.toString())
-                    result.remove("trace")
-                    result.remove("tokens")
-                    result.remove("diagnostics")
-                    File(File(dir, "current"), "$image.json").writeText(result.toString())
+                    persistResult(dir, image, result, previous?.optInt("attempt") ?: 0)
                     refresh(dir, mode)
                     if (result.optBoolean("abort_run")) { stopping = true; break }
+                    baselinePlan?.let { backfillProductionForPhoto(input, dir, it) }
                 }
                 mutable.update { it.copy(message = if (stopping) "Stopped safely. Resume continues with unattempted photos." else "Pass finished. Results are saved on this device; failed photos can be retried.") }
             } catch (cancel: CancellationException) {
