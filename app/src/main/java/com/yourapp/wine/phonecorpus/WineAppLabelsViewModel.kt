@@ -36,7 +36,6 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private val mutable = MutableStateFlow(WineAppLabelsState())
     val state = mutable.asStateFlow()
     private val root get() = File(app.noBackupFilesDir, "wine-app-labels-v1").apply { mkdirs() }
-    private val preferences get() = app.getSharedPreferences("wine-app-labels-results", Application.MODE_PRIVATE)
     private val installId get() = app.packageManager.getPackageInfo(app.packageName, 0).lastUpdateTime.toString()
     private val lock = Mutex()
     @Volatile private var stopping = false
@@ -44,7 +43,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     @Volatile private var resumeAfterBackgroundPause = false
     private var folder: File? = null
 
-    init { load(lastMode() ?: PhoneCorpusRunner.Mode.PRODUCTION_V1) }
+    init { load(PhoneCorpusRunner.Mode.LAB) }
 
     private fun assetJson(name: String) = JSONObject(app.assets.open("wine-app-labels-v1/$name").bufferedReader().use { it.readText() })
 
@@ -55,16 +54,6 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         return (0 until list.length()).map { list.getJSONObject(it).getString("image") }.toSet().also {
             check(it.size == WINE_APP_LABEL_COUNT && expected == WINE_APP_LABEL_COUNT) { "The retained workbook selection is invalid" }
         }
-    }
-
-    private fun lastMode(): PhoneCorpusRunner.Mode? {
-        val saved = preferences.getString("last_mode", null)
-        PhoneCorpusRunner.Mode.entries.firstOrNull { it.name == saved }?.let { return it }
-        val dirName = preferences.getString("last_run", null) ?: return null
-        val dir = File(root, dirName)
-        if (dir.parentFile != root || !File(dir, "run.json").isFile) return null
-        val value = runCatching { JSONObject(File(dir, "run.json").readText()).optString("mode") }.getOrNull()
-        return PhoneCorpusRunner.Mode.entries.firstOrNull { it.name == value }
     }
 
     private fun folderPrefix(mode: PhoneCorpusRunner.Mode) = "${BuildConfig.BUILD_COMMIT}-$installId-${mode.name}-"
@@ -111,7 +100,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             PhoneCorpusRunner.Mode.PRODUCTION_V1,
             PhoneCorpusRunner.Mode.PRODUCTION_V2,
             PhoneCorpusRunner.Mode.PRODUCTION_V3,
-        ).all { modes.optString(it.name).isNotBlank() }
+        ).all { modes.optString(it.name) == "seeded" }
     }
 
     private fun markSeeded(signature: String, mode: PhoneCorpusRunner.Mode, result: String) {
@@ -139,9 +128,10 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val dirs = mutableMapOf<PhoneCorpusRunner.Mode, File>()
         val existing = mutableMapOf<PhoneCorpusRunner.Mode, Map<String, JSONObject>>()
         val missing = mutableMapOf<PhoneCorpusRunner.Mode, List<JSONObject>>()
+        val failedModes = mutableSetOf<PhoneCorpusRunner.Mode>()
 
         for (baselineMode in modes) {
-            if (seededModes(signature).optString(baselineMode.name).isNotBlank()) continue
+            if (seededModes(signature).optString(baselineMode.name) == "seeded") continue
             try {
                 val dir = latestFolder(baselineMode) ?: selectFolder(baselineMode, fresh = false)
                 val saved = predictions(dir).associateBy { it.getString("image") }
@@ -152,6 +142,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             } catch (cancel: CancellationException) {
                 throw cancel
             } catch (error: Exception) {
+                failedModes += baselineMode
                 markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
             }
         }
@@ -162,7 +153,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         for (index in 0 until longestBackfill) {
             for (baselineMode in modes) {
                 val photos = missing[baselineMode].orEmpty()
-                if (index >= photos.size || seededModes(signature).optString(baselineMode.name).isNotBlank()) continue
+                if (index >= photos.size || seededModes(signature).optString(baselineMode.name) == "seeded" || baselineMode in failedModes) continue
                 if (stopping) return false
                 val dir = dirs.getValue(baselineMode)
                 val input = photos[index]
@@ -181,12 +172,13 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 } catch (cancel: CancellationException) {
                     throw cancel
                 } catch (error: Exception) {
-                    // An unavailable production baseline must not prevent the selected Lab run.
+                    // Record the failure, but retry this mode on a later Lab start.
+                    failedModes += baselineMode
                     markSeeded(signature, baselineMode, "unavailable: ${error.message.orEmpty()}")
                 }
             }
         }
-        if (!stopping) mutable.update { it.copy(baselinePending = false) }
+        if (!stopping) mutable.update { it.copy(baselinePending = !productionBaselinesSeeded(signature)) }
         return !stopping
     }
 
@@ -240,7 +232,6 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             try {
                 val dir = selectFolder(mode, fresh)
                 folder = dir
-                preferences.edit().putString("last_run", dir.name).putString("last_mode", mode.name).apply()
                 refresh(dir, mode)
                 val baselinePending = mode == PhoneCorpusRunner.Mode.LAB && !productionBaselinesSeeded()
                 mutable.update {
