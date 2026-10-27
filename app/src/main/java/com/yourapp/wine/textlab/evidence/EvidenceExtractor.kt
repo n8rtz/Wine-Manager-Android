@@ -112,6 +112,58 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         return emptyMap()
     }
 
+    private fun catalogWordKey(text:String):String = java.text.Normalizer.normalize(
+        TextNorm.scrub(text).lowercase(java.util.Locale.ROOT).replace('’','\''),
+        java.text.Normalizer.Form.NFKD,
+    ).replace(Regex("\\p{M}+"),"").replace(Regex("[^\\p{L}\\p{N}]+")," ").trim().replace(Regex("\\s+")," ")
+
+    private val nonProducerCatalogKeys:Set<String> by lazy {
+        buildSet {
+            for(place in kb.places()) {
+                add(catalogWordKey(place.name))
+                BundledOrigins.spellingForms(place).forEach { add(catalogWordKey(it)) }
+            }
+            for(origin in ReferenceWineCatalog.origins) {
+                add(catalogWordKey(origin.name))
+                add(catalogWordKey(origin.country))
+                origin.regions.forEach { add(catalogWordKey(it)) }
+                origin.aliases.forEach { add(catalogWordKey(it)) }
+                origin.path.forEach { add(catalogWordKey(it)) }
+            }
+            for(term in BundledOrigins.terms) {
+                add(catalogWordKey(term.name))
+                add(catalogWordKey(term.country))
+                if(term.region.isNotBlank()) add(catalogWordKey(term.region))
+                term.aliases.forEach { add(catalogWordKey(it)) }
+            }
+            for(term in BundledGrapes.terms) {
+                add(catalogWordKey(term.name))
+                term.aliases.forEach { add(catalogWordKey(it)) }
+            }
+            for(term in BundledWineStyles.terms) {
+                add(catalogWordKey(term.name))
+                term.aliases.forEach { add(catalogWordKey(it)) }
+            }
+            for(term in ReferenceWineCatalog.labelTerms) {
+                add(catalogWordKey(term.name))
+            }
+            remove("")
+        }
+    }
+
+    /** True when [rawText] is a known geographic origin, varietal, wine style, classification, or label designation. */
+    fun isNonProducerCatalogTerm(rawText:String):Boolean {
+        val clean=TextNorm.scrub(rawText).trim()
+        if(clean.isBlank()) return false
+        val key=catalogWordKey(clean)
+        if(key.isEmpty()) return false
+        if(key in nonProducerCatalogKeys) return true
+        if(WineDesignations.isDesignation(clean) || WineDesignations.isBareClassification(clean) || WineDesignations.isAppellationName(clean)) return true
+        val split=WineDesignations.split(clean)
+        if(split.suffix!=null && catalogWordKey(split.base) in nonProducerCatalogKeys) return true
+        return false
+    }
+
     fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {

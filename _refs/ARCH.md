@@ -168,6 +168,7 @@ tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> 
 docs/evidence-designation-levels.md # Why the Lab v4 designation/level/fragment rules changed, with the measured 125-label basis and the rejected flatten convention
 tools/tests/test_evidence_selection.py # Host checks for the classification-base mirror over the real catalog + wiring of the designation, fragment and level rules
 docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals and proposed staged accuracy plan (not recognition changes)
+docs/lab-v4-accuracy-roadmap.md        # Checkable (- [ ]) root-cause roadmap from the 0c88bda41164 125-label run + shipped Phase 0 d=0 fast-paths
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
 _backup/                               # Personal cellar JSON backups (source of the debug seed), one-off convert_csv.py (its CSV input was removed)

@@ -39,8 +39,23 @@ internal class ProducerResolver(private val index:Index,
         init { require(minimumIndependentEngines in 1..2) }
         var countryContext:String=""
             private set
+        var exactMatchFastPath:Boolean=false
+            private set
+        var nonProducerTerm:(String)->Boolean={ false }
+            private set
+        private fun copyWith(
+            country:String=countryContext,
+            exactFastPath:Boolean=exactMatchFastPath,
+            excluded:(String)->Boolean=nonProducerTerm,
+        ):Policy=Policy(minimumIndependentEngines).also {
+            it.countryContext=country
+            it.exactMatchFastPath=exactFastPath
+            it.nonProducerTerm=excluded
+        }
         fun withCountryContext(country:String):Policy=
-            if(country.isBlank()) this else Policy(minimumIndependentEngines).also { it.countryContext=country }
+            if(country.isBlank()) this else copyWith(country=country)
+        fun withExactMatchFastPath(excluded:(String)->Boolean={ false }):Policy=
+            copyWith(exactFastPath=true,excluded=excluded)
         fun supports(rows:List<Match>)=minimumIndependentEngines<2 || rows.any { a -> rows.any { b ->
             a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
         companion object {
@@ -60,6 +75,33 @@ internal class ProducerResolver(private val index:Index,
         const val MAX_FUZZY_CANDIDATES=200
         private val noise=Regex("\\b(?:imported|importer|imports|distributed|distributor|bottled|bottler|embouteille|mis en bouteille|produced by|product of|produit de|appellation|controlee|protegee|alcohol|alc|vol|contains|sulfites|sulphites|government|warning|llc|inc|corp|ltd|www|http)\\b")
         private val generic=setOf("chateau","domaine","domaines","estate","winery","wine","wines","vineyard","vineyards","cellar","cellars","bodega","bodegas","maison","de","du","des","la","le","les","the","and","et","of","family","reserve","reserva","grand","cru")
+        internal val estatePrefixes=setOf("chateau","domaine","domaines","bodega","bodegas","maison","tenuta","castello","clos","mas","cave","caves")
+        internal val exactFastPathStopTerms=setOf(
+            "old vines","vieilles vignes","gran reserva","grand cru","premier cru","1er cru",
+            "grand vin","red wine","white wine","rose wine","vin rouge","vin blanc","vin rose",
+            "brut","extra brut","sec","demi sec","cuvee","reserve","reserva","crianza",
+            "vintage","millesime","recolte","cosecha","vendimia","annata","estate bottled",
+            "single vineyard","barrel aged","oak aged","unfiltered","organic wine","biodynamic",
+            "chapelle","bastide","abbaye","moulin","chateau","domaine","bodega","bodegas",
+        )
+        internal fun exactFastPathShortEligible(text:String):Boolean {
+            if(text.length>96 || text.any(Char::isDigit) || '%' in text || '\n' in text) return false
+            val q=normalize(text)
+            if(q.length<5 || q in generic || q in exactFastPathStopTerms || noise.containsMatchIn(q)) return false
+            val words=q.split(' ')
+            return (words.size==1 && q.length>=5) ||
+                (words.size in 2..8 && q.length in 5..7 && words.any { it.length>=4 && it !in generic })
+        }
+        internal fun containsWordSequence(longer:List<String>,shorter:List<String>):Boolean {
+            if(shorter.isEmpty() || shorter.size>=longer.size) return false
+            return (0..(longer.size-shorter.size)).any { start -> longer.subList(start,start+shorter.size)==shorter }
+        }
+        internal fun isCleanEstatePrefixed(raw:String):Boolean {
+            if(raw.isBlank() || raw.any(Char::isDigit)) return false
+            val q=normalize(raw)
+            val words=q.split(' ')
+            return words.size in 2..5 && words.first() in estatePrefixes && !noise.containsMatchIn(q)
+        }
         fun canonicalCountryKey(country:String):String {
             val clean=TextNorm.scrub(country).trim().lowercase(Locale.ROOT)
             return if(clean=="russian federation") "russia" else clean
@@ -103,15 +145,27 @@ internal class ProducerResolver(private val index:Index,
         trace.visit("spans",spans.size<=MAX_SPANS,"span limit")
         if(spans.size>MAX_SPANS) return finish(existing,"span limit; abstained",emptyList())
         val matches=mutableListOf<Match>()
+        val normalizedSpans=if(policy.exactMatchFastPath) spans.map { normalize(it.text) }.filter(String::isNotEmpty) else emptyList()
+        fun isSingleWordEstateFragment(key:String):Boolean {
+            val words=key.split(' ')
+            if(words.size!=1) return false
+            val word=words[0]
+            return normalizedSpans.any { sp ->
+                sp!=key && word in sp.split(' ') && sp.split(' ').any { it in estatePrefixes }
+            }
+        }
         try {
             checkBudget()
             for(s in spans) {
                 checkBudget()
                 val engine=if(s.engine=="mlkit") "mlkit" else if(s.engine.startsWith("paddle")) "paddle" else "other"
                 val rejection=if(s.engine.isBlank() || s.observationIds.isEmpty()) "missing engine / original observation IDs" else ineligibilityReason(s.text)
-                trace.visit("$engine.eligible",rejection==null,rejection.orEmpty())
-                if(rejection!=null) continue
                 val q=normalize(s.text)
+                val exactShortAllowed=rejection!=null && policy.exactMatchFastPath &&
+                    s.engine.isNotBlank() && s.observationIds.isNotEmpty() &&
+                    exactFastPathShortEligible(s.text) && !policy.nonProducerTerm(s.text) && !isSingleWordEstateFragment(q)
+                trace.visit("$engine.eligible",rejection==null || exactShortAllowed,rejection.orEmpty())
+                if(rejection!=null && !exactShortAllowed) continue
                 trace.visit("$engine.lookup",false,"lookup did not complete")
                 val hits=index.lookup(q,MAX_FUZZY_CANDIDATES,checkBudget)
                 trace.visit("$engine.lookup",true)
@@ -121,7 +175,9 @@ internal class ProducerResolver(private val index:Index,
                     checkBudget()
                     if(e.key.length>96) continue
                     val d=distance(q,e.key)
-                    if(d<=if(q.length>=20) 2 else 1) {
+                    val allowed=if(exactShortAllowed) d==0 && (index.primaryVerified || "lwin" in e.support)
+                        else d<=if(q.length>=20) 2 else 1
+                    if(allowed) {
                         trace.visit("$engine.distance",true)
                         matches+=Match(e,s.text,s.engine,s.observationIds,d)
                     }
@@ -134,11 +190,57 @@ internal class ProducerResolver(private val index:Index,
             onFailureTelemetry(trace.fields())
             throw error // Preserve the original failure/abstention path; retain only diagnostic progress.
         }
+        val targetCountry=canonicalCountryKey(policy.countryContext)
+        if(policy.exactMatchFastPath) {
+            val exactMatches=matches.filter { m ->
+                m.distance==0 &&
+                    m.entity.key !in exactFastPathStopTerms &&
+                    !policy.nonProducerTerm(m.observed) &&
+                    !policy.nonProducerTerm(m.entity.name) &&
+                    !isSingleWordEstateFragment(m.entity.key)
+            }
+            val exactByKey=exactMatches.groupBy { it.entity.key }.filterValues { rows -> policy.supports(rows) }
+            if(exactByKey.isNotEmpty()) {
+                val cleanExisting=TextNorm.scrub(existing)
+                val old=normalize(cleanExisting)
+                if(cleanExisting.isNotBlank() && old in exactByKey) {
+                    trace.visit("independent",true);trace.visit("unambiguous",true);trace.visit("separated",true)
+                    trace.visit("existing",true);trace.visit("selected",true)
+                    trace.visit("changed",false,"existing supported producer retained")
+                    return finish(cleanExisting,"existing producer retained",matches)
+                }
+                val reducedKeys=exactByKey.keys.filter { key ->
+                    exactByKey.keys.none { other -> other!=key && containsWordSequence(other.split(' '),key.split(' ')) }
+                }
+                if(reducedKeys.size==1) {
+                    val winnerKey=reducedKeys.single()
+                    if(!(isCleanEstatePrefixed(cleanExisting) && winnerKey.split(' ').firstOrNull() !in estatePrefixes)) {
+                        val winnerRows=exactByKey.getValue(winnerKey)
+                        val chosen=winnerRows.sortedWith(
+                            compareByDescending<Match> { targetCountry.isNotEmpty() && canonicalCountryKey(it.entity.countryGroup)==targetCountry }
+                                .thenByDescending { index.primaryVerified || "lwin" in it.entity.support }
+                                .thenBy { it.entity.id }
+                        ).first()
+                        val entity=chosen.entity
+                        val cleanName=TextNorm.scrub(entity.name)
+                        trace.visit("independent",true);trace.visit("unambiguous",true);trace.visit("separated",true)
+                        trace.visit("existing",true);trace.visit("selected",true)
+                        trace.visit("changed",cleanName!=cleanExisting,"existing supported producer retained")
+                        val supplementalSources=entity.support.filter { it!="lwin" }.sorted()
+                        val support=if(winnerRows.any { a -> winnerRows.any { b -> a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } })
+                            "two engines" else "one engine reading under the lab single-reading policy"
+                        val reason=if(supplementalSources.isEmpty())
+                            "primary LWIN producer/brand name supported by $support (d=0 exact match); confirm manually"
+                            else "Lab expanded producer candidate (${supplementalSources.joinToString()}) supported by $support (d=0 exact match); confirm manually"
+                        return finish(cleanName,reason,matches,entity.id)
+                    }
+                }
+            }
+        }
         val groups=matches.groupBy { it.entity.id }
         val viableRaw=groups.filterValues { rows -> policy.supports(rows) }
         trace.visit("independent",viableRaw.isNotEmpty(),"no independently supported producer")
         if(viableRaw.isEmpty()) return finish(existing,"no independently supported producer; unchanged",matches)
-        val targetCountry=canonicalCountryKey(policy.countryContext)
         val viable=if(viableRaw.size>1 && targetCountry.isNotEmpty() &&
             viableRaw.values.all { it.first().entity.countryGroup.isNotBlank() }) {
             val inCountry=viableRaw.filterValues { canonicalCountryKey(it.first().entity.countryGroup)==targetCountry }

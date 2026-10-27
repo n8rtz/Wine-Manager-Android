@@ -47,8 +47,9 @@ internal class LinkedWineResolver(private val index:Index,
             val producers=producer.matches.groupBy { it.entity.id }.filterValues { rows -> policy.supports(rows) }.toMutableMap()
             // Validate an already-present single-word producer by exact OCR and exact primary name only.
             // This does not allow a wine name to introduce or rename a producer.
-            if(existingProducer.isNotBlank()) {
-                val key=ProducerResolver.normalize(existingProducer)
+            val effectiveExistingProducer=if(policy.exactMatchFastPath && producer.acceptedId!=null) producer.value else existingProducer
+            if(effectiveExistingProducer.isNotBlank()) {
+                val key=ProducerResolver.normalize(effectiveExistingProducer)
                 val observed=spans.filter { ProducerResolver.normalize(it.text)==key && it.observationIds.isNotEmpty() && it.engine.isNotBlank() }
                 if(observed.map { it.engine }.distinct().size>=policy.minimumIndependentEngines) {
                     val exact=index.lookup(key,33,checkBudget)
@@ -60,7 +61,7 @@ internal class LinkedWineResolver(private val index:Index,
             }
             trace.visit("producer_observed",producers.isNotEmpty(),"no independently observed producer")
             // Protect a different existing producer. Only existing/correctable independently read names can pair.
-            val old=ProducerResolver.normalize(existingProducer)
+            val old=ProducerResolver.normalize(effectiveExistingProducer)
             val candidates=producers.filterValues { rows ->
                 old.isBlank() || rows.first().entity.key==old ||
                     (ProducerResolver.distance(old,rows.first().entity.key)<=1 && rows.any { ProducerResolver.normalize(it.observed)==old })
@@ -95,6 +96,46 @@ internal class LinkedWineResolver(private val index:Index,
                 }
             }
             checkBudget()
+            val resolvedProducerKey=ProducerResolver.normalize(producer.value)
+            if(policy.exactMatchFastPath) {
+                val exactGroups=matches.filter { it.distance==0 }
+                    .groupBy { candidates.getValue(it.wine.producerId).first().entity.key to it.wine.key }
+                    .filterValues { rows -> policy.minimumIndependentEngines<2 || rows.any { a -> rows.any { b ->
+                        a.span.engine!=b.span.engine && a.span.observationIds.intersect(b.span.observationIds).isEmpty() } } }
+                if(exactGroups.size==1) {
+                    val (_,rows)=exactGroups.entries.single()
+                    val bestMatch=rows.minWith(compareBy<Match> { it.distance }.thenBy { it.wine.name })
+                    val wine=bestMatch.wine
+                    val p=candidates.getValue(wine.producerId).first().entity
+                    val consistent=producer.acceptedId==null || producer.acceptedId==p.id || p.key==resolvedProducerKey
+                    if(consistent) {
+                        val previous=ProducerResolver.normalize(existingWine)
+                        val staleRawProducer=ProducerResolver.normalize(existingProducer)
+                        val existingIsDistinctCuvee=existingWine.isNotBlank() &&
+                            previous!=wine.key && previous!=p.key && previous!=old && previous!=staleRawProducer &&
+                            !policy.nonProducerTerm(existingWine) && policy.nonProducerTerm(wine.name)
+                        if(!existingIsDistinctCuvee) {
+                            checkBudget()
+                            trace.visit("independent",true);trace.visit("unambiguous",true);trace.visit("separated",true)
+                            trace.visit("producer_consistent",true);trace.visit("existing",true)
+                            trace.visit("selected",true);trace.visit("execution",true)
+                            trace.visit("changed",previous!=wine.key,"existing supported wine retained")
+                            val agreement=if(rows.any { a -> rows.any { b ->
+                                    a.span.engine!=b.span.engine && a.span.observationIds.intersect(b.span.observationIds).isEmpty() } })
+                                "independent producer and wine OCR agree with primary LWIN relationship (d=0 exact match); confirm manually"
+                                else "single-engine producer and wine OCR agree with primary LWIN relationship under the lab single-reading policy (d=0 exact match); confirm manually"
+                            val cleanExistingProducer=TextNorm.scrub(effectiveExistingProducer)
+                            val cleanProducerName=TextNorm.scrub(p.name)
+                            val cleanExistingWine=TextNorm.scrub(existingWine)
+                            val cleanWineName=TextNorm.scrub(wine.name)
+                            val finalProducerId=if(producer.acceptedId!=null && p.key==resolvedProducerKey) producer.acceptedId else p.id
+                            return Decision(if(old==p.key) cleanExistingProducer else cleanProducerName,
+                                if(ProducerResolver.normalize(cleanExistingWine)==wine.key) cleanExistingWine else cleanWineName,
+                                agreement,matches,finalProducerId,wine.id,wine.lwin7,trace.fields())
+                        }
+                    }
+                }
+            }
             // Multiple LWIN products with the same producer + normalized WINE text are one name suggestion,
             // not independent support or permission to infer colour, vintage, site or other product attributes.
             val groups=matches.groupBy { it.wine.producerId to it.wine.key }
@@ -109,7 +150,8 @@ internal class LinkedWineResolver(private val index:Index,
             if(!separated) return unchanged("linked wine rival too close; unchanged",matches)
             val p=candidates.getValue(pair.first).first().entity
             val wine=rows.minWith(compareBy<Match> { it.distance }.thenBy { it.wine.name }).wine
-            val consistent=producer.acceptedId==null || producer.acceptedId==p.id
+            val consistent=producer.acceptedId==null || producer.acceptedId==p.id ||
+                (policy.exactMatchFastPath && p.key==resolvedProducerKey)
             trace.visit("producer_consistent",consistent,"wine conflicts with independently selected producer")
             if(!consistent) return unchanged("wine conflicts with independently selected producer",matches)
             if(existingWine.isNotBlank()) {
@@ -127,7 +169,7 @@ internal class LinkedWineResolver(private val index:Index,
                     a.span.engine!=b.span.engine && a.span.observationIds.intersect(b.span.observationIds).isEmpty() } })
                 "independent producer and wine OCR agree with primary LWIN relationship; confirm manually"
                 else "single-engine producer and wine OCR agree with primary LWIN relationship under the lab single-reading policy; confirm manually"
-            val cleanExistingProducer=TextNorm.scrub(existingProducer)
+            val cleanExistingProducer=TextNorm.scrub(effectiveExistingProducer)
             val cleanProducerName=TextNorm.scrub(p.name)
             val cleanExistingWine=TextNorm.scrub(existingWine)
             val cleanWineName=TextNorm.scrub(wine.name)

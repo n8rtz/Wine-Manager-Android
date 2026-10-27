@@ -65,6 +65,16 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertIn('"Independent-support agreement"', funnel)
         self.assertNotIn('"Two-engine + disjoint agreement"', funnel)
 
+    def test_exact_match_fast_path_is_lab_only(self):
+        producer = PRODUCER.read_text()
+        linked = LINKED.read_text()
+        spatial = SPATIAL.read_text()
+        self.assertIn('var exactMatchFastPath:Boolean=false', producer)
+        self.assertIn('fun withExactMatchFastPath(', producer)
+        self.assertIn('if(policy.exactMatchFastPath)', producer)
+        self.assertIn('if(policy.exactMatchFastPath)', linked)
+        self.assertIn('.withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }', spatial)
+
 
 if __name__ == '__main__':
     unittest.main()

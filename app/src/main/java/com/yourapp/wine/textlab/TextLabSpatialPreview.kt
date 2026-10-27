@@ -81,7 +81,10 @@ internal object TextLabSpatialPreview {
                         var producerFailureTelemetry=emptyMap<String,String>()
                         fun runProducerLookup(policy:ProducerResolver.Policy)=
                             ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget,policy)
-                        val activePolicy=if(isLabMode) policy.withCountryContext(row["country"].orEmpty()) else policy
+                        val activePolicy=if(isLabMode) {
+                            policy.withCountryContext(row["country"].orEmpty())
+                                .withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }
+                        } else policy
                         val decision=try { runProducerLookup(activePolicy) }
                             catch(cancel:CancellationException) { throw cancel }
                             catch(error:Exception) { ProducerResolver.Decision(before,"lookup failed; unchanged: ${error.javaClass.simpleName}",emptyList(),telemetry=
