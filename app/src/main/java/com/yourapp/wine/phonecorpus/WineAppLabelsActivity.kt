@@ -134,8 +134,6 @@ class WineAppLabelsActivity : ComponentActivity() {
             item {
                 Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
                 Text("125 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
-                Text("This normal-app benchmark uses all 125 retained rows in the updated workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded. The full legacy 168-photo run is not replayed.", style = MaterialTheme.typography.bodySmall)
-                Text("Private on-device benchmark. The source repository declares no image license; do not redistribute these photos or an APK containing them beyond authorized project use.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
@@ -163,8 +161,6 @@ class WineAppLabelsActivity : ComponentActivity() {
                         }
                     }
                 }
-                Text("Prod v3.0 uses verified LWIN producer data only. Lab v4 uses the Lab-only expanded producer index: the same verified LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates. Supplemental candidates never reach production or the Prod versions, and every suggestion still requires confirmation.", style = MaterialTheme.typography.bodySmall)
-                Text("Prod v1.0, Prod v2.0 and Prod v3.0 are frozen benchmarks, not live contenders. Each photo runs through them once, the outcome is saved on this device, and every later pass scores that saved record instead of re-running them — so their rows stay put while Lab v4 moves. Their bottleneck matrix comes from the funnel recorded during the capturing run. Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing (guarded evidence only / spatial with LWIN-only producers / spatial with the expanded producer index), while Prod v1.0 runs the Add Wine scanner separately. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen this screen and tap Start / resume — photos and captures already saved are not rerun.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
@@ -195,7 +191,7 @@ class WineAppLabelsActivity : ComponentActivity() {
             state.board?.let { board ->
                 item {
                     Text("Scored results", style = MaterialTheme.typography.titleMedium)
-                    Text("Attempted is the saved-photo tally. Fully correct (for example, 2/5) means all six scorable fields matched on that many photos; it is an accuracy score, not run progress. Expected blanks count as correct when matched; unresolved references are unscorable. Partial runs do not establish full-set accuracy.", style = MaterialTheme.typography.bodySmall)
+                    Text("Fully correct = all six scorable fields matched.", style = MaterialTheme.typography.bodySmall)
                     SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
                             val columnWidth = 88.dp
@@ -241,19 +237,12 @@ class WineAppLabelsActivity : ComponentActivity() {
                         onClick = { splitExisting.launch(arrayOf("text/*", "application/csv", "application/octet-stream")) },
                         enabled = !state.busy,
                     ) { Text("Split an existing CSV for upload") }
-                    Text(
-                        "The scored CSV holds one result set per version (Prod v1.0, Prod v2.0, Prod v3.0, Lab v4) with field outcomes and aggregate pipeline_step rows; the raw diagnostics CSV adds tokens, traces and every retained attempt. Both carry build, mode and run ID and never include images or account information. Exports over 25 MB are split into numbered CSVs, each with the header and complete records — save every part.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
                 }
             }
             state.board?.let { board ->
                 item {
                     Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Step-level diagnostics for the selected version only. ML Kit runs before Paddle; post-OCR rows describe the selected pipeline. Counts show passed (green) / failed (red) plus not-reached, not-recorded, and not-applicable cases. Tap + for step definitions.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
                     TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
                         Text(if (showDiagnostics) "Hide diagnostics table" else "Show diagnostics table")
                     }
@@ -359,7 +348,6 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             item {
                 Text("Gazetteer database coverage", style = MaterialTheme.typography.titleMedium)
-                Text("Known workbook values and accepted aliases are matched exactly after normalization. Counts are distinct test labels present in each database, checked on the scoring side only. The expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) is packaged for Lab v4 only; Prod versions and production never open it, and no coverage values are passed to OCR.", style = MaterialTheme.typography.bodySmall)
                 SelectionContainer {
                     Column(Modifier.horizontalScroll(rememberScrollState())) {
                         val width = 72.dp

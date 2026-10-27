@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -79,7 +80,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertTrue(all(0 <= row["matched_labels"] <= 125 for row in rows.values()))
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         self.assertIn("Gazetteer database coverage", activity)
-        self.assertIn("Known workbook values and accepted aliases", activity)
+        # Method/provenance text belongs in the coverage asset and docs, not on the page.
+        self.assertIn("never provided to the OCR runner", coverage["method"])
+        self.assertNotIn("Known workbook values and accepted aliases", activity)
 
     def test_user_adjudications_are_applied_to_workbook_and_phone_targets(self):
         labels = json.loads((REVIEW / "candidate-labels.json").read_text())
@@ -134,11 +137,14 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             self.assertFalse((ROOT / "app/src/main/assets/producer-gazetteer-v1" / name).exists())
             self.assertFalse((ROOT / "app/src/debug/assets/producer-gazetteer-v1" / name).exists())
         self.assertIn("val columnWidth = 88.dp", activity)
-        self.assertIn("Lab v4 uses the Lab-only expanded producer index", activity)
-        self.assertIn("Supplemental candidates never reach production or the Prod versions", activity)
+        # The Lab-only index claim lives in the copied stats and the docs, not in a wall of
+        # on-screen prose (the owner asked for the long paragraphs to be removed).
+        self.assertIn("the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates)", viewmodel)
+        self.assertIn("LAB ONLY expanded producer index", (ROOT / "_refs/ARCH.md").read_text())
         self.assertIn("Pipeline bottleneck matrix", activity)
-        self.assertIn("are frozen benchmarks, not live contenders", activity)
-        self.assertIn("every later pass scores that saved record instead of re-running them", activity)
+        # Frozen state is shown per mode (short captions), not explained in a paragraph.
+        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
+        self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
         self.assertNotIn("Every photo runs through all four versions", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
         self.assertNotIn("savedPredictions", viewmodel)
@@ -153,7 +159,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
         self.assertIn("RadioButton(", activity)
         self.assertNotIn("RUNNABLE_MODES", viewmodel)
-        self.assertIn("Fully correct (for example, 2/5) means all six scorable fields matched", activity)
+        self.assertIn('Text("Fully correct = all six scorable fields matched."', activity)
         self.assertIn('"Lab v4 checkpointed: ${state.labCompleted}/${state.total}"', activity)
         self.assertIn("Prod baselines captured: $frozen/${state.total} photos", activity)
         start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
@@ -270,10 +276,36 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
 
         # 6. The screen never offers a Prod version as a live run and says the rows are frozen.
         self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", activity)
-        self.assertIn("are frozen benchmarks, not live contenders", activity)
+        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
         self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
         self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', activity)
         self.assertIn('Text("New Lab run (keeps old results and frozen Prod)")', activity)
+
+
+    def test_benchmark_screen_stays_free_of_wall_of_text_copy(self):
+        # Owner rule: the Large image dataset test is a tool, not a document. Status, counts,
+        # tables and controls stay; the multi-sentence explanations live in the docs and in the
+        # copied stats instead of the screen.
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        long_literals = [literal for literal in re.findall(r'"([^"\n]{121,})"', activity)]
+        self.assertEqual(long_literals, [], "on-screen copy over 120 characters")
+        for removed in (
+            "This normal-app benchmark uses all 125 retained rows",
+            "Private on-device benchmark",
+            "Prod v3.0 uses verified LWIN producer data only",
+            "Prod v1.0, Prod v2.0 and Prod v3.0 are frozen benchmarks",
+            "Attempted is the saved-photo tally",
+            "The scored CSV holds one result set per version",
+            "Step-level diagnostics for the selected version only",
+            "Known workbook values and accepted aliases",
+        ):
+            self.assertNotIn(removed, activity)
+        # What must survive: the title, the subtitle, per-mode state and every control.
+        for kept in ('Text("Large image dataset test"', '"125 retained workbook-linked wine labels', 'Text(mode.title)',
+                     'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
+                     'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
+                     'Pipeline bottleneck matrix', 'Gazetteer database coverage', 'Reviewed labels'):
+            self.assertIn(kept, activity)
 
 
 if __name__ == "__main__":
