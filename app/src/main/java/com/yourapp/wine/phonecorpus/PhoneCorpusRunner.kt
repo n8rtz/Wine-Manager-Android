@@ -202,6 +202,7 @@ internal object PhoneCorpusRunner {
                         labModes.forEach { mark(it,"input.decoded",false,"image decode did not complete") }
                         val photo=TextLabRunner.preview(input,preview)
                         labModes.forEach { mark(it,"input.decoded",true) }
+                        journal.autoZoomTinyLabel=(labModes==listOf(Mode.LAB))
                         TextLabRunner.recognize(context,photo,TextCrop(0f,0f,1f,1f),false,crop,journal)
                         journal.metadata["ocr_source"]="fresh_ocr"
                         onFreshOcr(LinkedHashMap(journal.metadata),ArrayList(journal.rows))

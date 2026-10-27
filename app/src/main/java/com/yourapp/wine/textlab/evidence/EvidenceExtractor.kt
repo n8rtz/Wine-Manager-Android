@@ -10,9 +10,9 @@ internal data class Hypothesis(val values:Map<FieldId,String>,val phrase:Phrase,
 internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,val hypotheses:List<Hypothesis>,val elapsedMs:Long,val trace:EvidenceTrace)
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
-internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
+internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
     companion object { const val VERSION="evidence-lab-v4-context";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
-    private val kb=SupplementedWineKnowledgeBase(base)
+    private val kb=SupplementedWineKnowledgeBase(baseKb)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb)
     private val view=hierarchy.snapshot()

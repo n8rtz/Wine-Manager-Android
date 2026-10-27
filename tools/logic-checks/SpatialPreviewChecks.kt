@@ -88,5 +88,57 @@ fun main() {
     val v2=sample();TextLabEvidencePreview.append(v2,extractor,2026,true,hybrid,true,repair)
     verify(v2.rows.none { it["stage"].orEmpty().startsWith("spatial_") })
     verify(v2.rows.single { it["stage"]=="evidence_summary" }["status"]!="failed")
+
+    // Lab v4 bottle-column & medal-sticker filter + Prod v3.0 isolation + tiny-footprint zoom-crop checks.
+    val noisy=TextLabJournal(setOf("candidate_3"),"bottle-filter-check",true)
+    val noisyRows=listOf(
+        Triple("candidate_3","2019","0.45 0.08 0.55 0.12"), // neck-band vintage (must survive)
+        Triple("mlkit_reference","CHATEAU EXEMPLE","0.30 0.36 0.70 0.42"),
+        Triple("candidate_3","SAINT-EMILION GRAND CRU","0.27 0.45 0.73 0.50"),
+        Triple("candidate_3","20","0.29 0.52 0.35 0.55"), // split crest year left half (must survive)
+        Triple("candidate_3","16","0.65 0.52 0.71 0.55"), // split crest year right half (must survive)
+        Triple("candidate_3","MIS EN BOUTEILLE AU CHATEAU","0.29 0.59 0.71 0.63"),
+        Triple("candidate_3","zxq","0.66 0.53 0.75 0.58"), // lowercase margin signature scribble (dropped in Lab)
+        Triple("mlkit_reference","Decanter","0.58 0.24 0.65 0.26"), // critic award sticker (dropped in Lab)
+        Triple("mlkit_reference","95","0.59 0.26 0.64 0.30"), // near medal seal score fragment (dropped in Lab)
+        Triple("candidate_3","BADGE","0.60 0.78 0.68 0.81"), // detached lower round sticker (dropped in Lab)
+        Triple("mlkit_reference","SIDE BOTTLE","0.01 0.40 0.14 0.46"), // neighboring bottle (dropped in Lab)
+        Triple("mlkit_reference","WATERMARK TEXT","0.01 0.98 0.28 0.995"), // border watermark (dropped in Lab)
+    )
+    for((cand,txt,box) in noisyRows) {
+        noisy.add(cand,"recognition",values=mapOf("raw_text" to txt,"base_box_normalized" to box,"original_box_normalized" to box,
+            "mlkit_confidence" to "0.9","ctc_posterior" to "0.9","confidence_estimated" to "false"))
+    }
+    noisy.add("mlkit_reference","summary","complete")
+    noisy.add("candidate_3","candidate_summary","complete")
+    TextLabFormPreview.append(noisy,FillEngine(kb),2026)
+    // Prod v3.0 keeps all 12 readings untouched; Lab v4 drops the 6 noise boxes and keeps all 6 bottle readings.
+    TextLabSpatialPreview.append(noisy,extractor,hybrid,repair,2026,candidate="spatial_lwin_lab",stagePrefix="spatial_lwin_",
+        policy=com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod)
+    TextLabSpatialPreview.append(noisy,extractor,hybrid,repair,2026,candidate="spatial_lab",stagePrefix="spatial_",
+        policy=com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading)
+    val lwinSummary=noisy.rows.single { it["stage"]=="spatial_lwin_evidence_summary" }
+    val labSummary=noisy.rows.single { it["stage"]=="spatial_evidence_summary" }
+    verify(lwinSummary["spatial_source_count"]=="12" && lwinSummary["spatial_filter_dropped"]=="0")
+    verify(labSummary["spatial_source_count"]=="6" && labSummary["spatial_filter_dropped"]=="6")
+    val labObs=noisy.rows.filter { it["stage"]=="spatial_evidence_observation" }.map { it["raw_text"] }.toSet()
+    verify("2019" in labObs && "20" in labObs && "16" in labObs && "CHATEAU EXEMPLE" in labObs)
+    verify("zxq" !in labObs && "Decanter" !in labObs && "95" !in labObs && "BADGE" !in labObs && "SIDE BOTTLE" !in labObs)
+    verify(TextLabBottleFilter.proposeZoomCrop(noisy)==null) // normal close-up footprint (>10%) does not zoom-crop
+
+    val tiny=TextLabJournal(setOf("candidate_3"),"tiny-zoom-check",true)
+    for((cand,txt,box) in listOf(
+        Triple("mlkit_reference","BAROLO","0.42 0.42 0.58 0.46"),
+        Triple("candidate_3","ESTATE","0.40 0.48 0.60 0.52"),
+        Triple("candidate_3","2019","0.47 0.55 0.53 0.58"),
+        Triple("mlkit_reference","DOCG","0.41 0.61 0.59 0.65"),
+    )) {
+        tiny.add(cand,"recognition",values=mapOf("raw_text" to txt,"base_box_normalized" to box,"original_box_normalized" to box,
+            "mlkit_confidence" to "0.9","ctc_posterior" to "0.9","confidence_estimated" to "false"))
+    }
+    tiny.add("mlkit_reference","summary","complete")
+    tiny.add("candidate_3","candidate_summary","complete")
+    val zoomCrop=TextLabBottleFilter.proposeZoomCrop(tiny)
+    verify(zoomCrop!=null && zoomCrop.top<=0.25f && zoomCrop.bottom>=0.75f && (zoomCrop.right-zoomCrop.left)*(zoomCrop.bottom-zoomCrop.top)<=0.40f)
     println("PASS: $checks actual Kotlin spatial-to-guarded extraction integration checks (host geometry/clock, not Android OCR).")
 }

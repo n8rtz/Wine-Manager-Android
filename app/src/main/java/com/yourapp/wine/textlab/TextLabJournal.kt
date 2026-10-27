@@ -12,6 +12,7 @@ import java.util.UUID
  */
 internal class TextLabJournal(val selected:Set<String>,val build:String,val detectLines:Boolean) {
     val id:String=UUID.randomUUID().toString()
+    var autoZoomTinyLabel:Boolean=false
     val metadata=linkedMapOf("schema_version" to "1","test_id" to id,"build" to build,
         "started_at_ms" to System.currentTimeMillis().toString(),"selected_candidates" to selected.sorted().joinToString(" "),
         "mode" to if(detectLines) "det_line_rec" else "manual_line_rec",

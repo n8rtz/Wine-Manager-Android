@@ -203,6 +203,8 @@ internal class WineAppLabelsOcrCache(
             "base_to_original",
             "original_to_base",
             "preparation_ms",
+            "auto_zoom_crop",
+            "auto_zoom_crop_skipped",
             "device",
             "android_api",
         )

@@ -25,7 +25,16 @@ internal object TextLabSpatialPreview {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
-            val original=TextLabFormPreview.records(journal)
+            val rawOriginal=TextLabFormPreview.records(journal)
+            val filterOutcome=if(policy.minimumIndependentEngines<2) TextLabBottleFilter.filterTokens(rawOriginal) else null
+            val original=filterOutcome?.kept ?: rawOriginal
+            filterOutcome?.dropped?.forEachIndexed { index,item ->
+                val token=item.entry.payload
+                journal.add(candidate,stagePrefix+"filtered",values=mapOf("post_processing_version" to VERSION,
+                    "region_id" to index.toString(),"raw_text" to token.textRaw,
+                    "source_engine" to token.engineId,"filter_reason" to item.reason,
+                    "base_box_normalized" to "${item.entry.rectBox.left} ${item.entry.rectBox.top} ${item.entry.rectBox.right} ${item.entry.rectBox.bottom}"))
+            }
             val proposals=TextLabSpatialPhrases.propose(original)
             for((index,proposal) in proposals.withIndex()) {
                 val mergedText=TextNorm.scrub(proposal.phrase.mergedText)
@@ -42,8 +51,15 @@ internal object TextLabSpatialPreview {
             val readings=original
             val work=TextLabJournal(journal.selected,journal.build,journal.detectLines)
             work.metadata.putAll(journal.metadata)
-            // Unchanged raw baseline anchor, NOT a separately evaluated production-v2.0 result.
-            work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
+            // Unchanged raw baseline anchor for Prod v3.0 and unfiltered images; when Lab v4 drops
+            // stray side-bottle or medal-sticker tokens, recompute the anchor on filtered readings so
+            // dropped noise cannot leak back through EvidenceAnchorHybrid.
+            if(filterOutcome!=null && filterOutcome.dropped.isNotEmpty() && engine!=null) {
+                work.rows.addAll(journal.rows.filter { it["stage"] in setOf("summary","candidate_summary") })
+                TextLabFormPreview.append(work,com.yourapp.wine.fill.FillEngine(engine.baseKb),year,recordsOverride=readings)
+            } else {
+                work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
+            }
             TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                 useProducerRepair=true,producerRepair=repair,recordsOverride=readings)
             val spans=original.mapIndexed { id,r -> ProducerResolver.Span(r.textRaw,r.engineId,setOf(id),r.scoreIsEstimated) }+
@@ -179,6 +195,7 @@ internal object TextLabSpatialPreview {
                     row.filterKeys { it !in setOf("candidate","stage","status","sequence","details") }+
                         mapOf("post_processing_version" to "$VERSION+${ProducerRepair.VERSION}+${ProducerResolver.VERSION}+${LinkedWineResolver.VERSION}",
                             "spatial_source_count" to original.size.toString(),"spatial_reading_count" to readings.size.toString(),
+                            "spatial_filter_dropped" to (filterOutcome?.dropped?.size ?: 0).toString(),
                             "spatial_merged_groups" to proposals.count { it.sources.size>1 }.toString()),row["details"].orEmpty())
             }
             check(journal.rows.any { it["stage"]==summaryStage }) { "Spatial extractor produced no summary" }

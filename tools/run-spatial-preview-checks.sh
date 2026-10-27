@@ -11,8 +11,8 @@ sources=("$root"/merge/*.kt "$root"/extract/*.kt "$root"/fill/*.kt "$lab"/eviden
 for name in WineKnowledgeBase FixtureKnowledgeBase PlaceGazetteer PlaceHierarchy WineTerms BundledGrapes BundledWineStyles BundledProducerNames BundledOrigins ReferenceWineCatalog GeneratedWineKnowledge SupplementedWineKnowledgeBase; do
  sources+=("$root/kb/$name.kt")
 done
-bash "$KOTLIN_HOME/bin/kotlinc" "${sources[@]}" "$root/ocr/Tokens.kt" "$root/textlab/PaddleCandidates.kt" \
- "$lab"/{TextLabSpatialPhrases,TextLabSpatialPreview,TextLabEvidencePreview,TextLabFormPreview,TextLabJournal,TextLabWineTable,TextLabChoices}.kt \
+bash "$KOTLIN_HOME/bin/kotlinc" "${sources[@]}" "$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/textlab/PaddleCandidates.kt" \
+ "$lab"/{TextLabSpatialPhrases,TextLabSpatialPreview,TextLabEvidencePreview,TextLabFormPreview,TextLabJournal,TextLabWineTable,TextLabChoices,TextCropGeometry,TextLabBottleFilter}.kt \
  app/src/main/java/com/yourapp/wine/gazetteer/{ProducerResolver,LinkedWineResolver}.kt \
  app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt \
  tools/logic-checks/{AndroidGeometry,AndroidLog,AndroidClock,SpatialPreviewChecks,ProducerResolverChecks,LinkedWineResolverChecks}.kt \

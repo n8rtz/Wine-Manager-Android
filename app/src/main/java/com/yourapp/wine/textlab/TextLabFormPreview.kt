@@ -7,13 +7,13 @@ import com.yourapp.wine.ocr.TokenRecord
 
 /** Combined saved-crop replay using production gates, not an end-to-end shutter/quad benchmark. */
 internal object TextLabFormPreview {
-    fun append(journal:TextLabJournal,engine:FillEngine?,year:Int) {
+    fun append(journal:TextLabJournal,engine:FillEngine?,year:Int,recordsOverride:List<TokenRecord>? = null) {
         if(journal.rows.any { it["stage"]=="form_summary" }) return
         val values=linkedMapOf("preview_policy" to "production FillEngine + cellar presentation; saved crop, not shutter replay",
             "field_year" to year.toString())
         try {
             check(engine!=null) { "Field engine unavailable" }
-            val records=records(journal)
+            val records=recordsOverride ?: records(journal)
             val partial=journal.rows.any { it["stage"] in setOf("candidate_summary","summary") && it["status"]!="complete" }
             val fill=CellarFieldPresentation.apply(engine.fill(records,year,ConfidenceContext(labelFound=false,weakQuality=partial,
                 hint="Saved-crop form preview; confirm suggestions. Camera localization and shutter budget were not replayed.")))
