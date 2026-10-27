@@ -12,6 +12,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -69,6 +71,18 @@ private data class MatrixWidths(val step: Dp, val fields: List<Dp>) {
     val total: Dp get() = fields.fold(step) { total, width -> total + width }
 }
 
+private val FAILURE_FILTER_OPTIONS = listOf(
+    "producer" to "Producer",
+    "wine_name" to "Wine name",
+    "country" to "Country",
+    "region" to "Region",
+    "subregion" to "Subregion",
+    "vintage" to "Vintage",
+)
+
+private fun isFieldFailure(row: Map<String, String>): Boolean =
+    row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())
+
 class WineAppLabelsActivity : ComponentActivity() {
     private val vm: WineAppLabelsViewModel by viewModels()
 
@@ -87,6 +101,7 @@ class WineAppLabelsActivity : ComponentActivity() {
         super.onStop()
     }
 
+    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     private fun Screen() {
         val state by vm.state.collectAsState()
@@ -121,7 +136,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     subregion = target("subregion"),
                     vintage = target("vintage"),
                 )
-            }
+            }.sortedBy { it.reviewNumber }
         }
         val coverage = remember {
             val data = JSONObject(context.assets.open("wine-app-labels-v1/gazetteer-coverage.json").bufferedReader().use { it.readText() })
@@ -132,9 +147,30 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
         }
         val fieldRows = state.board?.csv.orEmpty().filter { it["row_type"] == "field" }.groupBy { it["image"] }
+        val failedFieldsByImage = remember(fieldRows) {
+            fieldRows.mapNotNull { (image, rows) ->
+                val key = image ?: return@mapNotNull null
+                val failed = rows.filter(::isFieldFailure).mapNotNull { it["field"] }.toSet()
+                val incomplete = failed.isNotEmpty() || rows.any { it["form_status"] == "execution_failed" }
+                if (incomplete) key to failed else null
+            }.toMap()
+        }
+        val incompleteCases = remember(cases, failedFieldsByImage) {
+            cases.filter { it.image in failedFieldsByImage }
+        }
         var showDiagnostics by remember { mutableStateOf(true) }
         var expandedDiagnostics by remember(state.mode) { mutableStateOf(emptySet<String>()) }
-        var showReviewedLabels by remember { mutableStateOf(false) }
+        var showIncompleteLabels by remember { mutableStateOf(false) }
+        var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }
+        val filteredIncompleteCases = remember(incompleteCases, failedFieldsByImage, selectedFailureFields) {
+            if (selectedFailureFields.isEmpty()) {
+                incompleteCases
+            } else {
+                incompleteCases.filter { wineCase ->
+                    failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }
+                }
+            }
+        }
 
         LazyColumn(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -444,37 +480,92 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
             item {
-                TextButton(onClick = { showReviewedLabels = !showReviewedLabels }, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { showIncompleteLabels = !showIncompleteLabels }, modifier = Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Reviewed labels", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Text(if (showReviewedLabels) "▲" else "▼", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "Incomplete labels (${incompleteCases.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(if (showIncompleteLabels) "▲" else "▼", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
-            if (showReviewedLabels) {
-                items(cases, key = { it.image }) { wineCase ->
-                val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        LabelThumbnail(wineCase.image)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
-                            Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(listOf(wineCase.country, wineCase.region, wineCase.subregion, wineCase.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                            if (results.isNotEmpty()) {
-                                HorizontalDivider(Modifier.padding(vertical = 3.dp))
-                                listOf("producer", "wine_name", "country", "region", "subregion", "vintage").forEach { field ->
-                                    val result = results[field] ?: return@forEach
-                                    val expected = result["expected"].takeUnless { it.isNullOrBlank() } ?: result["reference_status"].orEmpty()
-                                    val actual = result["recognized"].orEmpty().ifBlank { "(blank)" }
-                                    Text("$field: $actual  ·  ${result["outcome"]}  ·  expected $expected", style = MaterialTheme.typography.bodySmall)
+            if (showIncompleteLabels) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            FAILURE_FILTER_OPTIONS.forEach { (fieldKey, label) ->
+                                val selected = fieldKey in selectedFailureFields
+                                val count = incompleteCases.count { fieldKey in failedFieldsByImage[it.image].orEmpty() }
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = {
+                                        selectedFailureFields = if (selected) {
+                                            selectedFailureFields - fieldKey
+                                        } else {
+                                            selectedFailureFields + fieldKey
+                                        }
+                                    },
+                                    label = { Text("$label ($count)") },
+                                )
+                            }
+                        }
+                        if (selectedFailureFields.isNotEmpty()) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Showing ${filteredIncompleteCases.size}/${incompleteCases.size}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                TextButton(onClick = { selectedFailureFields = emptySet() }) {
+                                    Text("Clear filters")
+                                }
+                            }
+                        }
+                        if (fieldRows.isEmpty()) {
+                            Text("No scored labels yet.", style = MaterialTheme.typography.bodySmall)
+                        } else if (incompleteCases.isEmpty()) {
+                            Text("All scored labels are completely correct.", style = MaterialTheme.typography.bodySmall)
+                        } else if (filteredIncompleteCases.isEmpty()) {
+                            Text("No labels failed the selected filter(s).", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                items(filteredIncompleteCases, key = { it.image }) { wineCase ->
+                    val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
+                    Card(Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            LabelThumbnail(wineCase.image)
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
+                                Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(listOf(wineCase.country, wineCase.region, wineCase.subregion, wineCase.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                                if (results.isNotEmpty()) {
+                                    HorizontalDivider(Modifier.padding(vertical = 3.dp))
+                                    listOf("producer", "wine_name", "country", "region", "subregion", "vintage").forEach { field ->
+                                        val result = results[field] ?: return@forEach
+                                        val expected = result["expected"].takeUnless { it.isNullOrBlank() } ?: result["reference_status"].orEmpty()
+                                        val actual = result["recognized"].orEmpty().ifBlank { "(blank)" }
+                                        val failed = isFieldFailure(result)
+                                        Text(
+                                            "$field: $actual  ·  ${result["outcome"]}  ·  expected $expected",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (failed) MaterialTheme.colorScheme.error else Color.Unspecified,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
             }
     }
 }

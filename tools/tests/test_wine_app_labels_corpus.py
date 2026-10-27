@@ -310,8 +310,34 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         for kept in ('Text("Large image dataset test"', '"125 retained workbook-linked wine labels', 'Text(mode.title)',
                      'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
                      'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
-                     'Pipeline bottleneck matrix', 'Gazetteer database coverage', 'Reviewed labels'):
+                     'Pipeline bottleneck matrix', 'Gazetteer database coverage', 'Incomplete labels ('):
             self.assertIn(kept, activity)
+        self.assertNotIn('Reviewed labels', activity)
+
+    def test_incomplete_labels_section_is_collapsed_by_default_with_multi_field_failure_toggles(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        # Replaced Reviewed labels with collapsible Incomplete labels section, collapsed by default.
+        self.assertNotIn("showReviewedLabels", activity)
+        self.assertIn("var showIncompleteLabels by remember { mutableStateOf(false) }", activity)
+        self.assertIn("var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }", activity)
+        self.assertIn('"Incomplete labels (${incompleteCases.size})"', activity)
+        self.assertIn("if (showIncompleteLabels) {", activity)
+
+        # Six failure-filter toggle buttons supporting simultaneous multi-select.
+        for key, label in (
+            ("producer", "Producer"),
+            ("wine_name", "Wine name"),
+            ("country", "Country"),
+            ("region", "Region"),
+            ("subregion", "Subregion"),
+            ("vintage", "Vintage"),
+        ):
+            self.assertIn(f'"{key}" to "{label}"', activity)
+        self.assertIn("FilterChip(", activity)
+        self.assertIn("selectedFailureFields - fieldKey", activity)
+        self.assertIn("selectedFailureFields + fieldKey", activity)
+        self.assertIn('row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())', activity)
+        self.assertIn("failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }", activity)
 
     def test_background_execution_and_lab_ocr_cache_contracts(self):
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
