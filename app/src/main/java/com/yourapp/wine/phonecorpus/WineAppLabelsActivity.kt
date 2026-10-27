@@ -8,7 +8,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -22,15 +30,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -44,6 +61,7 @@ import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.abs
 
 /** Bottleneck-matrix cell: passed counts green, failed counts red, matching the corpus screen. */
 private fun passFailLabel(passed: Int, failed: Int, passColor: Color, failColor: Color, shared: Boolean = false, notReached: Int = 0, notRecorded: Int = 0, notApplicable: Int = 0): AnnotatedString = buildAnnotatedString {
@@ -162,6 +180,7 @@ class WineAppLabelsActivity : ComponentActivity() {
         var expandedDiagnostics by remember(state.mode) { mutableStateOf(emptySet<String>()) }
         var showIncompleteLabels by remember { mutableStateOf(false) }
         var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }
+        var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }
         val filteredIncompleteCases = remember(incompleteCases, failedFieldsByImage, selectedFailureFields) {
             if (selectedFailureFields.isEmpty()) {
                 incompleteCases
@@ -545,7 +564,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
                     Card(Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            LabelThumbnail(wineCase.image)
+                            LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
                                 Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -569,12 +588,15 @@ class WineAppLabelsActivity : ComponentActivity() {
                     }
                 }
             }
-            }
+        }
+        expandedImage?.let { image ->
+            ZoomableLabelDialog(image = image, onDismiss = { expandedImage = null })
+        }
     }
 }
 
 @Composable
-private fun LabelThumbnail(image: String) {
+private fun LabelThumbnail(image: String, onClick: () -> Unit) {
     val context = LocalContext.current
     val bitmap by produceState<android.graphics.Bitmap?>(null, image) {
         value = withContext(Dispatchers.IO) {
@@ -585,8 +607,116 @@ private fun LabelThumbnail(image: String) {
         }
     }
     if (bitmap != null) {
-        Image(bitmap!!.asImageBitmap(), contentDescription = image, modifier = Modifier.size(width = 82.dp, height = 112.dp), contentScale = ContentScale.Fit)
+        Image(
+            bitmap!!.asImageBitmap(),
+            contentDescription = image,
+            modifier = Modifier.size(width = 82.dp, height = 112.dp).clickable(onClick = onClick),
+            contentScale = ContentScale.Fit,
+        )
     } else {
-        Spacer(Modifier.size(width = 82.dp, height = 112.dp))
+        Spacer(Modifier.size(width = 82.dp, height = 112.dp).clickable(onClick = onClick))
+    }
+}
+
+@Composable
+private fun ZoomableLabelDialog(image: String, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    val bitmap by produceState<android.graphics.Bitmap?>(null, image) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                context.assets.open("wine-app-labels-v1/images/$image").use { BitmapFactory.decodeStream(it) }
+            }.getOrNull()
+        }
+    }
+    var scale by remember(image) { mutableStateOf(1f) }
+    var offset by remember(image) { mutableStateOf(Offset.Zero) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.92f))
+                .clipToBounds()
+                .onSizeChanged { containerSize = it }
+                .pointerInput(image) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        var movedPastSlop = false
+                        var multiTouch = currentEvent.changes.count { it.pressed } > 1
+                        var wasCanceled = false
+                        var totalPan = Offset.Zero
+                        var zoomAccumulator = 1f
+                        val touchSlop = viewConfiguration.touchSlop
+                        do {
+                            val event = awaitPointerEvent()
+                            val canceled = event.changes.any { it.isConsumed }
+                            if (canceled) {
+                                wasCanceled = true
+                            } else {
+                                if (event.changes.count { it.pressed } > 1) multiTouch = true
+                                val zoomChange = event.calculateZoom()
+                                val panChange = event.calculatePan()
+                                if (!movedPastSlop) {
+                                    zoomAccumulator *= zoomChange
+                                    totalPan += panChange
+                                    val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                                    val zoomMotion = abs(1f - zoomAccumulator) * centroidSize
+                                    if (zoomMotion > touchSlop || totalPan.getDistance() > touchSlop) {
+                                        movedPastSlop = true
+                                    }
+                                }
+                                if (movedPastSlop) {
+                                    val centroid = event.calculateCentroid(useCurrent = false)
+                                    if ((zoomChange != 1f || panChange != Offset.Zero) && zoomChange.isFinite() && panChange != Offset.Unspecified) {
+                                        val oldScale = scale
+                                        val newScale = (oldScale * zoomChange).coerceIn(1f, 8f)
+                                        val effectiveZoom = newScale / oldScale
+                                        val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
+                                        val pivot = if (centroid != Offset.Unspecified) centroid else center
+                                        val rawOffset = (offset + panChange) * effectiveZoom +
+                                            (center - pivot) * (effectiveZoom - 1f)
+                                        val maxX = (containerSize.width * (newScale - 1f)) / 2f
+                                        val maxY = (containerSize.height * (newScale - 1f)) / 2f
+                                        scale = newScale
+                                        offset = Offset(
+                                            x = rawOffset.x.coerceIn(-maxX, maxX),
+                                            y = rawOffset.y.coerceIn(-maxY, maxY),
+                                        )
+                                    }
+                                    event.changes.forEach { change ->
+                                        if (change.positionChanged()) change.consume()
+                                    }
+                                }
+                            }
+                        } while (!canceled && event.changes.any { it.pressed })
+
+                        if (!wasCanceled && !movedPastSlop && !multiTouch) {
+                            currentOnDismiss()
+                        }
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            bitmap?.let { loaded ->
+                Image(
+                    bitmap = loaded.asImageBitmap(),
+                    contentDescription = image,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = offset.x
+                            translationY = offset.y
+                        },
+                )
+            }
+        }
     }
 }

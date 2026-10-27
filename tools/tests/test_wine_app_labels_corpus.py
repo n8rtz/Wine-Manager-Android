@@ -365,6 +365,16 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())', activity)
         self.assertIn("failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }", activity)
 
+        # Clicking the thumbnail opens a full-resolution zoomable (pinch / pan) dialog; single tap dismisses it.
+        self.assertIn("var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }", activity)
+        self.assertIn("LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })", activity)
+        self.assertIn("ZoomableLabelDialog(image = image, onDismiss = { expandedImage = null })", activity)
+        self.assertIn("DialogProperties(usePlatformDefaultWidth = false)", activity)
+        self.assertIn("event.calculateZoom()", activity)
+        self.assertIn("event.calculatePan()", activity)
+        self.assertIn("if (!wasCanceled && !movedPastSlop && !multiTouch)", activity)
+        self.assertIn("currentOnDismiss()", activity)
+
     def test_lab_v4_last_build_row_and_scalar_results_log_contracts(self):
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
