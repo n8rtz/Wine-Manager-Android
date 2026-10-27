@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.gazetteer.LinkedWineResolver
 import com.yourapp.wine.diagnostics.PipelineFunnel
+import com.yourapp.wine.merge.TextNorm
 
 /** Current spatial pipeline, shared by the two gazetteer benchmark contenders. No second OCR pass.
  * The raw form summary is an internal anchor required by the existing guarded algorithm.
@@ -27,8 +28,9 @@ internal object TextLabSpatialPreview {
             val original=TextLabFormPreview.records(journal)
             val proposals=TextLabSpatialPhrases.propose(original)
             for((index,proposal) in proposals.withIndex()) {
+                val mergedText=TextNorm.scrub(proposal.phrase.mergedText)
                 journal.add(candidate,stagePrefix+"phrase",values=mapOf("post_processing_version" to VERSION,
-                    "region_id" to index.toString(),"raw_text" to proposal.phrase.mergedText,
+                    "region_id" to index.toString(),"raw_text" to mergedText,
                     "source_engine" to proposal.engineId,"source_variant" to proposal.variantId,
                     "source_indices_in_engine_pass" to proposal.phrase.sourceIndices.joinToString(" "),
                     "source_texts" to proposal.sources.joinToString("\n") { it.textRaw },
@@ -45,7 +47,7 @@ internal object TextLabSpatialPreview {
             TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                 useProducerRepair=true,producerRepair=repair,recordsOverride=readings)
             val spans=original.mapIndexed { id,r -> ProducerResolver.Span(r.textRaw,r.engineId,setOf(id),r.scoreIsEstimated) }+
-                proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(p.phrase.mergedText,p.engineId,
+                proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(TextNorm.scrub(p.phrase.mergedText),p.engineId,
                     p.sources.map { source -> original.indexOfFirst { it===source } }.filter { it>=0 }.toSet(),true) }
             for(rawRow in work.rows.filter { it["stage"]!="form_summary" }) {
                 val row=rawRow.toMutableMap()
@@ -58,9 +60,13 @@ internal object TextLabSpatialPreview {
                         row["producer_gazetteer_reason"]=producerUnavailable
                         row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
+                        val isLabMode=policy.minimumIndependentEngines<2
                         val started=android.os.SystemClock.elapsedRealtime()
                         var producerFailureTelemetry=emptyMap<String,String>()
-                        val decision=try { ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget,policy) }
+                        fun runProducerLookup(policy:ProducerResolver.Policy)=
+                            ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget,policy)
+                        val activePolicy=if(isLabMode) policy.withCountryContext(row["country"].orEmpty()) else policy
+                        val decision=try { runProducerLookup(activePolicy) }
                             catch(cancel:CancellationException) { throw cancel }
                             catch(error:Exception) { ProducerResolver.Decision(before,"lookup failed; unchanged: ${error.javaClass.simpleName}",emptyList(),telemetry=
                                 producerFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("producer.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
@@ -84,14 +90,18 @@ internal object TextLabSpatialPreview {
                         }
                         val linkedIndex=producerIndex as? LinkedWineResolver.Index
                         row["wine_before_gazetteer"]=row["wine_name"].orEmpty()
+                        var linkedDecision:LinkedWineResolver.Decision?=null
                         if(linkedIndex!=null) {
                             val wineStart=android.os.SystemClock.elapsedRealtime()
                             val wineBefore=row["wine_name"].orEmpty()
                             var wineFailureTelemetry=emptyMap<String,String>()
-                            val linked=try { LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget,policy) }
+                            fun runLinkedWineLookup(policy:ProducerResolver.Policy)=
+                                LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget,policy)
+                            val linked=try { runLinkedWineLookup(activePolicy) }
                                 catch(cancel:CancellationException) { throw cancel }
                                 catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}",telemetry=
                                     wineFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("wine.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
+                            linkedDecision=linked
                             row.putAll(linked.telemetry)
                             val wineMs=android.os.SystemClock.elapsedRealtime()-wineStart
                             row["wine_gazetteer_ms"]=wineMs.toString()
@@ -121,6 +131,47 @@ internal object TextLabSpatialPreview {
                             }
                         } else {
                             row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]="linked wine index unavailable"
+                        }
+                        if(isLabMode && engine!=null) {
+                            var backfilled=false
+                            val confirmedWine=linkedDecision
+                            val acceptedProducerId=confirmedWine?.producerId ?: decision.acceptedId
+                            val acceptedEntity=acceptedProducerId?.let { id -> decision.matches.firstOrNull { it.entity.id==id }?.entity }
+                            if(confirmedWine!=null && confirmedWine.wineId!=null) {
+                                val inferred=engine.resolveLinkedWineGeography(
+                                    confirmedWine.wine,
+                                    row["country"].orEmpty(),
+                                    row["region"].orEmpty(),
+                                    row["subregion"].orEmpty(),
+                                    acceptedEntity?.countryGroup.orEmpty(),
+                                )
+                                for((fieldId,value) in inferred) {
+                                    val fieldKey=fieldId.name.lowercase(java.util.Locale.ROOT)
+                                    if(row[fieldKey].orEmpty().isBlank()) {
+                                        row[fieldKey]=value
+                                        row["${fieldKey}_state"]="YELLOW"
+                                        row["${fieldKey}_reason"]="inferred from confirmed LWIN producer+wine pair (${confirmedWine.lwin7.ifBlank { confirmedWine.wineId.orEmpty() }}); confirm manually"
+                                        row["${fieldKey}_alternatives"]=""
+                                        backfilled=true
+                                    }
+                                }
+                            }
+                            if(row["country"].orEmpty().isBlank() && acceptedEntity!=null && acceptedEntity.countryGroup.isNotBlank()) {
+                                val countryName=engine.canonicalCountryName(acceptedEntity.countryGroup)
+                                val sameKeyCountries=decision.matches.filter { it.entity.key==acceptedEntity.key }
+                                    .mapNotNull { m -> m.entity.countryGroup.takeIf(String::isNotBlank)?.let(engine::canonicalCountryName) }.toSet()
+                                if(countryName!=null && sameKeyCountries.size==1) {
+                                    row["country"]=countryName
+                                    row["country_state"]="YELLOW"
+                                    row["country_reason"]="unambiguous LWIN producer country (${acceptedEntity.name}); confirm manually"
+                                    row["country_alternatives"]=""
+                                    backfilled=true
+                                }
+                            }
+                            if(backfilled) {
+                                row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
+                                row["status"]="suggestions"
+                            }
                         }
                     }
                 }

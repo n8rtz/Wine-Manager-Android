@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Looper
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.yourapp.wine.merge.TextNorm
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
@@ -31,8 +32,11 @@ internal class ProducerGazetteer private constructor(
                 while (statement.step()) {
                     checkBudget()
                     rows += ProducerResolver.Entity(
-                        statement.getText(0), statement.getText(1), statement.getText(2),
+                        statement.getText(0),
+                        TextNorm.scrub(statement.getText(1)),
+                        ProducerResolver.normalize(statement.getText(2)),
                         if (trackSources) setOf(statement.getText(3)) else emptySet(),
+                        TextNorm.scrub(statement.getText(if (trackSources) 4 else 3)),
                     )
                 }
             }
@@ -40,15 +44,15 @@ internal class ProducerGazetteer private constructor(
         }
         // Expanded indexes tag every entity with its source so suggestions stay attributable.
         val exactSql = if (trackSources)
-            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin') FROM producers p LEFT JOIN producer_sources s ON s.id=p.id WHERE p.key=? ORDER BY p.id LIMIT ?"
-            else "SELECT id,name,key FROM producers WHERE key=? ORDER BY id LIMIT ?"
+            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin'),COALESCE(p.country_group,'') FROM producers p LEFT JOIN producer_sources s ON s.id=p.id WHERE p.key=? ORDER BY p.id LIMIT ?"
+            else "SELECT id,name,key,COALESCE(country_group,'') FROM producers WHERE key=? ORDER BY id LIMIT ?"
         val exact = read(exactSql, key)
         if (exact.isNotEmpty()) return exact
         val query = key.windowed(3).filter { it.none(Char::isWhitespace) }.distinct().take(24)
             .joinToString(" OR ") { "\"$it\"" }
         val fuzzySql = if (trackSources)
-            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin') FROM names JOIN producers p ON names.id=p.id LEFT JOIN producer_sources s ON s.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
-            else "SELECT p.id,p.name,p.key FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
+            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin'),COALESCE(p.country_group,'') FROM names JOIN producers p ON names.id=p.id LEFT JOIN producer_sources s ON s.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
+            else "SELECT p.id,p.name,p.key,COALESCE(p.country_group,'') FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
         return if (query.isBlank()) emptyList() else read(fuzzySql, query)
     }
 
@@ -77,8 +81,11 @@ internal class ProducerGazetteer private constructor(
                 while (statement.step()) {
                     checkBudget()
                     rows += LinkedWineResolver.Wine(
-                        statement.getLong(0).toString(), statement.getText(1), statement.getText(2),
-                        statement.getText(3), statement.getText(4),
+                        statement.getLong(0).toString(),
+                        TextNorm.scrub(statement.getText(1)),
+                        ProducerResolver.normalize(statement.getText(2)),
+                        statement.getText(3),
+                        statement.getText(4),
                     )
                 }
             }

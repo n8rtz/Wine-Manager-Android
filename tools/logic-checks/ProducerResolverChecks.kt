@@ -11,7 +11,7 @@ fun main() {
     }
     fun spans(text:String="Chateau Example")=listOf(ProducerResolver.Span(text,"mlkit",setOf(1)),ProducerResolver.Span(text,"paddle",setOf(2),true))
     val resolver=ProducerResolver(index(listOf(primary)))
-    verify(resolver.resolve("",spans()).value==primary.name)
+    verify(resolver.resolve("",spans()).value=="Chateau Example")
     verify(resolver.resolve("Existing Good Producer",spans()).value=="Existing Good Producer")
     verify(resolver.resolve("",listOf(spans()[0],spans()[1].copy(observationIds=setOf(1)))).acceptedId==null)
     verify(resolver.resolve("",spans().take(1)).value.isBlank()) // secondary source counts are not votes
@@ -42,5 +42,11 @@ fun main() {
         ProducerResolver.normalize("Château Examplar"))))).resolve("",oneEngine,policy=lab).acceptedId==null) // ambiguity still blocks
     verify(resolver.resolve("",spans("Imported by Chateau Example"),policy=lab).acceptedId==null) // eligibility unchanged
     verify(resolver.resolve("",List(129) { spans()[0] },policy=lab).acceptedId==null) // span bound unchanged
+    val frHomonym=primary.copy(id="estate-fr",countryGroup="France")
+    val clHomonym=primary.copy(id="estate-cl",countryGroup="Chile")
+    val homonyms=ProducerResolver(index(listOf(frHomonym,clHomonym)))
+    verify(homonyms.resolve("",oneEngine,policy=lab).acceptedId==null)
+    verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("France")).acceptedId=="estate-fr")
+    verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("Argentina")).acceptedId==null)
     println("PASS: $checks conservative producer resolver checks (actual Kotlin; fixture data, no accuracy claim).")
 }

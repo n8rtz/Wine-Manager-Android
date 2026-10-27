@@ -417,13 +417,14 @@ Greco di Bianco
 Bianco
 Scilla
 Bivongi
+IT|Italy|Abruzzo|appellation
+Terre di Chieti
 IT|Italy||appellation
 Prosecco
 Lugana
 Orvieto
 Orvieto Classico
 Vino d'Italia
-Terre di Chieti
 IT|Italy||geography
 Vino
 Mediterraneo

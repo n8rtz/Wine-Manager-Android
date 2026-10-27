@@ -1,34 +1,34 @@
 id,name,country_code,country,regions,aliases,name_role,match_policy,review,path,source_id,source_record
 am-aragatsotn,Aragatsotn,AM,Armenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 am-vayots-dzor,Vayots Dzor,AM,Armenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-alto-valle-del-rio-negro,Alto Valle del Río Negro,AR,Argentina,Río Negro,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-alto-valle-del-rio-negro,Alto Valle del Rio Negro,AR,Argentina,Rio Negro,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-cafayate,Cafayate,AR,Argentina,Salta,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-calingasta,Calingasta,AR,Argentina,San Juan,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-catamarca,Catamarca,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-chapadmalal,Chapadmalal,AR,Argentina,Buenos Aires,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-chilecito,Chilecito,AR,Argentina,La Rioja Argentina,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-famatina,Famatina,AR,Argentina,La Rioja Argentina,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-fiambala,Fiambalá,AR,Argentina,Catamarca,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-fiambala,Fiambala,AR,Argentina,Catamarca,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-general-alvear,General Alvear,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-iglesia,Iglesia,AR,Argentina,San Juan,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-la-rioja-argentina,La Rioja Argentina,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-lujan-de-cuyo,Luján de Cuyo,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-maipu,Maipú,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-medanos,Médanos,AR,Argentina,Buenos Aires,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-lujan-de-cuyo,Lujan de Cuyo,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-maipu,Maipu,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-medanos,Medanos,AR,Argentina,Buenos Aires,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-mendoza,Mendoza,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-ar-neuquen,Neuquén,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-neuquen,Neuquen,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-pedernal,Pedernal,AR,Argentina,San Juan,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-rio-colorado,Río Colorado,AR,Argentina,Río Negro,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-rio-negro,Río Negro,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-rio-colorado,Rio Colorado,AR,Argentina,Rio Negro,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-rio-negro,Rio Negro,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-salta,Salta,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-san-carlos,San Carlos,AR,Argentina,Mendoza,,geography,exact,reference_confirm,Mendoza/Valle de Uco,editorial-v1,Project-authored; not a legal registry
 ar-san-juan,San Juan,AR,Argentina,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-san-patricio-del-chanar,San Patricio del Chañar,AR,Argentina,Neuquén,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ar-san-patricio-del-chanar,San Patricio del Chanar,AR,Argentina,Neuquen,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-san-rafael,San Rafael,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-sarmiento,Sarmiento,AR,Argentina,San Juan,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-tinogasta,Tinogasta,AR,Argentina,Catamarca,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-tulum,Tulum,AR,Argentina,San Juan,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ar-tunuyan,Tunuyán,AR,Argentina,Mendoza,,geography,exact,reference_confirm,Mendoza/Valle de Uco,editorial-v1,Project-authored; not a legal registry
+ar-tunuyan,Tunuyan,AR,Argentina,Mendoza,,geography,exact,reference_confirm,Mendoza/Valle de Uco,editorial-v1,Project-authored; not a legal registry
 ar-tupungato,Tupungato,AR,Argentina,Mendoza,,geography,exact,reference_confirm,Mendoza/Valle de Uco,editorial-v1,Project-authored; not a legal registry
 ar-ullum,Ullum,AR,Argentina,San Juan,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ar-valle-de-uco,Valle de Uco,AR,Argentina,Mendoza,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -47,11 +47,11 @@ at-leithaberg-dac,Leithaberg DAC,AT,Austria,Neusiedlersee,,appellation,exact,ref
 at-mittelburgenland,Mittelburgenland,AT,Austria,Mittelburgenland,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-mittelburgenland-dac,Mittelburgenland DAC,AT,Austria,Mittelburgenland,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-neusiedlersee,Neusiedlersee,AT,Austria,Neusiedlersee,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-at-osterreich,Österreich,AT,Austria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+at-osterreich,Osterreich,AT,Austria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-rosalia,Rosalia,AT,Austria,Rosalia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-rosalia-dac,Rosalia DAC,AT,Austria,Rosalia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-at-sudsteiermark,Südsteiermark,AT,Austria,Südsteiermark,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-at-sudsteiermark-dac,Südsteiermark DAC,AT,Austria,Südsteiermark,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+at-sudsteiermark,Sudsteiermark,AT,Austria,Sudsteiermark,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+at-sudsteiermark-dac,Sudsteiermark DAC,AT,Austria,Sudsteiermark,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-thermenregion,Thermenregion,AT,Austria,Thermenregion,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-thermenregion-dac,Thermenregion DAC,AT,Austria,Thermenregion,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 at-traisental,Traisental,AT,Austria,Traisental,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -175,20 +175,20 @@ au-western-plains,Western Plains,AU,Australia,New South Wales,,geography,exact,r
 au-western-victoria,Western Victoria,AU,Australia,Victoria,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 au-wrattonbully,Wrattonbully,AU,Australia,South Australia,,geography,exact,reference_confirm,South Australia/Limestone Coast,editorial-v1,Project-authored; not a legal registry
 au-yarra-valley,Yarra Valley,AU,Australia,Victoria,,geography,exact,reference_confirm,Victoria/Port Phillip,editorial-v1,Project-authored; not a legal registry
-bg-danube-plain,Danube Plain,BG,Bulgaria,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+bg-danube-plain,Danube Plain,BG,Bulgaria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 bg-danubian-plain,Danubian Plain,BG,Bulgaria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-bg-melnik,Melnik,BG,Bulgaria,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-bg-rose-valley,Rose Valley,BG,Bulgaria,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-bg-sakar,Sakar,BG,Bulgaria,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-bg-southern-black-sea-coast,Southern Black Sea Coast,BG,Bulgaria,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-bg-struma-river-valley,Struma River Valley,BG,Bulgaria,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+bg-melnik,Melnik,BG,Bulgaria,Struma River Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+bg-rose-valley,Rose Valley,BG,Bulgaria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+bg-sakar,Sakar,BG,Bulgaria,Thracian Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+bg-southern-black-sea-coast,Southern Black Sea Coast,BG,Bulgaria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+bg-struma-river-valley,Struma River Valley,BG,Bulgaria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 bg-thracian-lowlands,Thracian Lowlands,BG,Bulgaria,Thracian Valley,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 bg-thracian-valley,Thracian Valley,BG,Bulgaria,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 bo-tarija,Tarija,BO,Bolivia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 bo-valle-de-cinti,Valle de Cinti,BO,Bolivia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-br-campanha-gaucha,Campanha Gaúcha,BR,Brazil,Rio Grande do Sul,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+br-campanha-gaucha,Campanha Gaucha,BR,Brazil,Rio Grande do Sul,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 br-pinto-bandeira,Pinto Bandeira,BR,Brazil,Rio Grande do Sul,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-br-serra-gaucha,Serra Gaúcha,BR,Brazil,Rio Grande do Sul,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+br-serra-gaucha,Serra Gaucha,BR,Brazil,Rio Grande do Sul,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 br-vale-dos-vinhedos,Vale dos Vinhedos,BR,Brazil,Rio Grande do Sul,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ca-annapolis-valley,Annapolis Valley,CA,Canada,Nova Scotia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ca-beamsville-bench,Beamsville Bench,CA,Canada,Ontario,,geography,exact,reference_confirm,Ontario/Niagara Peninsula,editorial-v1,Project-authored; not a legal registry
@@ -224,21 +224,21 @@ ca-thompson-valley,Thompson Valley,CA,Canada,British Columbia,,geography,exact,r
 ca-twenty-mile-bench,Twenty Mile Bench,CA,Canada,Ontario,,geography,exact,reference_confirm,Ontario/Niagara Peninsula,editorial-v1,Project-authored; not a legal registry
 ca-vancouver-island,Vancouver Island,CA,Canada,British Columbia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ca-vinemount-ridge,Vinemount Ridge,CA,Canada,Ontario,,geography,exact,reference_confirm,Ontario/Niagara Peninsula,editorial-v1,Project-authored; not a legal registry
-ch-auvernier,Auvernier,CH,Switzerland,Neuchâtel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-bundner-herrschaft,Bündner Herrschaft,CH,Switzerland,Graubünden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-auvernier,Auvernier,CH,Switzerland,Neuchatel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-bundner-herrschaft,Bundner Herrschaft,CH,Switzerland,Graubunden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-chablais,Chablais,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-cortaillod,Cortaillod,CH,Switzerland,Neuchâtel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-cotes-de-l-orbe,Côtes de l'Orbe,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-dezaley,Dézaley,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-cortaillod,Cortaillod,CH,Switzerland,Neuchatel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-cotes-de-l-orbe,Cotes de l'Orbe,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-dezaley,Dezaley,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-fully,Fully,CH,Switzerland,Valais,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-geneve,Genève,CH,Switzerland,,Geneva,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-graubunden,Graubünden,CH,Switzerland,,Grisons,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-la-cote,La Côte,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-geneve,Geneve,CH,Switzerland,,Geneva,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-graubunden,Graubunden,CH,Switzerland,,Grisons,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-la-cote,La Cote,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-lavaux,Lavaux,CH,Switzerland,Vaud,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-leytron,Leytron,CH,Switzerland,Valais,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-mandement,Mandement,CH,Switzerland,Genève,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-mandement,Mandement,CH,Switzerland,Geneve,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-martigny,Martigny,CH,Switzerland,Valais,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ch-neuchatel,Neuchâtel,CH,Switzerland,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ch-neuchatel,Neuchatel,CH,Switzerland,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-salquenen,Salquenen,CH,Switzerland,Valais,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-schweiz,Schweiz,CH,Switzerland,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-sierre,Sierre,CH,Switzerland,Valais,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -249,17 +249,17 @@ ch-ticino,Ticino,CH,Switzerland,,Tessin,geography,exact,reference_confirm,,edito
 ch-valais,Valais,CH,Switzerland,,Wallis,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ch-vaud,Vaud,CH,Switzerland,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-aconcagua-valley,Aconcagua Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-cl-bio-bio-valley,Bío-Bío Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+cl-bio-bio-valley,Bio-Bio Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-cachapoal-valley,Cachapoal Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-casablanca-valley,Casablanca Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-cauquenes-valley,Cauquenes Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-choapa-valley,Choapa Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-colchagua-valley,Colchagua Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-cl-curico-valley,Curicó Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+cl-curico-valley,Curico Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-elqui-valley,Elqui Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-itata-valley,Itata Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-leyda-valley,Leyda Valley,CL,Chile,San Antonio Valley,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-cl-limari-valley,Limarí Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+cl-limari-valley,Limari Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-loncomilla-valley,Loncomilla Valley,CL,Chile,Maule Valley,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-maipo-valley,Maipo Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 cl-malleco-valley,Malleco Valley,CL,Chile,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -293,10 +293,10 @@ de-baden,Baden,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Proj
 de-bernkastel,Bernkastel,DE,Germany,Mosel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-bingen,Bingen,DE,Germany,Rheinhessen,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-bodensee,Bodensee,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-de-deutsche-weinstra-e,Deutsche Weinstraße,DE,Germany,Pfalz,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+de-deutsche-weinstrasse,Deutsche Weinstrasse,DE,Germany,Pfalz,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-deutscher-wein,Deutscher Wein,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-franken,Franken,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-de-hessische-bergstra-e,Hessische Bergstraße,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+de-hessische-bergstrasse,Hessische Bergstrasse,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-johannisberg,Johannisberg,DE,Germany,Rheingau,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-kaiserstuhl,Kaiserstuhl,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-kraichgau,Kraichgau,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -304,7 +304,7 @@ de-landwein,Landwein,DE,Germany,,,geography,exact,reference_confirm,,editorial-v
 de-maindreieck,Maindreieck,DE,Germany,Franken,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-mainviereck,Mainviereck,DE,Germany,Franken,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-mainz,Mainz,DE,Germany,Rheinhessen,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-de-markgraflerland,Markgräflerland,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+de-markgraflerland,Markgraflerland,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-mittelhaardt,Mittelhaardt,DE,Germany,Pfalz,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-mittelrhein,Mittelrhein,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-mosel,Mosel,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -316,19 +316,19 @@ de-ortenau,Ortenau,DE,Germany,Baden,,geography,exact,reference_confirm,,editoria
 de-pfalz,Pfalz,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-rheingau,Rheingau,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-rheinhessen,Rheinhessen,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-de-rudesheim,Rüdesheim,DE,Germany,Rheingau,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+de-rudesheim,Rudesheim,DE,Germany,Rheingau,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-ruwer,Ruwer,DE,Germany,Mosel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-saale-unstrut,Saale-Unstrut,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-saar,Saar,DE,Germany,Mosel,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-sachsen,Sachsen,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-steigerwald,Steigerwald,DE,Germany,Franken,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-de-sudliche-weinstra-e,Südliche Weinstraße,DE,Germany,Pfalz,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+de-sudliche-weinstrasse,Sudliche Weinstrasse,DE,Germany,Pfalz,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-tauberfranken,Tauberfranken,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-terrassenmosel,Terrassenmosel,DE,Germany,Mosel,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-tuniberg,Tuniberg,DE,Germany,Baden,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-walporzheim,Walporzheim,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-wonnegau,Wonnegau,DE,Germany,Rheinhessen,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-de-wurttemberg,Württemberg,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+de-wurttemberg,Wurttemberg,DE,Germany,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 de-zell,Zell,DE,Germany,Mosel,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ec-valladolid,Valladolid,EC,Ecuador,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 eg-alexandria,Alexandria,EG,Egypt,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -344,32 +344,32 @@ es-arabako-txakolina,Arabako Txakolina,ES,Spain,Basque Country,,appellation,exac
 es-arganda,Arganda,ES,Spain,Madrid,,geography,exact,reference_confirm,Madrid/Vinos de Madrid,editorial-v1,Project-authored; not a legal registry
 es-arlanza,Arlanza,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-arribes,Arribes,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-baja-montana,Baja Montaña,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-bajo-aragon,Bajo Aragón,ES,Spain,Aragon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-baja-montana,Baja Montana,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-bajo-aragon,Bajo Aragon,ES,Spain,Aragon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-barcelona,Barcelona,ES,Spain,Catalonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-betanzos,Betanzos,ES,Spain,Galicia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-bierzo,Bierzo,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-binissalem,Binissalem,ES,Spain,Balearic Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-bizkaiko-txakolina,Bizkaiko Txakolina,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-bullas,Bullas,ES,Spain,Murcia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-cadiz,Cádiz,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-cadiz,Cadiz,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-calatayud,Calatayud,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-campo-de-borja,Campo de Borja,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-campo-de-calatrava,Campo de Calatrava,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-campo-de-cartagena,Campo de Cartagena,ES,Spain,Murcia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-cangas,Cangas,ES,Spain,Asturias,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-carinena,Cariñena,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-carinena,Carinena,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-casa-del-blanco,Casa del Blanco,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-castello,Castelló,ES,Spain,Valencia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-castilla-y-leon,Castilla y León,ES,Spain,Castilla y Leon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-castello,Castello,ES,Spain,Valencia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-castilla-y-leon,Castilla y Leon,ES,Spain,Castilla y Leon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-catalunya,Catalunya,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-cava,Cava,ES,Spain,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-cebreros,Cebreros,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-chantada,Chantada,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Ribeira Sacra,editorial-v1,Project-authored; not a legal registry
 es-cigales,Cigales,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-conca-de-barbera,Conca de Barberà,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-conca-de-barbera,Conca de Barbera,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-condado-de-huelva,Condado de Huelva,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-condado-do-tea,Condado do Tea,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rías Baixas,editorial-v1,Project-authored; not a legal registry
+es-condado-do-tea,Condado do Tea,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rias Baixas,editorial-v1,Project-authored; not a legal registry
 es-costa-de-cantabria,Costa de Cantabria,ES,Spain,Cantabria,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-costers-del-segre,Costers del Segre,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-dehesa-del-carrizal,Dehesa del Carrizal,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -377,9 +377,9 @@ es-dominio-de-valdepusa,Dominio de Valdepusa,ES,Spain,Castilla-La Mancha,,appell
 es-el-hierro,El Hierro,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-el-terrerazo,El Terrerazo,ES,Spain,Valencia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-el-vicario,El Vicario,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-emporda,Empordà,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-emporda,Emporda,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-extremadura,Extremadura,ES,Spain,Extremadura,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-finca-elez,Finca Élez,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-finca-elez,Finca Elez,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-galicia,Galicia,ES,Spain,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 es-getariako-txakolina,Getariako Txakolina,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-gran-canaria,Gran Canaria,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -388,50 +388,50 @@ es-guijoso,Guijoso,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_conf
 es-illes-balears,Illes Balears,ES,Spain,Balearic Islands,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-islas-canarias,Islas Canarias,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-jerez,Jerez,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-jerez-xeres-sherry,Jerez-Xérès-Sherry,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-jerez-xeres-sherry,Jerez-Xeres-Sherry,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-jumilla,Jumilla,ES,Spain,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-la-mancha,La Mancha,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-la-palma,La Palma,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-lanzarote,Lanzarote,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-lebrija,Lebrija,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-liebana,Liébana,ES,Spain,Cantabria,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-liebana,Liebana,ES,Spain,Cantabria,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-los-balagueses,Los Balagueses,ES,Spain,Valencia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-madrid,Madrid,ES,Spain,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-es-malaga,Málaga,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-malaga,Malaga,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-mallorca,Mallorca,ES,Spain,Balearic Islands,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-manchuela,Manchuela,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-manzanilla,Manzanilla,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-manzanilla-sanlucar-de-barrameda,Manzanilla-Sanlúcar de Barrameda,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-manzanilla-sanlucar-de-barrameda,Manzanilla-Sanlucar de Barrameda,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-menorca,Menorca,ES,Spain,Balearic Islands,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-mentrida,Méntrida,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-mondejar,Mondéjar,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-mentrida,Mentrida,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-mondejar,Mondejar,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-monterrei,Monterrei,ES,Spain,Galicia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-montilla-moriles,Montilla-Moriles,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-montsant,Montsant,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-murcia,Murcia,ES,Spain,Murcia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-navalcarnero,Navalcarnero,ES,Spain,Madrid,,geography,exact,reference_confirm,Madrid/Vinos de Madrid,editorial-v1,Project-authored; not a legal registry
 es-navarra,Navarra,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-o-rosal,O Rosal,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rías Baixas,editorial-v1,Project-authored; not a legal registry
+es-o-rosal,O Rosal,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rias Baixas,editorial-v1,Project-authored; not a legal registry
 es-pago-calzadilla,Pago Calzadilla,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-pago-florentino,Pago Florentino,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-penedes,Penedès,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-penedes,Penedes,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-pla-de-bages,Pla de Bages,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-pla-i-llevant,Pla i Llevant,ES,Spain,Balearic Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-priorat,Priorat,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-quiroga-bibei,Quiroga-Bibei,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Ribeira Sacra,editorial-v1,Project-authored; not a legal registry
-es-rias-baixas,Rías Baixas,ES,Spain,Galicia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-ribeira-do-ulla,Ribeira do Ulla,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rías Baixas,editorial-v1,Project-authored; not a legal registry
+es-rias-baixas,Rias Baixas,ES,Spain,Galicia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-ribeira-do-ulla,Ribeira do Ulla,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rias Baixas,editorial-v1,Project-authored; not a legal registry
 es-ribeira-sacra,Ribeira Sacra,ES,Spain,Galicia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-ribeiras-do-mino,Ribeiras do Miño,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Ribeira Sacra,editorial-v1,Project-authored; not a legal registry
+es-ribeiras-do-mino,Ribeiras do Mino,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Ribeira Sacra,editorial-v1,Project-authored; not a legal registry
 es-ribeiras-do-sil,Ribeiras do Sil,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Ribeira Sacra,editorial-v1,Project-authored; not a legal registry
 es-ribeiro,Ribeiro,ES,Spain,Galicia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ribera-alta,Ribera Alta,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ribera-baja,Ribera Baja,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ribera-del-duero,Ribera del Duero,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-ribera-del-gallego-cinco-villas,Ribera del Gállego-Cinco Villas,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-ribera-del-gallego-cinco-villas,Ribera del Gallego-Cinco Villas,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ribera-del-guadiana,Ribera del Guadiana,ES,Spain,Extremadura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ribera-del-jiloca,Ribera del Jiloca,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-ribera-del-jucar,Ribera del Júcar,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-ribera-del-jucar,Ribera del Jucar,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ribera-del-queiles,Ribera del Queiles,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-rioja,Rioja,ES,Spain,Rioja,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-rioja-alavesa,Rioja Alavesa,ES,Spain,Rioja,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -439,41 +439,41 @@ es-rioja-alta,Rioja Alta,ES,Spain,Rioja,,appellation,exact,reference_confirm,,ed
 es-rioja-oriental,Rioja Oriental,ES,Spain,Rioja,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ronda,Ronda,ES,Spain,Andalusia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-rueda,Rueda,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-san-martin-de-valdeiglesias,San Martín de Valdeiglesias,ES,Spain,Madrid,,geography,exact,reference_confirm,Madrid/Vinos de Madrid,editorial-v1,Project-authored; not a legal registry
+es-san-martin-de-valdeiglesias,San Martin de Valdeiglesias,ES,Spain,Madrid,,geography,exact,reference_confirm,Madrid/Vinos de Madrid,editorial-v1,Project-authored; not a legal registry
 es-sierra-de-salamanca,Sierra de Salamanca,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-sierras-de-malaga,Sierras de Málaga,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-sierras-de-malaga,Sierras de Malaga,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-somontano,Somontano,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-soutomaior,Soutomaior,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rías Baixas,editorial-v1,Project-authored; not a legal registry
+es-soutomaior,Soutomaior,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rias Baixas,editorial-v1,Project-authored; not a legal registry
 es-tacoronte-acentejo,Tacoronte-Acentejo,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-tarragona,Tarragona,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-terra-alta,Terra Alta,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-tierra-de-leon,Tierra de León,ES,Spain,Castilla y Leon,León,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-tierra-de-leon,Tierra de Leon,ES,Spain,Castilla y Leon,Leon,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-tierra-del-vino-de-zamora,Tierra del Vino de Zamora,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-tierra-estella,Tierra Estella,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-toro,Toro,ES,Spain,Castilla y Leon,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-txakoli-de-alava,Txakoli de Álava,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-txakoli-de-alava,Txakoli de Alava,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-txakoli-de-bizkaia,Txakoli de Bizkaia,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-txakoli-de-getaria,Txakoli de Getaria,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-ucles,Uclés,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-ucles,Ucles,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-utiel-requena,Utiel-Requena,ES,Spain,Valencia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-val-do-salnes,Val do Salnés,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rías Baixas,editorial-v1,Project-authored; not a legal registry
-es-valdejalon,Valdejalón,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-val-do-salnes,Val do Salnes,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Rias Baixas,editorial-v1,Project-authored; not a legal registry
+es-valdejalon,Valdejalon,ES,Spain,Aragon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-valdeorras,Valdeorras,ES,Spain,Galicia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-valdepenas,Valdepeñas,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-valdepenas,Valdepenas,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-valdizarbe,Valdizarbe,ES,Spain,Navarra,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-valencia,Valencia,ES,Spain,Valencia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-valle-de-guimar,Valle de Güímar,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-valle-de-guimar,Valle de Guimar,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-valle-de-la-orotava,Valle de la Orotava,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-valtiendas,Valtiendas,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-vera-de-estenas,Vera de Estenas,ES,Spain,Valencia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-vino-de-espana,Vino de España,ES,Spain,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-vino-de-espana,Vino de Espana,ES,Spain,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-vinos-de-madrid,Vinos de Madrid,ES,Spain,Madrid,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ycoden-daute-isora,Ycoden-Daute-Isora,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-yecla,Yecla,ES,Spain,Murcia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-abymes,Abymes,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-ajaccio,Ajaccio,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-aleria,Aléria,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-aloxe-corton,Aloxe-Corton,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-aleria,Aleria,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-aloxe-corton,Aloxe-Corton,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-alsace,Alsace,FR,France,Alsace,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru,Alsace Grand Cru,FR,France,Alsace,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-altenberg-de-bergbieten,Alsace Grand Cru Altenberg de Bergbieten,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
@@ -496,8 +496,8 @@ fr-alsace-grand-cru-kanzlerberg,Alsace Grand Cru Kanzlerberg,FR,France,Alsace,,a
 fr-alsace-grand-cru-kastelberg,Alsace Grand Cru Kastelberg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-kessler,Alsace Grand Cru Kessler,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-kirchberg-de-barr,Alsace Grand Cru Kirchberg de Barr,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
-fr-alsace-grand-cru-kirchberg-de-ribeauville,Alsace Grand Cru Kirchberg de Ribeauvillé,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
-fr-alsace-grand-cru-kitterle,Alsace Grand Cru Kitterlé,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
+fr-alsace-grand-cru-kirchberg-de-ribeauville,Alsace Grand Cru Kirchberg de Ribeauville,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
+fr-alsace-grand-cru-kitterle,Alsace Grand Cru Kitterle,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-mambourg,Alsace Grand Cru Mambourg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-mandelberg,Alsace Grand Cru Mandelberg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-marckrain,Alsace Grand Cru Marckrain,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
@@ -524,7 +524,7 @@ fr-alsace-grand-cru-vorbourg,Alsace Grand Cru Vorbourg,FR,France,Alsace,,appella
 fr-alsace-grand-cru-wiebelsberg,Alsace Grand Cru Wiebelsberg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-wineck-schlossberg,Alsace Grand Cru Wineck-Schlossberg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-winzenberg,Alsace Grand Cru Winzenberg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
-fr-alsace-grand-cru-zinnkoepfle,Alsace Grand Cru Zinnkoepflé,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
+fr-alsace-grand-cru-zinnkoepfle,Alsace Grand Cru Zinnkoepfle,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Haut-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-alsace-grand-cru-zotzenberg,Alsace Grand Cru Zotzenberg,FR,France,Alsace,,appellation,exact,reference_confirm,Alsace/Bas-Rhin,editorial-v1,Project-authored; not a legal registry
 fr-anjou,Anjou,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-anjou-saumur,Anjou-Saumur,FR,France,Loire,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
@@ -536,112 +536,112 @@ fr-arbois,Arbois,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-
 fr-arbois-pupillin,Arbois Pupillin,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-atlantique,Atlantique,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-auvergne,Auvergne,FR,France,Loire,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-auxey-duresses,Auxey-Duresses,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-auxey-duresses,Auxey-Duresses,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-bandol,Bandol,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-banyuls,Banyuls,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-banyuls-grand-cru,Banyuls Grand Cru,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-barsac,Barsac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
 fr-bas-rhin,Bas-Rhin,FR,France,Alsace,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-batard-montrachet,Bâtard-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-bearn,Béarn,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-batard-montrachet,Batard-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-bearn,Bearn,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-beaujolais,Beaujolais,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-beaujolais-villages,Beaujolais-Villages,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-beaumes-de-venise,Beaumes-de-Venise,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-beaune,Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-beaune,Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-bellet,Bellet,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bergerac,Bergerac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bienvenues-batard-montrachet,Bienvenues-Bâtard-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-blagny,Blagny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-bienvenues-batard-montrachet,Bienvenues-Batard-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-blagny,Blagny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-blanquette-de-limoux,Blanquette de Limoux,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-blaye,Blaye,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-blaye-cotes-de-bordeaux,Blaye Côtes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-bonnes-mares,Bonnes-Mares,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-blaye-cotes-de-bordeaux,Blaye Cotes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-bonnes-mares,Bonnes-Mares,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-bonnezeaux,Bonnezeaux,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-bordeaux,Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bordeaux-clairet,Bordeaux Clairet,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bordeaux-cotes-de-francs,Bordeaux Côtes de Francs,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-bordeaux-rose,Bordeaux Rosé,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bordeaux-superieur,Bordeaux Supérieur,FR,France,Bordeaux,Bordeaux Superieur,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bordeaux-cotes-de-francs,Bordeaux Cotes de Francs,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-bordeaux-rose,Bordeaux Rose,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bordeaux-superieur,Bordeaux Superieur,FR,France,Bordeaux,Bordeaux Superieur,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourg,Bourg,FR,France,Bordeaux,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourgogne,Bourgogne,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bourgogne-aligote,Bourgogne Aligoté,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bourgogne-cote-saint-jacques,Bourgogne Côte Saint-Jacques,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bourgogne-hautes-cotes-de-beaune,Bourgogne Hautes-Côtes de Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bourgogne-hautes-cotes-de-nuits,Bourgogne Hautes-Côtes de Nuits,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bourgogne-aligote,Bourgogne Aligote,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bourgogne-cote-saint-jacques,Bourgogne Cote Saint-Jacques,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bourgogne-hautes-cotes-de-beaune,Bourgogne Hautes-Cotes de Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bourgogne-hautes-cotes-de-nuits,Bourgogne Hautes-Cotes de Nuits,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourgogne-passe-tout-grains,Bourgogne Passe-tout-grains,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourgueil,Bourgueil,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
-fr-bouzeron,Bouzeron,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte Chalonnaise,editorial-v1,Project-authored; not a legal registry
+fr-bouzeron,Bouzeron,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote Chalonnaise,editorial-v1,Project-authored; not a legal registry
 fr-brouilly,Brouilly,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-brulhois,Brulhois,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bugey,Bugey,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-burgundy,Burgundy,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-buzet,Buzet,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cabardes,Cabardès,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cabardes,Cabardes,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cabernet-d-anjou,Cabernet d'Anjou,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
-fr-cabrieres,Cabrières,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cabrieres,Cabrieres,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cadillac,Cadillac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
-fr-cadillac-cotes-de-bordeaux,Cadillac Côtes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-cadillac-cotes-de-bordeaux,Cadillac Cotes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-cahors,Cahors,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cairanne,Cairanne,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-canon-fronsac,Canon-Fronsac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-cap-corse,Cap Corse,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-caramany,Caramany,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cassis,Cassis,FR,France,Provence,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-castillon-cotes-de-bordeaux,Castillon Côtes de Bordeaux,FR,France,Bordeaux,Castillon,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-castillon-cotes-de-bordeaux,Castillon Cotes de Bordeaux,FR,France,Bordeaux,Castillon,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-centre-loire,Centre-Loire,FR,France,Loire,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-cerdon,Cerdon,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cerons,Cérons,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
+fr-cerons,Cerons,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
 fr-chablis,Chablis,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Chablis,editorial-v1,Project-authored; not a legal registry
 fr-chablis-grand-cru,Chablis Grand Cru,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Chablis,editorial-v1,Project-authored; not a legal registry
 fr-chablis-premier-cru,Chablis Premier Cru,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Chablis,editorial-v1,Project-authored; not a legal registry
-fr-chambertin,Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-chambertin-clos-de-beze,Chambertin-Clos de Bèze,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-chambolle-musigny,Chambolle-Musigny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-chambertin,Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-chambertin-clos-de-beze,Chambertin-Clos de Beze,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-chambolle-musigny,Chambolle-Musigny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-champagne,Champagne,FR,France,Champagne,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-champagne-grand-cru,Champagne Grand Cru,FR,France,Champagne,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-champagne-premier-cru,Champagne Premier Cru,FR,France,Champagne,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-chapelle-chambertin,Chapelle-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-charlemagne,Charlemagne,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-charmes-chambertin,Charmes-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-chassagne-montrachet,Chassagne-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-chateau-chalon,Château-Chalon,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-chateau-grillet,Château-Grillet,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-chateaumeillant,Châteaumeillant,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
-fr-chateauneuf-du-pape,Châteauneuf-du-Pape,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-chatillon-en-diois,Châtillon-en-Diois,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-chenas,Chénas,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-chevalier-montrachet,Chevalier-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-chapelle-chambertin,Chapelle-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-charlemagne,Charlemagne,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-charmes-chambertin,Charmes-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-chassagne-montrachet,Chassagne-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-chateau-chalon,Chateau-Chalon,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-chateau-grillet,Chateau-Grillet,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-chateaumeillant,Chateaumeillant,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
+fr-chateauneuf-du-pape,Chateauneuf-du-Pape,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-chatillon-en-diois,Chatillon-en-Diois,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-chenas,Chenas,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-chevalier-montrachet,Chevalier-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-cheverny,Cheverny,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
 fr-chignin,Chignin,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-chignin-bergeron,Chignin-Bergeron,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-chinon,Chinon,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
 fr-chiroubles,Chiroubles,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-chorey-les-beaune,Chorey-lès-Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-chorey-les-beaune,Chorey-les-Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-chusclan,Chusclan,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-clairette-de-die,Clairette de Die,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-clairette-du-languedoc,Clairette du Languedoc,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-clos-de-la-roche,Clos de la Roche,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-clos-de-la-roche,Clos de la Roche,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-clos-de-tart,Clos de Tart,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-clos-de-vougeot,Clos de Vougeot,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-clos-des-lambrays,Clos des Lambrays,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-clos-saint-denis,Clos Saint-Denis,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-clos-de-vougeot,Clos de Vougeot,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-clos-des-lambrays,Clos des Lambrays,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-clos-saint-denis,Clos Saint-Denis,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-collioure,Collioure,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-comte-tolosan,Comté Tolosan,FR,France,Languedoc,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-comtes-rhodaniens,Comtés Rhodaniens,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-comte-tolosan,Comte Tolosan,FR,France,Languedoc,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-comtes-rhodaniens,Comtes Rhodaniens,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-condrieu,Condrieu,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-corbieres,Corbières,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-corbieres-boutenac,Corbières-Boutenac,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-corbieres,Corbieres,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-corbieres-boutenac,Corbieres-Boutenac,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cornas,Cornas,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-corse,Corse,FR,France,Corsica,Vin de Corse,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-corton,Corton,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-corton-charlemagne,Corton-Charlemagne,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-costieres-de-nimes,Costières de Nîmes,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-cote-chalonnaise,Côte Chalonnaise,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-cote-de-beaune,Côte de Beaune,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-cote-de-brouilly,Côte de Brouilly,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cote-de-nuits,Côte de Nuits,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-cote-roannaise,Côte Roannaise,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
-fr-cote-rotie,Côte-Rôtie,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-corton,Corton,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-corton-charlemagne,Corton-Charlemagne,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-costieres-de-nimes,Costieres de Nimes,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-cote-chalonnaise,Cote Chalonnaise,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
+fr-cote-de-beaune,Cote de Beaune,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
+fr-cote-de-brouilly,Cote de Brouilly,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cote-de-nuits,Cote de Nuits,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
+fr-cote-roannaise,Cote Roannaise,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
+fr-cote-rotie,Cote-Rotie,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-coteaux-champenois,Coteaux Champenois,FR,France,Champagne,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-coteaux-d-aix-en-provence,Coteaux d'Aix-en-Provence,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-coteaux-d-ancenis,Coteaux d'Ancenis,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -653,141 +653,141 @@ fr-coteaux-du-layon,Coteaux du Layon,FR,France,Loire,,appellation,exact,referenc
 fr-coteaux-du-layon-chaume,Coteaux du Layon Chaume,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-coteaux-du-loir,Coteaux du Loir,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-coteaux-varois-en-provence,Coteaux Varois en Provence,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-d-auvergne,Côtes d'Auvergne,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-bergerac,Côtes de Bergerac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-blaye,Côtes de Blaye,FR,France,Bordeaux,Cotes de Blaye,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-bordeaux,Côtes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-bordeaux-francs,Côtes de Bordeaux Francs,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-bordeaux-saint-macaire,Côtes de Bordeaux Saint-Macaire,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-bourg,Côtes de Bourg,FR,France,Bordeaux,Cotes de Bourg,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-duras,Côtes de Duras,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-gascogne,Côtes de Gascogne,FR,France,Languedoc,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-montravel,Côtes de Montravel,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-de-provence,Côtes de Provence,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-forez,Côtes du Forez,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-jura,Côtes du Jura,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-marmandais,Côtes du Marmandais,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-rhone,Côtes du Rhône,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-rhone-villages,Côtes du Rhône Villages,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-roussillon,Côtes du Roussillon,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-roussillon-les-aspres,Côtes du Roussillon Les Aspres,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-roussillon-villages,Côtes du Roussillon Villages,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cotes-du-vivarais,Côtes du Vivarais,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-coulee-de-serrant,Coulée de Serrant,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-d-auvergne,Cotes d'Auvergne,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-bergerac,Cotes de Bergerac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-blaye,Cotes de Blaye,FR,France,Bordeaux,Cotes de Blaye,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-bordeaux,Cotes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-bordeaux-francs,Cotes de Bordeaux Francs,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-bordeaux-saint-macaire,Cotes de Bordeaux Saint-Macaire,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-bourg,Cotes de Bourg,FR,France,Bordeaux,Cotes de Bourg,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-duras,Cotes de Duras,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-gascogne,Cotes de Gascogne,FR,France,Languedoc,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-montravel,Cotes de Montravel,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-de-provence,Cotes de Provence,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-forez,Cotes du Forez,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-jura,Cotes du Jura,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-marmandais,Cotes du Marmandais,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-rhone,Cotes du Rhone,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-rhone-villages,Cotes du Rhone Villages,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-roussillon,Cotes du Roussillon,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-roussillon-les-aspres,Cotes du Roussillon Les Aspres,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-roussillon-villages,Cotes du Roussillon Villages,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cotes-du-vivarais,Cotes du Vivarais,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-coulee-de-serrant,Coulee de Serrant,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cour-cheverny,Cour-Cheverny,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
-fr-cremant-d-alsace,Crémant d'Alsace,FR,France,Alsace,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-bordeaux,Crémant de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-bourgogne,Crémant de Bourgogne,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-die,Crémant de Die,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-limoux,Crémant de Limoux,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-loire,Crémant de Loire,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-savoie,Crémant de Savoie,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-du-jura,Crémant du Jura,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-crepy,Crépy,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-criots-batard-montrachet,Criots-Bâtard-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-cremant-d-alsace,Cremant d'Alsace,FR,France,Alsace,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-bordeaux,Cremant de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-bourgogne,Cremant de Bourgogne,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-die,Cremant de Die,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-limoux,Cremant de Limoux,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-loire,Cremant de Loire,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-savoie,Cremant de Savoie,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-du-jura,Cremant du Jura,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-crepy,Crepy,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-criots-batard-montrachet,Criots-Batard-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-crozes-hermitage,Crozes-Hermitage,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-cruet,Cruet,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-duche-d-uzes,Duché d'Uzès,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-echezeaux,Échezeaux,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-duche-d-uzes,Duche d'Uzes,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-echezeaux,Echezeaux,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-entraygues-le-fel,Entraygues-Le Fel,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-entre-deux-mers,Entre-deux-Mers,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Entre-deux-Mers,editorial-v1,Project-authored; not a legal registry
 fr-entre-deux-mers-haut-benauge,Entre-deux-Mers Haut-Benauge,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Entre-deux-Mers,editorial-v1,Project-authored; not a legal registry
 fr-estaing,Estaing,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-faugeres,Faugères,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-faugeres,Faugeres,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-figari,Figari,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-fitou,Fitou,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-fixin,Fixin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-fixin,Fixin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-fleurie,Fleurie,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-francs-cotes-de-bordeaux,Francs Côtes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-francs-cotes-de-bordeaux,Francs Cotes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-fronsac,Fronsac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-fronton,Fronton,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-gadagne,Gadagne,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-gaillac,Gaillac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-gaillac-premieres-cotes,Gaillac Premières Côtes,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-gevrey-chambertin,Gevrey-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-gaillac-premieres-cotes,Gaillac Premieres Cotes,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-gevrey-chambertin,Gevrey-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-gigondas,Gigondas,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-givry,Givry,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte Chalonnaise,editorial-v1,Project-authored; not a legal registry
+fr-givry,Givry,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote Chalonnaise,editorial-v1,Project-authored; not a legal registry
 fr-grand-roussillon,Grand Roussillon,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-grands-echezeaux,Grands Échezeaux,FR,France,Burgundy,Grands-Échezeaux,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-grands-echezeaux,Grands Echezeaux,FR,France,Burgundy,Grands-Echezeaux,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-graves,Graves,FR,France,Bordeaux,,appellation,context_required,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
-fr-graves-superieures,Graves Supérieures,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
-fr-gres-de-montpellier,Grès de Montpellier,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-grignan-les-adhemar,Grignan-les-Adhémar,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-griotte-chambertin,Griotte-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-graves-superieures,Graves Superieures,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
+fr-gres-de-montpellier,Gres de Montpellier,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-grignan-les-adhemar,Grignan-les-Adhemar,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-griotte-chambertin,Griotte-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-gros-plant-du-pays-nantais,Gros Plant du Pays Nantais,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
-fr-haut-medoc,Haut-Médoc,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
+fr-haut-medoc,Haut-Medoc,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
 fr-haut-montravel,Haut-Montravel,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-haut-rhin,Haut-Rhin,FR,France,Alsace,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-hermitage,Hermitage,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-irancy,Irancy,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-irouleguy,Irouléguy,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-jasnieres,Jasnières,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-irouleguy,Irouleguy,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-jasnieres,Jasnieres,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-jongieux,Jongieux,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-julienas,Juliénas,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-jurancon,Jurançon,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-julienas,Julienas,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-jurancon,Jurancon,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-kaefferkopf,Kaefferkopf,FR,France,Alsace,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-l-etoile,L'Étoile,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-l-etoile,L'Etoile,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-la-clape,La Clape,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-la-grande-rue,La Grande Rue,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-la-romanee,La Romanée,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-la-tache,La Tâche,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-ladoix,Ladoix,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-la-romanee,La Romanee,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-la-tache,La Tache,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-ladoix,Ladoix,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-lalande-de-pomerol,Lalande-de-Pomerol,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-languedoc,Languedoc,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-latour-de-france,Latour-de-France,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-latricieres-chambertin,Latricières-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-latricieres-chambertin,Latricieres-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-laudun,Laudun,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-les-baux-de-provence,Les Baux de Provence,FR,France,Provence,Les Baux-de-Provence,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-lesquerde,Lesquerde,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-libournais,Libournais,FR,France,Bordeaux,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-limoux,Limoux,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-lirac,Lirac,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-listrac-medoc,Listrac-Médoc,FR,France,Bordeaux,Listrac,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
+fr-listrac-medoc,Listrac-Medoc,FR,France,Bordeaux,Listrac,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
 fr-loire,Loire,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-loupiac,Loupiac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
 fr-luberon,Luberon,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-lussac-saint-emilion,Lussac-Saint-Émilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-macon,Mâcon,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
-fr-macon-villages,Mâcon-Villages,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
-fr-maconnais,Mâconnais,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
+fr-lussac-saint-emilion,Lussac-Saint-Emilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-macon,Macon,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
+fr-macon-villages,Macon-Villages,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
+fr-maconnais,Maconnais,FR,France,Burgundy,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-macvin-du-jura,Macvin du Jura,FR,France,Jura,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-madiran,Madiran,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-malepere,Malepère,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-maranges,Maranges,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-malepere,Malepere,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-maranges,Maranges,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-marcillac,Marcillac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-margaux,Margaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
-fr-marsannay,Marsannay,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-margaux,Margaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
+fr-marsannay,Marsannay,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-massif-d-uchaux,Massif d'Uchaux,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-maury,Maury,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-mazis-chambertin,Mazis-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-mazoyeres-chambertin,Mazoyères-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-mediterranee,Méditerranée,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-medoc,Médoc,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
-fr-mejanelle,Méjanelle,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-mazis-chambertin,Mazis-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-mazoyeres-chambertin,Mazoyeres-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-mediterranee,Mediterranee,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-medoc,Medoc,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
+fr-mejanelle,Mejanelle,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-menetou-salon,Menetou-Salon,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
-fr-mercurey,Mercurey,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte Chalonnaise,editorial-v1,Project-authored; not a legal registry
-fr-meursault,Meursault,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-mercurey,Mercurey,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote Chalonnaise,editorial-v1,Project-authored; not a legal registry
+fr-meursault,Meursault,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-minervois,Minervois,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-minervois-la-liviniere,Minervois-La Livinière,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-minervois-la-liviniere,Minervois-La Liviniere,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-monbazillac,Monbazillac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-montagne-saint-emilion,Montagne-Saint-Émilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-montagne-saint-emilion,Montagne-Saint-Emilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-montagnieu,Montagnieu,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-montagny,Montagny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte Chalonnaise,editorial-v1,Project-authored; not a legal registry
-fr-monthelie,Monthélie,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-montagny,Montagny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote Chalonnaise,editorial-v1,Project-authored; not a legal registry
+fr-monthelie,Monthelie,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-montlouis-sur-loire,Montlouis-sur-Loire,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
-fr-montmelian,Montmélian,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-montmelian,Montmelian,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-montpeyroux,Montpeyroux,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-montrachet,Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-montrachet,Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-montravel,Montravel,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-morey-saint-denis,Morey-Saint-Denis,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-morey-saint-denis,Morey-Saint-Denis,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-morgon,Morgon,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-moulin-a-vent,Moulin-à-Vent,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-moulin-a-vent,Moulin-a-Vent,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-moulis,Moulis,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-moulis-en-medoc,Moulis-en-Médoc,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
+fr-moulis-en-medoc,Moulis-en-Medoc,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
 fr-muscadet,Muscadet,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
 fr-muscadet-coteaux-de-la-loire,Muscadet Coteaux de la Loire,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
-fr-muscadet-cotes-de-grandlieu,Muscadet Côtes de Grandlieu,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
-fr-muscadet-sevre-et-maine,Muscadet Sèvre et Maine,FR,France,Loire,Muscadet Sèvre-et-Maine,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
+fr-muscadet-cotes-de-grandlieu,Muscadet Cotes de Grandlieu,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
+fr-muscadet-sevre-et-maine,Muscadet Sevre et Maine,FR,France,Loire,Muscadet Sevre-et-Maine,appellation,exact,reference_confirm,Loire/Pays Nantais,editorial-v1,Project-authored; not a legal registry
 fr-muscat-de-beaumes-de-venise,Muscat de Beaumes-de-Venise,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-muscat-de-frontignan,Muscat de Frontignan,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-muscat-de-lunel,Muscat de Lunel,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -795,104 +795,104 @@ fr-muscat-de-mireval,Muscat de Mireval,FR,France,Languedoc,,appellation,exact,re
 fr-muscat-de-rivesaltes,Muscat de Rivesaltes,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-muscat-de-saint-jean-de-minervois,Muscat de Saint-Jean-de-Minervois,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-muscat-du-cap-corse,Muscat du Cap Corse,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-musigny,Musigny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-neac,Néac,FR,France,Bordeaux,,appellation,context_required,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-musigny,Musigny,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-neac,Neac,FR,France,Bordeaux,,appellation,context_required,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-northern-rhone,Northern Rhone,FR,France,Rhone,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-nuits-saint-georges,Nuits-Saint-Georges,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-nuits-saint-georges,Nuits-Saint-Georges,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-nyons,Nyons,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-orleans,Orléans,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
-fr-orleans-clery,Orléans-Cléry,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
+fr-orleans,Orleans,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
+fr-orleans-clery,Orleans-Clery,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
 fr-pacherenc-du-vic-bilh,Pacherenc du Vic-Bilh,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-palette,Palette,FR,France,Provence,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-patrimonio,Patrimonio,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-pauillac,Pauillac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
+fr-pauillac,Pauillac,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
 fr-pays-d-oc,Pays d'Oc,FR,France,Languedoc,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-pays-nantais,Pays Nantais,FR,France,Loire,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-pecharmant,Pécharmant,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-pernand-vergelesses,Pernand-Vergelesses,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-pessac-leognan,Pessac-Léognan,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
+fr-pecharmant,Pecharmant,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-pernand-vergelesses,Pernand-Vergelesses,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-pessac-leognan,Pessac-Leognan,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
 fr-petit-chablis,Petit Chablis,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Chablis,editorial-v1,Project-authored; not a legal registry
 fr-pic-saint-loup,Pic Saint-Loup,FR,France,Languedoc,Pic-Saint-Loup,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-picpoul-de-pinet,Picpoul de Pinet,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-pierrevert,Pierrevert,FR,France,Provence,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-plan-de-dieu,Plan de Dieu,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-pomerol,Pomerol,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-pommard,Pommard,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-pommard,Pommard,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-porto-vecchio,Porto-Vecchio,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-pouilly-fuisse,Pouilly-Fuissé,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
-fr-pouilly-fume,Pouilly-Fumé,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
-fr-pouilly-loche,Pouilly-Loché,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
+fr-pouilly-fuisse,Pouilly-Fuisse,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
+fr-pouilly-fume,Pouilly-Fume,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
+fr-pouilly-loche,Pouilly-Loche,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
 fr-pouilly-sur-loire,Pouilly-sur-Loire,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
-fr-pouilly-vinzelles,Pouilly-Vinzelles,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
-fr-premieres-cotes-de-bordeaux,Premières Côtes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
-fr-puisseguin-saint-emilion,Puisseguin-Saint-Émilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-puligny-montrachet,Puligny-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-puymeras,Puyméras,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-pouilly-vinzelles,Pouilly-Vinzelles,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
+fr-premieres-cotes-de-bordeaux,Premieres Cotes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
+fr-puisseguin-saint-emilion,Puisseguin-Saint-Emilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-puligny-montrachet,Puligny-Montrachet,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-puymeras,Puymeras,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-quarts-de-chaume,Quarts de Chaume,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-quatourze,Quatourze,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-quincy,Quincy,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
 fr-rasteau,Rasteau,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-regnie,Régnié,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-regnie,Regnie,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-reuilly,Reuilly,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
 fr-rhone,Rhone,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
-fr-richebourg,Richebourg,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-richebourg,Richebourg,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-rivesaltes,Rivesaltes,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-roaix,Roaix,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-rochegude,Rochegude,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-romanee-conti,Romanée-Conti,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-romanee-saint-vivant,Romanée-Saint-Vivant,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-rose-d-anjou,Rosé d'Anjou,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
-fr-rose-de-loire,Rosé de Loire,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-rose-des-riceys,Rosé des Riceys,FR,France,Champagne,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-romanee-conti,Romanee-Conti,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-romanee-saint-vivant,Romanee-Saint-Vivant,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-rose-d-anjou,Rose d'Anjou,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
+fr-rose-de-loire,Rose de Loire,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-rose-des-riceys,Rose des Riceys,FR,France,Champagne,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-rosette,Rosette,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-roussette-de-savoie,Roussette de Savoie,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-ruchottes-chambertin,Ruchottes-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-rully,Rully,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte Chalonnaise,editorial-v1,Project-authored; not a legal registry
+fr-ruchottes-chambertin,Ruchottes-Chambertin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-rully,Rully,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote Chalonnaise,editorial-v1,Project-authored; not a legal registry
 fr-sablet,Sablet,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-saint-amour,Saint-Amour,FR,France,Beaujolais,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-saint-aubin,Saint-Aubin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-saint-aubin,Saint-Aubin,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-saint-chinian,Saint-Chinian,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saint-chinian-berlou,Saint-Chinian Berlou,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saint-chinian-roquebrun,Saint-Chinian Roquebrun,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-saint-drezery,Saint-Drézéry,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-saint-emilion,Saint-Émilion,FR,France,Bordeaux,Saint Emilion,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-saint-emilion-grand-cru,Saint-Émilion Grand Cru,FR,France,Bordeaux,Saint Emilion Grand Cru,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-saint-estephe,Saint-Estèphe,FR,France,Bordeaux,Saint Estephe,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
+fr-saint-drezery,Saint-Drezery,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-saint-emilion,Saint-Emilion,FR,France,Bordeaux,Saint Emilion,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-saint-emilion-grand-cru,Saint-Emilion Grand Cru,FR,France,Bordeaux,Saint Emilion Grand Cru,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-saint-estephe,Saint-Estephe,FR,France,Bordeaux,Saint Estephe,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
 fr-saint-georges-d-orques,Saint-Georges-d'Orques,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-saint-georges-saint-emilion,Saint-Georges-Saint-Émilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
+fr-saint-georges-saint-emilion,Saint-Georges-Saint-Emilion,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
 fr-saint-gervais,Saint-Gervais,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-saint-jean-de-la-porte,Saint-Jean-de-la-Porte,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saint-jean-de-minervois,Saint-Jean-de-Minervois,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saint-joseph,Saint-Joseph,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-saint-julien,Saint-Julien,FR,France,Bordeaux,Saint Julien,appellation,exact,reference_confirm,Bordeaux/Médoc,editorial-v1,Project-authored; not a legal registry
+fr-saint-julien,Saint-Julien,FR,France,Bordeaux,Saint Julien,appellation,exact,reference_confirm,Bordeaux/Medoc,editorial-v1,Project-authored; not a legal registry
 fr-saint-maurice-sur-eygues,Saint-Maurice-sur-Eygues,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-saint-mont,Saint-Mont,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saint-nicolas-de-bourgueil,Saint-Nicolas-de-Bourgueil,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
-fr-saint-peray,Saint-Péray,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-saint-pourcain,Saint-Pourçain,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
-fr-saint-romain,Saint-Romain,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-saint-veran,Saint-Véran,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
-fr-sainte-cecile-les-vignes,Sainte-Cécile-les-Vignes,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-saint-peray,Saint-Peray,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-saint-pourcain,Saint-Pourcain,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Auvergne,editorial-v1,Project-authored; not a legal registry
+fr-saint-romain,Saint-Romain,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-saint-veran,Saint-Veran,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
+fr-sainte-cecile-les-vignes,Sainte-Cecile-les-Vignes,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-sainte-croix-du-mont,Sainte-Croix-du-Mont,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
 fr-sainte-foy-bordeaux,Sainte-Foy-Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-sainte-foy-cotes-de-bordeaux,Sainte-Foy Côtes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-sainte-foy-cotes-de-bordeaux,Sainte-Foy Cotes de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-sancerre,Sancerre,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Centre-Loire,editorial-v1,Project-authored; not a legal registry
-fr-santenay,Santenay,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-sartene,Sartène,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-santenay,Santenay,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-sartene,Sartene,FR,France,Corsica,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saumur,Saumur,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-saumur-champigny,Saumur-Champigny,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-saumur-puy-notre-dame,Saumur Puy-Notre-Dame,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-saussignac,Saussignac,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-sauternes,Sauternes,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Graves,editorial-v1,Project-authored; not a legal registry
-fr-savennieres,Savennières,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
-fr-savennieres-coulee-de-serrant,Savennières Coulée de Serrant,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
-fr-savennieres-roche-aux-moines,Savennières Roche aux Moines,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
-fr-savigny-les-beaune,Savigny-lès-Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-savennieres,Savennieres,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
+fr-savennieres-coulee-de-serrant,Savennieres Coulee de Serrant,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
+fr-savennieres-roche-aux-moines,Savennieres Roche aux Moines,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
+fr-savigny-les-beaune,Savigny-les-Beaune,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
 fr-savoie,Savoie,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-seguret,Séguret,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-seguret,Seguret,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-seyssel,Seyssel,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-signargues,Signargues,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-sommieres,Sommières,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-sommieres,Sommieres,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-southern-rhone,Southern Rhone,FR,France,Rhone,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 fr-suze-la-rousse,Suze-la-Rousse,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-tautavel,Tautavel,FR,France,Roussillon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -903,22 +903,22 @@ fr-touraine-amboise,Touraine Amboise,FR,France,Loire,,appellation,exact,referenc
 fr-touraine-azay-le-rideau,Touraine Azay-le-Rideau,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
 fr-touraine-chenonceaux,Touraine Chenonceaux,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-touraine-mesland,Touraine Mesland,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
-fr-touraine-noble-joue,Touraine Noble Joué,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
+fr-touraine-noble-joue,Touraine Noble Joue,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
 fr-touraine-oisly,Touraine Oisly,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-tursan,Tursan,FR,France,South West France,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-vacqueyras,Vacqueyras,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-val-de-loire,Val de Loire,FR,France,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-valencay,Valençay,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
-fr-valreas,Valréas,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
+fr-valencay,Valencay,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
+fr-valreas,Valreas,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-ventoux,Ventoux,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-vezelay,Vézelay,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-vezelay,Vezelay,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-vin-de-savoie,Vin de Savoie,FR,France,Savoie,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-vinsobres,Vinsobres,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-vire-clesse,Viré-Clessé,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Mâconnais,editorial-v1,Project-authored; not a legal registry
+fr-vire-clesse,Vire-Clesse,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Maconnais,editorial-v1,Project-authored; not a legal registry
 fr-visan,Visan,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Southern Rhone,editorial-v1,Project-authored; not a legal registry
-fr-volnay,Volnay,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Beaune,editorial-v1,Project-authored; not a legal registry
-fr-vosne-romanee,Vosne-Romanée,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
-fr-vougeot,Vougeot,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-volnay,Volnay,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Beaune,editorial-v1,Project-authored; not a legal registry
+fr-vosne-romanee,Vosne-Romanee,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
+fr-vougeot,Vougeot,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Cote de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-vouvray,Vouvray,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
 gb-buckinghamshire,Buckinghamshire,GB,United Kingdom,England,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gb-cornwall,Cornwall,GB,United Kingdom,England,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -943,30 +943,30 @@ gb-test-valley,Test Valley,GB,United Kingdom,England,,geography,exact,reference_
 gb-wales,Wales,GB,United Kingdom,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gb-west-sussex,West Sussex,GB,United Kingdom,England,,geography,exact,reference_confirm,England/Sussex,editorial-v1,Project-authored; not a legal registry
 gb-worcestershire,Worcestershire,GB,United Kingdom,England,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-adjara,Adjara,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-adjara,Adjara,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-akhasheni,Akhasheni,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-ateni,Ateni,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-guria,Guria,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-gurjaani,Gurjaani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-imereti,Imereti,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-kakheti,Kakheti,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-kardenakhi,Kardenakhi,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-kartli,Kartli,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-ateni,Ateni,GE,Georgia,Kartli,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-guria,Guria,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-gurjaani,Gurjaani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-imereti,Imereti,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-kakheti,Kakheti,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-kardenakhi,Kardenakhi,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-kartli,Kartli,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-khvanchkara,Khvanchkara,GE,Georgia,Racha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-kindzmarauli,Kindzmarauli,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-kvareli,Kvareli,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-lechkhumi,Lechkhumi,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-magrani,Magrani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-lechkhumi,Lechkhumi,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-magrani,Magrani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-manavi,Manavi,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-mukuzani,Mukuzani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-napareuli,Napareuli,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-racha,Racha,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-samegrelo,Samegrelo,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-tbilisi,Tbilisi,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-teliani,Teliani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-tibaani,Tibaani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-racha,Racha,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-samegrelo,Samegrelo,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-tbilisi,Tbilisi,GE,Georgia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-teliani,Teliani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-tibaani,Tibaani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-tsinandali,Tsinandali,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-vazisubani,Vazisubani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-vazisubani,Vazisubani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-achaia,Achaia,GR,Greece,Peloponnese,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-amyndeon,Amyndeon,GR,Greece,Macedonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-anchialos,Anchialos,GR,Greece,Macedonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1032,54 +1032,55 @@ gr-thessaloniki,Thessaloniki,GR,Greece,Macedonia,,geography,exact,reference_conf
 gr-thrace,Thrace,GR,Greece,Thrace,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-trikala,Trikala,GR,Greece,Thessaly,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-velvendo,Velvendo,GR,Greece,Macedonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-gr-verdea,Verdea,GR,Greece,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+gr-verdea,Verdea,GR,Greece,Ionian Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-veria,Veria,GR,Greece,Macedonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-vinsanto,Vinsanto,GR,Greece,Aegean Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-zakynthos,Zakynthos,GR,Greece,Ionian Islands,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-zitsa,Zitsa,GR,Greece,Epirus,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-brac,Brač,HR,Croatia,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-dalmatia,Dalmatia,HR,Croatia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-dingac,Dingač,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-brac,Brac,HR,Croatia,Dalmatia,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-dalmatia,Dalmatia,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-dingac,Dingac,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-hrvatska,Hrvatska,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-hvar,Hvar,HR,Croatia,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-hvar,Hvar,HR,Croatia,Dalmatia,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-istria,Istria,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-kastela,Kaštela,HR,Croatia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-korcula,Korčula,HR,Croatia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-kastela,Kastela,HR,Croatia,Dalmatia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-korcula,Korcula,HR,Croatia,Dalmatia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-kutjevo,Kutjevo,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-moslavina,Moslavina,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-peljesac,Pelješac,HR,Croatia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-plesivica,Plešivica,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-peljesac,Peljesac,HR,Croatia,Dalmatia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-plesivica,Plesivica,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-pokuplje,Pokuplje,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-postup,Postup,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-prigorje-bilogora,Prigorje-Bilogora,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-sibenik,Šibenik,HR,Croatia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-sibenik,Sibenik,HR,Croatia,Dalmatia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-slavonia,Slavonia,HR,Croatia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hr-slovenska-istra,Slovenska Istra,HR,Croatia,Istria,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-solin,Solin,HR,Croatia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-vis,Vis,HR,Croatia,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hr-zagorje-me-imurje,Zagorje-Međimurje,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-badacsony,Badacsony,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-balatonboglar,Balatonboglár,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-balatonfelvidek,Balatonfelvidék,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-balatonfured-csopak,Balatonfüred-Csopak,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-csongrad,Csongrád,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-duna,Duna,HU,Hungary,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-solin,Solin,HR,Croatia,Dalmatia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-vis,Vis,HR,Croatia,Dalmatia,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hr-zagorje-medimurje,Zagorje-Medimurje,HR,Croatia,Slavonia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-badacsony,Badacsony,HU,Hungary,Balaton,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-balaton,Balaton,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-balatonboglar,Balatonboglar,HU,Hungary,Balaton,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-balatonfelvidek,Balatonfelvidek,HU,Hungary,Balaton,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-balatonfured-csopak,Balatonfured-Csopak,HU,Hungary,Balaton,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-csongrad,Csongrad,HU,Hungary,Duna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-duna,Duna,HU,Hungary,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hu-eger,Eger,HU,Hungary,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hu-eger-wine-region,Eger Wine Region,HU,Hungary,Eger,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-hajos-baja,Hajós-Baja,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-kunsag,Kunság,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-matra,Mátra,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-nagy-somlo,Nagy-Somló,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-pannon,Pannon,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-somlo,Somló,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-hajos-baja,Hajos-Baja,HU,Hungary,Duna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-kunsag,Kunsag,HU,Hungary,Duna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-matra,Matra,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-nagy-somlo,Nagy-Somlo,HU,Hungary,Balaton,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-pannon,Pannon,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-somlo,Somlo,HU,Hungary,Balaton,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hu-sopron,Sopron,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-szekszard,Szekszárd,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-tihany,Tihany,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-szekszard,Szekszard,HU,Hungary,Pannon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-tihany,Tihany,HU,Hungary,Balaton,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hu-tokaj,Tokaj,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 hu-tokaj-hegyalja,Tokaj-Hegyalja,HU,Hungary,Tokaj,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-tokaji,Tokaji,HU,Hungary,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-villany,Villány,HU,Hungary,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-hu-zala,Zala,HU,Hungary,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-tokaji,Tokaji,HU,Hungary,Tokaj,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-villany,Villany,HU,Hungary,Pannon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+hu-zala,Zala,HU,Hungary,Balaton,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 id-bali,Bali,ID,Indonesia,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 il-galilee,Galilee,IL,Israel,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 il-golan-heights,Golan Heights,IL,Israel,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1101,7 +1102,7 @@ it-alcamo,Alcamo,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial
 it-aleatico-di-gradoli,Aleatico di Gradoli,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-alghero,Alghero,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-alta-langa,Alta Langa,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-alto-adige,Alto Adige,IT,Italy,Trentino-Alto Adige,Sudtirol;Südtirol,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-alto-adige,Alto Adige,IT,Italy,Trentino-Alto Adige,Sudtirol,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-alto-adige-colli-di-bolzano,Alto Adige Colli di Bolzano,IT,Italy,Trentino-Alto Adige,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-alto-adige-meranese,Alto Adige Meranese,IT,Italy,Trentino-Alto Adige,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-alto-adige-santa-maddalena,Alto Adige Santa Maddalena,IT,Italy,Trentino-Alto Adige,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1187,9 +1188,9 @@ it-chianti-montalbano,Chianti Montalbano,IT,Italy,Tuscany,,appellation,exact,ref
 it-chianti-montespertoli,Chianti Montespertoli,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
 it-chianti-rufina,Chianti Rufina,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
 it-cinque-terre,Cinque Terre,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-cinque-terre-sciacchetra,Cinque Terre Sciacchetrà,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-cinque-terre-sciacchetra,Cinque Terre Sciacchetra,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-circeo,Circeo,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-ciro,Cirò,IT,Italy,Calabria,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-ciro,Ciro,IT,Italy,Calabria,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-colli-albani,Colli Albani,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-colli-altotiberini,Colli Altotiberini,IT,Italy,Umbria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-colli-amerini,Colli Amerini,IT,Italy,Umbria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1366,8 +1367,8 @@ it-nizza,Nizza,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial
 it-noto,Noto,IT,Italy,Sicily,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-nuragus-di-cagliari,Nuragus di Cagliari,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-offida,Offida,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-oltrepo-pavese,Oltrepò Pavese,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-oltrepo-pavese-metodo-classico,Oltrepò Pavese Metodo Classico,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-oltrepo-pavese,Oltrepo Pavese,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-oltrepo-pavese-metodo-classico,Oltrepo Pavese Metodo Classico,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-oristano,Oristano,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ormeasco-di-pornassio,Ormeasco di Pornassio,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-orta-nova,Orta Nova,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1416,7 +1417,7 @@ it-rosso-di-cerignola,Rosso di Cerignola,IT,Italy,Apulia,,appellation,exact,refe
 it-rosso-di-montalcino,Rosso di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montalcino,editorial-v1,Project-authored; not a legal registry
 it-rosso-di-montepulciano,Rosso di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montepulciano,editorial-v1,Project-authored; not a legal registry
 it-rosso-piceno,Rosso Piceno,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-ruche-di-castagnole-monferrato,Ruchè di Castagnole Monferrato,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-ruche-di-castagnole-monferrato,Ruche di Castagnole Monferrato,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-salamino,Salamino,IT,Italy,Emilia-Romagna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-salaparuta,Salaparuta,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-salice-salentino,Salice Salentino,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1452,7 +1453,7 @@ it-taurasi,Taurasi,IT,Italy,Campania,,appellation,exact,reference_confirm,,edito
 it-teroldego-rotaliano,Teroldego Rotaliano,IT,Italy,Trentino-Alto Adige,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terratico-di-bibbona,Terratico di Bibbona,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-alfieri,Terre Alfieri,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-terre-di-chieti,Terre di Chieti,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-terre-di-chieti,Terre di Chieti,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-di-cosenza,Terre di Cosenza,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-siciliane,Terre Siciliane,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-tollesi,Terre Tollesi,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1478,7 +1479,7 @@ it-val-polcevera,Val Polcevera,IT,Italy,Liguria,,appellation,exact,reference_con
 it-valdadige,Valdadige,IT,Italy,Trentino-Alto Adige,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valdarno-di-sopra,Valdarno di Sopra,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valdobbiadene,Valdobbiadene,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-valle-d-aosta,Valle d'Aosta,IT,Italy,Aosta Valley,Vallée d'Aoste,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-valle-d-aosta,Valle d'Aosta,IT,Italy,Aosta Valley,Vallee d'Aoste,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valle-d-aosta-arnad-montjovet,Valle d'Aosta Arnad-Montjovet,IT,Italy,Aosta Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valle-d-aosta-chambave,Valle d'Aosta Chambave,IT,Italy,Aosta Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valle-d-aosta-donnas,Valle d'Aosta Donnas,IT,Italy,Aosta Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1532,23 +1533,23 @@ ma-benslimane,Benslimane,MA,Morocco,,,geography,exact,reference_confirm,,editori
 ma-casablanca,Casablanca,MA,Morocco,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ma-essaouira,Essaouira,MA,Morocco,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ma-guerrouane,Guerrouane,MA,Morocco,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ma-meknes,Meknès,MA,Morocco,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ma-meknes,Meknes,MA,Morocco,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 md-codru,Codru,MD,Moldova,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 md-purcari,Purcari,MD,Moldova,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-md-stefan-voda,Ștefan Vodă,MD,Moldova,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+md-stefan-voda,Stefan Voda,MD,Moldova,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 md-valul-lui-traian,Valul lui Traian,MD,Moldova,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mk-gevgelija-valandovo,Gevgelija-Valandovo,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-mk-kocani,Kočani,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+mk-kocani,Kocani,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mk-kratovo,Kratovo,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-mk-pcinja-ovce-pole,Pčinja-Ovče Pole,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+mk-pcinja-ovce-pole,Pcinja-Ovce Pole,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mk-polog,Polog,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mk-skopje,Skopje,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-mk-tikves,Tikveš,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+mk-tikves,Tikves,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mk-vardar-valley,Vardar Valley,MK,North Macedonia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mx-valle-de-guadalupe,Valle de Guadalupe,MX,Mexico,Baja California,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mx-valle-de-parras,Valle de Parras,MX,Mexico,Coahuila,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 mx-valle-de-san-vicente,Valle de San Vicente,MX,Mexico,Baja California,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-mx-valle-de-santo-tomas,Valle de Santo Tomás,MX,Mexico,Baja California,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+mx-valle-de-santo-tomas,Valle de Santo Tomas,MX,Mexico,Baja California,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 nz-auckland,Auckland,NZ,New Zealand,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 nz-awatere-valley,Awatere Valley,NZ,New Zealand,Marlborough,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 nz-bannockburn,Bannockburn,NZ,New Zealand,Central Otago,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1585,7 +1586,7 @@ nz-wairau-valley,Wairau Valley,NZ,New Zealand,Marlborough,,geography,exact,refer
 nz-waitaki-valley,Waitaki Valley,NZ,New Zealand,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 nz-wanaka,Wanaka,NZ,New Zealand,Central Otago,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pe-ica,Ica,PE,Peru,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-acores,Açores,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-acores,Acores,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-alenquer,Alenquer,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-alentejano,Alentejano,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-alentejo,Alentejo,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1593,7 +1594,7 @@ pt-almeirim,Almeirim,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,edit
 pt-amarante,Amarante,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-arruda,Arruda,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-ave,Ave,PT,Portugal,Vinho Verde,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-baiao,Baião,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-baiao,Baiao,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-bairrada,Bairrada,PT,Portugal,Bairrada,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-basto,Basto,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-beira-interior,Beira Interior,PT,Portugal,Beira Interior,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1602,90 +1603,92 @@ pt-borba,Borba,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editor
 pt-bucelas,Bucelas,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-carcavelos,Carcavelos,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-cartaxo,Cartaxo,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-cavado,Cávado,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-cavado,Cavado,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-chamusca,Chamusca,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-colares,Colares,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-coruche,Coruche,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-dao,Dão,PT,Portugal,Dao,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-dao,Dao,PT,Portugal,Dao,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-douro,Douro,PT,Portugal,Douro,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-duriense,Duriense,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-encostas-d-aire,Encostas d'Aire,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-evora,Évora,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-evora,Evora,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-graciosa,Graciosa,PT,Portugal,Azores,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-granja-amareleja,Granja-Amareleja,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-lagoa,Lagoa,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-lagos,Lagos,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-lima,Lima,PT,Portugal,Vinho Verde,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-lourinha,Lourinhã,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-lourinha,Lourinha,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-madeira,Madeira,PT,Portugal,Madeira,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-madeirense,Madeirense,PT,Portugal,Madeira,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-minho,Minho,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-moncao-e-melgaco,Monção e Melgaço,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-moncao-e-melgaco,Moncao e Melgaco,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-moura,Moura,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-obidos,Óbidos,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-obidos,Obidos,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-paiva,Paiva,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-palmela,Palmela,PT,Portugal,Península de Setúbal,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-palmela,Palmela,PT,Portugal,Peninsula de Setubal,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-pico,Pico,PT,Portugal,Azores,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-portalegre,Portalegre,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-portimao,Portimão,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-portimao,Portimao,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-porto,Porto,PT,Portugal,Douro,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-redondo,Redondo,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-reguengos,Reguengos,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-ribatejo,Ribatejo,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-santarem,Santarém,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-setubal,Setúbal,PT,Portugal,Península de Setúbal,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-santarem,Santarem,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-setubal,Setubal,PT,Portugal,Peninsula de Setubal,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-sousa,Sousa,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-tavira,Tavira,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-tejo,Tejo,PT,Portugal,Tejo,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-terras-de-basto,Terras de Basto,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-terras-do-cavado,Terras do Cávado,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-terras-do-cavado,Terras do Cavado,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-tomar,Tomar,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-torres-vedras,Torres Vedras,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-transmontano,Transmontano,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-tras-os-montes,Trás-os-Montes,PT,Portugal,Trás-os-Montes,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-valpacos,Valpaços,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-tras-os-montes,Tras-os-Montes,PT,Portugal,Tras-os-Montes,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-valpacos,Valpacos,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-vidigueira,Vidigueira,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-vinho-verde,Vinho Verde,PT,Portugal,Vinho Verde,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-py-itapua,Itapúa,PY,Paraguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-banat,Banat,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-bohotin,Bohotin,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-bucium,Bucium,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-ceptura,Ceptura,RO,Romania,Dealu Mare,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-colinele-dobrogei,Colinele Dobrogei,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-cotesti,Cotești,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+py-itapua,Itapua,PY,Paraguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-banat,Banat,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-bohotin,Bohotin,RO,Romania,Dealurile Moldovei,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-bucium,Bucium,RO,Romania,Dealurile Moldovei,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-ceptura,Ceptura,RO,Romania,Muntenia,,geography,exact,reference_confirm,Muntenia/Dealu Mare,editorial-v1,Project-authored; not a legal registry
+ro-colinele-dobrogei,Colinele Dobrogei,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-cotesti,Cotesti,RO,Romania,Dealurile Moldovei,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ro-cotnari,Cotnari,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-crisana,Crișana,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-crisana,Crisana,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ro-dealu-mare,Dealu Mare,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-dragasani,Drăgășani,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-husi,Huși,RO,Romania,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-iasi,Iași,RO,Romania,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-dealurile-moldovei,Dealurile Moldovei,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-dragasani,Dragasani,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-husi,Husi,RO,Romania,Dealurile Moldovei,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-iasi,Iasi,RO,Romania,Dealurile Moldovei,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-muntenia,Muntenia,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ro-murfatlar,Murfatlar,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-nicoresti,Nicorești,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-odobesti,Odobești,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-panciu,Panciu,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-recas,Recaș,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-romania,România,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-stefanesti,Ștefănești,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-tarnave,Târnave,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-transilvania,Transilvania,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-urlati,Urlati,RO,Romania,Dealu Mare,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ro-valea-calugareasca,Valea Călugărească,RO,Romania,Dealu Mare,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-rs-fruska-gora,Fruška Gora,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-nicoresti,Nicoresti,RO,Romania,Dealurile Moldovei,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-odobesti,Odobesti,RO,Romania,Dealurile Moldovei,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-panciu,Panciu,RO,Romania,Dealurile Moldovei,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-recas,Recas,RO,Romania,Banat,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-romania,Romania,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-stefanesti,Stefanesti,RO,Romania,Muntenia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-tarnave,Tarnave,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-transilvania,Transilvania,RO,Romania,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ro-urlati,Urlati,RO,Romania,Muntenia,,geography,exact,reference_confirm,Muntenia/Dealu Mare,editorial-v1,Project-authored; not a legal registry
+ro-valea-calugareasca,Valea Calugareasca,RO,Romania,Muntenia,,geography,exact,reference_confirm,Muntenia/Dealu Mare,editorial-v1,Project-authored; not a legal registry
+rs-fruska-gora,Fruska Gora,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 rs-negotin,Negotin,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 rs-sremski-karlovci,Sremski Karlovci,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 rs-subotica,Subotica,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-rs-sumadija,Šumadija,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-rs-zupa,Župa,RS,Serbia,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-si-bizeljsko-sremic,Bizeljsko-Sremič,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+rs-sumadija,Sumadija,RS,Serbia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+rs-zupa,Zupa,RS,Serbia,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+si-bizeljsko-sremic,Bizeljsko-Sremic,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-dolenjska,Dolenjska,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-si-goriska-brda,Goriška Brda,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+si-goriska-brda,Goriska Brda,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-podravje,Podravje,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-posavje,Posavje,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-prekmurje,Prekmurje,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-primorska,Primorska,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-slovenija,Slovenija,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-slovenska-istra,Slovenska Istra,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-si-stajerska-slovenija,Štajerska Slovenija,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+si-stajerska-slovenija,Stajerska Slovenija,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 si-vipavska-dolina,Vipavska Dolina,SI,Slovenia,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 th-chiang-mai,Chiang Mai,TH,Thailand,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 th-hua-hin,Hua Hin,TH,Thailand,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1701,11 +1704,11 @@ tr-cappadocia,Cappadocia,TR,Turkey,,,geography,exact,reference_confirm,,editoria
 tr-central-anatolia,Central Anatolia,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-denizli,Denizli,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-eastern-anatolia,Eastern Anatolia,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-tr-elaz-g,Elazığ,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+tr-elazig,Elazig,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-mediterranean,Mediterranean,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-midyat,Midyat,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-tr-nevsehir,Nevşehir,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-tr-sarkoy,Şarköy,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+tr-nevsehir,Nevsehir,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+tr-sarkoy,Sarkoy,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-southeastern-anatolia,Southeastern Anatolia,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-thrace,Thrace,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 tr-tokat,Tokat,TR,Turkey,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1970,7 +1973,7 @@ us-upper-mississippi-river-valley,Upper Mississippi River Valley,US,United State
 us-van-duzer-corridor,Van Duzer Corridor,US,United States,Oregon,,geography,exact,reference_confirm,,ucd-ava,avas/van_duzer_corridor.geojson
 us-verde-valley,Verde Valley,US,United States,Arizona,,geography,exact,reference_confirm,,ucd-ava,avas/verde_valley.geojson
 us-virginia-peninsula,Virginia Peninsula,US,United States,Virginia,,geography,exact,reference_confirm,,ucd-ava,avas/virginia_peninsula.geojson
-us-virginia-s-eastern-shore,Virginia’s Eastern Shore,US,United States,Virginia,,geography,exact,reference_confirm,,ucd-ava,avas/virginia_s_eastern_shore.geojson
+us-virginia-s-eastern-shore,Virginia's Eastern Shore,US,United States,Virginia,,geography,exact,reference_confirm,,ucd-ava,avas/virginia_s_eastern_shore.geojson
 us-wahluke-slope,Wahluke Slope,US,United States,Washington,,geography,exact,reference_confirm,,ucd-ava,avas/wahluke_slope.geojson
 us-walla-walla-valley,Walla Walla Valley,US,United States,Oregon;Washington,,geography,exact,reference_confirm,,ucd-ava,avas/walla_walla_valley.geojson
 us-warren-hills,Warren Hills,US,United States,New Jersey,,geography,context_required,reference_confirm,,ucd-ava,avas/warren_hills.geojson
@@ -1993,7 +1996,7 @@ us-yountville,Yountville,US,United States,California,,geography,exact,reference_
 us-yucaipa-valley,Yucaipa Valley,US,United States,California,,geography,exact,reference_confirm,,ucd-ava,avas/yucaipa_valley.geojson
 uy-canelones,Canelones,UY,Uruguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 uy-colonia,Colonia,UY,Uruguay,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-uy-juanico,Juanicó,UY,Uruguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+uy-juanico,Juanico,UY,Uruguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 uy-las-brujas,Las Brujas,UY,Uruguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 uy-maldonado,Maldonado,UY,Uruguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 uy-montevideo,Montevideo,UY,Uruguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry

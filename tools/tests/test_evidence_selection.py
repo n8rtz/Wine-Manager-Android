@@ -24,8 +24,14 @@ CLASSIFICATION = {'grandcru', 'grandcruclasse', 'premiergrandcruclasse',
                   'superieur', 'superieure', 'superieures'}
 
 
+def scrub_accents(text):
+    decomposed = unicodedata.normalize('NFD', text.replace('`', '').replace('´', ''))
+    stripped = ''.join(ch for ch in decomposed if unicodedata.category(ch) != 'Mn')
+    return unicodedata.normalize('NFC', stripped)
+
+
 def key(text):
-    value = unicodedata.normalize('NFKD', text.lower())
+    value = unicodedata.normalize('NFKD', scrub_accents(text).lower())
     value = ''.join(ch for ch in value if unicodedata.category(ch) != 'Mn')
     return ''.join(ch for ch in re.sub(r'[^a-z0-9]+', ' ', value) if ch.isalnum())
 
@@ -36,8 +42,8 @@ def suffix_terms():
 
 
 def split(text, terms=None):
-    """Mirror of WineDesignations.split: longest suffix first, trailing match before leading."""
-    clean = text.strip()
+    """Mirror of WineDesignations.split: scrub accents, longest suffix first, trailing before leading."""
+    clean = scrub_accents(text).strip()
     for name in sorted(terms or suffix_terms(), key=len, reverse=True):
         pattern = r'\s+'.join(re.escape(word) for word in name.split(' '))
         end = re.search(r'\s+(' + pattern + r')$', clean, re.IGNORECASE)
@@ -64,11 +70,14 @@ def catalog_names():
 class ClassificationBaseTests(unittest.TestCase):
     def test_the_reviewer_cases_keep_their_expected_level(self):
         # The benchmark expects these to resolve to the base place, with the printed form kept
-        # as the wine name.
-        self.assertEqual(classification_base('Saint-Émilion Grand Cru'), 'Saint-Émilion')
+        # as the wine name (both accented inputs and unaccented OCR caps scrub to plain ASCII).
+        self.assertEqual(classification_base('Saint-Emilion Grand Cru'), 'Saint-Emilion')
+        self.assertEqual(classification_base('Saint-Émilion Grand Cru'), 'Saint-Emilion')
+        self.assertEqual(classification_base('Bordeaux Superieur'), 'Bordeaux')
+        self.assertEqual(classification_base('BORDEAUX SUPERIEUR'), 'BORDEAUX')
         self.assertEqual(classification_base('Bordeaux Supérieur'), 'Bordeaux')
-        self.assertEqual(classification_base('Médoc Supérieur'), 'Médoc')
-        self.assertEqual(classification_base('Graves Supérieures'), 'Graves')
+        self.assertEqual(classification_base('Medoc Superieur'), 'Medoc')
+        self.assertEqual(classification_base('Graves Superieures'), 'Graves')
         # Zone-forming suffixes name a different place and must never be collapsed.
         for text in ('Chianti Classico', 'Soave Superiore', 'Beaujolais Villages',
                      'Barolo Riserva', 'Amarone della Valpolicella'):
@@ -84,7 +93,7 @@ class ClassificationBaseTests(unittest.TestCase):
         self.assertEqual(missing, [], f'base missing from catalog: {missing}')
         # Known representatives, so a silent catalog change cannot empty this test.
         names = {name for name, _ in qualified}
-        for name in ('Saint-Émilion Grand Cru', 'Bordeaux Supérieur'):
+        for name in ('Saint-Emilion Grand Cru', 'Bordeaux Superieur'):
             self.assertIn(name, names)
 
 
@@ -105,7 +114,7 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
 
     def test_classification_names_resolve_to_the_base_place(self):
         source = EVIDENCE.read_text()
-        self.assertIn('val printedBase=WineDesignations.classificationBase(text)', source)
+        self.assertIn('val printedBase=WineDesignations.classificationBase(placeSubject)', source)
         self.assertIn('WineDesignations.classificationBase(place.name)', source)
         self.assertIn('printed classification qualifies the matched appellation', source)
         # The base suppresses the unresolved-suffix rule, which would otherwise withhold the subregion.
@@ -115,13 +124,13 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         solver = SOLVER.read_text()
         self.assertIn('val base=WineDesignations.classificationBase(wineName) ?: wineName', solver)
         self.assertIn('!samePrintedAppellation(old,next.place)', solver)
-        # Mirror samePrintedAppellation: SAINT-ÉMILION GRAND CRU and BORDEAUX SUPÉRIEUR match their
+        # Mirror samePrintedAppellation: SAINT-EMILION GRAND CRU and BORDEAUX SUPERIEUR match their
         # stripped base places, while zone-forming suffixes and estate names still ownership-conflict.
-        self.assertEqual(key(classification_base('SAINT-ÉMILION GRAND CRU') or ''), key('Saint-Émilion'))
-        self.assertEqual(key(classification_base('SAINT EMILION GRAND CRU') or ''), key('Saint-Émilion'))
-        self.assertEqual(key(classification_base('BORDEAUX SUPÉRIEUR') or ''), key('Bordeaux'))
+        self.assertEqual(key(classification_base('SAINT-ÉMILION GRAND CRU') or ''), key('Saint-Emilion'))
+        self.assertEqual(key(classification_base('SAINT EMILION GRAND CRU') or ''), key('Saint-Emilion'))
+        self.assertEqual(key(classification_base('BORDEAUX SUPERIEUR') or ''), key('Bordeaux'))
         self.assertNotEqual(key(classification_base('Chianti Classico') or 'Chianti Classico'), key('Chianti'))
-        self.assertNotEqual(key(classification_base('Château Saint-Émilion') or 'Château Saint-Émilion'), key('Saint-Émilion'))
+        self.assertNotEqual(key(classification_base('Chateau Saint-Emilion') or 'Chateau Saint-Emilion'), key('Saint-Emilion'))
 
     def test_one_name_never_fills_two_levels(self):
         source = EVIDENCE.read_text()
@@ -132,7 +141,7 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         runner = RUNNER.read_text()
         self.assertIn('internal const val REPAIR_PLACES_IN_BENCHMARK=true', runner)
         self.assertIn('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true', runner)
-        self.assertIn('evidence-lab-v4-designation-base', EVIDENCE.read_text())
+        self.assertIn('evidence-lab-v4-context', EVIDENCE.read_text())
 
 
 if __name__ == '__main__':

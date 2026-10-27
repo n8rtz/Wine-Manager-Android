@@ -52,7 +52,7 @@ object EvidenceArchitectureChecks {
         check(!EvidenceIdentityRoles.ownerGrowerLegalLine("Domaine du Propriétaire-Récoltant"))
         val legalFooterLabel=engine.extract(listOf(t("CHÂTEAU PEYROUQUET",.08f),t("SAINT-ÉMILION",.35f),
             t("2020",.56f),t(ownerGrower,.84f)),2026).fill
-        check(legalFooterLabel.fields.getValue(FieldId.WINE_NAME).value=="SAINT-ÉMILION") { legalFooterLabel.fields }
+        check(legalFooterLabel.fields.getValue(FieldId.WINE_NAME).value=="SAINT-EMILION") { legalFooterLabel.fields }
         // Unrelated names test structure without bottle-name lookups or spelling fixtures.
         val novel=engine.extract(listOf(t("COLINASde",.1f),t("LUNAVISTA",.23f),t("CRIANZA",.4f)),2026).fill
         check(com.yourapp.wine.merge.TextNorm.normalize(novel.fields.getValue(FieldId.PRODUCER).value)=="colinas de lunavista") { novel.fields }
@@ -67,14 +67,14 @@ object EvidenceArchitectureChecks {
         check(percentage.fields.getValue(FieldId.WINE_NAME).value=="Crianza")
         val partialOrigin=engine.extract(listOf(t("COTES DU RHONE VII",.2f)),2026).fill
         check(partialOrigin.fields.getValue(FieldId.COUNTRY).value=="France")
-        check(partialOrigin.fields.getValue(FieldId.REGION).value=="Rhône")
+        check(partialOrigin.fields.getValue(FieldId.REGION).value=="Rhone")
         check(partialOrigin.fields.getValue(FieldId.SUBREGION).value.isBlank())
         val countrySuffix=engine.extract(listOf(t("Rueda-España",.2f)),2026).fill
         check(countrySuffix.fields.getValue(FieldId.SUBREGION).value=="Rueda")
         val suffixNegatives=listOf("Côtes du Rhône","Domaine Côtes du Rhône Vilas","Côtes du Rhône Violet")
         for(text in suffixNegatives) {
             val g=EvidenceLexicon.expand(EvidenceGraphBuilder.build(listOf(t(text,.2f)))) {}
-            check(g.phrases.none { it.text=="Côtes du Rhône Villages" })
+            check(g.phrases.none { it.text=="Cotes du Rhone Villages" })
         }
         // No independent producer-tail correction from variants of a single engine.
         val singleEngine=EvidenceLexicon.expand(EvidenceGraphBuilder.build(listOf(t("UIGNERONS de 'Eclave",.8f),
@@ -93,9 +93,10 @@ object EvidenceArchitectureChecks {
      * zone-forming suffixes such as `Chianti Classico` keep their own identity.
      */
     private fun designationAndLevelRules() {
-        check(WineDesignations.classificationBase("Saint-Émilion Grand Cru")=="Saint-Émilion")
+        check(WineDesignations.classificationBase("Saint-Émilion Grand Cru")=="Saint-Emilion")
         check(WineDesignations.classificationBase("Bordeaux Supérieur")=="Bordeaux")
-        check(WineDesignations.classificationBase("Médoc Supérieur")=="Médoc")
+        check(WineDesignations.classificationBase("BORDEAUX SUPERIEUR")=="BORDEAUX")
+        check(WineDesignations.classificationBase("Médoc Supérieur")=="Medoc")
         check(WineDesignations.classificationBase("Graves Supérieures")=="Graves")
         for(text in listOf("Chianti Classico","Soave Superiore","Beaujolais Villages","Barolo Riserva","Amarone della Valpolicella"))
             check(WineDesignations.classificationBase(text)==null) { text }
@@ -113,19 +114,45 @@ object EvidenceArchitectureChecks {
         check(superior.fields.getValue(FieldId.COUNTRY).value=="France") { superior.fields }
         check(superior.fields.getValue(FieldId.REGION).value=="Bordeaux") { superior.fields }
         check(superior.fields.getValue(FieldId.SUBREGION).value.isBlank()) { superior.fields }
-        check(superior.fields.getValue(FieldId.WINE_NAME).value=="BORDEAUX SUPÉRIEUR") { superior.fields }
+        check(superior.fields.getValue(FieldId.WINE_NAME).value=="BORDEAUX SUPERIEUR") { superior.fields }
         // The printed classification stays the wine name while the base appellation populates its ancestors,
         // both alongside a country-only line and when no country/region line is printed at all.
         val emilion=EvidenceExtractor(kb).extract(listOf(line("SAINT-ÉMILION GRAND CRU",.3f),line("PRODUCE OF FRANCE",.6f),
             line("CHÂTEAU ABELYCE",.5f,"paddle-v6-medium"),line("2010",.8f)),2026).fill
         check(emilion.fields.getValue(FieldId.COUNTRY).value=="France") { emilion.fields }
         check(emilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { emilion.fields }
-        check(emilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Émilion") { emilion.fields }
-        check(emilion.fields.getValue(FieldId.WINE_NAME).value=="SAINT-ÉMILION GRAND CRU") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.WINE_NAME).value=="SAINT-EMILION GRAND CRU") { emilion.fields }
+        val framedEmilion=EvidenceExtractor(kb).extract(listOf(
+            line("CHATEAU ABELYCE",.2f,"paddle-v6-medium"),
+            line("APPELLATION SAINT-EMILION GRAND CRU CONTROLEE",.5f),
+            line("MIS EN BOUTEILLE AU CHATEAU",.7f),
+            line("2015",.85f)),2026).fill
+        check(framedEmilion.fields.getValue(FieldId.COUNTRY).value=="France") { framedEmilion.fields }
+        check(framedEmilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { framedEmilion.fields }
+        check(framedEmilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { framedEmilion.fields }
+        check(framedEmilion.fields.getValue(FieldId.WINE_NAME).value=="SAINT-EMILION GRAND CRU") { framedEmilion.fields }
+        val contextGraves=EvidenceExtractor(kb).extract(listOf(
+            line("CHATEAU CARBONEAU",.2f,"paddle-v6-medium"),
+            line("GRAVES",.45f),
+            line("MIS EN BOUTEILLE AU CHATEAU",.7f),
+            line("2019",.85f)),2026).fill
+        check(contextGraves.fields.getValue(FieldId.COUNTRY).value=="France") { contextGraves.fields }
+        check(contextGraves.fields.getValue(FieldId.REGION).value=="Bordeaux") { contextGraves.fields }
+        check(contextGraves.fields.getValue(FieldId.SUBREGION).value=="Graves") { contextGraves.fields }
         val saintJulienOnly=EvidenceExtractor(kb).extract(listOf(line("CHÂTEAU TALBOT",.2f,"paddle-v6-medium"),
             line("SAINT-JULIEN",.5f),line("2018",.8f)),2026).fill
         check(saintJulienOnly.fields.getValue(FieldId.COUNTRY).value=="France") { saintJulienOnly.fields }
         check(saintJulienOnly.fields.getValue(FieldId.REGION).value=="Bordeaux") { saintJulienOnly.fields }
         check(saintJulienOnly.fields.getValue(FieldId.SUBREGION).value=="Saint-Julien") { saintJulienOnly.fields }
+        val twoItalianRegions=EvidenceExtractor(kb).extract(listOf(
+            line("BAROLO",.25f),line("CHIANTI",.55f),line("2019",.85f)),2026).fill
+        check(twoItalianRegions.fields.getValue(FieldId.COUNTRY).value=="Italy") { twoItalianRegions.fields }
+        check(twoItalianRegions.fields.getValue(FieldId.REGION).value.isBlank()) { twoItalianRegions.fields }
+        val extractor=EvidenceExtractor(kb)
+        check(extractor.canonicalCountryName("Russian Federation")=="Russia")
+        val baroloGeo=extractor.resolveLinkedWineGeography("Barolo","","","","Italy")
+        check(baroloGeo[FieldId.COUNTRY]=="Italy" && baroloGeo[FieldId.REGION]=="Piedmont" && baroloGeo[FieldId.SUBREGION]=="Barolo") { baroloGeo.toString() }
+        check(extractor.resolveLinkedWineGeography("Cuvee Speciale","","","","France").isEmpty())
     }
 }

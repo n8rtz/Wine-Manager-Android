@@ -36,13 +36,31 @@ object ReferenceWineCatalog {
     }
     fun isDescription(text:String):Boolean = TextNorm.normalize(text) in descriptions
 
+    private val regionRequiredContextNames = setOf(
+        "bianco", "denmark", "orange", "augusta", "hermann", "warren hills", "douglas"
+    )
+
     /** Ambiguous short/common names need a separately spelled country/region in the same searched text. */
-    fun mayMatch(place:Place,text:String):Boolean {
+    fun mayMatch(place:Place,text:String):Boolean = mayMatch(place,text,emptySet(),emptySet(),false)
+
+    /**
+     * Cross-line overload used by Lab `LabelContext`: when [standaloneOrFramed] is true for the
+     * evaluated phrase, separate country/region/legal context elsewhere on the label may unlock a
+     * `context_required` wine origin without turning bare style words (`Vino`, `Bianco`, `Orange Wine`)
+     * into geographic claims.
+     */
+    fun mayMatch(
+        place:Place,
+        text:String,
+        contextCountryCodes:Set<String>,
+        contextRegionsNormalized:Set<String>,
+        standaloneOrFramed:Boolean,
+    ):Boolean {
         val row=origin(place) ?: return true
         if(!row.contextRequired) return true
         if(place.nameNorm=="orange" && Regex("\\borange\\s+wine\\b").containsMatchIn(text)) return false
         val evidence=listOf(row.country)+row.regions
-        return evidence.any { name ->
+        val sameLine=evidence.any { name ->
             val n=TextNorm.normalize(name)
             n!=place.nameNorm && (listOf(row.name)+row.aliases).any { form ->
                 val term=Regex.escape(TextNorm.normalize(form))
@@ -50,5 +68,13 @@ object ReferenceWineCatalog {
                 Regex("(?<![\\p{L}\\p{N}])(?:$term[ ,;/:-]+$anchor|$anchor[ ,;/:-]+$term)(?![\\p{L}\\p{N}])").containsMatchIn(text)
             }
         }
+        if(sameLine) return true
+        if(!standaloneOrFramed || place.nameNorm=="vino") return false
+        if(place.nameNorm in regionRequiredContextNames) {
+            return row.regions.isNotEmpty() && row.regions.any { TextNorm.normalize(it) in contextRegionsNormalized }
+        }
+        if(row.code !in contextCountryCodes) return false
+        return row.regions.isEmpty() || contextRegionsNormalized.isEmpty() ||
+            row.regions.any { TextNorm.normalize(it) in contextRegionsNormalized }
     }
 }

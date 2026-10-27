@@ -1,6 +1,7 @@
 package com.yourapp.wine.gazetteer
 
 import com.yourapp.wine.diagnostics.PipelineFunnel
+import com.yourapp.wine.merge.TextNorm
 
 /** A linked name match needs its own OCR evidence, not merely a producer's catalogue membership. */
 internal class LinkedWineResolver(private val index:Index,
@@ -31,7 +32,7 @@ internal class LinkedWineResolver(private val index:Index,
         trace.visit("invoked",true)
         fun unchanged(reason:String,matches:List<Match> = emptyList(),completed:Boolean=true):Decision {
             trace.visit("execution",completed,reason)
-            return Decision(producer.value,existingWine,reason,matches,telemetry=trace.fields())
+            return Decision(TextNorm.scrub(producer.value),TextNorm.scrub(existingWine),reason,matches,telemetry=trace.fields())
         }
         // The wine index is the verified primary export in both index variants; supplemental
         // Lab producers simply have no linked wines and abstain below.
@@ -53,7 +54,7 @@ internal class LinkedWineResolver(private val index:Index,
                     val exact=index.lookup(key,33,checkBudget)
                     if(exact.size<=32) for(e in exact.filter { it.key==key }) {
                         val rows=observed.map { ProducerResolver.Match(e,it.text,it.engine,it.observationIds,0) }
-                        if(independent(rows)) producers[e.id]=rows
+                        if(policy.supports(rows)) producers[e.id]=rows
                     }
                 }
             }
@@ -126,8 +127,12 @@ internal class LinkedWineResolver(private val index:Index,
                     a.span.engine!=b.span.engine && a.span.observationIds.intersect(b.span.observationIds).isEmpty() } })
                 "independent producer and wine OCR agree with primary LWIN relationship; confirm manually"
                 else "single-engine producer and wine OCR agree with primary LWIN relationship under the lab single-reading policy; confirm manually"
-            return Decision(if(old==p.key) existingProducer else p.name,
-                if(ProducerResolver.normalize(existingWine)==wine.key) existingWine else wine.name,
+            val cleanExistingProducer=TextNorm.scrub(existingProducer)
+            val cleanProducerName=TextNorm.scrub(p.name)
+            val cleanExistingWine=TextNorm.scrub(existingWine)
+            val cleanWineName=TextNorm.scrub(wine.name)
+            return Decision(if(old==p.key) cleanExistingProducer else cleanProducerName,
+                if(ProducerResolver.normalize(cleanExistingWine)==wine.key) cleanExistingWine else cleanWineName,
                 agreement,matches,p.id,wine.id,wine.lwin7,trace.fields())
         } catch(_:ProducerResolver.BudgetExceeded) { return unchanged("linked wine budget reached; unchanged",completed=false) }
         catch(error:Exception) {

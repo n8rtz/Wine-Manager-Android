@@ -35,7 +35,7 @@ internal object TextLabWineExtraction {
                 try {
                     check(engine!=null) { setupError }
                     val records=TextLabWineTable.readings(journal,candidate,pass).map { row ->
-                        val text=row.getValue("raw_text")
+                        val text=TextNorm.scrub(row.getValue("raw_text"))
                         val baseBox=box(row["base_box_normalized"]) ?: if(!journal.detectLines) RectF(0f,0f,1f,1f)
                             else error("Missing/invalid base coordinates for region ${row["region_id"]}")
                         // Scores are intentionally estimated: the table cannot promote a lab reading to GREEN.

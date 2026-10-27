@@ -139,25 +139,34 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private fun labPredictions(): List<JSONObject> = labFolder?.let(::predictions).orEmpty()
 
     /**
-     * One record per photo for each version: the frozen Prod records, plus the current Lab
-     * checkpoints. Lab is scored straight from its folder so the row keeps live funnel telemetry;
-     * Prod records carry their frozen funnel, so the matrix works without a rerun.
+     * One record per photo for each version, scoped to the photos Lab v4 has attempted in this
+     * pass so all four rows compare side by side over the exact same subset before all 125 finish
+     * (while still showing the full frozen baseline when Lab has 0 checkpoints).
+     * On-disk Prod baselines remain frozen at full dataset size in [WineAppLabelsBaselines].
      */
-    private fun predictionsByMode(): Map<PhoneCorpusRunner.Mode, List<JSONObject>> =
-        PhoneCorpusRunner.Mode.entries.associateWith { mode ->
+    private fun predictionsByMode(): Map<PhoneCorpusRunner.Mode, List<JSONObject>> {
+        val lab = labPredictions()
+        val attempted: Set<String> = lab.mapNotNullTo(linkedSetOf()) {
+            it.optString("image").takeIf(String::isNotBlank)
+        }
+        return PhoneCorpusRunner.Mode.entries.associateWith { mode ->
             when (mode) {
-                PhoneCorpusRunner.Mode.LAB -> labPredictions()
-                else -> baselines?.all(mode)?.values?.toList().orEmpty()
+                PhoneCorpusRunner.Mode.LAB -> lab
+                else -> {
+                    val frozen = baselines?.all(mode).orEmpty()
+                    if (attempted.isEmpty()) frozen.values.toList() else attempted.mapNotNull(frozen::get)
+                }
             }
         }
+    }
 
     private fun scoreboard() = PhoneCorpusScoreboard(app, "wine-app-labels-v1")
 
     private fun refresh() {
         val mode = mutable.value.mode
         val scoreboard = PhoneCorpusScoreboard(app, "wine-app-labels-v1")
-        // Lab is scored from this pass's checkpoints; the Prod versions are scored from their
-        // frozen records, so their rows never move once captured.
+        // Lab is scored from this pass's checkpoints; frozen Prod rows follow Lab's attempted
+        // photo subset so side-by-side totals stay apples-to-apples while a pass is running.
         val byMode = predictionsByMode()
         val currentBoard = scoreboard.build(byMode.getValue(mode), mode)
         val comparisonRows = PhoneCorpusRunner.Mode.entries.map { comparedMode ->
@@ -173,7 +182,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · Lab v4 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen")
-            appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is then frozen on this device and every later pass scores that record instead of re-running them, so their rows only change when a new photo is captured. Only Lab v4 runs fresh OCR on every pass. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
+            appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v4 has attempted so far, so all four rows compare side by side without re-running Prod. Only Lab v4 runs fresh OCR on every pass. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
             appendLine("Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))

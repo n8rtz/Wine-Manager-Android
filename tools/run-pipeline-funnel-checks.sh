@@ -18,10 +18,11 @@ while (($#)); do
 done
 python3 tools/logic-checks/generate-funnel-fixture.py "$tmp/fixture.json" "${fixture_args[@]}"
 bash "$KOTLIN_HOME/bin/kotlinc" \
- app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt \
- app/src/debug/java/com/yourapp/wine/phonecorpus/{PhoneCorpusMath,PhoneCorpusPipelineDiagnostics,PhoneCorpusFunnelJson,PhoneCorpusScoreboard}.kt \
- app/src/debug/java/com/yourapp/wine/gazetteer/{ProducerResolver,LinkedWineResolver}.kt \
- app/src/debug/java/com/yourapp/wine/textlab/{TextLabJournal,TextLabChoices}.kt \
+ app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
+ app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt \
+ app/src/main/java/com/yourapp/wine/phonecorpus/{PhoneCorpusMath,PhoneCorpusPipelineDiagnostics,PhoneCorpusFunnelJson,PhoneCorpusScoreboard}.kt \
+ app/src/main/java/com/yourapp/wine/gazetteer/{ProducerResolver,LinkedWineResolver}.kt \
+ app/src/main/java/com/yourapp/wine/textlab/{TextLabJournal,TextLabChoices}.kt \
  app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt \
  tools/logic-checks/{PipelineFunnelChecks,PipelineFunnelHostContext,PipelineFunnelHostRunner}.kt \
  -cp "$JSON_JAVA_CLASSPATH" -include-runtime -d "$tmp/checks.jar"

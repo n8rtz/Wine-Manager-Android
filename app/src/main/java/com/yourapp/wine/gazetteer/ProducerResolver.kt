@@ -3,6 +3,7 @@ package com.yourapp.wine.gazetteer
 import java.text.Normalizer
 import java.util.Locale
 import com.yourapp.wine.diagnostics.PipelineFunnel
+import com.yourapp.wine.merge.TextNorm
 
 /** Conservative resolver over integrity-checked producer/brand names; suggestions always require confirmation.
  * The primary index is the verified LWIN export. The Lab benchmark may substitute an expanded
@@ -10,7 +11,7 @@ import com.yourapp.wine.diagnostics.PipelineFunnel
  * evidence rules below (two engines, separation, existing-value protection) are unchanged. */
 internal class ProducerResolver(private val index:Index,
     private val onFailureTelemetry:(Map<String,String>)->Unit={}) {
-    data class Entity(val id:String,val name:String,val key:String,val support:Set<String> = emptySet())
+    data class Entity(val id:String,val name:String,val key:String,val support:Set<String> = emptySet(),val countryGroup:String="")
     data class Span(val text:String,val engine:String,val observationIds:Set<Int>,val estimated:Boolean=false)
     interface Index {
         val version:String
@@ -36,6 +37,10 @@ internal class ProducerResolver(private val index:Index,
      */
     data class Policy(val minimumIndependentEngines:Int=2) {
         init { require(minimumIndependentEngines in 1..2) }
+        var countryContext:String=""
+            private set
+        fun withCountryContext(country:String):Policy=
+            if(country.isBlank()) this else Policy(minimumIndependentEngines).also { it.countryContext=country }
         fun supports(rows:List<Match>)=minimumIndependentEngines<2 || rows.any { a -> rows.any { b ->
             a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
         companion object {
@@ -55,7 +60,11 @@ internal class ProducerResolver(private val index:Index,
         const val MAX_FUZZY_CANDIDATES=200
         private val noise=Regex("\\b(?:imported|importer|imports|distributed|distributor|bottled|bottler|embouteille|mis en bouteille|produced by|product of|produit de|appellation|controlee|protegee|alcohol|alc|vol|contains|sulfites|sulphites|government|warning|llc|inc|corp|ltd|www|http)\\b")
         private val generic=setOf("chateau","domaine","domaines","estate","winery","wine","wines","vineyard","vineyards","cellar","cellars","bodega","bodegas","maison","de","du","des","la","le","les","the","and","et","of","family","reserve","reserva","grand","cru")
-        fun normalize(text:String):String=Normalizer.normalize(text.lowercase(Locale.ROOT).replace('’','\''),Normalizer.Form.NFKD)
+        fun canonicalCountryKey(country:String):String {
+            val clean=TextNorm.scrub(country).trim().lowercase(Locale.ROOT)
+            return if(clean=="russian federation") "russia" else clean
+        }
+        fun normalize(text:String):String=Normalizer.normalize(TextNorm.scrub(text).lowercase(Locale.ROOT).replace('’','\''),Normalizer.Form.NFKD)
             .replace(Regex("\\p{M}+"),"").replace(Regex("[^\\p{L}\\p{N}]+")," ").trim().replace(Regex("\\s+")," ")
         fun eligible(text:String):Boolean = ineligibilityReason(text)==null
         fun ineligibilityReason(text:String):String? {
@@ -126,32 +135,47 @@ internal class ProducerResolver(private val index:Index,
             throw error // Preserve the original failure/abstention path; retain only diagnostic progress.
         }
         val groups=matches.groupBy { it.entity.id }
-        val viable=groups.filterValues { rows -> policy.supports(rows) }
-        trace.visit("independent",viable.isNotEmpty(),"no independently supported producer")
-        if(viable.isEmpty()) return finish(existing,"no independently supported producer; unchanged",matches)
+        val viableRaw=groups.filterValues { rows -> policy.supports(rows) }
+        trace.visit("independent",viableRaw.isNotEmpty(),"no independently supported producer")
+        if(viableRaw.isEmpty()) return finish(existing,"no independently supported producer; unchanged",matches)
+        val targetCountry=canonicalCountryKey(policy.countryContext)
+        val viable=if(viableRaw.size>1 && targetCountry.isNotEmpty() &&
+            viableRaw.values.all { it.first().entity.countryGroup.isNotBlank() }) {
+            val inCountry=viableRaw.filterValues { canonicalCountryKey(it.first().entity.countryGroup)==targetCountry }
+            if(inCountry.size==1) inCountry else viableRaw
+        } else viableRaw
         trace.visit("unambiguous",viable.size==1,"ambiguous producer identities")
         if(viable.size!=1) return finish(existing,"ambiguous producer identities; unchanged",matches)
         val (id,winner)=viable.entries.single()
         val best=winner.minOf { it.distance }
-        // Even a rival seen by just one engine prevents a weak fuzzy win or an exact collision.
-        val separated=groups.none { (other,rows) -> other!=id && rows.minOf { it.distance }<=best+1 }
+        val entity=winner.first().entity
+        // Even a rival seen by just one engine prevents a weak fuzzy win or an exact collision,
+        // unless Lab country context rules out an explicitly foreign homonym.
+        val separated=groups.none { (other,rows) ->
+            other!=id && rows.minOf { it.distance }<=best+1 &&
+                !(targetCountry.isNotEmpty() &&
+                    canonicalCountryKey(entity.countryGroup)==targetCountry &&
+                    rows.first().entity.countryGroup.isNotBlank() &&
+                    canonicalCountryKey(rows.first().entity.countryGroup)!=targetCountry)
+        }
         trace.visit("separated",separated,"insufficient separation from competing producer")
         if(!separated) return finish(existing,"insufficient separation from competing producer; unchanged",matches)
-        val entity=winner.first().entity
-        if(existing.isNotBlank()) {
-            val old=normalize(existing)
+        val cleanName=TextNorm.scrub(entity.name)
+        val cleanExisting=TextNorm.scrub(existing)
+        if(cleanExisting.isNotBlank()) {
+            val old=normalize(cleanExisting)
             if(old==entity.key) {
                 trace.visit("existing",true);trace.visit("selected",true)
                 trace.visit("changed",false,"existing supported producer retained")
-                return finish(existing,"existing producer retained",matches)
+                return finish(cleanExisting,"existing producer retained",matches)
             }
             if(winner.none { normalize(it.observed)==old } || distance(old,entity.key)>1) {
                 trace.visit("existing",false,"different existing producer protected")
-                return finish(existing,"different existing producer protected",matches)
+                return finish(cleanExisting,"different existing producer protected",matches)
             }
         }
         trace.visit("existing",true);trace.visit("selected",true)
-        trace.visit("changed",entity.name!=existing,"existing supported producer retained")
+        trace.visit("changed",cleanName!=cleanExisting,"existing supported producer retained")
         val supplementalSources=entity.support.filter { it!="lwin" }.sorted()
         // The reason states the support that actually exists, not the policy minimum, so a two-engine
         // win still reads as two engines when the lab policy is on.
@@ -160,6 +184,6 @@ internal class ProducerResolver(private val index:Index,
         val reason=if(supplementalSources.isEmpty())
             "primary LWIN producer/brand name supported by $support; confirm manually"
             else "Lab expanded producer candidate (${supplementalSources.joinToString()}) supported by $support; confirm manually"
-        return finish(entity.name,reason,matches,id)
+        return finish(cleanName,reason,matches,id)
     }
 }

@@ -51,7 +51,7 @@ class ProducerCatalogDatabaseLookup private constructor(
             val placeholders=chunk.joinToString(",") { "?" }
             connection.prepare("SELECT id,name FROM producers WHERE id IN ($placeholders)").use { s ->
                 chunk.forEachIndexed { index,id -> s.bindText(index+1,id) }
-                while(s.step()) names[s.getText(0)]=s.getText(1)
+                while(s.step()) names[s.getText(0)]=TextNorm.scrub(s.getText(1))
             }
         }
         return names
@@ -89,9 +89,12 @@ class ProducerCatalogDatabaseLookup private constructor(
             var parameter=1
             args.forEach { s.bindText(parameter++,it) }
             s.bindLong(parameter++,limit.toLong());s.bindLong(parameter,offset.toLong())
-            while(s.step()) rows += DatabaseLookupMatch(
-                s.getText(0),contextOf(s.getText(1),if(trackSources) s.getText(2) else null),s.getText(0),0,100
-            )
+            while(s.step()) {
+                val cleanName=TextNorm.scrub(s.getText(0))
+                rows += DatabaseLookupMatch(
+                    cleanName,contextOf(TextNorm.scrub(s.getText(1)),if(trackSources) s.getText(2) else null),cleanName,0,100
+                )
+            }
         }
         return rows
     }
@@ -116,8 +119,8 @@ class ProducerCatalogDatabaseLookup private constructor(
         connection.prepare("SELECT p.id,p.name,p.key,p.country_group$sourceColumn FROM $from ORDER BY p.id").use { s ->
             args.forEachIndexed { index,arg -> s.bindText(index+1,arg) }
             while(s.step()) {
-                val id=s.getText(0);val name=s.getText(1);val key=s.getText(2)
-                val context=contextOf(s.getText(3),if(trackSources) s.getText(4) else null)
+                val id=s.getText(0);val name=TextNorm.scrub(s.getText(1));val key=TextNorm.scrub(s.getText(2))
+                val context=contextOf(TextNorm.scrub(s.getText(3)),if(trackSources) s.getText(4) else null)
                 val identity=if(trackSources) "expanded-producer:$id" else "lwin-producer:$id"
                 chunk += DatabaseLookupCandidate(identity=identity,name=name,context=context,searchTerms=listOf(name,key))
                 if(chunk.size==512) rankChunk()

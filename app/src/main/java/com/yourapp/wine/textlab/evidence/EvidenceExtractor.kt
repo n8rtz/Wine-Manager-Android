@@ -11,7 +11,7 @@ internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,v
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
-    companion object { const val VERSION="evidence-lab-v4-designation-base";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
+    companion object { const val VERSION="evidence-lab-v4-context";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
     private val kb=SupplementedWineKnowledgeBase(base)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb)
@@ -19,6 +19,70 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
     private val repairs=PlaceRepair(kb,hierarchy)
     private val roles=ProducerLineSelector()
     private fun family(engineId:String)=if(engineId.startsWith("paddle")) "paddle" else engineId
+
+    /** Maps an LWIN `country_group` string to a verified catalog country name, or null when unknown. */
+    fun canonicalCountryName(countryGroup:String):String? {
+        val clean=TextNorm.scrub(countryGroup).trim()
+        if(clean.isBlank()) return null
+        val mapped=if(clean.equals("Russian Federation",ignoreCase=true)) "Russia" else clean
+        return ReferenceWineCatalog.countryCodes.keys.firstOrNull { it.equals(mapped,ignoreCase=true) }
+    }
+
+    /**
+     * Lab v4 only: when `LinkedWineResolver` confirms a `supported_pair` LWIN wine whose name (or
+     * classification/designation base) is itself an unambiguous catalog appellation compatible with
+     * any already-resolved geography and producer country, returns only the still-missing ancestors.
+     */
+    fun resolveLinkedWineGeography(
+        wineName:String,
+        existingCountry:String,
+        existingRegion:String,
+        existingSubregion:String,
+        producerCountryGroup:String="",
+    ):Map<FieldId,String> {
+        val clean=TextNorm.scrub(wineName).trim()
+        if(clean.isBlank()) return emptyMap()
+        val existingPlaces=listOf(existingCountry,existingRegion,existingSubregion).filter(String::isNotBlank)
+            .map { gazetteer.matches(TextNorm.normalize(it)) }
+        if(existingPlaces.any { it.isEmpty() }) return emptyMap()
+        val producerCountry=canonicalCountryName(producerCountryGroup)
+        val producerCode=producerCountry?.let { ReferenceWineCatalog.countryCodes[it] }
+        val contextCountries=setOfNotNull(
+            existingCountry.takeIf(String::isNotBlank)?.let { c -> ReferenceWineCatalog.countryCodes.entries.firstOrNull { it.key.equals(TextNorm.scrub(c),true) }?.value },
+            producerCode,
+        )
+        val contextRegions=existingRegion.takeIf(String::isNotBlank)?.let { setOf(TextNorm.normalize(it)) }.orEmpty()
+        val candidateForms=listOfNotNull(
+            WineDesignations.classificationBase(clean),
+            clean,
+            WineDesignations.split(clean).base.takeIf { it!=clean && WineDesignations.isAppellationName(it) },
+        ).distinct()
+        for(candidate in candidateForms) {
+            val key=EvidenceRanking.nameKey(candidate)
+            if(key.isEmpty()) continue
+            val matches=gazetteer.matches(TextNorm.normalize(candidate),contextCountries,contextRegions,true)
+                .filter { place ->
+                    place.type!="country" &&
+                        (listOf(place.name)+BundledOrigins.spellingForms(place)).any { EvidenceRanking.nameKey(it)==key } &&
+                        (producerCode==null || place.countryCode==producerCode) &&
+                        existingPlaces.all { alternatives -> alternatives.any { view.compatible(place,it) } }
+                }
+            if(matches.size!=1) continue
+            val place=matches.single()
+            val path=view.ancestors(place)
+            val missing=linkedMapOf<FieldId,String>()
+            if(existingCountry.isBlank()) path.lastOrNull { it.type=="country" }?.let { missing[FieldId.COUNTRY]=it.name }
+            val multiRegion=(ReferenceWineCatalog.origin(place)?.regions?.size ?: 0)>1
+            if(existingRegion.isBlank() && !multiRegion) path.firstOrNull { it.type=="region" }?.let { missing[FieldId.REGION]=it.name }
+            val resolvedRegion=existingRegion.ifBlank { missing[FieldId.REGION].orEmpty() }
+            if(existingSubregion.isBlank() && place.type !in setOf("country","region") && !place.name.equals(resolvedRegion,ignoreCase=true)) {
+                missing[FieldId.SUBREGION]=place.name
+            }
+            return missing
+        }
+        return emptyMap()
+    }
+
     fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {
@@ -30,13 +94,8 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
         trace.add("graph", "observations=${graph.observations.size}; phrases=${graph.phrases.size}; truncated=${graph.truncated}")
         val hypotheses=mutableListOf<Hypothesis>()
         val roleNotes=mutableListOf<String>()
-        // Lab repair experiment only: one trie scan per phrase, never one per repair attempt.
-        val anchorsByPhrase=if(placeRepair.enabled) graph.phrases.associate { phrase ->
-            val otherText=WineTermSpacing.wineWords.repair(phrase.text).text
-            phrase.id to gazetteer.matches(TextNorm.normalize(otherText)).filter { place ->
-                place.type in setOf("country","region") && IdentityRoles.originOnly(otherText,listOf(place)) }
-        } else emptyMap()
-        val allAnchors=anchorsByPhrase.flatMap { (id,places) -> places.map { id to it } }
+        val labelContext=LabelContext.collect(graph,gazetteer,view,kb,typedIdentity)
+        trace.add("label_context",labelContext.traceSummary)
         for(p in graph.phrases.sortedByDescending { it.construction.contains("alternative") }) {
             checkBudget()
             if(hypotheses.size>=MAX_HYPOTHESES) { trace.add("hypothesis_limit", "remaining phrases not searched");break }
@@ -47,21 +106,35 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             val sources=graph.observations.filter { it.id in p.observations }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
             if(!supported) { trace.add("unsupported", "phrase=${p.id}");continue } // original reading retained
-            val administrative=MetadataRules.isBoilerplate(text) || MetadataRules.isPackaging(text) ||
-                EvidenceIdentityRoles.ownerGrowerLegalLine(text) || '%' in text
+            val nonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
+            val originFramingAdmin=!nonOriginAdmin && MetadataRules.isBoilerplate(text)
+            val administrative=nonOriginAdmin || originFramingAdmin
             val paragraph=p.box.width()<.25f && graph.phrases.count { other -> other.id!=p.id &&
                 kotlin.math.abs(other.box.left-p.box.left)<.04f && kotlin.math.abs(other.box.centerY()-p.box.centerY())<.12f }>=3
             val headingOnly=typedIdentity && EvidenceIdentityRoles.headingOnly(text)
             val namedEstate=typedIdentity && EvidenceIdentityRoles.namedEstate(text)
-            val exact=if(administrative || headingOnly || namedEstate) emptyList() else gazetteer.matches(norm)
+            if(nonOriginAdmin || headingOnly) { trace.add(if(nonOriginAdmin) "administrative" else "incomplete_producer_heading", "phrase=${p.id}; text=$text");continue }
+            val framed=WineDesignations.framedAppellation(text)
+            val placeSubject=framed ?: text
+            val subjectNorm=TextNorm.normalize(placeSubject)
+            val contextCountries=labelContext.contextCountriesForPhrase(p.id)
+            val contextRegions=labelContext.contextRegionsForPhrase(p.id)
+            val standaloneOrFramed=framed!=null || (!originFramingAdmin && norm.split(' ').size<=4)
+            val exact=if(namedEstate) emptyList() else {
+                val subjectMatches=gazetteer.matches(subjectNorm,contextCountries,contextRegions,standaloneOrFramed)
+                if(subjectMatches.isNotEmpty() || framed==null) subjectMatches
+                else gazetteer.matches(norm,contextCountries,contextRegions,false)
+            }
             // A classification-qualified catalog name (`Saint-Emilion Grand Cru`, `Bordeaux Superieur`)
             // names the same place as its base: the geography comes from the base, the printed form
             // stays available for the wine name below. Zone-forming suffixes (`Chianti Classico`) are
             // deliberately not split, so they keep their own hierarchy.
-            val printedBase=WineDesignations.classificationBase(text)
-            val baseFromPrinted=printedBase?.let { base -> gazetteer.matches(TextNorm.normalize(base)).filter { it.type!="country" } }.orEmpty()
+            val printedBase=WineDesignations.classificationBase(placeSubject)
+            val baseFromPrinted=if(namedEstate) emptyList() else printedBase?.let { base ->
+                gazetteer.matches(TextNorm.normalize(base),contextCountries,contextRegions,true).filter { it.type!="country" }
+            }.orEmpty()
             val baseFromCatalog=exact.mapNotNull { place -> WineDesignations.classificationBase(place.name) }.firstOrNull()
-                ?.let { base -> gazetteer.matches(TextNorm.normalize(base)).filter { it.type!="country" } }.orEmpty()
+                ?.let { base -> gazetteer.matches(TextNorm.normalize(base),contextCountries,contextRegions,true).filter { it.type!="country" } }.orEmpty()
             val classificationName=baseFromCatalog.isNotEmpty() || (baseFromPrinted.isNotEmpty() && exact.isEmpty())
             val matched=when {
                 baseFromCatalog.isNotEmpty() -> baseFromCatalog
@@ -69,20 +142,25 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 else -> baseFromPrinted
             }
             // Lab-only, off by default: a bounded repair may name a place the exact trie could not read.
-            // It needs another line's explicit country/region anchor; every engine's own reading is
-            // searched, so a form only one engine read is still repaired, and a tie abstains. The
-            // designation-stripped base is tried too, so `ESSAC-LEOGNA`/`APPELLATION PESSAC...` reach
-            // the same policy as their unqualified spelling.
-            val repair=if(placeRepair.enabled && matched.isEmpty() && !administrative && !headingOnly && !namedEstate) {
-                val anchors=allAnchors.filter { (id,_) -> id!=p.id }.map { it.second }.distinctBy { it.id }
-                val readings=sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) }
-                repairs.resolve(text,readings,anchors,placeRepair)
-                    ?: printedBase?.takeIf { it!=text }?.let { base -> repairs.resolve(base,readings,anchors,placeRepair) }
+            // Uses explicit country/region anchors first, then LabelContext legal/producer country cues,
+            // then unanchored distinctive >=8-letter appellations separated from rivals by >= best+2 edits.
+            val repair=if(placeRepair.enabled && matched.isEmpty() && (!originFramingAdmin || framed!=null) && !namedEstate) {
+                val anchors=labelContext.anchorsExcluding(p.id)
+                val countryHints=labelContext.countryHintsExcluding(p.id)+(labelContext.contextCountriesForPhrase(p.id).takeIf { framed!=null }.orEmpty())
+                val readings=if(framed!=null) {
+                    sources.map { source ->
+                        val inner=WineDesignations.framedAppellation(source.record.textRaw) ?: source.record.textRaw
+                        PlaceRepair.Reading(family(source.record.engineId),inner)
+                    }
+                } else {
+                    sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) }
+                }
+                repairs.resolve(placeSubject,readings,anchors,placeRepair,countryHints)
+                    ?: printedBase?.takeIf { it!=placeSubject }?.let { base -> repairs.resolve(base,readings,anchors,placeRepair,countryHints) }
             } else null
             if(repair!=null) trace.add("place_repair","phrase=${p.id}; ${repair.reason}")
             val places=repair?.let { listOf(it.place) } ?: matched
             roleNotes+="phrase=${p.id}; administrative=$administrative; paragraph=$paragraph; places=${places.joinToString { it.name }}"+(if(repair!=null) "; ${repair.reason}" else "")
-            if(administrative || headingOnly) { trace.add(if(administrative) "administrative" else "incomplete_producer_heading", "phrase=${p.id}; text=$text");continue }
             val incomplete=sources.count { source ->
                 val key=TextNorm.normalize(source.record.textRaw).filter(Char::isLetter)
                 key.length>=3 && graph.observations.any { other ->
@@ -102,26 +180,38 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 val weakContent=sources.count { TextNorm.normalize(it.record.textRaw) !in setOf("de","du","di","des") && it.record.score < if(it.record.engineId.startsWith("paddle")) .75f else .60f }
                 if(hypotheses.size<MAX_HYPOTHESES) hypotheses+=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place)
             }
-            if(Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
+            if(!originFramingAdmin && Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
                 offer(mapOf(FieldId.VINTAGE to norm),55.0,"complete observed vintage")
             for(place in places.take(4)) {
                 val path=view.ancestors(place)
                 val values=mutableMapOf<FieldId,String>()
                 path.lastOrNull { it.type=="country" }?.let { values[FieldId.COUNTRY]=it.name }
-                path.firstOrNull { it.type=="region" }?.let { values[FieldId.REGION]=it.name }
+                val multiRegion=(ReferenceWineCatalog.origin(place)?.regions?.size ?: 0)>1
+                if(!multiRegion) path.firstOrNull { it.type=="region" }?.let { values[FieldId.REGION]=it.name }
                 val core=place.nameNorm.filter(Char::isLetterOrDigit)
-                val compact=norm.filter(Char::isLetterOrDigit)
+                val compact=subjectNorm.filter(Char::isLetterOrDigit)
                 val suffix=if(compact.startsWith(core)) compact.removePrefix(core) else ""
-                val unresolvedSuffix=repair==null && !classificationName && place.type=="appellation" && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
+                val unresolvedSuffix=repair==null && !classificationName && place.type=="appellation" && !originFramingAdmin && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
                     suffix !in setOf("aoc","aop","doc","docg","dop","igp") && gazetteer.matches(suffix).none { it.type=="country" } &&
                     places.none { it.nameNorm.filter(Char::isLetterOrDigit)==compact }
                 // One name may fill one level only: a collapsed hierarchy must not repeat the region.
                 if(place.type !in setOf("country","region") && !unresolvedSuffix && values[FieldId.REGION]!=place.name)
                     values[FieldId.SUBREGION]=place.name
-                offer(values,50.0+path.size*5+lexicalBonus-(if(repair!=null) placeRepair.rankPenalty else 0.0),
+                val repairPenalty=if(repair!=null) maxOf(placeRepair.rankPenalty,repair.penalty) else 0.0
+                offer(values,50.0+path.size*5+lexicalBonus-repairPenalty,
                     "observed geography and actual ancestors; no producer-origin inference"+
                         (if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else "")+
                         (repair?.let { "; "+it.reason } ?: ""),place)
+            }
+            if(originFramingAdmin) {
+                if(repair==null && framed!=null && places.isNotEmpty()) {
+                    if(classificationName)
+                        offer(mapOf(FieldId.WINE_NAME to framed),64.0,"framed printed classification qualifies the matched appellation")
+                    else if(places.any { TextNorm.normalize(it.name)==subjectNorm } && WineDesignations.isAppellationName(framed))
+                        offer(mapOf(FieldId.WINE_NAME to framed),62.0,"framed printed appellation may also name the wine")
+                }
+                trace.add("administrative", "phrase=${p.id}; text=$text; places=${places.size}")
+                continue
             }
             if(repair==null && classificationName && places.isNotEmpty())
                 offer(mapOf(FieldId.WINE_NAME to text),70.0,"printed classification qualifies the matched appellation")

@@ -7,8 +7,9 @@ export PATH="$JAVA_HOME/bin:$PATH"
 tmp=$(mktemp -d);trap 'rm -rf "$tmp"' EXIT
 python3 tools/corpus/phone_score_fixture.py > "$tmp/fixture.tsv"
 bash "$KOTLIN_HOME/bin/kotlinc" \
- app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusMath.kt \
- app/src/debug/java/com/yourapp/wine/textlab/{TextLabStats,TextLabJournal,TextLabChoices}.kt \
+ app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
+ app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusMath.kt \
+ app/src/main/java/com/yourapp/wine/textlab/{TextLabStats,TextLabJournal,TextLabChoices}.kt \
  app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt \
  tools/logic-checks/PhoneCorpusChecks.kt -include-runtime -d "$tmp/checks.jar"
 "$JAVA_HOME/bin/java" -jar "$tmp/checks.jar" "$tmp/fixture.tsv"

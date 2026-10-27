@@ -26,8 +26,14 @@ class WineKnowledgeTests(unittest.TestCase):
             self.assertEqual(parts[0],row['regions'],row['name'])
             for part in parts: self.assertIn((row['country_code'],part.casefold()),names,(row['name'],part))
         by_name={r['name']:r for r in rows}
-        self.assertEqual(by_name['Pauillac']['path'],'Bordeaux/Médoc')
+        self.assertEqual(by_name['Pauillac']['path'],'Bordeaux/Medoc')
         self.assertGreaterEqual(len({r['path'] for r in rows if r['path']}),50)
+    def test_catalog_and_generated_knowledge_have_no_accent_marks(self):
+        for name in ('origins.csv','label-terms.csv','typical-grapes.csv'):
+            text=(DATA/name).read_text(encoding='utf-8')
+            self.assertTrue(text.isascii(),f'{name} contains accented/non-ASCII characters')
+        generated=(ROOT/'app/src/main/java/com/yourapp/wine/kb/GeneratedWineKnowledge.kt').read_text(encoding='utf-8')
+        self.assertTrue(generated.isascii(),'GeneratedWineKnowledge.kt contains accented/non-ASCII characters')
     def test_us_metadata_and_cross_state_membership(self):
         rows={r['name']:r for r in read('origins.csv') if r['country_code']=='US'}
         self.assertEqual(len(rows),276)

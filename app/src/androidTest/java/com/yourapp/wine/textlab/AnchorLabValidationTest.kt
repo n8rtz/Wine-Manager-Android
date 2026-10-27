@@ -44,7 +44,7 @@ class AnchorLabValidationTest {
             assertEquals("RED",summary["producer_state"])
             assertEquals("2020",summary["vintage"])
             assertEquals("YELLOW",summary["vintage_state"])
-            assertEquals("Cuvée des Astres",summary["wine_name"])
+            assertEquals("Cuvee des Astres",summary["wine_name"])
             assertFalse(TextLabWineTable.fields.any { summary["${it}_state"]=="GREEN" })
             assertEquals(preserved,journal.rows.single { it["stage"]=="form_summary" })
             assertTrue(TextLabWineTable.formRows(listOf(journal)).last()[1].startsWith("Guarded hybrid"))

@@ -36,7 +36,7 @@ internal object PaddleCtc {
             }
             previous=best
         }
-        return Reading(text.toString(),if(count==0) 0f else (sum/count).toFloat())
+        return Reading(com.yourapp.wine.merge.TextNorm.scrub(text.toString()),if(count==0) 0f else (sum/count).toFloat())
     }
     /** Widths in tensor pixels. A long paragraph is not a single-line handwriting input. */
     fun widths(width:Int,height:Int,fixedWidth:Long):Pair<Int,Int> {

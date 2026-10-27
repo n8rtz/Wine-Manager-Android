@@ -43,9 +43,9 @@ class SavedEvidenceReplayTest {
             File(root,"progress.json").writeText(JSONObject().put("stage","synthetic_warmup").toString())
             val synthetic=listOf(token("Château",.20f),token("des Asters",.28f))
             val roleResult=revised.extract(synthetic,2026,budgetMs=EvidenceExtractor.DEFAULT_BUDGET_MS)
-            assertTrue(roleResult.graph.phrases.any { it.text=="Château des Asters" && it.construction=="estate-heading composition" })
-            assertFalse(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Château" })
-            assertTrue(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Château des Asters" })
+            assertTrue(roleResult.graph.phrases.any { it.text=="Chateau des Asters" && it.construction=="estate-heading composition" })
+            assertFalse(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Chateau" })
+            assertTrue(roleResult.hypotheses.any { it.values[FieldId.PRODUCER]=="Chateau des Asters" })
             val onlyHeading=revised.extract(listOf(token("Château",.20f)),2026,budgetMs=EvidenceExtractor.DEFAULT_BUDGET_MS)
             assertTrue(onlyHeading.fill.fields.getValue(FieldId.PRODUCER).value.isBlank())
             val warmupMs=android.os.SystemClock.elapsedRealtime()-warmupStarted

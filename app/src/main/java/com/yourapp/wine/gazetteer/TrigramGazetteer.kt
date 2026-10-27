@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Looper
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.yourapp.wine.merge.TextNorm
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -25,7 +26,7 @@ internal class TrigramGazetteer private constructor(private val db:SQLiteConnect
         private val estate=Regex("\\b(?:chateau|chatau|chateaux|domaine|bodega|winery|estate|maison)\\b")
         private val generic=setOf("merlot","chardonnay","cabernet sauvignon","pinot noir","red wine","white wine","grand cru","reserve","riserva","reserva","wine","vin")
         fun normalize(value:String):String {
-            val n=Normalizer.normalize(value.lowercase(Locale.ROOT),Normalizer.Form.NFD).replace(Regex("\\p{M}+"),"")
+            val n=Normalizer.normalize(TextNorm.scrub(value).lowercase(Locale.ROOT),Normalizer.Form.NFD).replace(Regex("\\p{M}+"),"")
                 .map { if(it.isLetterOrDigit()) it else ' ' }.joinToString("").trim().split(Regex("\\s+")).filter(String::isNotBlank)
             return n.joinToString(" ") { when(it) { "st"->"saint";"ste"->"sainte";"mt"->"mount";else->it } }
         }
@@ -99,7 +100,19 @@ internal class TrigramGazetteer private constructor(private val db:SQLiteConnect
                 val aliases=JSONArray(text(10));val path=JSONArray(text(11))
                 val forms=(0 until aliases.length()).map { normalize(aliases.getString(it)) }.distinct()
                 val best=forms.map { distance(q,it) to it }.minWithOrNull(compareBy<Pair<Int,String>> { it.first }.thenBy { it.second }) ?: continue
-                val entity=Entity(s.getLong(0),text(1),text(2),text(3),text(4),text(5),if(s.isNull(6)) null else s.getLong(6),text(7),text(8),text(9),(0 until path.length()).map(path::getString))
+                val entity=Entity(
+                    s.getLong(0),
+                    TextNorm.scrub(text(1)),
+                    TextNorm.scrub(text(2)),
+                    TextNorm.scrub(text(3)),
+                    TextNorm.scrub(text(4)),
+                    text(5),
+                    if(s.isNull(6)) null else s.getLong(6),
+                    text(7),
+                    text(8),
+                    TextNorm.scrub(text(9)),
+                    (0 until path.length()).map { TextNorm.scrub(path.getString(it)) },
+                )
                 hits+=Hit(entity,best.first,1.0-best.first.toDouble()/maxOf(q.length,best.second.length,1),best.second,s.getDouble(12))
             }
         }

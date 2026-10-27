@@ -89,9 +89,47 @@ Still open for the owner (not changed here): `Toro` → `Castilla y León`, `Dun
 needs one convention decision per country, or a marker in the catalog for "this appellation is
 the region in its market", and neither can be guessed from the label.
 
+## Context clues, framed appellations, and accent-free matching (follow-up)
+
+On top of the five designation/fragment rules above, `EvidenceExtractor` (`evidence-lab-v4-context`)
+and `TextLabSpatialPreview` now apply unified label-wide context clues in Lab v4 and scrub
+letter accent marks across all OCR inputs and database/catalog outputs:
+
+* **`LabelContext` (`textlab/evidence/LabelContext.kt`).** Collects supported country/region
+  anchors, legal classification cues (`DOCG`/`IGT` → `IT`, `DOCa`/`DOQ` → `ES`, `AVA` → `US`,
+  `DAC` → `AT`, `VQA` → `CA`, `Wine of Origin` → `ZA`, `Mis en bouteille au Chateau|Domaine`
+  and `Appellation ... Controlee` → `FR`, plus narrowing `AOC`/`AOP`, `Qualitatswein` and `DOC`/`DO`),
+  and unambiguous KB producer countries once per label. Legal cues never fabricate standalone
+  fields; they only unlock `context_required` origins on another line (`PlaceGazetteer.matches`
+  4-arg overload) or supply country hints to bounded `PlaceRepair`.
+* **Framed appellations on legal lines (`WineDesignations.framedAppellation`).** Lines such as
+  `APPELLATION SAINT-EMILION GRAND CRU CONTROLEE`, `DENOMINAZIONE DI ORIGINE CONTROLLATA E GARANTITA BAROLO`
+  or `RIOJA DENOMINACION DE ORIGINE CALIFICADA` extract the inner appellation for geography and
+  (at rank 62/64 and in `AppellationFallback`) wine-name fallback while still blocking arbitrary
+  producer/vintage identity on boilerplate lines.
+* **Three-tier `PlaceRepair`.** Bounded appellation spelling repair now accepts (1) an explicit
+  compatible country/region anchor (`rankPenalty` 8.0), (2) a `LabelContext` legal/producer
+  country cue (penalty 10.0), or (3) an unanchored globally unique non-`context_required`
+  appellation of `>= 10` letters separated from every rival worldwide by at least `best + 2` edits
+  (penalty 12.0).
+* **Lab v4 `country_group` homonym tie-break & `YELLOW` geography backfill.** `ProducerGazetteer`
+  reads `country_group` from `producers.sqlite` / `producers-expanded.sqlite`. In Lab v4 only
+  (`policy.minimumIndependentEngines < 2`), `ProducerResolver` uses an already-resolved label
+  country to break cross-country LWIN homonym ties, and `TextLabSpatialPreview` backfills still-blank
+  geography as `YELLOW` from a confirmed `supported_pair` LWIN wine's unambiguous catalog
+  appellation ancestors (or `COUNTRY` alone from an unambiguous LWIN producer `country_group`,
+  mapping `Russian Federation` → `Russia`), never overwriting existing values or touching Prod.
+* **Accent-free normalization (`TextNorm.scrub`).** Incoming OCR text (`MlKitOcrEngine`,
+  `PaddleCtc`, `CoordMapper`, `TokenMerger`, `TextLab*`, `FieldExtractor`, `WineDesignations`)
+  and all KB/SQLite/gazetteer catalog outputs replace accented letters, Latin ligatures/stroked
+  letters (`ß` → `ss`, `œ` → `oe`, `æ` → `ae`, `ø` → `o`, `ł` → `l`, `đ` → `d`, `ı` → `i`)
+  and standalone spacing diacritics (`´`, `¨`, `¸`, `¯`, `ˆ`, `˜`) with plain ASCII letters.
+
 ## Measurement switches for the next run
 
 `PhoneCorpusRunner.REPAIR_PLACES_IN_BENCHMARK` and
 `SINGLE_READING_RESOLVERS_IN_BENCHMARK` are both **true** in this build, so the next
-**New Lab run** measures the place repair and the single-engine resolver policy together.
-Prod v3.0 is a frozen baseline and is not re-run, so its comparison row is unaffected.
+**New Lab run** measures the place repair, `LabelContext` context clues, and the single-engine
+resolver policy together. Frozen Prod v1.0–v3.0 scoreboard rows automatically filter to Lab v4's
+attempted photo subset while a pass is in progress (`attempted` non-empty) and revert to the
+full frozen set once complete or idle.

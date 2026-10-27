@@ -26,7 +26,7 @@ internal object EvidenceLexicon {
                 val suffix=suffixWords.joinToString("")
                 val repeatedInitial=suffixWords.size==2 && suffixWords[0].length==1 && suffixWords[1].startsWith(suffixWords[0])
                 if(suffix.length in 5..9 && suffix.startsWith("v") && (TextNorm.editDistance(suffix,"villages",3)!=null || (repeatedInitial && TextNorm.editDistance(suffix.drop(1),"villages",3)!=null)))
-                    add(p,"Côtes du Rhône Villages","bounded exact-core appellation suffix alternative")
+                    add(p,"Cotes du Rhone Villages","bounded exact-core appellation suffix alternative")
             }
         }
         fun tail(text:String)=Regex("[\\p{L}]{5,}$").find(text)

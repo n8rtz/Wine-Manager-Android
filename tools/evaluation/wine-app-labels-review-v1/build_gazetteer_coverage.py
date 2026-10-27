@@ -23,15 +23,37 @@ LABELS = HERE / "candidate-labels.json"
 OUT = ROOT / "app/src/main/assets/wine-app-labels-v1/gazetteer-coverage.json"
 DBS = ROOT / "app/src"
 
+APOSTROPHE_ACUTE_RE = re.compile(r"\b([dlcnst]|qu)\u00b4(?=[aeiouyh])", re.IGNORECASE)
+SPACING_ACCENTS_RE = re.compile(r"[\u0060\u00b4\u00a8\u00b8\u00af\u02c6\u02dc\u02d8-\u02dd]")
+COMBINING_MARKS_RE = re.compile(r"[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]+")
+LETTER_FOLDS = {
+    "\u00df": "ss", "\u1e9e": "SS", "\u00e6": "ae", "\u00c6": "AE",
+    "\u0153": "oe", "\u0152": "OE", "\u00f8": "o", "\u00d8": "O",
+    "\u0142": "l", "\u0141": "L", "\u0111": "d", "\u0110": "D",
+    "\u00f0": "d", "\u00d0": "D", "\u00fe": "th", "\u00de": "TH",
+    "\u0131": "i", "\u0130": "I", "\u0133": "ij", "\u0132": "IJ",
+}
+
+
+def scrub_accents(value: str) -> str:
+    if not value or value.isascii():
+        return value.replace("`", "")
+    step1 = APOSTROPHE_ACUTE_RE.sub(r"\1'", value)
+    step2 = SPACING_ACCENTS_RE.sub("", step1)
+    folded = "".join(LETTER_FOLDS.get(ch, ch) for ch in step2)
+    decomposed = unicodedata.normalize("NFD", folded)
+    stripped = COMBINING_MARKS_RE.sub("", decomposed)
+    return unicodedata.normalize("NFC", stripped)
+
 
 def producer_key(value: str) -> str:
-    value = unicodedata.normalize("NFKD", value.lower().replace("’", "'"))
+    value = unicodedata.normalize("NFKD", scrub_accents(value).lower().replace("’", "'"))
     value = "".join(ch for ch in value if not unicodedata.combining(ch))
     return " ".join("".join(ch if ch.isalnum() else " " for ch in value).split())
 
 
 def appellation_key(value: str) -> str:
-    value = unicodedata.normalize("NFD", value.lower())
+    value = unicodedata.normalize("NFD", scrub_accents(value).lower())
     value = "".join(ch for ch in value if not unicodedata.combining(ch))
     words = " ".join("".join(ch if ch.isalnum() else " " for ch in value).split()).split()
     replacements = {"st": "saint", "ste": "sainte", "mt": "mount"}
@@ -39,8 +61,8 @@ def appellation_key(value: str) -> str:
 
 
 def norm_key(value: str) -> str:
-    """Mirror of TextNorm.normalize: NFKD, strip combining marks, lowercase."""
-    value = unicodedata.normalize("NFKD", value)
+    """Mirror of TextNorm.normalize: scrub accents, NFKD, strip combining marks, lowercase."""
+    value = unicodedata.normalize("NFKD", scrub_accents(value))
     value = "".join(ch for ch in value if not unicodedata.combining(ch))
     return " ".join(value.lower().split())
 
@@ -75,9 +97,10 @@ def load_scanner_kb() -> dict[str, dict[str, set[str]]]:
     places: dict[str, set[str]] = {}
 
     def index(bucket: dict[str, set[str]], forms: set[str], record_id: str) -> None:
+        clean_id = scrub_accents(record_id)
         for form in forms:
             if form:
-                bucket.setdefault(form, set()).add(record_id)
+                bucket.setdefault(form, set()).add(clean_id)
 
     fixture = (kb_dir / "FixtureKnowledgeBase.kt").read_text()
     known_place_type: dict[tuple[str, str], str] = {}
@@ -184,11 +207,11 @@ def main() -> None:
     appellation_db = DBS / "debug/assets/gazetteer-v1/wine_gazetteer.sqlite"
 
     def query_keys(path: Path, sql: str) -> dict[str, set[str]]:
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
             result: dict[str, set[str]] = {}
             for name, key in conn.execute(sql):
-                result.setdefault(producer_key(str(key)), set()).add(str(name))
+                result.setdefault(producer_key(str(key)), set()).add(scrub_accents(str(name)))
             return result
         finally:
             conn.close()

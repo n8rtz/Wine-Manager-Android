@@ -43,7 +43,7 @@ class MlKitOcrEngine(private val nativeGate: NativeEngineGate) : OcrEngine {
                 val estimated = confidences.isEmpty() || confidences.any { it == null }
                 // Conservative real element confidence, not a made-up consensus across variants.
                 val confidence = confidences.filterNotNull().minOrNull()?.coerceIn(0f, 1f) ?: 0.65f
-                RawToken(line.text, confidence, points, id, variantId, estimated)
+                RawToken(com.yourapp.wine.merge.TextNorm.scrub(line.text), confidence, points, id, variantId, estimated)
             }.take(MAX_TOKENS)
         } finally {
             if (!submitted) { input?.release(); lease.close() }

@@ -58,9 +58,9 @@ object DatabaseNameLookup {
             }.maxWithOrNull(compareBy<Triple<String, Int, Double>> { it.third }.thenBy { -it.second })
                 ?: return@mapNotNull null
             candidate.identity to DatabaseLookupMatch(
-                name = candidate.name,
-                context = candidate.context,
-                matchedAs = best.first,
+                name = TextNorm.scrub(candidate.name),
+                context = TextNorm.scrub(candidate.context),
+                matchedAs = TextNorm.scrub(best.first),
                 editDistance = best.second,
                 similarityPercent = (best.third * 100).toInt().coerceIn(0, 100),
                 identity = candidate.identity

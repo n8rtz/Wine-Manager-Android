@@ -30,7 +30,7 @@ fun main() {
     verify(summary["spatial_source_count"]=="4" && summary["spatial_reading_count"]=="4")
     verify(summary["spatial_merged_groups"]=="2")
     verify(j.rows.count { it["stage"]=="recognition" }==4)
-    verify(j.rows.filter { it["stage"]=="spatial_evidence_observation" }.any { it["raw_text"]=="Romanée-Conti" }) // originals survive; joins are producer alternatives, not replacements
+    verify(j.rows.filter { it["stage"]=="spatial_evidence_observation" }.any { it["raw_text"]=="Romanee-Conti" }) // originals survive; joins are producer alternatives, not replacements
     verify(j.rows.filter { it["stage"]=="spatial_phrase" }.all { it["source_scores"].orEmpty().isNotBlank() && it["source_original_boxes"].orEmpty().isNotBlank() })
     verify(summary["producer_gazetteer_status"]=="unavailable")
     val withProducer=sample()
@@ -44,7 +44,7 @@ fun main() {
     }
     TextLabSpatialPreview.append(withProducer,extractor,hybrid,repair,2026,fixtureIndex)
     val produced=withProducer.rows.single { it["stage"]=="spatial_evidence_summary" }
-    verify(produced["producer"]=="Domaine de la Romanée-Conti")
+    verify(produced["producer"]=="Domaine de la Romanee-Conti")
     verify(produced["producer_state"]=="YELLOW")
     verify(produced["funnel.producer.independent.status"]=="PASSED")
     verify(withProducer.rows.count { it["stage"]=="recognition" }==4)

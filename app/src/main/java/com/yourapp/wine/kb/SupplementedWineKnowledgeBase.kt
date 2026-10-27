@@ -19,12 +19,13 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
         var virtualId = Long.MIN_VALUE + 1024
         val added = mutableSetOf<Long>()
         fun add(name: String, type: String, parent: Long?, code: String): Place? {
-            val key = code to TextNorm.normalize(name)
+            val cleanName = TextNorm.scrub(name)
+            val key = code to TextNorm.normalize(cleanName)
             val matches = byName[key].orEmpty().filter {
                 if (type == "country") it.type == "country" else it.type != "country" }
             if (matches.isNotEmpty()) return matches.singleOrNull() // Never choose an ambiguous imported place.
             while (virtualId in occupied) virtualId++
-            val place = Place(virtualId++, name, type, parent, code)
+            val place = Place(virtualId++, cleanName, type, parent, code)
             occupied += place.id; added += place.id; rows += place
             byName.getOrPut(key) { mutableListOf() } += place
             if (type == "country") byCountry.getOrPut(code) { mutableListOf() } += place
@@ -79,8 +80,8 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
             "Brunello di Montalcino" to "Montalcino", "Rosso di Montalcino" to "Montalcino",
             "Alexander Valley" to "Sonoma County", "Russian River Valley" to "Sonoma County",
             "Oakville" to "Napa Valley", "Rutherford" to "Napa Valley",
-            "Dundee Hills" to "Willamette Valley", "Côtes du Rhône Villages" to "Côtes du Rhône",
-            "Haut-Médoc" to "Médoc",
+            "Dundee Hills" to "Willamette Valley", "Cotes du Rhone Villages" to "Cotes du Rhone",
+            "Haut-Medoc" to "Medoc",
         )
     }
 }

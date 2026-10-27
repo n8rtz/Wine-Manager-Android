@@ -16,7 +16,8 @@ internal object TextLabSpatialPhrases {
         val sources=proposal.sources
         if(sources.size==1) sources.single() else {
             fun envelope(boxes:List<RectF>)=RectF(boxes.minOf { it.left },boxes.minOf { it.top },boxes.maxOf { it.right },boxes.maxOf { it.bottom })
-            sources.first().copy(textRaw=proposal.phrase.mergedText,textNorm=TextNorm.normalize(proposal.phrase.mergedText),
+            val merged=TextNorm.scrub(proposal.phrase.mergedText)
+            sources.first().copy(textRaw=merged,textNorm=TextNorm.normalize(merged),
                 score=sources.minOf { it.score },scoreIsEstimated=true,
                 bboxRect=envelope(sources.map { it.bboxRect }),bboxOrig=envelope(sources.map { it.bboxOrig }),polyOrig=emptyList())
         }

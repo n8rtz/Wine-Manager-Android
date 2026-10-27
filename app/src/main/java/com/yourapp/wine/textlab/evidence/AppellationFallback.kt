@@ -32,20 +32,24 @@ internal class AppellationFallback(private val kb:WineKnowledgeBase) {
         val choices=graph.observations.filter { o ->
             val r=o.record
             r.score >= (if(r.engineId.startsWith("paddle")) .75f else .60f) &&
-                r.bboxRect.width()>0 && r.bboxRect.height()>0 && !MetadataRules.isBoilerplate(r.textRaw)
-        }.filter { o ->
-            val text=o.record.textRaw;val key=EvidenceRanking.nameKey(text)
-            gazetteer.matches(TextNorm.normalize(text)).any { place ->
+                r.bboxRect.width()>0 && r.bboxRect.height()>0 &&
+                (!MetadataRules.isBoilerplate(r.textRaw) || WineDesignations.framedAppellation(r.textRaw)!=null)
+        }.mapNotNull { o ->
+            val rawText=o.record.textRaw
+            val candidateText=WineDesignations.framedAppellation(rawText) ?: rawText
+            val key=EvidenceRanking.nameKey(candidateText)
+            val matched=gazetteer.matches(TextNorm.normalize(candidateText)).any { place ->
                 // Exact complete observed form only: never truncate a longer cuvée or borrow a town name.
-                (place.type=="appellation" || WineDesignations.isAppellationName(text)) &&
+                (place.type=="appellation" || WineDesignations.isAppellationName(candidateText)) &&
                     (listOf(place.name)+BundledOrigins.spellingForms(place)).any { EvidenceRanking.nameKey(it)==key } &&
                     selected.all { alternatives -> alternatives.any { view.compatible(place,it) } }
             }
-        }.filter { o ->
+            if(!matched) null else o to candidateText
+        }.filter { (o,_) ->
             config.engines==1 || EvidenceRanking.independentEngines(Phrase(o.id,o.record.textRaw,setOf(o.id),o.record.bboxRect,"observed"),graph).size>=config.engines
-        }.groupBy { EvidenceRanking.nameKey(it.record.textRaw) }
+        }.groupBy { (_,candidateText) -> EvidenceRanking.nameKey(candidateText) }
         if(choices.size!=1) return baseline // Competing visible appellations remain unresolved.
-        val value=choices.values.single().maxBy { it.record.score }.record.textRaw.trim()
+        val value=choices.values.single().maxBy { (o,_) -> o.record.score }.second.trim()
         return baseline+ (FieldId.WINE_NAME to value)
     }
 }

@@ -10,5 +10,10 @@ data class WineOriginTerm(val name: String, val country: String, val region: Str
 internal fun parseWineTerms(source: String): List<WineTerm> = source.trimIndent().lineSequence()
     .map(String::trim).filter(String::isNotEmpty).map { row ->
         val parts = row.split('|', limit = 2)
-        WineTerm(parts.first().trim(), parts.getOrNull(1)?.split(';')?.map(String::trim)?.filter(String::isNotEmpty).orEmpty())
-    }.toList()
+        val cleanName = com.yourapp.wine.merge.TextNorm.scrub(parts.first().trim())
+        val cleanAliases = parts.getOrNull(1)?.split(';')?.map { com.yourapp.wine.merge.TextNorm.scrub(it.trim()) }
+            ?.filter(String::isNotEmpty).orEmpty()
+        WineTerm(cleanName, cleanAliases)
+    }.groupBy { com.yourapp.wine.merge.TextNorm.normalize(it.name) }.values.map { group ->
+        WineTerm(group.first().name, group.flatMap { it.aliases }.distinct())
+    }

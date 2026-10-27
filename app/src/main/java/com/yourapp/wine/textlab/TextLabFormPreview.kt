@@ -36,7 +36,7 @@ internal object TextLabFormPreview {
     }
     fun records(journal:TextLabJournal):List<TokenRecord> = listOf("mlkit_reference","candidate_3").flatMap { candidate ->
         TextLabWineTable.readings(journal,candidate,"").map { row ->
-            val text=row.getValue("raw_text")
+            val text=TextNorm.scrub(row.getValue("raw_text"))
             val box=parseBox(row["base_box_normalized"]) ?: if(!journal.detectLines) RectF(0f,0f,1f,1f)
                 else error("Missing/invalid normalized box for $candidate region ${row["region_id"]}")
             val paddle=candidate=="candidate_3"

@@ -44,11 +44,11 @@ if layout:
     end=source.index('  java.io.File',start)
     source=source[:start]+'''  val expected=listOf(
    listOf("Kirkland Signature","Brunello di Montalcino","Italy","Tuscany","Montalcino","2021"),
-   listOf("Marqués de Riscal","Verdejo","Spain","Castilla y Leon","Rueda","2023"),
+   listOf("Marques de Riscal","Verdejo","Spain","Castilla y Leon","Rueda","2023"),
    listOf("Kirkland Signature","Cabernet Sauvignon","California","Napa Valley","","2024"),
    listOf("Kirkland Signature","Cabernet Sauvignon","California","Alexander Valley","","2022"),
    listOf("Blackstone","Merlot","California","","",""),
-   listOf("Vignerons De L'ENclave","LA Reserve de L'ENclave","France","Rhône","Côtes du Rhône Villages","2022"))
+   listOf("Vignerons De L'ENclave","LA Reserve de L'ENclave","France","Rhone","Cotes du Rhone Villages","2022"))
   val keys=listOf("producer","wine_name","country","region","subregion","vintage")
   summaries.zip(expected).forEach { (row,want) -> check(keys.map { row[it].orEmpty() }==want) { row } }
   for(key in listOf("producer","wine_name","subregion")) check(summaries.last()[key+"_state"]=="YELLOW")
@@ -60,10 +60,10 @@ if evidence:
     source=source[:start]+'''  val expected=listOf(
    listOf("Kirkland Signature","Cabernet Sauvignon","California","Napa Valley","","2024"),
    listOf("Kirkland Signature","Brunello di Montalcino","Italy","Tuscany","Montalcino","2021"),
-   listOf("Marqués de Riscal","Verdejo","Spain","Castilla y Leon","Rueda","2023"),
+   listOf("Marques de Riscal","Verdejo","Spain","Castilla y Leon","Rueda","2023"),
    listOf("Kirkland Signature","Cabernet Sauvignon","California","Alexander Valley","","2022"),
    listOf("Blackstone","Merlot","California","","",""),
-   listOf("Vignerons De L'ÊNCLaVE","LA Reserve de L'ÊNCLaVE","","","","2022"))
+   listOf("Vignerons De L'ENCLaVE","LA Reserve de L'ENCLaVE","","","","2022"))
   val keys=listOf("producer","wine_name","country","region","subregion","vintage")
   summaries.zip(expected).forEach { (row,want) -> check(keys.map { row[it].orEmpty() }==want) { row } }
   for(key in listOf("producer","wine_name")) check(summaries.last()[key+"_state"]=="YELLOW")
@@ -75,7 +75,7 @@ if brand:
     source=source[:start]+'''  val expected=listOf(
    listOf("Kirkland Signature","Brunello di Montalcino","Italy","Tuscany","Montalcino","2021"),
    listOf("ALTOS de VALDOSO","Crianza","Spain","Ribera del Duero","",""),
-   listOf("Vignerons DE L'ENCLavE","LA Reserve de L'ENCLavE","France","Rhône","Côtes du Rhône Villages","2022"),
+   listOf("Vignerons DE L'ENCLavE","LA Reserve de L'ENCLavE","France","Rhone","Cotes du Rhone Villages","2022"),
    listOf("Blackstone","Merlot","California","","",""),
    listOf("Bodegas Olarra","RECIENTE Gran Reserva","Spain","Rioja","","2019"))
   val keys=listOf("producer","wine_name","country","region","subregion","vintage")

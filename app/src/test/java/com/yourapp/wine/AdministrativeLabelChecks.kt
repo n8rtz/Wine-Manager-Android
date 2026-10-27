@@ -18,13 +18,13 @@ object AdministrativeLabelChecks {
         ),2026)
         check(result.fields.getValue(FieldId.PRODUCER).state == UiState.RED) { result.fields }
         val name = result.fields.getValue(FieldId.WINE_NAME)
-        check(name.value == "Côtes du Rhône Villages" && name.state == UiState.YELLOW) { result.fields }
+        check(name.value == "Cotes du Rhone Villages" && name.state == UiState.YELLOW) { result.fields }
         check(name.reason.contains("bounded role/appellation repair")) // Anchored suffix suggestion, never a silent exact reading.
         check(result.fields.getValue(FieldId.COUNTRY).value == "France")
         check(result.fields.getValue(FieldId.VINTAGE).value == "2022")
         val exact = engine.fill(listOf(LogicChecks.token("Côtes du Rhône Villages",.9f)),2026)
         check(exact.fields.getValue(FieldId.PRODUCER).state == UiState.RED)
-        check(exact.fields.getValue(FieldId.WINE_NAME).value == "Côtes du Rhône Villages") { exact.fields }
+        check(exact.fields.getValue(FieldId.WINE_NAME).value == "Cotes du Rhone Villages") { exact.fields }
     }
 
     fun narrowAdministrativeRulesPreserveRealIdentities() {
@@ -36,7 +36,7 @@ object AdministrativeLabelChecks {
         val result=FillEngine(FixtureKnowledgeBase()).fill(listOf(
             LogicChecks.token("Domaine du Rhône",.9f,y=.2f),
             LogicChecks.token("Côtes du Rhône Villages",.85f,y=.5f)),2026)
-        check(result.fields.getValue(FieldId.PRODUCER).value == "Domaine du Rhône") { result.fields }
+        check(result.fields.getValue(FieldId.PRODUCER).value == "Domaine du Rhone") { result.fields }
     }
 
     fun reserveHeadingIsNotAnUnsupportedProducer() {

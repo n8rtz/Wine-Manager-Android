@@ -39,7 +39,7 @@ object ReferenceCatalogChecks {
         check(matches("Orange Australia").any { it.name=="Orange" })
         check(matches("Orange Wine Australia").none { it.name=="Orange" })
         check(matches("Orange Blossom Australia").none { it.name=="Orange" })
-        check(matches("Cadillac Côtes de Bordeaux").map { it.name }==listOf("Cadillac Côtes de Bordeaux"))
+        check(matches("Cadillac Côtes de Bordeaux").map { it.name }==listOf("Cadillac Cotes de Bordeaux"))
         val multi=fill("Walla Walla Valley")
         check(multi.fields.getValue(FieldId.REGION).state==UiState.RED) { multi.fields }
         check(CellarFieldPresentation.apply(multi).fields.getValue(FieldId.COUNTRY).state==UiState.RED)
@@ -82,6 +82,8 @@ object ReferenceCatalogChecks {
         // Off by default, and each remaining gate alone is enough to abstain.
         check(repairs.resolve("Pauilac",both,listOf(bordeaux),PlaceRepair.Config.off)==null)
         check(repairs.resolve("Pauilac",both,emptyList(),on)==null)
+        check(repairs.resolve("Pauilac",both,emptyList(),on,setOf("FR"))?.place?.name=="Pauillac")
+        check(repairs.resolve("Essac-Leognan",listOf(PlaceRepair.Reading("paddle","Essac-Leognan")),emptyList(),on)?.place?.name=="Pessac-Leognan")
         check(repairs.resolve("Pauilac",both,listOf(bordeaux,california),on)==null)
         // A repair may never contradict the printed anchor, and never re-derives an exact reading.
         check(repairs.resolve("Pauilac",both,listOf(california),on)==null)

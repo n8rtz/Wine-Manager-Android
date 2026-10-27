@@ -8,11 +8,11 @@ Chianti Classico,Sangiovese,typical_not_exhaustive,never_autofill
 Vino Nobile di Montepulciano,Sangiovese,typical_not_exhaustive,never_autofill
 Rioja,Tempranillo;Garnacha;Graciano;Mazuelo;Viura,typical_not_exhaustive,never_autofill
 Ribera del Duero,Tempranillo,typical_not_exhaustive,never_autofill
-Rías Baixas,Albariño,typical_not_exhaustive,never_autofill
+Rias Baixas,Albarino,typical_not_exhaustive,never_autofill
 Rueda,Verdejo;Sauvignon Blanc,typical_not_exhaustive,never_autofill
-Priorat,Garnacha;Cariñena,typical_not_exhaustive,never_autofill
+Priorat,Garnacha;Carinena,typical_not_exhaustive,never_autofill
 Sancerre,Sauvignon Blanc;Pinot Noir,typical_not_exhaustive,never_autofill
-Pouilly-Fumé,Sauvignon Blanc,typical_not_exhaustive,never_autofill
+Pouilly-Fume,Sauvignon Blanc,typical_not_exhaustive,never_autofill
 Vouvray,Chenin Blanc,typical_not_exhaustive,never_autofill
 Chinon,Cabernet Franc;Chenin Blanc,typical_not_exhaustive,never_autofill
 Bourgueil,Cabernet Franc,typical_not_exhaustive,never_autofill
@@ -20,12 +20,12 @@ Beaujolais,Gamay;Chardonnay,typical_not_exhaustive,never_autofill
 Condrieu,Viognier,typical_not_exhaustive,never_autofill
 Cornas,Syrah,typical_not_exhaustive,never_autofill
 Champagne,Chardonnay;Pinot Noir;Meunier,typical_not_exhaustive,never_autofill
-Châteauneuf-du-Pape,Grenache;Syrah;Mourvèdre,typical_not_exhaustive,never_autofill
-Bordeaux,Cabernet Sauvignon;Merlot;Cabernet Franc;Sauvignon Blanc;Sémillon,typical_not_exhaustive,never_autofill
-Burgundy,Pinot Noir;Chardonnay;Aligoté,typical_not_exhaustive,never_autofill
+Chateauneuf-du-Pape,Grenache;Syrah;Mourvedre,typical_not_exhaustive,never_autofill
+Bordeaux,Cabernet Sauvignon;Merlot;Cabernet Franc;Sauvignon Blanc;Semillon,typical_not_exhaustive,never_autofill
+Burgundy,Pinot Noir;Chardonnay;Aligote,typical_not_exhaustive,never_autofill
 Mosel,Riesling,typical_not_exhaustive,never_autofill
-Wachau,Grüner Veltliner;Riesling,typical_not_exhaustive,never_autofill
-Tokaj,Furmint;Hárslevelű,typical_not_exhaustive,never_autofill
+Wachau,Gruner Veltliner;Riesling,typical_not_exhaustive,never_autofill
+Tokaj,Furmint;Harslevelu,typical_not_exhaustive,never_autofill
 Soave,Garganega;Trebbiano di Soave,typical_not_exhaustive,never_autofill
 Gavi,Cortese,typical_not_exhaustive,never_autofill
 Valpolicella,Corvina;Corvinone;Rondinella,typical_not_exhaustive,never_autofill
@@ -36,7 +36,7 @@ Nemea,Agiorgitiko,typical_not_exhaustive,never_autofill
 Marlborough,Sauvignon Blanc;Pinot Noir,typical_not_exhaustive,never_autofill
 Central Otago,Pinot Noir,typical_not_exhaustive,never_autofill
 Mendoza,Malbec;Cabernet Sauvignon,typical_not_exhaustive,never_autofill
-Barossa Valley,Shiraz;Grenache;Mourvèdre,typical_not_exhaustive,never_autofill
+Barossa Valley,Shiraz;Grenache;Mourvedre,typical_not_exhaustive,never_autofill
 Coonawarra,Cabernet Sauvignon,typical_not_exhaustive,never_autofill
 Napa Valley,Cabernet Sauvignon;Chardonnay,typical_not_exhaustive,never_autofill
 Russian River Valley,Pinot Noir;Chardonnay,typical_not_exhaustive,never_autofill

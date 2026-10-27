@@ -18,9 +18,10 @@ object LabelLayoutChecks {
         check(repaired.text=="Vignerons de l'Enclave")
         check(repaired.tokens===raw.tokens && repaired.tokens.single().members.single().textRaw==raw.text)
         for(text in listOf("Vignerons de l'Enclave","Uignerons","Uignerons Hills","Domaine Uignerons de la Mer",
-            "Côtes du Rhône","Domaine Cotes du Rhone Vilias","Cotes du Rhone Vilias Estate","Cotes du Rhone Violet"))
+            "Cotes du Rhone","Domaine Cotes du Rhone Vilias","Cotes du Rhone Vilias Estate","Cotes du Rhone Violet"))
             check(LabelLayoutContext.repair(line(text,.1f)).text==text) { text }
-        check(LabelLayoutContext.repair(line("COTES DU RHONE VILIAS",.5f)).text=="Côtes du Rhône Villages")
+        check(LabelLayoutContext.repair(line("Côtes du Rhône",.1f)).text=="Cotes du Rhone")
+        check(LabelLayoutContext.repair(line("COTES DU RHONE VILIAS",.5f)).text=="Cotes du Rhone Villages")
         val title=listOf(line("La Reserve",.1f),line("DE",.2f,x=.45f,w=.1f,h=.04f),line("L'Enclaue",.27f))
         val supported=LabelLayoutContext.titles(title+repaired).single()
         check(supported.value=="La Reserve de L'Enclave" && supported.state==UiState.YELLOW)

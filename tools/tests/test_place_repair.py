@@ -193,9 +193,12 @@ class PlaceRepairWiringTests(unittest.TestCase):
 
     def test_a_separate_origin_anchor_and_one_winner_are_enforced(self):
         repair = REPAIR.read_text()
-        for fragment in ('if(anchors.isEmpty()) return null',
+        label_ctx = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt').read_text()
+        for fragment in ('if(anchors.isEmpty() && countryHints.isEmpty() && !config.allowUnanchored) return null',
                          'anchors.map { it.countryCode }.distinct().size!=1',
                          'anchors.none { view.compatible(place,it) }',
+                         'minOf(observedLetters,canonicalLetters)<config.unanchoredMinLetters',
+                         'otherId!=place.id && dist<=bestDist+1',
                          'val attempts=(listOf(observed)+readings.map { it.text })',
                          'candidates.size!=1'):
             self.assertTrue(fragment in repair, fragment)
@@ -203,10 +206,13 @@ class PlaceRepairWiringTests(unittest.TestCase):
         self.assertNotIn('minimumEngines', repair)
         self.assertIn('engines.ifEmpty { listOf("phrase") }', repair)
         extractor = EVIDENCE.read_text()
-        for fragment in ('IdentityRoles.originOnly(otherText,listOf(place))',
-                         'place.type in setOf("country","region")',
+        for fragment in ('LabelContext.collect(graph,gazetteer,view,kb,typedIdentity)',
+                         'labelContext.anchorsExcluding(p.id)',
                          'sources.map { source -> PlaceRepair.Reading(family(source.record.engineId)'):
             self.assertTrue(fragment in extractor, fragment)
+        for fragment in ('place.type in setOf("country", "region")',
+                         'IdentityRoles.originOnly(text, listOf(place))'):
+            self.assertTrue(fragment in label_ctx, fragment)
 
     def test_a_repair_cannot_outrank_exact_evidence_or_name_the_wine(self):
         extractor = EVIDENCE.read_text()

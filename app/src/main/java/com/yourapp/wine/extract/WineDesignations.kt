@@ -16,9 +16,9 @@ object WineDesignations {
         Triple(name, Regex("(?i)\\s+($pattern)$"), Regex("(?i)^($pattern)\\s+"))
     }
     data class Parts(val base: String, val suffix: String?)
-    /** Only actual words are reordered. No fuzzy spelling or missing designation is supplied. */
+    /** Only actual words are reordered. Accents are scrubbed; no fuzzy spelling or missing designation is supplied. */
     fun split(text: String): Parts {
-        val clean = text.trim()
+        val clean = TextNorm.scrub(text).trim()
         for ((name, endPattern, startPattern) in patterns) {
             val end = endPattern.find(clean)
             if (end != null) return Parts(clean.substring(0, end.range.first).trim(), name)
@@ -55,6 +55,47 @@ object WineDesignations {
         val suffix = parts.suffix ?: return null
         if (key(suffix) !in classificationSuffixes) return null
         return parts.base.takeIf { it.count(Char::isLetter) >= 3 }
+    }
+
+    private val bareFramingWords = setOf(
+        "d'origine", "d origine", "origine", "origen", "origin",
+        "controlee", "protegee", "controllata", "garantita",
+        "calificada", "qualificada", "protegida", "protetta", "tipica",
+        "appellation", "denominazione", "denominacion", "indicazione", "geografica",
+        "vin", "vino", "wine", "de", "di", "du", "des",
+    )
+
+    private val framingPatterns = listOf(
+        Regex("(?i)^appellation\\s+d[' ]origine\\s+(?:controlee|protegee)\\s+(.+)$"),
+        Regex("(?i)^(.+?)\\s+appellation\\s+(?:d[' ]origine\\s+)?(?:controlee|protegee)$"),
+        Regex("(?i)^appellation\\s+(.+?)\\s+(?:d[' ]origine\\s+)?(?:controlee|protegee)$"),
+        Regex("(?i)^(.+?)\\s+denominazione\\s+di\\s+origine\\s+controllata(?:\\s+e\\s+garantita)?$"),
+        Regex("(?i)^denominazione\\s+di\\s+origine\\s+controllata(?:\\s+e\\s+garantita)?\\s+(.+)$"),
+        Regex("(?i)^(.+?)\\s+indicazione\\s+geografica\\s+(?:tipica|protetta)$"),
+        Regex("(?i)^indicazione\\s+geografica\\s+(?:tipica|protetta)\\s+(.+)$"),
+        Regex("(?i)^(.+?)\\s+denominacion\\s+de\\s+origen(?:\\s+(?:calificada|qualificada|protegida))?$"),
+        Regex("(?i)^denominacion\\s+de\\s+origen(?:\\s+(?:calificada|qualificada|protegida))?\\s+(.+)$"),
+    )
+
+    /**
+     * Extracts the inner appellation phrase `<X>` from a legal framing line such as
+     * `APPELLATION SAINT-JULIEN CONTROLEE` or `BAROLO DENOMINAZIONE DI ORIGINE CONTROLLATA E GARANTITA`,
+     * or null when the line is bare boilerplate (`APPELLATION D'ORIGINE CONTROLEE`) or unframed.
+     */
+    fun framedAppellation(text: String): String? {
+        val clean = TextNorm.scrub(text).trim().trim('-', ',', ';', ':', '.', '/')
+        if (clean.isEmpty() || '%' in clean) return null
+        for (pattern in framingPatterns) {
+            val match = pattern.matchEntire(clean) ?: continue
+            val inner = match.groupValues[1].trim().trim('-', ',', ';', ':', '.', '/')
+            val norm = TextNorm.normalize(inner)
+            if (inner.count(Char::isLetter) < 3 || norm in bareFramingWords) continue
+            if (norm.split(' ').size > 6) continue
+            val without1er = norm.replace(Regex("\\b1er\\b"), "")
+            if (without1er.any(Char::isDigit)) continue
+            return inner
+        }
+        return null
     }
 
     fun hasNameAndDesignation(text: String): Boolean {

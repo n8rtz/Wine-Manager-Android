@@ -8,7 +8,7 @@ object DatabaseNameLookupChecks {
             DatabaseLookupCandidate("3", "Barolo", "Piedmont")
         )
         val ranked = DatabaseNameLookup.rank("Chateau d'Agassac", candidates)
-        check(ranked.first().name == "Château d'Agassac")
+        check(ranked.first().name == "Chateau d'Agassac")
         check(ranked.first().editDistance == 0)
         check(ranked.first().context == "Bordeaux")
         check(ranked[1].similarityPercent > ranked.last().similarityPercent)

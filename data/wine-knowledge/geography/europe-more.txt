@@ -26,11 +26,17 @@ Auvernier
 Cortaillod
 RO|Romania||geography
 România
-RO|Romania|Dealu Mare|geography
+Banat
+Crișana
+Transilvania
+Colinele Dobrogei
+Dealurile Moldovei
+Muntenia
+RO|Romania|Muntenia/Dealu Mare|geography
 Valea Călugărească
 Urlati
 Ceptura
-RO|Romania||appellation
+RO|Romania|Dealurile Moldovei|appellation
 Panciu
 Odobești
 Cotești
@@ -39,24 +45,25 @@ Bohotin
 Huși
 Iași
 Bucium
-Colinele Dobrogei
+RO|Romania|Banat|appellation
 Recaș
-Banat
-Crișana
-Transilvania
+RO|Romania|Muntenia|appellation
 Ștefănești
-BG|Bulgaria||appellation
-Melnik
+BG|Bulgaria||geography
 Struma River Valley
 Rose Valley
-Sakar
 Southern Black Sea Coast
 Danube Plain
-Thracian Lowlands
+Thracian Valley
+BG|Bulgaria|Struma River Valley|appellation
+Melnik
+BG|Bulgaria|Thracian Valley|appellation
+Sakar
 BG|Bulgaria|Thracian Valley|geography
 Thracian Lowlands
 HR|Croatia||geography
 Hrvatska
+Dalmatia
 HR|Croatia|Slavonia|geography
 Zagorje-Međimurje
 Moslavina
@@ -66,8 +73,7 @@ Prigorje-Bilogora
 Kutjevo
 HR|Croatia|Istria|geography
 Slovenska Istra
-HR|Croatia||appellation
-Dalmatia
+HR|Croatia|Dalmatia|appellation
 Pelješac
 Brač
 Hvar
@@ -83,26 +89,31 @@ Primorska
 Dolenjska
 Bizeljsko-Sremič
 Prekmurje
-HU|Hungary||appellation
+HU|Hungary||geography
 Tokaj
 Eger
+Mátra
+Sopron
+Duna
+Pannon
+Balaton
+HU|Hungary|Pannon|appellation
 Villány
 Szekszárd
+HU|Hungary|Balaton|appellation
 Somló
 Badacsony
 Balatonfüred-Csopak
 Balatonboglár
 Balatonfelvidék
-Mátra
-Sopron
-Kunság
-Hajós-Baja
-Csongrád
-Duna
-Pannon
 Zala
 Nagy-Somló
 Tihany
+HU|Hungary|Duna|appellation
+Kunság
+Hajós-Baja
+Csongrád
+HU|Hungary|Tokaj|appellation
 Tokaji
 HU|Hungary|Tokaj|geography
 Tokaj-Hegyalja
@@ -136,7 +147,7 @@ GB|United Kingdom|England/Kent|geography
 North Downs
 GB|United Kingdom|England/Hampshire|geography
 Test Valley
-GE|Georgia||appellation
+GE|Georgia||geography
 Kakheti
 Racha
 Imereti
@@ -146,13 +157,14 @@ Samegrelo
 Adjara
 Lechkhumi
 Tbilisi
+GE|Georgia|Kartli|appellation
 Ateni
+GE|Georgia|Kakheti|appellation
 Kvareli
 Mukuzani
 Napareuli
 Teliani
 Akhasheni
-Khvanchkara
 Kindzmarauli
 Manavi
 Tsinandali
@@ -161,8 +173,8 @@ Vazisubani
 Tibaani
 Kardenakhi
 Magrani
-GE|Georgia|Kakheti|geography
-Kakheti
+GE|Georgia|Racha|appellation
+Khvanchkara
 MD|Moldova||geography
 Codru
 Valul lui Traian
