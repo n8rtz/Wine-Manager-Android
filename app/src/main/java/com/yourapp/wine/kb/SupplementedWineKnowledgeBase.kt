@@ -35,11 +35,22 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
             val countries = byCountry[code].orEmpty()
             val country = if (countries.isEmpty()) add(term.country, "country", null, code) else countries.singleOrNull()
             if (country == null) continue
-            val region = if (term.region.isBlank()) country else add(term.region, "region", country.id, code) ?: continue
             val reference = ReferenceWineCatalog.named(term.name, code)
+            // Walk the authored containing chain (broad region first, then subregions). A blank
+            // path keeps the country-only behaviour: no region is invented.
+            val path = reference?.path.orEmpty().ifEmpty { listOfNotNull(term.region.takeIf(String::isNotBlank)) }
+            var region = country
+            var level = 0
+            while (level < path.size) {
+                val next = add(path[level], if (level == 0) "region" else "subregion", region.id, code)
+                if (next == null) { region = country; break }
+                region = next
+                level++
+            }
             val type = if (reference?.nameRole == "geography") {
-                if (term.region.isBlank() && reference.regions.isEmpty()) "region" else "subregion"
+                if (path.isEmpty() && reference.regions.isEmpty()) "region" else "subregion"
             } else "appellation"
+            // A row that names its own containing place reuses it instead of adding a child.
             if (TextNorm.normalize(term.name) != region.nameNorm) add(term.name, type, region.id, code)
         }
         // The DOCG/DOC names remain appellations; the cellar displays their shared town separately.

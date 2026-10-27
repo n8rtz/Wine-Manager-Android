@@ -1,0 +1,67 @@
+# Project-authored reference for further producing countries: NOT a regulator-verified register.
+JP|Japan||geography
+Koshu
+Katsunuma
+Isawa
+JP|Japan|Yamanashi|geography
+Koshu
+Katsunuma
+Isawa
+CN|China||geography
+Shacheng
+Huailai
+Yantai
+Penglai
+Turpan
+Yili
+Shangri-La
+Deqin
+Tonghua
+Huanren
+CN|China|Ningxia|geography
+Helan Mountain
+CN|China|Yunnan|geography
+Shangri-La
+Deqin
+IN|India||geography
+Nashik
+Nandi Hills
+Karnataka
+Maharashtra
+TH|Thailand||geography
+Hua Hin
+Khao Yai
+Chiang Mai
+ID|Indonesia||geography
+Bali
+VN|Vietnam||geography
+Da Lat
+MA|Morocco||geography
+Meknès
+Benslimane
+Casablanca
+Guerrouane
+Beni Mellal
+Essaouira
+TN|Tunisia||geography
+Mornag
+Kelibia
+Sidi Salem
+Thibar
+Kerkennah
+EG|Egypt||geography
+Alexandria
+Gianaclis
+BO|Bolivia||geography
+Tarija
+Valle de Cinti
+PE|Peru||geography
+Ica
+CO|Colombia||geography
+Valle del Cauca
+EC|Ecuador||geography
+Valladolid
+VE|Venezuela||geography
+Zulia
+PY|Paraguay||geography
+Itapúa

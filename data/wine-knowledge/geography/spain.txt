@@ -1,0 +1,167 @@
+# Project-authored Spanish DO/DOCa/VP/VdlT reference: NOT an exhaustive or regulator-verified register.
+ES|Spain|Galicia|appellation
+Rías Baixas
+Ribeiro
+Valdeorras
+Monterrei
+Ribeira Sacra
+ES|Spain|Galicia/Rías Baixas|geography
+Val do Salnés
+Condado do Tea
+O Rosal
+Ribeira do Ulla
+Soutomaior
+ES|Spain|Galicia/Ribeira Sacra|geography
+Amandi
+Chantada
+Quiroga-Bibei
+Ribeiras do Miño
+Ribeiras do Sil
+ES|Spain|Castilla y Leon|appellation
+Ribera del Duero
+Rueda
+Toro
+Cigales
+Bierzo
+Arlanza
+Arribes
+Tierra del Vino de Zamora
+Valtiendas
+Sierra de Salamanca
+Cebreros
+ES|Spain|Catalonia|appellation
+Priorat
+Montsant
+Penedès
+Empordà
+Conca de Barberà
+Costers del Segre
+Terra Alta
+Alella
+Pla de Bages
+Tarragona
+Catalunya
+ES|Spain|Rioja|appellation
+Rioja
+Rioja Alavesa
+Rioja Alta
+Rioja Oriental
+ES|Spain|Aragon|appellation
+Somontano
+Cariñena
+Calatayud
+Campo de Borja
+Valdejalón
+Ribera del Gállego-Cinco Villas
+Ribera del Jiloca
+Ribera del Queiles
+ES|Spain|Castilla-La Mancha|appellation
+La Mancha
+Valdepeñas
+Méntrida
+Almansa
+Manchuela
+Ribera del Júcar
+Uclés
+Mondéjar
+Campo de Calatrava
+Dominio de Valdepusa
+Finca Élez
+Guijoso
+Dehesa del Carrizal
+Casa del Blanco
+Pago Florentino
+Pago Calzadilla
+El Vicario
+ES|Spain|Murcia|appellation
+Yecla
+Bullas
+Campo de Cartagena
+Abanilla
+ES|Spain|Valencia|appellation
+Utiel-Requena
+Valencia
+Alicante
+El Terrerazo
+Los Balagueses
+Vera de Estenas
+ES|Spain|Andalusia|appellation
+Jerez-Xérès-Sherry
+Jerez
+Manzanilla-Sanlúcar de Barrameda
+Manzanilla
+Málaga
+Sierras de Málaga
+Montilla-Moriles
+Condado de Huelva
+Lebrija
+Cádiz
+ES|Spain|Basque Country|appellation
+Txakoli de Getaria
+Getariako Txakolina
+Txakoli de Bizkaia
+Txakoli de Álava
+Arabako Txakolina
+ES|Spain|Canary Islands|appellation
+Abona
+Tacoronte-Acentejo
+Valle de Güímar
+Valle de la Orotava
+Ycoden-Daute-Isora
+Lanzarote
+La Palma
+El Hierro
+Gran Canaria
+ES|Spain|Balearic Islands|appellation
+Binissalem
+Pla i Llevant
+ES|Spain|Madrid|appellation
+Vinos de Madrid
+ES|Spain|Madrid/Vinos de Madrid|geography
+Arganda
+Navalcarnero
+San Martín de Valdeiglesias
+ES|Spain|Navarra|appellation
+Navarra
+ES|Spain|Navarra|geography
+Ribera Alta
+Ribera Baja
+Tierra Estella
+Valdizarbe
+Baja Montaña
+ES|Spain|Extremadura|appellation
+Ribera del Guadiana
+ES|Spain|Asturias|appellation
+Cangas
+ES|Spain||geography
+Jumilla
+Cava
+Vino de España
+ES|Spain|Castilla y Leon|geography
+Castilla y León
+ES|Spain|Andalusia|geography
+Granada
+Ronda
+ES|Spain|Valencia|geography
+Castelló
+ES|Spain|Catalonia|geography
+Barcelona
+ES|Spain|Castilla-La Mancha|geography
+Alcarria
+ES|Spain|Aragon|geography
+Bajo Aragón
+ES|Spain|Cantabria|geography
+Liébana
+Costa de Cantabria
+ES|Spain|Murcia|geography
+Murcia
+ES|Spain|Balearic Islands|geography
+Mallorca
+Menorca
+Illes Balears
+ES|Spain|Extremadura|geography
+Extremadura
+ES|Spain|Galicia|geography
+Betanzos
+ES|Spain|Navarra|geography
+Navarra

@@ -4,12 +4,14 @@ import com.yourapp.wine.merge.TextNorm
 
 /** Auditable bundled reference, not a complete legal register. New catalog-based suggestions stay YELLOW. */
 object ReferenceWineCatalog {
+    /** [path] is the containing chain below the country ('Bordeaux/Médoc'); empty means country+broad region only. */
     data class Origin(val name:String,val code:String,val country:String,val regions:List<String>,val aliases:List<String>,
-        val nameRole:String,val contextRequired:Boolean,val source:String)
+        val nameRole:String,val contextRequired:Boolean,val source:String,val path:List<String>)
     data class LabelTerm(val role:String,val name:String,val countries:List<String>,val action:String)
     val origins:List<Origin> by lazy { GeneratedWineKnowledge.origins.map { row ->
         val p=row.split('|');Origin(p[0],p[1],p[2],p[3].split(';').filter(String::isNotBlank),
-            p[4].split(';').filter(String::isNotBlank),p[5],p[6]=="context_required",p[7])
+            p[4].split(';').filter(String::isNotBlank),p[5],p[6]=="context_required",p[7],
+            p.getOrElse(8){""}.split('/').filter(String::isNotBlank))
     } }
     val labelTerms:List<LabelTerm> by lazy { GeneratedWineKnowledge.labelTerms.map { row ->
         val p=row.split('|');LabelTerm(p[0],p[1],p[2].split(';').filter(String::isNotBlank),p[3])

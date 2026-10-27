@@ -1,0 +1,176 @@
+# Project-authored South African / American GI reference: NOT an exhaustive or regulator-verified register.
+ZA|South Africa|Western Cape|geography
+Stellenbosch
+Paarl
+Franschhoek
+Swartland
+Tulbagh
+Wellington
+Breedekloof
+Robertson
+Worcester
+Swellendam
+Cape Agulhas
+Elim
+Walker Bay
+Overberg
+Olifants River
+Malmesbury
+Durbanville
+Philadelphia
+Constantia
+Cape Point
+Darling
+Elgin
+Greyton
+Bonnievale
+Ashton
+Montagu
+Calitzdorp
+Herold
+Outeniqua
+Prince Albert
+Langeberg-Garcia
+Plettenberg Bay
+Stanford
+Ceres
+ZA|South Africa|Western Cape/Stellenbosch|geography
+Banghoek
+Bottelary
+Devon Valley
+Jonkershoek Valley
+Papegaaiberg
+Polkadraai Hills
+Simonsberg-Stellenbosch
+Vlottenburg
+ZA|South Africa|Western Cape/Paarl|geography
+Voor-Paardeberg
+Simonsberg-Paarl
+ZA|South Africa|Western Cape/Walker Bay|geography
+Hemel-en-Aarde Valley
+Hemel-en-Aarde Ridge
+Upper Hemel-en-Aarde Valley
+Bot River
+ZA|South Africa|Western Cape/Swartland|geography
+Riebeekberg
+Riebeek Valley
+Stettyn
+ZA|South Africa|Western Cape/Olifants River|geography
+Citrusdal Mountain
+Citrusdal Valley
+Lutzville Valley
+ZA|South Africa|Western Cape/Breedekloof|geography
+Slanghoek
+ZA|South Africa|Western Cape/Robertson|geography
+Goudmyn
+ZA|South Africa|Western Cape/Cape Agulhas|geography
+Elim
+AR|Argentina|Mendoza|geography
+Luján de Cuyo
+Maipú
+Valle de Uco
+San Rafael
+General Alvear
+AR|Argentina|Mendoza/Valle de Uco|geography
+Tupungato
+Tunuyán
+San Carlos
+AR|Argentina|Salta|geography
+Cafayate
+AR|Argentina|San Juan|geography
+Ullum
+Pedernal
+Calingasta
+Tulum
+Sarmiento
+Zonda
+Iglesia
+AR|Argentina|La Rioja Argentina|geography
+Famatina
+Chilecito
+AR|Argentina|Catamarca|geography
+Fiambalá
+Tinogasta
+AR|Argentina|Neuquén|geography
+San Patricio del Chañar
+AR|Argentina|Río Negro|geography
+Alto Valle del Río Negro
+Río Colorado
+AR|Argentina|Buenos Aires|geography
+Chapadmalal
+Médanos
+CL|Chile||geography
+Casablanca Valley
+Maipo Valley
+Colchagua Valley
+Cachapoal Valley
+Curicó Valley
+Maule Valley
+Itata Valley
+Bío-Bío Valley
+Malleco Valley
+San Antonio Valley
+Aconcagua Valley
+Elqui Valley
+Limarí Valley
+Choapa Valley
+Cauquenes Valley
+Margamarga
+CL|Chile|Colchagua Valley|geography
+Santa Cruz
+CL|Chile|Maipo Valley|geography
+Puente Alto
+CL|Chile|San Antonio Valley|geography
+Leyda Valley
+CL|Chile|Aconcagua Valley|geography
+Panquehue
+San Esteban
+CL|Chile|Maule Valley|geography
+Loncomilla Valley
+CA|Canada|Ontario|geography
+Niagara Peninsula
+Erie North Shore
+Prince Edward County
+Lake Erie North Shore
+CA|Canada|Ontario/Niagara Peninsula|geography
+Niagara-on-the-Lake
+Beamsville Bench
+Twenty Mile Bench
+Short Hills Bench
+Vinemount Ridge
+St. David's Bench
+Four Mile Creek
+Creek Shores
+Lincoln Lakeshore
+CA|Canada|British Columbia|geography
+Okanagan Valley
+Similkameen Valley
+Fraser Valley
+Vancouver Island
+Gulf Islands
+Shuswap
+Lillooet
+CA|Canada|British Columbia/Okanagan Valley|geography
+Kelowna
+Naramata Bench
+Okanagan Falls
+Golden Mile
+Black Sage Bench
+Oliver
+CA|Canada|Nova Scotia|geography
+Annapolis Valley
+Gaspereau Valley
+CA|Canada|Quebec|geography
+Brome-Missisquoi
+MX|Mexico|Baja California|geography
+Valle de Guadalupe
+Valle de San Vicente
+Valle de Santo Tomás
+UY|Uruguay||geography
+Progreso
+Juanicó
+Las Brujas
+BR|Brazil|Rio Grande do Sul|geography
+Serra Gaúcha
+Campanha Gaúcha
+Vale dos Vinhedos

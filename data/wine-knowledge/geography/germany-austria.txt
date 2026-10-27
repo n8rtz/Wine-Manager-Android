@@ -1,0 +1,119 @@
+# Project-authored German/Austrian reference: NOT an exhaustive or regulator-verified register.
+# German Anbaugebiete and Austrian DAC regions are region-level (country only; see editorial-origins).
+DE|Germany||geography
+Deutscher Wein
+Landwein
+Mosel
+Rheingau
+Rheinhessen
+Pfalz
+Nahe
+Ahr
+Mittelrhein
+Hessische Bergstraße
+Franken
+Württemberg
+Baden
+Saale-Unstrut
+Sachsen
+Walporzheim
+DE|Germany|Mosel|geography
+Bernkastel
+Zell
+Saar
+Ruwer
+Obermosel
+Terrassenmosel
+DE|Germany|Rheinhessen|geography
+Bingen
+Nierstein
+Wonnegau
+Mainz
+DE|Germany|Pfalz|geography
+Mittelhaardt
+Südliche Weinstraße
+Deutsche Weinstraße
+DE|Germany|Baden|geography
+Kaiserstuhl
+Markgräflerland
+Ortenau
+Tuniberg
+Bodensee
+Kraichgau
+Tauberfranken
+DE|Germany|Franken|geography
+Steigerwald
+Maindreieck
+Mainviereck
+DE|Germany|Nahe|geography
+Nahetal
+DE|Germany|Rheingau|geography
+Johannisberg
+Rüdesheim
+AT|Austria||geography
+Österreich
+Weinland
+Bergland
+AT|Austria|Wachau|geography
+Wachau
+AT|Austria|Kamptal|geography
+Kamptal
+AT|Austria|Kremstal|geography
+Kremstal
+AT|Austria|Traisental|geography
+Traisental
+AT|Austria|Wagram|geography
+Wagram
+AT|Austria|Weinviertel|geography
+Weinviertel
+AT|Austria|Carnuntum|geography
+Carnuntum
+AT|Austria|Thermenregion|geography
+Thermenregion
+AT|Austria|Wien|geography
+Wien
+AT|Austria|Neusiedlersee|geography
+Neusiedlersee
+Leithaberg
+AT|Austria|Mittelburgenland|geography
+Mittelburgenland
+AT|Austria|Eisenberg|geography
+Eisenberg
+AT|Austria|Rosalia|geography
+Rosalia
+AT|Austria|Vulkanland Steiermark|geography
+Vulkanland Steiermark
+AT|Austria|Südsteiermark|geography
+Südsteiermark
+AT|Austria|Weststeiermark|geography
+Weststeiermark
+AT|Austria|Wachau|appellation
+Wachau DAC
+AT|Austria|Kamptal|appellation
+Kamptal DAC
+AT|Austria|Kremstal|appellation
+Kremstal DAC
+AT|Austria|Traisental|appellation
+Traisental DAC
+AT|Austria|Wagram|appellation
+Wagram DAC
+AT|Austria|Weinviertel|appellation
+Weinviertel DAC
+AT|Austria|Carnuntum|appellation
+Carnuntum DAC
+AT|Austria|Thermenregion|appellation
+Thermenregion DAC
+AT|Austria|Neusiedlersee|appellation
+Leithaberg DAC
+AT|Austria|Mittelburgenland|appellation
+Mittelburgenland DAC
+AT|Austria|Eisenberg|appellation
+Eisenberg DAC
+AT|Austria|Rosalia|appellation
+Rosalia DAC
+AT|Austria|Vulkanland Steiermark|appellation
+Vulkanland Steiermark DAC
+AT|Austria|Südsteiermark|appellation
+Südsteiermark DAC
+AT|Austria|Weststeiermark|appellation
+Weststeiermark DAC

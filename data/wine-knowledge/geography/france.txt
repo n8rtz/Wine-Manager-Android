@@ -1,0 +1,446 @@
+# Project-authored French AOC/IGP reference: NOT an exhaustive or regulator-verified register.
+# Header: ISO|country|region path ('Region' or 'Region/Subregion')|name role.
+# Broad region is the first segment; a deeper path nests the entries under a subregion.
+FR|France|Bordeaux|geography
+Bordeaux Supérieur ~ Bordeaux Superieur
+Bordeaux Clairet
+Bordeaux Rosé
+Crémant de Bordeaux
+FR|France|Bordeaux/Médoc|appellation
+Médoc
+Saint-Estèphe ~ Saint Estephe
+Pauillac
+Saint-Julien ~ Saint Julien
+Margaux
+Moulis-en-Médoc ~ Moulis
+Listrac-Médoc ~ Listrac
+Haut-Médoc
+FR|France|Bordeaux/Graves|appellation
+Graves
+Graves Supérieures
+Pessac-Léognan
+Cérons
+Barsac
+Sauternes
+Sainte-Croix-du-Mont
+Loupiac
+Cadillac
+Premières Côtes de Bordeaux
+FR|France|Bordeaux/Libournais|appellation
+Saint-Émilion ~ Saint Emilion
+Saint-Émilion Grand Cru ~ Saint Emilion Grand Cru
+Montagne-Saint-Émilion
+Saint-Georges-Saint-Émilion
+Puisseguin-Saint-Émilion
+Lussac-Saint-Émilion
+Pomerol
+Lalande-de-Pomerol
+Néac
+Canon-Fronsac
+Fronsac
+Côtes de Bourg ~ Cotes de Bourg
+Côtes de Blaye ~ Cotes de Blaye
+Bordeaux Côtes de Francs
+Castillon Côtes de Bordeaux ~ Castillon
+Francs Côtes de Bordeaux
+Cadillac Côtes de Bordeaux
+Blaye Côtes de Bordeaux
+Sainte-Foy-Bordeaux
+FR|France|Bordeaux/Entre-deux-Mers|appellation
+Entre-deux-Mers
+Entre-deux-Mers Haut-Benauge
+FR|France|Burgundy/Chablis|appellation
+Chablis
+Petit Chablis
+Chablis Grand Cru
+Chablis Premier Cru
+FR|France|Burgundy/Côte de Nuits|appellation
+Marsannay
+Fixin
+Gevrey-Chambertin
+Morey-Saint-Denis
+Chambolle-Musigny
+Vougeot
+Vosne-Romanée
+Nuits-Saint-Georges
+Chambertin
+Chambertin-Clos de Bèze
+Chapelle-Chambertin
+Charmes-Chambertin
+Mazoyères-Chambertin
+Griotte-Chambertin
+Latricières-Chambertin
+Mazis-Chambertin
+Ruchottes-Chambertin
+Musigny
+Clos de Vougeot
+Échezeaux
+Grands-Échezeaux
+La Romanée
+Romanée-Conti
+Romanée-Saint-Vivant
+Richebourg
+La Tâche
+Bonnes-Mares
+Clos de la Roche
+Clos Saint-Denis
+Clos des Lambrays
+FR|France|Burgundy/Côte de Beaune|appellation
+Aloxe-Corton
+Ladoix
+Pernand-Vergelesses
+Savigny-lès-Beaune
+Chorey-lès-Beaune
+Beaune
+Pommard
+Volnay
+Monthélie
+Auxey-Duresses
+Saint-Romain
+Meursault
+Blagny
+Puligny-Montrachet
+Chassagne-Montrachet
+Santenay
+Maranges
+Saint-Aubin
+Corton
+Corton-Charlemagne
+Charlemagne
+Chevalier-Montrachet
+Bâtard-Montrachet
+Bienvenues-Bâtard-Montrachet
+Criots-Bâtard-Montrachet
+Montrachet
+FR|France|Burgundy/Côte Chalonnaise|appellation
+Bouzeron
+Rully
+Mercurey
+Givry
+Montagny
+FR|France|Burgundy/Mâconnais|appellation
+Mâcon
+Mâcon-Villages
+Pouilly-Fuissé
+Pouilly-Vinzelles
+Pouilly-Loché
+Saint-Véran
+Viré-Clessé
+FR|France|Burgundy|appellation
+Bourgogne
+Bourgogne Aligoté
+Bourgogne Hautes-Côtes de Beaune
+Bourgogne Hautes-Côtes de Nuits
+Bourgogne Passe-tout-grains
+Bourgogne Côte Saint-Jacques
+Crémant de Bourgogne
+Irancy
+Vézelay
+FR|France|Beaujolais|appellation
+Beaujolais
+Beaujolais-Villages
+Brouilly
+Côte de Brouilly
+Régnié
+Morgon
+Chiroubles
+Fleurie
+Moulin-à-Vent
+Chénas
+Juliénas
+Saint-Amour
+FR|France|Champagne|appellation
+Champagne
+Champagne Premier Cru
+Champagne Grand Cru
+Rosé des Riceys
+Coteaux Champenois
+FR|France|Rhone/Northern Rhone|appellation
+Côte-Rôtie
+Condrieu
+Château-Grillet
+Saint-Joseph
+Crozes-Hermitage
+Hermitage
+Cornas
+Saint-Péray
+Clairette de Die
+Crémant de Die
+Châtillon-en-Diois
+FR|France|Rhone/Southern Rhone|appellation
+Châteauneuf-du-Pape
+Côtes du Rhône
+Côtes du Rhône Villages
+Cairanne
+Rasteau
+Séguret
+Sablet
+Roaix
+Vacqueyras
+Gigondas
+Vinsobres
+Valréas
+Visan
+Saint-Maurice-sur-Eygues
+Rochegude
+Sainte-Cécile-les-Vignes
+Suze-la-Rousse
+Gadagne
+Chusclan
+Laudun
+Saint-Gervais
+Massif d'Uchaux
+Plan de Dieu
+Puyméras
+Nyons
+Signargues
+Tavel
+Lirac
+Muscat de Beaumes-de-Venise
+Beaumes-de-Venise
+Luberon
+Ventoux
+Grignan-les-Adhémar
+Costières de Nîmes
+Côtes du Vivarais
+Duché d'Uzès
+FR|France|Loire/Pays Nantais|appellation
+Muscadet
+Muscadet Sèvre-et-Maine
+Muscadet Coteaux de la Loire
+Muscadet Côtes de Grandlieu
+Gros Plant du Pays Nantais
+FR|France|Loire/Anjou-Saumur|appellation
+Anjou
+Anjou Villages
+Anjou Villages Brissac
+Cabernet d'Anjou
+Rosé d'Anjou
+Coteaux du Layon
+Coteaux du Layon Chaume
+Quarts de Chaume
+Bonnezeaux
+Savennières
+Savennières Coulée de Serrant
+Savennières Roche aux Moines
+Saumur
+Saumur-Champigny
+Coteaux de Saumur
+Coteaux de l'Aubance
+FR|France|Loire/Touraine|appellation
+Touraine
+Touraine Amboise
+Touraine Azay-le-Rideau
+Touraine Mesland
+Touraine Noble Joué
+Vouvray
+Montlouis-sur-Loire
+Chinon
+Bourgueil
+Saint-Nicolas-de-Bourgueil
+Cheverny
+Cour-Cheverny
+Valençay
+FR|France|Loire/Centre-Loire|appellation
+Sancerre
+Pouilly-Fumé
+Pouilly-sur-Loire
+Menetou-Salon
+Quincy
+Reuilly
+Coteaux du Giennois
+Châteaumeillant
+Orléans
+Orléans-Cléry
+FR|France|Loire/Auvergne|appellation
+Côtes d'Auvergne
+Saint-Pourçain
+Côte Roannaise
+Côtes du Forez
+FR|France|Alsace|appellation
+Alsace
+Alsace Grand Cru
+Crémant d'Alsace
+Kaefferkopf
+FR|France|Alsace/Bas-Rhin|appellation
+Alsace Grand Cru Altenberg de Bergbieten
+Alsace Grand Cru Altenberg de Bergheim
+Alsace Grand Cru Altenberg de Wolxheim
+Alsace Grand Cru Engelgarten
+Alsace Grand Cru Florimont
+Alsace Grand Cru Frankstein
+Alsace Grand Cru Froehn
+Alsace Grand Cru Geisberg
+Alsace Grand Cru Goldert
+Alsace Grand Cru Hatschbourg
+Alsace Grand Cru Kanzlerberg
+Alsace Grand Cru Kastelberg
+Alsace Grand Cru Kirchberg de Barr
+Alsace Grand Cru Kitterlé
+Alsace Grand Cru Moenchberg
+Alsace Grand Cru Muenchberg
+Alsace Grand Cru Osterberg
+Alsace Grand Cru Pfersigberg
+Alsace Grand Cru Praelatenberg
+Alsace Grand Cru Rosacker
+Alsace Grand Cru Saering
+Alsace Grand Cru Schlossberg
+Alsace Grand Cru Schoenenbourg
+Alsace Grand Cru Spiegel
+Alsace Grand Cru Steinklotz
+Alsace Grand Cru Wiebelsberg
+Alsace Grand Cru Wineck-Schlossberg
+Alsace Grand Cru Winzenberg
+Alsace Grand Cru Zotzenberg
+FR|France|Alsace/Haut-Rhin|appellation
+Alsace Grand Cru Brand
+Alsace Grand Cru Bruderthal
+Alsace Grand Cru Eichberg
+Alsace Grand Cru Furstentum
+Alsace Grand Cru Gloeckelberg
+Alsace Grand Cru Hengst
+Alsace Grand Cru Kessler
+Alsace Grand Cru Kirchberg de Ribeauvillé
+Alsace Grand Cru Mambourg
+Alsace Grand Cru Mandelberg
+Alsace Grand Cru Marckrain
+Alsace Grand Cru Ollwiller
+Alsace Grand Cru Pfingstberg
+Alsace Grand Cru Rangen
+Alsace Grand Cru Sommerberg
+Alsace Grand Cru Sonnenglanz
+Alsace Grand Cru Sporen
+Alsace Grand Cru Steinen
+Alsace Grand Cru Steingrubler
+Alsace Grand Cru Vorbourg
+Alsace Grand Cru Zinnkoepflé
+FR|France|Provence|appellation
+Côtes de Provence
+Coteaux d'Aix-en-Provence
+Coteaux Varois en Provence
+Les Baux-de-Provence
+Cassis
+Bandol
+Palette
+Bellet
+Pierrevert
+FR|France|Languedoc|appellation
+Languedoc
+Pic-Saint-Loup
+Grès de Montpellier
+La Clape
+Picpoul de Pinet
+Terrasses du Larzac
+Montpeyroux
+Cabrières
+Sommières
+Saint-Georges-d'Orques
+Saint-Drézéry
+Quatourze
+Méjanelle
+Saint-Chinian
+Saint-Chinian Berlou
+Saint-Chinian Roquebrun
+Faugères
+Fitou
+Corbières
+Corbières-Boutenac
+Minervois
+Minervois-La Livinière
+Malepère
+Cabardès
+Limoux
+Blanquette de Limoux
+Crémant de Limoux
+Clairette du Languedoc
+Muscat de Frontignan
+Muscat de Mireval
+Muscat de Lunel
+Muscat de Saint-Jean-de-Minervois
+Saint-Jean-de-Minervois
+FR|France|Roussillon|appellation
+Côtes du Roussillon
+Côtes du Roussillon Villages
+Côtes du Roussillon Les Aspres
+Caramany
+Latour-de-France
+Lesquerde
+Tautavel
+Maury
+Banyuls
+Banyuls Grand Cru
+Collioure
+Rivesaltes
+Muscat de Rivesaltes
+Grand Roussillon
+FR|France|South West France|appellation
+Bergerac
+Côtes de Bergerac
+Pécharmant
+Montravel
+Haut-Montravel
+Côtes de Montravel
+Monbazillac
+Saussignac
+Rosette
+Cahors
+Gaillac
+Gaillac Premières Côtes
+Fronton
+Madiran
+Pacherenc du Vic-Bilh
+Jurançon
+Béarn
+Irouléguy
+Marcillac
+Entraygues-Le Fel
+Estaing
+Saint-Mont
+Tursan
+Côtes de Duras
+Côtes du Marmandais
+Buzet
+FR|France|Jura|appellation
+Arbois
+Arbois Pupillin
+Château-Chalon
+L'Étoile
+Côtes du Jura
+Crémant du Jura
+Macvin du Jura
+FR|France|Savoie|appellation
+Apremont
+Abymes
+Arbin
+Chignin
+Chignin-Bergeron
+Cruet
+Montmélian
+Jongieux
+Saint-Jean-de-la-Porte
+Roussette de Savoie
+Seyssel
+Crépy
+Vin de Savoie
+Bugey
+Montagnieu
+Cerdon
+FR|France|Corsica|appellation
+Ajaccio
+Aléria
+Patrimonio
+Cap Corse
+Muscat du Cap Corse
+Sartène
+Figari
+Porto-Vecchio
+FR|France|Languedoc|geography
+Pays d'Oc
+Comté Tolosan
+Côtes de Gascogne
+Coteaux du Languedoc
+FR|France||geography
+Val de Loire
+Atlantique
+Comtés Rhodaniens
+Méditerranée

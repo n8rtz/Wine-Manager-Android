@@ -8,8 +8,8 @@ object ReferenceCatalogChecks {
     private fun fill(vararg lines:String):FillResult = FillEngine(FixtureKnowledgeBase()).fill(
         lines.mapIndexed { i,text -> LogicChecks.token(text,y=.1f+i*.18f,h=.06f) },2026)
     fun catalogAndProvenance() {
-        check(ReferenceWineCatalog.origins.size >= 1000)
-        check(ReferenceWineCatalog.countryCodes.size >= 29)
+        check(ReferenceWineCatalog.origins.size >= 2000)
+        check(ReferenceWineCatalog.countryCodes.size >= 45)
         check(ReferenceWineCatalog.origins.all { it.country.isNotBlank() && it.source.isNotBlank() })
         val imported=FixtureKnowledgeBase()
         val supplemented=SupplementedWineKnowledgeBase(imported)
