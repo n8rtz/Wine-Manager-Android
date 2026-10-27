@@ -54,8 +54,8 @@ object ReferenceCatalogChecks {
         val cava=fill("Cava")
         check(cava.fields.getValue(FieldId.REGION).state==UiState.RED) { cava.fields }
     }
-    /** Lab-only bounded appellation repair: off by default, anchored, two-engine, never an override. */
-    fun placeRepairIsBoundedAnchoredAndTwoEngineGated() {
+    /** Lab-only bounded appellation repair: off by default, anchored, widened to one engine, never an override. */
+    fun placeRepairIsBoundedAnchoredAndReadingDriven() {
         val kb=SupplementedWineKnowledgeBase(FixtureKnowledgeBase())
         val hierarchy=PlaceHierarchy(kb)
         val repairs=PlaceRepair(kb,hierarchy)
@@ -63,14 +63,26 @@ object ReferenceCatalogChecks {
         val bordeaux=view.byName.getValue("bordeaux").first()
         val california=view.byName.getValue("california").first()
         val on=PlaceRepair.Config.experimental
-        val both=listOf(PlaceRepair.Reading("mlkit","Pauilac"),PlaceRepair.Reading("paddle","Pauilac"))
+        val mlkit=listOf(PlaceRepair.Reading("mlkit","Pauilac"))
+        val paddle=listOf(PlaceRepair.Reading("paddle","Pauilac"))
+        val both=mlkit+paddle
         val repaired=repairs.resolve("Pauilac",both,listOf(bordeaux),on)
         check(repaired?.place?.name=="Pauillac") { repaired.toString() }
         check(repaired?.editDistance==1) { repaired.toString() }
-        // Off by default, and each gate alone is enough to abstain.
+        check(repaired?.engines==listOf("mlkit","paddle")) { repaired.toString() }
+        // One engine is enough: the engines widen the net, they are not a quorum, so a form only
+        // ML Kit or only Paddle read is still repaired.
+        check(repairs.resolve("Pauilac",mlkit,listOf(bordeaux),on)?.place?.name=="Pauillac")
+        check(repairs.resolve("Pauilac",mlkit,listOf(bordeaux),on)?.engines==listOf("mlkit"))
+        check(repairs.resolve("Pauilac",paddle,listOf(bordeaux),on)?.place?.name=="Pauillac")
+        check(repairs.resolve("Pauilac",paddle,listOf(bordeaux),on)?.engines==listOf("paddle"))
+        // One clean engine reading carries a phrase the merged text garbled; the clean reading is
+        // already exact for the trie, so the form still arrives through the other spelling.
+        check(repairs.resolve("Pauilac",listOf(PlaceRepair.Reading("paddle","Pauillac")),listOf(bordeaux),on)?.place?.name=="Pauillac")
+        // Off by default, and each remaining gate alone is enough to abstain.
         check(repairs.resolve("Pauilac",both,listOf(bordeaux),PlaceRepair.Config.off)==null)
         check(repairs.resolve("Pauilac",both,emptyList(),on)==null)
-        check(repairs.resolve("Pauilac",both.take(1),listOf(bordeaux),on)==null)
+        check(repairs.resolve("Pauilac",both,listOf(bordeaux,california),on)==null)
         // A repair may never contradict the printed anchor, and never re-derives an exact reading.
         check(repairs.resolve("Pauilac",both,listOf(california),on)==null)
         check(repairs.resolve("Pauillac",both,listOf(bordeaux),on)==null)

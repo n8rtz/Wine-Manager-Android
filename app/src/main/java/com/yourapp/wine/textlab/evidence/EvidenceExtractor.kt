@@ -55,7 +55,8 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             val namedEstate=typedIdentity && EvidenceIdentityRoles.namedEstate(text)
             val exact=if(administrative || headingOnly || namedEstate) emptyList() else gazetteer.matches(norm)
             // Lab-only, off by default: a bounded repair may name a place the exact trie could not read.
-            // It needs another line's explicit country/region anchor and two engines that read it plausibly.
+            // It needs another line's explicit country/region anchor; every engine's own reading is
+            // searched, so a form only one engine read is still repaired, and a tie abstains.
             val repair=if(placeRepair.enabled && exact.isEmpty() && !administrative && !headingOnly && !namedEstate) {
                 val anchors=allAnchors.filter { (id,_) -> id!=p.id }.map { it.second }.distinctBy { it.id }
                 repairs.resolve(text,sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) },anchors,placeRepair)

@@ -2,7 +2,7 @@
 
 The Kotlin side cannot run on the host, so this mirrors the exact arithmetic of
 `BoundedSpelling.distance` / `PlaceRepair.resolve` over the real catalog and separately
-asserts the wiring (off by default, exact-match precedence, two-engine gate, telemetry).
+asserts the wiring (off by default, exact-match precedence, anchor gate, telemetry).
 """
 import csv
 import re
@@ -82,35 +82,39 @@ def catalog_forms(rows=None):
     return forms
 
 
-def resolve(observed, forms, anchors=('France',), engine_readings=('mlkit', 'paddle')):
-    """Mirror of PlaceRepair.resolve: same winner, ambiguity, anchor-count and two-engine rules.
+def resolve(observed, forms, anchors=('France',), readings=()):
+    """Mirror of PlaceRepair.resolve: same winner, ambiguity and anchor rules.
 
-    Anchor *compatibility* (country/ancestor agreement) needs the place hierarchy and is
-    covered by the JVM check `ReferenceCatalogChecks.placeRepairIsBoundedAnchoredAndTwoEngineGated`.
+    The phrase and every engine reading are searched together, so one engine is enough; an
+    equal-distance disagreement between readings abstains. Anchor *compatibility* (country /
+    ancestor agreement) needs the place hierarchy and is covered by the JVM check
+    `ReferenceCatalogChecks.placeRepairIsBoundedAnchoredAndReadingDriven`.
     """
-    query = key(observed)
-    if not (5 <= len(query) <= 64) or len(query.split()) > 6:
-        return None
     if not anchors or len(anchors) != 1:
         return None
+    attempts = []
+    for text in [observed] + [text for _, text in readings]:
+        spelling = key(text)
+        if 5 <= len(spelling) <= 64 and len(spelling.split()) <= 6 and spelling not in [k for _, k in attempts]:
+            attempts.append((text, spelling))
     best, winners = None, []
-    for place, form in forms:
-        if key(form) == query:
-            continue
-        distance = bounded_distance(observed, form)
-        if distance is None:
-            continue
-        if best is None or distance < best:
-            best, winners = distance, [(place, form)]
-        elif distance == best:
-            winners.append((place, form))
+    for text, query in attempts:
+        for place, form in forms:
+            if key(form) == query:
+                continue
+            distance = bounded_distance(text, form)
+            if distance is None:
+                continue
+            if best is None or distance < best:
+                best, winners = distance, [(place, form)]
+            elif distance == best:
+                winners.append((place, form))
     places = {place for place, _ in winners}
     if len(places) != 1:
         return None
     place = places.pop()
-    if len(set(engine_readings)) < 2:
-        return None
-    return place, winners[0][1], best
+    engines = sorted({family for family, text in readings if bounded_distance(text, winners[0][1]) is not None})
+    return place, winners[0][1], best, engines or ['phrase']
 
 
 class PlaceRepairPolicyTests(unittest.TestCase):
@@ -145,11 +149,31 @@ class PlaceRepairPolicyTests(unittest.TestCase):
         synthetic = [('Alpha One', 'Alpha One'), ('Alpha Ono', 'Alpha Ono')]
         self.assertIsNone(resolve('Alpha On', synthetic))
 
-    def test_the_anchor_and_two_engine_gates_are_required(self):
+    def test_the_anchor_is_required_and_one_engine_is_enough(self):
         self.assertIsNotNone(resolve('Pauilac', self.forms, anchors=('France',)))
         self.assertIsNone(resolve('Pauilac', self.forms, anchors=()))
         self.assertIsNone(resolve('Pauilac', self.forms, anchors=('France', 'Italy')))
-        self.assertIsNone(resolve('Pauilac', self.forms, engine_readings=('mlkit',)))
+        # The engines widen the net; they are not a quorum. ML Kit alone is weaker on script
+        # faces, so requiring both engines would suppress exactly the repairs that matter.
+        mlkit_only = resolve('Pauilac', self.forms, readings=(('mlkit', 'Pauilac'),))
+        self.assertEqual(mlkit_only[0], 'Pauillac')
+        self.assertEqual(mlkit_only[3], ['mlkit'])
+        paddle_only = resolve('Pauilac', self.forms, readings=(('paddle', 'Pauilac'),))
+        self.assertEqual(paddle_only[0], 'Pauillac')
+        self.assertEqual(paddle_only[3], ['paddle'])
+        self.assertEqual(resolve('Pauilac', self.forms)[3], ['phrase'])
+        self.assertEqual(resolve('Pauilac', self.forms, readings=(('mlkit', 'Pauilac'), ('paddle', 'Pauilac')))[3],
+                         ['mlkit', 'paddle'])
+
+    def test_one_clean_engine_reading_carries_the_garbled_phrase(self):
+        # The merged phrase is what failed; a single engine's own spelling may still land.
+        resolved = resolve('Pauilac', self.forms, readings=(('paddle', 'Pauillac'),))
+        self.assertEqual(resolved[0], 'Pauillac')
+        self.assertEqual(resolved[1], 'Pauillac')
+
+    def test_readings_that_disagree_at_the_best_distance_abstain(self):
+        synthetic = [('Alpha One', 'Alpha One'), ('Beta Twoo', 'Beta Twoo')]
+        self.assertIsNone(resolve('Alpha Ono', synthetic, readings=(('paddle', 'Beta Two'),)))
 
     def test_unrelated_text_is_not_forced_onto_a_place(self):
         for query in ('Chateau Mouton', 'Grand Vin de Bordeaux', 'Mis en bouteille'):
@@ -167,15 +191,21 @@ class PlaceRepairWiringTests(unittest.TestCase):
         for fragment in ('val off=Config()', 'val experimental=Config(enabled=true)'):
             self.assertTrue(fragment in repair, fragment)
 
-    def test_two_engines_and_a_separate_origin_anchor_are_enforced(self):
+    def test_a_separate_origin_anchor_and_one_winner_are_enforced(self):
         repair = REPAIR.read_text()
-        for fragment in ('config.minimumEngines', 'corroborating.size<config.minimumEngines',
+        for fragment in ('if(anchors.isEmpty()) return null',
                          'anchors.map { it.countryCode }.distinct().size!=1',
-                         'anchors.none { view.compatible(place,it) }'):
+                         'anchors.none { view.compatible(place,it) }',
+                         'val attempts=(listOf(observed)+readings.map { it.text })',
+                         'candidates.size!=1'):
             self.assertTrue(fragment in repair, fragment)
+        # No engine quorum: the readings widen the search and are reported, never gate it.
+        self.assertNotIn('minimumEngines', repair)
+        self.assertIn('engines.ifEmpty { listOf("phrase") }', repair)
         extractor = EVIDENCE.read_text()
         for fragment in ('IdentityRoles.originOnly(otherText,listOf(place))',
-                         'place.type in setOf("country","region")'):
+                         'place.type in setOf("country","region")',
+                         'sources.map { source -> PlaceRepair.Reading(family(source.record.engineId)'):
             self.assertTrue(fragment in extractor, fragment)
 
     def test_a_repair_cannot_outrank_exact_evidence_or_name_the_wine(self):

@@ -151,7 +151,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                         Checkbox(state.repairPlaces,{vm.repairPlaces(it)},enabled=!state.busy)
                         Text("Repair appellations with bounded spelling (experimental)")
                     }
-                    if(state.repairPlaces) Text("Appellation-only repair of an unreadable phrase; needs a separate printed origin anchor and two engines reading it alike. One or two edits only, no ambiguous pick. Suggestions are never written to the form.",style=MaterialTheme.typography.bodySmall)
+                    if(state.repairPlaces) Text("Appellation-only repair of an unreadable phrase; needs a separate printed origin anchor. Both engines' readings are searched, so one engine is enough. One or two edits only, no ambiguous pick. Suggestions are never written to the form.",style=MaterialTheme.typography.bodySmall)
                 }
                 Text("Off: previous evidence architecture. On: development candidate, not validated on fresh labels. Incomplete producer headings remain blank. Production is unchanged.",style=MaterialTheme.typography.bodySmall)
             }
