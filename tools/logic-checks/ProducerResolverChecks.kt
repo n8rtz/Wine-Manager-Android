@@ -11,7 +11,7 @@ fun main() {
     }
     fun spans(text:String="Chateau Example")=listOf(ProducerResolver.Span(text,"mlkit",setOf(1)),ProducerResolver.Span(text,"paddle",setOf(2),true))
     val resolver=ProducerResolver(index(listOf(primary)))
-    verify(resolver.resolve("",spans()).value==primary.name)
+    verify(resolver.resolve("",spans()).value=="Chateau Example")
     verify(resolver.resolve("Existing Good Producer",spans()).value=="Existing Good Producer")
     verify(resolver.resolve("",listOf(spans()[0],spans()[1].copy(observationIds=setOf(1)))).acceptedId==null)
     verify(resolver.resolve("",spans().take(1)).value.isBlank()) // secondary source counts are not votes
@@ -29,5 +29,52 @@ fun main() {
     verify(resolver.resolve("keep",List(129) { spans()[0] }).acceptedId==null)
     verify(ProducerResolver(index(List(33) { primary.copy(id=it.toString()) })).resolve("",spans()).acceptedId==null)
     verify(ProducerResolver.normalize("Château d’Example")=="chateau d example")
+    // Lab v4 single-reading policy (owner, 2026-10-27): the engine quorum is the only difference.
+    val lab=ProducerResolver.Policy.singleReading
+    val oneEngine=spans().take(1)
+    verify(resolver.resolve("",oneEngine).acceptedId==null) // Prod keeps two engines
+    verify(resolver.resolve("",oneEngine,policy=lab).acceptedId=="estate")
+    verify(resolver.resolve("",oneEngine,policy=lab).reason.contains("one engine reading under the lab single-reading policy"))
+    verify(resolver.resolve("",spans(),policy=lab).acceptedId=="estate")
+    verify(resolver.resolve("",spans()).reason=="primary LWIN producer/brand name supported by two engines; confirm manually")
+    verify(resolver.resolve("",spans(),policy=lab).reason==resolver.resolve("",spans()).reason) // same wording when two engines did agree
+    verify(ProducerResolver(index(listOf(primary,ProducerResolver.Entity("rival","Château Examplar",
+        ProducerResolver.normalize("Château Examplar"))))).resolve("",oneEngine,policy=lab).acceptedId==null) // ambiguity still blocks
+    verify(resolver.resolve("",spans("Imported by Chateau Example"),policy=lab).acceptedId==null) // eligibility unchanged
+    verify(resolver.resolve("",List(129) { spans()[0] },policy=lab).acceptedId==null) // span bound unchanged
+    val frHomonym=primary.copy(id="estate-fr",countryGroup="France")
+    val clHomonym=primary.copy(id="estate-cl",countryGroup="Chile")
+    val homonyms=ProducerResolver(index(listOf(frHomonym,clHomonym)))
+    verify(homonyms.resolve("",oneEngine,policy=lab).acceptedId==null)
+    verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("France")).acceptedId=="estate-fr")
+    verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("Argentina")).acceptedId==null)
+    // Lab v4 d=0 exact-match fast-path: skips past noisy existing guesses and d>=1 rivals while preserving guards.
+    val labFast=lab.withExactMatchFastPath { it.equals("Saint Julien",ignoreCase=true) }
+    verify(resolver.resolve("SIGNATURE SERIES NoisyGuess",oneEngine,policy=labFast).value=="Chateau Example")
+    verify(ProducerResolver(index(listOf(primary,ProducerResolver.Entity("rival","Château Examplar",
+        ProducerResolver.normalize("Château Examplar"))))).resolve("NoisyGuess",oneEngine,policy=labFast).acceptedId=="estate")
+    verify(homonyms.resolve("MOUTONCADET",oneEngine,policy=labFast.withCountryContext("France")).acceptedId=="estate-fr")
+    val singleBrand=ProducerResolver.Entity("kaiken","Kaiken","kaiken",setOf("lwin"),"Argentina")
+    val singleIdx=object:ProducerResolver.Index {
+        override val version="fixture-exp";override val primaryVerified=false;override val labSupplemental=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=
+            listOf(singleBrand,ProducerResolver.Entity("supp-1","Bousquet","bousquet",setOf("ttb"))).filter { it.key==key }
+    }
+    verify(ProducerResolver(singleIdx).resolve("ultra",listOf(ProducerResolver.Span("KAIKEN","paddle",setOf(1))),policy=labFast).value=="Kaiken")
+    verify(ProducerResolver(singleIdx).resolve("",listOf(ProducerResolver.Span("Bousquet","paddle",setOf(1))),policy=labFast).acceptedId==null) // supplemental single-word blocked
+    verify(ProducerResolver(index(listOf(ProducerResolver.Entity("bousquet-lwin","Bousquet","bousquet")))).resolve(
+        "CHATEAU DU BOUSQUET",
+        listOf(ProducerResolver.Span("Bousquet","paddle",setOf(1)),ProducerResolver.Span("CHATEAU DU BOUSQUET","paddle",setOf(2))),
+        policy=labFast,
+    ).value=="CHATEAU DU BOUSQUET") // estate-prefixed existing + fragment guard
+    verify(ProducerResolver(index(listOf(ProducerResolver.Entity("gv","Gran Reserva","gran reserva")))).resolve(
+        "",listOf(ProducerResolver.Span("Gran Reserva","paddle",setOf(1))),policy=labFast).acceptedId==null)
+    verify(ProducerResolver(index(listOf(ProducerResolver.Entity("sj","Saint Julien","saint julien")))).resolve(
+        "",listOf(ProducerResolver.Span("Saint Julien","paddle",setOf(1))),policy=labFast).acceptedId==null)
+    val secondExact=ProducerResolver.Entity("vigneron","Franck Despagne","franck despagne")
+    val twoExact=ProducerResolver(index(listOf(primary,secondExact)))
+    val bothSpans=listOf(ProducerResolver.Span("Chateau Example","paddle",setOf(1)),ProducerResolver.Span("Franck Despagne","paddle",setOf(2)))
+    verify(twoExact.resolve("Chateau Example",bothSpans,policy=labFast).value=="Chateau Example")
+    verify(twoExact.resolve("",bothSpans,policy=labFast).acceptedId==null)
     println("PASS: $checks conservative producer resolver checks (actual Kotlin; fixture data, no accuracy claim).")
 }

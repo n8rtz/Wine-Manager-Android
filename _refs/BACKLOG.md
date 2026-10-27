@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-059**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-060**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-028**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -90,6 +90,13 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Scope now:** Owner requested syncing merged main first (done at `8fce0c6`/PR #9, no duplicate lookup fix), then implementing the table. 80 step definitions; latest-attempt label counts; passed/blocked/not reached/not recorded/N/A states; resolver setup, precision/protection gates and final coverage/correctness clearly separated. No OCR/model/budget/reference-asset or normal Add Wine behavior changes.
 * **Evidence / next steps:** [Audited phone results and proposed follow-up plan](../docs/scanner-accuracy-plan.md). Supplied f9 run remains 34/160 complete and 78/160 multi-error; no new OCR result. At 160 eligible forms the strict goal requires ≥129 complete and ≤7 multi-error. Correctness/helper threshold alignment is still pending. Android build/native/UI validation remains open in this branch's `THINGS_TO_CHECK` section. Broader recognition work is proposed, not authorized/implemented by the table request; no guaranteed gains.
 * **Priority:** Owner-directed scanner investigation/table interrupts other wishes; their ordering is otherwise unchanged. Do not promote latest Lab into normal Add Wine without separate authorization.
+
+### 8b. W-059 — Trigram/FTS appellation resolver built from `origins.csv` *(parked, owner decision 2026-10-27)*
+**Complexity:** M · **Status:** Needs decision — parked behind W-058's measurement
+* **Goal:** widen lab-only appellation repair beyond the bounded edit distance shipped in `PlaceRepair` (one to two edits, at most 20 % length change, so a dropped or reordered word in a long name never resolves).
+* **Shape:** a `debug`-only FTS5 trigram asset built deterministically from `data/wine-knowledge/origins.csv` (licensing is clean: project-authored plus pinned CC0 UC Davis metadata), with manifest + SHA-256 + record count, a `--check` freshness test, and the existing `TrigramGazetteer` shortlist→rerank policy (≤64 candidates, similarity ≥0.82, ≥0.06 margin, abstain on ambiguity).
+* **Why parked:** a second copy of the catalog in another format is a new source of truth to keep honest, and the owner's rule is that Lab v4 should stay comparable to Prod, which repairs with bounded spelling. Wiring `PlaceRepair` first keeps the Prod/Lab delta about the producer index and solver, not about a third matching engine.
+* **Revisit when:** measurement over the 125 labels shows anchor-gated near-misses failing on a meaningful share, those failures are mainly word-order/dropped-word cases, or the catalog passes roughly 4,000 names and the in-memory scan starts to matter.
 
 ### 1. W-056 — Automated build-and-test (CI) and tag-based releases *(new)*
 **Complexity:** S · **Status:** Open

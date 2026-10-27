@@ -10,12 +10,30 @@ class WineKnowledgeTests(unittest.TestCase):
         subprocess.run([sys.executable,str(ROOT/'tools/generate-wine-knowledge.py'),'--check'],check=True,capture_output=True)
     def test_coverage_ids_sources_and_policies(self):
         rows=read('origins.csv');sources={r['id'] for r in json.loads((DATA/'sources/registry.json').read_text())['sources']}
-        self.assertGreaterEqual(len(rows),1000);self.assertEqual(len(rows),len({r['id'] for r in rows}))
-        self.assertGreaterEqual(len({r['country_code'] for r in rows}),29)
+        self.assertGreaterEqual(len(rows),2000);self.assertEqual(len(rows),len({r['id'] for r in rows}))
+        self.assertGreaterEqual(len({r['country_code'] for r in rows}),45)
         for row in rows:
             self.assertIn(row['source_id'],sources);self.assertTrue(row['source_record'])
             self.assertEqual(row['review'],'reference_confirm');self.assertIn(row['match_policy'],('exact','context_required'))
             self.assertNotIn('|',row['regions']);self.assertTrue(row['country']);self.assertTrue(row['name'])
+    def test_regions_and_subregions_nest_under_their_authored_parents(self):
+        rows=read('origins.csv');names={(r['country_code'],r['name'].casefold()) for r in rows}
+        for row in rows:
+            path=row['path']
+            if not path: continue
+            parts=path.split('/')
+            self.assertLessEqual(len(parts),3,row['name'])
+            self.assertEqual(parts[0],row['regions'],row['name'])
+            for part in parts: self.assertIn((row['country_code'],part.casefold()),names,(row['name'],part))
+        by_name={r['name']:r for r in rows}
+        self.assertEqual(by_name['Pauillac']['path'],'Bordeaux/Medoc')
+        self.assertGreaterEqual(len({r['path'] for r in rows if r['path']}),50)
+    def test_catalog_and_generated_knowledge_have_no_accent_marks(self):
+        for name in ('origins.csv','label-terms.csv','typical-grapes.csv'):
+            text=(DATA/name).read_text(encoding='utf-8')
+            self.assertTrue(text.isascii(),f'{name} contains accented/non-ASCII characters')
+        generated=(ROOT/'app/src/main/java/com/yourapp/wine/kb/GeneratedWineKnowledge.kt').read_text(encoding='utf-8')
+        self.assertTrue(generated.isascii(),'GeneratedWineKnowledge.kt contains accented/non-ASCII characters')
     def test_us_metadata_and_cross_state_membership(self):
         rows={r['name']:r for r in read('origins.csv') if r['country_code']=='US'}
         self.assertEqual(len(rows),276)
@@ -34,8 +52,12 @@ class WineKnowledgeTests(unittest.TestCase):
         self.assertTrue(all(r['action']=='never_autofill' for r in read('typical-grapes.csv')))
         self.assertTrue(all(r['action']=='context_only' for r in read('label-terms.csv') if r['role']=='classification'))
         rows={r['name']:r for r in read('origins.csv')}
-        for name in ('Prosecco','Cava','Lugana','Orvieto','Canberra District'):
+        # Cross-region names keep an empty region: the app must not pick one of their real homes.
+        for name in ('Prosecco','Cava','Lugana','Orvieto'):
             self.assertEqual(rows[name]['regions'],'',name)
         self.assertEqual(rows['Orange']['match_policy'],'context_required')
         self.assertEqual(rows['Denmark']['match_policy'],'context_required')
+        # Bare style/colour words that are also real protected names must never match alone.
+        for name in ('Bianco','Vino'):
+            self.assertEqual(rows[name]['match_policy'],'context_required',name)
 if __name__=='__main__':unittest.main()

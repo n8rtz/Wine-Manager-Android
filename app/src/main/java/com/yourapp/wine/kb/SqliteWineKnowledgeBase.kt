@@ -29,7 +29,7 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
         val producers = mutableListOf<Producer>()
         connection.prepare("SELECT p.id,p.name,p.country_code,p.region_id FROM producer_fts JOIN producer p ON p.id=producer_fts.rowid WHERE producer_fts MATCH ? ORDER BY bm25(producer_fts) LIMIT 25").use { statement ->
             statement.bindText(1, ftsQuery)
-            while (statement.step()) producers += Producer(statement.getLong(0), statement.getText(1),
+            while (statement.step()) producers += Producer(statement.getLong(0), TextNorm.scrub(statement.getText(1)),
                 statement.getText(2), if (statement.isNull(3)) null else statement.getLong(3))
         }
         KbMatching.rank(text, producers.map { it.copy(aliases = aliases(it.id)) })
@@ -42,7 +42,7 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
         val producers=mutableListOf<Producer>()
         connection.prepare("SELECT p.id,p.name,p.country_code,p.region_id FROM producer_fts JOIN producer p ON p.id=producer_fts.rowid WHERE producer_fts MATCH ? ORDER BY bm25(producer_fts) LIMIT 25").use { statement ->
             statement.bindText(1,query)
-            while(statement.step()) producers+=Producer(statement.getLong(0),statement.getText(1),statement.getText(2),
+            while(statement.step()) producers+=Producer(statement.getLong(0),TextNorm.scrub(statement.getText(1)),statement.getText(2),
                 if(statement.isNull(3)) null else statement.getLong(3))
         }
         KbMatching.rank(text,producers.map { it.copy(aliases=aliases(it.id)) })
@@ -57,13 +57,14 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
                 connection.prepare("SELECT p.id,p.name,p.country_code,COALESCE(r.name,''),a.alias_norm FROM producer p LEFT JOIN place r ON r.id=p.region_id LEFT JOIN producer_alias a ON a.producer_id=p.id ORDER BY p.id").use { s ->
                     while (s.step()) {
                         val id = s.getLong(0)
-                        val region = s.getText(3)
+                        val name = TextNorm.scrub(s.getText(1))
+                        val region = TextNorm.scrub(s.getText(3))
                         val context = listOf(region, s.getText(2)).filter(String::isNotBlank).joinToString(" · ")
-                        val alias = if (s.isNull(4)) null else s.getText(4)
+                        val alias = if (s.isNull(4)) null else TextNorm.scrub(s.getText(4))
                         val existing = grouped[id]
                         grouped[id] = if (existing == null) DatabaseLookupCandidate(
-                            identity = "producer:$id", name = s.getText(1), context = context,
-                            searchTerms = listOfNotNull(s.getText(1), alias)
+                            identity = "producer:$id", name = name, context = context,
+                            searchTerms = listOfNotNull(name, alias)
                         ) else existing.copy(searchTerms = existing.searchTerms + listOfNotNull(alias))
                     }
                 }
@@ -72,10 +73,14 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
             DatabaseLookupCategory.WINE_NAME -> {
                 val candidates = mutableListOf<DatabaseLookupCandidate>()
                 connection.prepare("SELECT c.producer_id,c.name,p.name FROM cuvee c JOIN producer p ON p.id=c.producer_id ORDER BY c.name").use { s ->
-                    while (s.step()) candidates += DatabaseLookupCandidate(
-                        identity = "cuvee:${s.getLong(0)}:${TextNorm.normalize(s.getText(1))}",
-                        name = s.getText(1), context = "Producer: ${s.getText(2)}"
-                    )
+                    while (s.step()) {
+                        val cuveeName = TextNorm.scrub(s.getText(1))
+                        val producerName = TextNorm.scrub(s.getText(2))
+                        candidates += DatabaseLookupCandidate(
+                            identity = "cuvee:${s.getLong(0)}:${TextNorm.normalize(cuveeName)}",
+                            name = cuveeName, context = "Producer: $producerName"
+                        )
+                    }
                 }
                 candidates
             }
@@ -99,8 +104,8 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
         val matches=mutableListOf<CuveeHit>()
         connection.prepare("SELECT name,name_norm FROM cuvee WHERE producer_id=?").use { statement ->
             statement.bindLong(1,producerId)
-            while(statement.step()) TextNorm.editDistance(TextNorm.normalize(text),statement.getText(1))?.let {
-                matches+=CuveeHit(Cuvee(producerId,statement.getText(0)),it)
+            while(statement.step()) TextNorm.editDistance(TextNorm.normalize(text),TextNorm.normalize(statement.getText(1)))?.let {
+                matches+=CuveeHit(Cuvee(producerId,TextNorm.scrub(statement.getText(0))),it)
                 if(matches.size>8) { matches.sortBy { hit -> hit.editDistance };matches.removeAt(matches.lastIndex) }
             }
         }
@@ -169,22 +174,29 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
     }
 
     private fun insert(data: KnowledgeSnapshot) {
-        for (p in data.places) connection.prepare("INSERT INTO place(id,name,name_norm,type,parent_id,country_code) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,name_norm=excluded.name_norm,type=excluded.type,parent_id=excluded.parent_id,country_code=excluded.country_code").use { s ->
-            s.bindLong(1, p.id); s.bindText(2, p.name); s.bindText(3, p.nameNorm); s.bindText(4, p.type)
-            p.parentId?.let { s.bindLong(5, it) } ?: s.bindNull(5)
-            s.bindText(6, p.countryCode); s.step()
+        for (p in data.places) {
+            val cleanName = TextNorm.scrub(p.name)
+            connection.prepare("INSERT INTO place(id,name,name_norm,type,parent_id,country_code) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,name_norm=excluded.name_norm,type=excluded.type,parent_id=excluded.parent_id,country_code=excluded.country_code").use { s ->
+                s.bindLong(1, p.id); s.bindText(2, cleanName); s.bindText(3, TextNorm.normalize(cleanName)); s.bindText(4, p.type)
+                p.parentId?.let { s.bindLong(5, it) } ?: s.bindNull(5)
+                s.bindText(6, p.countryCode); s.step()
+            }
         }
         for (p in data.producers) {
+            val cleanName = TextNorm.scrub(p.name)
             connection.prepare("INSERT INTO producer(id,name,name_norm,country_code,region_id) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,name_norm=excluded.name_norm,country_code=excluded.country_code,region_id=excluded.region_id").use { s ->
-                s.bindLong(1, p.id); s.bindText(2, p.name); s.bindText(3, p.nameNorm); s.bindText(4, p.countryCode)
+                s.bindLong(1, p.id); s.bindText(2, cleanName); s.bindText(3, TextNorm.normalize(cleanName)); s.bindText(4, p.countryCode)
                 p.regionId?.let { s.bindLong(5, it) } ?: s.bindNull(5); s.step()
             }
             for (alias in p.aliases) connection.prepare("INSERT OR IGNORE INTO producer_alias(producer_id,alias_norm) VALUES(?,?)").use { s ->
                 s.bindLong(1, p.id); s.bindText(2, TextNorm.normalize(alias)); s.step()
             }
         }
-        for (c in data.cuvees) connection.prepare("INSERT INTO cuvee(producer_id,name,name_norm) VALUES(?,?,?) ON CONFLICT(producer_id,name_norm) DO UPDATE SET name=excluded.name").use { s ->
-            s.bindLong(1, c.producerId); s.bindText(2, c.name); s.bindText(3, TextNorm.normalize(c.name)); s.step()
+        for (c in data.cuvees) {
+            val cleanName = TextNorm.scrub(c.name)
+            connection.prepare("INSERT INTO cuvee(producer_id,name,name_norm) VALUES(?,?,?) ON CONFLICT(producer_id,name_norm) DO UPDATE SET name=excluded.name").use { s ->
+                s.bindLong(1, c.producerId); s.bindText(2, cleanName); s.bindText(3, TextNorm.normalize(cleanName)); s.step()
+            }
         }
     }
 
@@ -196,7 +208,7 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
     private fun readPlaces(): List<Place> {
         val result = mutableListOf<Place>()
         connection.prepare("SELECT id,name,type,parent_id,country_code FROM place").use { s ->
-            while (s.step()) result += Place(s.getLong(0), s.getText(1), s.getText(2),
+            while (s.step()) result += Place(s.getLong(0), TextNorm.scrub(s.getText(1)), s.getText(2),
                 if (s.isNull(3)) null else s.getLong(3), s.getText(4))
         }
         return result

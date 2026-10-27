@@ -1,0 +1,434 @@
+# Project-authored Italian DOP/IGP reference: NOT an exhaustive or regulator-verified register.
+IT|Italy|Piedmont|appellation
+Barolo
+Barbaresco
+Nizza
+Alta Langa
+Asti
+Moscato d'Asti
+Brachetto d'Acqui
+Acqui
+Barbera d'Asti
+Barbera del Monferrato
+Barbera d'Alba
+Dolcetto d'Alba
+Dolcetto di Dogliani
+Dogliani
+Diano d'Alba
+Langhe
+Roero
+Roero Arneis
+Nebbiolo d'Alba
+Grignolino del Monferrato Casalese
+Ruchè di Castagnole Monferrato
+Gattinara
+Ghemme
+Lessona
+Boca
+Bramaterra
+Fara
+Sizzano
+Erbaluce di Caluso
+Caluso
+Carema
+Canavese
+Colline Novaresi
+Coste della Sesia
+Gavi
+Cortese di Gavi
+Freisa di Chieri
+Freisa d'Asti
+Pinerolese
+Terre Alfieri
+Monferrato
+Piemonte
+IT|Italy|Tuscany|appellation
+Chianti
+Toscana
+Bolgheri
+Bolgheri Sassicaia
+IT|Italy|Tuscany/Chianti|appellation
+Chianti Classico
+Chianti Rufina
+Chianti Colli Fiorentini
+Chianti Colli Senesi
+Chianti Montalbano
+Chianti Montespertoli
+Chianti Colline Pisane
+Chianti Colli Aretini
+IT|Italy|Tuscany/Montalcino|appellation
+Brunello di Montalcino
+Rosso di Montalcino
+Moscadello di Montalcino
+Sant'Antimo
+IT|Italy|Tuscany/Montepulciano|appellation
+Vino Nobile di Montepulciano
+Rosso di Montepulciano
+Vin Santo di Montepulciano
+IT|Italy|Tuscany/Carmignano|appellation
+Carmignano
+Barco Reale di Carmignano
+Vin Santo di Carmignano
+IT|Italy|Tuscany/San Gimignano|appellation
+Vernaccia di San Gimignano
+Vernaccia di San Gimignano Riserva
+IT|Italy|Tuscany/Scansano|appellation
+Morellino di Scansano
+IT|Italy|Tuscany|appellation
+Valdarno di Sopra
+Val di Cornia
+Suvereto
+Elba
+Elba Aleatico Passito
+Montecucco
+Maremma Toscana
+Terratico di Bibbona
+Montescudaio
+Costa Toscana
+Toscana
+IT|Italy|Veneto|appellation
+Amarone della Valpolicella
+Recioto della Valpolicella
+Valpolicella
+Valpolicella Ripasso
+Valpolicella Superiore
+Bardolino
+Bardolino Superiore
+Soave
+Soave Superiore
+Recioto di Soave
+Colli Euganei
+Colli Berici
+Gambellara
+Recioto di Gambellara
+Conegliano Valdobbiadene Prosecco Superiore
+Asolo Prosecco Superiore
+Valdobbiadene
+Conegliano
+Montello Rosso
+Colli Asolani Prosecco
+Piave
+Piave Malanotte
+Bagnoli Friularo
+Lison
+Lison Pramaggiore
+Bianco di Custoza
+Custoza
+Durello
+Lessini Durello
+Merlara
+Vicenza
+Breganze
+IT|Italy|Lombardy|appellation
+Franciacorta
+Valtellina
+Valtellina Superiore
+Sforzato di Valtellina
+Sforzato
+Valtellina Rosso
+Oltrepò Pavese
+Oltrepo Pavese
+San Colombano al Lambro
+Garda
+Garda Classico
+Capriano del Colle
+Botticino
+Cellatica
+Montenetto di Brescia
+IT|Italy|Emilia-Romagna|appellation
+Lambrusco di Sorbara
+Lambrusco Grasparossa di Castelvetro
+Lambrusco Salamino di Santa Croce
+Lambrusco Reggiano
+Reggiano
+Colli Bolognesi
+Colli Bolognesi Classico Pignoletto
+Pignoletto
+Romagna Albana
+Albana di Romagna
+Romagna
+Sangiovese di Romagna
+Trebbiano di Romagna
+Cagnina di Romagna
+Pagadebit di Romagna
+Bosco Eliceo
+Colli Piacentini
+Gutturnio
+Ortrugo
+Piacentini
+Colli di Scandiano e di Canossa
+Salamino
+IT|Italy|Friuli-Venezia Giulia|appellation
+Collio
+Colli Orientali del Friuli
+Colli Orientali del Friuli Picolit
+Rosazzo
+Friuli
+Friuli Isonzo
+Isonzo
+Friuli Aquileia
+Aquileia
+Friuli Annia
+Annia
+Friuli Latisana
+Latisana
+Friuli Grave
+Grave del Friuli
+Carso
+Lison Pramaggiore
+Ramandolo
+IT|Italy|Trentino-Alto Adige|appellation
+Alto Adige
+Alto Adige Valle Isarco
+Alto Adige Terlano
+Alto Adige Colli di Bolzano
+Alto Adige Meranese
+Alto Adige Santa Maddalena
+Trentino
+Trento
+Teroldego Rotaliano
+Caldaro
+Lago di Caldaro
+Valdadige
+Dolomiti
+IT|Italy|Liguria|appellation
+Cinque Terre
+Cinque Terre Sciacchetrà
+Riviera Ligure di Ponente
+Riviera del Levante
+Rossese di Dolceacqua
+Dolceacqua
+Ormeasco di Pornassio
+Val Polcevera
+Golfo del Tigullio
+Colline di Levanto
+Pornassio
+IT|Italy|Aosta Valley|appellation
+Valle d'Aosta
+Valle d'Aosta Donnas
+Donnas
+Valle d'Aosta Torrette
+Torrette
+Valle d'Aosta Chambave
+Chambave
+Valle d'Aosta Arnad-Montjovet
+Arnad-Montjovet
+Valle d'Aosta Enfer d'Arvier
+Enfer d'Arvier
+Valle d'Aosta Nus
+Valle d'Aosta Fumin
+IT|Italy|Umbria|appellation
+Montefalco Sagrantino
+Montefalco Rosso
+Montefalco
+Torgiano
+Torgiano Rosso Riserva
+Colli Perugini
+Colli del Trasimeno
+Trasimeno
+Colli Altotiberini
+Colli Martani
+Colli Amerini
+Todi
+Spoleto
+Assisi
+IT|Italy|Marche|appellation
+Verdicchio dei Castelli di Jesi
+Verdicchio di Matelica
+Verdicchio di Matelica Riserva
+Castelli di Jesi
+Offida
+Rosso Conero
+Conero
+Rosso Piceno
+Piceno
+Vernaccia di Serrapetrona
+Serrapetrona
+Falerio
+Falerio dei Colli Ascolani
+Bianchello del Metauro
+Colli Maceratesi
+Esino
+Lacrima di Morro d'Alba
+Morro d'Alba
+Visciola
+IT|Italy|Lazio|appellation
+Frascati
+Frascati Superiore
+Cannellino di Frascati
+Cesanese del Piglio
+Cesanese di Olevano Romano
+Cesanese di Affile
+Colli Albani
+Marino
+Castelli Romani
+Velletri
+Colli Lanuvini
+Cori
+Montecompatri Colonna
+Zagarolo
+Est! Est!! Est!!! di Montefiascone
+Montefiascone
+Aleatico di Gradoli
+Cerveteri
+Circeo
+Tarquinia
+Colli Etruschi Viterbesi
+Colli della Sabina
+IT|Italy|Abruzzo|appellation
+Montepulciano d'Abruzzo
+Montepulciano d'Abruzzo Colline Teramane
+Colline Teramane
+Terre Tollesi
+Tullum
+Trebbiano d'Abruzzo
+Cerasuolo d'Abruzzo
+Cerasuolo
+Controguerra
+Villamagna
+Ortona
+Frentano
+IT|Italy|Molise|appellation
+Tintilia del Molise
+Biferno
+Molise
+Pentro di Isernia
+IT|Italy|Campania|appellation
+Taurasi
+Fiano di Avellino
+Greco di Tufo
+Aglianico del Taburno
+Taburno
+Falanghina del Sannio
+Sannio
+Beneventano
+Campi Flegrei
+Falerno del Massico
+Massico
+Galluccio
+Aversa
+Costa d'Amalfi
+Furore
+Ravello
+Tramonti
+Ischia
+Capri
+Peninsula Sorrentina
+Sorrento
+Vesuvio
+Lacryma Christi
+Castel San Lorenzo
+Paestum
+IT|Italy|Basilicata|appellation
+Aglianico del Vulture
+Aglianico del Vulture Superiore
+Matera
+Grottino di Roccanova
+IT|Italy|Apulia|appellation
+Primitivo di Manduria
+Primitivo di Manduria Dolce Naturale
+Manduria
+Castel del Monte
+Castel del Monte Bombino Nero
+Castel del Monte Nero di Troia Riserva
+Castel del Monte Rosso Riserva
+Nero di Troia
+Salice Salentino
+Copertino
+Leverano
+Brindisi
+Ostuni
+Locorotondo
+Martina Franca
+Gioia del Colle
+Gravina
+Moscato di Trani
+Trani
+San Severo
+Cacc'e Mmitte di Lucera
+Orta Nova
+Rosso di Cerignola
+Cerignola
+Galatina
+Lizzano
+IT|Italy|Sicily|appellation
+Cerasuolo di Vittoria
+Vittoria
+Etna
+Marsala
+Pantelleria
+Passito di Pantelleria
+Moscato di Pantelleria
+Moscato di Noto
+Noto
+Eloro
+Menfi
+Sciacca
+Vittoria
+Faro
+Regaleali
+Alcamo
+Contessa Entellina
+Santa Margherita di Belice
+Sambuca di Sicilia
+Monreale
+Salaparuta
+Delia Nivolelli
+Erice
+Terre Siciliane
+Sicilia
+IT|Italy|Sardinia|appellation
+Vermentino di Gallura
+Gallura
+Vermentino di Sardegna
+Monica di Sardegna
+Carignano del Sulcis
+Sulcis
+Cannonau di Sardegna
+Cannonau di Jerzu
+Jerzu
+Malvasia di Bosa
+Bosa
+Vernaccia di Oristano
+Oristano
+Nasco di Cagliari
+Cagliari
+Nuragus di Cagliari
+Giro di Cagliari
+Monica di Cagliari
+Moscato di Cagliari
+Vermentino di Cagliari
+Sardegna Semidano
+Mandrolisai
+Alghero
+Tharros
+IT|Italy|Calabria|appellation
+Cirò
+Ciro
+Savuto
+Donnici
+Pollino
+Terre di Cosenza
+Lamezia
+Melissa
+Sant'Anna di Isola Capo Rizzuto
+Isola Capo Rizzuto
+Greco di Bianco
+Bianco
+Scilla
+Bivongi
+IT|Italy|Abruzzo|appellation
+Terre di Chieti
+IT|Italy||appellation
+Prosecco
+Lugana
+Orvieto
+Orvieto Classico
+Vino d'Italia
+IT|Italy||geography
+Vino
+Mediterraneo
+IT|Italy|Veneto|appellation
+Valpolicella Classico
+Valpantena
+Valpolicella Ripasso

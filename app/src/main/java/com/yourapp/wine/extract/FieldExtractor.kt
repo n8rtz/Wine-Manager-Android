@@ -39,7 +39,8 @@ class FieldExtractor(private val kb: WineKnowledgeBase, private val vintage: Vin
     init { gazetteer.matches(""); normalizer.repair("") } // App-scoped Default initialization, not a first-scan regex/trie burst.
     /** Extracts from line strings, then whole-label text; evidence remains normalized rectified-label boxes. */
     fun extract(rawLines: List<LabelLine>, currentYear: Int, titleConnectors:List<LabelLine> = emptyList()): ExtractionResult {
-        val normalized = rawLines.map { line -> line.copy(text = normalizer.repair(WrappedBrandContext.reconcile(line).text).text) }
+        val scrubbedLines = rawLines.map { line -> line.copy(text = TextNorm.scrub(line.text)) }
+        val normalized = scrubbedLines.map { line -> line.copy(text = normalizer.repair(WrappedBrandContext.reconcile(line).text).text) }
         val contextual = ContextualAppellationRepair(gazetteer, hierarchy).repair(normalized)
         val geoSpelling=geographySpelling.suggest(contextual.lines)
         val spellingSuggestions=(contextual.suggestions+geoSpelling.suggestions).toMutableList()

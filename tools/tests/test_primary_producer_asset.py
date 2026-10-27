@@ -70,7 +70,7 @@ class PrimaryProducerAssetChecks(unittest.TestCase):
     def test_lab_only_wiring_preserves_raw(self):
         text=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
         self.assertIn('val readings=original',text)
-        self.assertRegex(text,r'ProducerResolver\(producerIndex(?:,onFailureTelemetry=\{[^}]+\})?\)\.resolve\(before,spans,checkProducerBudget\)')
+        self.assertRegex(text,r'ProducerResolver\(producerIndex(?:,onFailureTelemetry=\{[^}]+\})?\)\.resolve\(before,spans,checkProducerBudget(?:,policy)?\)')
         self.assertIn('producer_gazetteer_status',text)
         self.assertNotIn('TextLabSpatialPhrases.readings(proposals)',text)
         v2=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()

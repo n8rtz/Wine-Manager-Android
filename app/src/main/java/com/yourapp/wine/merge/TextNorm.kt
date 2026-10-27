@@ -7,10 +7,58 @@ import kotlin.math.max
 import kotlin.math.min
 
 object TextNorm {
-    /** No coordinates: NFKD matching form; callers retain the original for display. */
-    fun normalize(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFKD)
-        .replace(Regex("\\p{M}+"), "")
-        .replace(Regex("\\s+"), " ").trim().lowercase(Locale.ROOT)
+    private val apostropheAcute = Regex("(?i)\\b([dlcnst]|qu)\u00B4(?=[aeiouyh])")
+    private val spacingMarks = Regex("[\u00A8\u00AF\u00B4\u00B8\u02C6\u02D8-\u02DD]+")
+    private val combiningMarks = Regex("\\p{M}+")
+    private val multiSpace = Regex("\\s+")
+
+    /**
+     * Replaces Latin accent marks, spacing diacritic artifacts and non-decomposing Latin letters /
+     * ligatures with their plain ASCII letter equivalents while preserving case, digits and spacing.
+     */
+    fun scrub(text: String): String {
+        if (text.all { it.code < 128 }) return text
+        val precleaned = apostropheAcute.replace(text, "$1'")
+            .replace('’', '\'')
+            .replace('‘', '\'')
+            .replace('ʼ', '\'')
+            .let { spacingMarks.replace(it, "") }
+        val folded = buildString(precleaned.length + 4) {
+            for (ch in precleaned) {
+                when (ch) {
+                    'Œ' -> append("OE")
+                    'œ' -> append("oe")
+                    'Æ' -> append("AE")
+                    'æ' -> append("ae")
+                    'ẞ' -> append("SS")
+                    'ß' -> append("ss")
+                    'Ø' -> append('O')
+                    'ø' -> append('o')
+                    'Ł', 'Ŀ' -> append('L')
+                    'ł', 'ŀ' -> append('l')
+                    'Đ', 'Ð' -> append('D')
+                    'đ', 'ð' -> append('d')
+                    'Þ' -> append("TH")
+                    'þ' -> append("th")
+                    'İ' -> append('I')
+                    'ı' -> append('i')
+                    'Ĳ' -> append("IJ")
+                    'ĳ' -> append("ij")
+                    'Ħ' -> append('H')
+                    'ħ' -> append('h')
+                    'Ŧ' -> append('T')
+                    'ŧ' -> append('t')
+                    else -> append(ch)
+                }
+            }
+        }
+        return Normalizer.normalize(folded, Normalizer.Form.NFD).replace(combiningMarks, "")
+    }
+
+    /** No coordinates: ASCII-folded NFKD matching form; callers retain scrubbed ASCII text. */
+    fun normalize(text: String): String = Normalizer.normalize(scrub(text), Normalizer.Form.NFKD)
+        .replace(combiningMarks, "")
+        .replace(multiSpace, " ").trim().lowercase(Locale.ROOT)
 
     /** No coordinates: compare normalized strings using Jaro-Winkler, without external models. */
     fun jaroWinkler(a: String, b: String): Double {

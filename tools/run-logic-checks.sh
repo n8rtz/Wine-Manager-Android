@@ -47,21 +47,21 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/main/java/com/yourapp/wine/textlab/PaddleDetectionGeometry.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/PaddleDetectionChecks.kt
     app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabFormPreview.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt
-    app/src/debug/java/com/yourapp/wine/textlab/evidence/*.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextLabFormPreview.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt
+    app/src/main/java/com/yourapp/wine/textlab/evidence/*.kt
     tools/logic-checks/EvidenceArchitectureChecks.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabChoices.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabJournal.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabFieldExtractor.kt tools/logic-checks/TextLabFieldChecks.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextLabWineTable.kt app/src/debug/java/com/yourapp/wine/textlab/TextLabBatch.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextLabChoices.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextLabJournal.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextLabFieldExtractor.kt tools/logic-checks/TextLabFieldChecks.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextLabWineTable.kt app/src/main/java/com/yourapp/wine/textlab/TextLabBatch.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextLabBatchChecks.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextLabJournalChecks.kt
     app/src/main/java/com/yourapp/wine/textlab/PaddleProbabilityMap.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/PaddleProbabilityChecks.kt
     app/src/main/java/com/yourapp/wine/textlab/PaddleCtc.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/PaddleCtcChecks.kt
-    app/src/debug/java/com/yourapp/wine/textlab/TextCropGeometry.kt
+    app/src/main/java/com/yourapp/wine/textlab/TextCropGeometry.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextCropChecks.kt
     app/src/debug/java/com/yourapp/wine/benchmark/CellarWineChoice.kt
     app/src/testDebug/java/com/yourapp/wine/benchmark/CellarWineChoiceChecks.kt

@@ -1,0 +1,77 @@
+# Project-authored Portuguese DOC/IGP reference: NOT an exhaustive or regulator-verified register.
+PT|Portugal|Vinho Verde|appellation
+Vinho Verde
+PT|Portugal|Vinho Verde|geography
+Amarante
+Ave
+Baião
+Basto
+Cávado
+Lima
+Monção e Melgaço
+Paiva
+Sousa
+PT|Portugal|Alentejo|appellation
+Alentejo
+PT|Portugal|Alentejo|appellation
+Borba
+Évora
+Granja-Amareleja
+Moura
+Portalegre
+Redondo
+Reguengos
+Vidigueira
+PT|Portugal|Tejo|appellation
+Almeirim
+Cartaxo
+Chamusca
+Coruche
+Santarém
+Tomar
+PT|Portugal|Lisboa|appellation
+Alenquer
+Arruda
+Bucelas
+Carcavelos
+Colares
+Encostas d'Aire
+Lourinhã
+Óbidos
+Torres Vedras
+PT|Portugal|Península de Setúbal|appellation
+Palmela
+Setúbal
+PT|Portugal|Algarve|appellation
+Lagoa
+Lagos
+Portimão
+Tavira
+PT|Portugal|Azores|appellation
+Pico
+Graciosa
+Biscoitos
+PT|Portugal|Douro|appellation
+Douro
+Porto
+PT|Portugal|Dao|appellation
+Dão
+PT|Portugal|Bairrada|appellation
+Bairrada
+PT|Portugal|Madeira|appellation
+Madeira
+Madeirense
+PT|Portugal|Trás-os-Montes|appellation
+Trás-os-Montes
+PT|Portugal|Beira Interior|appellation
+Beira Interior
+PT|Portugal||geography
+Alentejano
+Duriense
+Transmontano
+Minho
+Terras do Cávado
+Terras de Basto
+Valpaços
+Ribatejo
+Açores

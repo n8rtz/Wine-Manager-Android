@@ -7,8 +7,10 @@ import java.util.Locale
 internal object PhoneCorpusMath {
     val fields=listOf("producer","wine_name","country","region","subregion","vintage")
     data class Target(val status:String,val accepted:Set<String>,val display:String="")
-    fun normalize(value:String)=Normalizer.normalize(value.lowercase(Locale.ROOT).replace("ß","ss").replace("ς","σ").replace("&"," et "),Normalizer.Form.NFKD)
-        .filter { it.isLetterOrDigit() }
+    fun normalize(value:String)=Normalizer.normalize(
+        com.yourapp.wine.merge.TextNorm.scrub(value).lowercase(Locale.ROOT).replace("ς","σ").replace("&"," et "),
+        Normalizer.Form.NFKD
+    ).filter { it.isLetterOrDigit() }
     fun outcome(target:Target,value:String,failed:Boolean=false):String=when {
         failed -> "execution_failed"
         target.status=="unresolved" -> if(value.isBlank()) "unscored_blank" else "unscored_filled"

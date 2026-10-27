@@ -19,6 +19,7 @@ class GeometryTest {
         val rect = original.map(matrix::map)
         val mapper = CoordMapper(matrix, 400, 600, 500, 800)
         val token = mapper.toOriginal(RawToken("Château", .9f, rect, "mlkit", "V0"))!!
+        assertEquals("Chateau", token.textRaw)
         original.zip(token.polyOrig).forEach { (expected, actual) ->
             assertEquals(expected.x, actual.x, .001f); assertEquals(expected.y, actual.y, .001f)
         }

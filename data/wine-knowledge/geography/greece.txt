@@ -1,0 +1,88 @@
+# Project-authored Greek PDO/PGI reference: NOT an exhaustive or regulator-verified register.
+GR|Greece|Macedonia|appellation
+Naoussa
+Amyndeon
+Goumenissa
+Rapsani
+Velvendo
+Servia
+Plagies Melitona
+Anchialos
+Epanomi
+Macedonia
+GR|Greece|Macedonia|geography
+Drama
+Kavala
+Serres
+Thessaloniki
+Chalkidiki
+Mount Athos
+Veria
+Imathia
+Pieria
+GR|Greece|Thrace|geography
+Thrace
+GR|Greece|Epirus|appellation
+Zitsa
+GR|Greece|Epirus|geography
+Epirus
+GR|Greece|Thessaly|geography
+Larissa
+Trikala
+Karditsa
+Magnisia
+GR|Greece|Peloponnese|appellation
+Nemea
+Mantinia
+Patras
+Mavrodaphne of Patras
+GR|Greece|Peloponnese|geography
+Peloponnese
+Achaia
+Ilia
+Arkadia
+Messinia
+Laconia
+Argolida
+Corinthia
+GR|Greece|Aegean Islands|appellation
+Samos
+Muscat of Samos
+Limnos
+Muscat of Limnos
+Santorini
+Vinsanto
+Rhodos
+GR|Greece|Aegean Islands|geography
+Chios
+Lesvos
+Syros
+Paros
+Naxos
+Mykonos
+GR|Greece|Crete|appellation
+Dafnes
+Peza
+Archanes
+Sitia
+GR|Greece|Crete|geography
+Heraklion
+Chania
+Rethymno
+Lasithi
+GR|Greece|Ionian Islands|appellation
+Robola of Cephalonia
+Mavrodaphne of Cephalonia
+Verdea
+GR|Greece|Ionian Islands|geography
+Kefalonia
+Zakynthos
+Lefkada
+Corfu
+GR|Greece|Attica|geography
+Attika
+GR|Greece||appellation
+Retsina
+GR|Greece|Central Greece|geography
+Central Greece
+Evia

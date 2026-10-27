@@ -16,7 +16,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
-| `arena/5dc78d5f-wine-manager-android` | not opened | current work | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
+| `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
+| `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
 | `arena/259cc0eb-wine-manager-android` | not opened | current work; main synced through PR #9 | W-058 debug pipeline bottleneck table, current-label checkpoint/CSV counts, merged build-metadata correction | [Jump](#branch-arena259cc0eb-wine-manager-android) |
 | `arena/814c691f-wine-manager-android` | not opened yet | historical checklist | Cleanup of dead code, Profile + Settings, build info in App Information, debug test-data restore, backlog and docs rewrite | [Jump](#branch-arena814c691f-wine-manager-android) |
@@ -25,6 +26,71 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/673cafd4-wine-manager-android`
+
+**Build it:** `git checkout arena/673cafd4-wine-manager-android`; build/install the debug build as usual. This branch merged `main` (PR #11) first, so the diagnostics-table and CSV-save work is included.
+
+**What changed:** the bundled wine catalog grew from 1,020 to **2,065 names across 48 countries** (1,095 appellations + 970 geographies, 399 nested under a region or subregion). Authored `ISO|country|region path|role` headers may now carry a slash path (`AU|Australia|South Australia/Barossa`), `origins.csv` and the generated Kotlin carry a `path` column, and `SupplementedWineKnowledgeBase` walks that chain so places are created as `country → region → subregion` instead of one flat region. No OCR, scoring, deadline or benchmark behaviour changed. Host checks: 216 Python contract tests pass and the catalog `--check` is clean; no Android build or device run yet.
+
+### Lab v4 appellation repair (experimental, off by default)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] **Profile → Settings → OCR Labs**, enable **Compare experimental evidence pipeline** and then **Use guarded hybrid**: a new **Repair appellations with bounded spelling (experimental)** checkbox sits under the producer-repair checkbox. It is **unchecked** on a fresh install and on every upgrade.
+2. [ ] Tick it and run one image whose label prints a clean appellation (e.g. `Pauillac`): the experimental row is unchanged from the unticked run — a repair never fires when the exact match already worked (the raw CSV shows no `place_repair` decision row).
+3. [ ] Run an image where OCR misspells the appellation by one or two letters (`Pauilac`, `Bordeux`, long names only): the experimental row keeps its country/region and may add the matched sub-region. The raw CSV gains one `place_repair` decision row and the field reason names the before/after with `confirm`.
+4. [ ] Confirm the gates: a sample whose misspelled word is the **only** origin text on the label (no separate printed country/region line) does **not** repair, and a candidate that contradicts the printed country (e.g. `Pauilac` on a label saying **Italy**) does not repair. One engine is deliberately enough, so a **script-face label that only Paddle read** should still repair (the reason line then ends `engines=paddle`, not `engines=mlkit+paddle`); the same sample read by both engines repairs either way. A label where the two engines' spellings point at two **different** places at the same distance does not repair.
+5. [ ] Confirm nothing is written: the saved form, the cellar record and every other field are untouched, all repaired values stay **YELLOW**, and the raw OCR text and scores in the CSV are byte-identical to the unticked run.
+6. [ ] Tick **New Lab run** on the **Large image dataset test** after changing `PhoneCorpusRunner.REPAIR_PLACES_IN_BENCHMARK`: the benchmark CSV carries `place_repair_enabled=true` on every row of that run, and a mixed corpus (some photos before, some after) never happens because the flag is fixed per batch.
+7. [ ] Timings: the run still finishes inside the per-photo budget on a mid-range phone (repair only runs for unmatched phrases and only when the experiment is on).
+
+### Lab v4 single-reading resolver policy (experimental, off by default)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] **Profile → Settings → OCR Labs**, enable **Compare experimental evidence pipeline** and **Use guarded hybrid**: the new **Accept one engine reading for producer and linked wine (experimental)** checkbox sits under the other two experiments and is **unchecked** by default.
+2. [ ] With it off, a Lab run is byte-for-byte the previous behaviour: every `producer_gazetteer_reason` / `wine_gazetteer_reason` still says **two engines**, and the CSV metadata says `resolver_single_reading_enabled=false`.
+3. [ ] Turn it on, tick **New Lab run**, and re-run a few script-face labels where Paddle read the producer cleanly and ML Kit did not: Lab v4 may now fill producer and linked wine where it previously abstained. The reason line then reads **one engine reading under the lab single-reading policy**.
+4. [ ] Confirm the Prod v3.0 contender on the same photos is unchanged — it must still abstain on those labels and keep the **two engines** wording. If Prod v3.0 changed, the flag leaked and the run is not comparable.
+5. [ ] Confirm the gates that are supposed to remain: a garbled span still fails eligibility, a rival name one edit away still abstains (ambiguous identity), and an existing different producer/wine is still protected. Only the engine quorum should differ.
+6. [ ] In the diagnostics table, the step formerly called **Two-engine + disjoint agreement** now reads **Independent-support agreement**; its description names the active policy.
+
+### Resolver budget: blocked rows should collapse
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run the **Large image dataset test** over a few photos and open the diagnostics table: the **Resolver completed within budget** rows for producer and linked wine should almost all pass, where about 30 % were blocked before.
+2. [ ] For any row that still blocks, read the reason: `producer budget reached; unchanged` / `linked wine budget reached; unchanged` means the 2000 ms lookup budget is still too small for that label; an exception class name means a different failure and needs a separate look.
+3. [ ] Check `producer_gazetteer_ms` + `wine_gazetteer_ms` on the summary rows: they should now show real search time instead of a near-zero leftover, and the sum should stay under the per-image allowance.
+4. [ ] Confirm the first photo of a run (cold cache) copies and verifies the databases once and later photos open them immediately; a cold first photo may still block on setup, and only that one should.
+5. [ ] Confirm nothing else changed: the same photos still produce the same suggestions, the funnel version, columns and row names are unchanged, and no score moved because of the timing fix.
+
+### Lab v4 designation, level and fragment rules
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run **New Lab run** on the 125 labels: the CSV metadata must show `place_repair_enabled=true` and `resolver_single_reading_enabled=true`, and every Lab v4 summary must carry `evidence-lab-v4-designation-base`.
+2. [ ] A label printing `SAINT-ÉMILION GRAND CRU` (the Abelyce photos): region **Bordeaux**, subregion **Saint-Émilion** (never `Saint-Émilion Grand Cru`), wine name the printed `Saint-Émilion Grand Cru`, and country France — all four filled at once.
+3. [ ] A label printing `BORDEAUX SUPÉRIEUR`: region Bordeaux, subregion **blank** (not `Bordeaux Supérieur`), wine name `Bordeaux Supérieur`. Same for `MÉDOC SUPÉRIEUR`.
+4. [ ] A label printing `CHIANTI CLASSICO`: subregion stays **Chianti Classico** (the classification rule must not collapse it to `Chianti`) with region Tuscany.
+5. [ ] A label whose only designation is `GRAND CRU` / `DOCG` / `RISERVA`: the wine name is **not** that word; the row may be blank or the real name.
+6. [ ] Any label where one engine read a fragment (`CRUCLASS`, `HATEAU`): that fragment must not appear as the producer or wine name.
+7. [ ] No row may show the same text in `region` and `subregion`.
+8. [ ] Known-good labels must not regress: `Antinori`/`Tuscany`/`Chianti Classico` and the clean Bordeaux references should score exactly as before.
+9. [ ] Record the new counts (complete forms, per-field correct/wrong/missing) next to the 32/123, 77/46/2, 63/33/27 baseline in `docs/evidence-designation-levels.md`.
+
+### Nested regions and subregions reach the form
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] **Profile → Settings → Database Lookup**, search **Pauillac** under *Appellation*: it is found, and **Bundled-origins appellations** in the "Databases searched" list is now several hundred rather than a few dozen. Clear the filter and search **Barossa Valley** and **Coonawarra**: both are found.
+2. [ ] Scan or type a label naming **Pauillac**: Country fills *France*, Region fills *Bordeaux*, Sub-region fills *Médoc* (or a conservative YELLOW confirmation for the newly nested value — new reference rows stay YELLOW, never counted as verified truth).
+3. [ ] Try **Barolo** (Italy → Piedmont), **Gevrey-Chambertin** (France → Burgundy → Côte de Nuits), **Napa Valley** (United States → California) and **Mosel** (Germany, no region invented): each lands in the expected levels and none invents a region that was not authored.
+4. [ ] The deliberately region-less names still refuse to pick a region: **Prosecco**, **Cava**, **Lugana** and **Orvieto** fill only their country, and the Region field stays empty (not guessed).
+5. [ ] **Canberra District** now resolves to Australia → New South Wales; **Orange** still requires the spelled-out country/region anchor (`Orange Australia` matches, bare `Orange` and `Orange Wine Australia` do not).
+6. [ ] A contradictory place in the same text still produces the existing YELLOW conflict reason rather than silently overwriting: e.g. **Pauillac** with **Italy** typed in the country field.
+7. [ ] Nothing else moved: the **Large image dataset test** still runs four versions with frozen Prod rows, CSV save/split still works, and no screen shows new prose.
 
 ## Branch `arena/5dc78d5f-wine-manager-android`
 

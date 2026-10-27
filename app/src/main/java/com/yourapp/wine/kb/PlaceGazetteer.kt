@@ -7,7 +7,15 @@ class PlaceGazetteer(private val kb: WineKnowledgeBase) {
     private var root = Node()
 
     /** No image coordinates: boundary-aware known place forms tolerate OCR word breaks, not changed letters. */
-    @Synchronized fun matches(normalizedText: String): List<Place> {
+    @Synchronized fun matches(normalizedText: String): List<Place> =
+        matches(normalizedText, emptySet(), emptySet(), false)
+
+    @Synchronized fun matches(
+        normalizedText: String,
+        contextCountryCodes: Set<String>,
+        contextRegionsNormalized: Set<String>,
+        standaloneOrFramed: Boolean,
+    ): List<Place> {
         val current = kb.places()
         if (current !== indexedPlaces) {
             val updated = Node()
@@ -36,7 +44,12 @@ class PlaceGazetteer(private val kb: WineKnowledgeBase) {
                 }
                 node = node.children[char] ?: break
                 index++
-                if (index == normalizedText.length || !normalizedText[index].isLetterOrDigit()) found += node.places.filter { ReferenceWineCatalog.mayMatch(it, normalizedText) }.map { Match(it,start,index) }
+                if (index == normalizedText.length || !normalizedText[index].isLetterOrDigit()) {
+                    val fullPhrase = standaloneOrFramed && start == 0 && index == normalizedText.length
+                    found += node.places.filter {
+                        ReferenceWineCatalog.mayMatch(it, normalizedText, contextCountryCodes, contextRegionsNormalized, fullPhrase)
+                    }.map { Match(it,start,index) }
+                }
             }
         }
         // Nested names inside one longer appellation are not separate contradictory origin claims.

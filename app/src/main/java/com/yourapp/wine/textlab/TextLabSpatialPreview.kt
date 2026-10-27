@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.gazetteer.LinkedWineResolver
 import com.yourapp.wine.diagnostics.PipelineFunnel
+import com.yourapp.wine.merge.TextNorm
 
 /** Current spatial pipeline, shared by the two gazetteer benchmark contenders. No second OCR pass.
  * The raw form summary is an internal anchor required by the existing guarded algorithm.
@@ -19,15 +20,27 @@ internal object TextLabSpatialPreview {
     const val VERSION="raw-plus-linked-wine-v2"
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
-        candidate:String="spatial_lab",stagePrefix:String="spatial_") {
+        candidate:String="spatial_lab",stagePrefix:String="spatial_",
+        policy:ProducerResolver.Policy=ProducerResolver.Policy.prod,
+        fillEngine:com.yourapp.wine.fill.FillEngine?=null) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
-            val original=TextLabFormPreview.records(journal)
+            val rawOriginal=TextLabFormPreview.records(journal)
+            val filterOutcome=if(policy.minimumIndependentEngines<2) TextLabBottleFilter.filterTokens(rawOriginal) else null
+            val original=filterOutcome?.kept ?: rawOriginal
+            filterOutcome?.dropped?.forEachIndexed { index,item ->
+                val token=item.entry.payload
+                journal.add(candidate,stagePrefix+"filtered",values=mapOf("post_processing_version" to VERSION,
+                    "region_id" to index.toString(),"raw_text" to token.textRaw,
+                    "source_engine" to token.engineId,"filter_reason" to item.reason,
+                    "base_box_normalized" to "${item.entry.rectBox.left} ${item.entry.rectBox.top} ${item.entry.rectBox.right} ${item.entry.rectBox.bottom}"))
+            }
             val proposals=TextLabSpatialPhrases.propose(original)
             for((index,proposal) in proposals.withIndex()) {
+                val mergedText=TextNorm.scrub(proposal.phrase.mergedText)
                 journal.add(candidate,stagePrefix+"phrase",values=mapOf("post_processing_version" to VERSION,
-                    "region_id" to index.toString(),"raw_text" to proposal.phrase.mergedText,
+                    "region_id" to index.toString(),"raw_text" to mergedText,
                     "source_engine" to proposal.engineId,"source_variant" to proposal.variantId,
                     "source_indices_in_engine_pass" to proposal.phrase.sourceIndices.joinToString(" "),
                     "source_texts" to proposal.sources.joinToString("\n") { it.textRaw },
@@ -39,12 +52,21 @@ internal object TextLabSpatialPreview {
             val readings=original
             val work=TextLabJournal(journal.selected,journal.build,journal.detectLines)
             work.metadata.putAll(journal.metadata)
-            // Unchanged raw baseline anchor, NOT a separately evaluated production-v2.0 result.
-            work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
+            // Unchanged raw baseline anchor for Prod v3.0 and unfiltered images; when Lab v4 drops
+            // stray side-bottle or medal-sticker tokens, recompute the anchor on filtered readings so
+            // dropped noise cannot leak back through EvidenceAnchorHybrid.
+            if(filterOutcome!=null && filterOutcome.dropped.isNotEmpty() && engine!=null) {
+                work.rows.addAll(journal.rows.filter { it["stage"] in setOf("summary","candidate_summary") })
+                if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)
+                else TextLabFormPreview.append(work,com.yourapp.wine.fill.FillEngine(engine.baseKb),year,recordsOverride=readings)
+            } else {
+                work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
+            }
             TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
-                useProducerRepair=true,producerRepair=repair,recordsOverride=readings)
+                useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
+                exactGeographyFastPath=policy.minimumIndependentEngines<2)
             val spans=original.mapIndexed { id,r -> ProducerResolver.Span(r.textRaw,r.engineId,setOf(id),r.scoreIsEstimated) }+
-                proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(p.phrase.mergedText,p.engineId,
+                proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(TextNorm.scrub(p.phrase.mergedText),p.engineId,
                     p.sources.map { source -> original.indexOfFirst { it===source } }.filter { it>=0 }.toSet(),true) }
             for(rawRow in work.rows.filter { it["stage"]!="form_summary" }) {
                 val row=rawRow.toMutableMap()
@@ -57,9 +79,16 @@ internal object TextLabSpatialPreview {
                         row["producer_gazetteer_reason"]=producerUnavailable
                         row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
+                        val isLabMode=policy.minimumIndependentEngines<2
                         val started=android.os.SystemClock.elapsedRealtime()
                         var producerFailureTelemetry=emptyMap<String,String>()
-                        val decision=try { ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget) }
+                        fun runProducerLookup(policy:ProducerResolver.Policy)=
+                            ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget,policy)
+                        val activePolicy=if(isLabMode) {
+                            policy.withCountryContext(row["country"].orEmpty())
+                                .withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }
+                        } else policy
+                        val decision=try { runProducerLookup(activePolicy) }
                             catch(cancel:CancellationException) { throw cancel }
                             catch(error:Exception) { ProducerResolver.Decision(before,"lookup failed; unchanged: ${error.javaClass.simpleName}",emptyList(),telemetry=
                                 producerFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("producer.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
@@ -83,14 +112,18 @@ internal object TextLabSpatialPreview {
                         }
                         val linkedIndex=producerIndex as? LinkedWineResolver.Index
                         row["wine_before_gazetteer"]=row["wine_name"].orEmpty()
+                        var linkedDecision:LinkedWineResolver.Decision?=null
                         if(linkedIndex!=null) {
                             val wineStart=android.os.SystemClock.elapsedRealtime()
                             val wineBefore=row["wine_name"].orEmpty()
                             var wineFailureTelemetry=emptyMap<String,String>()
-                            val linked=try { LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget) }
+                            fun runLinkedWineLookup(policy:ProducerResolver.Policy)=
+                                LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget,policy)
+                            val linked=try { runLinkedWineLookup(activePolicy) }
                                 catch(cancel:CancellationException) { throw cancel }
                                 catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}",telemetry=
                                     wineFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("wine.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
+                            linkedDecision=linked
                             row.putAll(linked.telemetry)
                             val wineMs=android.os.SystemClock.elapsedRealtime()-wineStart
                             row["wine_gazetteer_ms"]=wineMs.toString()
@@ -121,12 +154,54 @@ internal object TextLabSpatialPreview {
                         } else {
                             row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]="linked wine index unavailable"
                         }
+                        if(isLabMode && engine!=null) {
+                            var backfilled=false
+                            val confirmedWine=linkedDecision
+                            val acceptedProducerId=confirmedWine?.producerId ?: decision.acceptedId
+                            val acceptedEntity=acceptedProducerId?.let { id -> decision.matches.firstOrNull { it.entity.id==id }?.entity }
+                            if(confirmedWine!=null && confirmedWine.wineId!=null) {
+                                val inferred=engine.resolveLinkedWineGeography(
+                                    confirmedWine.wine,
+                                    row["country"].orEmpty(),
+                                    row["region"].orEmpty(),
+                                    row["subregion"].orEmpty(),
+                                    acceptedEntity?.countryGroup.orEmpty(),
+                                )
+                                for((fieldId,value) in inferred) {
+                                    val fieldKey=fieldId.name.lowercase(java.util.Locale.ROOT)
+                                    if(row[fieldKey].orEmpty().isBlank()) {
+                                        row[fieldKey]=value
+                                        row["${fieldKey}_state"]="YELLOW"
+                                        row["${fieldKey}_reason"]="inferred from confirmed LWIN producer+wine pair (${confirmedWine.lwin7.ifBlank { confirmedWine.wineId.orEmpty() }}); confirm manually"
+                                        row["${fieldKey}_alternatives"]=""
+                                        backfilled=true
+                                    }
+                                }
+                            }
+                            if(row["country"].orEmpty().isBlank() && acceptedEntity!=null && acceptedEntity.countryGroup.isNotBlank()) {
+                                val countryName=engine.canonicalCountryName(acceptedEntity.countryGroup)
+                                val sameKeyCountries=decision.matches.filter { it.entity.key==acceptedEntity.key }
+                                    .mapNotNull { m -> m.entity.countryGroup.takeIf(String::isNotBlank)?.let(engine::canonicalCountryName) }.toSet()
+                                if(countryName!=null && sameKeyCountries.size==1) {
+                                    row["country"]=countryName
+                                    row["country_state"]="YELLOW"
+                                    row["country_reason"]="unambiguous LWIN producer country (${acceptedEntity.name}); confirm manually"
+                                    row["country_alternatives"]=""
+                                    backfilled=true
+                                }
+                            }
+                            if(backfilled) {
+                                row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
+                                row["status"]="suggestions"
+                            }
+                        }
                     }
                 }
                 journal.add(candidate,stagePrefix+row.getValue("stage"),row.getValue("status"),
                     row.filterKeys { it !in setOf("candidate","stage","status","sequence","details") }+
                         mapOf("post_processing_version" to "$VERSION+${ProducerRepair.VERSION}+${ProducerResolver.VERSION}+${LinkedWineResolver.VERSION}",
                             "spatial_source_count" to original.size.toString(),"spatial_reading_count" to readings.size.toString(),
+                            "spatial_filter_dropped" to (filterOutcome?.dropped?.size ?: 0).toString(),
                             "spatial_merged_groups" to proposals.count { it.sources.size>1 }.toString()),row["details"].orEmpty())
             }
             check(journal.rows.any { it["stage"]==summaryStage }) { "Spatial extractor produced no summary" }

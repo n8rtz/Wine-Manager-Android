@@ -1,0 +1,151 @@
+# Project-authored Australian/NZ GI reference: NOT an exhaustive or regulator-verified register.
+AU|Australia||geography
+South Eastern Australia
+Murray Darling
+Swan Hill
+AU|Australia|South Australia/Barossa|geography
+Barossa Valley
+Eden Valley
+AU|Australia|South Australia/Mount Lofty Ranges|geography
+Adelaide Hills
+Adelaide Plains
+Langhorne Creek
+AU|Australia|South Australia/Fleurieu|geography
+Currency Creek
+Kangaroo Island
+McLaren Vale
+Southern Fleurieu
+AU|Australia|South Australia/Limestone Coast|geography
+Coonawarra
+Mount Benson
+Mount Gambier
+Padthaway
+Robe
+Wrattonbully
+AU|Australia|South Australia|geography
+Clare Valley
+Riverland
+Southern Flinders Ranges
+AU|Australia|Victoria/Port Phillip|geography
+Yarra Valley
+Mornington Peninsula
+Geelong
+Macedon Ranges
+Sunbury
+AU|Australia|Victoria/North East Victoria|geography
+Rutherglen
+Glenrowan
+Alpine Valleys
+Beechworth
+King Valley
+AU|Australia|Victoria/North West Victoria|geography
+AU|Australia|Victoria/Western Victoria|geography
+Grampians
+Henty
+Pyrenees
+AU|Australia|Victoria|geography
+Bendigo
+Gippsland
+AU|Australia|New South Wales/Big Rivers|geography
+Riverina
+AU|Australia|New South Wales/Central Ranges|geography
+Mudgee
+Orange
+Cowra
+AU|Australia|New South Wales/Hunter Valley|geography
+Hunter
+Broke Fordwich
+Pokolbin
+Upper Hunter Valley
+AU|Australia|New South Wales/South Coast|geography
+Shoalhaven Coast
+Southern Highlands
+AU|Australia|New South Wales/Southern New South Wales|geography
+Canberra District
+Tumbarumba
+Hilltops
+Gundagai
+AU|Australia|New South Wales/Western Plains|geography
+Dubbo
+AU|Australia|New South Wales|geography
+Northern Rivers
+Northern Slopes
+New England Australia
+AU|Australia|Western Australia/South West Australia|geography
+Geographe
+Great Southern
+Manjimup
+Margaret River
+Peel
+Pemberton
+Swan District
+AU|Australia|Western Australia/South West Australia/Great Southern|geography
+Albany
+Denmark
+Frankland River
+Mount Barker
+Porongurup
+AU|Australia|Western Australia/South West Australia/Swan District|geography
+Swan Valley
+Perth Hills
+AU|Australia|Queensland|geography
+Granite Belt
+South Burnett
+Mount Cotton
+AU|Australia|Tasmania|geography
+Tasmania
+Southern Tasmania
+Northern Tasmania
+East Coast Tasmania
+AU|Australia|Tasmania/Southern Tasmania|geography
+Derwent Valley
+Huon Valley
+Coal River Valley
+D'Entrecasteaux
+AU|Australia|Tasmania/Northern Tasmania|geography
+Tamar Valley
+AU|Australia|Tasmania/East Coast Tasmania|geography
+Pipers River
+NZ|New Zealand||geography
+New Zealand
+Northland
+Auckland
+Gisborne
+Hawke's Bay
+Wairarapa
+Nelson
+Marlborough
+Canterbury
+Waitaki Valley
+Central Otago
+NZ|New Zealand|Auckland|geography
+Waiheke Island
+Kumeu
+Matakana
+Clevedon
+NZ|New Zealand|Hawke's Bay|geography
+Gimblett Gravels
+Bridge Pa
+Te Awanga
+Esk Valley
+NZ|New Zealand|Wairarapa|geography
+Martinborough
+Gladstone
+Masterton
+NZ|New Zealand|Marlborough|geography
+Wairau Valley
+Awatere Valley
+Southern Valleys
+NZ|New Zealand|Canterbury|geography
+Waipara Valley
+North Canterbury
+NZ|New Zealand|Central Otago|geography
+Bannockburn
+Bendigo
+Gibbston
+Cromwell
+Wanaka
+Lowburn
+NZ|New Zealand|Nelson|geography
+Moutere
+Waimea

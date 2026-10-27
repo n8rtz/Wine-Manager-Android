@@ -19,7 +19,7 @@ data class TextLabImage(val id:String,val name:String,val photo:TextPhoto?=null,
 data class TextLabSavedRun(val file:File,val modifiedAt:Long,val bytes:Long)
 data class TextLabState(val images:List<TextLabImage> = emptyList(),val activeImage:Int=0,
     val savedRuns:List<TextLabSavedRun> = emptyList(),val viewingRunId:String?=null,
-    val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
+    val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val repairPlaces:Boolean=false,val resolverSingleReading:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val enlarge:Boolean=false,val selectedCandidates:Set<String> = setOf("candidate_3"),val detectLines:Boolean=true,
     val busy:Boolean=false,val result:String="",val wineTable:List<List<String>> = emptyList(),val formTable:List<List<String>> = emptyList(),val cropPreview:File?=null,val lastCsv:File?=null,
     val message:String="Choose one or more images. Full images are selected by default.") {
     val current:TextLabImage? get()=images.getOrNull(activeImage)
@@ -106,6 +106,12 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
     fun repairProducer(value:Boolean) {
         if(!mutable.value.busy) mutable.update { it.copy(repairProducer=value,result="",formTable=emptyList(),wineTable=emptyList()) }
     }
+    fun repairPlaces(value:Boolean) {
+        if(!mutable.value.busy) mutable.update { it.copy(repairPlaces=value,result="",formTable=emptyList(),wineTable=emptyList()) }
+    }
+    fun resolverSingleReading(value:Boolean) {
+        if(!mutable.value.busy) mutable.update { it.copy(resolverSingleReading=value,result="",formTable=emptyList(),wineTable=emptyList()) }
+    }
     fun detectLines(value:Boolean) { if(!mutable.value.busy) { clearPreview();mutable.update { it.copy(detectLines=value,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null) } } }
     fun choose(uris:List<Uri>) {
         if(mutable.value.busy || uris.isEmpty()) return
@@ -159,7 +165,7 @@ class TextLabViewModel(app:Application):AndroidViewModel(app) {
         val snapshot=mutable.value
         if(snapshot.busy || snapshot.images.isEmpty() || snapshot.selectedCandidates.isEmpty() || !snapshot.cropsReady) return
         clearPreview()
-        val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines,snapshot.compareEvidence,snapshot.anchorHybrid,snapshot.repairProducer,snapshot.compareGazetteer,snapshot.residualCandidates)
+        val batch=TextLabBatch(snapshot.images.map { TextLabImageKey(it.id,it.name) },snapshot.selectedCandidates,BuildConfig.BUILD_COMMIT,snapshot.detectLines,snapshot.compareEvidence,snapshot.anchorHybrid,snapshot.repairProducer,snapshot.compareGazetteer,snapshot.residualCandidates,repairPlaces=snapshot.repairPlaces,resolverSingleReading=snapshot.resolverSingleReading)
         mutable.update { it.copy(busy=true,result="",formTable=emptyList(),wineTable=emptyList(),cropPreview=null,message="Running image batch…") }
         job=viewModelScope.launch {
             var finalStatus="complete"

@@ -38,10 +38,11 @@ class WineIndexDatabaseLookup private constructor(
         }
         connection.prepare("SELECT id,name,key FROM wine_names ORDER BY id").use { s ->
             while(s.step()) {
-                val name=s.getText(1)
+                val name=TextNorm.scrub(s.getText(1))
+                val key=TextNorm.scrub(s.getText(2))
                 chunk += DatabaseLookupCandidate(
                     identity="lwin-wine:${s.getLong(0)}",name=name,context="",
-                    searchTerms=listOf(name,s.getText(2))
+                    searchTerms=listOf(name,key)
                 )
                 if(chunk.size==512) rankChunk()
             }

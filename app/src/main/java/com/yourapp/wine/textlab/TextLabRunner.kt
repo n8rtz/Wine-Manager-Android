@@ -9,6 +9,7 @@ import android.os.SystemClock
 import com.yourapp.wine.capture.BitmapWorkspace
 import com.yourapp.wine.capture.CaptureDecoder
 import com.yourapp.wine.capture.WineScannerServices
+import com.yourapp.wine.ocr.OcrEngine
 import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.*
 import java.io.File
@@ -39,7 +40,40 @@ internal object TextLabRunner {
         val lockStart=SystemClock.elapsedRealtime()
         scanner.withBenchmarkEngines { engines,_ ->
             journal.metadata["scan_lock_wait_ms"]=(SystemClock.elapsedRealtime()-lockStart).toString()
-            BitmapWorkspace().use { workspace ->
+            recognizeCrop(context,photo,selection,enlarge,output,journal,engines,checkpoint)
+            if(journal.autoZoomTinyLabel && !enlarge && selection==TextCrop(0f,0f,1f,1f)) {
+                val zoomCrop=TextLabBottleFilter.proposeZoomCrop(journal)
+                if(zoomCrop!=null) {
+                    currentCoroutineContext().ensureActive()
+                    val zoomOutput=File(output.parentFile ?: photo.input.parentFile,output.nameWithoutExtension+"-zoom.png")
+                    val zoomJournal=TextLabJournal(journal.selected,journal.build,journal.detectLines)
+                    try {
+                        recognizeCrop(context,photo,zoomCrop,true,zoomOutput,zoomJournal,engines,checkpoint)
+                        if(TextLabBottleFilter.shouldAcceptZoomPass(journal,zoomJournal)) {
+                            zoomOutput.copyTo(output,overwrite=true)
+                            TextLabBottleFilter.promoteZoomPass(journal,zoomJournal,zoomCrop)
+                        } else {
+                            journal.metadata["auto_zoom_crop_skipped"]="fallback_to_full_frame"
+                        }
+                    } catch(cancel:CancellationException) { throw cancel }
+                    catch(oom:OutOfMemoryError) { throw oom }
+                    catch(_:Exception) { journal.metadata["auto_zoom_crop_skipped"]="zoom_pass_error" }
+                    finally { zoomOutput.delete() }
+                }
+            }
+        }
+    }
+    private suspend fun recognizeCrop(
+        context:Context,
+        photo:TextPhoto,
+        selection:TextCrop,
+        enlarge:Boolean,
+        output:File,
+        journal:TextLabJournal,
+        engines:List<OcrEngine>,
+        checkpoint:()->Unit,
+    ) {
+        BitmapWorkspace().use { workspace ->
                 val started=SystemClock.elapsedRealtime()
                 val prepared=withTimeoutOrNull(8000) {
                     val decoded=CaptureDecoder().decode(photo.input,workspace)
@@ -144,6 +178,5 @@ internal object TextLabRunner {
                     }
                 }
             }
-        }
     }
 }

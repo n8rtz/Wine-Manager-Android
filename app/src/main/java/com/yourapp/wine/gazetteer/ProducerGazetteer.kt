@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Looper
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.yourapp.wine.merge.TextNorm
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
@@ -31,8 +32,11 @@ internal class ProducerGazetteer private constructor(
                 while (statement.step()) {
                     checkBudget()
                     rows += ProducerResolver.Entity(
-                        statement.getText(0), statement.getText(1), statement.getText(2),
+                        statement.getText(0),
+                        TextNorm.scrub(statement.getText(1)),
+                        ProducerResolver.normalize(statement.getText(2)),
                         if (trackSources) setOf(statement.getText(3)) else emptySet(),
+                        TextNorm.scrub(statement.getText(if (trackSources) 4 else 3)),
                     )
                 }
             }
@@ -40,15 +44,15 @@ internal class ProducerGazetteer private constructor(
         }
         // Expanded indexes tag every entity with its source so suggestions stay attributable.
         val exactSql = if (trackSources)
-            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin') FROM producers p LEFT JOIN producer_sources s ON s.id=p.id WHERE p.key=? ORDER BY p.id LIMIT ?"
-            else "SELECT id,name,key FROM producers WHERE key=? ORDER BY id LIMIT ?"
+            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin'),COALESCE(p.country_group,'') FROM producers p LEFT JOIN producer_sources s ON s.id=p.id WHERE p.key=? ORDER BY p.id LIMIT ?"
+            else "SELECT id,name,key,COALESCE(country_group,'') FROM producers WHERE key=? ORDER BY id LIMIT ?"
         val exact = read(exactSql, key)
         if (exact.isNotEmpty()) return exact
         val query = key.windowed(3).filter { it.none(Char::isWhitespace) }.distinct().take(24)
             .joinToString(" OR ") { "\"$it\"" }
         val fuzzySql = if (trackSources)
-            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin') FROM names JOIN producers p ON names.id=p.id LEFT JOIN producer_sources s ON s.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
-            else "SELECT p.id,p.name,p.key FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
+            "SELECT p.id,p.name,p.key,COALESCE(s.source,'lwin'),COALESCE(p.country_group,'') FROM names JOIN producers p ON names.id=p.id LEFT JOIN producer_sources s ON s.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
+            else "SELECT p.id,p.name,p.key,COALESCE(p.country_group,'') FROM names JOIN producers p ON names.id=p.id WHERE names MATCH ? ORDER BY bm25(names),p.id LIMIT ?"
         return if (query.isBlank()) emptyList() else read(fuzzySql, query)
     }
 
@@ -77,8 +81,11 @@ internal class ProducerGazetteer private constructor(
                 while (statement.step()) {
                     checkBudget()
                     rows += LinkedWineResolver.Wine(
-                        statement.getLong(0).toString(), statement.getText(1), statement.getText(2),
-                        statement.getText(3), statement.getText(4),
+                        statement.getLong(0).toString(),
+                        TextNorm.scrub(statement.getText(1)),
+                        ProducerResolver.normalize(statement.getText(2)),
+                        statement.getText(3),
+                        statement.getText(4),
                     )
                 }
             }
@@ -97,6 +104,24 @@ internal class ProducerGazetteer private constructor(
 
     companion object {
         const val ASSET = "producer-gazetteer-v1"
+
+        /**
+         * The cached copy is written under its content hash by an atomic move, so a stamp naming that
+         * hash and the byte length proves the copy without re-reading 34-50 MB on every open. That
+         * read used to spend most of the caller's per-photo budget before any lookup ran; the
+         * manifest's record counts are still checked against the opened database on every open, and a
+         * cache miss, a length change or a missing stamp falls back to the full copy-and-verify path.
+         */
+        private fun stampMatches(target: File, hash: String): Boolean {
+            if (!target.isFile) return false
+            val stamp = File(target.parentFile, "${target.name}.verified")
+            val parts = runCatching { stamp.readText().trim().split(' ') }.getOrNull() ?: return false
+            return parts.size == 2 && parts[0] == hash && parts[1].toLongOrNull() == target.length()
+        }
+
+        private fun writeStamp(target: File, hash: String) {
+            runCatching { File(target.parentFile, "${target.name}.verified").writeText("$hash ${target.length()}") }
+        }
 
         private fun sha(file: File, checkBudget: () -> Unit): String {
             val digest = MessageDigest.getInstance("SHA-256")
@@ -181,7 +206,7 @@ internal class ProducerGazetteer private constructor(
             checkBudget()
             val directory = File(context.cacheDir, assetFolder).apply { mkdirs() }
             val target = File(directory, "$hash.sqlite")
-            if (!target.exists() || sha(target, checkBudget) != hash) {
+            if (!stampMatches(target, hash)) {
                 val temporary = File.createTempFile("producer-", ".tmp", directory)
                 try {
                     context.assets.open("$assetFolder/$name").use { input ->
@@ -207,6 +232,7 @@ internal class ProducerGazetteer private constructor(
                     java.nio.file.Files.move(
                         temporary.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
                     )
+                    writeStamp(target, hash)
                 } finally {
                     temporary.delete()
                 }

@@ -16,6 +16,10 @@ object LogicChecks {
         RectF(x, y, x + w, y + h), RectF(x, y, x + w, y + h), listOf(PointF(x, y)), engine, variant)
 
     fun normalization() {
+        check(TextNorm.scrub("Château d´Yquem") == "Chateau d'Yquem")
+        check(TextNorm.scrub("PAUIL´LAC") == "PAUILLAC")
+        check(TextNorm.scrub("Weingut Meßmer") == "Weingut Messmer")
+        check(TextNorm.scrub("Chays d'Œuvre") == "Chays d'Oeuvre")
         check(TextNorm.normalize("  ChâTeau   MARGAUX ") == "chateau margaux")
         check(TextNorm.normalize("Cha\u0302teau") == "chateau")
         check(TextNorm.editDistance("chateau", "chateau") == 0)
@@ -30,7 +34,7 @@ object LogicChecks {
         check(merged.size == 1)
         check(kotlin.math.abs(merged.single().vote - .98f) < .0001f)
         val accent = TokenMerger().merge(listOf(token("Chateau", .8f), token("Château", .8f, "paddle"))).single()
-        check(accent.canonical == "Château")
+        check(accent.canonical == "Chateau")
         check(TokenMerger().merge(listOf(token("Specialist", .76f, "paddle"))).size == 1)
         check(TokenMerger().merge(listOf(token("Specialist", .74f, "paddle"))).isEmpty())
         check(TokenMerger().merge(listOf(token("Weak", .59f), token("Weak", .59f, variant = "V1"))).isEmpty())
@@ -45,7 +49,7 @@ object LogicChecks {
         val lines = LineBuilder().build(TokenMerger().merge(listOf(token("Margaux", x = .32f, w = .2f),
             token("Château", x = .1f, w = .2f), token("2018", y = .5f, w = .2f))))
         check(lines.size == 2)
-        check(lines.first().text == "Château Margaux")
+        check(lines.first().text == "Chateau Margaux")
     }
 
     fun vintage() {
@@ -101,7 +105,7 @@ object LogicChecks {
             token("Margaux", y = .5f), token("2018", y = .7f))
         val valid = fill.fill(tokens, 2026)
         check(valid.fields.size == 6)
-        check(valid.fields.getValue(FieldId.PRODUCER).value == "Château Margaux")
+        check(valid.fields.getValue(FieldId.PRODUCER).value == "Chateau Margaux")
         check(valid.fields.values.all { it.state == UiState.GREEN })
         val partial = fill.fill(tokens, 2026, ConfidenceContext(deadlineReached = true))
         check(partial.fields.values.none { it.state == UiState.GREEN })
@@ -164,18 +168,18 @@ object LogicChecks {
         val updated = previous.apply(partial, previous.fields.mapValues { it.value.value })
         check(updated.fields.getValue(FieldId.VINTAGE).state == UiState.RED)
         check(updated.fields.getValue(FieldId.VINTAGE).value.isEmpty())
-        check(updated.fields.getValue(FieldId.PRODUCER).value == "Château Margaux")
+        check(updated.fields.getValue(FieldId.PRODUCER).value == "Chateau Margaux")
     }
 
     fun extractionEdges() {
         val fill = FillEngine(FixtureKnowledgeBase())
         val inline = fill.fill(listOf(token("Château Margaux Pavillon Rouge 2018", y = .1f), token("Margaux", y = .5f)), 2026)
-        check(inline.fields.getValue(FieldId.PRODUCER).value == "Château Margaux")
+        check(inline.fields.getValue(FieldId.PRODUCER).value == "Chateau Margaux")
         check(inline.fields.getValue(FieldId.WINE_NAME).value == "Pavillon Rouge")
         check(inline.fields.getValue(FieldId.VINTAGE).value == "2018")
         val wrapped = fill.fill(listOf(token("Château", y = .1f), token("Margaux", y = .3f),
             token("Pavillon Rouge", y = .5f), token("2018", y = .7f)), 2026)
-        check(wrapped.fields.getValue(FieldId.PRODUCER).value == "Château Margaux")
+        check(wrapped.fields.getValue(FieldId.PRODUCER).value == "Chateau Margaux")
         check(wrapped.fields.getValue(FieldId.PRODUCER).state == UiState.GREEN)
         val fuzzy = fill.fill(listOf(token("Chateau Margauy", y = .1f), token("2018", y = .7f)), 2026)
         check(fuzzy.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
@@ -288,7 +292,7 @@ object LogicChecks {
         }
         val result = ResilientFillEngine(broken).fill(listOf(token("Chateau Margaux", y = .1f), token("2018", y = .5f)),
             2026, ConfidenceContext())
-        check(result.fields.getValue(FieldId.PRODUCER).value == "Château Margaux")
+        check(result.fields.getValue(FieldId.PRODUCER).value == "Chateau Margaux")
         check(result.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
         check(result.fields.getValue(FieldId.VINTAGE).state == UiState.YELLOW)
     }
@@ -298,7 +302,7 @@ object LogicChecks {
         val real = token("Chateau Margaux", score = .50f)
         val estimated = real.copy(score = .65f, variantId = "V1", scoreIsEstimated = true)
         val mixed = fill.fill(listOf(real, estimated), 2026)
-        check(mixed.fields.getValue(FieldId.PRODUCER).value == "Château Margaux")
+        check(mixed.fields.getValue(FieldId.PRODUCER).value == "Chateau Margaux")
         check(mixed.fields.getValue(FieldId.PRODUCER).state == UiState.YELLOW)
         val strong = fill.fill(listOf(real.copy(score = .92f), estimated), 2026)
         check(strong.fields.getValue(FieldId.PRODUCER).state == UiState.GREEN)

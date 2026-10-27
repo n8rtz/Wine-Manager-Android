@@ -33,6 +33,16 @@ fun main() {
     verify(LinkedWineResolver(index(ws=listOf(wine.copy(producerId="b")))).resolve("","",pd,producers+wineSpans).wineId==null)
     verify(LinkedWineResolver(idx).resolve("","Keep",pd,producers+wineSpans) { throw ProducerResolver.BudgetExceeded() }.wine=="Keep")
     verify(!LinkedWineResolver.eligible("Imported by Moonlight Cuvee"))
+    // Lab v4 single-reading policy: one engine carries both sides; Prod behaviour is untouched above.
+    val lab=ProducerResolver.Policy.singleReading
+    val oneProducer=ProducerResolver(idx).resolve("",producers.take(1),policy=lab)
+    verify(oneProducer.acceptedId=="a")
+    verify(ProducerResolver(idx).resolve("",producers.take(1)).acceptedId==null)
+    val oneWine=LinkedWineResolver(idx).resolve("","",oneProducer,producers.take(1)+wineSpans.take(1),policy=lab)
+    verify(oneWine.wineId==wine.id && oneWine.producer==estate.name)
+    verify(oneWine.reason.contains("lab single-reading policy"))
+    verify(LinkedWineResolver(idx).resolve("","",oneProducer,wineSpans.take(1),policy=lab).wineId==null) // producer observation still required
+    verify(LinkedWineResolver(idx).resolve("","",pd,producers+wineSpans.take(1)).wineId==null) // Prod unchanged
     verify(!LinkedWineResolver.eligible("Moonlight Cuvee 2019"))
     verify(LinkedWineResolver.eligible("Bin 389"))
     verify(!LinkedWineResolver.eligible("Grand Cru"))
@@ -53,5 +63,21 @@ fun main() {
     // remain one name group, not 33 OCR votes; the independent two-engine requirement still applies.
     verify(LinkedWineResolver(index(ws=List(33) { wine.copy(id=it.toString()) })).resolve("","",pd,producers+wineSpans).wineId!=null)
     verify(resolve(spans=List(129) { producers[0] }).wineId==null)
+    // Lab v4 d=0 exact-match fast-path: pairs with newly resolved d=0 producer and skips noisy existingWine/rivals.
+    val catalogTerms=setOf("chianti classico","pinot noir")
+    val labFast=lab.withExactMatchFastPath { ProducerResolver.normalize(it) in catalogTerms }
+    val fastProducer=ProducerResolver(idx).resolve("LEO",producers.take(1),policy=labFast)
+    verify(fastProducer.acceptedId=="a" && fastProducer.value=="Domaine Example")
+    val fastWineFromStaleBefore=LinkedWineResolver(idx).resolve("LEO","DOMAINE EXAMPLE",fastProducer,producers.take(1)+wineSpans.take(1),policy=labFast)
+    verify(fastWineFromStaleBefore.wine=="Moonlight Cuvee" && fastWineFromStaleBefore.producer=="Domaine Example")
+    val fastWineOverPlace=LinkedWineResolver(idx).resolve("Domaine Example","Chianti Classico",oneProducer,producers.take(1)+wineSpans.take(1),policy=labFast)
+    verify(fastWineOverPlace.wine=="Moonlight Cuvee")
+    val fastWineOverFuzzyRival=LinkedWineResolver(index(ws=listOf(wine,rival))).resolve("","",oneProducer,producers.take(1)+wineSpans.take(1),policy=labFast)
+    verify(fastWineOverFuzzyRival.wine=="Moonlight Cuvee")
+    val varietalWine=LinkedWineResolver.Wine("wine-pn","Pinot Noir","pinot noir","a","[\"7654321\"]")
+    val keepCuvee=LinkedWineResolver(index(ws=listOf(varietalWine))).resolve(
+        "Domaine Example","Inscription",oneProducer,
+        producers.take(1)+listOf(span("Pinot Noir","paddle",9)),policy=labFast)
+    verify(keepCuvee.wine=="Inscription") // distinctive cuvee is not downgraded to bare varietal
     println("PASS: $checks producer-linked wine resolver checks (actual Kotlin, fixture data).")
 }

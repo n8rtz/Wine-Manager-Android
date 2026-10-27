@@ -2,12 +2,14 @@ package com.yourapp.wine.merge
 
 import com.yourapp.wine.ocr.MergedToken
 import com.yourapp.wine.ocr.TokenRecord
-import java.text.Normalizer
 
 class TokenMerger {
-    /** Union-find over normalized rectified boxes; original spellings and capture boxes are retained. */
+    /** Union-find over normalized rectified boxes; incoming readings are accent-scrubbed. */
     fun merge(records: List<TokenRecord>): List<MergedToken> {
-        val tokens = records.filter { it.textNorm.isNotBlank() && it.score.isFinite() && it.score in 0f..1f &&
+        val tokens = records.map { r ->
+            val clean = TextNorm.scrub(r.textRaw)
+            if (clean == r.textRaw) r else r.copy(textRaw = clean, textNorm = TextNorm.normalize(clean))
+        }.filter { it.textNorm.isNotBlank() && it.score.isFinite() && it.score in 0f..1f &&
             it.bboxRect.width() > 0f && it.bboxRect.height() > 0f }
         val parent = IntArray(tokens.size) { it }
         val rank = IntArray(tokens.size)
@@ -46,13 +48,10 @@ class TokenMerger {
                 if (engineMax.values.single() < threshold) return@mapNotNull null
             }
             val best = members.sortedWith(compareByDescending<TokenRecord> { it.score }
-                .thenByDescending { diacriticCount(it.textRaw) }.thenByDescending { it.textRaw.length }).first()
+                .thenByDescending { it.textRaw.length }).first()
             val vote = 1f - engineMax.values.fold(1f) { product, score -> product * (1f - score) }
             if (vote < .60f) return@mapNotNull null // weak multi-engine clusters are not acceptable candidates either
             MergedToken(best.textRaw, members, vote, BoxMath.union(members.map { it.bboxRect }))
         }.sortedWith(compareBy<MergedToken> { it.bboxRect.centerY() }.thenBy { it.bboxRect.left })
     }
-
-    private fun diacriticCount(text: String): Int =
-        Normalizer.normalize(text, Normalizer.Form.NFD).count { Character.getType(it) == Character.NON_SPACING_MARK.toInt() }
 }

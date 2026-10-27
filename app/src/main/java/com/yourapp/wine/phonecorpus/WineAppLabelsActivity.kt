@@ -2,16 +2,27 @@ package com.yourapp.wine.phonecorpus
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -20,19 +31,29 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -40,8 +61,10 @@ import androidx.compose.ui.text.withStyle
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.abs
 
 /** Bottleneck-matrix cell: passed counts green, failed counts red, matching the corpus screen. */
 private fun passFailLabel(passed: Int, failed: Int, passColor: Color, failColor: Color, shared: Boolean = false, notReached: Int = 0, notRecorded: Int = 0, notApplicable: Int = 0): AnnotatedString = buildAnnotatedString {
@@ -69,6 +92,20 @@ private data class MatrixWidths(val step: Dp, val fields: List<Dp>) {
     val total: Dp get() = fields.fold(step) { total, width -> total + width }
 }
 
+private val FAILURE_FILTER_OPTIONS = listOf(
+    "producer" to "Producer",
+    "wine_name" to "Wine name",
+    "country" to "Country",
+    "region" to "Region",
+    "subregion" to "Subregion",
+    "vintage" to "Vintage",
+)
+
+private val FIELD_DISPLAY_NAMES = FAILURE_FILTER_OPTIONS.toMap()
+
+private fun isFieldFailure(row: Map<String, String>): Boolean =
+    row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())
+
 class WineAppLabelsActivity : ComponentActivity() {
     private val vm: WineAppLabelsViewModel by viewModels()
 
@@ -87,6 +124,7 @@ class WineAppLabelsActivity : ComponentActivity() {
         super.onStop()
     }
 
+    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     private fun Screen() {
         val state by vm.state.collectAsState()
@@ -121,20 +159,54 @@ class WineAppLabelsActivity : ComponentActivity() {
                     subregion = target("subregion"),
                     vintage = target("vintage"),
                 )
-            }
+            }.sortedBy { it.reviewNumber }
         }
         val coverage = remember {
             val data = JSONObject(context.assets.open("wine-app-labels-v1/gazetteer-coverage.json").bufferedReader().use { it.readText() })
-            val databases = data.getJSONArray("databases")
-            (0 until databases.length()).map { index ->
-                val item = databases.getJSONObject(index)
+            val parameters = data.getJSONArray("parameters")
+            (0 until parameters.length()).map { index ->
+                val item = parameters.getJSONObject(index)
                 item.getString("label") to "${item.getInt("matched_labels")}/${item.getInt("total_labels")}"
             }
         }
         val fieldRows = state.board?.csv.orEmpty().filter { it["row_type"] == "field" }.groupBy { it["image"] }
+        val failedFieldsByImage = remember(fieldRows) {
+            fieldRows.mapNotNull { (image, rows) ->
+                val key = image ?: return@mapNotNull null
+                val failed = rows.filter(::isFieldFailure).mapNotNull { it["field"] }.toSet()
+                val incomplete = failed.isNotEmpty() || rows.any { it["form_status"] == "execution_failed" }
+                if (incomplete) key to failed else null
+            }.toMap()
+        }
+        val incompleteCases = remember(cases, failedFieldsByImage) {
+            cases.filter { it.image in failedFieldsByImage }
+        }
         var showDiagnostics by remember { mutableStateOf(true) }
         var expandedDiagnostics by remember(state.mode) { mutableStateOf(emptySet<String>()) }
-        var showReviewedLabels by remember { mutableStateOf(false) }
+        var showIncompleteLabels by remember { mutableStateOf(false) }
+        var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }
+        var expandedRawOcrImages by remember(state.mode) { mutableStateOf(emptySet<String>()) }
+        var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }
+        var nowRealtimeMs by remember { mutableStateOf(SystemClock.elapsedRealtime()) }
+        LaunchedEffect(state.labRunning) {
+            if (state.labRunning) {
+                while (true) {
+                    nowRealtimeMs = SystemClock.elapsedRealtime()
+                    delay(250L)
+                }
+            } else {
+                nowRealtimeMs = SystemClock.elapsedRealtime()
+            }
+        }
+        val filteredIncompleteCases = remember(incompleteCases, failedFieldsByImage, selectedFailureFields) {
+            if (selectedFailureFields.isEmpty()) {
+                incompleteCases
+            } else {
+                incompleteCases.filter { wineCase ->
+                    failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }
+                }
+            }
+        }
 
         LazyColumn(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -147,7 +219,7 @@ class WineAppLabelsActivity : ComponentActivity() {
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
                     val capture = state.captures[mode]
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(
                             selected = state.mode == mode,
                             // The Prod versions are frozen comparators: they are not re-run and
@@ -155,11 +227,15 @@ class WineAppLabelsActivity : ComponentActivity() {
                             onClick = { if (mode == PhoneCorpusRunner.Mode.LAB) vm.load(mode) },
                             enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,
                         )
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(mode.title)
                             Text(
                                 if (mode == PhoneCorpusRunner.Mode.LAB) {
-                                    "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                    if (state.useCachedOcr) {
+                                        "Cached OCR (${state.ocrCached}/${state.total} ready) · ${state.labCompleted}/${state.total} checkpointed"
+                                    } else {
+                                        "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                    }
                                 } else if (capture == null) {
                                     "Baseline not captured yet · will run once for each remaining photo"
                                 } else {
@@ -167,6 +243,16 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                             )
+                        }
+                        if (mode == PhoneCorpusRunner.Mode.LAB) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = state.useCachedOcr,
+                                    onCheckedChange = vm::setUseCachedOcr,
+                                    enabled = !state.busy,
+                                )
+                                Text("Cached OCR", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }
@@ -186,6 +272,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                 ) {
                     Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v4 only")
                 }
+                BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
                     TextButton(
@@ -215,6 +302,12 @@ class WineAppLabelsActivity : ComponentActivity() {
                             }
                         }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    BuildFieldComparisonTable(
+                        currentScores = state.currentBuildFieldScores,
+                        bestBuildScores = state.bestBuildFieldScores,
+                        prodV3Scores = state.prodV3FieldScores,
+                    )
                 }
                 item {
                     Text("CSV export", style = MaterialTheme.typography.titleMedium)
@@ -408,52 +501,190 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
             item {
-                Text("Gazetteer database coverage", style = MaterialTheme.typography.titleMedium)
+                Text("Database coverage", style = MaterialTheme.typography.titleMedium)
                 SelectionContainer {
                     Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        val width = 72.dp
+                        val width = 88.dp
                         Row {
-                            Text("Coverage", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall)
+                            Text("Parameter", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1, softWrap = false)
                             coverage.forEach { (label, _) ->
                                 Text(label, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    maxLines = 1, softWrap = false)
                             }
                         }
                         HorizontalDivider(Modifier.width((width.value * (coverage.size + 1)).dp))
                         Row {
-                            Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                            Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1, softWrap = false)
                             coverage.forEach { (_, count) ->
-                                Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                                Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1, softWrap = false)
                             }
                         }
                     }
                 }
             }
             item {
-                TextButton(onClick = { showReviewedLabels = !showReviewedLabels }, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { showIncompleteLabels = !showIncompleteLabels }, modifier = Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Reviewed labels", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Text(if (showReviewedLabels) "▲" else "▼", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "Incomplete labels (${incompleteCases.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(if (showIncompleteLabels) "▲" else "▼", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
-            if (showReviewedLabels) {
-                items(cases, key = { it.image }) { wineCase ->
-                val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
-                Card(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        LabelThumbnail(wineCase.image)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
-                            Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(listOf(wineCase.country, wineCase.region, wineCase.subregion, wineCase.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                            if (results.isNotEmpty()) {
-                                HorizontalDivider(Modifier.padding(vertical = 3.dp))
-                                listOf("producer", "wine_name", "country", "region", "subregion", "vintage").forEach { field ->
-                                    val result = results[field] ?: return@forEach
-                                    val expected = result["expected"].takeUnless { it.isNullOrBlank() } ?: result["reference_status"].orEmpty()
-                                    val actual = result["recognized"].orEmpty().ifBlank { "(blank)" }
-                                    Text("$field: $actual  ·  ${result["outcome"]}  ·  expected $expected", style = MaterialTheme.typography.bodySmall)
+            if (showIncompleteLabels) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            FAILURE_FILTER_OPTIONS.forEach { (fieldKey, label) ->
+                                val selected = fieldKey in selectedFailureFields
+                                val count = incompleteCases.count { fieldKey in failedFieldsByImage[it.image].orEmpty() }
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = {
+                                        selectedFailureFields = if (selected) {
+                                            selectedFailureFields - fieldKey
+                                        } else {
+                                            selectedFailureFields + fieldKey
+                                        }
+                                    },
+                                    label = { Text("$label ($count)") },
+                                )
+                            }
+                        }
+                        if (selectedFailureFields.isNotEmpty()) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Showing ${filteredIncompleteCases.size}/${incompleteCases.size}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                TextButton(onClick = { selectedFailureFields = emptySet() }) {
+                                    Text("Clear filters")
+                                }
+                            }
+                        }
+                        if (fieldRows.isEmpty()) {
+                            Text("No scored labels yet.", style = MaterialTheme.typography.bodySmall)
+                        } else if (incompleteCases.isEmpty()) {
+                            Text("All scored labels are completely correct.", style = MaterialTheme.typography.bodySmall)
+                        } else if (filteredIncompleteCases.isEmpty()) {
+                            Text("No labels failed the selected filter(s).", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                items(filteredIncompleteCases, key = { it.image }) { wineCase ->
+                    val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
+                    val failedResults = PhoneCorpusMath.fields.mapNotNull { field ->
+                        results[field]?.takeIf(::isFieldFailure)?.let { field to it }
+                    }
+                    val showRawOcr = wineCase.image in expandedRawOcrImages
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        "#${wineCase.reviewNumber} · ${wineCase.producer}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                    )
+                                    Text(
+                                        wineCase.wineName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    val locationLine = listOf(
+                                        wineCase.country,
+                                        wineCase.region,
+                                        wineCase.subregion,
+                                        wineCase.vintage,
+                                    ).filter { it != "(blank)" }.joinToString(" · ")
+                                    if (locationLine.isNotEmpty()) {
+                                        Text(
+                                            locationLine,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    Text(
+                                        wineCase.sourceFilename,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            if (failedResults.isNotEmpty()) {
+                                FailedParametersTable(failedResults)
+                            } else if (results.values.any { it["form_status"] == "execution_failed" }) {
+                                Text(
+                                    "Execution failed before field scoring.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            Column {
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            expandedRawOcrImages = if (showRawOcr) {
+                                                expandedRawOcrImages - wineCase.image
+                                            } else {
+                                                expandedRawOcrImages + wineCase.image
+                                            }
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        "Raw OCR",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        if (showRawOcr) "▲" else "▼",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                if (showRawOcr) {
+                                    val rawOcr by produceState<String?>(
+                                        initialValue = null,
+                                        wineCase.image,
+                                        state.mode,
+                                        state.labCompleted,
+                                    ) {
+                                        value = vm.loadRawOcrText(wineCase.image, state.mode)
+                                    }
+                                    SelectionContainer {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                                .padding(8.dp),
+                                        ) {
+                                            Text(
+                                                rawOcr ?: "Loading OCR...",
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                ),
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -461,12 +692,86 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
         }
-            }
+        expandedImage?.let { image ->
+            ZoomableLabelDialog(image = image, onDismiss = { expandedImage = null })
+        }
     }
 }
 
 @Composable
-private fun LabelThumbnail(image: String) {
+private fun FailedParametersTable(failedResults: List<Pair<String, Map<String, String>>>) {
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val failColor = MaterialTheme.colorScheme.error
+    SelectionContainer {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .border(0.5.dp, gridColor),
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Parameter",
+                    Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                Text(
+                    "Expected",
+                    Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                Text(
+                    "Output",
+                    Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+            failedResults.forEach { (field, result) ->
+                val expected = result["expected"].takeUnless { it.isNullOrBlank() }
+                    ?: if (result["reference_status"] == "expected_blank") "(blank)"
+                    else result["reference_status"].orEmpty()
+                val output = result["recognized"].orEmpty().ifBlank { "(blank)" }
+                HorizontalDivider(thickness = 0.5.dp, color = gridColor)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                ) {
+                    Text(
+                        FIELD_DISPLAY_NAMES[field] ?: field,
+                        Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                    Text(
+                        expected,
+                        Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = passColor,
+                    )
+                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                    Text(
+                        output,
+                        Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = failColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LabelThumbnail(image: String, onClick: () -> Unit) {
     val context = LocalContext.current
     val bitmap by produceState<android.graphics.Bitmap?>(null, image) {
         value = withContext(Dispatchers.IO) {
@@ -477,8 +782,229 @@ private fun LabelThumbnail(image: String) {
         }
     }
     if (bitmap != null) {
-        Image(bitmap!!.asImageBitmap(), contentDescription = image, modifier = Modifier.size(width = 82.dp, height = 112.dp), contentScale = ContentScale.Fit)
+        Image(
+            bitmap!!.asImageBitmap(),
+            contentDescription = image,
+            modifier = Modifier.size(width = 82.dp, height = 112.dp).clickable(onClick = onClick),
+            contentScale = ContentScale.Fit,
+        )
     } else {
-        Spacer(Modifier.size(width = 82.dp, height = 112.dp))
+        Spacer(Modifier.size(width = 82.dp, height = 112.dp).clickable(onClick = onClick))
+    }
+}
+
+@Composable
+private fun ZoomableLabelDialog(image: String, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    val bitmap by produceState<android.graphics.Bitmap?>(null, image) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                context.assets.open("wine-app-labels-v1/images/$image").use { BitmapFactory.decodeStream(it) }
+            }.getOrNull()
+        }
+    }
+    var scale by remember(image) { mutableStateOf(1f) }
+    var offset by remember(image) { mutableStateOf(Offset.Zero) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.92f))
+                .clipToBounds()
+                .onSizeChanged { containerSize = it }
+                .pointerInput(image) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        var movedPastSlop = false
+                        var multiTouch = currentEvent.changes.count { it.pressed } > 1
+                        var wasCanceled = false
+                        var totalPan = Offset.Zero
+                        var zoomAccumulator = 1f
+                        val touchSlop = viewConfiguration.touchSlop
+                        do {
+                            val event = awaitPointerEvent()
+                            val canceled = event.changes.any { it.isConsumed }
+                            if (canceled) {
+                                wasCanceled = true
+                            } else {
+                                if (event.changes.count { it.pressed } > 1) multiTouch = true
+                                val zoomChange = event.calculateZoom()
+                                val panChange = event.calculatePan()
+                                if (!movedPastSlop) {
+                                    zoomAccumulator *= zoomChange
+                                    totalPan += panChange
+                                    val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                                    val zoomMotion = abs(1f - zoomAccumulator) * centroidSize
+                                    if (zoomMotion > touchSlop || totalPan.getDistance() > touchSlop) {
+                                        movedPastSlop = true
+                                    }
+                                }
+                                if (movedPastSlop) {
+                                    val centroid = event.calculateCentroid(useCurrent = false)
+                                    if ((zoomChange != 1f || panChange != Offset.Zero) && zoomChange.isFinite() && panChange != Offset.Unspecified) {
+                                        val oldScale = scale
+                                        val newScale = (oldScale * zoomChange).coerceIn(1f, 8f)
+                                        val effectiveZoom = newScale / oldScale
+                                        val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
+                                        val pivot = if (centroid != Offset.Unspecified) centroid else center
+                                        val rawOffset = (offset + panChange) * effectiveZoom +
+                                            (center - pivot) * (effectiveZoom - 1f)
+                                        val maxX = (containerSize.width * (newScale - 1f)) / 2f
+                                        val maxY = (containerSize.height * (newScale - 1f)) / 2f
+                                        scale = newScale
+                                        offset = Offset(
+                                            x = rawOffset.x.coerceIn(-maxX, maxX),
+                                            y = rawOffset.y.coerceIn(-maxY, maxY),
+                                        )
+                                    }
+                                    event.changes.forEach { change ->
+                                        if (change.positionChanged()) change.consume()
+                                    }
+                                }
+                            }
+                        } while (!canceled && event.changes.any { it.pressed })
+
+                        if (!wasCanceled && !movedPastSlop && !multiTouch) {
+                            currentOnDismiss()
+                        }
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            bitmap?.let { loaded ->
+                Image(
+                    bitmap = loaded.asImageBitmap(),
+                    contentDescription = image,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = offset.x
+                            translationY = offset.y
+                        },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BenchmarkTimersRow(state: WineAppLabelsState, nowRealtimeMs: Long) {
+    val liveElapsedMs = WineAppLabelsTimers.liveElapsedMs(
+        accumulatedRunMs = state.elapsedRunMs,
+        segmentStartedRealtimeMs = state.runSegmentStartedRealtimeMs,
+        nowRealtimeMs = nowRealtimeMs,
+    )
+    val remainingMs = WineAppLabelsTimers.estimatedRemainingMs(
+        remainingImages = state.remainingImages,
+        etaPerImageMs = state.etaPerImageMs,
+        currentImageStartedRealtimeMs = state.currentImageStartedRealtimeMs,
+        nowRealtimeMs = nowRealtimeMs,
+    )
+    val items = listOf(
+        "Run time" to WineAppLabelsTimers.formatElapsedMmSs(liveElapsedMs),
+        "Avg / image" to WineAppLabelsTimers.formatAverageSeconds(state.avgImageMs),
+        "Est. remaining" to WineAppLabelsTimers.formatCountdownMmSs(remainingMs),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items.forEach { (label, value) ->
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.small)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuildFieldComparisonTable(
+    currentScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    bestBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    prodV3Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+) {
+    val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val failColor = MaterialTheme.colorScheme.error
+    val buildColumnWidth = 96.dp
+    val fieldColumnWidth = 88.dp
+    val totalWidth = buildColumnWidth + (fieldColumnWidth.value * FAILURE_FILTER_OPTIONS.size).dp
+    val buildRows = listOf(
+        "Current build" to currentScores,
+        "Best build" to bestBuildScores,
+        PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores,
+    )
+    SelectionContainer {
+        Column(Modifier.horizontalScroll(rememberScrollState())) {
+            Row {
+                Text(
+                    "Build",
+                    Modifier.width(buildColumnWidth).padding(4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                FAILURE_FILTER_OPTIONS.forEach { (_, label) ->
+                    Text(
+                        label,
+                        Modifier.width(fieldColumnWidth).padding(4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+            }
+            buildRows.forEach { (title, scores) ->
+                HorizontalDivider(Modifier.width(totalWidth))
+                Row {
+                    Text(
+                        title,
+                        Modifier.width(buildColumnWidth).padding(4.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
+                        val cell = scores[fieldKey]?.let { score ->
+                            passFailLabel(score.correct, score.incorrect, passColor, failColor)
+                        } ?: AnnotatedString("—")
+                        Text(
+                            cell,
+                            Modifier.width(fieldColumnWidth).padding(4.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+            }
+        }
     }
 }

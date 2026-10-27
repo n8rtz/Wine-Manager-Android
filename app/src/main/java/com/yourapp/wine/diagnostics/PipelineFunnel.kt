@@ -95,7 +95,7 @@ internal object PipelineFunnel {
             step("$kind.primary", title, "Verified producer index available", "The resolver received an integrity-checked producer index (verified primary LWIN; Lab v4 also admits source-tagged supplemental candidates).", true)
             step("$kind.spans", title, "Span-count bound passed", "The preserved-original/alternative span list is within its bound.", true)
             if (kind == "wine") {
-                step("wine.producer_observed", title, "Independently observed producer", "At least one producer has two-engine/disjoint evidence, including exact validation of an existing name.", true)
+                step("wine.producer_observed", title, "Independently observed producer", "At least one producer has the independent support the active resolver policy requires (two engines by default; the Lab single-reading experiment accepts one), including exact validation of an existing name.", true)
                 step("wine.producer_compatible", title, "Producer compatible with existing value", "At least one independently observed producer survives existing-value protection.", true)
                 step("wine.producer_bound", title, "Producer candidate bound passed", "No more than eight independently supported producer identities remain.", true)
             }
@@ -107,7 +107,7 @@ internal object PipelineFunnel {
                 if (kind == "wine") step("wine.$engine.disjoint", branch, "Separate producer/wine observations", "At least one linked candidate uses observations disjoint from producer evidence and a different name key.", true)
                 step("$kind.$engine.distance", branch, "Candidate passed edit distance", "At least one candidate passes the unchanged bounded distance rule.", true)
             }
-            step("$kind.independent", title, "Two-engine + disjoint agreement", "At least one identity/name group has independent support from both engines.", true)
+            step("$kind.independent", title, "Independent-support agreement", "At least one identity/name group has the independent support the active resolver policy requires: two engines with disjoint observations in Prod, or one engine reading under the Lab single-reading experiment.", true)
             step("$kind.unambiguous", title, "One viable identity/name group", "Exactly one independently supported group remains.", true)
             step("$kind.separated", title, "Separated from competing candidates", "No observed rival is too close under the existing separation rule.", true)
             if (kind == "wine") step("wine.producer_consistent", title, "Consistent with selected producer", "The linked wine does not contradict an independently selected producer.", true)

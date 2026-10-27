@@ -30,14 +30,14 @@ class SqliteKnowledgeBaseDeviceTest {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             SqliteWineKnowledgeBase.open(context).use { kb ->
                 val exact = kb.findProducer("Chateau Margaux").first()
-                assertEquals("Château Margaux", exact.producer.name)
+                assertEquals("Chateau Margaux", exact.producer.name)
                 assertEquals(0, exact.editDistance)
                 assertEquals(1, kb.findProducer("Chateau Margauy").first().editDistance)
                 val before = kb.places()
                 val bad = """{"schema":"wine-kb/v1","places":[{"id":99999,"name":"Invalid","type":"region","parent_id":1,"country_code":"IT"}]}"""
                 assertTrue(runCatching { kb.importOpenWines(bad.byteInputStream()) }.isFailure)
                 assertEquals(before, kb.places())
-                assertEquals("Château Margaux", kb.findProducer("Chateau Margaux").first().producer.name)
+                assertEquals("Chateau Margaux", kb.findProducer("Chateau Margaux").first().producer.name)
             }
         }
     }
@@ -70,12 +70,12 @@ class SqliteKnowledgeBaseDeviceTest {
                 for (json in invalid) {
                     assertTrue(json, runCatching { kb.importOpenWines(json.byteInputStream()) }.isFailure)
                     assertEquals(before, kb.places())
-                    assertEquals("Château Margaux", kb.findProducer("Chateau Margaux").first().producer.name)
+                    assertEquals("Chateau Margaux", kb.findProducer("Chateau Margaux").first().producer.name)
                     assertEquals(existingFiles, stagingFiles())
                 }
                 val reordered = """{"producer_aliases":[{"producer_id":1,"alias_norm":"chateau margaux"}],"producers":[{"id":1,"name":"Château Margaux","country_code":"FR","region_id":2}],"schema":"wine-kb/v1"}"""
                 kb.importOpenWines(reordered.byteInputStream())
-                assertEquals("Château Margaux", kb.findProducer("Chateau Margaux").first().producer.name)
+                assertEquals("Chateau Margaux", kb.findProducer("Chateau Margaux").first().producer.name)
                 assertEquals(existingFiles, stagingFiles())
             }
         }

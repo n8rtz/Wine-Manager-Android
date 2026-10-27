@@ -63,6 +63,28 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         coverage = json.loads((ASSETS / "gazetteer-coverage.json").read_text())
         self.assertEqual(coverage["dataset_count"], 125)
         self.assertIn("never provided to the OCR runner", coverage["method"])
+        # Per-parameter total coverage across all consulted databases (rendered on screen).
+        params = coverage["parameters"]
+        self.assertEqual(
+            [(row["id"], row["label"]) for row in params],
+            [
+                ("producer", "Producer"),
+                ("wine_name", "Wine name"),
+                ("country", "Country"),
+                ("region", "Region"),
+                ("subregion", "Subregion"),
+            ],
+        )
+        by_param = {row["id"]: row for row in params}
+        self.assertEqual((by_param["producer"]["matched_labels"], by_param["producer"]["total_labels"]), (101, 125))
+        self.assertEqual((by_param["wine_name"]["matched_labels"], by_param["wine_name"]["total_labels"]), (106, 123))
+        self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 42)
+        self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 64)
+        self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (124, 124))
+        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (120, 120))
+        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (77, 77))
+        self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 125 for row in params))
+        # Source-level databases remain in the asset for provenance auditing.
         rows = {row["id"]: row for row in coverage["databases"]}
         self.assertEqual(set(rows), {"lwin_producers", "expanded_producers", "lwin_wines", "appellations", "wine_geography",
                                      "kb_producers", "kb_wine_names", "kb_appellations", "kb_geography"})
@@ -75,11 +97,17 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(rows["appellations"]["matched_labels"], 89)
         # Scanner KB rows include the bundled wine-knowledge origins catalog
         # (editorial + UC Davis AVA) folded into the knowledge-base place list.
-        self.assertEqual(rows["kb_appellations"]["matched_labels"], 72)
+        # The nested catalog adds the Bordeaux, Portuguese, Georgian and Italian names the
+        # workbook prints; geography-role rows are counted as regions, not appellations.
+        self.assertEqual(rows["kb_appellations"]["matched_labels"], 77)
+        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 42)
         self.assertEqual(rows["kb_producers"]["matched_labels"], 13)
         self.assertTrue(all(0 <= row["matched_labels"] <= 125 for row in rows.values()))
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
-        self.assertIn("Gazetteer database coverage", activity)
+        self.assertIn('Text("Database coverage"', activity)
+        self.assertNotIn("Gazetteer database coverage", activity)
+        self.assertIn('data.getJSONArray("parameters")', activity)
+        self.assertNotIn('data.getJSONArray("databases")', activity)
         # Method/provenance text belongs in the coverage asset and docs, not on the page.
         self.assertIn("never provided to the OCR runner", coverage["method"])
         self.assertNotIn("Known workbook values and accepted aliases", activity)
@@ -307,8 +335,235 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         for kept in ('Text("Large image dataset test"', '"125 retained workbook-linked wine labels', 'Text(mode.title)',
                      'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
                      'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
-                     'Pipeline bottleneck matrix', 'Gazetteer database coverage', 'Reviewed labels'):
+                     'Pipeline bottleneck matrix', 'Database coverage', 'Incomplete labels ('):
             self.assertIn(kept, activity)
+        self.assertNotIn('Gazetteer database coverage', activity)
+        self.assertNotIn('Reviewed labels', activity)
+
+    def test_incomplete_labels_section_is_collapsed_by_default_with_multi_field_failure_toggles(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        # Replaced Reviewed labels with collapsible Incomplete labels section, collapsed by default.
+        self.assertNotIn("showReviewedLabels", activity)
+        self.assertIn("var showIncompleteLabels by remember { mutableStateOf(false) }", activity)
+        self.assertIn("var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }", activity)
+        self.assertIn('"Incomplete labels (${incompleteCases.size})"', activity)
+        self.assertIn("if (showIncompleteLabels) {", activity)
+
+        # Six failure-filter toggle buttons supporting simultaneous multi-select.
+        for key, label in (
+            ("producer", "Producer"),
+            ("wine_name", "Wine name"),
+            ("country", "Country"),
+            ("region", "Region"),
+            ("subregion", "Subregion"),
+            ("vintage", "Vintage"),
+        ):
+            self.assertIn(f'"{key}" to "{label}"', activity)
+        self.assertIn("FilterChip(", activity)
+        self.assertIn("selectedFailureFields - fieldKey", activity)
+        self.assertIn("selectedFailureFields + fieldKey", activity)
+        self.assertIn('row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())', activity)
+        self.assertIn("failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }", activity)
+        self.assertIn("results[field]?.takeIf(::isFieldFailure)?.let { field to it }", activity)
+        self.assertNotIn("color = if (failed) MaterialTheme.colorScheme.error else Color.Unspecified", activity)
+
+        # Clicking the thumbnail opens a full-resolution zoomable (pinch / pan) dialog; single tap dismisses it.
+        self.assertIn("var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }", activity)
+        self.assertIn("LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })", activity)
+        self.assertIn("ZoomableLabelDialog(image = image, onDismiss = { expandedImage = null })", activity)
+        self.assertIn("DialogProperties(usePlatformDefaultWidth = false)", activity)
+        self.assertIn("event.calculateZoom()", activity)
+        self.assertIn("event.calculatePan()", activity)
+        self.assertIn("if (!wasCanceled && !movedPastSlop && !multiTouch)", activity)
+        self.assertIn("currentOnDismiss()", activity)
+
+    def test_lab_v4_best_build_row_and_scalar_results_log_contracts(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+
+        # Separate scalar log file (never mixed into scored/raw export CSVs, zero raw OCR/image data)
+        # logs both per-run scalar metrics and the composite best_build row with source build numbers.
+        self.assertIn('const val FILE_NAME = "benchmark-results-log.csv"', build_log)
+        self.assertIn('const val BEST_BUILD_ROW_TITLE = "Lab v4 Best build"', build_log)
+        self.assertIn('const val BEST_BUILD_ROW_TYPE = "best_build"', build_log)
+        self.assertNotIn("Lab v4 Last build", build_log)
+        self.assertNotIn('"Last build"', activity)
+        self.assertNotIn('"Last build"', viewmodel)
+        for field in (
+            '"row_type"',
+            '"date"',
+            '"time"',
+            '"build_number"',
+            '"version_code"',
+            '"build_commit"',
+            '"branch"',
+            '"model_version"',
+            '"attempted"',
+            '"eligible"',
+            '"complete"',
+            '"one_error"',
+            '"two_plus_errors"',
+            '"failed"',
+            '"correct_values"',
+            '"wrong"',
+            '"missing"',
+            '"correct_blanks"',
+            '"total_correct"',
+            '"unsupported"',
+            '"unresolved"',
+            '"deadline_partial"',
+            '"producer_correct"',
+            '"producer_incorrect"',
+            '"wine_name_correct"',
+            '"wine_name_incorrect"',
+            '"country_correct"',
+            '"country_incorrect"',
+            '"region_correct"',
+            '"region_incorrect"',
+            '"subregion_correct"',
+            '"subregion_incorrect"',
+            '"vintage_correct"',
+            '"vintage_incorrect"',
+            '"best_complete_build"',
+            '"best_total_correct_build"',
+            '"best_correct_values_build"',
+            '"best_producer_build"',
+            '"best_wine_name_build"',
+            '"best_country_build"',
+            '"best_region_build"',
+            '"best_subregion_build"',
+            '"best_vintage_build"',
+        ):
+            self.assertIn(field, build_log)
+        for forbidden in ('"raw_text"', '"tokens"', '"trace"', "BitmapFactory", "images/"):
+            self.assertNotIn(forbidden, build_log)
+
+        # Score table places "Lab v4 Best build" directly below "Lab v4" and above Prod v3.0/v2.0/v1.0,
+        # backfills existing saved Lab runs on load, and syncs the persisted best_build log row.
+        self.assertIn("val comparisonRows = listOf(modeRows.first(), bestBuildRow) + modeRows.drop(1)", viewmodel)
+        self.assertIn("val bestBuild = buildLog?.bestBuildSummary()", viewmodel)
+        self.assertIn("backfillBuildLog(logStore, signature)", viewmodel)
+        self.assertIn("log.syncBestBuildSummary(PhoneCorpusRunner.Mode.LAB)", viewmodel)
+        self.assertIn('WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))', viewmodel)
+
+        # Granular per-field Current build / Best build / Prod v3.0 table sits at the bottom of
+        # Scored results (above CSV export) using green/red "correct/incorrect" passFailLabel formatting.
+        scored_section = activity.split('Text("Scored results"', 1)[1].split('Text("CSV export"', 1)[0]
+        self.assertIn("BuildFieldComparisonTable(", scored_section)
+        self.assertIn('"Current build" to currentScores', activity)
+        self.assertIn('"Best build" to bestBuildScores', activity)
+        self.assertIn("PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores", activity)
+        self.assertIn("val prodV3Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V3)", viewmodel)
+        self.assertIn("passFailLabel(score.correct, score.incorrect, passColor, failColor)", activity)
+
+    def test_background_execution_and_lab_ocr_cache_contracts(self):
+        manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
+        service = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsRunService.kt").read_text()
+        cache = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt").read_text()
+
+        # 1. Background execution: process-scoped coroutine session + non-exported foreground service;
+        #    leaving WineAppLabelsActivity (Back or app switch) no longer calls stop().
+        self.assertIn("private class WineAppLabelsSession", viewmodel)
+        self.assertIn("CoroutineScope(SupervisorJob() + Dispatchers.IO)", viewmodel)
+        pause_body = viewmodel.split("fun onBackgroundPause(resumeWhenForeground: Boolean) {", 1)[1].split("\n    }", 1)[0]
+        self.assertNotIn("stop()", pause_body)
+        self.assertIn("WineAppLabelsRunService.start(app,", viewmodel)
+        self.assertIn("WineAppLabelsRunService.update(", viewmodel)
+        self.assertIn("WineAppLabelsRunService.stop(app)", viewmodel)
+        self.assertIn('android:name="com.yourapp.wine.phonecorpus.WineAppLabelsRunService"', manifest)
+        self.assertIn('android:foregroundServiceType="specialUse"', manifest)
+        self.assertIn("ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE", service)
+        self.assertIn("PowerManager.PARTIAL_WAKE_LOCK", service)
+
+        # 2. Cached OCR checkbox sits next to Lab v4 only and reuses verified OCR outputs without
+        #    ever replaying cached OCR into Prod baselines.
+        self.assertIn("if (mode == PhoneCorpusRunner.Mode.LAB) {", activity)
+        self.assertIn("Checkbox(", activity)
+        self.assertIn("checked = state.useCachedOcr", activity)
+        self.assertIn("onCheckedChange = vm::setUseCachedOcr", activity)
+        self.assertIn('Text("Cached OCR"', activity)
+        self.assertIn('File(app.noBackupFilesDir, "wine-app-labels-v1/ocr-cache-v1/$signature")', cache)
+        for forbidden in ("packageManager", "lastUpdateTime", "firstInstallTime", "BuildConfig.BUILD_COMMIT).take("):
+            self.assertNotIn(forbidden, cache)
+        self.assertIn("fun promote(runFolders: List<File>, expectedHashes: Map<String, String>): Int", cache)
+        self.assertIn("Mode.PRODUCTION_V1 !in modes && modes==setOf(Mode.LAB) && it.image==image && it.imageSha256==hash", runner)
+        self.assertIn("useCachedOcr && needed == setOf(PhoneCorpusRunner.Mode.LAB)", viewmodel)
+        self.assertIn("onFreshOcr = { meta, rows -> ocrStore?.save(image, imageSha, meta, rows) }", viewmodel)
+
+    def test_benchmark_timers_sit_below_start_button_and_above_tables(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        timers = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsTimers.kt").read_text()
+
+        # Placement: directly below the Start button and above the Scored results table.
+        start_idx = activity.index('"Start / resume Lab v4 only"')
+        timer_idx = activity.index("BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)")
+        table_idx = activity.index('Text("Scored results"')
+        self.assertLess(start_idx, timer_idx)
+        self.assertLess(timer_idx, table_idx)
+
+        # Three distinct timers: Run time (mm ss), Avg / image (s), Est. remaining (countdown mm ss).
+        self.assertIn('"Run time" to WineAppLabelsTimers.formatElapsedMmSs(liveElapsedMs)', activity)
+        self.assertIn('"Avg / image" to WineAppLabelsTimers.formatAverageSeconds(state.avgImageMs)', activity)
+        self.assertIn('"Est. remaining" to WineAppLabelsTimers.formatCountdownMmSs(remainingMs)', activity)
+        self.assertIn('"%02dm %02ds".format(Locale.US, minutes, seconds)', timers)
+        self.assertIn('"%.1fs".format(Locale.US, avgImageMs.coerceAtLeast(0L) / 1000.0)', timers)
+        self.assertIn("writeRunTiming(lab, RunTiming(", viewmodel)
+        self.assertIn('"elapsed_run_ms"', viewmodel)
+        self.assertIn('"timed_images_count"', viewmodel)
+        self.assertIn('"timed_images_total_ms"', viewmodel)
+
+    def test_incomplete_label_cards_show_failed_parameter_table_and_collapsed_raw_ocr(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+
+        # Failed parameters are rendered as a 3-column Parameter | Expected | Output table,
+        # filtered strictly to failed fields.
+        self.assertIn("FailedParametersTable(failedResults)", activity)
+        table_block = activity.split("private fun FailedParametersTable(", 1)[1]
+        for header in ('"Parameter"', '"Expected"', '"Output"'):
+            self.assertIn(header, table_block)
+        self.assertIn("FIELD_DISPLAY_NAMES[field] ?: field", table_block)
+
+        # Raw OCR per incomplete label is inside a collapsible section that is collapsed by default.
+        self.assertIn("var expandedRawOcrImages by remember(state.mode) { mutableStateOf(emptySet<String>()) }", activity)
+        self.assertIn("val showRawOcr = wineCase.image in expandedRawOcrImages", activity)
+        self.assertIn('"Raw OCR"', activity)
+        self.assertIn("if (showRawOcr) {", activity)
+        self.assertIn("vm.loadRawOcrText(wineCase.image, state.mode)", activity)
+        self.assertIn("suspend fun loadRawOcrText(", viewmodel)
+        self.assertIn('row.optString("stage") != "recognition"', viewmodel)
+
+    def test_benchmark_pass_reuses_warm_read_only_engines_and_closes_in_finally(self):
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
+        extraction = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabWineExtraction.kt").read_text()
+        spatial = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt").read_text()
+
+        # Pass-scoped WarmSession is opened once per start() pass, forwarded to runImageAllModes,
+        # and closed in finally even on stop/pause/exception.
+        self.assertIn("var warmSession: PhoneCorpusRunner.WarmSession? = null", viewmodel)
+        self.assertIn("warmSession = PhoneCorpusRunner.WarmSession(app)", viewmodel)
+        self.assertIn("warmSession = warmSession,", viewmodel)
+        self.assertIn("runCatching { warmSession?.close() }", viewmodel)
+        self.assertIn("internal class WarmSession(context:Context):AutoCloseable", runner)
+        self.assertIn("TextLabWineExtraction.append(context,batch,warmSession=warmSession?.extraction)", runner)
+
+        # TextLabWineExtraction skips unused TextLabFieldExtractor on benchmarkOnly batches,
+        # reuses warm KB/FillEngine/EvidenceExtractor/Gazetteer handles across photos,
+        # replays gazetteer_setup funnel fields, and avoids rebuilding FillEngine on filtered photos.
+        self.assertIn("if(batch.benchmarkOnly) null else TextLabFieldExtractor(kb!!)", extraction)
+        self.assertIn("kb=warmSession?.knowledgeBase() ?: SqliteWineKnowledgeBase.open(context.applicationContext,0)", extraction)
+        self.assertIn("warmSession?.fillEngine(it) ?: com.yourapp.wine.fill.FillEngine(it)", extraction)
+        self.assertIn("warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces)", extraction)
+        self.assertIn("val setupFields=cachedGazetteer?.setupFields ?: setup.fields()", extraction)
+        self.assertIn("finally { if(ownsKb) kb?.close() }", extraction)
+        self.assertIn("finally { if(ownsProducers) producers?.close() }", extraction)
+        self.assertIn("if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)", spatial)
 
 
 if __name__ == "__main__":

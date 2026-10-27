@@ -5,6 +5,9 @@
     <!-- Internet is for unrelated image imports. Label OCR/KB lookup makes no wine-database API calls. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
@@ -39,7 +42,16 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.yourapp.wine.phonecorpus.WineAppLabelsActivity" android:exported="false" />
+        <activity android:name="com.yourapp.wine.phonecorpus.WineAppLabelsActivity" android:exported="false" android:launchMode="singleTop" />
+
+        <service
+            android:name="com.yourapp.wine.phonecorpus.WineAppLabelsRunService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Offline on-device wine-label OCR benchmark execution" />
+        </service>
     </application>
 
 </manifest>

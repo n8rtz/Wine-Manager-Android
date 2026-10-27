@@ -17,9 +17,10 @@ internal object EvidenceGraphBuilder {
     fun build(records:List<TokenRecord>,checkBudget:()->Unit = {},typedIdentity:Boolean=false):EvidenceGraph {
         val observations=records.take(MAX_OBSERVATIONS).mapIndexedNotNull { i,r ->
             val b=r.bboxRect
-            if(r.textRaw.isBlank() || r.textRaw.length>256 || !r.score.isFinite() || r.score !in 0f..1f ||
+            val scrubbed=TextNorm.scrub(r.textRaw)
+            if(scrubbed.isBlank() || scrubbed.length>256 || !r.score.isFinite() || r.score !in 0f..1f ||
                 b.width()<=0 || b.height()<=0 || listOf(b.left,b.top,b.right,b.bottom).any { !it.isFinite() || it !in 0f..1f }) null
-            else Observation(i,r.copy(bboxRect=RectF(b),bboxOrig=RectF(r.bboxOrig)))
+            else Observation(i,r.copy(textRaw=scrubbed,textNorm=TextNorm.normalize(scrubbed),bboxRect=RectF(b),bboxOrig=RectF(r.bboxOrig)))
         }
         val phrases=mutableListOf<Phrase>()
         var truncated=records.size>MAX_OBSERVATIONS

@@ -37,7 +37,7 @@ object WrappedBrandChecks {
         check(fixed.tokens.first().members.first().textRaw=="COLINASde" && fixed.tokens.first().members.first().score==.9f)
         check(WrappedBrandContext.reconcile(duplicate.copy(tokens=glued.tokens+connectorToken)).text==duplicate.text)
         check(WrappedBrandContext.reconcile(duplicate.copy(tokens=duplicate.tokens.map { it.copy(members=it.members.map { m -> m.copy(engineId="mlkit") }) })).text==duplicate.text)
-        check(LabelLayoutContext.repair(line("COTES DU RHONE VIILAS",.4f)).text=="Côtes du Rhône Villages")
+        check(LabelLayoutContext.repair(line("COTES DU RHONE VIILAS",.4f)).text=="Cotes du Rhone Villages")
         check(LabelLayoutContext.repair(line("COTES DU RHONE VIOLET",.4f)).text=="COTES DU RHONE VIOLET")
         println("PASS: wrapped brand assembly, split/joined engine reconciliation, immutable sources, missing/tied/misaligned/style/geography negative controls")
     }

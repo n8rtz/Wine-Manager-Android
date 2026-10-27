@@ -4,7 +4,12 @@ package com.yourapp.wine.kb
 object BundledOrigins {
     private val legacyTerms: List<WineOriginTerm> by lazy { source.trimIndent().lineSequence().map(String::trim).filter(String::isNotEmpty).map { line ->
         val parts = line.split('|')
-        WineOriginTerm(parts[0].trim(), parts[1].trim(), parts[2].trim(), parts.getOrNull(5)?.split(';')?.map(String::trim).orEmpty())
+        WineOriginTerm(
+            com.yourapp.wine.merge.TextNorm.scrub(parts[0].trim()),
+            com.yourapp.wine.merge.TextNorm.scrub(parts[1].trim()),
+            com.yourapp.wine.merge.TextNorm.scrub(parts[2].trim()),
+            parts.getOrNull(5)?.split(';')?.map { com.yourapp.wine.merge.TextNorm.scrub(it.trim()) }.orEmpty().distinct()
+        )
     }.toList() }
 
     private val legacyIndex by lazy { legacyTerms.associateBy { it.country to com.yourapp.wine.merge.TextNorm.normalize(it.name) } }
@@ -38,9 +43,9 @@ object BundledOrigins {
 
     // Exact native-language country names only; no demonym/country inference or fuzzy matching.
     private val countryLabelForms=mapOf(
-        "ES" to listOf("España","Espagne"), "IT" to listOf("Italia","Italie"),
+        "ES" to listOf("Espana","Espagne"), "IT" to listOf("Italia","Italie"),
         "DE" to listOf("Deutschland","Allemagne"), "FR" to listOf("Francia"),
-        "AT" to listOf("Österreich","Autriche"), "PT" to listOf("Portugal")
+        "AT" to listOf("Osterreich","Autriche"), "PT" to listOf("Portugal")
     )
 
     val source = """

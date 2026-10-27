@@ -19,7 +19,8 @@ class CoordMapper(private val originalToRect: Matrix3, private val origW: Int, p
         val rectBox = normalizedBox(token.polygon, rectW, rectH)
         val origBox = normalizedBox(original, origW, origH)
         if (rectBox.width() <= 0f || rectBox.height() <= 0f || origBox.width() <= 0f || origBox.height() <= 0f) return null
-        return TokenRecord(token.text, TextNorm.normalize(token.text), token.score,
+        val scrubbed = TextNorm.scrub(token.text)
+        return TokenRecord(scrubbed, TextNorm.normalize(scrubbed), token.score,
             origBox, rectBox, original, token.engineId, token.variantId, token.scoreIsEstimated)
     }
 

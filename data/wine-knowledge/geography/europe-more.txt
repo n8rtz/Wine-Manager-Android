@@ -1,0 +1,228 @@
+# Project-authored European reference: NOT an exhaustive or regulator-verified register.
+CH|Switzerland||geography
+Schweiz
+Suisse
+CH|Switzerland|Valais|geography
+Sierre
+Salquenen
+Fully
+Martigny
+Leytron
+CH|Switzerland|Vaud|geography
+Lavaux
+La Côte
+Chablais
+Côtes de l'Orbe
+Dézaley
+CH|Switzerland|Genève|geography
+Mandement
+CH|Switzerland|Ticino|geography
+Sopraceneri
+Sottoceneri
+CH|Switzerland|Graubünden|geography
+Bündner Herrschaft
+CH|Switzerland|Neuchâtel|geography
+Auvernier
+Cortaillod
+RO|Romania||geography
+România
+Banat
+Crișana
+Transilvania
+Colinele Dobrogei
+Dealurile Moldovei
+Muntenia
+RO|Romania|Muntenia/Dealu Mare|geography
+Valea Călugărească
+Urlati
+Ceptura
+RO|Romania|Dealurile Moldovei|appellation
+Panciu
+Odobești
+Cotești
+Nicorești
+Bohotin
+Huși
+Iași
+Bucium
+RO|Romania|Banat|appellation
+Recaș
+RO|Romania|Muntenia|appellation
+Ștefănești
+BG|Bulgaria||geography
+Struma River Valley
+Rose Valley
+Southern Black Sea Coast
+Danube Plain
+Thracian Valley
+BG|Bulgaria|Struma River Valley|appellation
+Melnik
+BG|Bulgaria|Thracian Valley|appellation
+Sakar
+BG|Bulgaria|Thracian Valley|geography
+Thracian Lowlands
+HR|Croatia||geography
+Hrvatska
+Dalmatia
+HR|Croatia|Slavonia|geography
+Zagorje-Međimurje
+Moslavina
+Plešivica
+Pokuplje
+Prigorje-Bilogora
+Kutjevo
+HR|Croatia|Istria|geography
+Slovenska Istra
+HR|Croatia|Dalmatia|appellation
+Pelješac
+Brač
+Hvar
+Korčula
+Šibenik
+Kaštela
+Vis
+Solin
+SI|Slovenia||geography
+Slovenija
+Primorska
+Štajerska Slovenija
+Dolenjska
+Bizeljsko-Sremič
+Prekmurje
+HU|Hungary||geography
+Tokaj
+Eger
+Mátra
+Sopron
+Duna
+Pannon
+Balaton
+HU|Hungary|Pannon|appellation
+Villány
+Szekszárd
+HU|Hungary|Balaton|appellation
+Somló
+Badacsony
+Balatonfüred-Csopak
+Balatonboglár
+Balatonfelvidék
+Zala
+Nagy-Somló
+Tihany
+HU|Hungary|Duna|appellation
+Kunság
+Hajós-Baja
+Csongrád
+HU|Hungary|Tokaj|appellation
+Tokaji
+HU|Hungary|Tokaj|geography
+Tokaj-Hegyalja
+HU|Hungary|Eger|geography
+Eger Wine Region
+GB|United Kingdom||geography
+England
+Wales
+Scotland
+GB|United Kingdom|England|geography
+Sussex
+Kent
+Hampshire
+Surrey
+Cornwall
+Devon
+Dorset
+Essex
+Buckinghamshire
+Gloucestershire
+Oxfordshire
+Herefordshire
+Worcestershire
+East Anglia
+Cumbria
+GB|United Kingdom|England/Sussex|geography
+East Sussex
+West Sussex
+Ditchling
+GB|United Kingdom|England/Kent|geography
+North Downs
+GB|United Kingdom|England/Hampshire|geography
+Test Valley
+GE|Georgia||geography
+Kakheti
+Racha
+Imereti
+Kartli
+Guria
+Samegrelo
+Adjara
+Lechkhumi
+Tbilisi
+GE|Georgia|Kartli|appellation
+Ateni
+GE|Georgia|Kakheti|appellation
+Kvareli
+Mukuzani
+Napareuli
+Teliani
+Akhasheni
+Kindzmarauli
+Manavi
+Tsinandali
+Gurjaani
+Vazisubani
+Tibaani
+Kardenakhi
+Magrani
+GE|Georgia|Racha|appellation
+Khvanchkara
+MD|Moldova||geography
+Codru
+Valul lui Traian
+Ștefan Vodă
+Purcari
+UA|Ukraine||geography
+Crimea
+Bessarabia
+Transcarpathia
+Kherson
+Odesa
+Mykolaiv
+RS|Serbia||geography
+Fruška Gora
+Župa
+Negotin
+Šumadija
+Subotica
+Sremski Karlovci
+MK|North Macedonia||geography
+Tikveš
+Pčinja-Ovče Pole
+Vardar Valley
+Gevgelija-Valandovo
+Polog
+Skopje
+Kratovo
+Kočani
+TR|Turkey||geography
+Thrace
+Aegean
+Mediterranean
+Central Anatolia
+Eastern Anatolia
+Southeastern Anatolia
+Cappadocia
+Bozcaada
+Şarköy
+Elazığ
+Midyat
+Tokat
+Nevşehir
+Denizli
+IL|Israel||geography
+Galilee
+Golan Heights
+Judean Hills
+Shimshon
+Negev
+Sharon
+Samaria

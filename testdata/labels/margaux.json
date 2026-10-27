@@ -5,7 +5,7 @@
   "coordinate_note": "Expected tokens describe this printed crop (identity homography); scores are synthetic test inputs, not measured OCR confidence.",
   "expected": {
     "PRODUCER": {
-      "value": "Château Margaux",
+      "value": "Chateau Margaux",
       "state": "GREEN"
     },
     "WINE_NAME": {

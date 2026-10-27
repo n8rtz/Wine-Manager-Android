@@ -51,7 +51,7 @@ class ProducerResolverFuzzyLookupTest {
         val decision=ProducerResolver(index).resolve("", listOf(
             span("chateau margaux","mlkit",0),
             span("chateau margaux","paddle",1)))
-        assertEquals("Château Margaux", decision.value)
+        assertEquals("Chateau Margaux", decision.value)
         assertEquals("p1", decision.acceptedId)
     }
 

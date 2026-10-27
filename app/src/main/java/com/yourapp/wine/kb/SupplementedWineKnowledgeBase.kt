@@ -19,12 +19,13 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
         var virtualId = Long.MIN_VALUE + 1024
         val added = mutableSetOf<Long>()
         fun add(name: String, type: String, parent: Long?, code: String): Place? {
-            val key = code to TextNorm.normalize(name)
+            val cleanName = TextNorm.scrub(name)
+            val key = code to TextNorm.normalize(cleanName)
             val matches = byName[key].orEmpty().filter {
                 if (type == "country") it.type == "country" else it.type != "country" }
             if (matches.isNotEmpty()) return matches.singleOrNull() // Never choose an ambiguous imported place.
             while (virtualId in occupied) virtualId++
-            val place = Place(virtualId++, name, type, parent, code)
+            val place = Place(virtualId++, cleanName, type, parent, code)
             occupied += place.id; added += place.id; rows += place
             byName.getOrPut(key) { mutableListOf() } += place
             if (type == "country") byCountry.getOrPut(code) { mutableListOf() } += place
@@ -33,13 +34,24 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
         for (term in BundledOrigins.terms) {
             val code = BundledOrigins.countryCode(term.country) ?: continue
             val countries = byCountry[code].orEmpty()
-            val country = if (countries.isEmpty()) add(term.country, "country", null, code) else countries.singleOrNull()
-            if (country == null) continue
-            val region = if (term.region.isBlank()) country else add(term.region, "region", country.id, code) ?: continue
+            val country: Place = (if (countries.isEmpty()) add(term.country, "country", null, code) else countries.singleOrNull())
+                ?: continue
             val reference = ReferenceWineCatalog.named(term.name, code)
+            // Walk the authored containing chain (broad region first, then subregions). A blank
+            // path keeps the country-only behaviour: no region is invented.
+            val path = reference?.path.orEmpty().ifEmpty { listOfNotNull(term.region.takeIf(String::isNotBlank)) }
+            var region: Place = country
+            var level = 0
+            while (level < path.size) {
+                val next = add(path[level], if (level == 0) "region" else "subregion", region.id, code)
+                    ?: run { region = country; break }
+                region = next
+                level++
+            }
             val type = if (reference?.nameRole == "geography") {
-                if (term.region.isBlank() && reference.regions.isEmpty()) "region" else "subregion"
+                if (path.isEmpty() && reference.regions.isEmpty()) "region" else "subregion"
             } else "appellation"
+            // A row that names its own containing place reuses it instead of adding a child.
             if (TextNorm.normalize(term.name) != region.nameNorm) add(term.name, type, region.id, code)
         }
         // The DOCG/DOC names remain appellations; the cellar displays their shared town separately.
@@ -64,12 +76,12 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
     }
 
     private companion object {
-        val containment = mapOf(
+        val containment = GeneratedWineKnowledge.avaContainment + mapOf(
             "Brunello di Montalcino" to "Montalcino", "Rosso di Montalcino" to "Montalcino",
             "Alexander Valley" to "Sonoma County", "Russian River Valley" to "Sonoma County",
             "Oakville" to "Napa Valley", "Rutherford" to "Napa Valley",
-            "Dundee Hills" to "Willamette Valley", "Côtes du Rhône Villages" to "Côtes du Rhône",
-            "Haut-Médoc" to "Médoc",
+            "Dundee Hills" to "Willamette Valley", "Cotes du Rhone Villages" to "Cotes du Rhone",
+            "Haut-Medoc" to "Medoc",
         )
     }
 }

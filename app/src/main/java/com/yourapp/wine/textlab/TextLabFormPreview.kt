@@ -7,13 +7,13 @@ import com.yourapp.wine.ocr.TokenRecord
 
 /** Combined saved-crop replay using production gates, not an end-to-end shutter/quad benchmark. */
 internal object TextLabFormPreview {
-    fun append(journal:TextLabJournal,engine:FillEngine?,year:Int) {
+    fun append(journal:TextLabJournal,engine:FillEngine?,year:Int,recordsOverride:List<TokenRecord>? = null) {
         if(journal.rows.any { it["stage"]=="form_summary" }) return
         val values=linkedMapOf("preview_policy" to "production FillEngine + cellar presentation; saved crop, not shutter replay",
             "field_year" to year.toString())
         try {
             check(engine!=null) { "Field engine unavailable" }
-            val records=records(journal)
+            val records=recordsOverride ?: records(journal)
             val partial=journal.rows.any { it["stage"] in setOf("candidate_summary","summary") && it["status"]!="complete" }
             val fill=CellarFieldPresentation.apply(engine.fill(records,year,ConfidenceContext(labelFound=false,weakQuality=partial,
                 hint="Saved-crop form preview; confirm suggestions. Camera localization and shutter budget were not replayed.")))
@@ -36,7 +36,7 @@ internal object TextLabFormPreview {
     }
     fun records(journal:TextLabJournal):List<TokenRecord> = listOf("mlkit_reference","candidate_3").flatMap { candidate ->
         TextLabWineTable.readings(journal,candidate,"").map { row ->
-            val text=row.getValue("raw_text")
+            val text=TextNorm.scrub(row.getValue("raw_text"))
             val box=parseBox(row["base_box_normalized"]) ?: if(!journal.detectLines) RectF(0f,0f,1f,1f)
                 else error("Missing/invalid normalized box for $candidate region ${row["region_id"]}")
             val paddle=candidate=="candidate_3"

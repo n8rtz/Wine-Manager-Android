@@ -72,7 +72,7 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('TextLabSpatialPreview.append',extraction)
         self.assertIn('ProducerGazetteer.openExpanded(',extraction)
         self.assertIn('appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false)',extraction)
-        self.assertIn('appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=true)',extraction)
+        self.assertIn('appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=true,singleReading=batch.resolverSingleReading)',extraction)
         self.assertIn('if(!batch.benchmarkOnly)',extraction)
         self.assertFalse((LAB/'TextLabMergedSpatialPreview.kt').exists())
         self.assertNotIn('TextLabMergedSpatialPreview',extraction)

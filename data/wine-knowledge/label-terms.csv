@@ -11,12 +11,15 @@ suffix,Crianza,,append_to_name
 suffix,Grand Cru,,append_to_name
 suffix,Premier Cru,,append_to_name
 suffix,1er Cru,,append_to_name
-suffix,Premier Grand Cru Classé,,append_to_name
-suffix,Grand Cru Classé,,append_to_name
+suffix,Premier Grand Cru Classe,,append_to_name
+suffix,Grand Cru Classe,,append_to_name
 suffix,Villages,,append_to_name
 suffix,Classico,,append_to_name
 suffix,Superiore,,append_to_name
 suffix,Superiore Riserva,,append_to_name
+suffix,Superieur,,append_to_name
+suffix,Superieure,,append_to_name
+suffix,Superieures,,append_to_name
 suffix,Classico Riserva,,append_to_name
 producer_marker,adega,PT,producer_role_only
 producer_marker,herdade,PT,producer_role_only
@@ -32,32 +35,32 @@ producer_marker,viticulteur,FR,producer_role_only
 producer_marker,viticoltore,IT,producer_role_only
 producer_marker,bodegues,ES,producer_role_only
 producer_marker,celler,ES,producer_role_only
-producer_marker,viña,ES;CL,producer_role_only
-producer_marker,vinícola,ES;PT;BR,producer_role_only
+producer_marker,vina,ES;CL,producer_role_only
+producer_marker,vinicola,ES;PT;BR,producer_role_only
 producer_marker,winzergenossenschaft,DE;AT,producer_role_only
 producer_marker,winzer,DE;AT,producer_role_only
 producer_marker,kellerei,DE;AT;IT,producer_role_only
 producer_marker,schloss,DE;AT,producer_role_only
 producer_marker,stift,AT,producer_role_only
 producer_marker,kloster,DE;AT,producer_role_only
-producer_marker,borászat,HU,producer_role_only
-producer_marker,pincészet,HU,producer_role_only
+producer_marker,boraszat,HU,producer_role_only
+producer_marker,pinceszet,HU,producer_role_only
 producer_marker,vinarija,HR;RS,producer_role_only
 administrative_prefix,contains sulphites,,reject_identity
 administrative_prefix,contains sulfites,,reject_identity
 administrative_prefix,contient des sulfites,,reject_identity
 administrative_prefix,contiene sulfitos,,reject_identity
 administrative_prefix,contiene solfiti,,reject_identity
-administrative_prefix,contém sulfitos,,reject_identity
-administrative_prefix,enthält sulfite,,reject_identity
+administrative_prefix,contem sulfitos,,reject_identity
+administrative_prefix,enthalt sulfite,,reject_identity
 administrative_prefix,bevat sulfieten,,reject_identity
 administrative_prefix,government warning,,reject_identity
 administrative_prefix,imported by,,reject_identity
-administrative_prefix,importé par,,reject_identity
+administrative_prefix,importe par,,reject_identity
 administrative_prefix,importado por,,reject_identity
 administrative_prefix,importato da,,reject_identity
 administrative_prefix,distributed by,,reject_identity
-administrative_prefix,distribué par,,reject_identity
+administrative_prefix,distribue par,,reject_identity
 administrative_prefix,distribuito da,,reject_identity
 administrative_prefix,distribuido por,,reject_identity
 administrative_prefix,emballage recyclable,,reject_identity
@@ -79,8 +82,8 @@ classification,DAC,AT,context_only
 classification,VQA,CA,context_only
 classification,AVA,US,context_only
 classification,WO,ZA,context_only
-classification,Qualitätswein,DE;AT,context_only
-classification,Prädikatswein,DE;AT,context_only
+classification,Qualitatswein,DE;AT,context_only
+classification,Pradikatswein,DE;AT,context_only
 classification,Landwein,DE;AT,context_only
 sweetness,Brut Nature,,never_infer_origin_or_grape
 sweetness,Extra Brut,,never_infer_origin_or_grape
@@ -103,7 +106,7 @@ sweetness,Dulce,,never_infer_origin_or_grape
 sweetness,Doce,,never_infer_origin_or_grape
 style,Blanc de Blancs,,never_infer_chardonnay
 style,Blanc de Noirs,,never_infer_pinot_noir
-style,Rosé,,never_infer_grape
+style,Rose,,never_infer_grape
 style,Orange Wine,,never_infer_australian_region
 style,Vin Jaune,FR,context_only
 style,Vin de Paille,,context_only
@@ -111,12 +114,12 @@ style,Passito,IT,context_only
 style,Ripasso,IT,context_only
 style,Appassimento,IT,context_only
 style,Kabinett,DE;AT,never_infer_sweetness
-style,Spätlese,DE;AT,never_infer_sweetness
+style,Spatlese,DE;AT,never_infer_sweetness
 style,Auslese,DE;AT,never_infer_sweetness
 style,Beerenauslese,DE;AT,context_only
 style,Trockenbeerenauslese,DE;AT,context_only
 style,Eiswein,DE;AT,context_only
 style,Icewine,CA,context_only
 style,Vendanges Tardives,FR,context_only
-style,Sélection de Grains Nobles,FR,context_only
+style,Selection de Grains Nobles,FR,context_only
 style,Vin Doux Naturel,FR,context_only
