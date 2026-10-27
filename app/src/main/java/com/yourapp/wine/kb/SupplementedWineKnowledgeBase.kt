@@ -33,17 +33,17 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
         for (term in BundledOrigins.terms) {
             val code = BundledOrigins.countryCode(term.country) ?: continue
             val countries = byCountry[code].orEmpty()
-            val country = if (countries.isEmpty()) add(term.country, "country", null, code) else countries.singleOrNull()
-            if (country == null) continue
+            val country: Place = (if (countries.isEmpty()) add(term.country, "country", null, code) else countries.singleOrNull())
+                ?: continue
             val reference = ReferenceWineCatalog.named(term.name, code)
             // Walk the authored containing chain (broad region first, then subregions). A blank
             // path keeps the country-only behaviour: no region is invented.
             val path = reference?.path.orEmpty().ifEmpty { listOfNotNull(term.region.takeIf(String::isNotBlank)) }
-            var region = country
+            var region: Place = country
             var level = 0
             while (level < path.size) {
                 val next = add(path[level], if (level == 0) "region" else "subregion", region.id, code)
-                if (next == null) { region = country; break }
+                    ?: run { region = country; break }
                 region = next
                 level++
             }
