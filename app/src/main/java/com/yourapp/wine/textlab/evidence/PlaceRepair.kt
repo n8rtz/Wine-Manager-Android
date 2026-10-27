@@ -49,8 +49,8 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
 
     private class Form(val place:Place,val text:String,val key:String)
 
-    private var indexed:List<Place>?=null
-    private var byLength:Map<Int,List<Form>>=emptyMap()
+    private var indexed: List<Place>? = null
+    private var byLength: Map<Int, List<Form>> = emptyMap()
 
     /**
      * Length-bucketed index over catalog names and their bundled spelling forms. A bounded edit distance
