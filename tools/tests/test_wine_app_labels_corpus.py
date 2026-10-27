@@ -430,12 +430,14 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("backfillBuildLog(logStore, signature)", viewmodel)
         self.assertIn('WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))', viewmodel)
 
-        # Granular per-field Current build vs Last build table sits at the bottom of Scored results
-        # (above CSV export) using green/red "correct/incorrect" passFailLabel formatting.
+        # Granular per-field Current build / Last build / Prod v3.0 table sits at the bottom of
+        # Scored results (above CSV export) using green/red "correct/incorrect" passFailLabel formatting.
         scored_section = activity.split('Text("Scored results"', 1)[1].split('Text("CSV export"', 1)[0]
         self.assertIn("BuildFieldComparisonTable(", scored_section)
         self.assertIn('"Current build" to currentScores', activity)
         self.assertIn('"Last build" to lastBuildScores', activity)
+        self.assertIn("PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores", activity)
+        self.assertIn("val prodV3Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V3)", viewmodel)
         self.assertIn("passFailLabel(score.correct, score.incorrect, passColor, failColor)", activity)
 
     def test_background_execution_and_lab_ocr_cache_contracts(self):
