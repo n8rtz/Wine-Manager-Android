@@ -1,6 +1,6 @@
 # Local wine-knowledge catalog
 
-**2,065 origin entries across 48 countries** (1,045 protected appellations and 1,020 broader wine geographies; 399 of them nest under a region or subregion), **121 label terms**, and **42 typical grape associations** in this revision. This is a large, inspectable reference, **not an exhaustive or legally authoritative worldwide register**. Regulations, geographical boundaries and permitted styles change. A name on a label does not prove regulatory compliance.
+**2,065 origin entries across 48 countries** (1,095 protected appellations and 970 broader wine geographies; 399 of them nest under a region or subregion), **121 label terms**, and **42 typical grape associations** in this revision. This is a large, inspectable reference, **not an exhaustive or legally authoritative worldwide register**. Regulations, geographical boundaries and permitted styles change. A name on a label does not prove regulatory compliance.
 
 ## Start here
 

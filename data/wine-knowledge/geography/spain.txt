@@ -133,14 +133,13 @@ ES|Spain|Extremadura|appellation
 Ribera del Guadiana
 ES|Spain|Asturias|appellation
 Cangas
-ES|Spain||geography
+ES|Spain||appellation
 Jumilla
 Cava
 Vino de España
 ES|Spain|Castilla y Leon|geography
 Castilla y León
 ES|Spain|Andalusia|geography
-Granada
 Ronda
 ES|Spain|Valencia|geography
 Castelló

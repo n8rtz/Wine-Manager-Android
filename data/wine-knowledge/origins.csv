@@ -363,7 +363,7 @@ es-casa-del-blanco,Casa del Blanco,ES,Spain,Castilla-La Mancha,,appellation,exac
 es-castello,Castelló,ES,Spain,Valencia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-castilla-y-leon,Castilla y León,ES,Spain,Castilla y Leon,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-catalunya,Catalunya,ES,Spain,Catalonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-cava,Cava,ES,Spain,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-cava,Cava,ES,Spain,,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-cebreros,Cebreros,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-chantada,Chantada,ES,Spain,Galicia,,geography,exact,reference_confirm,Galicia/Ribeira Sacra,editorial-v1,Project-authored; not a legal registry
 es-cigales,Cigales,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -383,13 +383,13 @@ es-finca-elez,Finca Élez,ES,Spain,Castilla-La Mancha,,appellation,exact,referen
 es-galicia,Galicia,ES,Spain,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 es-getariako-txakolina,Getariako Txakolina,ES,Spain,Basque Country,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-gran-canaria,Gran Canaria,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-granada,Granada,ES,Spain,Andalusia,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-granada,Granada,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-guijoso,Guijoso,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-illes-balears,Illes Balears,ES,Spain,Balearic Islands,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-islas-canarias,Islas Canarias,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-jerez,Jerez,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-jerez-xeres-sherry,Jerez-Xérès-Sherry,ES,Spain,Andalusia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-jumilla,Jumilla,ES,Spain,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-jumilla,Jumilla,ES,Spain,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-la-mancha,La Mancha,ES,Spain,Castilla-La Mancha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-la-palma,La Palma,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-lanzarote,Lanzarote,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -466,7 +466,7 @@ es-valle-de-guimar,Valle de Güímar,ES,Spain,Canary Islands,,appellation,exact,
 es-valle-de-la-orotava,Valle de la Orotava,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-valtiendas,Valtiendas,ES,Spain,Castilla y Leon,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-vera-de-estenas,Vera de Estenas,ES,Spain,Valencia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-es-vino-de-espana,Vino de España,ES,Spain,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+es-vino-de-espana,Vino de España,ES,Spain,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-vinos-de-madrid,Vinos de Madrid,ES,Spain,Madrid,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-ycoden-daute-isora,Ycoden-Daute-Isora,ES,Spain,Canary Islands,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 es-yecla,Yecla,ES,Spain,Murcia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -558,10 +558,10 @@ fr-blaye-cotes-de-bordeaux,Blaye Côtes de Bordeaux,FR,France,Bordeaux,,appellat
 fr-bonnes-mares,Bonnes-Mares,FR,France,Burgundy,,appellation,exact,reference_confirm,Burgundy/Côte de Nuits,editorial-v1,Project-authored; not a legal registry
 fr-bonnezeaux,Bonnezeaux,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Anjou-Saumur,editorial-v1,Project-authored; not a legal registry
 fr-bordeaux,Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bordeaux-clairet,Bordeaux Clairet,FR,France,Bordeaux,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bordeaux-clairet,Bordeaux Clairet,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bordeaux-cotes-de-francs,Bordeaux Côtes de Francs,FR,France,Bordeaux,,appellation,exact,reference_confirm,Bordeaux/Libournais,editorial-v1,Project-authored; not a legal registry
-fr-bordeaux-rose,Bordeaux Rosé,FR,France,Bordeaux,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-bordeaux-superieur,Bordeaux Supérieur,FR,France,Bordeaux,Bordeaux Superieur,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bordeaux-rose,Bordeaux Rosé,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-bordeaux-superieur,Bordeaux Supérieur,FR,France,Bordeaux,Bordeaux Superieur,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourg,Bourg,FR,France,Bordeaux,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourgogne,Bourgogne,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-bourgogne-aligote,Bourgogne Aligoté,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -676,7 +676,7 @@ fr-cotes-du-vivarais,Côtes du Vivarais,FR,France,Rhone,,appellation,exact,refer
 fr-coulee-de-serrant,Coulée de Serrant,FR,France,Loire,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cour-cheverny,Cour-Cheverny,FR,France,Loire,,appellation,exact,reference_confirm,Loire/Touraine,editorial-v1,Project-authored; not a legal registry
 fr-cremant-d-alsace,Crémant d'Alsace,FR,France,Alsace,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-fr-cremant-de-bordeaux,Crémant de Bordeaux,FR,France,Bordeaux,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+fr-cremant-de-bordeaux,Crémant de Bordeaux,FR,France,Bordeaux,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cremant-de-bourgogne,Crémant de Bourgogne,FR,France,Burgundy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 fr-cremant-de-die,Crémant de Die,FR,France,Rhone,,appellation,exact,reference_confirm,Rhone/Northern Rhone,editorial-v1,Project-authored; not a legal registry
 fr-cremant-de-limoux,Crémant de Limoux,FR,France,Languedoc,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -947,25 +947,25 @@ ge-adjara,Adjara,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,
 ge-akhasheni,Akhasheni,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-ateni,Ateni,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-guria,Guria,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-gurjaani,Gurjaani,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-gurjaani,Gurjaani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-imereti,Imereti,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-kakheti,Kakheti,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-kakheti,Kakheti,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-kardenakhi,Kardenakhi,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-kartli,Kartli,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-khvanchkara,Khvanchkara,GE,Georgia,Racha,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-kindzmarauli,Kindzmarauli,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-kvareli,Kvareli,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-kvareli,Kvareli,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-lechkhumi,Lechkhumi,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-magrani,Magrani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-manavi,Manavi,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-mukuzani,Mukuzani,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-napareuli,Napareuli,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-mukuzani,Mukuzani,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-napareuli,Napareuli,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-racha,Racha,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-samegrelo,Samegrelo,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-tbilisi,Tbilisi,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-teliani,Teliani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-tibaani,Tibaani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-ge-tsinandali,Tsinandali,GE,Georgia,Kakheti,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+ge-tsinandali,Tsinandali,GE,Georgia,Kakheti,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ge-vazisubani,Vazisubani,GE,Georgia,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-achaia,Achaia,GR,Greece,Peloponnese,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 gr-amyndeon,Amyndeon,GR,Greece,Macedonia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1316,7 +1316,7 @@ it-lison,Lison,IT,Italy,Veneto,Lison DOCG,appellation,exact,reference_confirm,,e
 it-lison-pramaggiore,Lison-Pramaggiore,IT,Italy,,Lison Pramaggiore,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-lizzano,Lizzano,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-locorotondo,Locorotondo,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-lugana,Lugana,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-lugana,Lugana,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-malvasia-delle-lipari,Malvasia delle Lipari,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-malvasia-di-bosa,Malvasia di Bosa,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-mandrolisai,Mandrolisai,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1373,8 +1373,8 @@ it-ormeasco-di-pornassio,Ormeasco di Pornassio,IT,Italy,Liguria,,appellation,exa
 it-orta-nova,Orta Nova,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ortona,Ortona,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ortrugo,Ortrugo,IT,Italy,Emilia-Romagna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-orvieto,Orvieto,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-orvieto-classico,Orvieto Classico,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-orvieto,Orvieto,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-orvieto-classico,Orvieto Classico,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ostuni,Ostuni,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-paestum,Paestum,IT,Italy,Campania,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-pagadebit-di-romagna,Pagadebit di Romagna,IT,Italy,Emilia-Romagna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1394,7 +1394,7 @@ it-pomino,Pomino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editoria
 it-pornassio,Pornassio,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-primitivo-di-manduria,Primitivo di Manduria,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-primitivo-di-manduria-dolce-naturale,Primitivo di Manduria Dolce Naturale,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-prosecco,Prosecco,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-prosecco,Prosecco,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ramandolo,Ramandolo,IT,Italy,Friuli-Venezia Giulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ravello,Ravello,IT,Italy,Campania,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-recioto-della-valpolicella,Recioto della Valpolicella,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1452,7 +1452,7 @@ it-taurasi,Taurasi,IT,Italy,Campania,,appellation,exact,reference_confirm,,edito
 it-teroldego-rotaliano,Teroldego Rotaliano,IT,Italy,Trentino-Alto Adige,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terratico-di-bibbona,Terratico di Bibbona,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-alfieri,Terre Alfieri,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-terre-di-chieti,Terre di Chieti,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-terre-di-chieti,Terre di Chieti,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-di-cosenza,Terre di Cosenza,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-siciliane,Terre Siciliane,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-terre-tollesi,Terre Tollesi,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1514,7 +1514,7 @@ it-vin-santo-del-chianti-classico,Vin Santo del Chianti Classico,IT,Italy,Tuscan
 it-vin-santo-di-carmignano,Vin Santo di Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Carmignano,editorial-v1,Project-authored; not a legal registry
 it-vin-santo-di-montepulciano,Vin Santo di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montepulciano,editorial-v1,Project-authored; not a legal registry
 it-vino,Vino,IT,Italy,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-vino-d-italia,Vino d'Italia,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-vino-d-italia,Vino d'Italia,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vino-nobile-di-montepulciano,Vino Nobile di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montepulciano,editorial-v1,Project-authored; not a legal registry
 it-visciola,Visciola,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vittoria,Vittoria,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1586,65 +1586,65 @@ nz-waitaki-valley,Waitaki Valley,NZ,New Zealand,,,geography,exact,reference_conf
 nz-wanaka,Wanaka,NZ,New Zealand,Central Otago,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pe-ica,Ica,PE,Peru,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-acores,Açores,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-alenquer,Alenquer,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-alenquer,Alenquer,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-alentejano,Alentejano,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-alentejo,Alentejo,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-almeirim,Almeirim,PT,Portugal,Tejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-almeirim,Almeirim,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-amarante,Amarante,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-arruda,Arruda,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-arruda,Arruda,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-ave,Ave,PT,Portugal,Vinho Verde,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-baiao,Baião,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-bairrada,Bairrada,PT,Portugal,Bairrada,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-basto,Basto,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-beira-interior,Beira Interior,PT,Portugal,Beira Interior,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-biscoitos,Biscoitos,PT,Portugal,Azores,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-borba,Borba,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-bucelas,Bucelas,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-carcavelos,Carcavelos,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-cartaxo,Cartaxo,PT,Portugal,Tejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-biscoitos,Biscoitos,PT,Portugal,Azores,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-borba,Borba,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-bucelas,Bucelas,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-carcavelos,Carcavelos,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-cartaxo,Cartaxo,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-cavado,Cávado,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-chamusca,Chamusca,PT,Portugal,Tejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-colares,Colares,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-coruche,Coruche,PT,Portugal,Tejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-chamusca,Chamusca,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-colares,Colares,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-coruche,Coruche,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-dao,Dão,PT,Portugal,Dao,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-douro,Douro,PT,Portugal,Douro,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-duriense,Duriense,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-encostas-d-aire,Encostas d'Aire,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-evora,Évora,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-graciosa,Graciosa,PT,Portugal,Azores,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-granja-amareleja,Granja-Amareleja,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-lagoa,Lagoa,PT,Portugal,Algarve,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-lagos,Lagos,PT,Portugal,Algarve,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-encostas-d-aire,Encostas d'Aire,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-evora,Évora,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-graciosa,Graciosa,PT,Portugal,Azores,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-granja-amareleja,Granja-Amareleja,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-lagoa,Lagoa,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-lagos,Lagos,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-lima,Lima,PT,Portugal,Vinho Verde,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-lourinha,Lourinhã,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-lourinha,Lourinhã,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-madeira,Madeira,PT,Portugal,Madeira,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-madeirense,Madeirense,PT,Portugal,Madeira,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-minho,Minho,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-moncao-e-melgaco,Monção e Melgaço,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-moura,Moura,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-obidos,Óbidos,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-moura,Moura,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-obidos,Óbidos,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-paiva,Paiva,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-palmela,Palmela,PT,Portugal,Península de Setúbal,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-pico,Pico,PT,Portugal,Azores,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-portalegre,Portalegre,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-portimao,Portimão,PT,Portugal,Algarve,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-palmela,Palmela,PT,Portugal,Península de Setúbal,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-pico,Pico,PT,Portugal,Azores,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-portalegre,Portalegre,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-portimao,Portimão,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-porto,Porto,PT,Portugal,Douro,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-redondo,Redondo,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-reguengos,Reguengos,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-redondo,Redondo,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-reguengos,Reguengos,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-ribatejo,Ribatejo,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-santarem,Santarém,PT,Portugal,Tejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-setubal,Setúbal,PT,Portugal,Península de Setúbal,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-santarem,Santarém,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-setubal,Setúbal,PT,Portugal,Península de Setúbal,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-sousa,Sousa,PT,Portugal,Vinho Verde,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-tavira,Tavira,PT,Portugal,Algarve,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-tavira,Tavira,PT,Portugal,Algarve,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-tejo,Tejo,PT,Portugal,Tejo,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-terras-de-basto,Terras de Basto,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-terras-do-cavado,Terras do Cávado,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-tomar,Tomar,PT,Portugal,Tejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-torres-vedras,Torres Vedras,PT,Portugal,Lisboa,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-tomar,Tomar,PT,Portugal,Tejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-torres-vedras,Torres Vedras,PT,Portugal,Lisboa,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-transmontano,Transmontano,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-tras-os-montes,Trás-os-Montes,PT,Portugal,Trás-os-Montes,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-valpacos,Valpaços,PT,Portugal,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-pt-vidigueira,Vidigueira,PT,Portugal,Alentejo,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+pt-vidigueira,Vidigueira,PT,Portugal,Alentejo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 pt-vinho-verde,Vinho Verde,PT,Portugal,Vinho Verde,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 py-itapua,Itapúa,PY,Paraguay,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 ro-banat,Banat,RO,Romania,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry

@@ -31,7 +31,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/673cafd4-wine-manager-android`; build/install the debug build as usual. This branch merged `main` (PR #11) first, so the diagnostics-table and CSV-save work is included.
 
-**What changed:** the bundled wine catalog grew from 1,020 to **2,065 names across 48 countries** (1,045 appellations + 1,020 geographies, 399 nested under a region or subregion). Authored `ISO|country|region path|role` headers may now carry a slash path (`AU|Australia|South Australia/Barossa`), `origins.csv` and the generated Kotlin carry a `path` column, and `SupplementedWineKnowledgeBase` walks that chain so places are created as `country → region → subregion` instead of one flat region. No OCR, scoring, deadline or benchmark behaviour changed. Host checks: 216 Python contract tests pass and the catalog `--check` is clean; no Android build or device run yet.
+**What changed:** the bundled wine catalog grew from 1,020 to **2,065 names across 48 countries** (1,095 appellations + 970 geographies, 399 nested under a region or subregion). Authored `ISO|country|region path|role` headers may now carry a slash path (`AU|Australia|South Australia/Barossa`), `origins.csv` and the generated Kotlin carry a `path` column, and `SupplementedWineKnowledgeBase` walks that chain so places are created as `country → region → subregion` instead of one flat region. No OCR, scoring, deadline or benchmark behaviour changed. Host checks: 216 Python contract tests pass and the catalog `--check` is clean; no Android build or device run yet.
 
 ### Nested regions and subregions reach the form
 

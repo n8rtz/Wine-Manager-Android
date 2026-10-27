@@ -64,10 +64,10 @@
     {
       "id": "kb_appellations",
       "label": "Scanner KB appellations",
-      "matched_labels": 70,
+      "matched_labels": 75,
       "total_labels": 125,
-      "unique_known_values_matched": 40,
-      "database_records_matched": 39
+      "unique_known_values_matched": 41,
+      "database_records_matched": 40
     },
     {
       "id": "kb_geography",

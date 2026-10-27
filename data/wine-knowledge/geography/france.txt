@@ -1,7 +1,7 @@
 # Project-authored French AOC/IGP reference: NOT an exhaustive or regulator-verified register.
 # Header: ISO|country|region path ('Region' or 'Region/Subregion')|name role.
 # Broad region is the first segment; a deeper path nests the entries under a subregion.
-FR|France|Bordeaux|geography
+FR|France|Bordeaux|appellation
 Bordeaux Supérieur ~ Bordeaux Superieur
 Bordeaux Clairet
 Bordeaux Rosé

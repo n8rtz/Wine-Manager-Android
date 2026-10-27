@@ -162,11 +162,7 @@ Tibaani
 Kardenakhi
 Magrani
 GE|Georgia|Kakheti|geography
-Kvareli
-Mukuzani
-Napareuli
-Tsinandali
-Gurjaani
+Kakheti
 MD|Moldova||geography
 Codru
 Valul lui Traian

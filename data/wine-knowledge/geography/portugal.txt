@@ -13,7 +13,7 @@ Paiva
 Sousa
 PT|Portugal|Alentejo|appellation
 Alentejo
-PT|Portugal|Alentejo|geography
+PT|Portugal|Alentejo|appellation
 Borba
 Évora
 Granja-Amareleja
@@ -22,14 +22,14 @@ Portalegre
 Redondo
 Reguengos
 Vidigueira
-PT|Portugal|Tejo|geography
+PT|Portugal|Tejo|appellation
 Almeirim
 Cartaxo
 Chamusca
 Coruche
 Santarém
 Tomar
-PT|Portugal|Lisboa|geography
+PT|Portugal|Lisboa|appellation
 Alenquer
 Arruda
 Bucelas
@@ -39,15 +39,15 @@ Encostas d'Aire
 Lourinhã
 Óbidos
 Torres Vedras
-PT|Portugal|Península de Setúbal|geography
+PT|Portugal|Península de Setúbal|appellation
 Palmela
 Setúbal
-PT|Portugal|Algarve|geography
+PT|Portugal|Algarve|appellation
 Lagoa
 Lagos
 Portimão
 Tavira
-PT|Portugal|Azores|geography
+PT|Portugal|Azores|appellation
 Pico
 Graciosa
 Biscoitos
