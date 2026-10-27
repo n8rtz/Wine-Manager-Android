@@ -27,8 +27,9 @@ class ResolverPolicyWiringTests(unittest.TestCase):
                          'val singleReading=Policy(1)'):
             self.assertTrue(fragment in producer, fragment)
         self.assertTrue('policy:ProducerResolver.Policy=ProducerResolver.Policy.prod' in LINKED.read_text())
-        # A default-off switch is the only thing that can reach the lab policy.
-        self.assertTrue('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=false' in RUNNER.read_text())
+        # The Lab switch (on for the 2026-10-27 measurement run) is the only path to the lab policy;
+        # the Prod v3.0 contender still never receives it.
+        self.assertTrue('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true' in RUNNER.read_text())
 
     def test_every_independence_check_follows_the_policy(self):
         linked = LINKED.read_text()

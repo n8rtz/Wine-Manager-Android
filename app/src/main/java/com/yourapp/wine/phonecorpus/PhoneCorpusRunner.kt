@@ -26,14 +26,14 @@ internal object PhoneCorpusRunner {
      * difference, set this to true, rebuild, and tap **New Lab run** so no photo mixes both settings
      * (the flag is written to each CSV's `place_repair_enabled` metadata column).
      */
-    internal const val REPAIR_PLACES_IN_BENCHMARK=false
+    internal const val REPAIR_PLACES_IN_BENCHMARK=true
     /**
      * Lab-only measurement switch for the resolver engine quorum. False keeps Prod's two-engine rule in
      * both spatial contenders. True lowers it to one engine for **Lab v4 only** (Prod v3.0 is untouched),
      * so the delta is the quorum itself; exported per CSV as `resolver_single_reading_enabled`, and
      * flipping it requires a **New Lab run** so one corpus never mixes both settings.
      */
-    internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=false
+    internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
         LAB("Lab v4", "lab-v4-expanded-producers", "spatial_evidence_summary"),
         PRODUCTION_V3("Prod v3.0", "production-v3.0-lwin-only", "spatial_lwin_evidence_summary"),

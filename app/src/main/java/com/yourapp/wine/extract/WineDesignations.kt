@@ -38,6 +38,25 @@ object WineDesignations {
     fun isAppellationName(text: String): Boolean = key(text) in appellationKeys ||
         key(split(text).base) in appellationKeys || LabelTextRoles.isRhoneAppellation(text)
 
+    /**
+     * Classification suffixes that qualify an existing appellation instead of forming a distinct one:
+     * `Saint-Emilion Grand Cru`, `Bordeaux Superieur`, `Medoc Superieur`, `Graves Superieures` all name
+     * the same place as their base. Zone-forming suffixes are deliberately absent, because
+     * `Chianti Classico`, `Soave Superiore`, `Beaujolais Villages` and `Barolo Riserva` style names are
+     * separate appellations whose base is a different place (owner benchmark: Chianti Classico must
+     * stay Chianti Classico, Saint-Emilion Grand Cru must resolve to Saint-Emilion).
+     */
+    private val classificationSuffixes = setOf("grandcru","grandcruclasse","premiergrandcruclasse",
+        "superieur","superieure","superieures")
+
+    /** The place this classification-qualified name belongs to, or null when the name forms its own zone. */
+    fun classificationBase(text: String): String? {
+        val parts = split(text)
+        val suffix = parts.suffix ?: return null
+        if (key(suffix) !in classificationSuffixes) return null
+        return parts.base.takeIf { it.count(Char::isLetter) >= 3 }
+    }
+
     fun hasNameAndDesignation(text: String): Boolean {
         val parts = split(text)
         return parts.suffix != null && parts.base.count(Char::isLetter) >= 3 &&

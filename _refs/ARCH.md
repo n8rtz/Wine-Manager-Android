@@ -157,6 +157,8 @@ app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt # LAB ONLY, o
 tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 data/wine-knowledge/                # Authored catalog inputs: editorial-origins.txt, geography/*.txt region/subregion trees, label-terms.csv, typical-grapes.csv, sources/registry.json + pinned CC0 AVA snapshot
 tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> origins.csv (+ path column) and kb/GeneratedWineKnowledge.kt; --check detects stale outputs
+docs/evidence-designation-levels.md # Why the Lab v4 designation/level/fragment rules changed, with the measured 125-label basis and the rejected flatten convention
+tools/tests/test_evidence_selection.py # Host checks for the classification-base mirror over the real catalog + wiring of the designation, fragment and level rules
 docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals and proposed staged accuracy plan (not recognition changes)
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED

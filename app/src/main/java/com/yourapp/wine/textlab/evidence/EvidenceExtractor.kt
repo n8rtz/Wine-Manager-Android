@@ -11,7 +11,7 @@ internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,v
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
-    companion object { const val VERSION="evidence-lab-v3-heading-roles";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
+    companion object { const val VERSION="evidence-lab-v4-designation-base";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
     private val kb=SupplementedWineKnowledgeBase(base)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb)
@@ -54,26 +54,50 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             val headingOnly=typedIdentity && EvidenceIdentityRoles.headingOnly(text)
             val namedEstate=typedIdentity && EvidenceIdentityRoles.namedEstate(text)
             val exact=if(administrative || headingOnly || namedEstate) emptyList() else gazetteer.matches(norm)
+            // A classification-qualified catalog name (`Saint-Emilion Grand Cru`, `Bordeaux Superieur`)
+            // names the same place as its base: the geography comes from the base, the printed form
+            // stays available for the wine name below. Zone-forming suffixes (`Chianti Classico`) are
+            // deliberately not split, so they keep their own hierarchy.
+            val printedBase=WineDesignations.classificationBase(text)
+            val baseFromPrinted=printedBase?.let { base -> gazetteer.matches(TextNorm.normalize(base)).filter { it.type!="country" } }.orEmpty()
+            val baseFromCatalog=exact.mapNotNull { place -> WineDesignations.classificationBase(place.name) }.firstOrNull()
+                ?.let { base -> gazetteer.matches(TextNorm.normalize(base)).filter { it.type!="country" } }.orEmpty()
+            val classificationName=baseFromCatalog.isNotEmpty() || (baseFromPrinted.isNotEmpty() && exact.isEmpty())
+            val matched=when {
+                baseFromCatalog.isNotEmpty() -> baseFromCatalog
+                exact.isNotEmpty() -> exact
+                else -> baseFromPrinted
+            }
             // Lab-only, off by default: a bounded repair may name a place the exact trie could not read.
             // It needs another line's explicit country/region anchor; every engine's own reading is
-            // searched, so a form only one engine read is still repaired, and a tie abstains.
-            val repair=if(placeRepair.enabled && exact.isEmpty() && !administrative && !headingOnly && !namedEstate) {
+            // searched, so a form only one engine read is still repaired, and a tie abstains. The
+            // designation-stripped base is tried too, so `ESSAC-LEOGNA`/`APPELLATION PESSAC...` reach
+            // the same policy as their unqualified spelling.
+            val repair=if(placeRepair.enabled && matched.isEmpty() && !administrative && !headingOnly && !namedEstate) {
                 val anchors=allAnchors.filter { (id,_) -> id!=p.id }.map { it.second }.distinctBy { it.id }
-                repairs.resolve(text,sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) },anchors,placeRepair)
+                val readings=sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) }
+                repairs.resolve(text,readings,anchors,placeRepair)
+                    ?: printedBase?.takeIf { it!=text }?.let { base -> repairs.resolve(base,readings,anchors,placeRepair) }
             } else null
             if(repair!=null) trace.add("place_repair","phrase=${p.id}; ${repair.reason}")
-            val places=repair?.let { listOf(it.place) } ?: exact
+            val places=repair?.let { listOf(it.place) } ?: matched
             roleNotes+="phrase=${p.id}; administrative=$administrative; paragraph=$paragraph; places=${places.joinToString { it.name }}"+(if(repair!=null) "; ${repair.reason}" else "")
             if(administrative || headingOnly) { trace.add(if(administrative) "administrative" else "incomplete_producer_heading", "phrase=${p.id}; text=$text");continue }
+            val incomplete=sources.count { source ->
+                val key=TextNorm.normalize(source.record.textRaw).filter(Char::isLetter)
+                key.length>=3 && graph.observations.any { other ->
+                    val full=TextNorm.normalize(other.record.textRaw).filter(Char::isLetter)
+                    other.record.engineId!=source.record.engineId && other.record.score>=.75f &&
+                        full.length>=key.length+3 && full.startsWith(key) &&
+                        com.yourapp.wine.merge.BoxMath.iou(other.record.bboxRect,source.record.bboxRect)>.08f
+                }
+            }
+            // One word that another engine read as the start of a longer overlapping line is a fragment
+            // of that line (CRUCLASS for CRU CLASSE, HATEAU for CHATEAU), never a producer or wine name.
+            val fragmentOnly=norm.split(' ').size==1 && incomplete>0
             fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null) {
-                val incomplete=sources.count { source ->
-                    val key=TextNorm.normalize(source.record.textRaw).filter(Char::isLetter)
-                    key.length>=3 && graph.observations.any { other ->
-                        val full=TextNorm.normalize(other.record.textRaw).filter(Char::isLetter)
-                        other.record.engineId!=source.record.engineId && other.record.score>=.75f &&
-                            full.length>=key.length+3 && full.startsWith(key) &&
-                            com.yourapp.wine.merge.BoxMath.iou(other.record.bboxRect,source.record.bboxRect)>.08f
-                    }
+                if(fragmentOnly && values.keys.all { it==FieldId.PRODUCER || it==FieldId.WINE_NAME }) {
+                    trace.add("fragment_identity","phrase=${p.id}; text=$text");return
                 }
                 val weakContent=sources.count { TextNorm.normalize(it.record.textRaw) !in setOf("de","du","di","des") && it.record.score < if(it.record.engineId.startsWith("paddle")) .75f else .60f }
                 if(hypotheses.size<MAX_HYPOTHESES) hypotheses+=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place)
@@ -88,16 +112,20 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 val core=place.nameNorm.filter(Char::isLetterOrDigit)
                 val compact=norm.filter(Char::isLetterOrDigit)
                 val suffix=if(compact.startsWith(core)) compact.removePrefix(core) else ""
-                val unresolvedSuffix=repair==null && place.type=="appellation" && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
+                val unresolvedSuffix=repair==null && !classificationName && place.type=="appellation" && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
                     suffix !in setOf("aoc","aop","doc","docg","dop","igp") && gazetteer.matches(suffix).none { it.type=="country" } &&
                     places.none { it.nameNorm.filter(Char::isLetterOrDigit)==compact }
-                if(place.type !in setOf("country","region") && !unresolvedSuffix) values[FieldId.SUBREGION]=place.name
+                // One name may fill one level only: a collapsed hierarchy must not repeat the region.
+                if(place.type !in setOf("country","region") && !unresolvedSuffix && values[FieldId.REGION]!=place.name)
+                    values[FieldId.SUBREGION]=place.name
                 offer(values,50.0+path.size*5+lexicalBonus-(if(repair!=null) placeRepair.rankPenalty else 0.0),
                     "observed geography and actual ancestors; no producer-origin inference"+
                         (if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else "")+
                         (repair?.let { "; "+it.reason } ?: ""),place)
             }
-            if(repair==null && places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
+            if(repair==null && classificationName && places.isNotEmpty())
+                offer(mapOf(FieldId.WINE_NAME to text),70.0,"printed classification qualifies the matched appellation")
+            else if(repair==null && places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
             if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
             if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
@@ -112,8 +140,10 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),90.0+lexicalBonus,"complete name with adjacent designation")
                 continue
             }
-            if(roles.isWineDescription(text) || WineDesignations.isDesignation(text)) {
-                offer(mapOf(FieldId.WINE_NAME to (WineDesignations.display(text) ?: text)),75.0,"observed varietal or designation")
+            // A bare designation (`GRAND CRU`, `DOCG`, `RISERVA`) qualifies a name and never is one.
+            if(WineDesignations.isDesignation(text)) { trace.add("bare_designation","phrase=${p.id}; text=$text");continue }
+            if(roles.isWineDescription(text)) {
+                offer(mapOf(FieldId.WINE_NAME to (WineDesignations.display(text) ?: text)),75.0,"observed varietal")
                 continue
             }
             if(norm.count(Char::isLetter)<4 || norm.any(Char::isDigit)) continue

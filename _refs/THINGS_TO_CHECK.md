@@ -66,6 +66,20 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 4. [ ] Confirm the first photo of a run (cold cache) copies and verifies the databases once and later photos open them immediately; a cold first photo may still block on setup, and only that one should.
 5. [ ] Confirm nothing else changed: the same photos still produce the same suggestions, the funnel version, columns and row names are unchanged, and no score moved because of the timing fix.
 
+### Lab v4 designation, level and fragment rules
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run **New Lab run** on the 125 labels: the CSV metadata must show `place_repair_enabled=true` and `resolver_single_reading_enabled=true`, and every Lab v4 summary must carry `evidence-lab-v4-designation-base`.
+2. [ ] A label printing `SAINT-ÉMILION GRAND CRU` (the Abelyce photos): region **Bordeaux**, subregion **Saint-Émilion** (never `Saint-Émilion Grand Cru`), wine name the printed `Saint-Émilion Grand Cru`, and country France — all four filled at once.
+3. [ ] A label printing `BORDEAUX SUPÉRIEUR`: region Bordeaux, subregion **blank** (not `Bordeaux Supérieur`), wine name `Bordeaux Supérieur`. Same for `MÉDOC SUPÉRIEUR`.
+4. [ ] A label printing `CHIANTI CLASSICO`: subregion stays **Chianti Classico** (the classification rule must not collapse it to `Chianti`) with region Tuscany.
+5. [ ] A label whose only designation is `GRAND CRU` / `DOCG` / `RISERVA`: the wine name is **not** that word; the row may be blank or the real name.
+6. [ ] Any label where one engine read a fragment (`CRUCLASS`, `HATEAU`): that fragment must not appear as the producer or wine name.
+7. [ ] No row may show the same text in `region` and `subregion`.
+8. [ ] Known-good labels must not regress: `Antinori`/`Tuscany`/`Chianti Classico` and the clean Bordeaux references should score exactly as before.
+9. [ ] Record the new counts (complete forms, per-field correct/wrong/missing) next to the 32/123, 77/46/2, 63/33/27 baseline in `docs/evidence-designation-levels.md`.
+
 ### Nested regions and subregions reach the form
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*

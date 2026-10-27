@@ -6,7 +6,9 @@ import com.yourapp.wine.fill.*
 import kotlinx.coroutines.CancellationException
 
 internal object TextLabEvidencePreview {
-    fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(cuveeRole=useAnchors),
+    // equivalentNames: two spellings of one name differing only by spacing/punctuation (`CHATEAU
+    // ABELYCE` / `CHATEAU ABELY CE`) are one answer, not an ambiguity that blanks the field.
+    fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
         placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off)
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null) {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return

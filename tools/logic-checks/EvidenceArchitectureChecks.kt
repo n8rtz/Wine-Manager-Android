@@ -3,7 +3,9 @@ package com.yourapp.wine.textlab
 import com.yourapp.wine.textlab.evidence.*
 import com.yourapp.wine.*
 import com.yourapp.wine.fill.*
+import com.yourapp.wine.extract.WineDesignations
 import com.yourapp.wine.kb.FixtureKnowledgeBase
+import com.yourapp.wine.kb.SupplementedWineKnowledgeBase
 
 object EvidenceArchitectureChecks {
     fun run() {
@@ -81,6 +83,46 @@ object EvidenceArchitectureChecks {
         val unrelatedLocations=EvidenceLexicon.expand(EvidenceGraphBuilder.build(listOf(t("UIGNERONS de 'Eclave",.8f),
             t("L'Enclave",.2f),t("L'Enclaue",.5f,"paddle-v6-medium")))) {}
         check(unrelatedLocations.phrases.none { it.text=="Vignerons de L'Enclave" })
-        println("PASS: independent experimental graph, raw observations, bounded alternatives, no score inflation, unchanged baseline, opt-in comparison, failure isolation")
+        designationAndLevelRules()
+        println("PASS: independent experimental graph, raw observations, bounded alternatives, no score inflation, unchanged baseline, opt-in comparison, failure isolation, designation levels")
+    }
+
+    /**
+     * Owner benchmark cases (2026-10-27): a classification-qualified appellation keeps the base
+     * place, a bare designation is never a wine name, one name never fills two levels, and
+     * zone-forming suffixes such as `Chianti Classico` keep their own identity.
+     */
+    private fun designationAndLevelRules() {
+        check(WineDesignations.classificationBase("Saint-Émilion Grand Cru")=="Saint-Émilion")
+        check(WineDesignations.classificationBase("Bordeaux Supérieur")=="Bordeaux")
+        check(WineDesignations.classificationBase("Médoc Supérieur")=="Médoc")
+        check(WineDesignations.classificationBase("Graves Supérieures")=="Graves")
+        for(text in listOf("Chianti Classico","Soave Superiore","Beaujolais Villages","Barolo Riserva","Amarone della Valpolicella"))
+            check(WineDesignations.classificationBase(text)==null) { text }
+        val kb=SupplementedWineKnowledgeBase(FixtureKnowledgeBase())
+        fun line(text:String,y:Float,engine:String="mlkit")=LogicChecks.token(text,.9f,engine=engine,y=y,h=.1f)
+        // A designation on its own qualifies a name and never becomes one.
+        val bare=EvidenceExtractor(kb).extract(listOf(line("GRAND CRU",.2f),line("2019",.8f)),2026).fill
+        check(bare.fields.getValue(FieldId.WINE_NAME).value.isBlank()) { bare.fields }
+        val bareDesignation=EvidenceExtractor(kb).extract(listOf(line("DOCG",.2f),line("2019",.8f)),2026).fill
+        check(bareDesignation.fields.getValue(FieldId.WINE_NAME).value.isBlank()) { bareDesignation.fields }
+        // One name may not fill the region and the subregion at once.
+        val superior=EvidenceExtractor(kb).extract(listOf(line("BORDEAUX SUPÉRIEUR",.3f),line("PRODUCE OF FRANCE",.6f),
+            line("2016",.8f)),2026).fill
+        val region=superior.fields.getValue(FieldId.REGION).value
+        val subregion=superior.fields.getValue(FieldId.SUBREGION).value
+        check(subregion!=region || subregion.isBlank()) { superior.fields }
+        check(subregion!="Bordeaux Supérieur") { superior.fields }
+        check(region.isBlank() || region=="Bordeaux") { superior.fields }
+        check(superior.fields.getValue(FieldId.WINE_NAME).value.isBlank() ||
+            superior.fields.getValue(FieldId.WINE_NAME).value.lowercase().contains("supérieur")) { superior.fields }
+        // The printed classification stays the wine name while the appellation keeps its own level.
+        val emilion=EvidenceExtractor(kb).extract(listOf(line("SAINT-ÉMILION GRAND CRU",.3f),line("PRODUCE OF FRANCE",.6f),
+            line("CHÂTEAU ABELYCE",.5f,"paddle-v6-medium"),line("2010",.8f)),2026).fill
+        check(emilion.fields.getValue(FieldId.SUBREGION).value!="Saint-Émilion Grand Cru") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.SUBREGION).value.isEmpty() ||
+            emilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Émilion") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.REGION).value.isEmpty() ||
+            emilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { emilion.fields }
     }
 }

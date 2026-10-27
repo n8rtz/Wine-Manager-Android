@@ -185,7 +185,7 @@ class PlaceRepairWiringTests(unittest.TestCase):
         extractor = EVIDENCE.read_text()
         repair = REPAIR.read_text()
         for fragment in ('private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off',
-                         'if(placeRepair.enabled && exact.isEmpty()'):
+                         'if(placeRepair.enabled && matched.isEmpty()'):
             self.assertTrue(fragment in extractor, fragment)
         self.assertNotIn('placeRepair.enabled || exact.isEmpty()', extractor)
         for fragment in ('val off=Config()', 'val experimental=Config(enabled=true)'):
@@ -211,14 +211,16 @@ class PlaceRepairWiringTests(unittest.TestCase):
     def test_a_repair_cannot_outrank_exact_evidence_or_name_the_wine(self):
         extractor = EVIDENCE.read_text()
         for fragment in ('placeRepair.rankPenalty',
-                         'if(repair==null && places.any { TextNorm.normalize(it.name)==norm }',
-                         'val unresolvedSuffix=repair==null && place.type=="appellation"'):
+                         'else if(repair==null && places.any { TextNorm.normalize(it.name)==norm }',
+                         'val unresolvedSuffix=repair==null && !classificationName && place.type=="appellation"'):
             self.assertTrue(fragment in extractor, fragment)
         self.assertNotIn('UiState.GREEN', extractor)
 
     def test_the_switch_is_recorded_and_marked_lab_only(self):
         runner = RUNNER.read_text()
-        for fragment in ('internal const val REPAIR_PLACES_IN_BENCHMARK=false',
+        # Turned on for the measurement run (owner, 2026-10-27); Prod v3.0 is a frozen baseline,
+        # so enabling the Lab switch cannot change the comparison row it is measured against.
+        for fragment in ('internal const val REPAIR_PLACES_IN_BENCHMARK=true',
                          'repairPlaces=REPAIR_PLACES_IN_BENCHMARK'):
             self.assertTrue(fragment in runner, fragment)
         self.assertTrue('"place_repair_enabled" to repairPlaces.toString()' in BATCH.read_text())
