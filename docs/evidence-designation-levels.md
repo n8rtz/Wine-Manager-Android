@@ -46,7 +46,10 @@ take completeness from 32 to 79; that is the whole reason these five rules exist
    `Grand Cru Classé`, `Premier Grand Cru Classé`, `Supérieur`, `Supérieure` and
    `Supérieures` qualify; `Classico`, `Villages`, `Riserva`, `Superiore` and similar
    zone-forming suffixes do not, because those name a different appellation. The geography is
-   taken from the base, and the **full printed line stays the wine name**.
+   taken from the base, the **full printed line stays the wine name**, and
+   `EvidenceSolver.samePrintedAppellation` compares `classificationBase(wineName) ?: wineName`
+   against the matched place (and its catalog spelling forms) so the wine-name offer never
+   kills its own ancestor geography bundle via `ownership_conflict`.
 2. **Designation splitting in the extractor.** `Supérieur`/`Supérieure`/`Supérieures` were
    added to `data/wine-knowledge/label-terms.csv` (121 → 124 terms), so
    `Bordeaux Supérieur` splits into `Bordeaux` + `Supérieur` everywhere the app already splits

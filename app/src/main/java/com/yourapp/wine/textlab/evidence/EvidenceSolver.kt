@@ -1,5 +1,8 @@
 package com.yourapp.wine.textlab.evidence
 
+import com.yourapp.wine.extract.WineDesignations
+import com.yourapp.wine.kb.BundledOrigins
+import com.yourapp.wine.kb.Place
 import com.yourapp.wine.kb.PlaceHierarchy
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.merge.BoxMath
@@ -7,6 +10,16 @@ import com.yourapp.wine.merge.TextNorm
 
 /** Bounded joint assignment of identities, coherent geography bundle and vintage, with abstention. */
 internal object EvidenceSolver {
+    private fun samePrintedAppellation(old:Hypothesis,place:Place?):Boolean {
+        if(place==null || old.values.keys!=setOf(FieldId.WINE_NAME)) return false
+        val wineName=old.values[FieldId.WINE_NAME] ?: return false
+        val base=WineDesignations.classificationBase(wineName) ?: wineName
+        val baseKey=EvidenceRanking.nameKey(base)
+        return baseKey.isNotEmpty() && (listOf(place.name)+BundledOrigins.spellingForms(place)).any {
+            EvidenceRanking.nameKey(it)==baseKey
+        }
+    }
+
     fun solve(input:List<Hypothesis>,hierarchy:PlaceHierarchy.View,graph:EvidenceGraph,checkBudget:()->Unit,trace:EvidenceTrace=EvidenceTrace(),config:EvidenceSearchConfig=EvidenceSearchConfig()):List<List<Hypothesis>> {
         val observations=graph.observations.associateBy { it.id }
         fun overlaps(a:Hypothesis,b:Hypothesis):Boolean = a.phrase.observations.any { ai -> b.phrase.observations.any { bi ->
@@ -41,8 +54,7 @@ internal object EvidenceSolver {
                 checkBudget()
                 listOf(state)+options.mapNotNull { next ->
                     if(state.selected.any { old ->
-                        val samePrintedAppellation=next.place!=null && old.values[FieldId.WINE_NAME]?.let { TextNorm.normalize(it)==next.place.nameNorm }==true
-                        !samePrintedAppellation && (overlaps(old,next) ||
+                        !samePrintedAppellation(old,next.place) && (overlaps(old,next) ||
                         BoxMath.iou(old.phrase.box,next.phrase.box)>.5f) }) { trace.add("ownership_conflict") { "phrase=${next.phrase.id}; values=${next.values}" };return@mapNotNull null }
                     var rank=next.rank
                     // Geography must explain all competing explicit geographic observations, not producer headquarters.

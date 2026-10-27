@@ -106,23 +106,26 @@ object EvidenceArchitectureChecks {
         check(bare.fields.getValue(FieldId.WINE_NAME).value.isBlank()) { bare.fields }
         val bareDesignation=EvidenceExtractor(kb).extract(listOf(line("DOCG",.2f),line("2019",.8f)),2026).fill
         check(bareDesignation.fields.getValue(FieldId.WINE_NAME).value.isBlank()) { bareDesignation.fields }
-        // One name may not fill the region and the subregion at once.
+        // One name may not fill the region and the subregion at once, and the classification-qualified
+        // wine name must not ownership-conflict with its own stripped base place in EvidenceSolver.
         val superior=EvidenceExtractor(kb).extract(listOf(line("BORDEAUX SUPÉRIEUR",.3f),line("PRODUCE OF FRANCE",.6f),
             line("2016",.8f)),2026).fill
-        val region=superior.fields.getValue(FieldId.REGION).value
-        val subregion=superior.fields.getValue(FieldId.SUBREGION).value
-        check(subregion!=region || subregion.isBlank()) { superior.fields }
-        check(subregion!="Bordeaux Supérieur") { superior.fields }
-        check(region.isBlank() || region=="Bordeaux") { superior.fields }
-        check(superior.fields.getValue(FieldId.WINE_NAME).value.isBlank() ||
-            superior.fields.getValue(FieldId.WINE_NAME).value.lowercase().contains("supérieur")) { superior.fields }
-        // The printed classification stays the wine name while the appellation keeps its own level.
+        check(superior.fields.getValue(FieldId.COUNTRY).value=="France") { superior.fields }
+        check(superior.fields.getValue(FieldId.REGION).value=="Bordeaux") { superior.fields }
+        check(superior.fields.getValue(FieldId.SUBREGION).value.isBlank()) { superior.fields }
+        check(superior.fields.getValue(FieldId.WINE_NAME).value=="BORDEAUX SUPÉRIEUR") { superior.fields }
+        // The printed classification stays the wine name while the base appellation populates its ancestors,
+        // both alongside a country-only line and when no country/region line is printed at all.
         val emilion=EvidenceExtractor(kb).extract(listOf(line("SAINT-ÉMILION GRAND CRU",.3f),line("PRODUCE OF FRANCE",.6f),
             line("CHÂTEAU ABELYCE",.5f,"paddle-v6-medium"),line("2010",.8f)),2026).fill
-        check(emilion.fields.getValue(FieldId.SUBREGION).value!="Saint-Émilion Grand Cru") { emilion.fields }
-        check(emilion.fields.getValue(FieldId.SUBREGION).value.isEmpty() ||
-            emilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Émilion") { emilion.fields }
-        check(emilion.fields.getValue(FieldId.REGION).value.isEmpty() ||
-            emilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.COUNTRY).value=="France") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Émilion") { emilion.fields }
+        check(emilion.fields.getValue(FieldId.WINE_NAME).value=="SAINT-ÉMILION GRAND CRU") { emilion.fields }
+        val saintJulienOnly=EvidenceExtractor(kb).extract(listOf(line("CHÂTEAU TALBOT",.2f,"paddle-v6-medium"),
+            line("SAINT-JULIEN",.5f),line("2018",.8f)),2026).fill
+        check(saintJulienOnly.fields.getValue(FieldId.COUNTRY).value=="France") { saintJulienOnly.fields }
+        check(saintJulienOnly.fields.getValue(FieldId.REGION).value=="Bordeaux") { saintJulienOnly.fields }
+        check(saintJulienOnly.fields.getValue(FieldId.SUBREGION).value=="Saint-Julien") { saintJulienOnly.fields }
     }
 }

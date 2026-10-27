@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / 'data/wine-knowledge'
 EVIDENCE = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt'
+SOLVER = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceSolver.kt'
 DESIGNATIONS = ROOT / 'app/src/main/java/com/yourapp/wine/extract/WineDesignations.kt'
 PREVIEW = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt'
 RUNNER = ROOT / 'app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt'
@@ -109,6 +110,18 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         self.assertIn('printed classification qualifies the matched appellation', source)
         # The base suppresses the unresolved-suffix rule, which would otherwise withhold the subregion.
         self.assertIn('val unresolvedSuffix=repair==null && !classificationName', source)
+
+    def test_solver_allows_classification_wine_name_alongside_its_base_place(self):
+        solver = SOLVER.read_text()
+        self.assertIn('val base=WineDesignations.classificationBase(wineName) ?: wineName', solver)
+        self.assertIn('!samePrintedAppellation(old,next.place)', solver)
+        # Mirror samePrintedAppellation: SAINT-ÉMILION GRAND CRU and BORDEAUX SUPÉRIEUR match their
+        # stripped base places, while zone-forming suffixes and estate names still ownership-conflict.
+        self.assertEqual(key(classification_base('SAINT-ÉMILION GRAND CRU') or ''), key('Saint-Émilion'))
+        self.assertEqual(key(classification_base('SAINT EMILION GRAND CRU') or ''), key('Saint-Émilion'))
+        self.assertEqual(key(classification_base('BORDEAUX SUPÉRIEUR') or ''), key('Bordeaux'))
+        self.assertNotEqual(key(classification_base('Chianti Classico') or 'Chianti Classico'), key('Chianti'))
+        self.assertNotEqual(key(classification_base('Château Saint-Émilion') or 'Château Saint-Émilion'), key('Saint-Émilion'))
 
     def test_one_name_never_fills_two_levels(self):
         source = EVIDENCE.read_text()
