@@ -10,7 +10,7 @@ internal object TextLabEvidencePreview {
     // ABELYCE` / `CHATEAU ABELY CE`) are one answer, not an ambiguity that blanks the field.
     fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
         placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off)
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null) {
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false) {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer/vintage, rules-001 wine/origin, heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
@@ -24,7 +24,7 @@ internal object TextLabEvidencePreview {
                 check(FieldId.entries.all { baseline.containsKey(it.name.lowercase(java.util.Locale.ROOT)) }) { "Incomplete baseline summary" }
             }
             val records=recordsOverride ?: TextLabFormPreview.records(journal)
-            val result=engine.extract(records,year)
+            val result=engine.extract(records,year,exactGeographyFastPath=exactGeographyFastPath)
             val fill=result.fill
             for(field in FieldId.entries) {
                 val key=field.name.lowercase(java.util.Locale.ROOT);val candidate=fill.fields.getValue(field)

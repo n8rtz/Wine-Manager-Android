@@ -140,5 +140,39 @@ fun main() {
     tiny.add("candidate_3","candidate_summary","complete")
     val zoomCrop=TextLabBottleFilter.proposeZoomCrop(tiny)
     verify(zoomCrop!=null && zoomCrop.top<=0.25f && zoomCrop.bottom>=0.75f && (zoomCrop.right-zoomCrop.left)*(zoomCrop.bottom-zoomCrop.top)<=0.40f)
+
+    // Lab v4 d=0 geography fast-path + ancestral chain + country-context feed into ProducerResolver (Prod v3.0 untouched).
+    val d0Geo=TextLabJournal(setOf("candidate_3"),"d0-geo-context-check",true)
+    for((cand,txt,box,score) in listOf(
+        listOf("mlkit_reference","Domaine Allary","0.25 0.20 0.75 0.27","0.9"),
+        listOf("candidate_3","Domaine Allary","0.25 0.20 0.75 0.27","0.9"),
+        listOf("mlkit_reference","Haut-Brion","0.30 0.42 0.70 0.48","0.9"),
+        listOf("candidate_3","Haut-Brion","0.30 0.42 0.70 0.48","0.9"),
+        listOf("mlkit_reference","PESSAC-LEOGNAN","0.30 0.68 0.70 0.74","0.56"),
+        listOf("candidate_3","PESSAGILEOGNA","0.30 0.68 0.70 0.74","0.87"),
+        listOf("mlkit_reference","2009","0.44 0.82 0.56 0.87","0.9"),
+    )) {
+        d0Geo.add(cand,"recognition",values=mapOf("raw_text" to txt,"base_box_normalized" to box,"original_box_normalized" to box,
+            "mlkit_confidence" to score,"ctc_posterior" to score,"confidence_estimated" to "false"))
+    }
+    d0Geo.add("mlkit_reference","summary","complete")
+    d0Geo.add("candidate_3","candidate_summary","complete")
+    TextLabFormPreview.append(d0Geo,FillEngine(kb),2026)
+    val homonymIndex=object:com.yourapp.wine.gazetteer.ProducerResolver.Index {
+        override val version="d0-geo-fixture";override val primaryVerified=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(
+            com.yourapp.wine.gazetteer.ProducerResolver.Entity("fr-alary","Domaine Alary","domaine alary",countryGroup="France"),
+            com.yourapp.wine.gazetteer.ProducerResolver.Entity("es-alary","Domaine Alary","domaine alary",countryGroup="Spain"),
+        )
+    }
+    TextLabSpatialPreview.append(d0Geo,extractor,hybrid,repair,2026,homonymIndex,candidate="spatial_lwin_lab",
+        stagePrefix="spatial_lwin_",policy=com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod)
+    TextLabSpatialPreview.append(d0Geo,extractor,hybrid,repair,2026,homonymIndex,candidate="spatial_lab",
+        stagePrefix="spatial_",policy=com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading)
+    val d0Prod=d0Geo.rows.single { it["stage"]=="spatial_lwin_evidence_summary" }
+    val d0Lab=d0Geo.rows.single { it["stage"]=="spatial_evidence_summary" }
+    verify(d0Prod["region"].orEmpty().isBlank() && d0Prod["subregion"].orEmpty().isBlank())
+    verify(d0Lab["country"]=="France" && d0Lab["region"]=="Bordeaux" && d0Lab["subregion"]=="Pessac-Leognan")
+    verify(d0Lab["wine_name"]=="Haut-Brion" && d0Lab["producer"]=="Domaine Alary" && d0Lab["producer_gazetteer_entity_id"]=="fr-alary")
     println("PASS: $checks actual Kotlin spatial-to-guarded extraction integration checks (host geometry/clock, not Android OCR).")
 }

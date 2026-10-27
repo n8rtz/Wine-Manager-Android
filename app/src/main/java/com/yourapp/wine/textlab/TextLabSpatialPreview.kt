@@ -61,7 +61,8 @@ internal object TextLabSpatialPreview {
                 work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
             }
             TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
-                useProducerRepair=true,producerRepair=repair,recordsOverride=readings)
+                useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
+                exactGeographyFastPath=policy.minimumIndependentEngines<2)
             val spans=original.mapIndexed { id,r -> ProducerResolver.Span(r.textRaw,r.engineId,setOf(id),r.scoreIsEstimated) }+
                 proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(TextNorm.scrub(p.phrase.mergedText),p.engineId,
                     p.sources.map { source -> original.indexOfFirst { it===source } }.filter { it>=0 }.toSet(),true) }

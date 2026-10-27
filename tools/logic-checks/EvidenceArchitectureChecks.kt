@@ -199,5 +199,67 @@ object EvidenceArchitectureChecks {
         val gascogne=extractor.extract(listOf(line("SAUVIGNON BLANC",.3f),line("CÔTES DE GASCOGNE",.65f)),2026).fill
         check(gascogne.fields.getValue(FieldId.REGION).value=="South West France") { gascogne.fields }
         check(gascogne.fields.getValue(FieldId.SUBREGION).value=="Cotes de Gascogne") { gascogne.fields }
+        // Lab v4 d=0 exact geography fast-path: locks coherent exact appellation/region chains, populates
+        // ancestral Country/Region/Subregion, feeds LabelContext, and leaves Prod default untouched.
+        val labRepairExtractor=EvidenceExtractor(kb,placeRepair=PlaceRepair.Config.experimental)
+        val heritageProd=labRepairExtractor.extract(
+            listOf(line("ROCHE MAZET",.15f),line("PAYS D'OC",.4f),line("HERITAGE",.6f),line("PRODUIT DE FRANCE",.8f)),
+            2026,
+            exactGeographyFastPath=false,
+        ).fill
+        check(heritageProd.fields.getValue(FieldId.REGION).value.isBlank()) { heritageProd.fields }
+        val heritageLab=labRepairExtractor.extract(
+            listOf(line("ROCHE MAZET",.15f),line("PAYS D'OC",.4f),line("HERITAGE",.6f),line("PRODUIT DE FRANCE",.8f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(heritageLab.fields.getValue(FieldId.COUNTRY).value=="France") { heritageLab.fields }
+        check(heritageLab.fields.getValue(FieldId.REGION).value=="Languedoc") { heritageLab.fields }
+        check(heritageLab.fields.getValue(FieldId.SUBREGION).value.isBlank()) { heritageLab.fields }
+        val bourgogneOnlyLab=extractor.extract(
+            listOf(line("ALBERT BICHOT",.2f),line("BOURGOGNE",.45f),line("CHARDONNAY",.7f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(bourgogneOnlyLab.fields.getValue(FieldId.COUNTRY).value=="France") { bourgogneOnlyLab.fields }
+        check(bourgogneOnlyLab.fields.getValue(FieldId.REGION).value=="Burgundy") { bourgogneOnlyLab.fields }
+        check(bourgogneOnlyLab.fields.getValue(FieldId.SUBREGION).value.isBlank()) { bourgogneOnlyLab.fields }
+        val hautesBeauneLab=extractor.extract(
+            listOf(line("Maison Chandesais",.2f),line("BOURGOGNE",.45f),line("HAUTES CÔTES DE BEAUNE",.65f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(hautesBeauneLab.fields.getValue(FieldId.COUNTRY).value=="France") { hautesBeauneLab.fields }
+        check(hautesBeauneLab.fields.getValue(FieldId.REGION).value=="Burgundy") { hautesBeauneLab.fields }
+        check(hautesBeauneLab.fields.getValue(FieldId.SUBREGION).value=="Bourgogne Hautes-Cotes de Beaune") { hautesBeauneLab.fields }
+        val riojaBrandSubstringLab=extractor.extract(
+            listOf(line("La RiojaAlta",.25f),line("GRAN RESERVA 904",.5f),line("RIOJA",.75f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(riojaBrandSubstringLab.fields.getValue(FieldId.COUNTRY).value=="Spain") { riojaBrandSubstringLab.fields }
+        check(riojaBrandSubstringLab.fields.getValue(FieldId.REGION).value=="Rioja") { riojaBrandSubstringLab.fields }
+        check(riojaBrandSubstringLab.fields.getValue(FieldId.SUBREGION).value.isBlank()) { riojaBrandSubstringLab.fields }
+        val corroboratedPessacLab=extractor.extract(
+            listOf(
+                line("Haut-Brion",.40f),
+                LogicChecks.token("PESSAC-LEOGNAN",.56f,engine="mlkit",y=.70f,h=.06f),
+                LogicChecks.token("PESSAGILEOGNA",.87f,engine="paddle-v6-medium",y=.70f,h=.06f),
+                line("2009",.85f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(corroboratedPessacLab.fields.getValue(FieldId.COUNTRY).value=="France") { corroboratedPessacLab.fields }
+        check(corroboratedPessacLab.fields.getValue(FieldId.REGION).value=="Bordeaux") { corroboratedPessacLab.fields }
+        check(corroboratedPessacLab.fields.getValue(FieldId.SUBREGION).value=="Pessac-Leognan") { corroboratedPessacLab.fields }
+        check(corroboratedPessacLab.fields.getValue(FieldId.WINE_NAME).value=="Haut-Brion") { corroboratedPessacLab.fields }
+        val contradictoryLab=extractor.extract(
+            listOf(line("BAROLO",.25f),line("CHIANTI",.55f),line("2019",.85f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(contradictoryLab.fields.getValue(FieldId.COUNTRY).value=="Italy") { contradictoryLab.fields }
+        check(contradictoryLab.fields.getValue(FieldId.REGION).value.isBlank()) { contradictoryLab.fields }
     }
 }

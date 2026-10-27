@@ -75,6 +75,22 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertIn('if(policy.exactMatchFastPath)', linked)
         self.assertIn('.withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }', spatial)
 
+    def test_exact_geography_fast_path_is_lab_only_and_feeds_context(self):
+        evidence = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text()
+        label_ctx = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt').read_text()
+        preview = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
+        spatial = SPATIAL.read_text()
+        # Default stays false so Prod v3.0 and SavedEvidenceReplayTest stay untouched.
+        self.assertIn('fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS,exactGeographyFastPath:Boolean=false):EvidenceResult', evidence)
+        self.assertIn('exactGeographyFastPath: Boolean = false,', label_ctx)
+        self.assertIn('exactGeographyFastPath:Boolean=false', preview)
+        self.assertIn('exactGeographyFastPath=policy.minimumIndependentEngines<2', spatial)
+        # Exact d=0 geography fast-path locks coherent chains and feeds LabelContext + ProducerResolver country context.
+        self.assertIn('trace.add("exact_geography_fast_path"', evidence)
+        self.assertIn('d=0 exact geography fast-path', evidence)
+        self.assertIn('LabelContext.collect(graph,gazetteer,view,kb,typedIdentity,true)', evidence)
+        self.assertIn('policy.withCountryContext(row["country"].orEmpty())', spatial)
+
 
 if __name__ == '__main__':
     unittest.main()

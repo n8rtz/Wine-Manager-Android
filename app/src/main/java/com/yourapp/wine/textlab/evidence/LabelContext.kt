@@ -4,11 +4,13 @@ import com.yourapp.wine.extract.IdentityRoles
 import com.yourapp.wine.extract.LabelTextRoles
 import com.yourapp.wine.extract.MetadataRules
 import com.yourapp.wine.extract.WineTermSpacing
+import com.yourapp.wine.kb.BundledOrigins
 import com.yourapp.wine.kb.Place
 import com.yourapp.wine.kb.PlaceGazetteer
 import com.yourapp.wine.kb.PlaceHierarchy
 import com.yourapp.wine.kb.ReferenceWineCatalog
 import com.yourapp.wine.kb.WineKnowledgeBase
+import com.yourapp.wine.merge.BoxMath
 import com.yourapp.wine.merge.TextNorm
 
 /**
@@ -152,6 +154,7 @@ internal class LabelContext(
             view: PlaceHierarchy.View,
             kb: WineKnowledgeBase,
             typedIdentity: Boolean,
+            exactGeographyFastPath: Boolean = false,
         ): LabelContext {
             val anchors = linkedMapOf<Int, List<Place>>()
             val explicitCountries = linkedMapOf<Int, Set<String>>()
@@ -163,14 +166,23 @@ internal class LabelContext(
             for (phrase in graph.phrases) {
                 val sources = graph.observations.filter { it.id in phrase.observations }
                 val supported = sources.any { it.record.score >= if (it.record.engineId.startsWith("paddle")) .75f else .60f }
-                if (!supported) continue
+                val corroboratedLowScore = !supported && exactGeographyFastPath &&
+                    sources.any { it.record.score >= .45f } &&
+                    graph.observations.any { other ->
+                        sources.none { it.record.engineId == other.record.engineId } &&
+                            other.record.score >= (if (other.record.engineId.startsWith("paddle")) .75f else .60f) &&
+                            BoxMath.iou(other.record.bboxRect, phrase.box) > .10f
+                    }
+                if (!supported && !corroboratedLowScore) continue
                 val text = WineTermSpacing.wineWords.repair(phrase.text).text
                 val norm = TextNorm.normalize(text)
-                val (single, narrowing) = legalCues(norm)
-                val postalCode = postalAddressCountryCode(norm)
-                val combinedSingle = if (postalCode != null) single + postalCode else single
-                if (combinedSingle.isNotEmpty()) singleCues[phrase.id] = combinedSingle
-                if (narrowing.isNotEmpty()) narrowingCues[phrase.id] = narrowing
+                if (supported) {
+                    val (single, narrowing) = legalCues(norm)
+                    val postalCode = postalAddressCountryCode(norm)
+                    val combinedSingle = if (postalCode != null) single + postalCode else single
+                    if (combinedSingle.isNotEmpty()) singleCues[phrase.id] = combinedSingle
+                    if (narrowing.isNotEmpty()) narrowingCues[phrase.id] = narrowing
+                }
 
                 val nonOrigin = isNonOriginAdministrative(text, norm)
                 val headingOnly = typedIdentity && EvidenceIdentityRoles.headingOnly(text)
@@ -178,13 +190,42 @@ internal class LabelContext(
                 if (nonOrigin || headingOnly) continue
 
                 if (!namedEstate) {
-                    val matched = gazetteer.matches(norm)
                     val strippedOrigin = originStatementPrefix.replaceFirst(norm, "").trim()
+                    val matched = gazetteer.matches(norm)
+                    if (corroboratedLowScore) {
+                        val place = matched.singleOrNull()
+                        val key = EvidenceRanking.nameKey(strippedOrigin)
+                        if (place != null && place.type != "country" && key.length >= 8 &&
+                            ReferenceWineCatalog.origin(place)?.contextRequired != true &&
+                            (listOf(place.name) + BundledOrigins.spellingForms(place)).any { EvidenceRanking.nameKey(it) == key }
+                        ) {
+                            val path = view.ancestors(place)
+                            val ancestorAnchors = path.filter { it.type in setOf("country", "region") }
+                            if (ancestorAnchors.isNotEmpty()) anchors[phrase.id] = ancestorAnchors
+                            path.lastOrNull { it.type == "country" }?.let { explicitCountries[phrase.id] = setOf(it.countryCode) }
+                            path.firstOrNull { it.type == "region" }?.let { explicitRegions[phrase.id] = setOf(it.nameNorm) }
+                        }
+                        continue
+                    }
                     val anchorPlaces = matched.filter { place ->
                         place.type in setOf("country", "region") &&
                             (IdentityRoles.originOnly(text, listOf(place)) || strippedOrigin == place.nameNorm)
                     }
-                    if (anchorPlaces.isNotEmpty()) anchors[phrase.id] = anchorPlaces
+                    if (anchorPlaces.isNotEmpty()) {
+                        anchors[phrase.id] = anchorPlaces
+                    } else if (exactGeographyFastPath && matched.size == 1) {
+                        val exactPlace = matched.single()
+                        val strippedKey = EvidenceRanking.nameKey(strippedOrigin)
+                        val isWholeExact = ReferenceWineCatalog.origin(exactPlace)?.contextRequired != true &&
+                            (IdentityRoles.originOnly(text, listOf(exactPlace)) ||
+                                (strippedKey.isNotEmpty() && (listOf(exactPlace.name) + BundledOrigins.spellingForms(exactPlace)).any {
+                                    EvidenceRanking.nameKey(it) == strippedKey
+                                }))
+                        if (isWholeExact) {
+                            val ancestorAnchors = view.ancestors(exactPlace).filter { it.type in setOf("country", "region") }
+                            if (ancestorAnchors.isNotEmpty()) anchors[phrase.id] = ancestorAnchors
+                        }
+                    }
                     val countriesFromPlaces = linkedSetOf<String>()
                     val regionsFromPlaces = linkedSetOf<String>()
                     for (place in matched) {

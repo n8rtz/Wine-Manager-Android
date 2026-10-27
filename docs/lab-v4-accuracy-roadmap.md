@@ -13,9 +13,9 @@ Grounded in the full 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 125 
 | Scorable cells correct | `617/748` (`82.5%`) | `611/748` (`81.7%`) | `558` value + `59` expected blank |
 | `Producer` (`correct/incorrect`) | `81/44` | `78/47` | `+13` wins / `0` losses in Phase 0 (`d = 0` fast-path) |
 | `Wine name` (`correct/incorrect`) | `71/53` | `70/54` | `+2` direct wins in Phase 0; `35/53` tied to `paragraph=true` |
-| `Country` (`correct/incorrect`) | `122/3` | `121/4` | |
-| `Region` (`correct/incorrect`) | `115/10` | `115/10` | |
-| `Subregion` (`correct/incorrect`) | `108/17` | `107/18` | |
+| `Country` (`correct/incorrect`) | `122/3` | `121/4` | `+1` win (`#67`) via Phase 0 producer `d = 0` country backfill |
+| `Region` (`correct/incorrect`) | `115/10` | `115/10` | `+3` wins / `0` losses in Phase 0c (`#30, #85, #92`) |
+| `Subregion` (`correct/incorrect`) | `108/17` | `107/18` | `+7` wins / `0` losses in Phase 0c (`#5, #30, #70, #92, #142, #162, #169`) |
 | `Vintage` (`correct/incorrect`) | `120/4` | `120/4` | `#176` is `unresolved` |
 
 ---
@@ -33,6 +33,12 @@ Grounded in the full 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 125 
   - **Root cause:** When `ProducerResolver` updated a noisy `before` producer, `LinkedWineResolver` still checked compatibility against the stale pre-gazetteer `before` string; and when `wines.sqlite` had an unambiguous `d = 0` linked wine, echoed-producer or generic-place `existingWine` values (`ROCHE MAZET`, `Chianti Classico`) or `d = 1` rivals blocked it.
   - **Shipped fix:** Pair against the resolved producer key across same-key LWIN producer IDs when `producer.acceptedId != null`, and accept an unambiguous `d = 0` `(producerKey, wineKey)` pair immediately unless `existingWine` is already a distinctive non-catalog cuvée and the `d = 0` wine is only a bare catalog varietal (`#170`).
   - **Verified replay impact:** `+2` immediate `wine_name` wins (`#85` `Merlot`, `#180` `Peppoli`), `0` regressions, and pre-wires automatic `d = 0` wine promotion once Item 1 fixes `paragraph=true` over-merging.
+- [x] **0c. `EvidenceExtractor` + `LabelContext` Lab v4 `d = 0` exact-geography fast-path, ancestral chain expansion, and context feed** (`EvidenceExtractor.kt`, `LabelContext.kt`, `TextLabEvidencePreview.kt`, `TextLabSpatialPreview.kt`)
+  - **Root cause:** Exact `d = 0` catalog places printed cleanly on the label (`Pays d'Oc` `#85`, `Cotes de Bergerac` `#5`, `Hautes Cotes de Beaune` + `Bourgogne` `#30`, `Bourgogne` `#70`, `Pessac-Leognan` `#92`, `Saint-Emilion Grand Cru` `#142`, `Lalande-de-Pomerol` `#162`, `Rioja` `#169`) were poisoned or blanked in post-processing by `d >= 1` fuzzy `PlaceRepair` collisions (`HERITAGE` -> `Hermitage` `#85`), partial substring matches inside garbled/brand lines (`CTES DE BERGERAC` `#5`, `LALAND DE-DEP POMEROL` `#162`, `La RiojaAlta` `#169`), `Bourgogne` sibling-appellation conflicts (`#30, #70`), solver ownership/margin ties (`#142`), or slightly sub-threshold ML Kit confidence corroborated by an overlapping second-engine box (`#92`).
+  - **Shipped fix (Lab v4 `exactGeographyFastPath = true`, Prod `v3.0` untouched):**
+    1. Identifies whole-phrase, framed, classification-base, origin-wrapped, and compound-segment `d = 0` catalog places (plus corroborated `>= 8`-letter `d = 0` sub-country appellations at `score >= 0.45`), checks coherence across all `d = 0` places on the label (treating `Bourgogne` as region-wide under `Burgundy` alongside `ReferenceWineCatalog.isRegionWideIndication`), and intercepts incompatible fuzzy/partial-substring geography competitors and post-solver parent/child margin abstentions to lock the deepest coherent `d = 0` place and expand its full `Subregion -> Region -> Country` ancestral chain (`CellarFieldPresentation.apply` + `geographyPath`).
+    2. Feeds `d = 0` appellation ancestors (`Country` + `Region`) directly into `LabelContext` (`anchors`, `explicitCountries`, `explicitRegions`), `AppellationFallback`, `ProducerResolver` (`policy.withCountryContext`), and `LinkedWineResolver` / `resolveLinkedWineGeography`.
+  - **Verified replay impact:** `+10` geography cell wins (`+3` `Region`: `#30, #85, #92`; `+7` `Subregion`: `#5, #30, #70, #92, #142, #162, #169`), `0` regressions across all `375` geography cells.
 
 ---
 
@@ -109,22 +115,26 @@ Grounded in the full 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 125 
 
 ---
 
-## Item 5 — Geography Conflict, Region-Wide Indication & Brand-Line Fixes
+## Item 5 — Geography Conflict, Region-Wide Indication & Non-`d = 0` Appellation Recovery
 
-- [ ] **5a. `EvidenceSolver` same-box cross-engine IoU place conflict fix**
-  - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceSolver.kt`
-  - **Root cause:** When ML Kit and Paddle read the same physical text box (`IoU > 0.5`) slightly differently (e.g. `Bergerac` vs `Cotes de Bergerac` on `#5`, or overlapping place tokens on `#162`), `EvidenceSolver` treats them as two independent conflicting places instead of competing readings of one physical print location.
-  - **Target bottles:** `#5, #162`.
+- [x] **5a. Whole-phrase `d = 0` precedence over garbled partial-substring place matches** (`EvidenceExtractor.kt`, shipped in Phase 0c)
+  - **Resolved:** Garbled partial-substring reads (`APELLATION CTES DE BERGERAC CONTROLEE` -> `Bergerac` `#5`, `LALAND DE-DEP POMEROL` -> `Pomerol` `#162`) no longer block or tie against coherent whole-phrase `d = 0` appellations (`Cotes de Bergerac`, `Lalande-de-Pomerol`).
 
-- [ ] **5b. Add `Bourgogne` to `ReferenceWineCatalog.regionWideIndicationKeys`**
-  - **Files:** `app/src/main/java/com/yourapp/wine/kb/ReferenceWineCatalog.kt`
-  - **Root cause:** Regional `Bourgogne` AOC is coextensive with the `Burgundy` region (`FR` -> `Burgundy`), just like `Pays d'Oc` (`Languedoc-Roussillon`), `Toscana`, and `Sicilia`. Without `"FR" to "bourgogne"` in `regionWideIndicationKeys`, regional `Bourgogne` bottles populate `Subregion = Bourgogne` where `Subregion` should remain blank (`expected_blank`).
-  - **Target bottles:** `#30, #70`.
+- [x] **5b. Regional `Bourgogne` region-wide hierarchy handling in Lab v4** (`EvidenceExtractor.kt`, `LabelContext.kt`, shipped in Phase 0c)
+  - **Resolved:** Lab v4 treats `Bourgogne` (`FR` -> `Burgundy`) as region-wide, keeping `Subregion` blank on regional `Bourgogne` bottles (`#70`) while making `BOURGOGNE` + `HAUTES COTES DE BEAUNE` ancestrally coherent (`#30`).
 
-- [ ] **5c. Suppress sub-zone place extraction from inside a confirmed producer brand line**
-  - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceSolver.kt`
-  - **Root cause:** On `#169` (`La Rioja Alta, S.A.`), the winery name `La RiojaAlta` contains the words `Rioja Alta`, causing `Subregion = Rioja Alta` to fire from the producer header even though the wine is a general `Rioja` Gran Reserva (`Subregion` expected blank).
-  - **Target bottles:** `#169`.
+- [x] **5c. Suppress sub-zone partial-substring place extraction when a `d = 0` region is printed** (`EvidenceExtractor.kt`, shipped in Phase 0c)
+  - **Resolved:** Partial brand-line substring matches (`La RiojaAlta` -> `Rioja Alta` `#169`) are filtered out when an explicit whole-phrase `d = 0` `Region` (`RIOJA`) is present without a whole-phrase `d = 0` subregion.
+
+- [ ] **5d. Multi-edit (`d <= 2` / `d <= 3`) hyphenated distinctive appellation `PlaceRepair` & split-word appellation rejoining**
+  - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceGraph.kt`
+  - **Root cause:** Heavily stylized/curved script appellations (`Cote-Rotie` `#58`, `Chateauneuf-du-Pape` `#78`) or vertically split two-line appellations (`Montagne` / `Saint-Emilion` `#103`) fall outside `d = 0` and 1-edit bounds when unanchored or split across lines.
+  - **Target bottles:** `#58, #78, #103`.
+
+- [ ] **5e. Optional single-region LWIN producer geography backfill when no place is printed on the front label**
+  - **Files:** `app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt`, `app/src/main/java/com/yourapp/wine/kb/WineKnowledgeBase.kt`
+  - **Root cause:** Minimalist estate/cuvée front labels (`Domaine Rene Rostaing` `#67`, `Chateau La Fleur-Petrus` `#133`, `Vietti` `#171`) print no geographic appellation on the visible face or curved neck, leaving `Region`/`Subregion` blank unless linked-wine or single-appellation estate metadata is consulted.
+  - **Target bottles:** `#67, #133, #171`.
 
 ---
 

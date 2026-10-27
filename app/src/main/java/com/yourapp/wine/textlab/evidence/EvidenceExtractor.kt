@@ -23,6 +23,58 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     private val leadingYearPattern = Regex("^((?:19|20)\\d{2})\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*(.+)$")
     private val trailingYearPattern = Regex("^(.+?)\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*((?:19|20)\\d{2})$")
     private val harvestYearPattern = Regex("(?i)\\b(?:[cgos]osecha|vendimia|annata|millesime|recolte|harvest)\\s+((?:19|20)\\d{2})\\b")
+    private val originFramingWrapper = Regex(
+        "(?i)^(?:product\\s+of|produce\\s+of|produced\\s+in|produit\\s+de|wine\\s+of|" +
+            "vin\\s+de|vin\\s+du|vin\\s+des|grand\\s+vin\\s+de|grand\\s+vin\\s+du|grand\\s+vin\\s+des)\\s+(.+?)(?:\\s+wine)?$"
+    )
+
+    private fun isLabRegionWide(place: Place, exactGeographyFastPath: Boolean): Boolean =
+        ReferenceWineCatalog.isRegionWideIndication(place) ||
+            (exactGeographyFastPath && place.countryCode == "FR" && EvidenceRanking.nameKey(place.name) == "bourgogne")
+
+    private fun compatibleGeography(a: Place, b: Place, exactGeographyFastPath: Boolean): Boolean {
+        if (view.compatible(a, b)) return true
+        if (!exactGeographyFastPath || a.countryCode != b.countryCode) return false
+        val regA = view.ancestors(a).firstOrNull { it.type == "region" }?.nameNorm
+        val regB = view.ancestors(b).firstOrNull { it.type == "region" }?.nameNorm
+        return regA != null && regA == regB && (isLabRegionWide(a, true) || isLabRegionWide(b, true))
+    }
+
+    private fun isExactWholePhrasePlace(
+        place: Place,
+        path: List<Place>,
+        framed: String?,
+        placeSubject: String,
+        yearlessText: String,
+    ): Boolean {
+        val placeKeys = (listOf(place.name) + BundledOrigins.spellingForms(place))
+            .map(EvidenceRanking::nameKey)
+            .filter(String::isNotEmpty)
+            .toSet()
+        if (placeKeys.isEmpty()) return false
+        val originStripped = originFramingWrapper.matchEntire(yearlessText.trim())?.groupValues?.get(1)?.trim()
+        val directForms = listOfNotNull(
+            framed,
+            placeSubject,
+            WineDesignations.classificationBase(placeSubject),
+            originStripped,
+            originStripped?.let(WineDesignations::classificationBase),
+        )
+        if (directForms.any { EvidenceRanking.nameKey(it) in placeKeys }) return true
+        val chainKeys = path.flatMap { anc -> listOf(anc.name) + BundledOrigins.spellingForms(anc) }
+            .map(EvidenceRanking::nameKey)
+            .filter(String::isNotEmpty)
+            .toSet() + placeKeys
+        val segments = yearlessText.split(Regex("[-\\u2013\\u2014\\u00b7,|/]+")).map(String::trim).filter(String::isNotEmpty)
+        if (segments.size in 2..3 &&
+            segments.all { EvidenceRanking.nameKey(it) in chainKeys } &&
+            segments.any { EvidenceRanking.nameKey(it) in placeKeys }
+        ) return true
+        val words = yearlessText.trim().split(Regex("\\s+")).filter(String::isNotEmpty)
+        return words.size == 2 &&
+            words.all { EvidenceRanking.nameKey(it) in chainKeys } &&
+            words.any { EvidenceRanking.nameKey(it) in placeKeys }
+    }
 
     private fun detachEdgeVintage(raw: String, maxYear: Int): Pair<String, String?> {
         val trimmed = raw.trim()
@@ -164,7 +216,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         return false
     }
 
-    fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS):EvidenceResult {
+    fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS,exactGeographyFastPath:Boolean=false):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {
             if(Thread.currentThread().isInterrupted) throw InterruptedException("Evidence extraction interrupted")
@@ -173,9 +225,12 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         val trace=EvidenceTrace()
         val graph=EvidenceLexicon.expand(EvidenceGraphBuilder.build(records,::checkBudget,typedIdentity),::checkBudget)
         trace.add("graph", "observations=${graph.observations.size}; phrases=${graph.phrases.size}; truncated=${graph.truncated}")
+        data class ExactGeoCandidate(val hypothesis:Hypothesis,val place:Place,val depth:Int)
         val hypotheses=mutableListOf<Hypothesis>()
+        val exactGeoCandidates=mutableListOf<ExactGeoCandidate>()
+        val partialGeoHypotheses=mutableSetOf<Hypothesis>()
         val roleNotes=mutableListOf<String>()
-        val labelContext=LabelContext.collect(graph,gazetteer,view,kb,typedIdentity)
+        val labelContext=if(exactGeographyFastPath) LabelContext.collect(graph,gazetteer,view,kb,typedIdentity,true) else LabelContext.collect(graph,gazetteer,view,kb,typedIdentity)
         trace.add("label_context",labelContext.traceSummary)
         for(p in graph.phrases.sortedByDescending { it.construction.contains("alternative") }) {
             checkBudget()
@@ -186,7 +241,58 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             val lexicalBonus=6.0*p.construction.split("alternative").lastIndex
             val sources=graph.observations.filter { it.id in p.observations }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
-            if(!supported) { trace.add("unsupported", "phrase=${p.id}");continue } // original reading retained
+            if(!supported) {
+                if(exactGeographyFastPath && sources.any { it.record.score >= .45f } &&
+                    !LabelContext.isNonOriginAdministrative(text,norm) &&
+                    !(typedIdentity && EvidenceIdentityRoles.headingOnly(text)) &&
+                    !(typedIdentity && EvidenceIdentityRoles.namedEstate(text)) &&
+                    graph.observations.any { other ->
+                        sources.none { it.record.engineId == other.record.engineId } &&
+                            other.record.score >= (if(other.record.engineId.startsWith("paddle")) .75f else .60f) &&
+                            com.yourapp.wine.merge.BoxMath.iou(other.record.bboxRect,p.box) > .10f
+                    }
+                ) {
+                    val rescuedFramed=WineDesignations.framedAppellation(text)
+                    val (rescuedYearless,_)=if(rescuedFramed==null) detachEdgeVintage(text,year) else (text to null)
+                    val rescuedSubject=rescuedFramed ?: rescuedYearless
+                    val rescuedNorm=TextNorm.normalize(rescuedSubject)
+                    if(rescuedNorm.count(Char::isLetter) >= 8) {
+                        val rescuedMatches=gazetteer.matches(
+                            rescuedNorm,
+                            labelContext.contextCountriesForPhrase(p.id),
+                            labelContext.contextRegionsForPhrase(p.id),
+                            true,
+                        ).filter { it.type != "country" }
+                        val rescuedPlace=rescuedMatches.singleOrNull()
+                        if(rescuedPlace!=null) {
+                            val rescuedPath=view.ancestors(rescuedPlace)
+                            if(isExactWholePhrasePlace(rescuedPlace,rescuedPath,rescuedFramed,rescuedSubject,rescuedYearless) && hypotheses.size<MAX_HYPOTHESES) {
+                                val rescuedValues=mutableMapOf<FieldId,String>()
+                                rescuedPath.lastOrNull { it.type=="country" }?.let { rescuedValues[FieldId.COUNTRY]=it.name }
+                                val multiRegion=(ReferenceWineCatalog.origin(rescuedPlace)?.regions?.size ?: 0)>1
+                                if(!multiRegion) rescuedPath.firstOrNull { it.type=="region" }?.let { rescuedValues[FieldId.REGION]=it.name }
+                                if(rescuedPlace.type !in setOf("country","region") && rescuedValues[FieldId.REGION]!=rescuedPlace.name)
+                                    rescuedValues[FieldId.SUBREGION]=rescuedPlace.name
+                                val regionWide=isLabRegionWide(rescuedPlace,true)
+                                if(regionWide) rescuedValues.remove(FieldId.SUBREGION)
+                                val effectiveDepth=if(regionWide && rescuedPath.size>2) 2 else rescuedPath.size
+                                val rescuedHyp=Hypothesis(
+                                    rescuedValues,
+                                    p,
+                                    50.0+effectiveDepth*5+lexicalBonus,
+                                    "observed geography and actual ancestors; no producer-origin inference; corroborated d=0 appellation",
+                                    rescuedPlace,
+                                )
+                                hypotheses+=rescuedHyp
+                                exactGeoCandidates+=ExactGeoCandidate(rescuedHyp,rescuedPlace,effectiveDepth)
+                                trace.add("exact_geography_rescued","phrase=${p.id}; place=${rescuedPlace.name}")
+                                continue
+                            }
+                        }
+                    }
+                }
+                trace.add("unsupported", "phrase=${p.id}");continue
+            } // original reading retained
             val nonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
             val originFramingAdmin=!nonOriginAdmin && MetadataRules.isBoilerplate(text)
             val administrative=nonOriginAdmin || originFramingAdmin
@@ -257,12 +363,15 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             // One word that another engine read as the start of a longer overlapping line is a fragment
             // of that line (CRUCLASS for CRU CLASSE, HATEAU for CHATEAU), never a producer or wine name.
             val fragmentOnly=norm.split(' ').size==1 && incomplete>0
-            fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null) {
+            fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null):Hypothesis? {
                 if(fragmentOnly && values.keys.all { it==FieldId.PRODUCER || it==FieldId.WINE_NAME }) {
-                    trace.add("fragment_identity","phrase=${p.id}; text=$text");return
+                    trace.add("fragment_identity","phrase=${p.id}; text=$text");return null
                 }
                 val weakContent=sources.count { TextNorm.normalize(it.record.textRaw) !in setOf("de","du","di","des") && it.record.score < if(it.record.engineId.startsWith("paddle")) .75f else .60f }
-                if(hypotheses.size<MAX_HYPOTHESES) hypotheses+=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place)
+                if(hypotheses.size>=MAX_HYPOTHESES) return null
+                val added=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place)
+                hypotheses+=added
+                return added
             }
             if(!originFramingAdmin && Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
                 offer(mapOf(FieldId.VINTAGE to norm),55.0,"complete observed vintage")
@@ -270,6 +379,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 val embeddedYear=(attachedYear?.takeIf { places.isNotEmpty() }) ?: explicitHarvestVintage(norm,year)
                 if(embeddedYear!=null) offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage")
             }
+            val coherentPhrasePlaces=exactGeographyFastPath && places.isNotEmpty() &&
+                places.all { a -> places.all { b -> compatibleGeography(a,b,true) } }
             for(place in places.take(4)) {
                 val path=view.ancestors(place)
                 val values=mutableMapOf<FieldId,String>()
@@ -285,14 +396,21 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 // One name may fill one level only: a collapsed hierarchy must not repeat the region.
                 if(place.type !in setOf("country","region") && !unresolvedSuffix && values[FieldId.REGION]!=place.name)
                     values[FieldId.SUBREGION]=place.name
-                val regionWide=ReferenceWineCatalog.isRegionWideIndication(place)
+                val regionWide=ReferenceWineCatalog.isRegionWideIndication(place) || isLabRegionWide(place,exactGeographyFastPath)
                 if(regionWide) values.remove(FieldId.SUBREGION)
                 val repairPenalty=if(repair!=null) maxOf(placeRepair.rankPenalty,repair.penalty) else 0.0
                 val effectiveDepth=if(regionWide && path.size>2) 2 else path.size
-                offer(values,50.0+effectiveDepth*5+lexicalBonus-repairPenalty,
+                val offered=offer(values,50.0+effectiveDepth*5+lexicalBonus-repairPenalty,
                     "observed geography and actual ancestors; no producer-origin inference"+
                         (if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else "")+
                         (repair?.let { "; "+it.reason } ?: ""),place)
+                if(exactGeographyFastPath && offered!=null && repair==null && !unresolvedSuffix) {
+                    if(coherentPhrasePlaces && isExactWholePhrasePlace(place,path,framed,placeSubject,yearlessText)) {
+                        exactGeoCandidates+=ExactGeoCandidate(offered,place,effectiveDepth)
+                    } else {
+                        partialGeoHypotheses+=offered
+                    }
+                }
             }
             if(originFramingAdmin) {
                 if(repair==null && framed!=null && places.isNotEmpty()) {
@@ -337,19 +455,83 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             if(!titleCue) offer(mapOf(FieldId.PRODUCER to text),(if(roles.hasProducerCue(text)) 85.0 else if(joined) 82.0 else 32.0)+lexicalBonus,"producer/brand interpretation; ${p.construction}")
             if(!namedEstate) offer(mapOf(FieldId.WINE_NAME to text),(if(joined) 88.0 else 43.0)+lexicalBonus,"title interpretation; ${p.construction}")
         }
-        val ranked=hypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
-        val solution=EvidenceSolver.solve(ranked,view,graph,::checkBudget,trace,search)
-        val fields=FieldId.entries.associateWith { field ->
-            val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinctBy { value ->
-                if(ranking.equivalentNames && field in setOf(FieldId.PRODUCER,FieldId.WINE_NAME)) EvidenceRanking.nameKey(value) else TextNorm.normalize(value)
-            }
-            val winner=solution.firstOrNull()?.firstOrNull { field in it.values }
-            val value=values.singleOrNull().orEmpty()
-            FieldCandidate(field,value,if(value.isBlank()) UiState.RED else UiState.YELLOW,
-                if(value.isBlank()) "Experimental abstention: missing or competing assignments" else "${winner?.reason}; phrase=${winner?.phrase?.id}; observations=${winner?.phrase?.observations}; experimental rank, not probability; confirm",
-                emptyList())
+        fun coherentExactPair(a:ExactGeoCandidate,b:ExactGeoCandidate):Boolean {
+            if(compatibleGeography(a.place,b.place,true)) return true
+            if(a.place.countryCode!=b.place.countryCode) return false
+            val regA=view.ancestors(a.place).firstOrNull { it.type=="region" }?.nameNorm
+            val regB=view.ancestors(b.place).firstOrNull { it.type=="region" }?.nameNorm
+            val keyA=EvidenceRanking.nameKey(a.place.name)
+            val keyB=EvidenceRanking.nameKey(b.place.name)
+            return regA!=null && regA==regB && keyA.isNotEmpty() && keyB.isNotEmpty() &&
+                (keyA.contains(keyB) || keyB.contains(keyA)) &&
+                com.yourapp.wine.merge.BoxMath.iou(a.hypothesis.phrase.box,b.hypothesis.phrase.box) > .08f
         }
-        val path=solution.firstOrNull()?.firstOrNull { it.place!=null }?.place?.let(view::ancestors).orEmpty()
+        val bestExactGeo=if(exactGeographyFastPath && exactGeoCandidates.isNotEmpty() &&
+            exactGeoCandidates.all { a -> exactGeoCandidates.all { b -> coherentExactPair(a,b) } }
+        ) {
+            val pool=exactGeoCandidates.filter { it.place.type!="country" }.ifEmpty { exactGeoCandidates }
+            pool.maxWithOrNull(
+                compareBy<ExactGeoCandidate> {
+                    if(FieldId.SUBREGION in it.hypothesis.values) 3
+                    else if(FieldId.REGION in it.hypothesis.values) 2
+                    else 1
+                }.thenBy { it.depth }
+                    .thenBy { it.place.nameNorm.length }
+                    .thenBy { it.hypothesis.rank }
+            )
+        } else null
+        val exactHypothesisSet=exactGeoCandidates.map { it.hypothesis }.toSet()
+        val filteredHypotheses=if(bestExactGeo!=null) {
+            trace.add("exact_geography_fast_path","place=${bestExactGeo.place.name}; values=${bestExactGeo.hypothesis.values}; phrase=${bestExactGeo.hypothesis.phrase.id}")
+            hypotheses.filterNot { h ->
+                h.place!=null && (
+                    (!compatibleGeography(h.place,bestExactGeo.place,true) && h !in exactHypothesisSet) ||
+                        (FieldId.REGION in bestExactGeo.hypothesis.values &&
+                            FieldId.SUBREGION !in bestExactGeo.hypothesis.values &&
+                            h in partialGeoHypotheses &&
+                            FieldId.SUBREGION in h.values)
+                    )
+            }
+        } else hypotheses
+        val ranked=filteredHypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
+        val solution=EvidenceSolver.solve(ranked,view,graph,::checkBudget,trace,search)
+        val exactLockedGeo:Pair<Hypothesis,Place>?=if(bestExactGeo!=null) {
+            val solverGeo=solution.mapNotNull { assignment -> assignment.firstOrNull { it.place!=null } }
+            val distinctSolverPlaces=solverGeo.mapNotNull { it.place }.distinctBy { it.id }
+            val singleDeeperCompatible=if(solution.isNotEmpty() && solverGeo.size==solution.size && distinctSolverPlaces.size==1) {
+                val candidatePlace=distinctSolverPlaces.single()
+                val candidateHyp=solverGeo.first()
+                val strictlyDeeper=(FieldId.SUBREGION in candidateHyp.values && FieldId.SUBREGION !in bestExactGeo.hypothesis.values) ||
+                    (FieldId.REGION in candidateHyp.values && FieldId.REGION !in bestExactGeo.hypothesis.values)
+                if(strictlyDeeper && compatibleGeography(candidatePlace,bestExactGeo.place,true)) candidateHyp to candidatePlace else null
+            } else null
+            singleDeeperCompatible ?: (bestExactGeo.hypothesis to bestExactGeo.place)
+        } else null
+        val geoFields=setOf(FieldId.COUNTRY,FieldId.REGION,FieldId.SUBREGION)
+        val fields=FieldId.entries.associateWith { field ->
+            if(exactLockedGeo!=null && field in geoFields) {
+                val (lockedHyp,_)=exactLockedGeo
+                val lockedVal=lockedHyp.values[field].orEmpty()
+                FieldCandidate(
+                    field,
+                    lockedVal,
+                    if(lockedVal.isBlank()) UiState.RED else UiState.YELLOW,
+                    if(lockedVal.isBlank()) "d=0 exact geography fast-path: finer locality not claimed"
+                    else "d=0 exact geography fast-path; ${lockedHyp.reason}; phrase=${lockedHyp.phrase.id}; observations=${lockedHyp.phrase.observations}; confirm",
+                    emptyList(),
+                )
+            } else {
+                val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinctBy { value ->
+                    if(ranking.equivalentNames && field in setOf(FieldId.PRODUCER,FieldId.WINE_NAME)) EvidenceRanking.nameKey(value) else TextNorm.normalize(value)
+                }
+                val winner=solution.firstOrNull()?.firstOrNull { field in it.values }
+                val value=values.singleOrNull().orEmpty()
+                FieldCandidate(field,value,if(value.isBlank()) UiState.RED else UiState.YELLOW,
+                    if(value.isBlank()) "Experimental abstention: missing or competing assignments" else "${winner?.reason}; phrase=${winner?.phrase?.id}; observations=${winner?.phrase?.observations}; experimental rank, not probability; confirm",
+                    emptyList())
+            }
+        }
+        val path=(exactLockedGeo?.second ?: solution.firstOrNull()?.firstOrNull { it.place!=null }?.place)?.let(view::ancestors).orEmpty()
         val alternatives=FieldId.entries.associateWith { f -> ranked.filter { f in it.values }.sortedByDescending { it.rank }.distinctBy { it.values[f] }.take(6).map {
             FieldCandidate(f,it.values.getValue(f),UiState.YELLOW,"${it.reason}; phrase=${it.phrase.id}; observations=${it.phrase.observations}; rank=${it.rank}",emptyList())
         } }
