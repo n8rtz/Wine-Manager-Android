@@ -2,6 +2,7 @@ package com.yourapp.wine
 
 import com.yourapp.wine.phonecorpus.PhoneCorpusRunner
 import com.yourapp.wine.phonecorpus.WineAppLabelsBuildLog
+import com.yourapp.wine.textlab.TextLabCsv
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -17,14 +18,14 @@ class WineAppLabelsBuildLogTest {
     val temp = TemporaryFolder()
 
     @Test
-    fun logsScalarBuildSummariesAndSelectsImmediatelyPrecedingBuild() {
+    fun composesBestScoresAcrossDistinctBuildsAndLogsSourceBuildNumbers() {
         val logFile = temp.newFile("benchmark-results-log.csv").apply { delete() }
         val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
 
         // Initially empty -> placeholder row with em-dashes.
-        assertNull(log.previousBuildEntry("build-c:clean"))
-        val emptyRow = log.previousBuildRow("build-c:clean")
-        assertEquals(WineAppLabelsBuildLog.LAST_BUILD_ROW_TITLE, emptyRow.first())
+        assertNull(log.bestBuildSummary())
+        val emptyRow = log.bestBuildRow()
+        assertEquals(WineAppLabelsBuildLog.BEST_BUILD_ROW_TITLE, emptyRow.first())
         assertEquals(14, emptyRow.size)
         assertTrue(emptyRow.drop(1).all { it == "—" })
 
@@ -32,68 +33,113 @@ class WineAppLabelsBuildLogTest {
         val buildB = WineAppLabelsBuildLog.BuildInfo("build-b:clean", "#56 (bbbbbbbbbbbb)", "56", "bbbbbbbbbbbb", "feature/lab")
         val buildC = WineAppLabelsBuildLog.BuildInfo("build-c:clean", "#57 (cccccccccccc)", "57", "cccccccccccc", "feature/lab")
 
+        // Build A: highest Producer (94/31) and Vintage (121/3), lower Total correct (605) & Complete (41/123).
         log.recordSummary(
-            runId = "run-a-1",
+            runId = "run-a-full",
             buildInfo = buildA,
             mode = PhoneCorpusRunner.Mode.LAB,
-            summaryRow = listOf("Lab v4", "125", "123", "28/123", "44", "51", "0", "505", "92", "80", "54", "16", "2", "0"),
+            summaryRow = listOf("Lab v4", "125", "123", "41/123", "45", "37", "0", "550", "88", "55", "55", "16", "2", "0"),
             timestampMs = 1_700_000_000_000L,
+            fieldScores = mapOf(
+                "producer" to WineAppLabelsBuildLog.FieldScore(94, 31),
+                "wine_name" to WineAppLabelsBuildLog.FieldScore(68, 56),
+                "country" to WineAppLabelsBuildLog.FieldScore(121, 4),
+                "region" to WineAppLabelsBuildLog.FieldScore(114, 11),
+                "subregion" to WineAppLabelsBuildLog.FieldScore(107, 18),
+                "vintage" to WineAppLabelsBuildLog.FieldScore(121, 3),
+            ),
         )
+
+        // Build B: highest Complete (46/123), highest Total correct (566+59=625), highest Region (118/7) & Subregion (115/10),
+        // but regressed on Producer (90/35) vs Build A.
         log.recordSummary(
             runId = "run-b-full",
             buildInfo = buildB,
             mode = PhoneCorpusRunner.Mode.LAB,
-            summaryRow = listOf("Lab v4", "125", "123", "31/123", "45", "47", "0", "521", "86", "70", "54", "18", "2", "0"),
+            summaryRow = listOf("Lab v4", "125", "123", "46/123", "46", "31", "0", "566", "74", "49", "59", "14", "2", "0"),
             timestampMs = 1_700_010_000_000L,
-        )
-        // Updating the same runId updates in place rather than duplicating rows; starting a new
-        // live run on build C keeps build B as "one build old".
-        log.recordSummary(
-            runId = "run-c-live",
-            buildInfo = buildC,
-            mode = PhoneCorpusRunner.Mode.LAB,
-            summaryRow = listOf("Lab v4", "40", "40", "14/40", "16", "10", "0", "178", "22", "18", "18", "4", "0", "0"),
-            timestampMs = 1_700_020_000_000L,
-        )
-        log.recordSummary(
-            runId = "run-c-live",
-            buildInfo = buildC,
-            mode = PhoneCorpusRunner.Mode.LAB,
-            summaryRow = listOf("Lab v4", "125", "123", "36/123", "48", "39", "0", "540", "72", "65", "54", "14", "2", "0"),
-            timestampMs = 1_700_025_000_000L,
+            fieldScores = mapOf(
+                "producer" to WineAppLabelsBuildLog.FieldScore(90, 35),
+                "wine_name" to WineAppLabelsBuildLog.FieldScore(73, 51),
+                "country" to WineAppLabelsBuildLog.FieldScore(123, 2),
+                "region" to WineAppLabelsBuildLog.FieldScore(118, 7),
+                "subregion" to WineAppLabelsBuildLog.FieldScore(115, 10),
+                "vintage" to WineAppLabelsBuildLog.FieldScore(120, 4),
+            ),
         )
 
+        // Build C: partial in-progress pass (40/125). Its partial error counts (wrong=15, twoPlusErrors=8)
+        // must NOT overwrite full-corpus minimums from Build B.
+        log.recordSummary(
+            runId = "run-c-partial",
+            buildInfo = buildC,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v4", "40", "40", "16/40", "16", "8", "0", "180", "15", "12", "18", "3", "0", "0"),
+            timestampMs = 1_700_020_000_000L,
+            fieldScores = mapOf(
+                "producer" to WineAppLabelsBuildLog.FieldScore(30, 10),
+                "wine_name" to WineAppLabelsBuildLog.FieldScore(24, 16),
+                "country" to WineAppLabelsBuildLog.FieldScore(39, 1),
+                "region" to WineAppLabelsBuildLog.FieldScore(37, 3),
+                "subregion" to WineAppLabelsBuildLog.FieldScore(35, 5),
+                "vintage" to WineAppLabelsBuildLog.FieldScore(38, 2),
+            ),
+        )
+
+        // readEntries() returns only the 3 real run rows, never double-counting the synthetic best_build row.
         val entries = log.readEntries()
         assertEquals(3, entries.size)
 
-        // While running on build C, "Lab v4 Last build" resolves to build B (one build old), NOT build A or C.
-        val prevForC = log.previousBuildEntry("build-c:clean")
-        assertNotNull(prevForC)
-        assertEquals("bbbbbbbbbbbb", prevForC!!.buildCommit)
-        assertEquals("feature/lab", prevForC.branch)
+        val best = log.bestBuildSummary()
+        assertNotNull(best)
         assertEquals(
-            listOf("Lab v4 Last build", "125", "123", "31/123", "45", "47", "0", "521", "86", "70", "54", "18", "2", "0"),
-            log.previousBuildRow("build-c:clean"),
+            listOf("Lab v4 Best build", "125", "123", "46/123", "46", "31", "0", "566", "74", "49", "59", "14", "2", "0"),
+            best!!.toTableRow(),
         )
+        // Producer & Vintage come from Build A; Complete, Total correct, Wine name, Country, Region, Subregion come from Build B.
+        assertEquals(625, best.totalCorrect.value)
+        assertEquals("#56 (bbbbbbbbbbbb)", best.totalCorrect.buildNumber)
+        assertEquals("#56 (bbbbbbbbbbbb)", best.complete.buildNumber)
+        assertEquals(WineAppLabelsBuildLog.FieldScore(94, 31), best.fieldScores["producer"])
+        assertEquals("#55 (aaaaaaaaaaaa)", best.fieldBests["producer"]?.buildNumber)
+        assertEquals(WineAppLabelsBuildLog.FieldScore(73, 51), best.fieldScores["wine_name"])
+        assertEquals("#56 (bbbbbbbbbbbb)", best.fieldBests["wine_name"]?.buildNumber)
+        assertEquals(WineAppLabelsBuildLog.FieldScore(118, 7), best.fieldScores["region"])
+        assertEquals("#56 (bbbbbbbbbbbb)", best.fieldBests["region"]?.buildNumber)
+        assertEquals(WineAppLabelsBuildLog.FieldScore(121, 3), best.fieldScores["vintage"])
+        assertEquals("#55 (aaaaaaaaaaaa)", best.fieldBests["vintage"]?.buildNumber)
 
-        // Once upgraded to a later build D, "Lab v4 Last build" advances to build C's final 36/123 score.
-        assertEquals(
-            listOf("Lab v4 Last build", "125", "123", "36/123", "48", "39", "0", "540", "72", "65", "54", "14", "2", "0"),
-            log.previousBuildRow("build-d:clean"),
-        )
-
-        // Verify the CSV file contains only metadata + scalar numbers (no raw text/trace/image keys).
-        val rawCsv = logFile.readText(Charsets.UTF_8)
-        for (required in listOf("date", "time", "build_number", "branch", "model_version", "attempted", "complete", "one_error", "two_plus_errors")) {
-            assertTrue(rawCsv.contains(required))
+        // Verify the persisted CSV logs the composite best_build row along with per-parameter build numbers,
+        // and still excludes raw OCR / image payloads.
+        val parsedCsvRows = mutableListOf<Map<String, String>>()
+        var headers: List<String>? = null
+        logFile.bufferedReader(Charsets.UTF_8).use { reader ->
+            TextLabCsv.read(reader) { record ->
+                if (headers == null) headers = record
+                else parsedCsvRows += headers.orEmpty().mapIndexed { idx, col -> col to record.getOrElse(idx) { "" } }.toMap()
+            }
         }
+        assertEquals(4, parsedCsvRows.size)
+        val bestCsvRow = parsedCsvRows.single { it["row_type"] == WineAppLabelsBuildLog.BEST_BUILD_ROW_TYPE }
+        assertEquals("Lab v4 Best build", bestCsvRow["model_version"])
+        assertEquals("46", bestCsvRow["complete"])
+        assertEquals("625", bestCsvRow["total_correct"])
+        assertEquals("94", bestCsvRow["producer_correct"])
+        assertEquals("31", bestCsvRow["producer_incorrect"])
+        assertEquals("#56 (bbbbbbbbbbbb)", bestCsvRow["best_complete_build"])
+        assertEquals("#56 (bbbbbbbbbbbb)", bestCsvRow["best_total_correct_build"])
+        assertEquals("#55 (aaaaaaaaaaaa)", bestCsvRow["best_producer_build"])
+        assertEquals("#56 (bbbbbbbbbbbb)", bestCsvRow["best_wine_name_build"])
+        assertEquals("#55 (aaaaaaaaaaaa)", bestCsvRow["best_vintage_build"])
+
+        val rawCsv = logFile.readText(Charsets.UTF_8)
         for (forbidden in listOf("raw_text", "tokens", "trace", "image_sha256")) {
             assertFalse(rawCsv.contains(forbidden))
         }
     }
 
     @Test
-    fun summarizesAndPersistsPerFieldCorrectIncorrectScoresAcrossBuilds() {
+    fun summarizesAndPersistsPerFieldCorrectIncorrectScores() {
         val logFile = temp.newFile("benchmark-field-scores-log.csv").apply { delete() }
         val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
 
@@ -121,7 +167,7 @@ class WineAppLabelsBuildLogTest {
         assertEquals(WineAppLabelsBuildLog.FieldScore(1, 1), fieldScores["subregion"])
         assertEquals(WineAppLabelsBuildLog.FieldScore(1, 0), fieldScores["vintage"])
 
-        val buildPrev = WineAppLabelsBuildLog.BuildInfo(
+        val buildInfo = WineAppLabelsBuildLog.BuildInfo(
             buildKey = "prev:clean",
             buildNumber = "#57 (prev)",
             versionCode = "57",
@@ -130,21 +176,21 @@ class WineAppLabelsBuildLogTest {
         )
         log.recordSummary(
             runId = "run-prev",
-            buildInfo = buildPrev,
+            buildInfo = buildInfo,
             mode = PhoneCorpusRunner.Mode.LAB,
             summaryRow = listOf("Lab v4", "2", "1", "0/1", "1", "0", "0", "4", "1", "1", "2", "1", "2", "0"),
             timestampMs = 1_700_100_000_000L,
             fieldScores = fieldScores,
         )
 
-        val restored = log.previousBuildEntry("curr:clean")
-        assertNotNull(restored)
-        assertTrue(restored!!.hasFieldScores)
-        assertEquals("1/1", restored.fieldScores["producer"]?.label())
-        assertEquals("0/1", restored.fieldScores["wine_name"]?.label())
-        assertEquals("2/0", restored.fieldScores["country"]?.label())
-        assertEquals("1/1", restored.fieldScores["region"]?.label())
-        assertEquals("1/1", restored.fieldScores["subregion"]?.label())
-        assertEquals("1/0", restored.fieldScores["vintage"]?.label())
+        val restoredBest = log.bestBuildSummary()
+        assertNotNull(restoredBest)
+        assertEquals("1/1", restoredBest!!.fieldScores["producer"]?.label())
+        assertEquals("0/1", restoredBest.fieldScores["wine_name"]?.label())
+        assertEquals("2/0", restoredBest.fieldScores["country"]?.label())
+        assertEquals("1/1", restoredBest.fieldScores["region"]?.label())
+        assertEquals("1/1", restoredBest.fieldScores["subregion"]?.label())
+        assertEquals("1/0", restoredBest.fieldScores["vintage"]?.label())
+        assertEquals("#57 (prev)", restoredBest.fieldBests["producer"]?.buildNumber)
     }
 }

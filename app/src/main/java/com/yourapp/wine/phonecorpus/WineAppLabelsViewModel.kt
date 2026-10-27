@@ -71,8 +71,8 @@ internal data class WineAppLabelsState(
     val remainingImages: Int = WINE_APP_LABEL_COUNT,
     /** Per-field correct/incorrect counts for the current build's Lab v4 run. */
     val currentBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
-    /** Per-field correct/incorrect counts for the immediately preceding distinct build's Lab v4 run. */
-    val lastBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
+    /** Highest per-field correct/incorrect counts achieved across all logged Lab v4 builds. */
+    val bestBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     /** Per-field correct/incorrect counts for frozen Prod v3.0 (scoped to Lab v4's attempted subset). */
     val prodV3FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
 )
@@ -339,6 +339,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 ?: metadata.optLong("created_ms", dir.lastModified())
             log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts, fieldScores)
         }
+        log.syncBestBuildSummary(PhoneCorpusRunner.Mode.LAB)
     }
 
     private fun refresh() {
@@ -392,15 +393,15 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val frozenReady = captures.size == BASELINE_MODES.size
         val captureRemaining = if (frozenReady) 0 else WINE_APP_LABEL_COUNT - captured
         val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
-        val lastBuildEntry = buildLog?.previousBuildEntry()
-        val lastBuildRow = lastBuildEntry?.toTableRow()
-            ?: WineAppLabelsBuildLog.emptyLastBuildRow(displayHeaders.size)
-        val lastBuildFieldScores = lastBuildEntry?.fieldScores.orEmpty()
-        val comparisonRows = listOf(modeRows.first(), lastBuildRow) + modeRows.drop(1)
+        val bestBuild = buildLog?.bestBuildSummary()
+        val bestBuildRow = bestBuild?.toTableRow()
+            ?: WineAppLabelsBuildLog.emptyBestBuildRow(displayHeaders.size)
+        val bestBuildFieldScores = bestBuild?.fieldScores.orEmpty()
+        val comparisonRows = listOf(modeRows.first(), bestBuildRow) + modeRows.drop(1)
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · Lab v4 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
-            if (lastBuildEntry != null) {
-                appendLine("Lab v4 Last build: ${lastBuildEntry.buildNumber} · branch ${lastBuildEntry.branch} · ${lastBuildEntry.date} ${lastBuildEntry.time}")
+            if (bestBuild != null) {
+                appendLine(bestBuild.provenanceLine())
             }
             appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v4 has attempted so far, so all four rows compare side by side without re-running Prod. Lab v4 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
             appendLine("Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
@@ -411,7 +412,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             fun formatFieldRow(title: String, scores: Map<String, WineAppLabelsBuildLog.FieldScore>): String =
                 (listOf(title) + PhoneCorpusMath.fields.map { scores[it]?.label() ?: "—" }).joinToString(" | ")
             appendLine(formatFieldRow("Current build", currentFieldScores))
-            appendLine(formatFieldRow("Last build", lastBuildFieldScores))
+            appendLine(formatFieldRow("Best build", bestBuildFieldScores))
             appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V3.title, prodV3FieldScores))
         }
         val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
@@ -425,7 +426,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     labCompleted = labCount, ocrCached = ocrReady,
                     captures = captures, captureRemaining = captureRemaining,
                     currentBuildFieldScores = currentFieldScores,
-                    lastBuildFieldScores = lastBuildFieldScores,
+                    bestBuildFieldScores = bestBuildFieldScores,
                     prodV3FieldScores = prodV3FieldScores,
                 )
             } else {
@@ -440,7 +441,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentImageStartedRealtimeMs = null,
                     remainingImages = idleRemaining,
                     currentBuildFieldScores = currentFieldScores,
-                    lastBuildFieldScores = lastBuildFieldScores,
+                    bestBuildFieldScores = bestBuildFieldScores,
                     prodV3FieldScores = prodV3FieldScores,
                 )
             }
@@ -621,7 +622,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 elapsedRunMs = 0L, runSegmentStartedRealtimeMs = null, avgImageMs = null,
                 etaPerImageMs = null, currentImageStartedRealtimeMs = null,
                 remainingImages = WINE_APP_LABEL_COUNT,
-                currentBuildFieldScores = emptyMap(), lastBuildFieldScores = emptyMap(),
+                currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(),
                 prodV3FieldScores = emptyMap(),
                 message = "Loading saved 125-label results…",
             )

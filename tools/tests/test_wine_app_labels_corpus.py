@@ -377,15 +377,21 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("if (!wasCanceled && !movedPastSlop && !multiTouch)", activity)
         self.assertIn("currentOnDismiss()", activity)
 
-    def test_lab_v4_last_build_row_and_scalar_results_log_contracts(self):
+    def test_lab_v4_best_build_row_and_scalar_results_log_contracts(self):
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
 
-        # Separate scalar log file (never mixed into scored/raw export CSVs, zero raw OCR/image data).
+        # Separate scalar log file (never mixed into scored/raw export CSVs, zero raw OCR/image data)
+        # logs both per-run scalar metrics and the composite best_build row with source build numbers.
         self.assertIn('const val FILE_NAME = "benchmark-results-log.csv"', build_log)
-        self.assertIn('const val LAST_BUILD_ROW_TITLE = "Lab v4 Last build"', build_log)
+        self.assertIn('const val BEST_BUILD_ROW_TITLE = "Lab v4 Best build"', build_log)
+        self.assertIn('const val BEST_BUILD_ROW_TYPE = "best_build"', build_log)
+        self.assertNotIn("Lab v4 Last build", build_log)
+        self.assertNotIn('"Last build"', activity)
+        self.assertNotIn('"Last build"', viewmodel)
         for field in (
+            '"row_type"',
             '"date"',
             '"time"',
             '"build_number"',
@@ -403,6 +409,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             '"wrong"',
             '"missing"',
             '"correct_blanks"',
+            '"total_correct"',
             '"unsupported"',
             '"unresolved"',
             '"deadline_partial"',
@@ -418,24 +425,34 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             '"subregion_incorrect"',
             '"vintage_correct"',
             '"vintage_incorrect"',
+            '"best_complete_build"',
+            '"best_total_correct_build"',
+            '"best_correct_values_build"',
+            '"best_producer_build"',
+            '"best_wine_name_build"',
+            '"best_country_build"',
+            '"best_region_build"',
+            '"best_subregion_build"',
+            '"best_vintage_build"',
         ):
             self.assertIn(field, build_log)
         for forbidden in ('"raw_text"', '"tokens"', '"trace"', "BitmapFactory", "images/"):
             self.assertNotIn(forbidden, build_log)
 
-        # Score table places "Lab v4 Last build" directly below "Lab v4" and above Prod v3.0/v2.0/v1.0,
-        # and backfills existing saved Lab runs on load.
-        self.assertIn("val comparisonRows = listOf(modeRows.first(), lastBuildRow) + modeRows.drop(1)", viewmodel)
-        self.assertIn("val lastBuildEntry = buildLog?.previousBuildEntry()", viewmodel)
+        # Score table places "Lab v4 Best build" directly below "Lab v4" and above Prod v3.0/v2.0/v1.0,
+        # backfills existing saved Lab runs on load, and syncs the persisted best_build log row.
+        self.assertIn("val comparisonRows = listOf(modeRows.first(), bestBuildRow) + modeRows.drop(1)", viewmodel)
+        self.assertIn("val bestBuild = buildLog?.bestBuildSummary()", viewmodel)
         self.assertIn("backfillBuildLog(logStore, signature)", viewmodel)
+        self.assertIn("log.syncBestBuildSummary(PhoneCorpusRunner.Mode.LAB)", viewmodel)
         self.assertIn('WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))', viewmodel)
 
-        # Granular per-field Current build / Last build / Prod v3.0 table sits at the bottom of
+        # Granular per-field Current build / Best build / Prod v3.0 table sits at the bottom of
         # Scored results (above CSV export) using green/red "correct/incorrect" passFailLabel formatting.
         scored_section = activity.split('Text("Scored results"', 1)[1].split('Text("CSV export"', 1)[0]
         self.assertIn("BuildFieldComparisonTable(", scored_section)
         self.assertIn('"Current build" to currentScores', activity)
-        self.assertIn('"Last build" to lastBuildScores', activity)
+        self.assertIn('"Best build" to bestBuildScores', activity)
         self.assertIn("PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores", activity)
         self.assertIn("val prodV3Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V3)", viewmodel)
         self.assertIn("passFailLabel(score.correct, score.incorrect, passColor, failColor)", activity)

@@ -143,7 +143,7 @@ app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt # The on
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt # Process-scoped Lab pass + one-time Prod capture; survives background navigation; exports scored/raw CSV through CsvUploadParts
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsRunService.kt # Foreground service + partial wake lock keeping an active 125-label benchmark running when navigated away from
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt # Frozen Prod v1.0/v2.0/v3.0 outcomes per photo, keyed by corpus signature
-app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt # Separate scalar benchmark-results-log.csv (date, time, build #, branch, model version, counts only) powering the "Lab v4 Last build" comparison row
+app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt # Separate scalar benchmark-results-log.csv (date, time, build #, branch, model version, counts, and per-parameter best-build provenance) powering the "Lab v4 Best build" / "Best build" comparison rows
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsTimers.kt # Pure formatting and monotonic live-tick arithmetic for Run time (mm ss), Avg / image (s), and Est. remaining countdown (mm ss)
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt # Per-photo cache of verified ML Kit + Paddle v6 Medium OCR outputs for Lab v4, keyed by corpus + model signature
 app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt # Fresh or opt-in Lab v4 cached OCR per photo; runImageAllModes is the only entry point

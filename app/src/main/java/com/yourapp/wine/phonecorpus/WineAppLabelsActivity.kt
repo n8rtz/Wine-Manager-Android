@@ -305,7 +305,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     Spacer(Modifier.height(8.dp))
                     BuildFieldComparisonTable(
                         currentScores = state.currentBuildFieldScores,
-                        lastBuildScores = state.lastBuildFieldScores,
+                        bestBuildScores = state.bestBuildFieldScores,
                         prodV3Scores = state.prodV3FieldScores,
                     )
                 }
@@ -948,7 +948,7 @@ private fun BenchmarkTimersRow(state: WineAppLabelsState, nowRealtimeMs: Long) {
 @Composable
 private fun BuildFieldComparisonTable(
     currentScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
-    lastBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    bestBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     prodV3Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
@@ -958,7 +958,7 @@ private fun BuildFieldComparisonTable(
     val totalWidth = buildColumnWidth + (fieldColumnWidth.value * FAILURE_FILTER_OPTIONS.size).dp
     val buildRows = listOf(
         "Current build" to currentScores,
-        "Last build" to lastBuildScores,
+        "Best build" to bestBuildScores,
         PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores,
     )
     SelectionContainer {
