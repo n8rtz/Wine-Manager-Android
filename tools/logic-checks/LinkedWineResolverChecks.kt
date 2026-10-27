@@ -33,6 +33,16 @@ fun main() {
     verify(LinkedWineResolver(index(ws=listOf(wine.copy(producerId="b")))).resolve("","",pd,producers+wineSpans).wineId==null)
     verify(LinkedWineResolver(idx).resolve("","Keep",pd,producers+wineSpans) { throw ProducerResolver.BudgetExceeded() }.wine=="Keep")
     verify(!LinkedWineResolver.eligible("Imported by Moonlight Cuvee"))
+    // Lab v4 single-reading policy: one engine carries both sides; Prod behaviour is untouched above.
+    val lab=ProducerResolver.Policy.singleReading
+    val oneProducer=ProducerResolver(idx).resolve("",producers.take(1),policy=lab)
+    verify(oneProducer.acceptedId=="a")
+    verify(ProducerResolver(idx).resolve("",producers.take(1)).acceptedId==null)
+    val oneWine=LinkedWineResolver(idx).resolve("","",oneProducer,producers.take(1)+wineSpans.take(1),policy=lab)
+    verify(oneWine.wineId==wine.id && oneWine.producer==estate.name)
+    verify(oneWine.reason.contains("lab single-reading policy"))
+    verify(LinkedWineResolver(idx).resolve("","",oneProducer,wineSpans.take(1),policy=lab).wineId==null) // producer observation still required
+    verify(LinkedWineResolver(idx).resolve("","",pd,producers+wineSpans.take(1)).wineId==null) // Prod unchanged
     verify(!LinkedWineResolver.eligible("Moonlight Cuvee 2019"))
     verify(LinkedWineResolver.eligible("Bin 389"))
     verify(!LinkedWineResolver.eligible("Grand Cru"))

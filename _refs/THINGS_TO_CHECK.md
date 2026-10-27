@@ -45,6 +45,17 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 6. [ ] Tick **New Lab run** on the **Large image dataset test** after changing `PhoneCorpusRunner.REPAIR_PLACES_IN_BENCHMARK`: the benchmark CSV carries `place_repair_enabled=true` on every row of that run, and a mixed corpus (some photos before, some after) never happens because the flag is fixed per batch.
 7. [ ] Timings: the run still finishes inside the per-photo budget on a mid-range phone (repair only runs for unmatched phrases and only when the experiment is on).
 
+### Lab v4 single-reading resolver policy (experimental, off by default)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] **Profile → Settings → OCR Labs**, enable **Compare experimental evidence pipeline** and **Use guarded hybrid**: the new **Accept one engine reading for producer and linked wine (experimental)** checkbox sits under the other two experiments and is **unchecked** by default.
+2. [ ] With it off, a Lab run is byte-for-byte the previous behaviour: every `producer_gazetteer_reason` / `wine_gazetteer_reason` still says **two engines**, and the CSV metadata says `resolver_single_reading_enabled=false`.
+3. [ ] Turn it on, tick **New Lab run**, and re-run a few script-face labels where Paddle read the producer cleanly and ML Kit did not: Lab v4 may now fill producer and linked wine where it previously abstained. The reason line then reads **one engine reading under the lab single-reading policy**.
+4. [ ] Confirm the Prod v3.0 contender on the same photos is unchanged — it must still abstain on those labels and keep the **two engines** wording. If Prod v3.0 changed, the flag leaked and the run is not comparable.
+5. [ ] Confirm the gates that are supposed to remain: a garbled span still fails eligibility, a rival name one edit away still abstains (ambiguous identity), and an existing different producer/wine is still protected. Only the engine quorum should differ.
+6. [ ] In the diagnostics table, the step formerly called **Two-engine + disjoint agreement** now reads **Independent-support agreement**; its description names the active policy.
+
 ### Nested regions and subregions reach the form
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*

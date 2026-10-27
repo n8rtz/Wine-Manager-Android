@@ -29,5 +29,18 @@ fun main() {
     verify(resolver.resolve("keep",List(129) { spans()[0] }).acceptedId==null)
     verify(ProducerResolver(index(List(33) { primary.copy(id=it.toString()) })).resolve("",spans()).acceptedId==null)
     verify(ProducerResolver.normalize("Château d’Example")=="chateau d example")
+    // Lab v4 single-reading policy (owner, 2026-10-27): the engine quorum is the only difference.
+    val lab=ProducerResolver.Policy.singleReading
+    val oneEngine=spans().take(1)
+    verify(resolver.resolve("",oneEngine).acceptedId==null) // Prod keeps two engines
+    verify(resolver.resolve("",oneEngine,policy=lab).acceptedId=="estate")
+    verify(resolver.resolve("",oneEngine,policy=lab).reason.contains("one engine reading under the lab single-reading policy"))
+    verify(resolver.resolve("",spans(),policy=lab).acceptedId=="estate")
+    verify(resolver.resolve("",spans()).reason=="primary LWIN producer/brand name supported by two engines; confirm manually")
+    verify(resolver.resolve("",spans(),policy=lab).reason==resolver.resolve("",spans()).reason) // same wording when two engines did agree
+    verify(ProducerResolver(index(listOf(primary,ProducerResolver.Entity("rival","Château Examplar",
+        ProducerResolver.normalize("Château Examplar"))))).resolve("",oneEngine,policy=lab).acceptedId==null) // ambiguity still blocks
+    verify(resolver.resolve("",spans("Imported by Chateau Example"),policy=lab).acceptedId==null) // eligibility unchanged
+    verify(resolver.resolve("",List(129) { spans()[0] },policy=lab).acceptedId==null) // span bound unchanged
     println("PASS: $checks conservative producer resolver checks (actual Kotlin; fixture data, no accuracy claim).")
 }

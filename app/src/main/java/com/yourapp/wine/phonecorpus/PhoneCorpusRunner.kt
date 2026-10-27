@@ -27,6 +27,13 @@ internal object PhoneCorpusRunner {
      * (the flag is written to each CSV's `place_repair_enabled` metadata column).
      */
     internal const val REPAIR_PLACES_IN_BENCHMARK=false
+    /**
+     * Lab-only measurement switch for the resolver engine quorum. False keeps Prod's two-engine rule in
+     * both spatial contenders. True lowers it to one engine for **Lab v4 only** (Prod v3.0 is untouched),
+     * so the delta is the quorum itself; exported per CSV as `resolver_single_reading_enabled`, and
+     * flipping it requires a **New Lab run** so one corpus never mixes both settings.
+     */
+    internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=false
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
         LAB("Lab v4", "lab-v4-expanded-producers", "spatial_evidence_summary"),
         PRODUCTION_V3("Prod v3.0", "production-v3.0-lwin-only", "spatial_lwin_evidence_summary"),
@@ -170,7 +177,8 @@ internal object PhoneCorpusRunner {
                     val batch=TextLabBatch(listOf(TextLabImageKey(image,image)),setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true,
                         compareEvidence=true,anchorHybrid=true,repairProducer=true,
                         spatialPhrases=needSpatial,benchmarkOnly=true,benchmarkAllPipelines=true,
-                        benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,repairPlaces=REPAIR_PLACES_IN_BENCHMARK)
+                        benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,repairPlaces=REPAIR_PLACES_IN_BENCHMARK,
+                        resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK)
                     val journal=batch.journals.single()
                     diagnosticJournal=journal
                     labModes.forEach { mark(it,"input.decoded",false,"image decode did not complete") }

@@ -96,7 +96,7 @@ internal object TextLabWineExtraction {
                     batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false) }
                 }
                 if(runExpandedSpatial) {
-                    batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=true) }
+                    batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=true,singleReading=batch.resolverSingleReading) }
                 }
             }
             if(batch.compareGazetteer || batch.residualCandidates) {
@@ -118,7 +118,12 @@ internal object TextLabWineExtraction {
     private fun appendSpatialContender(context:Context,journal:TextLabJournal,
         experimental:com.yourapp.wine.textlab.evidence.EvidenceExtractor?,
         hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
-        repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean) {
+        repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean,
+        singleReading:Boolean=false) {
+        // Lab v4 only, default off: the Prod v3.0 contender keeps the Prod two-engine rule so the
+        // comparison stays "Prod policy vs Lab policy", not "old build vs new build".
+        val policy=if(expanded && singleReading) com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading
+            else com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod
         val candidate=if(expanded) "spatial_lab" else "spatial_lwin_lab"
         val deadline=android.os.SystemClock.elapsedRealtime()+500L
         val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=deadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
@@ -153,7 +158,7 @@ internal object TextLabWineExtraction {
                 if(now>=lookupDeadline!!) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
             }
             TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget,
-                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_")
+                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",policy=policy)
         } finally { producers?.close() }
     }
     private fun box(value:String?):RectF? {

@@ -24,6 +24,25 @@ internal class ProducerResolver(private val index:Index,
     data class Match(val entity:Entity,val observed:String,val engine:String,val observationIds:Set<Int>,val distance:Int)
     data class Decision(val value:String,val reason:String,val matches:List<Match>,val acceptedId:String?=null,
         val telemetry:Map<String,String> = emptyMap())
+    /**
+     * How much independent OCR support one identity needs before it may become a suggestion.
+     *
+     * Prod keeps the original two-engine/disjoint rule. The Lab v4 benchmark may lower the quorum to
+     * one engine (owner, 2026-10-27): the ensemble is a wide net, not a vote, and ML Kit is the weaker
+     * engine, so a name only Paddle read should still reach the filter. Everything else - eligibility,
+     * edit distance, one identity group, separation from rivals, existing-value protection and the
+     * producer/wine observation split - is identical in both modes, so the delta measures the quorum
+     * and nothing else.
+     */
+    data class Policy(val minimumIndependentEngines:Int=2) {
+        init { require(minimumIndependentEngines in 1..2) }
+        fun supports(rows:List<Match>)=minimumIndependentEngines<2 || rows.any { a -> rows.any { b ->
+            a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
+        companion object {
+            val prod=Policy()
+            val singleReading=Policy(1)
+        }
+    }
     class BudgetExceeded:RuntimeException()
     companion object {
         const val VERSION="producer-resolver-v4"
@@ -62,7 +81,7 @@ internal class ProducerResolver(private val index:Index,
             return prev[b.length]
         }
     }
-    fun resolve(existing:String,spans:List<Span>,checkBudget:()->Unit={}):Decision {
+    fun resolve(existing:String,spans:List<Span>,checkBudget:()->Unit={},policy:Policy=Policy.prod):Decision {
         val trace=PipelineFunnel.Recorder("producer.")
         trace.visit("invoked",true)
         fun finish(value:String,reason:String,matches:List<Match>,id:String?=null,completed:Boolean=true):Decision {
@@ -107,7 +126,7 @@ internal class ProducerResolver(private val index:Index,
             throw error // Preserve the original failure/abstention path; retain only diagnostic progress.
         }
         val groups=matches.groupBy { it.entity.id }
-        val viable=groups.filterValues { rows -> rows.any { a -> rows.any { b -> a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } } }
+        val viable=groups.filterValues { rows -> policy.supports(rows) }
         trace.visit("independent",viable.isNotEmpty(),"no independently supported producer")
         if(viable.isEmpty()) return finish(existing,"no independently supported producer; unchanged",matches)
         trace.visit("unambiguous",viable.size==1,"ambiguous producer identities")
@@ -134,9 +153,13 @@ internal class ProducerResolver(private val index:Index,
         trace.visit("existing",true);trace.visit("selected",true)
         trace.visit("changed",entity.name!=existing,"existing supported producer retained")
         val supplementalSources=entity.support.filter { it!="lwin" }.sorted()
+        // The reason states the support that actually exists, not the policy minimum, so a two-engine
+        // win still reads as two engines when the lab policy is on.
+        val support=if(winner.any { a -> winner.any { b -> a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } })
+            "two engines" else "one engine reading under the lab single-reading policy"
         val reason=if(supplementalSources.isEmpty())
-            "primary LWIN producer/brand name supported by two engines; confirm manually"
-            else "Lab expanded producer candidate (${supplementalSources.joinToString()}) supported by two engines; confirm manually"
+            "primary LWIN producer/brand name supported by $support; confirm manually"
+            else "Lab expanded producer candidate (${supplementalSources.joinToString()}) supported by $support; confirm manually"
         return finish(entity.name,reason,matches,id)
     }
 }

@@ -19,7 +19,8 @@ internal object TextLabSpatialPreview {
     const val VERSION="raw-plus-linked-wine-v2"
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
-        candidate:String="spatial_lab",stagePrefix:String="spatial_") {
+        candidate:String="spatial_lab",stagePrefix:String="spatial_",
+        policy:ProducerResolver.Policy=ProducerResolver.Policy.prod) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
@@ -59,7 +60,7 @@ internal object TextLabSpatialPreview {
                     } else {
                         val started=android.os.SystemClock.elapsedRealtime()
                         var producerFailureTelemetry=emptyMap<String,String>()
-                        val decision=try { ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget) }
+                        val decision=try { ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget,policy) }
                             catch(cancel:CancellationException) { throw cancel }
                             catch(error:Exception) { ProducerResolver.Decision(before,"lookup failed; unchanged: ${error.javaClass.simpleName}",emptyList(),telemetry=
                                 producerFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("producer.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }
@@ -87,7 +88,7 @@ internal object TextLabSpatialPreview {
                             val wineStart=android.os.SystemClock.elapsedRealtime()
                             val wineBefore=row["wine_name"].orEmpty()
                             var wineFailureTelemetry=emptyMap<String,String>()
-                            val linked=try { LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget) }
+                            val linked=try { LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget,policy) }
                                 catch(cancel:CancellationException) { throw cancel }
                                 catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}",telemetry=
                                     wineFailureTelemetry.ifEmpty { PipelineFunnel.Recorder("wine.").apply { visit("invoked",true);visit("execution",false,error.javaClass.simpleName) }.fields() }) }

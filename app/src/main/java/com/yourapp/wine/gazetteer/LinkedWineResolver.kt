@@ -26,7 +26,7 @@ internal class LinkedWineResolver(private val index:Index,
             a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
     }
     fun resolve(existingProducer:String,existingWine:String,producer:ProducerResolver.Decision,
-        spans:List<ProducerResolver.Span>,checkBudget:()->Unit={}):Decision {
+        spans:List<ProducerResolver.Span>,checkBudget:()->Unit={},policy:ProducerResolver.Policy=ProducerResolver.Policy.prod):Decision {
         val trace=PipelineFunnel.Recorder("wine.")
         trace.visit("invoked",true)
         fun unchanged(reason:String,matches:List<Match> = emptyList(),completed:Boolean=true):Decision {
@@ -43,13 +43,13 @@ internal class LinkedWineResolver(private val index:Index,
         val matches=mutableListOf<Match>()
         try {
             checkBudget()
-            val producers=producer.matches.groupBy { it.entity.id }.filterValues(::independent).toMutableMap()
+            val producers=producer.matches.groupBy { it.entity.id }.filterValues { rows -> policy.supports(rows) }.toMutableMap()
             // Validate an already-present single-word producer by exact OCR and exact primary name only.
             // This does not allow a wine name to introduce or rename a producer.
             if(existingProducer.isNotBlank()) {
                 val key=ProducerResolver.normalize(existingProducer)
                 val observed=spans.filter { ProducerResolver.normalize(it.text)==key && it.observationIds.isNotEmpty() && it.engine.isNotBlank() }
-                if(observed.map { it.engine }.distinct().size>=2) {
+                if(observed.map { it.engine }.distinct().size>=policy.minimumIndependentEngines) {
                     val exact=index.lookup(key,33,checkBudget)
                     if(exact.size<=32) for(e in exact.filter { it.key==key }) {
                         val rows=observed.map { ProducerResolver.Match(e,it.text,it.engine,it.observationIds,0) }
@@ -97,7 +97,7 @@ internal class LinkedWineResolver(private val index:Index,
             // Multiple LWIN products with the same producer + normalized WINE text are one name suggestion,
             // not independent support or permission to infer colour, vintage, site or other product attributes.
             val groups=matches.groupBy { it.wine.producerId to it.wine.key }
-            val viable=groups.filterValues { rows -> rows.any { a -> rows.any { b ->
+            val viable=groups.filterValues { rows -> policy.minimumIndependentEngines<2 || rows.any { a -> rows.any { b ->
                 a.span.engine!=b.span.engine && a.span.observationIds.intersect(b.span.observationIds).isEmpty() } } }
             trace.visit("independent",viable.isNotEmpty(),"no independently observed linked wine")
             if(viable.isNotEmpty()) trace.visit("unambiguous",viable.size==1,"ambiguous linked wines/producers")
@@ -121,9 +121,14 @@ internal class LinkedWineResolver(private val index:Index,
             checkBudget()
             trace.visit("existing",true);trace.visit("selected",true);trace.visit("execution",true)
             trace.visit("changed",ProducerResolver.normalize(existingWine)!=wine.key,"existing supported wine retained")
+            // State the support that exists: under the lab policy a two-engine win keeps the Prod wording.
+            val agreement=if(rows.any { a -> rows.any { b ->
+                    a.span.engine!=b.span.engine && a.span.observationIds.intersect(b.span.observationIds).isEmpty() } })
+                "independent producer and wine OCR agree with primary LWIN relationship; confirm manually"
+                else "single-engine producer and wine OCR agree with primary LWIN relationship under the lab single-reading policy; confirm manually"
             return Decision(if(old==p.key) existingProducer else p.name,
                 if(ProducerResolver.normalize(existingWine)==wine.key) existingWine else wine.name,
-                "independent producer and wine OCR agree with primary LWIN relationship; confirm manually",matches,p.id,wine.id,wine.lwin7,trace.fields())
+                agreement,matches,p.id,wine.id,wine.lwin7,trace.fields())
         } catch(_:ProducerResolver.BudgetExceeded) { return unchanged("linked wine budget reached; unchanged",completed=false) }
         catch(error:Exception) {
             trace.visit("execution",false,error.javaClass.simpleName)
