@@ -336,7 +336,8 @@ contextual-repair explanation. No acceptance thresholds or image passes changed.
 ### Large offline relationship catalog
 
 See [`data/wine-knowledge/README.md`](../data/wine-knowledge/README.md) and its main
-[`origins.csv`](../data/wine-knowledge/origins.csv): 1,020 named origins across 29 countries,
+[`origins.csv`](../data/wine-knowledge/origins.csv): 2,065 named origins across 48 countries
+(1,045 appellations plus 1,020 wine geographies, 399 nested under a region or subregion),
 121 role/classification/style terms, and 42 non-inferential typical-grape associations.
 The bundled generator is deterministic and network-free. UC Davis CC0 AVA metadata is pinned;
 non-U.S. additions are explicitly project-authored references, not a verified global legal registry.

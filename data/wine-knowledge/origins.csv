@@ -1122,13 +1122,13 @@ it-barbera-d-alba,Barbera d'Alba,IT,Italy,Piedmont,,appellation,exact,reference_
 it-barbera-d-asti,Barbera d'Asti,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-barbera-del-monferrato,Barbera del Monferrato,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-barbera-del-monferrato-superiore,Barbera del Monferrato Superiore,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-barco-reale-di-carmignano,Barco Reale di Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-barco-reale-di-carmignano,Barco Reale di Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Carmignano,editorial-v1,Project-authored; not a legal registry
 it-bardolino,Bardolino,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-bardolino-superiore,Bardolino Superiore,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-barolo,Barolo,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-beneventano,Beneventano,IT,Italy,Campania,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-bianchello-del-metauro,Bianchello del Metauro,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-bianco,Bianco,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-bianco,Bianco,IT,Italy,Calabria,,appellation,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-bianco-di-custoza,Bianco di Custoza,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-biferno,Biferno,IT,Italy,Molise,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-bivongi,Bivongi,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1142,7 +1142,7 @@ it-brachetto-d-acqui,Brachetto d'Acqui,IT,Italy,Piedmont,,appellation,exact,refe
 it-bramaterra,Bramaterra,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-breganze,Breganze,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-brindisi,Brindisi,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-brunello-di-montalcino,Brunello di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-brunello-di-montalcino,Brunello di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montalcino,editorial-v1,Project-authored; not a legal registry
 it-cacc-e-mmitte-di-lucera,Cacc'e Mmitte di Lucera,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-cagliari,Cagliari,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-cagnina-di-romagna,Cagnina di Romagna,IT,Italy,Emilia-Romagna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1157,7 +1157,7 @@ it-capri,Capri,IT,Italy,Campania,,appellation,exact,reference_confirm,,editorial
 it-capriano-del-colle,Capriano del Colle,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-carema,Carema,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-carignano-del-sulcis,Carignano del Sulcis,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-carmignano,Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-carmignano,Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Carmignano,editorial-v1,Project-authored; not a legal registry
 it-carso,Carso,IT,Italy,Friuli-Venezia Giulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-castel-del-monte,Castel del Monte,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-castel-del-monte-bombino-nero,Castel del Monte Bombino Nero,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1178,14 +1178,14 @@ it-cesanese-di-affile,Cesanese di Affile,IT,Italy,Lazio,,appellation,exact,refer
 it-cesanese-di-olevano-romano,Cesanese di Olevano Romano,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-chambave,Chambave,IT,Italy,Aosta Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-chianti,Chianti,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-classico,Chianti Classico,IT,Italy,Tuscany,,geography,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
-it-chianti-colli-aretini,Chianti Colli Aretini,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-colli-fiorentini,Chianti Colli Fiorentini,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-colli-senesi,Chianti Colli Senesi,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-colline-pisane,Chianti Colline Pisane,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-montalbano,Chianti Montalbano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-montespertoli,Chianti Montespertoli,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-chianti-rufina,Chianti Rufina,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-chianti-classico,Chianti Classico,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-colli-aretini,Chianti Colli Aretini,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-colli-fiorentini,Chianti Colli Fiorentini,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-colli-senesi,Chianti Colli Senesi,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-colline-pisane,Chianti Colline Pisane,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-montalbano,Chianti Montalbano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-montespertoli,Chianti Montespertoli,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
+it-chianti-rufina,Chianti Rufina,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Chianti,editorial-v1,Project-authored; not a legal registry
 it-cinque-terre,Cinque Terre,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-cinque-terre-sciacchetra,Cinque Terre Sciacchetrà,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-circeo,Circeo,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1336,7 +1336,7 @@ it-monferrato,Monferrato,IT,Italy,Piedmont,,appellation,exact,reference_confirm,
 it-monica-di-cagliari,Monica di Cagliari,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-monica-di-sardegna,Monica di Sardegna,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-monreale,Monreale,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-montalcino,Montalcino,IT,Italy,Tuscany,,geography,exact,reference_confirm,Tuscany/Montalcino,editorial-v1,Project-authored; not a legal registry
+it-montalcino,Montalcino,IT,Italy,Tuscany,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 it-montecarlo,Montecarlo,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-montecompatri-colonna,Montecompatri Colonna,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-montecucco,Montecucco,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1347,12 +1347,13 @@ it-montefalco-sagrantino,Montefalco Sagrantino,IT,Italy,Umbria,,appellation,exac
 it-montefiascone,Montefiascone,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-montello-rosso,Montello Rosso,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-montenetto-di-brescia,Montenetto di Brescia,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-montepulciano,Montepulciano,IT,Italy,Tuscany,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 it-montepulciano-d-abruzzo,Montepulciano d'Abruzzo,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-montepulciano-d-abruzzo-colline-teramane,Montepulciano d'Abruzzo Colline Teramane,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-montescudaio,Montescudaio,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-morellino-di-scansano,Morellino di Scansano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-morellino-di-scansano,Morellino di Scansano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Scansano,editorial-v1,Project-authored; not a legal registry
 it-morro-d-alba,Morro d'Alba,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-moscadello-di-montalcino,Moscadello di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-moscadello-di-montalcino,Moscadello di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montalcino,editorial-v1,Project-authored; not a legal registry
 it-moscato-d-asti,Moscato d'Asti,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-moscato-di-cagliari,Moscato di Cagliari,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-moscato-di-noto,Moscato di Noto,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1412,8 +1413,8 @@ it-rosazzo,Rosazzo,IT,Italy,Friuli-Venezia Giulia,,appellation,exact,reference_c
 it-rossese-di-dolceacqua,Rossese di Dolceacqua,IT,Italy,Liguria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-rosso-conero,Rosso Conero,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-rosso-di-cerignola,Rosso di Cerignola,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-rosso-di-montalcino,Rosso di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-rosso-di-montepulciano,Rosso di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-rosso-di-montalcino,Rosso di Montalcino,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montalcino,editorial-v1,Project-authored; not a legal registry
+it-rosso-di-montepulciano,Rosso di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montepulciano,editorial-v1,Project-authored; not a legal registry
 it-rosso-piceno,Rosso Piceno,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-ruche-di-castagnole-monferrato,Ruchè di Castagnole Monferrato,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-salamino,Salamino,IT,Italy,Emilia-Romagna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1421,15 +1422,17 @@ it-salaparuta,Salaparuta,IT,Italy,Sicily,,appellation,exact,reference_confirm,,e
 it-salice-salentino,Salice Salentino,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-sambuca-di-sicilia,Sambuca di Sicilia,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-san-colombano-al-lambro,San Colombano al Lambro,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-san-gimignano,San Gimignano,IT,Italy,Tuscany,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 it-san-martino-della-battaglia,San Martino della Battaglia,IT,Italy,,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-san-severo,San Severo,IT,Italy,Apulia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-sangiovese-di-romagna,Sangiovese di Romagna,IT,Italy,Emilia-Romagna,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-sannio,Sannio,IT,Italy,Campania,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-sant-anna-di-isola-capo-rizzuto,Sant'Anna di Isola Capo Rizzuto,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-sant-antimo,Sant'Antimo,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-sant-antimo,Sant'Antimo,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montalcino,editorial-v1,Project-authored; not a legal registry
 it-santa-margherita-di-belice,Santa Margherita di Belice,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-sardegna-semidano,Sardegna Semidano,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-savuto,Savuto,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-scansano,Scansano,IT,Italy,Tuscany,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 it-sciacca,Sciacca,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-scilla,Scilla,IT,Italy,Calabria,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-serrapetrona,Serrapetrona,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1484,14 +1487,15 @@ it-valle-d-aosta-fumin,Valle d'Aosta Fumin,IT,Italy,Aosta Valley,,appellation,ex
 it-valle-d-aosta-nus,Valle d'Aosta Nus,IT,Italy,Aosta Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valle-d-aosta-torrette,Valle d'Aosta Torrette,IT,Italy,Aosta Valley,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valli-ossolane,Valli Ossolane,IT,Italy,Piedmont,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-valpolicella,Valpolicella,IT,Italy,Veneto,,geography,exact,reference_confirm,Veneto/Valpolicella,editorial-v1,Project-authored; not a legal registry
+it-valpantena,Valpantena,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-valpolicella,Valpolicella,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-valpolicella-classico,Valpolicella Classico,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valpolicella-ripasso,Valpolicella Ripasso,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valpolicella-superiore,Valpolicella Superiore,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valtellina,Valtellina,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valtellina-rosso,Valtellina Rosso,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-valtellina-superiore,Valtellina Superiore,IT,Italy,Lombardy,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-velletri,Velletri,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-veneto,Veneto,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Implied containing place of an authored geography path
 it-verdicchio-dei-castelli-di-jesi,Verdicchio dei Castelli di Jesi,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-verdicchio-di-matelica,Verdicchio di Matelica,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-verdicchio-di-matelica-riserva,Verdicchio di Matelica Riserva,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
@@ -1499,19 +1503,19 @@ it-vermentino-di-cagliari,Vermentino di Cagliari,IT,Italy,Sardinia,,appellation,
 it-vermentino-di-gallura,Vermentino di Gallura,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vermentino-di-sardegna,Vermentino di Sardegna,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vernaccia-di-oristano,Vernaccia di Oristano,IT,Italy,Sardinia,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-vernaccia-di-san-gimignano,Vernaccia di San Gimignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-vernaccia-di-san-gimignano-riserva,Vernaccia di San Gimignano Riserva,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-vernaccia-di-san-gimignano,Vernaccia di San Gimignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/San Gimignano,editorial-v1,Project-authored; not a legal registry
+it-vernaccia-di-san-gimignano-riserva,Vernaccia di San Gimignano Riserva,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/San Gimignano,editorial-v1,Project-authored; not a legal registry
 it-vernaccia-di-serrapetrona,Vernaccia di Serrapetrona,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vesuvio,Vesuvio,IT,Italy,Campania,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vicenza,Vicenza,IT,Italy,Veneto,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-villamagna,Villamagna,IT,Italy,Abruzzo,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vin-santo-del-chianti,Vin Santo del Chianti,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vin-santo-del-chianti-classico,Vin Santo del Chianti Classico,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-vin-santo-di-carmignano,Vin Santo di Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-vin-santo-di-montepulciano,Vin Santo di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-vin-santo-di-carmignano,Vin Santo di Carmignano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Carmignano,editorial-v1,Project-authored; not a legal registry
+it-vin-santo-di-montepulciano,Vin Santo di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montepulciano,editorial-v1,Project-authored; not a legal registry
 it-vino,Vino,IT,Italy,,,geography,context_required,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vino-d-italia,Vino d'Italia,IT,Italy,,,geography,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
-it-vino-nobile-di-montepulciano,Vino Nobile di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
+it-vino-nobile-di-montepulciano,Vino Nobile di Montepulciano,IT,Italy,Tuscany,,appellation,exact,reference_confirm,Tuscany/Montepulciano,editorial-v1,Project-authored; not a legal registry
 it-visciola,Visciola,IT,Italy,Marche,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-vittoria,Vittoria,IT,Italy,Sicily,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry
 it-zagarolo,Zagarolo,IT,Italy,Lazio,,appellation,exact,reference_confirm,,editorial-v1,Project-authored; not a legal registry

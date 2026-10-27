@@ -16,7 +16,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
-| `arena/5dc78d5f-wine-manager-android` | not opened | current work | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
+| `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
+| `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
 | `arena/259cc0eb-wine-manager-android` | not opened | current work; main synced through PR #9 | W-058 debug pipeline bottleneck table, current-label checkpoint/CSV counts, merged build-metadata correction | [Jump](#branch-arena259cc0eb-wine-manager-android) |
 | `arena/814c691f-wine-manager-android` | not opened yet | historical checklist | Cleanup of dead code, Profile + Settings, build info in App Information, debug test-data restore, backlog and docs rewrite | [Jump](#branch-arena814c691f-wine-manager-android) |
@@ -25,6 +26,24 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/673cafd4-wine-manager-android`
+
+**Build it:** `git checkout arena/673cafd4-wine-manager-android`; build/install the debug build as usual. This branch merged `main` (PR #11) first, so the diagnostics-table and CSV-save work is included.
+
+**What changed:** the bundled wine catalog grew from 1,020 to **2,065 names across 48 countries** (1,045 appellations + 1,020 geographies, 399 nested under a region or subregion). Authored `ISO|country|region path|role` headers may now carry a slash path (`AU|Australia|South Australia/Barossa`), `origins.csv` and the generated Kotlin carry a `path` column, and `SupplementedWineKnowledgeBase` walks that chain so places are created as `country → region → subregion` instead of one flat region. No OCR, scoring, deadline or benchmark behaviour changed. Host checks: 216 Python contract tests pass and the catalog `--check` is clean; no Android build or device run yet.
+
+### Nested regions and subregions reach the form
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] **Profile → Settings → Database Lookup**, search **Pauillac** under *Appellation*: it is found, and **Bundled-origins appellations** in the "Databases searched" list is now several hundred rather than a few dozen. Clear the filter and search **Barossa Valley** and **Coonawarra**: both are found.
+2. [ ] Scan or type a label naming **Pauillac**: Country fills *France*, Region fills *Bordeaux*, Sub-region fills *Médoc* (or a conservative YELLOW confirmation for the newly nested value — new reference rows stay YELLOW, never counted as verified truth).
+3. [ ] Try **Barolo** (Italy → Piedmont), **Gevrey-Chambertin** (France → Burgundy → Côte de Nuits), **Napa Valley** (United States → California) and **Mosel** (Germany, no region invented): each lands in the expected levels and none invents a region that was not authored.
+4. [ ] The deliberately region-less names still refuse to pick a region: **Prosecco**, **Cava**, **Lugana** and **Orvieto** fill only their country, and the Region field stays empty (not guessed).
+5. [ ] **Canberra District** now resolves to Australia → New South Wales; **Orange** still requires the spelled-out country/region anchor (`Orange Australia` matches, bare `Orange` and `Orange Wine Australia` do not).
+6. [ ] A contradictory place in the same text still produces the existing YELLOW conflict reason rather than silently overwriting: e.g. **Pauillac** with **Italy** typed in the country field.
+7. [ ] Nothing else moved: the **Large image dataset test** still runs four versions with frozen Prod rows, CSV save/split still works, and no screen shows new prose.
 
 ## Branch `arena/5dc78d5f-wine-manager-android`
 

@@ -51,4 +51,7 @@ class WineKnowledgeTests(unittest.TestCase):
             self.assertEqual(rows[name]['regions'],'',name)
         self.assertEqual(rows['Orange']['match_policy'],'context_required')
         self.assertEqual(rows['Denmark']['match_policy'],'context_required')
+        # Bare style/colour words that are also real protected names must never match alone.
+        for name in ('Bianco','Vino'):
+            self.assertEqual(rows[name]['match_policy'],'context_required',name)
 if __name__=='__main__':unittest.main()

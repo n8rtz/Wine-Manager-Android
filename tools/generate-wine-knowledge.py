@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]; DATA=ROOT/'data/wine-knowledge'
 def norm(s): return ''.join(c for c in unicodedata.normalize('NFKD',s.lower()) if not unicodedata.combining(c)).strip()
 def slug(s): return re.sub('[^a-z0-9]+','-',norm(s)).strip('-')
 STATES=dict(x.split(':') for x in ('AL:Alabama|AK:Alaska|AZ:Arizona|AR:Arkansas|CA:California|CO:Colorado|CT:Connecticut|DE:Delaware|FL:Florida|GA:Georgia|HI:Hawaii|ID:Idaho|IL:Illinois|IN:Indiana|IA:Iowa|KS:Kansas|KY:Kentucky|LA:Louisiana|ME:Maine|MD:Maryland|MA:Massachusetts|MI:Michigan|MN:Minnesota|MS:Mississippi|MO:Missouri|MT:Montana|NE:Nebraska|NV:Nevada|NH:New Hampshire|NJ:New Jersey|NM:New Mexico|NY:New York|NC:North Carolina|ND:North Dakota|OH:Ohio|OK:Oklahoma|OR:Oregon|PA:Pennsylvania|RI:Rhode Island|SC:South Carolina|SD:South Dakota|TN:Tennessee|TX:Texas|UT:Utah|VT:Vermont|VA:Virginia|WA:Washington|WV:West Virginia|WI:Wisconsin|WY:Wyoming').split('|'))
-ambiguous={'Orange','Denmark','Bourg','Graves','Cassis','Palette','Asti','Gavi','Faro','Pico','Samos','Eger','Kent','Surrey','Dorset','Cornwall','Douglas','Colonia','Rivera','Augusta','Hermann','Warren Hills','Hudson River Region'}
+ambiguous={'Bianco','Orange','Denmark','Bourg','Graves','Cassis','Palette','Asti','Gavi','Faro','Pico','Samos','Eger','Kent','Surrey','Dorset','Cornwall','Douglas','Colonia','Rivera','Augusta','Hermann','Warren Hills','Hudson River Region'}
 rows={};country_names={}
 
 def parent_path(path):

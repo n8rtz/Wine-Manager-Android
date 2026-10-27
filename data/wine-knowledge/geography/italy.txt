@@ -44,6 +44,10 @@ Monferrato
 Piemonte
 IT|Italy|Tuscany|appellation
 Chianti
+Toscana
+Bolgheri
+Bolgheri Sassicaia
+IT|Italy|Tuscany/Chianti|appellation
 Chianti Classico
 Chianti Rufina
 Chianti Colli Fiorentini
@@ -52,21 +56,25 @@ Chianti Montalbano
 Chianti Montespertoli
 Chianti Colline Pisane
 Chianti Colli Aretini
+IT|Italy|Tuscany/Montalcino|appellation
 Brunello di Montalcino
 Rosso di Montalcino
 Moscadello di Montalcino
 Sant'Antimo
+IT|Italy|Tuscany/Montepulciano|appellation
 Vino Nobile di Montepulciano
 Rosso di Montepulciano
 Vin Santo di Montepulciano
-Bolgheri
-Bolgheri Sassicaia
+IT|Italy|Tuscany/Carmignano|appellation
 Carmignano
 Barco Reale di Carmignano
 Vin Santo di Carmignano
-Morellino di Scansano
+IT|Italy|Tuscany/San Gimignano|appellation
 Vernaccia di San Gimignano
 Vernaccia di San Gimignano Riserva
+IT|Italy|Tuscany/Scansano|appellation
+Morellino di Scansano
+IT|Italy|Tuscany|appellation
 Valdarno di Sopra
 Val di Cornia
 Suvereto
@@ -418,9 +426,7 @@ Vino d'Italia
 Vino
 Mediterraneo
 Terre di Chieti
-IT|Italy|Tuscany/Chianti|geography
-Chianti Classico
-IT|Italy|Veneto/Valpolicella|geography
-Valpolicella
-IT|Italy|Tuscany/Montalcino|geography
-Montalcino
+IT|Italy|Veneto|appellation
+Valpolicella Classico
+Valpantena
+Valpolicella Ripasso
