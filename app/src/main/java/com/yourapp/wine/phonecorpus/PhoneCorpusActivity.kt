@@ -194,13 +194,6 @@ class PhoneCorpusActivity:ComponentActivity() {
                 }
                 Text("Exports over 25 MB are split into numbered CSVs, each with a header and complete records. Save and upload every part. A 35 MB export normally produces two files. Existing exports can be split without rerunning the test.",style=MaterialTheme.typography.bodySmall)
             }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(horizontal = 8.dp)) {
-                    TextButton(onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + (state.board?.text ?: ""))) }, enabled = !state.busy) { Text("Copy scored stats") }
-                    Button(onClick = { vm.prepareExport(false) }, enabled = !state.busy && state.csv != null) { Text("Prepare scored CSV export") }
-                    TextButton(onClick = { vm.prepareExport(true) }, enabled = !state.busy && state.completed > 0 && !state.readOnly) { Text("Prepare raw diagnostics CSV export") }
-                }
-            }
             item { TextButton(onClick={showDetails=!showDetails}) { Text(if(showDetails) "Hide per-photo results" else "Show per-photo results") } }
             if(showDetails) items(state.board?.details.orEmpty()) { detail ->
                 Card(Modifier.fillMaxWidth()) { SelectionContainer { Column(Modifier.padding(12.dp)) {
