@@ -589,17 +589,18 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
                                 Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(listOf(wineCase.country, wineCase.region, wineCase.subregion, wineCase.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                                if (results.isNotEmpty()) {
+                                val failedResults = PhoneCorpusMath.fields.mapNotNull { field ->
+                                    results[field]?.takeIf(::isFieldFailure)?.let { field to it }
+                                }
+                                if (failedResults.isNotEmpty()) {
                                     HorizontalDivider(Modifier.padding(vertical = 3.dp))
-                                    listOf("producer", "wine_name", "country", "region", "subregion", "vintage").forEach { field ->
-                                        val result = results[field] ?: return@forEach
+                                    failedResults.forEach { (field, result) ->
                                         val expected = result["expected"].takeUnless { it.isNullOrBlank() } ?: result["reference_status"].orEmpty()
                                         val actual = result["recognized"].orEmpty().ifBlank { "(blank)" }
-                                        val failed = isFieldFailure(result)
                                         Text(
                                             "$field: $actual  ·  ${result["outcome"]}  ·  expected $expected",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = if (failed) MaterialTheme.colorScheme.error else Color.Unspecified,
+                                            color = MaterialTheme.colorScheme.error,
                                         )
                                     }
                                 }

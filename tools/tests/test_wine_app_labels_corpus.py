@@ -364,6 +364,8 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("selectedFailureFields + fieldKey", activity)
         self.assertIn('row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())', activity)
         self.assertIn("failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }", activity)
+        self.assertIn("results[field]?.takeIf(::isFieldFailure)?.let { field to it }", activity)
+        self.assertNotIn("color = if (failed) MaterialTheme.colorScheme.error else Color.Unspecified", activity)
 
         # Clicking the thumbnail opens a full-resolution zoomable (pinch / pan) dialog; single tap dismisses it.
         self.assertIn("var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }", activity)
