@@ -161,6 +161,33 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         for label in ("Lab v4", "Prod v3.0", "Prod v2.0", "Prod v1.0"):
             self.assertIn(f'("{label}"', runner)
 
+    def test_large_image_dataset_screen_prepares_and_saves_csv_exports(self):
+        # The main-branch Large image dataset test page prepared CSVs, then saved each part via
+        # the system document picker. The 125-label replacement screen lost that flow.
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        self.assertIn('ActivityResultContracts.CreateDocument("text/csv")', activity)
+        self.assertIn("vm.saveExportPart(it, exportIndex)", activity)
+        self.assertIn('Text("Prepare scored CSV export")', activity)
+        self.assertIn('Text("Prepare raw diagnostics CSV export")', activity)
+        self.assertIn("vm.prepareExport(raw = false)", activity)
+        self.assertIn("vm.prepareExport(raw = true)", activity)
+        self.assertIn("export.launch(file.name)", activity)
+        self.assertIn('Text("Save ${if (state.exportParts.size > 1) "part ${index + 1}/${state.exportParts.size}" else "CSV"}', activity)
+        self.assertIn('Text("Split an existing CSV for upload")', activity)
+        self.assertIn("vm::splitExistingCsv", activity)
+        self.assertIn("val exportParts: List<File> = emptyList()", viewmodel)
+        self.assertIn("fun prepareExport(raw: Boolean)", viewmodel)
+        self.assertIn("fun saveExportPart(uri: Uri, index: Int)", viewmodel)
+        self.assertIn("fun splitExistingCsv(uri: Uri)", viewmodel)
+        # Both exports cover every version and are split with the shared 25 MB splitter.
+        self.assertIn("for (mode in PhoneCorpusRunner.Mode.entries)", viewmodel)
+        self.assertIn("private fun writeScoredCsv(target: File, dirs: Map<PhoneCorpusRunner.Mode, File>)", viewmodel)
+        self.assertIn("private fun writeRawCsv(target: File, dirs: Map<PhoneCorpusRunner.Mode, File>)", viewmodel)
+        self.assertIn("CsvUploadParts.split(target, exportDir)", viewmodel)
+        # Saving a CSV opens the document picker, which must not be treated as pausing a run.
+        self.assertIn("if (mutable.value.busy && !exporting) {", viewmodel)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,10 +1,12 @@
 package com.yourapp.wine.phonecorpus
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.textlab.PaddleCandidates
+import com.yourapp.wine.textlab.TextLabCsv
 import com.yourapp.wine.capture.WineScannerServices
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +28,7 @@ internal data class WineAppLabelsState(
     val completed: Int = 0,
     val total: Int = WINE_APP_LABEL_COUNT,
     val board: PhoneCorpusScoreboard.Board? = null,
+    val exportParts: List<File> = emptyList(),
 )
 
 /** Runs the 125 retained workbook labels. Targets stay on the scoring side of the boundary. */
@@ -37,6 +40,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private val installId get() = app.packageManager.getPackageInfo(app.packageName, 0).lastUpdateTime.toString()
     private val lock = Mutex()
     @Volatile private var stopping = false
+    /** CSV preparation/saving also sets [WineAppLabelsState.busy]; this flag keeps it out of run pause/resume logic. */
+    @Volatile private var exporting = false
     @Volatile private var activityForeground = false
     @Volatile private var resumeAfterBackgroundPause = false
     /** One current run folder per version; every photo is checkpointed into all of them together. */
@@ -111,6 +116,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         .map { JSONObject(it.readText()) }
         .filter { it.optString("image") in includedIds() }
 
+    private fun scoreboard() = PhoneCorpusScoreboard(app, "wine-app-labels-v1", includeLegacyComparisons = false)
+
     private fun refresh() {
         val dirs = folders
         if (dirs.isEmpty()) return
@@ -140,10 +147,147 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         mutable.update { it.copy(completed = fullyCheckpointed, total = WINE_APP_LABEL_COUNT, board = board) }
     }
 
+    /** One scored row set per version, all four versions in one file (each row carries its mode). */
+    private fun writeScoredCsv(target: File, dirs: Map<PhoneCorpusRunner.Mode, File>) {
+        val scorer = scoreboard()
+        val rows = mutableListOf<Map<String, String>>()
+        for (mode in PhoneCorpusRunner.Mode.entries) {
+            val dir = dirs[mode] ?: continue
+            val provenance = mapOf("build" to BuildConfig.BUILD_COMMIT, "mode" to mode.name, "run_id" to dir.name)
+            scorer.build(predictions(dir), mode).csv.forEach { rows += provenance + it }
+        }
+        target.bufferedWriter(Charsets.UTF_8).use { writer -> TextLabCsv.write(writer, rows.asSequence()) }
+    }
+
+    /** Every retained attempt plus the aggregate pipeline steps the screen shows, one file for all versions. */
+    private fun writeRawCsv(target: File, dirs: Map<PhoneCorpusRunner.Mode, File>) {
+        val scorer = scoreboard()
+        val included = includedIds()
+        // Reiterable, one photo at a time: the CSV writer scans keys, then writes rows.
+        val records = sequence {
+            for (mode in PhoneCorpusRunner.Mode.entries) {
+                val dir = dirs[mode] ?: continue
+                val files = File(dir, "attempts").listFiles().orEmpty()
+                    .filter { it.extension == "json" }.sortedBy { it.name }
+                for (file in files) {
+                    val p = JSONObject(file.readText())
+                    if (p.optString("image") !in included) continue
+                    val meta = mapOf("build" to p.optString("build"), "mode" to mode.name, "pipeline" to mode.pipelineId,
+                        "run_id" to dir.name, "image" to p.optString("image"), "attempt" to p.optString("attempt"))
+                    yield(meta + mapOf("row_type" to "image_summary", "status" to p.optString("status"),
+                        "elapsed_ms" to p.optString("total_elapsed_ms"), "error" to p.optString("error"),
+                        "engine_incomplete" to p.optBoolean("engine_incomplete").toString(),
+                        "diagnostics" to p.optString("diagnostics"),
+                        "pipeline_funnel_error" to p.optString("pipeline_funnel_error")))
+                    for (key in listOf("tokens", "engine_timings", "trace", "pipelines", "pipeline_funnel")) {
+                        val rows = p.optJSONArray(key) ?: continue
+                        for (index in 0 until rows.length()) {
+                            val row = rows.getJSONObject(index)
+                            yield(meta + mapOf("row_type" to key) +
+                                row.keys().asSequence().associateWith { row.optString(it) })
+                        }
+                    }
+                }
+                // Same current/latest-attempt aggregate as the screen and scored CSV; old attempts above remain raw evidence only.
+                for (row in scorer.build(predictions(dir), mode).csv.filter { it["row_type"] == "pipeline_step" })
+                    yield(mapOf("build" to BuildConfig.BUILD_COMMIT, "mode" to mode.name, "run_id" to dir.name) + row)
+            }
+        }
+        target.bufferedWriter(Charsets.UTF_8).use { writer -> TextLabCsv.write(writer, records) }
+    }
+
+    /** Prepares the chosen CSV in the cache, split under the 25 MB upload cap, so each part can be saved. */
+    fun prepareExport(raw: Boolean) {
+        if (mutable.value.busy) return
+        val dirs = folders
+        if (dirs.isEmpty()) {
+            mutable.update { it.copy(message = "Load the 125-label test before preparing an export.") }
+            return
+        }
+        val previousParts = mutable.value.exportParts
+        exporting = true
+        mutable.update { it.copy(busy = true, exportParts = emptyList(), message = "Preparing upload-sized CSV files…") }
+        viewModelScope.launch(Dispatchers.IO) {
+            val exportDir = File(app.cacheDir, "wine-app-labels-exports/${UUID.randomUUID()}")
+            try {
+                check(exportDir.mkdirs())
+                val target = File(exportDir,
+                    "wine-app-labels-${WINE_APP_LABEL_COUNT}-${if (raw) "raw-" else ""}all-versions-${BuildConfig.BUILD_COMMIT}.csv")
+                if (raw) writeRawCsv(target, dirs) else writeScoredCsv(target, dirs)
+                val parts = CsvUploadParts.split(target, exportDir)
+                if (parts.size > 1) target.delete()
+                previousParts.mapNotNull { it.parentFile }.distinct()
+                    .filter { it.parentFile == exportDir.parentFile }.forEach { it.deleteRecursively() }
+                mutable.update {
+                    it.copy(exportParts = parts, message = "${parts.size} CSV file(s) ready, each at most 25 MB. Tap each Save button below. Complete rows and headers are preserved.")
+                }
+            } catch (cancel: CancellationException) {
+                exportDir.deleteRecursively();throw cancel
+            } catch (e: Exception) {
+                exportDir.deleteRecursively()
+                mutable.update { it.copy(message = "CSV preparation failed: ${e.message}. Original run data is unchanged.") }
+            } finally {
+                exporting = false
+                mutable.update { it.copy(busy = false) }
+            }
+        }
+    }
+
+    /** Saves one prepared part through the system document picker; the prepared file stays in the cache. */
+    fun saveExportPart(uri: Uri, index: Int) {
+        if (mutable.value.busy) return
+        val file = mutable.value.exportParts.getOrNull(index) ?: run {
+            mutable.update { it.copy(message = "Export session expired. Prepare the CSV again, then save its parts.") };return
+        }
+        exporting = true
+        mutable.update { it.copy(busy = true, message = "Saving ${file.name}…") }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                app.contentResolver.openOutputStream(uri, "w").use { out -> requireNotNull(out);file.inputStream().use { it.copyTo(out) } }
+                mutable.update { it.copy(message = "Saved ${file.name}. Save each listed part before uploading.") }
+            } catch (cancel: CancellationException) {
+                throw cancel
+            } catch (e: Exception) {
+                mutable.update { it.copy(message = "Export failed: ${e.message}") }
+            } finally {
+                exporting = false
+                mutable.update { it.copy(busy = false) }
+            }
+        }
+    }
+
+    /** Allows an already-saved export to be split for upload without rerunning OCR. */
+    fun splitExistingCsv(uri: Uri) {
+        if (mutable.value.busy) return
+        exporting = true
+        mutable.update { it.copy(busy = true, exportParts = emptyList(), message = "Splitting selected CSV for upload…") }
+        viewModelScope.launch(Dispatchers.IO) {
+            val exportDir = File(app.cacheDir, "wine-app-labels-exports/${UUID.randomUUID()}")
+            try {
+                check(exportDir.mkdirs())
+                val source = File(exportDir, "wine-app-labels-existing.csv")
+                requireNotNull(app.contentResolver.openInputStream(uri)).use { input -> source.outputStream().use { input.copyTo(it) } }
+                val parts = CsvUploadParts.split(source, exportDir)
+                if (parts.size > 1) source.delete()
+                mutable.update {
+                    it.copy(exportParts = parts, message = "${parts.size} upload-sized CSV file(s) ready. Save every part below. Original file unchanged; no OCR rerun.")
+                }
+            } catch (cancel: CancellationException) {
+                exportDir.deleteRecursively();throw cancel
+            } catch (e: Exception) {
+                exportDir.deleteRecursively()
+                mutable.update { it.copy(message = "Cannot split CSV: ${e.message}. Original file unchanged.") }
+            } finally {
+                exporting = false
+                mutable.update { it.copy(busy = false) }
+            }
+        }
+    }
+
     fun load(mode: PhoneCorpusRunner.Mode, fresh: Boolean = false) {
         if (mutable.value.busy) return
         folders = emptyMap()
-        mutable.update { it.copy(busy = true, mode = mode, completed = 0, total = WINE_APP_LABEL_COUNT, board = null, message = "Loading saved 125-label results…") }
+        mutable.update { it.copy(busy = true, mode = mode, completed = 0, total = WINE_APP_LABEL_COUNT, board = null, exportParts = emptyList(), message = "Loading saved 125-label results…") }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // The selected version only chooses which diagnostics are displayed; a run always
@@ -168,7 +312,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
 
     fun onBackgroundPause(resumeWhenForeground: Boolean) {
         activityForeground = false
-        if (mutable.value.busy) {
+        // Preparing or saving a CSV opens the system document picker, which pauses this activity.
+        // That is not a benchmark run, so it must neither stop OCR nor queue a resume.
+        if (mutable.value.busy && !exporting) {
             resumeAfterBackgroundPause = resumeWhenForeground
             stop()
         }

@@ -3,7 +3,9 @@ package com.yourapp.wine.phonecorpus
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -16,9 +18,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
@@ -29,6 +33,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -77,6 +82,15 @@ class WineAppLabelsActivity : ComponentActivity() {
     private fun Screen() {
         val state by vm.state.collectAsState()
         val context = LocalContext.current
+        val clipboard = LocalClipboardManager.current
+        var exportIndex by rememberSaveable { mutableStateOf(0) }
+        // Same save flow as the legacy Large image dataset test page: prepare, then Save each part.
+        val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+            uri?.let { vm.saveExportPart(it, exportIndex) }
+        }
+        val splitExisting = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let(vm::splitExistingCsv)
+        }
         val cases = remember {
             val scoring = JSONObject(context.assets.open("wine-app-labels-v1/scoring.json").bufferedReader().use { it.readText() })
             val images = scoring.getJSONArray("images")
@@ -172,6 +186,40 @@ class WineAppLabelsActivity : ComponentActivity() {
                             }
                         }
                     }
+                }
+                item {
+                    Text("CSV export", style = MaterialTheme.typography.titleMedium)
+                    TextButton(
+                        onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + board.text)) },
+                        enabled = !state.busy,
+                    ) { Text("Copy scored stats") }
+                    Button(
+                        onClick = { vm.prepareExport(raw = false) },
+                        enabled = !state.busy && board.csv.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Prepare scored CSV export") }
+                    OutlinedButton(
+                        onClick = { vm.prepareExport(raw = true) },
+                        enabled = !state.busy && board.csv.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Prepare raw diagnostics CSV export") }
+                    state.exportParts.forEachIndexed { index, file ->
+                        OutlinedButton(
+                            onClick = { exportIndex = index; export.launch(file.name) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Save ${if (state.exportParts.size > 1) "part ${index + 1}/${state.exportParts.size}" else "CSV"} · ${"%.2f".format(file.length() / 1_000_000.0)} MB")
+                        }
+                    }
+                    TextButton(
+                        onClick = { splitExisting.launch(arrayOf("text/*", "application/csv", "application/octet-stream")) },
+                        enabled = !state.busy,
+                    ) { Text("Split an existing CSV for upload") }
+                    Text(
+                        "The scored CSV holds one result set per version (Prod v1.0, Prod v2.0, Prod v3.0, Lab v4) with field outcomes and aggregate pipeline_step rows; the raw diagnostics CSV adds tokens, traces and every retained attempt. Both carry build, mode and run ID and never include images or account information. Exports over 25 MB are split into numbered CSVs, each with the header and complete records — save every part.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
             state.board?.let { board ->
