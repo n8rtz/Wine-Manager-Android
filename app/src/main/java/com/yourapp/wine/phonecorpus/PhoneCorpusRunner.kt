@@ -20,6 +20,11 @@ import java.time.Year
 
 /** Fresh pixels only. Receives input identity/hash, NEVER target fields or saved predictions. */
 internal object PhoneCorpusRunner {
+    /** Run-scoped read-only extraction/gazetteer session reused across one benchmark pass. */
+    internal class WarmSession(context:Context):AutoCloseable {
+        internal val extraction=TextLabWineExtraction.WarmSession(context)
+        override fun close()=extraction.close()
+    }
     /**
      * Lab-only measurement switch for bounded appellation repair. Off by default so the frozen Prod
      * comparators and every stored Lab v4 checkpoint keep their current meaning. To measure the
@@ -77,6 +82,7 @@ internal object PhoneCorpusRunner {
         assetRoot:String="wine-app-labels-v1",
         cachedOcr:WineAppLabelsOcrCache.Entry?=null,
         onFreshOcr:(Map<String,String>,List<Map<String,String>>) -> Unit = { _,_ -> },
+        warmSession:WarmSession?=null,
     ):Map<Mode,JSONObject> {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         require(modes.isNotEmpty()) { "At least one pipeline version is required" }
@@ -207,7 +213,7 @@ internal object PhoneCorpusRunner {
                         journal.metadata["ocr_source"]="fresh_ocr"
                         onFreshOcr(LinkedHashMap(journal.metadata),ArrayList(journal.rows))
                     }
-                    TextLabWineExtraction.append(context,batch)
+                    TextLabWineExtraction.append(context,batch,warmSession=warmSession?.extraction)
                     val engineRows=listOf("mlkit_reference" to "summary","candidate_3" to "candidate_summary").map { (candidate,stage) ->
                         journal.rows.lastOrNull { it["candidate"]==candidate && it["stage"]==stage }
                     }

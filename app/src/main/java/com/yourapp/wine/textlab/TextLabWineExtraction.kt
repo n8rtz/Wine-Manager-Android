@@ -11,14 +11,85 @@ import kotlinx.coroutines.CancellationException
 
 /** Post-OCR reporting only, outside engine timings; uses the same local KB/rules for every contender. */
 internal object TextLabWineExtraction {
-    fun append(context:Context,batch:TextLabBatch,skip:Boolean=false) {
+    /**
+     * Run-scoped read-only cache of extraction catalogs, tries, and SQLite gazetteer handles across
+     * a multi-photo benchmark pass. Callers close this session in a `finally` block when the pass
+     * finishes, pauses, or stops; single-photo callers omit it and close resources per call.
+     */
+    internal class WarmSession(context:Context):AutoCloseable {
+        private val appContext=context.applicationContext
+        private var kb:SqliteWineKnowledgeBase?=null
+        private var production:com.yourapp.wine.fill.FillEngine?=null
+        private val evidenceEngines=mutableMapOf<Pair<Boolean,Boolean>,com.yourapp.wine.textlab.evidence.EvidenceExtractor>()
+        private var hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?=null
+        private var repair:com.yourapp.wine.textlab.evidence.ProducerRepair?=null
+        internal data class WarmGazetteer(
+            val gazetteer:com.yourapp.wine.gazetteer.ProducerGazetteer,
+            val setupFields:Map<String,String>,
+        )
+        private var primaryGazetteer:WarmGazetteer?=null
+        private var expandedGazetteer:WarmGazetteer?=null
+
+        fun knowledgeBase():SqliteWineKnowledgeBase {
+            kb?.let { return it }
+            return SqliteWineKnowledgeBase.open(appContext,0).also { kb=it }
+        }
+
+        fun fillEngine(base:SqliteWineKnowledgeBase):com.yourapp.wine.fill.FillEngine {
+            if(base===kb) production?.let { return it }
+            return com.yourapp.wine.fill.FillEngine(base).also { if(base===kb) production=it }
+        }
+
+        fun evidenceExtractor(base:SqliteWineKnowledgeBase,anchorHybrid:Boolean,repairPlaces:Boolean):com.yourapp.wine.textlab.evidence.EvidenceExtractor {
+            val key=anchorHybrid to repairPlaces
+            if(base===kb) evidenceEngines[key]?.let { return it }
+            return TextLabEvidencePreview.engine(base,anchorHybrid,repairPlaces).also { engine ->
+                engine.isNonProducerCatalogTerm("")
+                if(base===kb) evidenceEngines[key]=engine
+            }
+        }
+
+        fun anchorHybrid(base:SqliteWineKnowledgeBase):com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid {
+            if(base===kb) hybrid?.let { return it }
+            return com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(base).also { if(base===kb) hybrid=it }
+        }
+
+        fun producerRepair(base:SqliteWineKnowledgeBase):com.yourapp.wine.textlab.evidence.ProducerRepair {
+            if(base===kb) repair?.let { return it }
+            return com.yourapp.wine.textlab.evidence.ProducerRepair(base).also { if(base===kb) repair=it }
+        }
+
+        fun cachedGazetteer(expanded:Boolean):WarmGazetteer?=
+            if(expanded) expandedGazetteer else primaryGazetteer
+
+        fun cacheGazetteer(expanded:Boolean,gazetteer:com.yourapp.wine.gazetteer.ProducerGazetteer,setupFields:Map<String,String>) {
+            val entry=WarmGazetteer(gazetteer,setupFields)
+            if(expanded) expandedGazetteer=entry else primaryGazetteer=entry
+        }
+
+        override fun close() {
+            runCatching { expandedGazetteer?.gazetteer?.close() }
+            expandedGazetteer=null
+            runCatching { primaryGazetteer?.gazetteer?.close() }
+            primaryGazetteer=null
+            evidenceEngines.clear()
+            hybrid=null
+            repair=null
+            production=null
+            runCatching { kb?.close() }
+            kb=null
+        }
+    }
+
+    fun append(context:Context,batch:TextLabBatch,skip:Boolean=false,warmSession:WarmSession?=null) {
         var kb:SqliteWineKnowledgeBase?=null
+        val ownsKb=warmSession==null
         var setupError=if(skip) "Skipped after memory pressure" else ""
         batch.journals.forEach { it.add("shared","knowledge_setup","running") }
         val engine=try {
             if(skip) null else {
-                kb=SqliteWineKnowledgeBase.open(context.applicationContext,0)
-                TextLabFieldExtractor(kb!!)
+                kb=warmSession?.knowledgeBase() ?: SqliteWineKnowledgeBase.open(context.applicationContext,0)
+                if(batch.benchmarkOnly) null else TextLabFieldExtractor(kb!!)
             }
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) { setupError="${error.javaClass.simpleName}: ${error.message}";null }
@@ -70,12 +141,22 @@ internal object TextLabWineExtraction {
                 catch(error:Exception) { status="failed";details="${error.javaClass.simpleName}: ${error.message}" }
                 journal.add(candidate,"field_summary",status,values,details)
             }
-            val production=kb?.let { com.yourapp.wine.fill.FillEngine(it) }
+            val production=kb?.let { warmSession?.fillEngine(it) ?: com.yourapp.wine.fill.FillEngine(it) }
             batch.journals.forEach { TextLabFormPreview.append(it,production,Year.now().value) }
             if(batch.compareEvidence) {
-                val experimental=kb?.let { TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces) }
-                val hybrid=if(batch.anchorHybrid) kb?.let { com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
-                val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
+                val experimental=kb?.let {
+                    warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces)
+                        ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces)
+                }
+                val hybrid=if(batch.anchorHybrid) kb?.let { warmSession?.anchorHybrid(it) ?: com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
+                val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { warmSession?.producerRepair(it) ?: com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
+                fun appendSpatialContender(context:Context,journal:TextLabJournal,
+                    experimental:com.yourapp.wine.textlab.evidence.EvidenceExtractor?,
+                    hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
+                    repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean,
+                    singleReading:Boolean=false)=appendSpatialContenderWithSession(
+                        context,journal,experimental,hybrid,repair,skip,expanded,singleReading,production,warmSession
+                    )
                 // Benchmark batches select their contenders explicitly and append each selected
                 // summary to the one OCR journal: evidence_summary (Prod v2.0),
                 // spatial_lwin_evidence_summary (Prod v3.0, LWIN-only producers) and
@@ -110,16 +191,18 @@ internal object TextLabWineExtraction {
                     if(batch.residualCandidates) batch.journals.forEach { TextLabResidualPreview.append(it,resolver,Year.now().value,error) }
                 } finally { resolver?.close() }
             }
-        } finally { kb?.close() }
+        } finally { if(ownsKb) kb?.close() }
     }
     /** One spatial contender: gazetteer setup under its own budget, then the spatial preview with
      * a separate lookup budget. The producer-data gate fails closed per contender; one contender's
      * unavailable index never alters another's. */
-    private fun appendSpatialContender(context:Context,journal:TextLabJournal,
+    private fun appendSpatialContenderWithSession(context:Context,journal:TextLabJournal,
         experimental:com.yourapp.wine.textlab.evidence.EvidenceExtractor?,
         hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
         repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean,
-        singleReading:Boolean=false) {
+        singleReading:Boolean=false,
+        fillEngine:com.yourapp.wine.fill.FillEngine?=null,
+        warmSession:WarmSession?=null) {
         // Lab v4 only, default off: the Prod v3.0 contender keeps the Prod two-engine rule so the
         // comparison stays "Prod policy vs Lab policy", not "old build vs new build".
         val policy=if(expanded && singleReading) com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading
@@ -131,29 +214,38 @@ internal object TextLabWineExtraction {
         // recorded "resolver completed within budget" as blocked (owner report, 2026-10-27).
         val setupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_SETUP_MS
         val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=setupDeadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
-        var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=null
+        val cachedGazetteer=if(!skip) warmSession?.cachedGazetteer(expanded) else null
+        var ownsProducers=cachedGazetteer==null
+        var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=cachedGazetteer?.gazetteer
         var unavailable=if(expanded) "Lab expanded producer index required" else "primary LWIN export required"
         val setup=com.yourapp.wine.diagnostics.PipelineFunnel.Recorder()
         var setupStep="asset.manifest"
         try {
-            try {
-                if(!skip) producers=if(expanded)
-                    com.yourapp.wine.gazetteer.ProducerGazetteer.openExpanded(
-                        context.applicationContext,checkBudget) { step,passed ->
-                        setupStep=step;setup.visit(step,passed,"asset validation did not complete")
+            if(cachedGazetteer==null) {
+                try {
+                    if(!skip) producers=if(expanded)
+                        com.yourapp.wine.gazetteer.ProducerGazetteer.openExpanded(
+                            context.applicationContext,checkBudget) { step,passed ->
+                            setupStep=step;setup.visit(step,passed,"asset validation did not complete")
+                        }
+                        else com.yourapp.wine.gazetteer.ProducerGazetteer.open(
+                            context.applicationContext,checkBudget) { step,passed ->
+                            setupStep=step;setup.visit(step,passed,"asset validation did not complete")
+                        }
+                    if(producers!=null && warmSession!=null) {
+                        warmSession.cacheGazetteer(expanded,producers,setup.fields())
+                        ownsProducers=false
                     }
-                    else com.yourapp.wine.gazetteer.ProducerGazetteer.open(
-                        context.applicationContext,checkBudget) { step,passed ->
-                        setupStep=step;setup.visit(step,passed,"asset validation did not complete")
-                    }
+                }
+                catch(cancel:CancellationException) { throw cancel }
+                catch(e:Exception) {
+                    unavailable=(if(expanded) "Lab expanded producer gazetteer unavailable: " else "Primary producer gazetteer unavailable: ")+
+                        "${e.javaClass.simpleName}; ${e.message}"
+                    setup.visit(setupStep,false,unavailable)
+                }
             }
-            catch(cancel:CancellationException) { throw cancel }
-            catch(e:Exception) {
-                unavailable=(if(expanded) "Lab expanded producer gazetteer unavailable: " else "Primary producer gazetteer unavailable: ")+
-                    "${e.javaClass.simpleName}; ${e.message}"
-                setup.visit(setupStep,false,unavailable)
-            }
-            journal.add(candidate,"gazetteer_setup",if(producers!=null) "complete" else "unavailable",setup.fields(),unavailable.takeIf { producers==null }.orEmpty())
+            val setupFields=cachedGazetteer?.setupFields ?: setup.fields()
+            journal.add(candidate,"gazetteer_setup",if(producers!=null) "complete" else "unavailable",setupFields,unavailable.takeIf { producers==null }.orEmpty())
             var lookupDeadline=0L
             val lookupBudget={
                 if(lookupDeadline==0L) lookupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_LOOKUP_MS
@@ -161,8 +253,8 @@ internal object TextLabWineExtraction {
                     throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
             }
             TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget,
-                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",policy=policy)
-        } finally { producers?.close() }
+                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",fillEngine=fillEngine,policy=policy)
+        } finally { if(ownsProducers) producers?.close() }
     }
     private fun box(value:String?):RectF? {
         val v=value?.trim()?.split(Regex("\\s+"))?.mapNotNull { it.toFloatOrNull() } ?: return null

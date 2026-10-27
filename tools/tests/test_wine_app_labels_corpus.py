@@ -500,6 +500,54 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('"timed_images_count"', viewmodel)
         self.assertIn('"timed_images_total_ms"', viewmodel)
 
+    def test_incomplete_label_cards_show_failed_parameter_table_and_collapsed_raw_ocr(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+
+        # Failed parameters are rendered as a 3-column Parameter | Expected | Output table,
+        # filtered strictly to failed fields.
+        self.assertIn("FailedParametersTable(failedResults)", activity)
+        table_block = activity.split("private fun FailedParametersTable(", 1)[1]
+        for header in ('"Parameter"', '"Expected"', '"Output"'):
+            self.assertIn(header, table_block)
+        self.assertIn("FIELD_DISPLAY_NAMES[field] ?: field", table_block)
+
+        # Raw OCR per incomplete label is inside a collapsible section that is collapsed by default.
+        self.assertIn("var expandedRawOcrImages by remember(state.mode) { mutableStateOf(emptySet<String>()) }", activity)
+        self.assertIn("val showRawOcr = wineCase.image in expandedRawOcrImages", activity)
+        self.assertIn('"Raw OCR"', activity)
+        self.assertIn("if (showRawOcr) {", activity)
+        self.assertIn("vm.loadRawOcrText(wineCase.image, state.mode)", activity)
+        self.assertIn("suspend fun loadRawOcrText(", viewmodel)
+        self.assertIn('row.optString("stage") != "recognition"', viewmodel)
+
+    def test_benchmark_pass_reuses_warm_read_only_engines_and_closes_in_finally(self):
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
+        extraction = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabWineExtraction.kt").read_text()
+        spatial = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt").read_text()
+
+        # Pass-scoped WarmSession is opened once per start() pass, forwarded to runImageAllModes,
+        # and closed in finally even on stop/pause/exception.
+        self.assertIn("var warmSession: PhoneCorpusRunner.WarmSession? = null", viewmodel)
+        self.assertIn("warmSession = PhoneCorpusRunner.WarmSession(app)", viewmodel)
+        self.assertIn("warmSession = warmSession,", viewmodel)
+        self.assertIn("runCatching { warmSession?.close() }", viewmodel)
+        self.assertIn("internal class WarmSession(context:Context):AutoCloseable", runner)
+        self.assertIn("TextLabWineExtraction.append(context,batch,warmSession=warmSession?.extraction)", runner)
+
+        # TextLabWineExtraction skips unused TextLabFieldExtractor on benchmarkOnly batches,
+        # reuses warm KB/FillEngine/EvidenceExtractor/Gazetteer handles across photos,
+        # replays gazetteer_setup funnel fields, and avoids rebuilding FillEngine on filtered photos.
+        self.assertIn("if(batch.benchmarkOnly) null else TextLabFieldExtractor(kb!!)", extraction)
+        self.assertIn("kb=warmSession?.knowledgeBase() ?: SqliteWineKnowledgeBase.open(context.applicationContext,0)", extraction)
+        self.assertIn("warmSession?.fillEngine(it) ?: com.yourapp.wine.fill.FillEngine(it)", extraction)
+        self.assertIn("warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces)", extraction)
+        self.assertIn("val setupFields=cachedGazetteer?.setupFields ?: setup.fields()", extraction)
+        self.assertIn("finally { if(ownsKb) kb?.close() }", extraction)
+        self.assertIn("finally { if(ownsProducers) producers?.close() }", extraction)
+        self.assertIn("if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)", spatial)
+
 
 if __name__ == "__main__":
     unittest.main()

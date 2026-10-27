@@ -16,9 +16,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.UUID
@@ -685,6 +687,81 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         activityForeground = true
     }
 
+    /**
+     * Loads captured raw OCR lines per engine for [image] on demand when an incomplete-label card's
+     * Raw OCR section is expanded. Reads from the latest saved attempt trace or verified OCR cache
+     * on Dispatchers.IO so normal score refreshes never carry 125 raw OCR payloads in memory.
+     */
+    suspend fun loadRawOcrText(
+        image: String,
+        mode: PhoneCorpusRunner.Mode = PhoneCorpusRunner.Mode.LAB,
+    ): String = withContext(Dispatchers.IO) {
+        fun formatEngineBlocks(mlkit: List<String>, paddle: List<String>): String = buildString {
+            append("ML Kit (${mlkit.size}):\n")
+            if (mlkit.isEmpty()) append("  (none)\n") else mlkit.forEach { append("  ").append(it).append('\n') }
+            append("\nPaddle Medium (${paddle.size}):\n")
+            if (paddle.isEmpty()) append("  (none)") else paddle.forEachIndexed { idx, line ->
+                append("  ").append(line)
+                if (idx < paddle.lastIndex) append('\n')
+            }
+        }
+
+        val folder = if (mode == PhoneCorpusRunner.Mode.LAB) labFolder else latestFolder(mode) ?: labFolder
+        val latestAttempt = folder?.let { File(it, "attempts") }
+            ?.listFiles()
+            .orEmpty()
+            .filter { it.isFile && it.name.startsWith("$image-") && it.name.endsWith(".json") }
+            .maxByOrNull { it.lastModified() }
+        if (latestAttempt != null) {
+            val parsed = runCatching { JSONObject(latestAttempt.readText()) }.getOrNull()
+            val trace = parsed?.optJSONArray("trace")
+            if (trace != null && trace.length() > 0) {
+                val mlkit = mutableListOf<String>()
+                val paddle = mutableListOf<String>()
+                for (i in 0 until trace.length()) {
+                    val row = trace.optJSONObject(i) ?: continue
+                    if (row.optString("stage") != "recognition") continue
+                    val raw = row.optString("raw_text").trim()
+                    if (raw.isEmpty()) continue
+                    when (row.optString("candidate")) {
+                        "mlkit_reference" -> mlkit.add(raw)
+                        "candidate_3" -> paddle.add(raw)
+                    }
+                }
+                return@withContext formatEngineBlocks(mlkit, paddle)
+            }
+            val tokens = parsed?.optJSONArray("tokens")
+            if (tokens != null && tokens.length() > 0) {
+                val mlkit = mutableListOf<String>()
+                val paddle = mutableListOf<String>()
+                for (i in 0 until tokens.length()) {
+                    val tok = tokens.optJSONObject(i) ?: continue
+                    val raw = tok.optString("raw").trim()
+                    if (raw.isEmpty()) continue
+                    when (tok.optString("engine")) {
+                        "mlkit" -> mlkit.add(raw)
+                        "paddle-v6-medium" -> paddle.add(raw)
+                    }
+                }
+                return@withContext formatEngineBlocks(mlkit, paddle)
+            }
+        }
+
+        val sha = runCatching { inputHashes()[image] }.getOrNull()
+        val cached = if (sha != null) runCatching { ocrCache?.entry(image, sha) }.getOrNull() else null
+        if (cached != null) {
+            val mlkit = cached.rows
+                .filter { it["candidate"] == "mlkit_reference" && it["stage"] == "recognition" }
+                .mapNotNull { it["raw_text"]?.trim()?.takeIf(String::isNotEmpty) }
+            val paddle = cached.rows
+                .filter { it["candidate"] == "candidate_3" && it["stage"] == "recognition" }
+                .mapNotNull { it["raw_text"]?.trim()?.takeIf(String::isNotEmpty) }
+            return@withContext formatEngineBlocks(mlkit, paddle)
+        }
+
+        "No raw OCR recorded for this label."
+    }
+
     private fun isFailed(result: JSONObject): Boolean =
         result.optString("status") != "complete" || result.optBoolean("engine_incomplete") ||
             result.optJSONArray("pipelines")?.let { rows ->
@@ -724,6 +801,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         WineAppLabelsRunService.start(app, "Preparing 125-label benchmark…")
         bgScope.launch {
             var locked = false
+            var warmSession: PhoneCorpusRunner.WarmSession? = null
             var runImagesCount = initialTiming.timedImagesCount
             var runImagesTotalMs = initialTiming.timedImagesTotalMs
             var passImagesCount = 0
@@ -775,6 +853,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                         }
                     }
                 }
+                warmSession = PhoneCorpusRunner.WarmSession(app)
                 File(lab, "current").mkdirs(); File(lab, "attempts").mkdirs()
                 for ((index, input) in manifest.withIndex()) {
                     if (stopping) break
@@ -815,6 +894,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                         listOf(lab), "wine-app-labels-v1",
                         cachedOcr = cachedEntry,
                         onFreshOcr = { meta, rows -> ocrStore?.save(image, imageSha, meta, rows) },
+                        warmSession = warmSession,
                     )
                     for ((version, result) in results) {
                         if (version == PhoneCorpusRunner.Mode.LAB) {
@@ -866,6 +946,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             } catch (e: OutOfMemoryError) {
                 mutable.update { it.copy(message = "Memory pressure stopped the test. Completed checkpoints are retained.") }
             } finally {
+                runCatching { warmSession?.close() }
                 val finalElapsed = initialTiming.elapsedRunMs + (SystemClock.elapsedRealtime() - passStartRealtime).coerceAtLeast(0L)
                 runCatching { writeRunTiming(lab, RunTiming(finalElapsed, runImagesCount, runImagesTotalMs)) }
                 val finalAvg = WineAppLabelsTimers.averageImageMs(runImagesTotalMs, runImagesCount)

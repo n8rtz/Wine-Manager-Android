@@ -101,6 +101,8 @@ private val FAILURE_FILTER_OPTIONS = listOf(
     "vintage" to "Vintage",
 )
 
+private val FIELD_DISPLAY_NAMES = FAILURE_FILTER_OPTIONS.toMap()
+
 private fun isFieldFailure(row: Map<String, String>): Boolean =
     row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())
 
@@ -183,6 +185,7 @@ class WineAppLabelsActivity : ComponentActivity() {
         var expandedDiagnostics by remember(state.mode) { mutableStateOf(emptySet<String>()) }
         var showIncompleteLabels by remember { mutableStateOf(false) }
         var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }
+        var expandedRawOcrImages by remember(state.mode) { mutableStateOf(emptySet<String>()) }
         var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }
         var nowRealtimeMs by remember { mutableStateOf(SystemClock.elapsedRealtime()) }
         LaunchedEffect(state.labRunning) {
@@ -583,26 +586,104 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
                 items(filteredIncompleteCases, key = { it.image }) { wineCase ->
                     val results = fieldRows[wineCase.image].orEmpty().associateBy { it["field"] }
+                    val failedResults = PhoneCorpusMath.fields.mapNotNull { field ->
+                        results[field]?.takeIf(::isFieldFailure)?.let { field to it }
+                    }
+                    val showRawOcr = wineCase.image in expandedRawOcrImages
                     Card(Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text("#${wineCase.reviewNumber} · ${wineCase.producer} — ${wineCase.wineName}", style = MaterialTheme.typography.titleSmall)
-                                Text(wineCase.sourceFilename, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(listOf(wineCase.country, wineCase.region, wineCase.subregion, wineCase.vintage).filter { it != "(blank)" }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                                val failedResults = PhoneCorpusMath.fields.mapNotNull { field ->
-                                    results[field]?.takeIf(::isFieldFailure)?.let { field to it }
-                                }
-                                if (failedResults.isNotEmpty()) {
-                                    HorizontalDivider(Modifier.padding(vertical = 3.dp))
-                                    failedResults.forEach { (field, result) ->
-                                        val expected = result["expected"].takeUnless { it.isNullOrBlank() } ?: result["reference_status"].orEmpty()
-                                        val actual = result["recognized"].orEmpty().ifBlank { "(blank)" }
+                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        "#${wineCase.reviewNumber} · ${wineCase.producer}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                    )
+                                    Text(
+                                        wineCase.wineName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    val locationLine = listOf(
+                                        wineCase.country,
+                                        wineCase.region,
+                                        wineCase.subregion,
+                                        wineCase.vintage,
+                                    ).filter { it != "(blank)" }.joinToString(" · ")
+                                    if (locationLine.isNotEmpty()) {
                                         Text(
-                                            "$field: $actual  ·  ${result["outcome"]}  ·  expected $expected",
+                                            locationLine,
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.error,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
+                                    }
+                                    Text(
+                                        wineCase.sourceFilename,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            if (failedResults.isNotEmpty()) {
+                                FailedParametersTable(failedResults)
+                            } else if (results.values.any { it["form_status"] == "execution_failed" }) {
+                                Text(
+                                    "Execution failed before field scoring.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            Column {
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            expandedRawOcrImages = if (showRawOcr) {
+                                                expandedRawOcrImages - wineCase.image
+                                            } else {
+                                                expandedRawOcrImages + wineCase.image
+                                            }
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        "Raw OCR",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(
+                                        if (showRawOcr) "▲" else "▼",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                if (showRawOcr) {
+                                    val rawOcr by produceState<String?>(
+                                        initialValue = null,
+                                        wineCase.image,
+                                        state.mode,
+                                        state.labCompleted,
+                                    ) {
+                                        value = vm.loadRawOcrText(wineCase.image, state.mode)
+                                    }
+                                    SelectionContainer {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                                .padding(8.dp),
+                                        ) {
+                                            Text(
+                                                rawOcr ?: "Loading OCR...",
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                ),
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -613,6 +694,78 @@ class WineAppLabelsActivity : ComponentActivity() {
         }
         expandedImage?.let { image ->
             ZoomableLabelDialog(image = image, onDismiss = { expandedImage = null })
+        }
+    }
+}
+
+@Composable
+private fun FailedParametersTable(failedResults: List<Pair<String, Map<String, String>>>) {
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val failColor = MaterialTheme.colorScheme.error
+    SelectionContainer {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .border(0.5.dp, gridColor),
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Parameter",
+                    Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                Text(
+                    "Expected",
+                    Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                Text(
+                    "Output",
+                    Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+            failedResults.forEach { (field, result) ->
+                val expected = result["expected"].takeUnless { it.isNullOrBlank() }
+                    ?: if (result["reference_status"] == "expected_blank") "(blank)"
+                    else result["reference_status"].orEmpty()
+                val output = result["recognized"].orEmpty().ifBlank { "(blank)" }
+                HorizontalDivider(thickness = 0.5.dp, color = gridColor)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                ) {
+                    Text(
+                        FIELD_DISPLAY_NAMES[field] ?: field,
+                        Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                    Text(
+                        expected,
+                        Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = passColor,
+                    )
+                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+                    Text(
+                        output,
+                        Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = failColor,
+                    )
+                }
+            }
         }
     }
 }

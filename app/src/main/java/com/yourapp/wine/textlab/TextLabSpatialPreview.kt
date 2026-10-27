@@ -21,7 +21,8 @@ internal object TextLabSpatialPreview {
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
         candidate:String="spatial_lab",stagePrefix:String="spatial_",
-        policy:ProducerResolver.Policy=ProducerResolver.Policy.prod) {
+        policy:ProducerResolver.Policy=ProducerResolver.Policy.prod,
+        fillEngine:com.yourapp.wine.fill.FillEngine?=null) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
@@ -56,7 +57,8 @@ internal object TextLabSpatialPreview {
             // dropped noise cannot leak back through EvidenceAnchorHybrid.
             if(filterOutcome!=null && filterOutcome.dropped.isNotEmpty() && engine!=null) {
                 work.rows.addAll(journal.rows.filter { it["stage"] in setOf("summary","candidate_summary") })
-                TextLabFormPreview.append(work,com.yourapp.wine.fill.FillEngine(engine.baseKb),year,recordsOverride=readings)
+                if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)
+                else TextLabFormPreview.append(work,com.yourapp.wine.fill.FillEngine(engine.baseKb),year,recordsOverride=readings)
             } else {
                 work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
             }
