@@ -98,6 +98,24 @@ internal class ProducerGazetteer private constructor(
     companion object {
         const val ASSET = "producer-gazetteer-v1"
 
+        /**
+         * The cached copy is written under its content hash by an atomic move, so a stamp naming that
+         * hash and the byte length proves the copy without re-reading 34-50 MB on every open. That
+         * read used to spend most of the caller's per-photo budget before any lookup ran; the
+         * manifest's record counts are still checked against the opened database on every open, and a
+         * cache miss, a length change or a missing stamp falls back to the full copy-and-verify path.
+         */
+        private fun stampMatches(target: File, hash: String): Boolean {
+            if (!target.isFile) return false
+            val stamp = File(target.parentFile, "${target.name}.verified")
+            val parts = runCatching { stamp.readText().trim().split(' ') }.getOrNull() ?: return false
+            return parts.size == 2 && parts[0] == hash && parts[1].toLongOrNull() == target.length()
+        }
+
+        private fun writeStamp(target: File, hash: String) {
+            runCatching { File(target.parentFile, "${target.name}.verified").writeText("$hash ${target.length()}") }
+        }
+
         private fun sha(file: File, checkBudget: () -> Unit): String {
             val digest = MessageDigest.getInstance("SHA-256")
             file.inputStream().use { input ->
@@ -181,7 +199,7 @@ internal class ProducerGazetteer private constructor(
             checkBudget()
             val directory = File(context.cacheDir, assetFolder).apply { mkdirs() }
             val target = File(directory, "$hash.sqlite")
-            if (!target.exists() || sha(target, checkBudget) != hash) {
+            if (!stampMatches(target, hash)) {
                 val temporary = File.createTempFile("producer-", ".tmp", directory)
                 try {
                     context.assets.open("$assetFolder/$name").use { input ->
@@ -207,6 +225,7 @@ internal class ProducerGazetteer private constructor(
                     java.nio.file.Files.move(
                         temporary.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
                     )
+                    writeStamp(target, hash)
                 } finally {
                     temporary.delete()
                 }

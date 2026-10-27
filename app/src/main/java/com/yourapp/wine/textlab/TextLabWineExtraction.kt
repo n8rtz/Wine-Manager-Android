@@ -91,7 +91,7 @@ internal object TextLabWineExtraction {
                 }
                 // The two spatial contenders run the identical pipeline; only the producer index
                 // differs (Prod v3.0: verified LWIN only; Lab v4: Lab expanded index). Each keeps
-                // its own candidate/stage namespace, setup telemetry and 500 ms stage budget.
+                // its own candidate/stage namespace, setup telemetry and setup/lookup budgets.
                 if(runLwinSpatial) {
                     batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false) }
                 }
@@ -112,9 +112,9 @@ internal object TextLabWineExtraction {
             }
         } finally { kb?.close() }
     }
-    /** One spatial contender: gazetteer setup under its own 500 ms budget, then the shared
-     * spatial preview in the contender's candidate/stage namespace. The producer-data gate
-     * fails closed per contender; one contender's unavailable index never alters another's. */
+    /** One spatial contender: gazetteer setup under its own budget, then the spatial preview with
+     * a separate lookup budget. The producer-data gate fails closed per contender; one contender's
+     * unavailable index never alters another's. */
     private fun appendSpatialContender(context:Context,journal:TextLabJournal,
         experimental:com.yourapp.wine.textlab.evidence.EvidenceExtractor?,
         hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
@@ -125,8 +125,12 @@ internal object TextLabWineExtraction {
         val policy=if(expanded && singleReading) com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading
             else com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod
         val candidate=if(expanded) "spatial_lab" else "spatial_lwin_lab"
-        val deadline=android.os.SystemClock.elapsedRealtime()+500L
-        val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=deadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
+        // Setup and lookups get separate budgets on purpose. Asset verification reads 34-50 MB and
+        // used to spend the lookups' time: the resolvers were handed the leftovers of one 500 ms
+        // slice, so a slow open made them throw BudgetExceeded before the first query and the funnel
+        // recorded "resolver completed within budget" as blocked (owner report, 2026-10-27).
+        val setupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_SETUP_MS
+        val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=setupDeadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
         var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=null
         var unavailable=if(expanded) "Lab expanded producer index required" else "primary LWIN export required"
         val setup=com.yourapp.wine.diagnostics.PipelineFunnel.Recorder()
@@ -150,12 +154,10 @@ internal object TextLabWineExtraction {
                 setup.visit(setupStep,false,unavailable)
             }
             journal.add(candidate,"gazetteer_setup",if(producers!=null) "complete" else "unavailable",setup.fields(),unavailable.takeIf { producers==null }.orEmpty())
-            val remaining=(deadline-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L)
-            var lookupDeadline:Long?=null
+            val lookupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_LOOKUP_MS
             val lookupBudget={
-                val now=android.os.SystemClock.elapsedRealtime()
-                if(lookupDeadline==null) lookupDeadline=now+remaining
-                if(now>=lookupDeadline!!) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
+                if(android.os.SystemClock.elapsedRealtime()>=lookupDeadline)
+                    throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
             }
             TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget,
                 candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",policy=policy)

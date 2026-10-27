@@ -45,7 +45,7 @@ This deliberately prioritizes precision. It can fill missing names, confirm obse
 
 ## Bounds and diagnostics
 
-- Existing shared producer/linked-wine setup-and-lookup allowance remains **500 ms**; the wine extension does not receive another allowance. OCR remains 60 seconds per engine in the experimental harness.
+- *(Update 2026-10-27.)* Setup and lookup now have **separate** budgets: `TextLabBudgets.GAZETTEER_SETUP_MS` = 500 ms for manifest checks, asset copy/verification and SQLite open, then `GAZETTEER_LOOKUP_MS` = 2000 ms for the producer lookup plus the linked-wine lookup of one contender. Previously one 500 ms slice covered setup **and** lookups, so a slow open handed the resolvers the leftovers; `producer.execution` / `wine.execution` were blocked by budget exhaustion on about 30 % of labels. The cached database copy is also no longer re-hashed on every open (see `ProducerGazetteer.load`). OCR remains 60 seconds per engine in the experimental harness.
 - Maximum 128 observed/alternative spans, eight producer identities, and 32 candidate wine links per span. A saturated 33-row retrieval causes abstention for that span.
 - Loader checks schema, hashes, table counts and FTS availability off the main thread. Per-file installation cap is now 32 MiB to accommodate the measured 21.94 MiB wine file. Missing, mismatched or over-budget assets do not silently substitute sample data.
 - New CSV rows: `linked_wine_candidate`, including observed text, engine, observation IDs, wine-name ID, linked producer ID, LWIN7 codes, edit distance and database version/hashes.

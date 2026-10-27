@@ -56,6 +56,16 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 5. [ ] Confirm the gates that are supposed to remain: a garbled span still fails eligibility, a rival name one edit away still abstains (ambiguous identity), and an existing different producer/wine is still protected. Only the engine quorum should differ.
 6. [ ] In the diagnostics table, the step formerly called **Two-engine + disjoint agreement** now reads **Independent-support agreement**; its description names the active policy.
 
+### Resolver budget: blocked rows should collapse
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run the **Large image dataset test** over a few photos and open the diagnostics table: the **Resolver completed within budget** rows for producer and linked wine should almost all pass, where about 30 % were blocked before.
+2. [ ] For any row that still blocks, read the reason: `producer budget reached; unchanged` / `linked wine budget reached; unchanged` means the 2000 ms lookup budget is still too small for that label; an exception class name means a different failure and needs a separate look.
+3. [ ] Check `producer_gazetteer_ms` + `wine_gazetteer_ms` on the summary rows: they should now show real search time instead of a near-zero leftover, and the sum should stay under the per-image allowance.
+4. [ ] Confirm the first photo of a run (cold cache) copies and verifies the databases once and later photos open them immediately; a cold first photo may still block on setup, and only that one should.
+5. [ ] Confirm nothing else changed: the same photos still produce the same suggestions, the funnel version, columns and row names are unchanged, and no score moved because of the timing fix.
+
 ### Nested regions and subregions reach the form
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
