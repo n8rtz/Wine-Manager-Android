@@ -2,6 +2,7 @@ package com.yourapp.wine.phonecorpus
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -59,6 +61,7 @@ import androidx.compose.ui.text.withStyle
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import kotlin.math.abs
@@ -181,6 +184,17 @@ class WineAppLabelsActivity : ComponentActivity() {
         var showIncompleteLabels by remember { mutableStateOf(false) }
         var selectedFailureFields by remember { mutableStateOf(emptySet<String>()) }
         var expandedImage by rememberSaveable { mutableStateOf<String?>(null) }
+        var nowRealtimeMs by remember { mutableStateOf(SystemClock.elapsedRealtime()) }
+        LaunchedEffect(state.labRunning) {
+            if (state.labRunning) {
+                while (true) {
+                    nowRealtimeMs = SystemClock.elapsedRealtime()
+                    delay(250L)
+                }
+            } else {
+                nowRealtimeMs = SystemClock.elapsedRealtime()
+            }
+        }
         val filteredIncompleteCases = remember(incompleteCases, failedFieldsByImage, selectedFailureFields) {
             if (selectedFailureFields.isEmpty()) {
                 incompleteCases
@@ -255,6 +269,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                 ) {
                     Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v4 only")
                 }
+                BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
                     TextButton(
@@ -715,6 +730,55 @@ private fun ZoomableLabelDialog(image: String, onDismiss: () -> Unit) {
                             translationX = offset.x
                             translationY = offset.y
                         },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BenchmarkTimersRow(state: WineAppLabelsState, nowRealtimeMs: Long) {
+    val liveElapsedMs = WineAppLabelsTimers.liveElapsedMs(
+        accumulatedRunMs = state.elapsedRunMs,
+        segmentStartedRealtimeMs = state.runSegmentStartedRealtimeMs,
+        nowRealtimeMs = nowRealtimeMs,
+    )
+    val remainingMs = WineAppLabelsTimers.estimatedRemainingMs(
+        remainingImages = state.remainingImages,
+        etaPerImageMs = state.etaPerImageMs,
+        currentImageStartedRealtimeMs = state.currentImageStartedRealtimeMs,
+        nowRealtimeMs = nowRealtimeMs,
+    )
+    val items = listOf(
+        "Run time" to WineAppLabelsTimers.formatElapsedMmSs(liveElapsedMs),
+        "Avg / image" to WineAppLabelsTimers.formatAverageSeconds(state.avgImageMs),
+        "Est. remaining" to WineAppLabelsTimers.formatCountdownMmSs(remainingMs),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items.forEach { (label, value) ->
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.small)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }

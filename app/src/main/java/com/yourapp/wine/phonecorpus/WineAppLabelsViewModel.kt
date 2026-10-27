@@ -2,6 +2,7 @@ package com.yourapp.wine.phonecorpus
 
 import android.app.Application
 import android.net.Uri
+import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -54,6 +55,24 @@ internal data class WineAppLabelsState(
     val captures: Map<PhoneCorpusRunner.Mode, WineAppLabelsBaselines.Capture> = emptyMap(),
     /** Photos still to run through the not-yet-frozen Prod versions. */
     val captureRemaining: Int = WINE_APP_LABEL_COUNT,
+    /** Active benchmark execution duration accumulated before the current running pass (ms). */
+    val elapsedRunMs: Long = 0L,
+    /** Monotonic SystemClock.elapsedRealtime() when the active benchmark pass started; null when idle. */
+    val runSegmentStartedRealtimeMs: Long? = null,
+    /** Mean execution time per completed image in the current Lab run (ms); null until 1+ image finishes. */
+    val avgImageMs: Long? = null,
+    /** Per-image pace (ms) used for the live countdown (current pass pace once 1+ image finishes, else avgImageMs). */
+    val etaPerImageMs: Long? = null,
+    /** Monotonic SystemClock.elapsedRealtime() when the currently-executing image started; null when idle. */
+    val currentImageStartedRealtimeMs: Long? = null,
+    /** Remaining images to process in the active pass (or remaining uncheckpointed/uncaptured when idle). */
+    val remainingImages: Int = WINE_APP_LABEL_COUNT,
+)
+
+private data class RunTiming(
+    val elapsedRunMs: Long = 0L,
+    val timedImagesCount: Int = 0,
+    val timedImagesTotalMs: Long = 0L,
 )
 
 /**
@@ -224,8 +243,40 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 if (cachedOcrEnabled) "phone; cached OCR outputs; owner-reviewed Wine App Labels"
                 else "phone; fresh OCR; owner-reviewed Wine App Labels",
             )
+            .put("elapsed_run_ms", 0L)
+            .put("timed_images_count", 0)
+            .put("timed_images_total_ms", 0L)
         File(dir, "run.json").writeText(metadata.toString(2))
         return dir
+    }
+
+    private fun readRunTiming(dir: File?): RunTiming = runCatching {
+        if (dir == null) return RunTiming()
+        val file = File(dir, "run.json")
+        if (!file.isFile) return RunTiming()
+        val metadata = JSONObject(file.readText())
+        RunTiming(
+            elapsedRunMs = metadata.optLong("elapsed_run_ms", 0L).coerceAtLeast(0L),
+            timedImagesCount = metadata.optInt("timed_images_count", 0).coerceAtLeast(0),
+            timedImagesTotalMs = metadata.optLong("timed_images_total_ms", 0L).coerceAtLeast(0L),
+        )
+    }.getOrDefault(RunTiming())
+
+    private fun writeRunTiming(dir: File, timing: RunTiming) {
+        runCatching {
+            val file = File(dir, "run.json")
+            if (!file.isFile) return
+            val metadata = JSONObject(file.readText())
+                .put("elapsed_run_ms", timing.elapsedRunMs.coerceAtLeast(0L))
+                .put("timed_images_count", timing.timedImagesCount.coerceAtLeast(0))
+                .put("timed_images_total_ms", timing.timedImagesTotalMs.coerceAtLeast(0L))
+            val tmp = File(dir, "run.json.tmp")
+            tmp.writeText(metadata.toString(2))
+            if (!tmp.renameTo(file)) {
+                tmp.copyTo(file, overwrite = true)
+                tmp.delete()
+            }
+        }
     }
 
     private fun predictions(dir: File) = File(dir, "current").listFiles().orEmpty()
@@ -328,12 +379,29 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
         }
         val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
+        val timing = readRunTiming(activeLabDir)
+        val idleAvg = WineAppLabelsTimers.averageImageMs(timing.timedImagesTotalMs, timing.timedImagesCount)
+        val idleRemaining = maxOf(WINE_APP_LABEL_COUNT - labCount, captureRemaining).coerceAtLeast(0)
         mutable.update {
-            it.copy(
-                completed = captured, total = WINE_APP_LABEL_COUNT, board = board,
-                labCompleted = labCount, ocrCached = ocrReady,
-                captures = captures, captureRemaining = captureRemaining,
-            )
+            if (it.labRunning) {
+                it.copy(
+                    completed = captured, total = WINE_APP_LABEL_COUNT, board = board,
+                    labCompleted = labCount, ocrCached = ocrReady,
+                    captures = captures, captureRemaining = captureRemaining,
+                )
+            } else {
+                it.copy(
+                    completed = captured, total = WINE_APP_LABEL_COUNT, board = board,
+                    labCompleted = labCount, ocrCached = ocrReady,
+                    captures = captures, captureRemaining = captureRemaining,
+                    elapsedRunMs = timing.elapsedRunMs,
+                    runSegmentStartedRealtimeMs = null,
+                    avgImageMs = idleAvg,
+                    etaPerImageMs = idleAvg,
+                    currentImageStartedRealtimeMs = null,
+                    remainingImages = idleRemaining,
+                )
+            }
         }
     }
 
@@ -505,9 +573,14 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val preferredCachedOcr = if (session.loaded) mutable.value.useCachedOcr else readUseCachedOcrPref()
         labFolder = null
         mutable.update {
-            it.copy(busy = true, mode = mode, useCachedOcr = preferredCachedOcr, completed = 0,
+            it.copy(
+                busy = true, mode = mode, useCachedOcr = preferredCachedOcr, completed = 0,
                 total = WINE_APP_LABEL_COUNT, board = null, exportParts = emptyList(), labCompleted = 0,
-                message = "Loading saved 125-label results…")
+                elapsedRunMs = 0L, runSegmentStartedRealtimeMs = null, avgImageMs = null,
+                etaPerImageMs = null, currentImageStartedRealtimeMs = null,
+                remainingImages = WINE_APP_LABEL_COUNT,
+                message = "Loading saved 125-label results…",
+            )
         }
         bgScope.launch {
             try {
@@ -587,11 +660,32 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val store = baselines ?: return
         val ocrStore = ocrCache
         val useCachedOcr = mutable.value.useCachedOcr
-        mutable.update { it.copy(busy = true, labRunning = true, message = "Checking the 125 retained workbook photos and OCR engines…") }
+        val initialTiming = readRunTiming(lab)
+        val initialAvg = WineAppLabelsTimers.averageImageMs(
+            initialTiming.timedImagesTotalMs,
+            initialTiming.timedImagesCount,
+        )
+        val passStartRealtime = SystemClock.elapsedRealtime()
+        mutable.update {
+            it.copy(
+                busy = true,
+                labRunning = true,
+                elapsedRunMs = initialTiming.elapsedRunMs,
+                runSegmentStartedRealtimeMs = passStartRealtime,
+                avgImageMs = initialAvg,
+                etaPerImageMs = initialAvg,
+                currentImageStartedRealtimeMs = null,
+                message = "Checking the 125 retained workbook photos and OCR engines…",
+            )
+        }
         stopping = false
         WineAppLabelsRunService.start(app, "Preparing 125-label benchmark…")
         bgScope.launch {
             var locked = false
+            var runImagesCount = initialTiming.timedImagesCount
+            var runImagesTotalMs = initialTiming.timedImagesTotalMs
+            var passImagesCount = 0
+            var passImagesTotalMs = 0L
             try {
                 lock.lock()
                 locked = true
@@ -610,6 +704,17 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     "The packaged inputs do not match the selected workbook set"
                 }
                 val existingLabByImage = predictions(lab).associateBy { it.optString("image") }
+                var remainingInPass = manifest.count { item ->
+                    val img = item.getString("image")
+                    val prev = existingLabByImage[img]
+                    val needsLab = if (retryFailures) prev == null || isFailed(prev) else prev == null
+                    val needsProd = BASELINE_MODES.any { version ->
+                        val existing = store.record(version, img)
+                        if (retryFailures) existing != null && isFailed(existing) else existing == null
+                    }
+                    needsLab || needsProd
+                }
+                mutable.update { it.copy(remainingImages = remainingInPass) }
                 val requiresFreshEngines = manifest.any { item ->
                     val img = item.getString("image")
                     val prev = existingLabByImage[img]
@@ -651,12 +756,17 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                         if (runLab) add(PhoneCorpusRunner.Mode.LAB.title)
                         if (neededBaselines.isNotEmpty()) add("capturing ${neededBaselines.joinToString(", ") { it.title }}")
                     }
+                    val imageStartRealtime = SystemClock.elapsedRealtime()
                     WineAppLabelsRunService.update(
                         app,
                         "Photo ${index + 1}/${manifest.size} · ${running.joinToString(" + ")} ($ocrSourceLabel)",
                     )
                     mutable.update {
-                        it.copy(message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\nRunning ${running.joinToString(" + ")} ($ocrSourceLabel) · continues in background if navigated away.")
+                        it.copy(
+                            remainingImages = remainingInPass,
+                            currentImageStartedRealtimeMs = imageStartRealtime,
+                            message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\nRunning ${running.joinToString(" + ")} ($ocrSourceLabel) · continues in background if navigated away.",
+                        )
                     }
                     val results = PhoneCorpusRunner.runImageAllModes(
                         app, image, input.getString("sha256"), needed, File(root, "work"),
@@ -678,6 +788,25 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                         }
                     }
                     refresh()
+                    val nowAfterImage = SystemClock.elapsedRealtime()
+                    val imageDurationMs = (nowAfterImage - imageStartRealtime).coerceAtLeast(1L)
+                    runImagesCount += 1
+                    runImagesTotalMs += imageDurationMs
+                    passImagesCount += 1
+                    passImagesTotalMs += imageDurationMs
+                    remainingInPass = (remainingInPass - 1).coerceAtLeast(0)
+                    val updatedAvg = WineAppLabelsTimers.averageImageMs(runImagesTotalMs, runImagesCount)
+                    val updatedEtaPace = WineAppLabelsTimers.averageImageMs(passImagesTotalMs, passImagesCount) ?: updatedAvg
+                    val totalElapsedSoFar = initialTiming.elapsedRunMs + (nowAfterImage - passStartRealtime).coerceAtLeast(0L)
+                    writeRunTiming(lab, RunTiming(totalElapsedSoFar, runImagesCount, runImagesTotalMs))
+                    mutable.update {
+                        it.copy(
+                            avgImageMs = updatedAvg,
+                            etaPerImageMs = updatedEtaPace,
+                            currentImageStartedRealtimeMs = null,
+                            remainingImages = remainingInPass,
+                        )
+                    }
                     if (results.values.any { it.optBoolean("abort_run") }) { stopping = true; break }
                 }
                 val frozen = BASELINE_MODES.all { store.capture(it)?.count == WINE_APP_LABEL_COUNT }
@@ -695,9 +824,24 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             } catch (e: OutOfMemoryError) {
                 mutable.update { it.copy(message = "Memory pressure stopped the test. Completed checkpoints are retained.") }
             } finally {
+                val finalElapsed = initialTiming.elapsedRunMs + (SystemClock.elapsedRealtime() - passStartRealtime).coerceAtLeast(0L)
+                runCatching { writeRunTiming(lab, RunTiming(finalElapsed, runImagesCount, runImagesTotalMs)) }
+                val finalAvg = WineAppLabelsTimers.averageImageMs(runImagesTotalMs, runImagesCount)
                 if (locked) lock.unlock()
                 WineAppLabelsRunService.stop(app)
-                mutable.update { it.copy(busy = false, labRunning = false) }
+                mutable.update { state ->
+                    val idleRemaining = maxOf(state.total - state.labCompleted, state.captureRemaining).coerceAtLeast(0)
+                    state.copy(
+                        busy = false,
+                        labRunning = false,
+                        elapsedRunMs = finalElapsed,
+                        runSegmentStartedRealtimeMs = null,
+                        avgImageMs = finalAvg,
+                        etaPerImageMs = finalAvg,
+                        currentImageStartedRealtimeMs = null,
+                        remainingImages = idleRemaining,
+                    )
+                }
             }
         }
     }

@@ -452,6 +452,29 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("useCachedOcr && needed == setOf(PhoneCorpusRunner.Mode.LAB)", viewmodel)
         self.assertIn("onFreshOcr = { meta, rows -> ocrStore?.save(image, imageSha, meta, rows) }", viewmodel)
 
+    def test_benchmark_timers_sit_below_start_button_and_above_tables(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        timers = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsTimers.kt").read_text()
+
+        # Placement: directly below the Start button and above the Scored results table.
+        start_idx = activity.index('"Start / resume Lab v4 only"')
+        timer_idx = activity.index("BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)")
+        table_idx = activity.index('Text("Scored results"')
+        self.assertLess(start_idx, timer_idx)
+        self.assertLess(timer_idx, table_idx)
+
+        # Three distinct timers: Run time (mm ss), Avg / image (s), Est. remaining (countdown mm ss).
+        self.assertIn('"Run time" to WineAppLabelsTimers.formatElapsedMmSs(liveElapsedMs)', activity)
+        self.assertIn('"Avg / image" to WineAppLabelsTimers.formatAverageSeconds(state.avgImageMs)', activity)
+        self.assertIn('"Est. remaining" to WineAppLabelsTimers.formatCountdownMmSs(remainingMs)', activity)
+        self.assertIn('"%02dm %02ds".format(Locale.US, minutes, seconds)', timers)
+        self.assertIn('"%.1fs".format(Locale.US, avgImageMs.coerceAtLeast(0L) / 1000.0)', timers)
+        self.assertIn("writeRunTiming(lab, RunTiming(", viewmodel)
+        self.assertIn('"elapsed_run_ms"', viewmodel)
+        self.assertIn('"timed_images_count"', viewmodel)
+        self.assertIn('"timed_images_total_ms"', viewmodel)
+
 
 if __name__ == "__main__":
     unittest.main()
