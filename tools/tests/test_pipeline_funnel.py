@@ -53,7 +53,7 @@ class PipelineFunnelChecks(unittest.TestCase):
         # page is the only bench, so this contract is asserted against it (and its condensed
         # step column) instead of the deleted file.
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
-        table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Gazetteer database coverage"', 1)[0]
+        table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Database coverage"', 1)[0]
         # Columns are measured from their own text instead of being guessed from a fraction of
         # the screen, so headers, step labels and counts each stay on one line.
         self.assertIn("val matrixWidths = remember(board, labelStyle, cellStyle, passColor, failColor) {", table)
@@ -79,7 +79,7 @@ class PipelineFunnelChecks(unittest.TestCase):
 
     def test_labels_matrix_colors_pass_fail_and_measures_its_columns(self):
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
-        table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Gazetteer database coverage"', 1)[0]
+        table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Database coverage"', 1)[0]
         self.assertIn("private fun passFailLabel", source)
         self.assertIn("passFailLabel(it.passed, it.failed, passColor, failColor, notReached = it.notReached", table)
         self.assertIn("passFailLabel(row.shared.passed, row.shared.failed, passColor, failColor, shared = true", table)

@@ -140,9 +140,9 @@ class WineAppLabelsActivity : ComponentActivity() {
         }
         val coverage = remember {
             val data = JSONObject(context.assets.open("wine-app-labels-v1/gazetteer-coverage.json").bufferedReader().use { it.readText() })
-            val databases = data.getJSONArray("databases")
-            (0 until databases.length()).map { index ->
-                val item = databases.getJSONObject(index)
+            val parameters = data.getJSONArray("parameters")
+            (0 until parameters.length()).map { index ->
+                val item = parameters.getJSONObject(index)
                 item.getString("label") to "${item.getInt("matched_labels")}/${item.getInt("total_labels")}"
             }
         }
@@ -458,22 +458,25 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
             item {
-                Text("Gazetteer database coverage", style = MaterialTheme.typography.titleMedium)
+                Text("Database coverage", style = MaterialTheme.typography.titleMedium)
                 SelectionContainer {
                     Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        val width = 72.dp
+                        val width = 88.dp
                         Row {
-                            Text("Coverage", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall)
+                            Text("Parameter", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1, softWrap = false)
                             coverage.forEach { (label, _) ->
                                 Text(label, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    maxLines = 1, softWrap = false)
                             }
                         }
                         HorizontalDivider(Modifier.width((width.value * (coverage.size + 1)).dp))
                         Row {
-                            Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                            Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1, softWrap = false)
                             coverage.forEach { (_, count) ->
-                                Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                                Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1, softWrap = false)
                             }
                         }
                     }

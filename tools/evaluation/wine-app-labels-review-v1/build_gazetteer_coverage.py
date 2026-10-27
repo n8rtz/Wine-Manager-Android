@@ -125,6 +125,16 @@ def load_scanner_kb() -> dict[str, dict[str, set[str]]]:
         forms = {name.strip(), *(a.strip() for a in alias_text.split(";") if a.strip())}
         index(producers, {producer_key(form) for form in forms if form}, name.strip())
 
+    grapes: dict[str, set[str]] = {}
+    for block in re.findall(r'Source = """(.*?)"""', (kb_dir / "BundledGrapes.kt").read_text(), re.S):
+        for line in block.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            name, _, alias_text = line.partition("|")
+            forms = {name.strip(), *(a.strip() for a in alias_text.split(";") if a.strip())}
+            index(grapes, {producer_key(form) for form in forms if form}, f"grape:{name.strip()}")
+
     legacy_terms = []
     for line in raw_block((kb_dir / "BundledOrigins.kt").read_text()).splitlines():
         line = line.strip()
@@ -183,6 +193,7 @@ def load_scanner_kb() -> dict[str, dict[str, set[str]]]:
     return {
         "producers": producers,
         "wine_names": wine_names,
+        "grapes": grapes,
         "appellations": appellations,
         "places": places,
     }
@@ -300,16 +311,129 @@ def main() -> None:
             "database_records_matched": len(matched_records),
         })
 
+    def merge_indexes(tagged: list[tuple[str, dict[str, set[str]]]]) -> dict[str, set[str]]:
+        merged: dict[str, set[str]] = {}
+        for prefix, index in tagged:
+            for key, record_ids in index.items():
+                bucket = merged.setdefault(key, set())
+                for record_id in record_ids:
+                    bucket.add(f"{prefix}:{record_id}")
+        return merged
+
+    combined_producers = merge_indexes([
+        ("lwin_producers", producer_indexes["lwin_producers"]),
+        ("expanded_producers", producer_indexes["expanded_producers"]),
+        ("kb_producers", producer_indexes["kb_producers"]),
+    ])
+    combined_wine_index = merge_indexes([
+        ("lwin_wines", wine_indexes["lwin_wines"]),
+        ("kb_wine_names", wine_indexes["kb_wine_names"]),
+    ])
+    combined_geography = merge_indexes([
+        ("appellation", appellation_ids),
+        ("place", place_ids),
+        ("kb_appellation", scanner_kb["appellations"]),
+        ("kb_place", scanner_kb["places"]),
+    ])
+    combined_grapes = merge_indexes([
+        ("kb_grapes", scanner_kb["grapes"]),
+    ])
+
+    parameter_definitions = [
+        ("producer", "Producer"),
+        ("wine_name", "Wine name"),
+        ("country", "Country"),
+        ("region", "Region"),
+        ("subregion", "Subregion"),
+    ]
+    parameters = []
+    for field, label in parameter_definitions:
+        known_labels = 0
+        expected_blank_labels = 0
+        unresolved_labels = 0
+        matched_labels: set[int] = set()
+        matched_values: set[str] = set()
+        matched_records: set[str] = set()
+        wine_index_only_labels: set[int] = set()
+        appellation_or_varietal_labels: set[int] = set()
+
+        for record in records:
+            status = record.get(f"{field}_status")
+            if status == "expected_blank":
+                expected_blank_labels += 1
+                continue
+            if status == "unresolved":
+                unresolved_labels += 1
+                continue
+            if status != "expected_value":
+                continue
+            known_labels += 1
+            values = target_names(record, field)
+            review_id = int(record["review_number"])
+
+            if field == "producer":
+                found = {producer_key(name) for name in values} & set(combined_producers)
+                if found:
+                    matched_labels.add(review_id)
+                    matched_values.update(found)
+                    for key in found:
+                        matched_records.update(combined_producers[key])
+            elif field == "wine_name":
+                prod_keys = {producer_key(name) for name in values}
+                app_keys = {appellation_key(name) for name in values}
+                found_wine = prod_keys & set(combined_wine_index)
+                found_geo = app_keys & set(combined_geography)
+                found_grape = prod_keys & set(combined_grapes)
+                if found_wine or found_geo or found_grape:
+                    matched_labels.add(review_id)
+                    matched_values.update(found_wine | found_geo | found_grape)
+                    if found_wine:
+                        wine_index_only_labels.add(review_id)
+                    else:
+                        appellation_or_varietal_labels.add(review_id)
+                    for key in found_wine:
+                        matched_records.update(combined_wine_index[key])
+                    for key in found_geo:
+                        matched_records.update(combined_geography[key])
+                    for key in found_grape:
+                        matched_records.update(combined_grapes[key])
+            else:
+                found = {appellation_key(name) for name in values} & set(combined_geography)
+                if found:
+                    matched_labels.add(review_id)
+                    matched_values.update(found)
+                    for key in found:
+                        matched_records.update(combined_geography[key])
+
+        entry = {
+            "id": field,
+            "label": label,
+            "matched_labels": len(matched_labels),
+            "total_labels": known_labels,
+            "dataset_labels": len(records),
+            "expected_blank_labels": expected_blank_labels,
+            "unresolved_labels": unresolved_labels,
+            "unique_known_values_matched": len(matched_values),
+            "database_records_matched": len(matched_records),
+        }
+        if field == "wine_name":
+            entry["wine_index_matched_labels"] = len(wine_index_only_labels)
+            entry["appellation_or_varietal_matched_labels"] = len(appellation_or_varietal_labels)
+        parameters.append(entry)
+
     output = {
-        "schema_version": 1,
+        "schema_version": 2,
         "dataset_count": len(records),
         "source_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
         "source_workbook_sha256": doc["source_workbook_sha256"],
-        "method": "Exact normalized match of workbook-known targets and accepted alternatives to each database's canonical normalized keys; appellations and regions are matched to canonical names and aliases. Each label is counted once per database. Scanner KB rows reproduce the knowledge base as the runtime assembles it: the fixture snapshot seeding wine-label-kb.sqlite, the bundled producer vocabulary, and the bundled origins supplement (generated editorial / UC Davis AVA catalog merged with the legacy list), with runtime place-type assignment. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
+        "method": "Exact normalized match of workbook-known targets and accepted alternatives across all packaged lookup databases consulted by the app. Parameter totals count labels with a known expected value for each parameter (excluding expected blanks and unresolved targets) matched in any consulted database for that parameter: producers across LWIN, Expanded Lab, and Scanner KB; wine names across LWIN wine names, Scanner KB cuvees, appellation/place databases for appellation-named wines, and bundled grape varietals; country, region, and subregion across packaged geography and appellation databases. Source-level database rows remain recorded under databases for provenance auditing. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
+        "parameters": parameters,
         "databases": results,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n")
+    for item in parameters:
+        print(f"Parameter {item['label']}: {item['matched_labels']}/{item['total_labels']} known labels ({item['database_records_matched']} distinct records)")
     for item in results:
         print(f"{item['label']}: {item['matched_labels']}/{item['total_labels']} labels; {item['database_records_matched']} distinct records")
 

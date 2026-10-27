@@ -63,6 +63,28 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         coverage = json.loads((ASSETS / "gazetteer-coverage.json").read_text())
         self.assertEqual(coverage["dataset_count"], 125)
         self.assertIn("never provided to the OCR runner", coverage["method"])
+        # Per-parameter total coverage across all consulted databases (rendered on screen).
+        params = coverage["parameters"]
+        self.assertEqual(
+            [(row["id"], row["label"]) for row in params],
+            [
+                ("producer", "Producer"),
+                ("wine_name", "Wine name"),
+                ("country", "Country"),
+                ("region", "Region"),
+                ("subregion", "Subregion"),
+            ],
+        )
+        by_param = {row["id"]: row for row in params}
+        self.assertEqual((by_param["producer"]["matched_labels"], by_param["producer"]["total_labels"]), (101, 125))
+        self.assertEqual((by_param["wine_name"]["matched_labels"], by_param["wine_name"]["total_labels"]), (106, 123))
+        self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 42)
+        self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 64)
+        self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (124, 124))
+        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (120, 120))
+        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (77, 77))
+        self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 125 for row in params))
+        # Source-level databases remain in the asset for provenance auditing.
         rows = {row["id"]: row for row in coverage["databases"]}
         self.assertEqual(set(rows), {"lwin_producers", "expanded_producers", "lwin_wines", "appellations", "wine_geography",
                                      "kb_producers", "kb_wine_names", "kb_appellations", "kb_geography"})
@@ -82,7 +104,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(rows["kb_producers"]["matched_labels"], 13)
         self.assertTrue(all(0 <= row["matched_labels"] <= 125 for row in rows.values()))
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
-        self.assertIn("Gazetteer database coverage", activity)
+        self.assertIn('Text("Database coverage"', activity)
+        self.assertNotIn("Gazetteer database coverage", activity)
+        self.assertIn('data.getJSONArray("parameters")', activity)
+        self.assertNotIn('data.getJSONArray("databases")', activity)
         # Method/provenance text belongs in the coverage asset and docs, not on the page.
         self.assertIn("never provided to the OCR runner", coverage["method"])
         self.assertNotIn("Known workbook values and accepted aliases", activity)
@@ -310,8 +335,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         for kept in ('Text("Large image dataset test"', '"125 retained workbook-linked wine labels', 'Text(mode.title)',
                      'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
                      'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
-                     'Pipeline bottleneck matrix', 'Gazetteer database coverage', 'Incomplete labels ('):
+                     'Pipeline bottleneck matrix', 'Database coverage', 'Incomplete labels ('):
             self.assertIn(kept, activity)
+        self.assertNotIn('Gazetteer database coverage', activity)
         self.assertNotIn('Reviewed labels', activity)
 
     def test_incomplete_labels_section_is_collapsed_by_default_with_multi_field_failure_toggles(self):
