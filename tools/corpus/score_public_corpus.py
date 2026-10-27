@@ -163,14 +163,14 @@ def score(ref, predictions, production):
 def write_report(result, output):
     lines = ['# Public-label corpus: visual-reference scoring', '',
              '**Provisional, single-agent visual review—not human-adjudicated ground truth.**', '',
-             'All 168 photos were visually reviewed. Targets and accepted aliases were frozen in commit `3c48c98` before loading detailed saved predictions for this comparison. No scanner code or recognition KB was changed.', '',
+             'All 168 photos were visually reviewed. An owner-requested producer-role correction now treats Club des Sommeliers as label branding rather than an established producer (reviews 14 and 108); the A. Kolb aliases no longer include Club des Sommeliers (reviews 16 and 66). Actual producers remain unknown where the photos do not establish them. Saved OCR outputs were not changed; scores below are recomputed against this corrected reference.', '',
              '## Overall results', '',
              '| Pipeline | Correct | Wrong fills | Abstained | Scored | Unscored | Correct / scored | Correct / scored fills |',
              '|---|---:|---:|---:|---:|---:|---:|---:|']
     for name, p in result['pipelines'].items():
         s = p['all_fields']
         lines.append(f"| {name} | {s['correct']} | {s['wrong']} | {s['abstained']} | {s['scored']} | {s['unscored']} | {s['correct_over_scored_pct']}% | {s['correct_over_scored_fills_pct']}% |")
-    lines += ['', 'Wrong means a nonblank output fails the predeclared label-supported aliases. Abstained means blank despite a known target. The 114 unknown targets are excluded from correctness denominators: their filled values are **unverified**, not automatically wrong or correct. GREEN/YELLOW suggestions are both evaluated; this is field correctness, not automatic-acceptance accuracy.', '',
+    lines += ['', f"Wrong means a nonblank output fails the label-supported aliases. Abstained means blank despite a known target. The {result['pipelines']['production']['all_fields']['unscored']} unknown targets are excluded from correctness denominators: their filled values are **unverified**, not automatically wrong or correct. GREEN/YELLOW suggestions are both evaluated; this is field correctness, not automatic-acceptance accuracy.", '',
               '## Per-field results', '', '| Field | Known / 168 | Production C / W / A | Lab baseline C / W / A | Experimental C / W / A |', '|---|---:|---:|---:|---:|']
     for f in FIELDS:
         data = [result['pipelines'][n]['per_field'][f] for n in PIPELINES]
@@ -193,7 +193,7 @@ def write_report(result, output):
         lines.append(f"| {name} | {s['correct']} / {s['wrong']} / {s['abstained']} | {s['scored']} | {s['correct_over_scored_pct']}% | {i['six_field_fully_correct']} / {i['six_field_eligible']} |")
     lines += ['', 'This is a duplicate-sensitivity check, not an independent bottle-level benchmark or train/test split. `scores.json` also includes repeated-group output stability (which may be consistently wrong), confidence-state strata, and strata defined by the production deadline flag.', '',
               '## Main finding', '',
-              'The lab baseline leads this comparison. Relative to it, experimental produces **31 fewer correct fields and 21 more wrong fills**. Its wine-name results improve (54 → 72 correct), but producer results regress sharply (71 → 24 correct); vintage recall also drops (146 → 137). This does not support promoting experimental over the baseline. The one-photo-per-identity check preserves the same ordering.', '',
+              f"The lab baseline leads this comparison. Relative to it, experimental produces **{result['pipelines']['lab_baseline']['all_fields']['correct']-result['pipelines']['experimental']['all_fields']['correct']} fewer correct fields and {result['pipelines']['experimental']['all_fields']['wrong']-result['pipelines']['lab_baseline']['all_fields']['wrong']} more wrong fills**. The updated per-field totals are shown above. This does not support promoting experimental over the baseline. The one-photo-per-identity check preserves the same ordering.", '',
               'Producer and wine-name assignment are the dominant remaining weaknesses, not country recognition. The next engineering step should preserve these frozen outputs, add decision-neutral role/composition traces, and address assignment failures without changing production or using these references as a recognition lookup.', '',
               '## Interpretation and limitations', '',
               '- Geography may be inferred from a visible appellation; it is not all literal label transcription. Country stores the US state per the app convention. Origin is not inferred merely from estate reputation or bottler addresses.',
@@ -227,7 +227,7 @@ def main():
     args.output.mkdir(parents=True,exist_ok=True)
     (args.output/'scores.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
     with (args.output/'field-results.csv').open('w',newline='') as f:
-        writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+        writer=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator="\n");writer.writeheader();writer.writerows(rows)
     args.report.parent.mkdir(parents=True,exist_ok=True)
     write_report(result,args.report)
     for name,p in result['pipelines'].items():

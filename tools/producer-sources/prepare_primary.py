@@ -3,7 +3,7 @@
 No mirror fallback, DISPLAY_NAME inference, brand-from-wine inference or legal-owner aliases.
 Provenance is an explicit acquisition attestation, not proof supplied by a filename.
 """
-import argparse,collections,csv,gzip,hashlib,json,pathlib,sqlite3,unicodedata,urllib.parse,re
+import argparse,collections,csv,hashlib,json,pathlib,sqlite3,unicodedata,urllib.parse,re
 
 def normalize(s):
     import re
@@ -30,7 +30,7 @@ def read_rows(p):
         finally:wb.close()
     else:raise ValueError('Expected official CSV or XLSX')
 
-def build(source,provenance,out,support_dir=None):
+def build(source,provenance,out):
     provenance=json.loads(pathlib.Path(provenance).read_text())
     if provenance.get('acquisition')!='official_download_user_supplied':raise ValueError('Official acquisition attestation required; mirrors not accepted')
     url=urllib.parse.urlparse(provenance.get('source_url',''))
@@ -84,28 +84,11 @@ def build(source,provenance,out,support_dir=None):
     c.execute("INSERT INTO wine_fts(wine_fts) VALUES('rebuild')")
     if c.execute('PRAGMA foreign_key_check').fetchall():raise ValueError('Broken wine link')
     c.commit();c.execute('VACUUM');c.close()
-    support={}
-    if support_dir:
-        for src,file,name_field in [('ttb','ttb-wine-only.jsonl.gz','operating_name'),('osm','osm-wineries.jsonl.gz','name')]:
-            path=pathlib.Path(support_dir)/file
-            if not path.exists():continue
-            target=out/(src+'-support.sqlite');target.unlink(missing_ok=True)
-            c=sqlite3.connect(target);c.execute('CREATE TABLE support(key TEXT,id TEXT,PRIMARY KEY(key,id))')
-            with gzip.open(path,'rt',encoding='utf-8') as f:
-                for line in f:
-                    r=json.loads(line)
-                    if src=='ttb' and (r.get('industry')!='Wine Producer' or r.get('role')!='wine_permit_holder'):continue
-                    if src=='osm' and (r.get('role')!='mapped_winery' or not any(r.get('source_tags',{}).get(k)=='winery' for k in ('craft','industrial'))):continue
-                    value=r.get(name_field,'')
-                    if value:c.execute('INSERT OR IGNORE INTO support VALUES(?,?)',(normalize(value),r['id']))
-            c.commit();c.execute('VACUUM');c.close()
-            support[src]=dict(file=target.name,sha256=sha(target),input_sha256=sha(path),license='ODbL-1.0' if src=='osm' else 'TTB provenance pending review')
     manifest=dict(schema=2,primary_verified=True,verification_kind='official-export-acquisition-attested',provenance=provenance,
-        version='producer-wine-primary-v2',wine_database_sha256=sha(wine_db),wine_names=len(wine_ids),wine_links=len(links),wine_lwin_records=len(wine_rows),database_sha256=sha(db),records=len(groups),counts=dict(counts),support=support,
-        attribution='LWIN by Liv-ex, CC BY 4.0; producer/title and explicit WINE fields with LWIN7 relationships retained; non-wine/inactive/missing producer records excluded; no inferred aliases',
-        support_attribution='OSM: © OpenStreetMap contributors, ODbL 1.0, snapshot via OpenHistoryMap; TTB: supplied FOIA permit snapshot. Separate files; support never supplies producer names or extra OCR votes.')
+        version='producer-wine-primary-v3-lwin-only',wine_database_sha256=sha(wine_db),wine_names=len(wine_ids),wine_links=len(links),wine_lwin_records=len(wine_rows),database_sha256=sha(db),records=len(groups),counts=dict(counts),
+        attribution='LWIN by Liv-ex, CC BY 4.0; producer/title and explicit WINE fields with LWIN7 relationships retained; non-wine/inactive/missing producer records excluded; no inferred aliases')
     (out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     return manifest
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--primary',required=True);p.add_argument('--provenance',required=True);p.add_argument('--out',required=True);p.add_argument('--support-dir')
-    a=p.parse_args();print(json.dumps(build(a.primary,a.provenance,a.out,a.support_dir),indent=2))
+    p=argparse.ArgumentParser();p.add_argument('--primary',required=True);p.add_argument('--provenance',required=True);p.add_argument('--out',required=True)
+    a=p.parse_args();print(json.dumps(build(a.primary,a.provenance,a.out),indent=2))

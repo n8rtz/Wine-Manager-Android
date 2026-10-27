@@ -27,6 +27,8 @@ UNRESOLVED={4,8,9,19,38,101,109}
 def disposition(item,field):
     target=item['fields'][field];n=item['review_number']
     if target['status']=='known':return 'expected_value','Original known value and geographic inference policy unchanged.'
+    if target['status']=='unknown' and field=='producer' and n in (14,108):
+        return 'unresolved','Club des Sommeliers is visible branding and the named entity is a bottler; the actual producer is not established by the photo.'
     if field=='subregion' and n in REGIONAL_ONLY:
         return 'expected_blank','Recorded review establishes regional origin only; no supported finer origin. Do not use a brand, bottler address, or vineyard name as an unsupported subregion.'
     if n in NO_ORIGIN_OR_WINE and field in ('wine_name','country','region','subregion'):
@@ -48,7 +50,7 @@ def classify(status,target,output):
 
 def write_csv(path,rows):
     with path.open('w',encoding='utf-8-sig',newline='') as f:
-        w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator="\n");w.writeheader();w.writerows(rows)
 
 def run():
     OUT.mkdir(exist_ok=True)
@@ -60,7 +62,7 @@ def run():
         for field,t in item['fields'].items():
             status,reason=disposition(item,field);policy[item['image'],field]=status
             overlay.append(dict(review_number=item['review_number'],image=item['image'],field=field,original_status=t['status'],new_status=status,target=t['value'] or '',basis=t['basis'],decision_reason=reason,original_review_notes=item['notes']))
-    assert sum(r['new_status']=='expected_value' for r in overlay)==894
+    assert sum(r['new_status']=='expected_value' for r in overlay)==892
     write_csv(OUT/'reference-overlay.csv',overlay)
     diag={(r['image'],r['field']):r for r in csv.DictReader(DIAG.open())}
     hy={(r['image'],r['field']):r for r in csv.DictReader(HYBRID.open()) if r['variant']=='anchors-role-guard'}
@@ -85,7 +87,7 @@ def run():
     write_csv(OUT/'paired-fields.csv',fields);write_csv(OUT/'paired-labels.csv',labels)
     counts=Counter(r['new_status'] for r in overlay);eligible=[r for r in labels if r['fully_scorable']]
     summary=dict(policy='Expected values retain original aliases and geographic inference. Expected blanks earn credit; unsupported fills are errors. Unresolved remains unscored.',
-        qualification='Provisional adjudication from existing visual-review notes, not a new image audit or independent review. No predictions rerun. No frozen v1 reference edited.',
+        qualification='Provisional visual-reference correction at the owner\'s request: Club des Sommeliers is treated as branding, not as the producer; actual producers are left unresolved when not established. Saved predictions were not rerun.',
         provenance={str(p.relative_to(ROOT)):digest(p) for p in [REF,DIAG,HYBRID]},implementation_sha256=digest(Path(__file__)),
         reference_states=dict(counts),images=168,fully_scorable_labels=len(eligible),partly_unresolved_labels=168-len(eligible),systems={})
     field_totals=[]
@@ -109,7 +111,7 @@ def run():
     for n in range(6,-1,-1):lines.append('| '+str(n)+' | '+' | '.join(str(summary['systems'][name]['correct_slot_distribution'][str(n)]) for name in systems)+' |')
     lines+=['','## Interpretation','',
         'A correctly blank region/subregion now contributes toward a completely correct form. Geographic inference from supported appellations is still required. Do not compare these counts directly with the old 103-photo denominator as if model quality improved: only the scoring changed.',
-        'No-value producer references for reviews 9/38/109, unreadable/uncertain fields in 4/8/19/101, and the wine-name policy ambiguity in 125 remain unresolved. See reference-overlay.csv for every decision, including the original review notes.',
+        'Producer identity is now unresolved for reviews 14 and 108: Club des Sommeliers is label branding, while the named Cave de Tain and Maison Delor are bottlers; no actual producer is established. Existing no-value producer references for reviews 9/38/109, unreadable/uncertain fields in 4/8/19/101, and the wine-name policy ambiguity in 125 remain unresolved. See reference-overlay.csv for every decision and original review notes.',
         'Unknown is not automatically converted to expected blank. The inferred St. Helena subregion in review 150 remains an expected value, not a blank, under the unchanged geographic policy.',
         'This is a development-set scoring correction, not held-out validation or a new production promotion. Frozen baseline/v3/hybrid outputs are unchanged.','']
     (OUT/'report.md').write_text('\n'.join(lines))

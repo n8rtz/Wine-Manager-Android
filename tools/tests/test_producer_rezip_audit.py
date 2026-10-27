@@ -26,10 +26,8 @@ class ProducerRezipAuditChecks(unittest.TestCase):
         self.assertTrue(p['Blackstone'])
         for r in p['Blackstone']:self.assertEqual(r['industries'],['Distilled Spirits Plant'])
         self.assertEqual(p['Chateau Margaux'],[])
-    def test_lexical_counts_not_promoted_to_accuracy(self):
+    def test_retired_reference_is_not_used_for_source_evaluation(self):
         a=self.a
-        self.assertEqual(a['lexical_all']['photos'],22)
-        self.assertEqual(a['lexical_wine_only']['photos'],3)
-        for key in ('lexical_all','lexical_wine_only'):
-            self.assertEqual(a[key]['photos'],len(a[key]['matches']))
-            self.assertIn('not verified coverage or OCR accuracy',a[key]['note'])
+        self.assertEqual(a['reference_evaluation']['status'],'not_performed')
+        self.assertNotIn('lexical_all',a)
+        self.assertNotIn('lexical_wine_only',a)

@@ -22,11 +22,11 @@ Actual country counts: US 85; France 23; Italy 5; Spain 3; Germany 3; Chile/Aust
 
 The demo's 92,500-producer / 62.25 MB / 12.35-second example is seeded code, **not a measurement of the ZIP**. The builder can silently complete without the large registry. Its `TTB-*` identifiers and permit-looking raw legal names are not evidence that those entries were obtained from official records. The UI also estimates raw ingestion counts from normalized counts. Do not carry these claims into our diagnostics.
 
-### Measured lexical coverage, not accuracy
+### Reference-evaluation boundary
 
-Comparing canonical names/aliases with the frozen benchmark's accepted producer names gives matches for **14/165 known-producer photos**, representing only **four distinct reference names**: Domaine Drouhin, Château Margaux, Vega Sicilia and Spottswoode. Repeated Château Margaux photos account for 11 of those matches. This is exact normalized alias presence, not OCR recall, independently verified coverage or held-out evaluation.
+Historical lexical coverage figures in this review used the former 168-image reference. That set has been scrubbed and retired; its coverage counts and matched names are not valid for current source decisions or evaluation. The current scrubbed set's count and IDs are not established here. **No producer-coverage or OCR-accuracy conclusion is made from those historical figures.**
 
-The package therefore does not currently cover most of our troublesome front-label producers. Adding the existing 128 rows cannot plausibly solve the producer deficit by itself.
+Any future benchmark-based evaluation must use only the approved scrubbed set under the exact benchmark name **“Large image dataset test”**, after its identities and membership are confirmed. Source filters remain independent of reference answers.
 
 ## Risks found in the supplied implementation
 
@@ -65,7 +65,7 @@ Ask the source generator for the missing `ttb_cola_registry_raw.tsv.gz` **and it
 - Reject fabricated/demo permit IDs and unverified “legal” names from production-quality assets; retain them only as clearly marked test fixtures if useful.
 - Separate actual producers/estates, front-label brands, legal companies, bottlers and importers. A permit holder is not automatically the front-label producer. US permit data also is not automatically a global producer registry.
 - Fail the builder if required source data is missing, counts collapse unexpectedly, or a source checksum changes. No silent 128-row success posing as a large registry.
-- Measure coverage against the development corpus by distinct producer and photo count, without copying benchmark answers into a whitelist. Reserve additional identities/photos for held-out checks. Real names absent from the dictionary remain valid open-vocabulary candidates.
+- Once the current scrubbed reference is approved and its membership/expected identities are confirmed, measure coverage by distinct producer and image using **“Large image dataset test”**. Do not use the retired 168-image reference or copy answers into a whitelist. Reserve independent held-out identities/images only if a current split is defined. Real names absent from the dictionary remain valid open-vocabulary candidates.
 - Review code/data reuse permissions before shipping a database. No live registry or subscription API dependency in the app.
 
 **Deliverable:** reviewed source manifest, measured coverage report, exclusion list and deterministic build inputs. Until this is available, a quarantined fixture-only resolver can test mechanics, but not claim broad recognition improvements.
@@ -114,7 +114,7 @@ Surface dictionary missing/unavailable separately from “no producer found”; 
 2. **Contrastive tests:** near-miss names against unrelated châteaux; Estate/Domaine/PREMIER; bottler/address lines; `Margaux` as origin vs `Château Margaux` as estate; Cristal/Pavillon Rouge/Sassicaia as wine names; known versus unseen producers; inconsistent geographic context; genuine ambiguity. Include unrelated negatives, not just the builder's preferred Montelena examples.
 3. **Spatial regression tests:** the observed producer+Médoc+appellation join and vintage+Brouilly join must not erase usable originals or earn extra support. A dictionary must not make those joins look like valid names.
 4. **Saved-evidence extraction analysis:** when available, use the OnePlus raw CSV to isolate resolver changes without repeating OCR. Label this as saved-OCR replay, not an end-to-end image benchmark. The OnePlus rerun's detailed diagnostics have not been supplied in this conversation; emulator traces alone have Paddle timeouts.
-5. **Fresh phone validation:** one latest-Lab pass on the same 168 photos after the candidate passes isolated checks. Compare against saved v2.0, with same-attempted-photo rows for partial runs. Report complete gains **and losses**, producer correct/wrong/missing, wine-name spillover, unsupported geographic fills, multi-error forms, engine completion and runtime.
+5. **Fresh phone validation:** only after the current scrubbed reference is confirmed, run the latest Lab against **“Large image dataset test”**. Do not assume the retired set's 168 images or reuse its IDs/labels. Compare against a compatible saved baseline, with same-attempted-image rows for partial runs. Report complete gains **and losses**, producer correct/wrong/missing, wine-name spillover, unsupported geographic fills, multi-error forms, engine completion and runtime.
 
 Acceptance is not “more filled fields” or “the right answer is somewhere in top 15.” We need fewer wrong producers and more completely correct forms without losing valid wine/origin fields. The existing ≥80% complete / <5% multi-error goal remains; no gain is claimed from this source audit.
 

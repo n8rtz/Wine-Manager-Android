@@ -12,7 +12,7 @@ class ProducerRoleTests(unittest.TestCase):
         source=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/ProducerRoleDeviceTest.kt').read_text()
         self.assertIn('val alternatives=emptyList<String>()',source)
         self.assertNotIn('EvidenceExtractor(',source)
-        repair=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/evidence/ProducerRepair.kt').read_text()
+        repair=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/evidence/ProducerRepair.kt').read_text()
         self.assertIn('recommendedConfig get()=refinedExperiments.first()',repair)
         for v in suite.VARIANTS:self.assertIn(v,repair)
 

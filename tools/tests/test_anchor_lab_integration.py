@@ -2,7 +2,7 @@
 from pathlib import Path
 import unittest
 ROOT=Path(__file__).resolve().parents[2]
-LAB=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+LAB=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
 class AnchorLabIntegrationTests(unittest.TestCase):
     def test_default_off_explicit_mode_and_no_second_baseline(self):
         state=(LAB/'TextLabViewModel.kt').read_text();batch=(LAB/'TextLabBatch.kt').read_text()

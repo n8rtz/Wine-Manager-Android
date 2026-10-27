@@ -38,14 +38,16 @@ class TrigramGazetteerTests(unittest.TestCase):
             aliases=json.loads(db.execute('SELECT aliases_json FROM entities WHERE id=300').fetchone()[0])
             self.assertIn('cotes du rhone',aliases);self.assertIn('cotes-du-rhone',aliases)
     def test_opt_in_preparser_preserves_baseline_and_raw_evidence(self):
-        base=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+        base=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
         for f in ['TextLabBatch.kt','TextLabViewModel.kt']:self.assertIn('compareGazetteer:Boolean=false',(base/f).read_text())
         s=(base/'TextLabGazetteerPreview.kt').read_text()
         self.assertLess(s.index('records.map { resolver.resolve'),s.index('engine.fill(remaining'))
         self.assertIn('matches[i].accepted==null',s)
         self.assertIn('original_box',s);self.assertIn('rectified_box',s)
         self.assertNotIn('UiState.GREEN',s)
-        for p in (ROOT/'app/src/main').rglob('*.kt'):self.assertNotIn('TrigramGazetteer',p.read_text())
+        production_roots=[ROOT/'app/src/main/java/com/yourapp/wine/capture',ROOT/'app/src/main/java/com/yourapp/wine/fill']
+        for root in production_roots:
+            for p in root.rglob('*.kt'):self.assertNotIn('TrigramGazetteer',p.read_text())
     def test_measured_host_benchmark_passes_and_is_labeled_synthetic(self):
         p=ROOT/'tools/evaluation/gazetteer-trigram-v1'
         summary=json.loads((p/'scores.json').read_text());rows=json.loads((p/'cases.json').read_text())

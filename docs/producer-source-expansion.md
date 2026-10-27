@@ -1,18 +1,20 @@
 # Producer-source cleanup and expansion
 
-> Update: the user has now supplied the primary LWIN workbook. The debug-only primary asset and Lab resolver are implemented; see `docs/lab-primary-producer-resolver.md`. The acquisition notes below describe the earlier source-staging phase.
+> Historical source-expansion audit: OpenWineMap, TTB, and X-Wines lists were evaluated as possible supplements. They were not independently verified as label producers and have been removed from packaged app assets and runtime lookup. The active producer source is verified LWIN only. Earlier benchmark-overlap figures below are retired because the owner scrubbed and replaced the former 168-image reference.
+
+> **Update (2026-10-26):** the supplemental candidates are now actually packaged — as the Lab-only expanded producer index (previously this page claimed a packaged OSM/X-Wines index existed; it did not, the refresh pipeline wrote review files only). `tools/producer-sources/build_expanded.py` copies the verified primary `producers.sqlite` verbatim and appends candidates whose normalized keys are absent from LWIN: 18,945 X-Wines winery names (CC0), 14,849 TTB wine-permit operating names, and 11,661 OpenStreetMap winery names (ODbL), for 78,615 total producer rows. The index ships in `app/src/main/assets/producer-gazetteer-expanded-v1/` (the benchmark runs in the normal build; it is opened only by the Lab v4 benchmark path via `ProducerGazetteer.openExpanded`, with its own `lab_only` manifest gate). Every supplemental row is tagged in `producer_sources`, and acceptance telemetry names the winning source (`lexical_support_sources`). Production and Prod v1.0/v2.0/v3.0 still use only the verified primary LWIN database, whose manifest still rejects packaged supplemental sources. Supplemental identity status remains `candidate_not_verified_label_producer`: the resolver's two-engine, separation and existing-value rules are unchanged, and every suggestion is YELLOW / confirm manually. Workbook coverage (scorer-side audit): LWIN producers 86/125 labels, expanded producers 101/125. The Database Lookup page's single Producer search runs over this union index — all 78,615 records, each result tagged with its source database — and lists the four contributing databases with their record counts (per owner rule `.agents/instructions.md` #17, every future packaged database addition/change must join that page's matching search and listing in the same change).
 
 ## Completed, not just proposed
 
 The working candidate layers now exclude importer-only, wholesaler-only, spirits-only and other non-producer categories. The original mixed inputs remain historical audit material only; **no mixed permit database is an active recognition asset**.
 
-Three filtered, source-separated datasets were actually generated outside Git at `/home/user/producer-sources/curated/`. Filters, pinned download tooling, output hashes, licensing/attribution and measured reports are committed under `tools/producer-sources/`. No app code, Lab scoring mode, OCR budget or production scanner changed.
+The earlier TTB/LWIN/OSM source layers were kept separate. (Superseded by the 2026-10-26 update above: the Lab expanded index now combines the LWIN subset with source-tagged supplemental layers for benchmark comparison; production and normal Add Wine behavior are unchanged.)
 
 | Source layer | Actual retained records | Status |
 |---|---:|---|
-| TTB Wine Producer permit records | **16,793** | Legal/operating names separate; wine-permit evidence, not verified label identities |
-| LWIN producer/brand groups | **33,146** | Pinned attributed derivative, linked to **184,842 wine records**; primary XLSX not independently compared |
-| OSM explicit named wineries | **15,316** | Pinned map-data derivative; only `craft=winery` / `industrial=winery`, no shops, bars, vineyard-only or building-only entries |
+| TTB Wine Producer permit records | **16,793** | Historical staged permit snapshot; legal/operating names separate, not verified label identities |
+| LWIN producer/brand groups | **33,160** | Current primary gazetteer; linked wine records and source/filters described in manifest and `NOTICE.md` |
+| OpenWineMap explicit named wineries | **15,354** | Latest debug support snapshot; only explicit `craft=winery` / `industrial=winery`, no shops, bars, vineyard-only or building-only entries |
 
 These counts overlap and are not a count of distinct verified wineries. Some label-facing wine brands do not physically manufacture wine; those remain typed as producer-or-brand candidates, not silently promoted to physical wineries.
 
@@ -26,15 +28,22 @@ From 84,689 unique permit rows:
 
 The OSM pass likewise removes non-winery features, unnamed entries and non-grape-name cases. The LWIN derivative's pipeline uses wine type/status filtering and separates `PRODUCER_TITLE`/`PRODUCER_NAME` from wine names; our importer validates its producer-to-LWIN7 relationships and does not import atlas geographic assignments or turn wine names into aliases.
 
-### Preliminary benchmark usefulness
+### Reference-data boundary
 
-Exact normalized name presence against the frozen benchmark's 165 known-producer photos:
+The previous lexical-overlap report used the retired 168-image reference and is not a current coverage measure. It is not used by this refresh, does not guide source filtering, and should not be used to assess the scrubbed reference. No OCR/reference accuracy claim is made here.
 
-- **LWIN: 123/165**, across **53 distinct reference producer names**.
-- **OSM: 24/165**, across eight names.
-- **Strict raw TTB names: 2/165**, one name.
+## Latest automated acquisition
 
-This is **lexical overlap only**, not verified entity coverage, recognition accuracy or a forecast. Source filters never read benchmark answers. Repeated producers, ambiguous short names, raw legal suffixes and naming variants all affect this count. The TTB metric is intentionally stricter than the previous alias-generating builder and is not directly comparable. The LWIN result is promising enough to prioritize primary-source verification and a conservative resolver; it does not justify autofill by itself.
+`python tools/producer-sources/refresh_open_candidates.py` fetches current GitHub `main` snapshots from `openhistorymap/openwinemap` and `JamesOH5/Xwines-Atlas` through the GitHub API and codeload. It parses JSON from archives without executing third-party code, records commit/date/archive hashes, and replaces only debug assets. Use explicit `--osm-commit` / `--xwines-commit` arguments to reproduce a pinned run.
+
+| Source | Current result | How it is used |
+|---|---:|---|
+| OpenWineMap / OSM, snapshot 2026-10-25 | 15,354 named, explicit winery features; 42 new OSM IDs, 4 removed, 4 renamed relative to the previously packaged snapshot; 3 additional exact normalized-name support keys for primary LWIN groups | Separate ODbL support DB; no name promotion or extra OCR votes |
+| X-Wines name list, aggregate loaded 2026-06-08 | 30,510 winery-name rows; 30,161 normalized strings; **19,085** candidate rows with **18,945** distinct normalized names not in primary LWIN; **18,006** distinct names not present in LWIN, current TTB support or refreshed OSM | Separate debug/Lab index; candidate lookup only after LWIN exact lookup misses; every suggestion remains yellow/manual-confirm |
+
+X-Wines reports 100,646 wines across 62 countries and 2,160 regions. Its dataset repository declares CC0-1.0. The refreshed name list is extracted from XWines-Atlas' precomputed payload; that repository has no separate license declaration, so this is explicitly a candidate-only supplement with both repositories, revisions, hashes and the required dataset paper citation recorded in the asset manifest/NOTICE. The source list has duplicate normalized names and no verified per-name country/role in this extracted table; duplicates remain separate IDs to preserve ambiguity. No country, alias or LWIN identity is inferred.
+
+Historical candidate-database evaluation is documented here, but no TTB, OSM, or X-Wines candidate database is currently packaged in any app source set or used by the resolver. Only the 33,160-row primary LWIN producer table is eligible for producer matching.
 
 ## Requested sources: evidence and actual acquisition status
 
@@ -84,10 +93,10 @@ Use as the next main candidate layer, with clear producer-or-brand roles, primar
 
 OpenHistoryMap/openwinemap publishes OSM-derived winery and other wine-related features with upstream attribution. [3](https://github.com/openhistorymap/openwinemap)
 
-**Actually acquired:** pinned snapshot `98a5bf983abd23b1f6255bcb60bc73bd99b6b69e`; filtered its per-country data by source tags rather than trusting the broad “winery” category, which also includes building-only features. Exact OSM IDs deduplicated; no names-only business merge. Output remains ODbL-derived and separate from the CC BY LWIN layer. Source map names are candidate evidence, not automatically label display names; a winery's location is not every bottle's origin.
+**Earlier snapshot acquired, then refreshed:** the current source is the latest recorded `openhistorymap/openwinemap` commit in `app/src/main/assets/producer-gazetteer-v1/manifest.json`. Per-country data is filtered by source tags rather than trusting the broad “winery” category, which also includes building-only features. Exact OSM IDs deduplicated; no names-only business merge. Output remains ODbL-derived and separate from the CC BY LWIN layer. Source map names are candidate evidence, not automatically label display names; a winery's location is not every bottle's origin.
 
 ## Next implementation step
 
-Build the Lab-only bounded producer resolver against source-separated candidates, prioritizing the LWIN layer after primary reconciliation. Retain source IDs/roles, preserve original OCR alternatives, and abstain on conflicting short names and role ambiguity. Reconcile legal owner versus label brand explicitly. Do not use the new names as a blanket replacement for raw OCR, geography, wine names, or supported existing producer choices.
+Continue building the Lab-only bounded resolver against source-separated candidates. LWIN remains first; X-Wines is a fallback name-candidate layer only. Retain source IDs/roles, preserve original OCR alternatives, and abstain on conflicting short names and role ambiguity. Reconcile legal owner versus label brand explicitly. Do not use supplemental names as a blanket replacement for raw OCR, geography, wine names, or supported existing producer choices.
 
 No automatic production promotion or performance improvement is claimed. These are acquisition/filtering results; native Android builds and fresh phone recognition have not been run for this change.

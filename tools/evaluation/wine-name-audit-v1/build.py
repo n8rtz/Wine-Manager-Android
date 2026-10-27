@@ -6,9 +6,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 REFERENCE = ROOT / "tools/evaluation/public-corpus-reference-v1/reference.json"
-SCORING = ROOT / "app/src/debug/assets/phone-corpus-v1/scoring.json"
-ADJUDICATIONS = ROOT / "app/src/debug/assets/phone-corpus-v1/reference-adjudications-v1.json"
-V2 = ROOT / "app/src/debug/assets/phone-corpus-v1/saved-production-v2.json"
+# The 168-photo corpus is retired from the APK; these inputs live in tools/ (see its README).
+SCORING = ROOT / "tools/evaluation/retired-phone-corpus-v1/scoring.json"
+ADJUDICATIONS = ROOT / "tools/evaluation/retired-phone-corpus-v1/reference-adjudications-v1.json"
+V2 = ROOT / "tools/evaluation/retired-phone-corpus-v1/saved-production-v2.json"
 OUT = Path(__file__).resolve().parent
 FIELDS = ["review_number", "image", "source_url", "identity_group", "reference_status", "reference_target",
           "accepted_aliases", "reference_basis", "reference_notes", "imported_reference_target", "imported_reference_accepted",

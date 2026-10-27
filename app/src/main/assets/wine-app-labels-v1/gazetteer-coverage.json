@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "dataset_count": 125,
+  "source_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
+  "source_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
+  "method": "Exact normalized match of workbook-known targets and accepted alternatives to each database's canonical normalized keys; appellations and regions are matched to canonical names and aliases. Each label is counted once per database. Scanner KB rows reproduce the knowledge base as the runtime assembles it: the fixture snapshot seeding wine-label-kb.sqlite, the bundled producer vocabulary, and the bundled origins supplement (generated editorial / UC Davis AVA catalog merged with the legacy list), with runtime place-type assignment. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
+  "databases": [
+    {
+      "id": "lwin_producers",
+      "label": "LWIN producers",
+      "matched_labels": 86,
+      "total_labels": 125,
+      "unique_known_values_matched": 56,
+      "database_records_matched": 56
+    },
+    {
+      "id": "expanded_producers",
+      "label": "Expanded producers (Lab)",
+      "matched_labels": 101,
+      "total_labels": 125,
+      "unique_known_values_matched": 73,
+      "database_records_matched": 73
+    },
+    {
+      "id": "lwin_wines",
+      "label": "LWIN wine names",
+      "matched_labels": 42,
+      "total_labels": 125,
+      "unique_known_values_matched": 30,
+      "database_records_matched": 32
+    },
+    {
+      "id": "appellations",
+      "label": "Appellations",
+      "matched_labels": 89,
+      "total_labels": 125,
+      "unique_known_values_matched": 55,
+      "database_records_matched": 53
+    },
+    {
+      "id": "wine_geography",
+      "label": "Regions/subregions",
+      "matched_labels": 115,
+      "total_labels": 125,
+      "unique_known_values_matched": 19,
+      "database_records_matched": 18
+    },
+    {
+      "id": "kb_producers",
+      "label": "Scanner KB producers",
+      "matched_labels": 13,
+      "total_labels": 125,
+      "unique_known_values_matched": 6,
+      "database_records_matched": 6
+    },
+    {
+      "id": "kb_wine_names",
+      "label": "Scanner KB wine names",
+      "matched_labels": 0,
+      "total_labels": 125,
+      "unique_known_values_matched": 0,
+      "database_records_matched": 0
+    },
+    {
+      "id": "kb_appellations",
+      "label": "Scanner KB appellations",
+      "matched_labels": 72,
+      "total_labels": 125,
+      "unique_known_values_matched": 38,
+      "database_records_matched": 38
+    },
+    {
+      "id": "kb_geography",
+      "label": "Scanner KB regions",
+      "matched_labels": 124,
+      "total_labels": 125,
+      "unique_known_values_matched": 34,
+      "database_records_matched": 35
+    }
+  ]
+}

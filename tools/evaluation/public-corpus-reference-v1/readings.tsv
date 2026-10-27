@@ -12,9 +12,9 @@ review_number	producer	wine_name	country	region	subregion	vintage	notes
 011	Château Alcée	Castillon Côtes de Bordeaux	France	Bordeaux	Castillon Côtes de Bordeaux	2016	Nicolas Thienpont footer; country inferred from appellation.
 012	La Francette	Cabernet Sauvignon	France	-	-	-	Vin de France; bottler Nîmes address is not evidence of wine origin; no year visible.
 013	Château de Beaupré	Coteaux d'Aix-en-Provence	France	Provence	Coteaux d'Aix-en-Provence	2012	Country and parent region inferred from appellation.
-014	Club des Sommeliers	Crozes-Hermitage	France	Rhône	Crozes-Hermitage	2020	Cave de Tain explicitly bottler; France printed; Rhône parent inferred.
+014	-	Crozes-Hermitage	France	Rhône	Crozes-Hermitage	2020	Club des Sommeliers is visible branding; Cave de Tain is named as bottler; actual producer is not established.
 015	La Cave d'Augustin Florent	Costières de Nîmes	France	Rhône	Costières de Nîmes	2019	France printed; Rhône is the wine-region parent, not bottling-address geography.
-016	A. Kolb	Crémant d'Alsace Brut	France	Alsace	-	-	Club des Sommeliers also printed as brand; no year; Crémant regional sparkling designation not a distinct geographic subregion.
+016	A. Kolb	Crémant d'Alsace Brut	France	Alsace	-	-	A. Kolb is the separately printed producer/brand; Club des Sommeliers is separate label branding; no year; Crémant regional sparkling designation is not a distinct geographic subregion.
 017	Malesan	Bordeaux Cuvée Sélectionnée	France	Bordeaux	-	2019	Bordeaux and Cuvée Sélectionnée printed; country inferred; generic range descriptor optional as for 141.
 018	Château d'Agassac	Haut-Médoc	France	Bordeaux	Haut-Médoc	2014	Country and parent region inferred from appellation.
 019	Delor	Impérial Médoc	France	Bordeaux	Médoc	-	DELOR IMPERIAL MEDOC; F. Delor signature; no readable vintage; country inferred from Médoc.
@@ -64,7 +64,7 @@ review_number	producer	wine_name	country	region	subregion	vintage	notes
 063	Château La Sauvageonne	Volcanie Rosé	France	Languedoc	-	2018	Gérard Bertrand also valid producer/brand reading; same identity as 010.
 064	La Cave d'Augustin Florent	Graves	France	Bordeaux	Graves	2020	Bordeaux and France printed.
 065	Château Acker-Perreau	Bordeaux	France	Bordeaux	-	2013	Vignobles Acker footer; regional appellation without geographic subregion.
-066	A. Kolb	Crémant d'Alsace Brut	France	Alsace	-	-	Same visible undated product identity as 016; Club des Sommeliers also branded.
+066	A. Kolb	Crémant d'Alsace Brut	France	Alsace	-	-	A. Kolb is the separately printed producer/brand; Club des Sommeliers is separate label branding; same undated product identity as review 16.
 067	Jean-Christophe Icard	Sauvignon Blanc	France	South West France	Gascogne	-	Gascogne printed; Premium is optional range descriptor; country/parent region inferred; no year.
 068	Château du Bousquet	Côtes de Bourg	France	Bordeaux	Côtes de Bourg	2019	Grand vin de Bordeaux printed; country inferred.
 069	Château Margaux	Margaux	France	Bordeaux	Margaux	1996	Appellation Margaux and France printed.
@@ -106,7 +106,7 @@ review_number	producer	wine_name	country	region	subregion	vintage	notes
 105	Domaine de l'Ermitage Lamourous	Haut-Médoc	France	Bordeaux	Haut-Médoc	1989	De Luze & Fils selected/distributed footer, not primary estate; France printed.
 106	Baron Philippe de Rothschild	Mouton Cadet	France	Bordeaux	-	2020	Explicit maker below wine/brand Mouton Cadet; Bordeaux appellation; white appearance not a printed varietal.
 107	Lacheteau	Soupçon de Fruit	France	Loire Valley	Anjou	2020	Cabernet d'Anjou appellation; Parfums de Loire footer; explicit brand Lacheteau.
-108	Club des Sommeliers	Médoc	France	Bordeaux	Médoc	2017	Unlike 009, complete brand visible; Maison Delor is bottler.
+108	-	Médoc	France	Bordeaux	Médoc	2017	Club des Sommeliers is visible branding; Maison Delor is named as bottler; actual producer is not established.
 109	-	Médoc Select	France	Bordeaux	Médoc	2007	No unambiguous complete producer/brand; V.U.M. footer not expanded; Médoc Select may be product descriptor.
 110	Château d'Aiguilhe	-	-	-	-	2017	No origin/cuvée visible; same conservative treatment as 039 and 095.
 111	Réserve de Padulone	Île de Beauté	France	Corsica	-	-	Front brand used; island-wide IGP, no narrower origin; no year.

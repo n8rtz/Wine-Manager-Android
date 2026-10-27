@@ -53,21 +53,25 @@ class PrimaryProducerAssetChecks(unittest.TestCase):
             self.assertEqual(c.execute('select count(*) from names').fetchone()[0],m['records'])
             self.assertEqual(c.execute("select count(*) from producers where name like 'NA %'").fetchone()[0],0)
         self.assertTrue((primary/'NOTICE.md').exists())
+        self.assertNotIn('support',m)
+        self.assertNotIn('support_attribution',m)
         self.assertFalse((debug/'producers.sqlite').exists())
-        self.assertEqual(p.sha(debug/'wines.sqlite'),m['wine_database_sha256'])
-        with sqlite3.connect(debug/'wines.sqlite') as c:
+        self.assertEqual(p.sha(primary/'wines.sqlite'),m['wine_database_sha256'])
+        with sqlite3.connect(primary/'wines.sqlite') as c:
             self.assertEqual(c.execute('select count(*) from wine_names').fetchone()[0],m['wine_names'])
             self.assertEqual(c.execute('select count(*) from wine_links').fetchone()[0],m['wine_links'])
             self.assertEqual(c.execute('pragma foreign_key_check').fetchall(),[])
-        for item in m['support'].values():self.assertEqual(p.sha(debug/item['file']),item['sha256'])
+        for folder in (primary,debug):
+            for name in ('ttb-support.sqlite','osm-support.sqlite','xwines-candidates.sqlite'):
+                self.assertFalse((folder/name).exists())
     def test_excel_numeric_and_na_values(self):
         self.assertEqual(p.clean(1000001.0),'1000001')
         for v in ('NA','n/a',None,'-'):self.assertEqual(p.clean(v),'')
     def test_lab_only_wiring_preserves_raw(self):
-        text=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
+        text=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
         self.assertIn('val readings=original',text)
         self.assertRegex(text,r'ProducerResolver\(producerIndex(?:,onFailureTelemetry=\{[^}]+\})?\)\.resolve\(before,spans,checkProducerBudget\)')
         self.assertIn('producer_gazetteer_status',text)
         self.assertNotIn('TextLabSpatialPhrases.readings(proposals)',text)
-        v2=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
+        v2=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
         self.assertNotIn('ProducerResolver',v2)

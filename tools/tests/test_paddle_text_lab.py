@@ -58,7 +58,7 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertNotIn('findProducer',engine)
     def test_failures_include_stage_and_contract_details(self):
         engine=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleTextRecognizer.kt').read_text()
-        runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
+        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
         self.assertIn('PaddleCtc.validateInputShape(input.shape)',engine)
         self.assertIn('Actual output shape ${shape.contentToString()}',engine)
         self.assertIn('$stage: ${error.javaClass.simpleName}',engine)
@@ -66,8 +66,8 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertNotIn('Check model assets or use a shorter single-line crop',runner)
 
     def test_comparison_preserves_partial_readings(self):
-        runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        vm=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
+        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
+        vm=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
         self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
         self.assertIn('batch.finishPending(',vm)
         self.assertIn('csv=batch.save(csvFolder)',vm)
@@ -90,7 +90,7 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertNotIn('URL(',engine)
 
     def test_full_label_pipeline_has_no_mlkit_box_dependency(self):
-        pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
+        pipeline=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
         self.assertIn('PaddleTextDetector.detect(context,base,workspace,gate,spec)',pipeline)
         self.assertIn('PaddleTextRecognizer.recognize(context,base,workspace,deadline,gate,region.quadBase,spec)',pipeline)
         self.assertIn('if(detection.regions.lines.isEmpty()) return Outcome("no_regions"',pipeline)
@@ -105,10 +105,10 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('finally { binary.release()',decoder)
 
     def test_incremental_reports_survive_timeout(self):
-        runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
+        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
         self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
         self.assertIn('status=if(done==null) "timed_out"',runner)
-        state=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
+        state=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
         self.assertIn('detectLines:Boolean=true',state)
 
     def test_v6_dictionary_and_profiles(self):
@@ -130,9 +130,9 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertEqual(manifest['asset_budget_enforced'],False)
 
     def test_sessions_are_released_and_all_candidates_export_together(self):
-        runner=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
-        ui=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt').read_text()
+        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
+        pipeline=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
+        ui=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt').read_text()
         self.assertIn('for(spec in PaddleCandidates.selected(journal.selected))',runner)
         self.assertIn('PaddleTextRecognizer.release(gate)',runner)
         self.assertIn('withContext(NonCancellable) { PaddleTextDetector.release(gate) }',pipeline)
@@ -141,7 +141,7 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertNotIn('80*1024*1024',runner)
 
     def test_lab_60_seconds_and_production_15_seconds(self):
-        root=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+        root=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
         journal=(root/'TextLabJournal.kt').read_text()
         runner=(root/'TextLabRunner.kt').read_text()
         ui=(root/'OcrTextLabActivity.kt').read_text()
@@ -158,11 +158,11 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertLess(engine.index('"diagnostic_stage" to "detector_output"'),engine.index('PaddleProbabilityMap.validateAndClamp'))
         self.assertLess(engine.index('PaddleProbabilityMap.validateAndClamp'),engine.index('PaddleDbPostprocess.decode'))
         self.assertIn('buffer.remaining()==values.size',engine)
-        pipeline=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
+        pipeline=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
         self.assertIn('values["diagnostic_stage"] ?: "detection"',pipeline)
 
     def test_multi_image_picker_and_per_image_metadata(self):
-        root=ROOT/'app/src/debug/java/com/yourapp/wine/textlab'
+        root=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
         ui=(root/'OcrTextLabActivity.kt').read_text()
         vm=(root/'TextLabViewModel.kt').read_text()
         batch=(root/'TextLabBatch.kt').read_text()
@@ -188,8 +188,8 @@ class PaddleTextLabTests(unittest.TestCase):
             self.assertNotIn(retired,gradle)
         self.assertFalse((ROOT/'app/src/debug/assets/indra-v1').exists())
         self.assertFalse((ROOT/'app/src/main/java/com/yourapp/wine/ocr/PaddleEngineFactory.kt').exists())
-        self.assertFalse((ROOT/'app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkPreprocess.kt').exists())
-        self.assertFalse(list((ROOT/'app/src/debug/java/com/yourapp/wine/textlab').glob('Indra*.kt')))
+        self.assertFalse((ROOT/'app/src/main/java/com/yourapp/wine/benchmark/BenchmarkPreprocess.kt').exists())
+        self.assertFalse(list((ROOT/'app/src/main/java/com/yourapp/wine/textlab').glob('Indra*.kt')))
 
     def test_review_corpus_is_observed_data_not_ground_truth(self):
         data=json.loads((ROOT/'app/src/testDebug/resources/textlab/production-review.json').read_text())

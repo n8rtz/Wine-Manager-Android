@@ -34,19 +34,6 @@ def audit(archive, output):
         con=sqlite3.connect(db)
         counts=dict(producers=con.execute('select count(*) from producers').fetchone()[0],fts=con.execute('select count(*) from producers_fts').fetchone()[0])
         con.close()
-        reference=json.loads((ROOT/'tools/evaluation/public-corpus-reference-v1/reference.json').read_text())['images']
-        known=[r for r in reference if r['fields']['producer']['status']=='known']
-        norm=lambda x: ''.join(c for c in m.fold_ascii(x).casefold() if c.isalnum())
-        def coverage(entities):
-            forms=collections.defaultdict(set)
-            for p in entities:
-                for a in [p.canonical_name]+p.aliases: forms[norm(a)].add(p.canonical_name)
-            matched=[]
-            for r in known:
-                names=sorted({n for a in r['fields']['producer']['accepted'] for n in forms.get(norm(a),set())})
-                if names: matched.append(dict(review_number=r['review_number'],expected=r['fields']['producer']['value'],matching_canonical_names=names))
-            return dict(photos=len(matched),known_photos=len(known),distinct_reference_names=sorted({r['expected'] for r in matched}),matches=matched,
-                        note='Lexical presence only. Owner aliases, name collisions and incorrect entity roles can create false matches; not verified coverage or OCR accuracy.')
         probes={}
         for term in ['Domaine Drouhin','Chateau Montelena','Blackstone','Ridge Vineyards','Chateau Margaux','Costco','Walmart']:
             hits=[p for p in all_entities if any(norm(term)==norm(a) for a in [p.canonical_name]+p.aliases)]
@@ -59,7 +46,8 @@ def audit(archive, output):
             json_rows=len(json_payload['Permit Data']),raw_rows=len(raw),unique_parsed_records=len(set(keys)),unique_permits=len({r.permit for r in raw}),
             industry_rows=dict(industries),unique_record_industries=dict(unique_industries),all_entity_counts=counts,all_database_bytes=db.stat().st_size,
             entities_with_wine_role=sum('Wine Producer' in p.industries for p in all_entities),wine_only_entities=len(wine_entities),
-            lexical_all=coverage(all_entities),lexical_wine_only=coverage(wine_entities),exact_alias_probes=probes,
+            reference_evaluation=dict(status='not_performed',reason='The former 168-image reference is retired and is not used for current source evaluation.'),
+            exact_alias_probes=probes,
             limitations=['Cached source authenticity/freshness and CC0 claim not independently verified against TTB.',
              'Supplied writer drops permits and industries from SQLite; owner/operating-name aliases conflate roles.',
              'Offline source review only; no Android integration, OCR rerun or measured accuracy improvement.'])

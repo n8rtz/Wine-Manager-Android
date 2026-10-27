@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "kind": "lab-expanded-producer-index",
+  "lab_only": true,
+  "version": "lab-expanded-producers-v1",
+  "records": 78615,
+  "database_sha256": "566ec89b4cc8514a3c6ccd5796b2b8e13de0ae7d67d171235b7ac245b25c923d",
+  "wine_database_sha256": "83ac9248e85efa238c9c95e949396e8d92a057833b3d3ddb929caa06858ba01c",
+  "wine_names": 101326,
+  "wine_links": 154405,
+  "primary_database_sha256": "4e5a50c9dae33d122ba4c8f02f1a4b5792e2a1e724bfb2084512f6c5e0d2345f",
+  "primary_records": 33160,
+  "supplemental_records": 45455,
+  "sources": [
+    {
+      "id": "lwin",
+      "records": 33160,
+      "note": "Verified primary producer export copied verbatim; see ../producer-gazetteer-v1/manifest.json"
+    },
+    {
+      "id": "xwines",
+      "records": 18945,
+      "source_records": 30510,
+      "license": "CC0-1.0",
+      "atlas_repo": "JamesOH5/Xwines-Atlas",
+      "atlas_commit": "7f9b50c1241995693d708f5a628a57dae3aee7d5",
+      "atlas_archive_sha256": "c351759daf841a0cc8d905873698d758abb3d8d263917895964ac4e6f8f47e44",
+      "xwines_repo": "rogerioxavier/X-Wines",
+      "xwines_commit": "5e43c7f38ff4abaee1815f84dbdd2b54aa873b1d",
+      "dataset": {
+        "loaded_at": "2026-06-08T20:36:33.403558+00:00",
+        "winery_rows": 30510,
+        "unique_raw_names": 30190,
+        "unique_normalized_names": 30161,
+        "grand_total_wines": 100646,
+        "grand_total_wineries": 30510,
+        "countries": 62,
+        "regions": 2160
+      },
+      "citation": "de Azambuja, Morais & Filipe (2023), X-Wines, https://doi.org/10.3390/bdcc7010020"
+    },
+    {
+      "id": "ttb",
+      "records": 14849,
+      "source_records": 16793,
+      "license_status": "Supplied archive claims public-domain/CC0; authenticity not independently validated",
+      "input_git_blob": "8bf9737463092b0a2ef233139dee8e88a0f6fae8",
+      "input_repo": "n8rtz/Wine-Reference-Drop",
+      "source_url": "https://www.ttb.gov/public-information/foia/list-of-permittees"
+    },
+    {
+      "id": "osm",
+      "records": 11661,
+      "source_records": 15354,
+      "license": "ODbL-1.0",
+      "attribution": "© OpenStreetMap contributors",
+      "repo": "openhistorymap/openwinemap",
+      "commit": "1f4bf605d1938844c275e7ec0ae0e23141b4a61e",
+      "archive_sha256": "a3481829930bc58babd71e22e5c31382ba3458c76066e2b42bbc04b29e51ea53"
+    }
+  ],
+  "identity_status": "candidate_not_verified_label_producer",
+  "built_by": "tools/producer-sources/build_expanded.py"
+}

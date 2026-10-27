@@ -1,0 +1,155 @@
+{
+  "source_workbook_url": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/reference-data-scrubbed.xlsx",
+  "source_workbook_blob_sha": "5e1e2b0f8938f1ed789c9f2430cd37881a2b2bdc",
+  "source_workbook_sha256": "ab61848cb41903a6bf17c9c1628fe0b071997ca39b5bf44764d10f29f90c0b46",
+  "red_rows_removed_from_both_tabs": [
+    49,
+    52,
+    55,
+    64,
+    73,
+    133,
+    159,
+    168
+  ],
+  "red_row_detail": {
+    "reference-data-168": [
+      {
+        "review_number": 49,
+        "row": 25,
+        "image": "441dc491754f6835b121e889ea6a20ffa61da00b.jpg",
+        "original_review_notes": "Full-size photo resolves vintage as 2003; Barbera d’Alba printed; Piedmont inferred.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 52,
+        "row": 28,
+        "image": "47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg",
+        "original_review_notes": "Same visible identity as 015, different view.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 64,
+        "row": 40,
+        "image": "60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg",
+        "original_review_notes": "Bordeaux and France printed.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 73,
+        "row": 49,
+        "image": "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+        "original_review_notes": "2021 medal is not vintage; France printed; parent region inferred.",
+        "problem": null,
+        "problem_solution_ideas": null
+      }
+    ],
+    "Condensed Table": [
+      {
+        "review_number": 49,
+        "row": 25,
+        "image": "441dc491754f6835b121e889ea6a20ffa61da00b.jpg",
+        "original_review_notes": "Full-size photo resolves vintage as 2003; Barbera d’Alba printed; Piedmont inferred.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 52,
+        "row": 28,
+        "image": "47cd327dfffc08ee69570ddadf8ca5f5475b6f63.jpg",
+        "original_review_notes": "Same visible identity as 015, different view.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 55,
+        "row": 31,
+        "image": "5369c23329d9c59e5b42c5de952328191b4ff8ec.jpg",
+        "original_review_notes": "Saint-Émilion Grand Cru; oval Léo by Léo; different appellation/vintage from 032.",
+        "problem": null,
+        "problem_solution_ideas": "confusing label; remove from dataset"
+      },
+      {
+        "review_number": 64,
+        "row": 40,
+        "image": "60eded164ec14a9ff7d5cbf81335a3c9df9feae6.jpg",
+        "original_review_notes": "Bordeaux and France printed.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 73,
+        "row": 49,
+        "image": "6fec2a232614518ae1500d99a66d081c73b16cd4.jpg",
+        "original_review_notes": "2021 medal is not vintage; France printed; parent region inferred.",
+        "problem": null,
+        "problem_solution_ideas": null
+      },
+      {
+        "review_number": 133,
+        "row": 88,
+        "image": "c8791cbdef50a92ea13b208eeb2f33538a19e6db.jpg",
+        "original_review_notes": "Côtes de Provence appellation; top-right small vintage; country inferred.",
+        "problem": "Combination of bad lighting causing a reflection and a script font. ",
+        "problem_solution_ideas": "Bad sample - remove from dataset"
+      },
+      {
+        "review_number": 159,
+        "row": 105,
+        "image": "f26cdfb733a40ad85d1ffd61a60565396adef8d4.jpg",
+        "original_review_notes": "Same identity as 127; Gérard Bertrand also printed parent producer.",
+        "problem": null,
+        "problem_solution_ideas": "Confusing label - producer isnt even clear to me. remove from dataset. "
+      },
+      {
+        "review_number": 168,
+        "row": 113,
+        "image": "ff16be743b4329579aa82341aa5ef68884a8a9b1.jpg",
+        "original_review_notes": "Full-size photo confirms Léo by Léo, not de Léo; same identity as 055; explicit Bertrand Ravache attribution; Saint-Émilion Grand Cru.",
+        "problem": null,
+        "problem_solution_ideas": "confusing label; remove from dataset"
+      }
+    ]
+  },
+  "owner_removed_club_des_sommeliers_review_ids": [
+    14
+  ],
+  "club_producer_row_detail": [
+    {
+      "review_number": 14,
+      "image": "1312f082dcbacf739b6edcc04b4a55d731254782.jpg",
+      "producer_original_value": "Club des Sommeliers",
+      "producer_scored_target": "Club des Sommeliers",
+      "original_review_notes": "Cave de Tain explicitly bottler; France printed; Rhône parent inferred."
+    }
+  ],
+  "all_removed_review_ids": [
+    14,
+    49,
+    52,
+    55,
+    64,
+    73,
+    133,
+    159,
+    168
+  ],
+  "existing_rows_before_update": {
+    "reference-data-168": 112,
+    "Condensed Table": 112
+  },
+  "existing_rows_retained": {
+    "reference-data-168": 103,
+    "Condensed Table": 103
+  },
+  "rows_after_appending_22": {
+    "reference-data-168": 125,
+    "Condensed Table": 125
+  },
+  "retained_candidate_count": 22,
+  "producer_exclusion": "Rows whose producer/original producer target is Club des Sommeliers are removed at the owner's direction; branding is not treated as the actual producer.",
+  "output_workbook": "reference-data-scrubbed-updated.xlsx"
+}

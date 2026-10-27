@@ -67,25 +67,25 @@ class FrozenScoringTests(unittest.TestCase):
             self.assertEqual(item['review_number'],int(row['review_number']))
             for field in scorer.FIELDS:
                 self.assertEqual(item['fields'][field]['value'],None if row[field]=='-' else row[field])
-        self.assertEqual(sum(t['status']=='known' for i in self.ref['images'] for t in i['fields'].values()),894)
+        self.assertEqual(sum(t['status']=='known' for i in self.ref['images'] for t in i['fields'].values()),892)
 
     def test_counts_partition_all_outputs(self):
         self.assertEqual(len(self.rows),3024)
         for p in self.result['pipelines'].values():
             s=p['all_fields']
             self.assertEqual(s['scored']+s['unscored'],1008)
-            self.assertEqual(s['correct']+s['wrong']+s['abstained'],894)
-            self.assertEqual(s['unscored_filled']+s['unscored_blank'],114)
+            self.assertEqual(s['correct']+s['wrong']+s['abstained'],892)
+            self.assertEqual(s['unscored_filled']+s['unscored_blank'],116)
             for key in ('correct','wrong','abstained','unscored','filled'):
                 self.assertEqual(sum(f[key] for f in p['per_field'].values()),s[key])
 
     def test_frozen_scores_and_existing_fill_totals(self):
-        expected={'production':(480,143,271,639,6),'lab_baseline':(597,100,197,724,23),'experimental':(566,121,207,713,8)}
+        expected={'production':(480,141,271,639,6),'lab_baseline':(597,100,195,724,23),'experimental':(566,121,205,713,8)}
         for name,(c,w,a,filled,full) in expected.items():
             p=self.result['pipelines'][name];s=p['all_fields']
             self.assertEqual((s['correct'],s['wrong'],s['abstained'],s['filled']),(c,w,a,filled))
             self.assertEqual(p['image_results']['six_field_fully_correct'],full)
-            self.assertEqual(p['image_results']['six_field_eligible'],103)
+            self.assertEqual(p['image_results']['six_field_eligible'],101)
 
     def test_duplicates_are_identity_not_byte_or_estate_only(self):
         self.assertEqual(self.result['identity_groups'],143)
@@ -95,7 +95,7 @@ class FrozenScoringTests(unittest.TestCase):
         self.assertNotEqual(by_number[55]['identity_group'],by_number[32]['identity_group'])
         for p in self.result['pipelines'].values():
             self.assertEqual(p['one_photo_per_identity']['image_results']['images'],143)
-            self.assertEqual(p['one_photo_per_identity']['all_fields']['scored'],762)
+            self.assertEqual(p['one_photo_per_identity']['all_fields']['scored'],760)
 
     def test_checked_in_scores_reproduce(self):
         saved=json.loads((ROOT/'tools/evaluation/public-corpus-scoring-v1/scores.json').read_text())

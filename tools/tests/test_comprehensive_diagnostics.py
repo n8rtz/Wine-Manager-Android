@@ -74,7 +74,7 @@ class DiagnosticReproductionTests(unittest.TestCase):
             self.assertLessEqual(oracle['either_whole_entry'],oracle['selected_field_union'])
             self.assertLessEqual(oracle['selected_field_union'],oracle['candidate_pool_union'])
             for p in actual['policies'].values():
-                self.assertEqual(p['fields']['scored'],894)
-                self.assertEqual(p['fields']['unscored'],114)
-                self.assertEqual(p['images']['six_field_eligible'],103)
+                self.assertEqual(p['fields']['scored'],892)
+                self.assertEqual(p['fields']['unscored'],116)
+                self.assertEqual(p['images']['six_field_eligible'],101)
                 self.assertEqual(sum(f['fields']['total'] for f in p['identity_group_slices'].values()),1008)

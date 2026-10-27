@@ -53,7 +53,7 @@ class SavedEvidenceReplayTests(unittest.TestCase):
             self.assertFalse((root/'out').exists())
 
     def test_experimental_budget_and_outer_timeout_are_consistent(self):
-        source=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text()
+        source=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text()
         self.assertIn('DEFAULT_BUDGET_MS=60_000L',source)
         self.assertIn('budgetMs:Long=DEFAULT_BUDGET_MS',source)
         harness=(ROOT/'tools/corpus/run_saved_evidence_replay.sh').read_text()

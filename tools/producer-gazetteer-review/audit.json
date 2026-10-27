@@ -190,32 +190,9 @@
       "top_results": []
     }
   ],
-  "lexical_reference_coverage": {
-    "matched_photos": 14,
-    "known_producer_photos": 165,
-    "distinct_reference_names": [
-      "Château Margaux",
-      "Domaine Drouhin",
-      "Spottswoode",
-      "Vega Sicilia"
-    ],
-    "review_numbers": [
-      2,
-      8,
-      28,
-      56,
-      62,
-      69,
-      90,
-      96,
-      121,
-      124,
-      128,
-      149,
-      150,
-      166
-    ],
-    "note": "Exact normalized accepted-alias presence, NOT OCR accuracy, validated identity coverage or held-out evaluation."
-  },
-  "disposition": "REVIEW ONLY: missing bulk data, unverified curated identities/aliases, seeded UI metrics. Not bundled into Android or enabled in Lab."
+  "disposition": "REVIEW ONLY: missing bulk data, unverified curated identities/aliases, seeded UI metrics. Not bundled into Android or enabled in Lab.",
+  "reference_evaluation": {
+    "status": "not_performed",
+    "reason": "The former 168-image reference is retired and is not used for current source evaluation."
+  }
 }

@@ -54,16 +54,11 @@ The cached report identifies its source as TTB FOIA List of Permittees, and the 
 - **Missing data can silently fall back to ten hand-written seed records.** The optional minimum-count check occurs after writing the DB. A reviewed builder should fail before publishing output and must never fall back to sample data for recognition.
 - **Web search returns ranked candidates, not validated producer decisions.** Trigram Dice/token scores, early stopping and BM25 do not establish identity or calibrated confidence. Retain our bounded field-aware verification/abstention design rather than porting the demo rank directly into form filling.
 
-## Benchmark lexical checks: interpret carefully
+## Reference-evaluation boundary
 
-The same exact normalized accepted-name comparison used for the first package produces:
+Earlier lexical-overlap figures in this historical audit used the former 168-image reference. That reference has since been scrubbed and retired; its coverage counts, matched names and derived conclusions have been removed from current reporting. The scrubbed reference's current count and IDs are not established here. **No source coverage, resolver accuracy or OCR-performance conclusion is made from the old reference.**
 
-- **22/165 known-producer photos** with an alias match in the unrestricted entity set, spanning eight distinct reference names.
-- **3/165 photos**, spanning Hawk's Shadow Estate and Spottswoode, when building from Wine Producer records only.
-
-These numbers are **not recognition accuracy, verified identity coverage, or an upper bound on potential recall**. The unrestricted result contains misleading name collisions, notably Margaux and Cavalier. Some reference aliases are broad. Conversely, the strict check misses legitimate longer variants: the cached source includes **Domaine Drouhin Oregon**, but the benchmark's shorter **Domaine Drouhin** does not exactly match it. No claim that the dictionary lacks Drouhin is warranted.
-
-Next evaluation should separate: verified entity presence; safe alias/variant retrieval; top-result correctness; abstention; and final six-field outcomes. Do not use the inflated unrestricted count as evidence of improved OCR accuracy.
+Future evaluation must use only the current approved set under the exact benchmark name **“Large image dataset test”** after its contents and expected identities are confirmed. Keep source acquisition/filtering independent of benchmark answers.
 
 ## Updated integration plan
 
@@ -74,7 +69,7 @@ This replaces the earlier plan's “obtain missing bulk file” blocker **for th
 3. **Use a conservative positive subset.** Wine-permit operating names are a starting point, not automatic trusted label identities. Preserve uncertainty for ambiguous names, cider/mead businesses and owner-only records. Do not globally discard a company with importer permits if it also has independent wine-producer evidence. Separate importer/wholesaler/spirit-only names into role-disambiguation evidence, never positive producer autofill by default.
 4. **Build the debug-only offline `ProducerGazetteer` adapter** using the existing appellation gazetteer's bundled SQLite/FTS5, checksum and off-main-thread mechanisms. Use the richer schema from the original plan, bounded retrieval and edit checks, distinctive-token support, top-two separation and explicit abstention. Share infrastructure, not appellation-specific cleaning rules.
 5. **Feed original OCR and safe phrase alternatives, not destructive joins.** Preserve observation provenance, prevent shared-source vote inflation, keep geography and producer identity reasoning independent, and never substitute permit address/state for wine origin. Fix spatial over-merging before judging dictionary improvements.
-6. **Evaluate Lab only.** First use role/alias collision unit tests and saved OCR where available; then one latest-Lab phone benchmark against saved v2. Keep existing three modes, scoring conventions, export size limits and acceptance goals. No v2 live rerun inside Lab, no normal-scanner promotion, no new OCR models.
+6. **Evaluate Lab only.** First use role/alias collision unit tests and saved OCR where available. Any future image evaluation must use the confirmed, current scrubbed set under **“Large image dataset test”**; do not reuse the former 168-image reference or assume a current count. Keep production behavior unchanged until there is a valid approved evaluation. No v2 live rerun inside Lab, no normal-scanner promotion, no new OCR models.
 7. **Expand international coverage separately.** A US importer list does not supply the foreign estates whose bottles it imports. Additional verified global producer/brand sources are needed; do not claim this source closes that gap.
 
 **Recommendation:** reuse the cached source records, but replace the identity assembly and storage schema before importing recognition data. The infrastructure is feasible; correctness of entity roles and label-facing names is the key work, not maximizing the row count.
@@ -87,4 +82,4 @@ Download the pinned repository blob via `gh api repos/n8rtz/Wine-Reference-Drop/
 python tools/producer-gazetteer-review/rezip/audit.py --archive /path/to/source.zip
 ```
 
-The script verifies the Git blob hash, extracts only the inspected builder/cache files into temporary storage, disables network fetching, builds/inspects the database, records counts and lexical probes, then removes temporary input/database files. The committed `audit.json` is an observed audit snapshot, not an approved gazetteer asset.
+The script verifies the Git blob hash, extracts only the inspected builder/cache files into temporary storage, disables network fetching, builds/inspects the database, and records source counts and search probes without consulting reference data; it then removes temporary input/database files. The committed `audit.json` is an observed audit snapshot, not an approved gazetteer asset.

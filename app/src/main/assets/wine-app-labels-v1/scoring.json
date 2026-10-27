@@ -1,0 +1,6125 @@
+{
+  "version": 2,
+  "reference_sha256": "6c066495b5f48207cb41cbbb2be8e2fad02cdc6f61293629ea44cd378d513102",
+  "note": "Frozen owner-corrected values from the 125 retained rows of the updated workbook. Unresolved references remain unscorable; expected blanks are scored as blanks. Targets are scorer-only and never provided to OCR.",
+  "images": [
+    {
+      "image": "fa02ff37350880d8b127ba9e8a98b6b1396fa3fd.jpg",
+      "review_number": 2,
+      "source_filename": "158.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainedrouhin",
+            "drouhin"
+          ],
+          "target": "Domaine Drouhin"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pinotnoir"
+          ],
+          "target": "Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "oregon"
+          ],
+          "target": "Oregon"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "willamettevalley"
+          ],
+          "target": "Willamette Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "dundeehills"
+          ],
+          "target": "Dundee Hills"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "4eea6952f397795d178534d6ec3c81be2f1cf05a.jpg",
+      "review_number": 5,
+      "source_filename": "0016.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauhautebrande",
+            "hautebrande"
+          ],
+          "target": "Château Haute Brande"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebergeracmoelleux",
+            "cotesdebergerac"
+          ],
+          "target": "Côtes de Bergerac Moelleux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "southwestfrance",
+            "sudouest",
+            "southwest",
+            "sudouestfrance"
+          ],
+          "target": "South West France"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebergerac",
+            "bergerac"
+          ],
+          "target": "Côtes de Bergerac"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "e98861ddfe83f5d5e27a06a522dec99bcf8d1cfd.jpg",
+      "review_number": 7,
+      "source_filename": "0091.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauamelisse",
+            "amelisse"
+          ],
+          "target": "Château Amélisse"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "15c4e556cdd75a735ddf8477a4a97d68efb299cf.jpg",
+      "review_number": 10,
+      "source_filename": "149.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulasauvageonne",
+            "gerardbertrand",
+            "lasauvageonne"
+          ],
+          "target": "Château La Sauvageonne"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "volcanierose",
+            "volcanie"
+          ],
+          "target": "Volcanie Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "66ac7cb1c690905a29c2844ef837363a37bfadfe.jpg",
+      "review_number": 12,
+      "source_filename": "0012.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lafrancette"
+          ],
+          "target": "La Francette"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "9119c26ffe684ea424e540cdd49907440c5ea313.jpg",
+      "review_number": 13,
+      "source_filename": "164.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudebeaupre",
+            "debeaupre"
+          ],
+          "target": "Château de Beaupré"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "coteauxdaixenprovence"
+          ],
+          "target": "Coteaux d'Aix-en-Provence"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "provence"
+          ],
+          "target": "Provence"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "coteauxdaixenprovence"
+          ],
+          "target": "Coteaux d'Aix-en-Provence"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2012"
+          ],
+          "target": "2012"
+        }
+      }
+    },
+    {
+      "image": "dc2dde5ad7fbcf8a90b74a813b20a660fc181317.jpg",
+      "review_number": 17,
+      "source_filename": "0021.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "malesan"
+          ],
+          "target": "Malesan"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxcuveeselectionnee",
+            "bordeaux",
+            "cuveeselectionnee"
+          ],
+          "target": "Bordeaux Cuvée Sélectionnée"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "0745531b81830b27b14927b46c857e32cdaa6126.jpg",
+      "review_number": 18,
+      "source_filename": "0072.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudagassac",
+            "dagassac"
+          ],
+          "target": "Château d'Agassac"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2014"
+          ],
+          "target": "2014"
+        }
+      }
+    },
+    {
+      "image": "b6c7e6ecff24d5f413a1b74905115780267aeaf2.jpg",
+      "review_number": 26,
+      "source_filename": "0063.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauabelyce",
+            "abelyce"
+          ],
+          "target": "Château Abelyce"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "7ec47562e79bd594b2a7804d338739d42553db91.jpg",
+      "review_number": 30,
+      "source_filename": "118.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "maisonchandesais",
+            "chandesais"
+          ],
+          "target": "Maison Chandesais"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lesguillottes"
+          ],
+          "target": "Les Guillottes"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy",
+            "bourgogne"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautescotesdebeaune",
+            "bourgognehautescotesdebeaune"
+          ],
+          "target": "Hautes Côtes de Beaune"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "9925ccc8729ba37168f246f2a19712c16f03af12.jpg",
+      "review_number": 31,
+      "source_filename": "0041.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulatourdeby",
+            "latourdeby"
+          ],
+          "target": "Château La Tour de By"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "medoc"
+          ],
+          "target": "Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "medoc"
+          ],
+          "target": "Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "83e980c3c77dbde7284b56ed3e12b5fe879d4ccc.jpg",
+      "review_number": 32,
+      "source_filename": "124.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "bertrandravache"
+          ],
+          "target": "Bertrand Ravache"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "leobyleo"
+          ],
+          "target": "Léo by Léo"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "fronsac"
+          ],
+          "target": "Fronsac"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "effacef9bca28b2796b0193f999a006e7fcbc94a.jpg",
+      "review_number": 33,
+      "source_filename": "0071.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudagassac",
+            "dagassac"
+          ],
+          "target": "Château d'Agassac"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "1568537668f72fefbf848c15676c6d03ca914441.jpg",
+      "review_number": 34,
+      "source_filename": "0064.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauabelyce",
+            "abelyce"
+          ],
+          "target": "Château Abelyce"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "1b118d36267ccc66578ecff61739fe85eb4de8fa.jpg",
+      "review_number": 35,
+      "source_filename": "0070.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauadaugusta",
+            "adaugusta"
+          ],
+          "target": "Château Adaugusta"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "057a782c7abe8947bcc5cb71c0f5843373c6f4e6.jpg",
+      "review_number": 36,
+      "source_filename": "0042.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulacroix",
+            "lacroix"
+          ],
+          "target": "Château La Croix"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pomerol"
+          ],
+          "target": "Pomerol"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "pomerol"
+          ],
+          "target": "Pomerol"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2005"
+          ],
+          "target": "2005"
+        }
+      }
+    },
+    {
+      "image": "9be943a985e9bb5954c6d230dc1be2eac24d592e.jpg",
+      "review_number": 42,
+      "source_filename": "134.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lapetitechapelledebordeaux"
+          ],
+          "target": "La Petite Chapelle de Bordeaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "7401555a328c6b22476d515bb166c2aac5ad0824.jpg",
+      "review_number": 43,
+      "source_filename": "160.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainedecassan",
+            "decassan"
+          ],
+          "target": "Domaine de Cassan"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "tradition"
+          ],
+          "target": "Tradition"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "rhone",
+            "rhonevalley",
+            "valleedurhone"
+          ],
+          "target": "Rhône"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "beaumesdevenise"
+          ],
+          "target": "Beaumes-de-Venise"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "d4dac287403c33152db8b5f2f75407aac6b2d391.jpg",
+      "review_number": 44,
+      "source_filename": "109.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "rochemazet"
+          ],
+          "target": "Roche Mazet"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon",
+            "cabernetsauvignoncuveespeciale",
+            "cuveespecialecabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedocroussillon",
+            "languedoc"
+          ],
+          "target": "Languedoc-Roussillon"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "db9d9ec4ff86a473d9ffbb4698e6423db3d9e8d3.jpg",
+      "review_number": 45,
+      "source_filename": "0036.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lachapelledecalon"
+          ],
+          "target": "La Chapelle de Calon"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintestephe"
+          ],
+          "target": "Saint-Estèphe"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintestephe"
+          ],
+          "target": "Saint-Estèphe"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2011"
+          ],
+          "target": "2011"
+        }
+      }
+    },
+    {
+      "image": "5a97d36321e4fff9d4424ff2764671fd0bf205f4.jpg",
+      "review_number": 46,
+      "source_filename": "0079.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauvieuxbonneau",
+            "vieuxbonneau"
+          ],
+          "target": "Château Vieux Bonneau"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "montagnesaintemilion"
+          ],
+          "target": "Montagne Saint-Émilion"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "montagnesaintemilion",
+            "montagnestemilion"
+          ],
+          "target": "Montagne Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2014"
+          ],
+          "target": "2014"
+        }
+      }
+    },
+    {
+      "image": "45fd1c696766c76721b734c1c7aa8e52e6bfcdfc.jpg",
+      "review_number": 48,
+      "source_filename": "98.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaupeyrouquet",
+            "peyrouquet"
+          ],
+          "target": "Château Peyrouquet"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "732ede1efd68c2b4a5b8c8f8eaec073f42b7f961.jpg",
+      "review_number": 50,
+      "source_filename": "103.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "gerardbertrand"
+          ],
+          "target": "Gérard Bertrand"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "naturaemerlot"
+          ],
+          "target": "Naturae Merlot"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedocroussillon",
+            "languedoc"
+          ],
+          "target": "Languedoc-Roussillon"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "e2f5e7251baef50b8fde53398930bb7a5bdec7a4.jpg",
+      "review_number": 51,
+      "source_filename": "0056.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudelabbaye",
+            "delabbaye"
+          ],
+          "target": "Château de l'Abbaye"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "33ab63dbd6570effa12e2db62c6274fac3c25bfb.jpg",
+      "review_number": 53,
+      "source_filename": "0032.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulestuileries",
+            "lestuileries"
+          ],
+          "target": "Château Les Tuileries"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "56bdcb858f3c861237d50b0602f71b6f4076fbdb.jpg",
+      "review_number": 54,
+      "source_filename": "0022.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lescheminsdonairac"
+          ],
+          "target": "Les Chemins d'Onairac"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "paysdherault"
+          ],
+          "target": "Pays d'Hérault"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "paysdherault"
+          ],
+          "target": "Pays d'Hérault"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "048b56522359f87663a66b47cec02d9f63b8ea58.jpg",
+      "review_number": 56,
+      "source_filename": "0052.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumargaux",
+            "margaux"
+          ],
+          "target": "Château Margaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1998"
+          ],
+          "target": "1998"
+        }
+      }
+    },
+    {
+      "image": "6508c395d80dd85825cb437dd7d74c8af39ad9b8.jpg",
+      "review_number": 57,
+      "source_filename": "003.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainemargueritecarillon",
+            "margueritecarillon"
+          ],
+          "target": "Domaine Marguerite Carillon"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "chablis"
+          ],
+          "target": "Chablis"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy",
+            "bourgogne"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "chablis"
+          ],
+          "target": "Chablis"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "8ba065c0f159dde55578555d96a4b87d1501cd2e.jpg",
+      "review_number": 58,
+      "source_filename": "129.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lesormesdecambras"
+          ],
+          "target": "Les Ormes de Cambras"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon",
+            "cabernetsauvignoncuveereservee",
+            "cuveereserveecabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedocroussillon",
+            "languedoc"
+          ],
+          "target": "Languedoc-Roussillon"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "9ea06b46a73aca34865420193c73fde60e9f9c39.jpg",
+      "review_number": 59,
+      "source_filename": "0044.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lalande"
+          ],
+          "target": "Lalande"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxsuperieur"
+          ],
+          "target": "Bordeaux Supérieur"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2014"
+          ],
+          "target": "2014"
+        }
+      }
+    },
+    {
+      "image": "c91a8a2439e173c0ce3dca74092b24e574278ee0.jpg",
+      "review_number": 60,
+      "source_filename": "163.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "jkieffer"
+          ],
+          "target": "J. Kieffer"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "blancdeblancsbrut",
+            "brutblancdeblancs"
+          ],
+          "target": "Blanc de Blancs Brut"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "793c0327b15fcc72fcf414f5985ee658e93c7c17.jpg",
+      "review_number": 61,
+      "source_filename": "133.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lapetitechapelledebordeaux"
+          ],
+          "target": "La Petite Chapelle de Bordeaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "447db7af7a913abe316e2a99c39bef8dd7189173.jpg",
+      "review_number": 62,
+      "source_filename": "0049.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumargaux",
+            "margaux"
+          ],
+          "target": "Château Margaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2002"
+          ],
+          "target": "2002"
+        }
+      }
+    },
+    {
+      "image": "37b32af44ea0b373136d2ed722f2f5fc605f8912.jpg",
+      "review_number": 63,
+      "source_filename": "150.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulasauvageonne",
+            "gerardbertrand",
+            "lasauvageonne"
+          ],
+          "target": "Château La Sauvageonne"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "volcanierose",
+            "volcanie"
+          ],
+          "target": "Volcanie Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "124cc0ea947a1bae9e89ee1ea043f796cb44ea5d.jpg",
+      "review_number": 65,
+      "source_filename": "0068.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauackerperreau",
+            "ackerperreau"
+          ],
+          "target": "Château Acker-Perreau"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2013"
+          ],
+          "target": "2013"
+        }
+      }
+    },
+    {
+      "image": "274621fc56a805f64d0cc0a2e3902db10b88a275.jpg",
+      "review_number": 66,
+      "source_filename": "144.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "akolb",
+            "kolb"
+          ],
+          "target": "A. Kolb"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cremantdalsacebrut",
+            "cremantdalsace"
+          ],
+          "target": "Crémant d'Alsace Brut"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "alsace"
+          ],
+          "target": "Alsace"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
+      "review_number": 67,
+      "source_filename": "000.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "jeanchristopheicard"
+          ],
+          "target": "Jean-Christophe Icard"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "sauvignonblanc",
+            "sauvignonblancpremium",
+            "premiumsauvignonblanc"
+          ],
+          "target": "Sauvignon Blanc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "southwestfrance",
+            "sudouest",
+            "southwest",
+            "sudouestfrance"
+          ],
+          "target": "South West France"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "gascogne",
+            "cotesdegascogne"
+          ],
+          "target": "Gascogne"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "378ab5b4ee821ac346f104411908796ee907230c.jpg",
+      "review_number": 68,
+      "source_filename": "97.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudubousquet",
+            "dubousquet"
+          ],
+          "target": "Château du Bousquet"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "469465c756d7339f4cdda41a0b329432d645fce6.jpg",
+      "review_number": 69,
+      "source_filename": "0055.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumargaux",
+            "margaux"
+          ],
+          "target": "Château Margaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1996"
+          ],
+          "target": "1996"
+        }
+      }
+    },
+    {
+      "image": "fc506334b1010731e7e73e877ac933284b2acf20.jpg",
+      "review_number": 70,
+      "source_filename": "15032022_105917.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "albertbichot"
+          ],
+          "target": "Albert Bichot"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lescaillouxchardonnay",
+            "lescailloux"
+          ],
+          "target": "Les Cailloux Chardonnay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy",
+            "bourgogne"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "95496ab2640658c6e6f34e575ddfb56d61d1cdb0.jpg",
+      "review_number": 71,
+      "source_filename": "108.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lheritagedecarillan"
+          ],
+          "target": "L'Héritage de Carillan"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "gamay"
+          ],
+          "target": "Gamay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "southwestfrance",
+            "sudouest",
+            "southwest",
+            "sudouestfrance"
+          ],
+          "target": "South West France"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdutarn"
+          ],
+          "target": "Côtes du Tarn"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "94fec8b9c287ae763c9b6295b371a36d832b6049.jpg",
+      "review_number": 72,
+      "source_filename": "99.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "moulindejaure"
+          ],
+          "target": "Moulin de Jaure"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxsuperieur"
+          ],
+          "target": "Bordeaux Supérieur"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "a4f5e980fa8716d8b0879985e3cbe0e68792538f.jpg",
+      "review_number": 74,
+      "source_filename": "0034.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "deluzeetfils",
+            "adeluzeetfils",
+            "deluze"
+          ],
+          "target": "De Luze & Fils"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "medocsuperieur"
+          ],
+          "target": "Médoc Supérieur"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "medoc"
+          ],
+          "target": "Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1914"
+          ],
+          "target": "1914"
+        }
+      }
+    },
+    {
+      "image": "267386938b4b0c026ee1920aecc4929d4e457fd2.jpg",
+      "review_number": 75,
+      "source_filename": "0030.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulatourdeby",
+            "latourdeby"
+          ],
+          "target": "Château La Tour de By"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "medoc"
+          ],
+          "target": "Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "medoc"
+          ],
+          "target": "Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "fdfabb0aa4b90b98464edfa3a76dd987c5e7caf4.jpg",
+      "review_number": 76,
+      "source_filename": "0073.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudagassac",
+            "dagassac"
+          ],
+          "target": "Château d'Agassac"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2014"
+          ],
+          "target": "2014"
+        }
+      }
+    },
+    {
+      "image": "72bdc20913c77b0acea0b407f91a44e891b0d2e8.jpg",
+      "review_number": 77,
+      "source_filename": "0033.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulestuileries",
+            "lestuileries"
+          ],
+          "target": "Château Les Tuileries"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2006"
+          ],
+          "target": "2006"
+        }
+      }
+    },
+    {
+      "image": "a936f53234f32c7d71b95e2e392963bc5aa20801.jpg",
+      "review_number": 78,
+      "source_filename": "0069.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauadaugusta",
+            "adaugusta"
+          ],
+          "target": "Château Adaugusta"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2010"
+          ],
+          "target": "2010"
+        }
+      }
+    },
+    {
+      "image": "bfe29d112dd036f77336f4871a8322ffe5334b62.jpg",
+      "review_number": 83,
+      "source_filename": "0085.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "barondestey"
+          ],
+          "target": "Baron d'Estey"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "7a721d5e7082f50d3a8d5b1e3da49d3635474378.jpg",
+      "review_number": 85,
+      "source_filename": "110.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "rochemazet"
+          ],
+          "target": "Roche Mazet"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "merlot",
+            "merlotcuveespeciale",
+            "cuveespecialemerlot"
+          ],
+          "target": "Merlot"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedocroussillon",
+            "languedoc"
+          ],
+          "target": "Languedoc-Roussillon"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "897b2a6b6023d3bcba78eafe8366ff7a5082b8fe.jpg",
+      "review_number": 86,
+      "source_filename": "0011.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "deluze"
+          ],
+          "target": "De Luze"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "barondeluze"
+          ],
+          "target": "Baron de Luze"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "8623ea3006f120e3392232bf74c952db11f69f04.jpg",
+      "review_number": 88,
+      "source_filename": "0088.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauambetourpourret",
+            "ambetourpourret"
+          ],
+          "target": "Château Ambe Tour Pourret"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2012"
+          ],
+          "target": "2012"
+        }
+      }
+    },
+    {
+      "image": "e9029d92b518ca9429b367ca5e0775aa8d982100.jpg",
+      "review_number": 89,
+      "source_filename": "159.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "bertrandravache"
+          ],
+          "target": "Bertrand Ravache"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "leobyleo"
+          ],
+          "target": "Léo by Léo"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "fronsac"
+          ],
+          "target": "Fronsac"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "2d1619d9c3a30339f2a94c14052553b35ace26ec.jpg",
+      "review_number": 90,
+      "source_filename": "0047.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumargaux",
+            "margaux"
+          ],
+          "target": "Château Margaux"
+        },
+        "wine_name": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "country": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "region": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2007"
+          ],
+          "target": "2007"
+        }
+      }
+    },
+    {
+      "image": "74f212c48019b45fe67ea43a2afb76e37087124e.jpg",
+      "review_number": 91,
+      "source_filename": "148.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaubellevuefigeac",
+            "bellevuefigeac"
+          ],
+          "target": "Château Bellevue Figeac"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "5bc7bf5fbed1f97eb03a5c292eb8c7f39d75ba44.jpg",
+      "review_number": 92,
+      "source_filename": "0084.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domaineallaryhautbrion",
+            "allaryhautbrion"
+          ],
+          "target": "Domaine Allary Haut-Brion"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pessacleognan"
+          ],
+          "target": "Pessac-Léognan"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "pessacleognan"
+          ],
+          "target": "Pessac-Léognan"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2009"
+          ],
+          "target": "2009"
+        }
+      }
+    },
+    {
+      "image": "23b34fda468d17669b49a2882576846709f19b9e.jpg",
+      "review_number": 93,
+      "source_filename": "105.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaucroixmouton",
+            "croixmouton"
+          ],
+          "target": "Château Croix-Mouton"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxsuperieur"
+          ],
+          "target": "Bordeaux Supérieur"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "bbc5b6873fe8ec8e28b072fe2386095b359cd87b.jpg",
+      "review_number": 94,
+      "source_filename": "0092.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauamelisse",
+            "amelisse"
+          ],
+          "target": "Château Amélisse"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2011"
+          ],
+          "target": "2011"
+        }
+      }
+    },
+    {
+      "image": "e8e049d425e563d2452657409e63577e7c760187.jpg",
+      "review_number": 96,
+      "source_filename": "0054.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumargaux",
+            "margaux"
+          ],
+          "target": "Château Margaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1996"
+          ],
+          "target": "1996"
+        }
+      }
+    },
+    {
+      "image": "a4778fe210bd084b2854e6f429b2bfec8bb60ff8.jpg",
+      "review_number": 97,
+      "source_filename": "0060.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauabelyce",
+            "abelyce"
+          ],
+          "target": "Château Abelyce"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cuveegarance"
+          ],
+          "target": "Cuvée Garance"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2017"
+          ],
+          "target": "2017"
+        }
+      }
+    },
+    {
+      "image": "05e4b7eca36ed4dfb6a3c17c6994e8d141eeb8a2.jpg",
+      "review_number": 98,
+      "source_filename": "102.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumoulindelille",
+            "moulindelille"
+          ],
+          "target": "Château Moulin Delille"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintestephe"
+          ],
+          "target": "Saint-Estèphe"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintestephe"
+          ],
+          "target": "Saint-Estèphe"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "b87ca31f798edb05da02e35cefc483e5573ad648.jpg",
+      "review_number": 99,
+      "source_filename": "0067.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudabzac",
+            "dabzac"
+          ],
+          "target": "Château d'Abzac"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxsuperieur"
+          ],
+          "target": "Bordeaux Supérieur"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2007"
+          ],
+          "target": "2007"
+        }
+      }
+    },
+    {
+      "image": "299fd5f2ec65ec621fbd9973c2aaa671775c259c.jpg",
+      "review_number": 102,
+      "source_filename": "0066.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauabelyce",
+            "abelyce"
+          ],
+          "target": "Château Abelyce"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2010"
+          ],
+          "target": "2010"
+        }
+      }
+    },
+    {
+      "image": "81ae36f1b4238e878b0871fe284c59212ae95d18.jpg",
+      "review_number": 103,
+      "source_filename": "140.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauhautlagarde",
+            "hautlagarde"
+          ],
+          "target": "Château Haut La Garde"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "blayecotesdebordeaux"
+          ],
+          "target": "Blaye Côtes de Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "blayecotesdebordeaux",
+            "blaye",
+            "cotesdeblaye"
+          ],
+          "target": "Blaye Côtes de Bordeaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "cc94f76f1d16ce337b97df1c43023af464cfe3a7.jpg",
+      "review_number": 104,
+      "source_filename": "004.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "barondelavariere"
+          ],
+          "target": "Baron de la Varière"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "anjou"
+          ],
+          "target": "Anjou"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "loirevalley",
+            "loire",
+            "valdeloire",
+            "valleedelaloire"
+          ],
+          "target": "Loire Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "anjou",
+            "rosedanjou",
+            "cabernetdanjou"
+          ],
+          "target": "Anjou"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "eb94a0d67d5415d80b5afc91be1bb24d5d9417fc.jpg",
+      "review_number": 105,
+      "source_filename": "0031.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainedelermitagelamourous",
+            "delermitagelamourous"
+          ],
+          "target": "Domaine de l'Ermitage Lamourous"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1989"
+          ],
+          "target": "1989"
+        }
+      }
+    },
+    {
+      "image": "8a76af29bf8d2c00fbfd6146e77f941e1f3de726.jpg",
+      "review_number": 106,
+      "source_filename": "0015.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "baronphilippederothschild"
+          ],
+          "target": "Baron Philippe de Rothschild"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "moutoncadet"
+          ],
+          "target": "Mouton Cadet"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "77726e0fe83acedbd8b058768d16d785a6ed0551.jpg",
+      "review_number": 113,
+      "source_filename": "0023.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaubaudare",
+            "baudare"
+          ],
+          "target": "Château Baudare"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "fronton",
+            "frontontraditiondexcellence",
+            "traditiondexcellence"
+          ],
+          "target": "Fronton"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "southwestfrance",
+            "sudouest",
+            "southwest",
+            "sudouestfrance"
+          ],
+          "target": "South West France"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "fronton"
+          ],
+          "target": "Fronton"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "30cacb85b4b85b60888ea38cc493169080ce34ad.jpg",
+      "review_number": 114,
+      "source_filename": "0017.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lepasdutemplier"
+          ],
+          "target": "Le Pas du Templier"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "minervois"
+          ],
+          "target": "Minervois"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "minervois"
+          ],
+          "target": "Minervois"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "a81af4f7d3a94291fb683101a63d05d3bd35e1a4.jpg",
+      "review_number": 115,
+      "source_filename": "0090.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauamelisse",
+            "amelisse"
+          ],
+          "target": "Château Amélisse"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2017"
+          ],
+          "target": "2017"
+        }
+      }
+    },
+    {
+      "image": "21844d6ea902cb788d150cd4390f6d6ea3da0693.jpg",
+      "review_number": 116,
+      "source_filename": "0019.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaufabas",
+            "fabas"
+          ],
+          "target": "Château Fabas"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "payrouliere",
+            "payrouliereminervois",
+            "minervoispayrouliere"
+          ],
+          "target": "Payroulière"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "minervois"
+          ],
+          "target": "Minervois"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "781c41b767b22281370c8c55669842d3ef6921c6.jpg",
+      "review_number": 117,
+      "source_filename": "008.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lafrancette"
+          ],
+          "target": "La Francette"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "merlot"
+          ],
+          "target": "Merlot"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "382ab4eaeff62f6e4234df5536382ba783f56588.jpg",
+      "review_number": 118,
+      "source_filename": "95.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "symbiose"
+          ],
+          "target": "Symbiose"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc"
+          ],
+          "target": "Languedoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "685b760118a72cddf6f4859572a1030846a38a2a.jpg",
+      "review_number": 119,
+      "source_filename": "122.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulavieillecure",
+            "lavieillecure"
+          ],
+          "target": "Château La Vieille Cure"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lasacristiedelavieillecure"
+          ],
+          "target": "La Sacristie de la Vieille Cure"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "fronsac"
+          ],
+          "target": "Fronsac"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2014"
+          ],
+          "target": "2014"
+        }
+      }
+    },
+    {
+      "image": "fe56d23fcb75036e5a848dcdde48b450a053d252.jpg",
+      "review_number": 122,
+      "source_filename": "0078.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauvieuxbonneau",
+            "vieuxbonneau"
+          ],
+          "target": "Château Vieux Bonneau"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "montagnesaintemilion"
+          ],
+          "target": "Montagne Saint-Émilion"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "montagnesaintemilion",
+            "montagnestemilion"
+          ],
+          "target": "Montagne Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2012"
+          ],
+          "target": "2012"
+        }
+      }
+    },
+    {
+      "image": "808059b6a18bc493bb6eae9c694acc5e1999b6af.jpg",
+      "review_number": 123,
+      "source_filename": "0065.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauabelyce",
+            "abelyce"
+          ],
+          "target": "Château Abelyce"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2012"
+          ],
+          "target": "2012"
+        }
+      }
+    },
+    {
+      "image": "ee636b8711ebab2d43c0196ea531a351be0530b2.jpg",
+      "review_number": 125,
+      "source_filename": "0024.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaupeyfaures",
+            "peyfaures"
+          ],
+          "target": "Château Peyfaures"
+        },
+        "wine_name": {
+          "status": "unresolved",
+          "accepted": []
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "a1946895e5540cd9a206b4d37a73d4e63a9b0a86.jpg",
+      "review_number": 126,
+      "source_filename": "128.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lheritagedecarillan"
+          ],
+          "target": "L'Héritage de Carillan"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedocroussillon",
+            "languedoc"
+          ],
+          "target": "Languedoc-Roussillon"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "25b1497dd224f47c3b0a5a436276df13857a0e05.jpg",
+      "review_number": 127,
+      "source_filename": "136.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainegeorgesbertrand",
+            "gerardbertrand",
+            "georgesbertrand"
+          ],
+          "target": "Domaine Georges Bertrand"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "corbieres"
+          ],
+          "target": "Corbières"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "corbieres"
+          ],
+          "target": "Corbières"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "10025b033895175ca84e9b27b7e2fe012fd946ff.jpg",
+      "review_number": 128,
+      "source_filename": "157.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "vegasicilia"
+          ],
+          "target": "Vega Sicilia"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "unico"
+          ],
+          "target": "Único"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "riberadelduero"
+          ],
+          "target": "Ribera del Duero"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1991"
+          ],
+          "target": "1991"
+        }
+      }
+    },
+    {
+      "image": "04b3d1e4abdb81a66c5dd65883aca59fc0abbd84.jpg",
+      "review_number": 129,
+      "source_filename": "96.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "cavederoquebrun"
+          ],
+          "target": "Cave de Roquebrun"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "chemindesolivettes"
+          ],
+          "target": "Chemin des Olivettes"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc",
+            "languedocroussillon"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "08d7bb58ad708ac9ff04e19e82996d1b2b7a8222.jpg",
+      "review_number": 135,
+      "source_filename": "15032022_211301.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "hawksshadowestate",
+            "hawksshadow",
+            "hawksshadowestatewinery"
+          ],
+          "target": "Hawk's Shadow Estate"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "orangemuscat",
+            "lostdrawvineyardsorangemuscat",
+            "orangemuscatlostdrawvineyards"
+          ],
+          "target": "Orange Muscat"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "texas"
+          ],
+          "target": "Texas"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "texashighplains"
+          ],
+          "target": "Texas High Plains"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2011"
+          ],
+          "target": "2011"
+        }
+      }
+    },
+    {
+      "image": "cb8b1fb878884b98afc5fac0136c8758c7bf0a18.jpg",
+      "review_number": 136,
+      "source_filename": "0083.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domaineallaryhautbrion",
+            "allaryhautbrion"
+          ],
+          "target": "Domaine Allary Haut-Brion"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pessacleognan"
+          ],
+          "target": "Pessac-Léognan"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "pessacleognan"
+          ],
+          "target": "Pessac-Léognan"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2010"
+          ],
+          "target": "2010"
+        }
+      }
+    },
+    {
+      "image": "e4dc501bc4e83580bf0f931009d2a3d539b9420c.jpg",
+      "review_number": 137,
+      "source_filename": "125.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudupeyratplouget",
+            "dupeyratplouget"
+          ],
+          "target": "Château Dupeyrat Plouget"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "crudeplouget"
+          ],
+          "target": "Cru de Plouget"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "f2642411fc961e98ec285131de095565892f0397.jpg",
+      "review_number": 139,
+      "source_filename": "132.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauguillaumeblanc",
+            "guillaumeblanc"
+          ],
+          "target": "Château Guillaume Blanc"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxsuperieur"
+          ],
+          "target": "Bordeaux Supérieur"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "0b882dea564133e7a10b4e7baaa1fdeb2a2367f2.jpg",
+      "review_number": 140,
+      "source_filename": "0089.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauamelisse",
+            "amelisse"
+          ],
+          "target": "Château Amélisse"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "bdbd1e1c6261f851ed6d7605633c5e3182dcb751.jpg",
+      "review_number": 141,
+      "source_filename": "104.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "malesan"
+          ],
+          "target": "Malesan"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxcuveeselectionnee",
+            "bordeaux",
+            "cuveeselectionnee"
+          ],
+          "target": "Bordeaux Cuvée Sélectionnée"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "8cf0a44f74b2f0c0f1d5b5b51ec27b0022ac6efe.jpg",
+      "review_number": 142,
+      "source_filename": "0061.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauabelyce",
+            "abelyce"
+          ],
+          "target": "Château Abelyce"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "2566b1eb9485eb7343497f5c05481d4b17ef9f46.jpg",
+      "review_number": 144,
+      "source_filename": "114.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainedumanay",
+            "lesjacquelins",
+            "dumanay"
+          ],
+          "target": "Domaine du Manay"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "menetousalon"
+          ],
+          "target": "Menetou-Salon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "loirevalley",
+            "loire",
+            "valdeloire",
+            "valleedelaloire"
+          ],
+          "target": "Loire Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "menetousalon"
+          ],
+          "target": "Menetou-Salon"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "32528341058b1b9b327f7b31651f380832e17770.jpg",
+      "review_number": 146,
+      "source_filename": "007.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "citran"
+          ],
+          "target": "Citran"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "da6e38c8075b5f619e8b7c01e53d6d7a466b753d.jpg",
+      "review_number": 147,
+      "source_filename": "0086.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauambetourpourret",
+            "ambetourpourret"
+          ],
+          "target": "Château Ambe Tour Pourret"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2010"
+          ],
+          "target": "2010"
+        }
+      }
+    },
+    {
+      "image": "768762e3a0986d4848e2e7c3476dde72b13628aa.jpg",
+      "review_number": 148,
+      "source_filename": "0059.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudelabbaye",
+            "delabbaye"
+          ],
+          "target": "Château de l'Abbaye"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "hautmedoc"
+          ],
+          "target": "Haut-Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2011"
+          ],
+          "target": "2011"
+        }
+      }
+    },
+    {
+      "image": "3638eb5d3ebcda5059ba4165c05b8189820a9d41.jpg",
+      "review_number": 150,
+      "source_filename": "156.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "spottswoode",
+            "spottswoodeestatevineyardetwinery"
+          ],
+          "target": "Spottswoode"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "napavalley"
+          ],
+          "target": "Napa Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "sthelena",
+            "sainthelena"
+          ],
+          "target": "St. Helena"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "671e26b515b1a2e2d27af679739bd0de8e48d9e9.jpg",
+      "review_number": 151,
+      "source_filename": "0080.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaualcee",
+            "nicolasthienpont",
+            "alcee"
+          ],
+          "target": "Château Alcée"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "castilloncotesdebordeaux"
+          ],
+          "target": "Castillon Côtes de Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "castilloncotesdebordeaux",
+            "castillon",
+            "cotesdecastillon"
+          ],
+          "target": "Castillon Côtes de Bordeaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2018"
+          ],
+          "target": "2018"
+        }
+      }
+    },
+    {
+      "image": "f1a822e02f61ad7bfcc256c4f206d66b0b605e4e.jpg",
+      "review_number": 152,
+      "source_filename": "115.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "gerardbertrand"
+          ],
+          "target": "Gérard Bertrand"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "naturaesyrahrose"
+          ],
+          "target": "Naturae Syrah Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedocroussillon",
+            "languedoc"
+          ],
+          "target": "Languedoc-Roussillon"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "aaef7ae815ab9b42e6d2365965666b1eb9dba43c.jpg",
+      "review_number": 154,
+      "source_filename": "15032022_211928.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "cockburns"
+          ],
+          "target": "Cockburn's"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "latebottledvintageport",
+            "lbv",
+            "lbvport",
+            "portlbv",
+            "latebottledvintage"
+          ],
+          "target": "Late Bottled Vintage Port"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "douro",
+            "dourovalley"
+          ],
+          "target": "Douro"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "a71ba19710d489723a8a1076f0c7fa53e569ad04.jpg",
+      "review_number": 157,
+      "source_filename": "161.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaufleurcardinale",
+            "fleurcardinale"
+          ],
+          "target": "Château Fleur Cardinale"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemiliongrandcru",
+            "saintemiliongrandcruclasse"
+          ],
+          "target": "Saint-Émilion Grand Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintemilion",
+            "stemilion",
+            "saintemiliongrandcru"
+          ],
+          "target": "Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2014"
+          ],
+          "target": "2014"
+        }
+      }
+    },
+    {
+      "image": "8b96c1e4f424021e9b44e235dd1095df358963c8.jpg",
+      "review_number": 160,
+      "source_filename": "113.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudesroches",
+            "desroches"
+          ],
+          "target": "Château des Roches"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "loupiac"
+          ],
+          "target": "Loupiac"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "loupiac"
+          ],
+          "target": "Loupiac"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2020"
+          ],
+          "target": "2020"
+        }
+      }
+    },
+    {
+      "image": "ff03bf0bb7ff79096dfa7aae0187f083eac60abe.jpg",
+      "review_number": 162,
+      "source_filename": "0026.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauvangelys",
+            "vangelys"
+          ],
+          "target": "Château Vangelys"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lalandedepomerol"
+          ],
+          "target": "Lalande-de-Pomerol"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "lalandedepomerol"
+          ],
+          "target": "Lalande-de-Pomerol"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "15cbbbbcf45e645f94e0abf9a0c33845242a363a.jpg",
+      "review_number": 163,
+      "source_filename": "0082.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaualcee",
+            "nicolasthienpont",
+            "alcee"
+          ],
+          "target": "Château Alcée"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "castilloncotesdebordeaux"
+          ],
+          "target": "Castillon Côtes de Bordeaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "castilloncotesdebordeaux",
+            "castillon",
+            "cotesdecastillon"
+          ],
+          "target": "Castillon Côtes de Bordeaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2012"
+          ],
+          "target": "2012"
+        }
+      }
+    },
+    {
+      "image": "4c9cd06a808f07aa88933b20979b4a877c727c7d.jpg",
+      "review_number": 164,
+      "source_filename": "131.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudubousquet",
+            "dubousquet"
+          ],
+          "target": "Château du Bousquet"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cotesdebourg"
+          ],
+          "target": "Côtes de Bourg"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "1b08d7b41e939d01b7a2ad1952de8fd46dd97184.jpg",
+      "review_number": 165,
+      "source_filename": "141.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaudebensse",
+            "debensse"
+          ],
+          "target": "Château de Bensse"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "medoccrubourgeois",
+            "medoc"
+          ],
+          "target": "Médoc Cru Bourgeois"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "medoc"
+          ],
+          "target": "Médoc"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2016"
+          ],
+          "target": "2016"
+        }
+      }
+    },
+    {
+      "image": "276a427a6bf13778b2ef39531053e9906d8a4c85.jpg",
+      "review_number": 166,
+      "source_filename": "0053.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaumargaux",
+            "margaux"
+          ],
+          "target": "Château Margaux"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1997"
+          ],
+          "target": "1997"
+        }
+      }
+    },
+    {
+      "image": "4771870c2063c29f444e7182f5571dc6fa733eac.jpg",
+      "review_number": 167,
+      "source_filename": "0035.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "deluze"
+          ],
+          "target": "De Luze"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "montagnesaintemilion"
+          ],
+          "target": "Montagne Saint-Émilion"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "montagnesaintemilion",
+            "montagnestemilion"
+          ],
+          "target": "Montagne Saint-Émilion"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "1985"
+          ],
+          "target": "1985"
+        }
+      }
+    },
+    {
+      "image": "9a856b8269aadc7fec650b096fef2327b9b0c165.jpg",
+      "review_number": 169,
+      "source_filename": "IMG_2164-1774x2048.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lariojaalta"
+          ],
+          "target": "La Rioja Alta"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "granreserva904"
+          ],
+          "target": "Gran Reserva 904"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "rioja"
+          ],
+          "target": "Rioja"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2015"
+          ],
+          "target": "2015"
+        }
+      }
+    },
+    {
+      "image": "50937908e0070bec683d5e4a5b2f6dee4bab1af8.jpg",
+      "review_number": 170,
+      "source_filename": "IMG_2211-1772x2048.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kingestate"
+          ],
+          "target": "King Estate"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "inscriptionpinotnoir"
+          ],
+          "target": "Inscription Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "oregon"
+          ],
+          "target": "Oregon"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "willamettevalley"
+          ],
+          "target": "Willamette Valley"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "ea64b06225435b49e3e7e8969f80316b9a2fc748.jpg",
+      "review_number": 171,
+      "source_filename": "IMG_2217-1968x2048.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "bodegasvatan"
+          ],
+          "target": "Bodegas Vatan"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "triton"
+          ],
+          "target": "Triton"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "toro"
+          ],
+          "target": "Toro"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2022"
+          ],
+          "target": "2022"
+        }
+      }
+    },
+    {
+      "image": "8b5b1fe41d8bc53d7e98574ddb66bb95fc5e1884.jpg",
+      "review_number": 172,
+      "source_filename": "IMG_2237-1794x2048.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kirklandsignature"
+          ],
+          "target": "Kirkland Signature"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pauillac"
+          ],
+          "target": "Pauillac"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "pauillac"
+          ],
+          "target": "Pauillac"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "f2393cb645ae94d58c7acbe2b6aa97b55ce67fa8.jpg",
+      "review_number": 173,
+      "source_filename": "IMG_2446.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "ciabot"
+          ],
+          "target": "Ciabot"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "baronetto"
+          ],
+          "target": "Baronetto"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "barbaresco"
+          ],
+          "target": "Barbaresco"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "27d788a54a3702473447fa3b8979623e9dc47285.jpg",
+      "review_number": 174,
+      "source_filename": "IMG_2477.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "seanminor"
+          ],
+          "target": "Sean Minor"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "signatureseriescabernetsauvignon"
+          ],
+          "target": "Signature Series Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "northcoast"
+          ],
+          "target": "North Coast"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2022"
+          ],
+          "target": "2022"
+        }
+      }
+    },
+    {
+      "image": "45d7c3ebe60e25a42f1e190f4d7a85b82576178d.jpg",
+      "review_number": 175,
+      "source_filename": "IMG_2741.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateauduglana"
+          ],
+          "target": "Château du Glana"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "saintjulien"
+          ],
+          "target": "Saint-Julien"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saintjulien"
+          ],
+          "target": "Saint-Julien"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
+        }
+      }
+    },
+    {
+      "image": "5fcf8f44a86ad37b82d93b69f1b13c29bce9acec.jpg",
+      "review_number": 176,
+      "source_filename": "IMG_2850-1739x2048.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "bodegasolarra"
+          ],
+          "target": "Bodegas Olarra"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "recientegranreserva"
+          ],
+          "target": "Reciente Gran Reserva"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "rioja"
+          ],
+          "target": "Rioja"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "unresolved",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "cecce77323fac582a84de78156c28e770cc95480.jpg",
+      "review_number": 177,
+      "source_filename": "IMG_3076-1682x2048.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kaiken"
+          ],
+          "target": "Kaiken"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "ultramalbec"
+          ],
+          "target": "Ultra Malbec"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "argentina"
+          ],
+          "target": "Argentina"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "mendoza"
+          ],
+          "target": "Mendoza"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2021"
+          ],
+          "target": "2021"
+        }
+      }
+    },
+    {
+      "image": "ce5afaa4582dcfe78c2a8983cd9bd195e836fca5.jpg",
+      "review_number": 178,
+      "source_filename": "IMG_3100.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "antinori"
+          ],
+          "target": "Antinori"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bramitodellasalachardonnay"
+          ],
+          "target": "Bramìto della Sala Chardonnay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "umbria"
+          ],
+          "target": "Umbria"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2024"
+          ],
+          "target": "2024"
+        }
+      }
+    },
+    {
+      "image": "6860c91d34b44147ddcdf9947cd0f2c49aaa2c75.jpg",
+      "review_number": 179,
+      "source_filename": "IMG_3112.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "francoislurton"
+          ],
+          "target": "François Lurton"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "campoeliseo"
+          ],
+          "target": "Campo Eliseo"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "toro"
+          ],
+          "target": "Toro"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "bf476b5822e28e5e8b567424b06c9db424cdcf73.jpg",
+      "review_number": 180,
+      "source_filename": "IMG_3155-1640x2048.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "antinori"
+          ],
+          "target": "Antinori"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "peppolichianticlassico",
+            "peppoli"
+          ],
+          "target": "Pèppoli Chianti Classico"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "tuscany"
+          ],
+          "target": "Tuscany"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "chianticlassico"
+          ],
+          "target": "Chianti Classico"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2024"
+          ],
+          "target": "2024"
+        }
+      }
+    },
+    {
+      "image": "a887c984aa1782d3db13dfaf659492a0fdd04b4c.jpg",
+      "review_number": 181,
+      "source_filename": "IMG_3609-1843x2048.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "marquesdecasaconcha"
+          ],
+          "target": "Marqués de Casa Concha"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "heritage"
+          ],
+          "target": "Heritage"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "chile"
+          ],
+          "target": "Chile"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "puentealto"
+          ],
+          "target": "Puente Alto"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2021"
+          ],
+          "target": "2021"
+        }
+      }
+    },
+    {
+      "image": "544d07e0801d9efc3bc4cc7bf604aaa7bd08bd09.jpg",
+      "review_number": 182,
+      "source_filename": "IMG_3645.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "reputation"
+          ],
+          "target": "Reputation"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "napavalley"
+          ],
+          "target": "Napa Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "stagsleapdistrict",
+            "stagsleap"
+          ],
+          "target": "Stags Leap District"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "ebe149b5dd8aba96752725857be77ddcadb593aa.jpg",
+      "review_number": 183,
+      "source_filename": "IMG_3732-1862x2048.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "trivento"
+          ],
+          "target": "Trivento"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "goldenreservemalbec"
+          ],
+          "target": "Golden Reserve Malbec"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "argentina"
+          ],
+          "target": "Argentina"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "mendoza"
+          ],
+          "target": "Mendoza"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "lujandecuyo"
+          ],
+          "target": "Luján de Cuyo"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "6140756eb428858729e1a2eb25949a6280bd9220.jpg",
+      "review_number": 184,
+      "source_filename": "IMG_3759-2048x1843.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "patriciagreencellars"
+          ],
+          "target": "Patricia Green Cellars"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "volcanicpinotnoir"
+          ],
+          "target": "Volcanic Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "oregon"
+          ],
+          "target": "Oregon"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "dundeehills"
+          ],
+          "target": "Dundee Hills"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "97d9c9749caa13ec5c38a9355c2c71290abaecc5.jpg",
+      "review_number": 185,
+      "source_filename": "IMG_3761.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "collinasanponzio"
+          ],
+          "target": "Collina San Ponzio"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "barolo"
+          ],
+          "target": "Barolo"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "barolo"
+          ],
+          "target": "Barolo"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2021"
+          ],
+          "target": "2021"
+        }
+      }
+    },
+    {
+      "image": "72221751f8c08ab5a3df4c2205c8ab3c69c58851.jpg",
+      "review_number": 186,
+      "source_filename": "IMG_3763.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "stagsleap"
+          ],
+          "target": "Stags’ Leap"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "merlot"
+          ],
+          "target": "Merlot"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "napavalley"
+          ],
+          "target": "Napa Valley"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "d95bea0cdf29836162bf845f54110531c00fc9bb.jpg",
+      "review_number": 187,
+      "source_filename": "IMG_3765.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lenoble"
+          ],
+          "target": "Le Noble"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeauxsauvignonblanccuveereserve",
+            "bordeauxsauvignonblanc",
+            "cuveereserve"
+          ],
+          "target": "Bordeaux Sauvignon Blanc; Cuvée Réserve"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": []
+        }
+      }
+    },
+    {
+      "image": "e3563fb60897a5ba43e941a25e9c3df2c6ee6a8c.jpg",
+      "review_number": 188,
+      "source_filename": "IMG_3819.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "decoy"
+          ],
+          "target": "Decoy"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pinotnoir"
+          ],
+          "target": "Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": []
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "e39e2b81ad6ee22c51763a3858dbd907ce82f32e.jpg",
+      "review_number": 189,
+      "source_filename": "IMG_3856-1.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kirklandsignature"
+          ],
+          "target": "Kirkland Signature"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "gigondas"
+          ],
+          "target": "Gigondas"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "rhone"
+          ],
+          "target": "Rhône"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "gigondas"
+          ],
+          "target": "Gigondas"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2024"
+          ],
+          "target": "2024"
+        }
+      }
+    },
+    {
+      "image": "a3da97fef7642c7ccee9817f89da3011a628174c.jpg",
+      "review_number": 190,
+      "source_filename": "IMG_9703.jpg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "ilpoggione"
+          ],
+          "target": "Il Poggione"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "rossodimontalcino"
+          ],
+          "target": "Rosso di Montalcino"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "tuscany"
+          ],
+          "target": "Tuscany"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "montalcino"
+          ],
+          "target": "Montalcino"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2021"
+          ],
+          "target": "2021"
+        }
+      }
+    }
+  ]
+}

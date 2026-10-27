@@ -1,34 +1,34 @@
 {
   "policy": "Expected values retain original aliases and geographic inference. Expected blanks earn credit; unsupported fills are errors. Unresolved remains unscored.",
-  "qualification": "Provisional adjudication from existing visual-review notes, not a new image audit or independent review. No predictions rerun. No frozen v1 reference edited.",
+  "qualification": "Provisional visual-reference correction at the owner's request: Club des Sommeliers is treated as branding, not as the producer; actual producers are left unresolved when not established. Saved predictions were not rerun.",
   "provenance": {
-    "tools/evaluation/public-corpus-reference-v1/reference.json": "8b6fff85ad5b9ec02162bd86dbb8f675294c98680a9d31815441ff871ad7bde2",
-    "tools/evaluation/comprehensive-diagnostics-v1/field-diagnostics.csv": "9eb29b151e7613f395df4aa76b30966d9f4ef8041f664536e6c4aff2d69674a2",
+    "tools/evaluation/public-corpus-reference-v1/reference.json": "cdb584e0ef38fce331c0c8c7833989b8d91b53f0bd0f9ccf305f108a91f2d41d",
+    "tools/evaluation/comprehensive-diagnostics-v1/field-diagnostics.csv": "bb64e96bfbff9536634155a825bdf60d26d7b285c7b17b6b23b828d7e41c159f",
     "tools/evaluation/anchor-iteration-39834118734/field-results.csv": "5723148c08550dd3f2c4c2eaaec0a1df45264ea35d3bd0e69e9853ccab80b6d4"
   },
-  "implementation_sha256": "6d0240a751b767dc8842ad8b0fdc2751571569796853e5099d8c6774892f20c8",
+  "implementation_sha256": "5e1758186ab1bfd9f4a7726735168e786d6b44cb2f98006e7f6e4da57ea1915a",
   "reference_states": {
-    "expected_value": 894,
-    "unresolved": 17,
+    "expected_value": 892,
+    "unresolved": 19,
     "expected_blank": 97
   },
   "images": 168,
-  "fully_scorable_labels": 160,
-  "partly_unresolved_labels": 8,
+  "fully_scorable_labels": 158,
+  "partly_unresolved_labels": 10,
   "systems": {
     "baseline": {
       "outcomes": {
         "wrong_value": 100,
-        "missing_value": 197,
+        "missing_value": 195,
         "correct_value": 597,
         "unscored_filled": 7,
-        "unscored_blank": 10,
+        "unscored_blank": 12,
         "correct_blank": 77,
         "unsupported_fill": 20
       },
       "correct_total": 674,
       "wrong_total": 120,
-      "missing_values": 197,
+      "missing_values": 195,
       "complete": 26,
       "complete_gained_vs_baseline": [],
       "complete_lost_vs_baseline": [],
@@ -38,23 +38,23 @@
         "2": 22,
         "3": 15,
         "4": 38,
-        "5": 49,
+        "5": 47,
         "6": 26
       }
     },
     "previous_v3": {
       "outcomes": {
-        "missing_value": 211,
+        "missing_value": 209,
         "correct_value": 599,
         "wrong_value": 84,
-        "unscored_blank": 10,
+        "unscored_blank": 12,
         "unscored_filled": 7,
         "correct_blank": 77,
         "unsupported_fill": 20
       },
       "correct_total": 676,
       "wrong_total": 104,
-      "missing_values": 211,
+      "missing_values": 209,
       "complete": 24,
       "complete_gained_vs_baseline": [
         "300e16922f8692be7d9cb9de26254b5770caf170.jpg",
@@ -84,9 +84,9 @@
         "0": 0,
         "1": 10,
         "2": 17,
-        "3": 18,
+        "3": 17,
         "4": 43,
-        "5": 48,
+        "5": 47,
         "6": 24
       }
     },
@@ -94,15 +94,15 @@
       "outcomes": {
         "wrong_value": 82,
         "correct_value": 627,
-        "missing_value": 185,
-        "unscored_blank": 10,
+        "missing_value": 183,
+        "unscored_blank": 12,
         "unscored_filled": 7,
         "correct_blank": 77,
         "unsupported_fill": 20
       },
       "correct_total": 704,
       "wrong_total": 102,
-      "missing_values": 185,
+      "missing_values": 183,
       "complete": 32,
       "complete_gained_vs_baseline": [
         "03110ad18731d0f11fadf9b86725d69202f08cff.jpg",
@@ -128,9 +128,9 @@
         "0": 0,
         "1": 6,
         "2": 18,
-        "3": 15,
+        "3": 14,
         "4": 43,
-        "5": 46,
+        "5": 45,
         "6": 32
       }
     }

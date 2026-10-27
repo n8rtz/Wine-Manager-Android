@@ -6,17 +6,17 @@
 
 | Saved system | Correct / wrong / abstained | Complete / eligible |
 |---|---:|---:|
-| production | 480 / 143 / 271 | 6 / 103 |
-| lab_baseline | 597 / 100 / 197 | 23 / 103 |
-| experimental_v2 | 566 / 121 / 207 | 8 / 103 |
-| experimental_v3 | 599 / 84 / 211 | 19 / 103 |
-| production_60s | 486 / 139 / 269 | 6 / 103 |
+| production | 480 / 141 / 271 | 6 / 101 |
+| lab_baseline | 597 / 100 / 195 | 23 / 101 |
+| experimental_v2 | 566 / 121 / 205 | 8 / 101 |
+| experimental_v3 | 599 / 84 / 209 | 19 / 101 |
+| production_60s | 486 / 138 / 268 | 6 / 101 |
 
 ## Opportunity bounds (use reference answers; NOT runtime policies)
 
-- Either complete entry already correct: **28/103**.
-- Every field correct in at least one selected output: **32/103**.
-- Every field correct somewhere in selected outputs / baseline alternatives / v3 hypotheses: **47/103**.
+- Either complete entry already correct: **28/101**.
+- Every field correct in at least one selected output: **32/101**.
+- Every field correct somewhere in selected outputs / baseline alternatives / v3 hypotheses: **47/101**.
 The latter two can require incompatible choices. They locate potential opportunity, not an achievable guarantee. Candidate traces are limited to what was saved.
 
 ## Stage triage
@@ -28,8 +28,8 @@ The latter two can require incompatible choices. They locate potential opportuni
 | correct_v3_hypothesis_not_selected | 107 |
 | geography_needs_semantic_origin_review | 67 |
 | literal_text_present_candidate_missing | 26 |
-| no_literal_match_not_proof_of_ocr_failure | 63 |
-| unscored_reference | 114 |
+| no_literal_match_not_proof_of_ocr_failure | 61 |
+| unscored_reference | 116 |
 | v3_selected_correct | 599 |
 
 Literal-text checks are proxies, not proof of OCR correctness/failure. Geography is not classified from literal absence because it can require appellation inference. A correct generated hypothesis not selected does not distinguish rule rejection, search pruning, ranking and ambiguity; inspect Android decision traces before claiming causation.
@@ -42,35 +42,35 @@ Top 12 **in-sample** policies below, ranked by full entries then wrong fills. Th
 
 | Policy | Complete / eligible | Correct / wrong / abstained | Complete gained / lost vs baseline | Mixed geography sources |
 |---|---:|---:|---:|---:|
-| evidence-0-0-0 | 28 / 103 | 648 / 118 / 128 | 7 / 2 | 0 |
-| evidence-1-0-0 | 26 / 103 | 643 / 118 / 133 | 7 / 4 | 0 |
-| hybrid-0-1-prefer | 26 / 103 | 630 / 129 / 135 | 3 / 0 | 0 |
-| field-011100 | 25 / 103 | 630 / 89 / 175 | 6 / 4 | 96 |
-| field-011000 | 25 / 103 | 627 / 90 / 177 | 6 / 4 | 118 |
-| field-010100 | 25 / 103 | 620 / 90 / 184 | 6 / 4 | 116 |
-| field-010000 | 25 / 103 | 617 / 91 / 186 | 6 / 4 | 0 |
-| group-0100 | 25 / 103 | 617 / 91 / 186 | 6 / 4 | 0 |
-| evidence-0-2-0 | 25 / 103 | 633 / 99 / 162 | 7 / 5 | 0 |
-| evidence-1-2-0 | 25 / 103 | 633 / 99 / 162 | 7 / 5 | 0 |
-| hybrid-1-1-prefer | 25 / 103 | 634 / 113 / 147 | 8 / 6 | 0 |
-| field-011110 | 24 / 103 | 624 / 88 / 182 | 5 / 4 | 0 |
+| evidence-0-0-0 | 28 / 101 | 648 / 118 / 126 | 7 / 2 | 0 |
+| evidence-1-0-0 | 26 / 101 | 643 / 118 / 131 | 7 / 4 | 0 |
+| hybrid-0-1-prefer | 26 / 101 | 630 / 129 / 133 | 3 / 0 | 0 |
+| field-011100 | 25 / 101 | 630 / 89 / 173 | 6 / 4 | 96 |
+| field-011000 | 25 / 101 | 627 / 90 / 175 | 6 / 4 | 118 |
+| field-010100 | 25 / 101 | 620 / 90 / 182 | 6 / 4 | 116 |
+| field-010000 | 25 / 101 | 617 / 91 / 184 | 6 / 4 | 0 |
+| group-0100 | 25 / 101 | 617 / 91 / 184 | 6 / 4 | 0 |
+| evidence-0-2-0 | 25 / 101 | 633 / 99 / 160 | 7 / 5 | 0 |
+| evidence-1-2-0 | 25 / 101 | 633 / 99 / 160 | 7 / 5 | 0 |
+| hybrid-1-1-prefer | 25 / 101 | 634 / 113 / 145 | 8 / 6 | 0 |
+| field-011110 | 24 / 101 | 624 / 88 / 180 | 5 / 4 | 0 |
 
 ## Near-complete entries
 
-Number of unresolved known fields on the 103 six-known photos (wrong fills and blanks both count):
+Number of unresolved known fields on the 101 six-known photos (wrong fills and blanks both count):
 
-- baseline: 0 fields remaining: 23 photos, 1 fields remaining: 35 photos, 2 fields remaining: 17 photos, 3 fields remaining: 4 photos, 4 fields remaining: 15 photos, 5 fields remaining: 9 photos
-- v3: 0 fields remaining: 19 photos, 1 fields remaining: 31 photos, 2 fields remaining: 24 photos, 3 fields remaining: 9 photos, 4 fields remaining: 14 photos, 5 fields remaining: 6 photos
+- baseline: 0 fields remaining: 23 photos, 1 fields remaining: 33 photos, 2 fields remaining: 17 photos, 3 fields remaining: 4 photos, 4 fields remaining: 15 photos, 5 fields remaining: 9 photos
+- v3: 0 fields remaining: 19 photos, 1 fields remaining: 30 photos, 2 fields remaining: 24 photos, 3 fields remaining: 8 photos, 4 fields remaining: 14 photos, 5 fields remaining: 6 photos
 
 ## Lower-error shortlist (not automatically safe to deploy)
 
 These group-preserving policies have no more total wrong fills than the saved baseline. Complete-entry gains and losses still need inspection; a lower error total does not mean zero new errors.
 
-- `group-0100`: 25/103 complete; 617 correct, 91 wrong, 186 abstained; 6 complete entries gained and 4 lost.
-- `evidence-0-2-0`: 25/103 complete; 633 correct, 99 wrong, 162 abstained; 7 complete entries gained and 5 lost.
-- `evidence-1-2-0`: 25/103 complete; 633 correct, 99 wrong, 162 abstained; 7 complete entries gained and 5 lost.
-- `group-0110`: 24/103 complete; 624 correct, 88 wrong, 182 abstained; 5 complete entries gained and 4 lost.
-- `group-0000`: 23/103 complete; 597 correct, 100 wrong, 197 abstained; 0 complete entries gained and 0 lost.
+- `group-0100`: 25/101 complete; 617 correct, 91 wrong, 184 abstained; 6 complete entries gained and 4 lost.
+- `evidence-0-2-0`: 25/101 complete; 633 correct, 99 wrong, 160 abstained; 7 complete entries gained and 5 lost.
+- `evidence-1-2-0`: 25/101 complete; 633 correct, 99 wrong, 160 abstained; 7 complete entries gained and 5 lost.
+- `group-0110`: 24/101 complete; 624 correct, 88 wrong, 180 abstained; 5 complete entries gained and 4 lost.
+- `group-0000`: 23/101 complete; 597 correct, 100 wrong, 195 abstained; 0 complete entries gained and 0 lost.
 
 ## Review and reproduction
 

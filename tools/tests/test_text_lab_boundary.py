@@ -13,7 +13,7 @@ class TextLabBoundaryTests(unittest.TestCase):
         profile=(ROOT/'app/src/main/java/com/n8rtz/winetracker/ui/screens/ProfileScreen.kt').read_text()
         self.assertIn(name,profile.split('if (BuildConfig.DEBUG) {',1)[1])
     def test_manual_crop_uses_shared_gate_and_only_raw_mlkit(self):
-        source=(ROOT/'app/src/debug/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
+        source=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
         self.assertIn('scanner.withBenchmarkEngines',source)
         self.assertIn('it.id=="mlkit" && it.available',source)
         self.assertIn('engine.recognize(crop,',source)

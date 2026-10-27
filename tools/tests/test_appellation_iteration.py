@@ -36,5 +36,6 @@ class AppellationIterationTests(unittest.TestCase):
         workflow=(ROOT/'.github/workflows/appellation-iteration.yml').read_text()
         self.assertIn('set -euo pipefail',workflow)
         self.assertIn('APPELLATION_ITERATION=true',workflow)
-        main_sources=(ROOT/'app/src/main').rglob('*.kt')
-        self.assertFalse(any('AppellationFallback' in p.read_text() for p in main_sources))
+        production_roots = [ROOT/'app/src/main/java/com/yourapp/wine/capture', ROOT/'app/src/main/java/com/yourapp/wine/fill']
+        production_sources = [p for root in production_roots for p in root.rglob('*.kt')]
+        self.assertFalse(any('AppellationFallback' in p.read_text() for p in production_sources))

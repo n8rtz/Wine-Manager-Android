@@ -21,7 +21,7 @@ class ProducerIterationTests(unittest.TestCase):
             self.assertFalse(decision['production_promoted'])
             self.assertEqual(decision['meets_user_target'],[])
             for v in suite.VARIANTS:
-                g=s['systems'][v]['completion'];self.assertEqual(g['complete'],32);self.assertEqual(g['two_or_more_errors'],82);self.assertFalse(g['passes'])
+                g=s['systems'][v]['completion'];self.assertEqual(g['complete'],32);self.assertEqual(g['two_or_more_errors'],81);self.assertFalse(g['passes'])
             rows[0]['fields']['wine_name']['value']='changed'
             (p/'results.jsonl').write_text('\n'.join(map(json.dumps,rows)))
             with self.assertRaises(AssertionError):suite.collect(p,p/'bad','a'*40)
@@ -41,4 +41,6 @@ class ProducerIterationTests(unittest.TestCase):
         s=(ROOT/'app/src/androidTest/java/com/yourapp/wine/textlab/ProducerRepairDeviceTest.kt').read_text()
         for forbidden in ['FillEngine','EvidenceExtractor(', 'TextLabFormPreview.append','WineScannerServices']:self.assertNotIn(forbidden,s)
         self.assertIn('repair.repair(',s)
-        for p in (ROOT/'app/src/main').rglob('*.kt'):self.assertNotIn('ProducerRepair',p.read_text())
+        production_roots=[ROOT/'app/src/main/java/com/yourapp/wine/capture',ROOT/'app/src/main/java/com/yourapp/wine/fill']
+        for root in production_roots:
+            for p in root.rglob('*.kt'):self.assertNotIn('ProducerRepair',p.read_text())

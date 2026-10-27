@@ -16,6 +16,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/5dc78d5f-wine-manager-android` | not opened | current work | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
+| `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
 | `arena/259cc0eb-wine-manager-android` | not opened | current work; main synced through PR #9 | W-058 debug pipeline bottleneck table, current-label checkpoint/CSV counts, merged build-metadata correction | [Jump](#branch-arena259cc0eb-wine-manager-android) |
 | `arena/814c691f-wine-manager-android` | not opened yet | historical checklist | Cleanup of dead code, Profile + Settings, build info in App Information, debug test-data restore, backlog and docs rewrite | [Jump](#branch-arena814c691f-wine-manager-android) |
 | `arena/a8add687-wine-manager-android` | #5, merged 2026-10-15 | in `main` | Toolchain matched to Code on the Go (AGP 9.3.1, Kotlin 2.3.21, Gradle 9.6.1); **reverted on this branch to AGP 9.1.1 / Kotlin 2.2.10 / Gradle 9.3.1** | [Jump](#branch-arenaa8add687-wine-manager-android) |
@@ -23,6 +25,79 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/5dc78d5f-wine-manager-android`
+
+**Build it:** `git checkout arena/5dc78d5f-wine-manager-android`; build/install the debug build as usual (nothing here writes cellar data).
+
+**What changed:** the **Large image dataset test** row in Settings opens the 125-label Wine App Labels page, which had no export controls; it now prepares a scored or raw diagnostics CSV and saves each part through the system document picker. On the same screen, **Prod v1.0 / v2.0 / v3.0 are now captured once per photo and frozen on the device** (only Lab v4 re-runs), and the legacy 168-photo `PhoneCorpusActivity` page, its importer and its debug photo bundle were deleted.
+
+### Large image dataset test — CSV save restored
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings → Large image dataset test**. Under **Scored results** there is a **CSV export** section with **Copy scored stats**, **Prepare scored CSV export**, **Prepare raw diagnostics CSV export** and **Split an existing CSV for upload**. With no checkpointed photos the two Prepare buttons are disabled; after a few photos they enable.
+2. [ ] Tap **Prepare scored CSV export**: a **Save CSV · n.nn MB** button appears. Tap it, pick a folder in the system picker and save. The status line names the saved file, and the file opens in a spreadsheet with one summary row plus field and `pipeline_step` rows for each version (the `mode` and `pipeline` columns tell Prod v1.0 / v2.0 / v3.0 / Lab v4 apart).
+3. [ ] Tap **Prepare raw diagnostics CSV export** and save it the same way. It adds `image_summary`, `tokens`, `engine_timings`, `trace`, `pipelines` and `pipeline_funnel` rows; no image, photo path or account information appears in either file.
+4. [ ] Tap a **Save** button and cancel the system dialog: nothing is written, the button stays, and no error message appears. Save the same part again successfully.
+5. [ ] Watch the status while preparing/saving an export and then returning from the picker: there is no "Stopping after the current photo" message and no run starts by itself (opening the picker is not a benchmark background pause).
+6. [ ] Use **Split an existing CSV for upload** on a saved export larger than 25 MB: numbered parts appear with the same header and complete records; each one saves separately. A small file is offered as a single part, unchanged.
+7. [ ] Start a run, then try the export buttons during it: they stay disabled until the run stops, and **Start / resume remaining photos** stays disabled while a CSV is being prepared or saved.
+
+### Large image dataset test — Prod versions frozen, legacy page retired
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a **fresh install** (clear app data first), open **Profile → Settings → Large image dataset test**. Only **Lab v4** has a selectable radio; **Prod v1.0**, **Prod v2.0** and **Prod v3.0** are greyed out and show `Baseline not captured yet · will run once for each remaining photo`. The page now carries only the title, the one-line subtitle, the mode rows and the counts — the long explanatory paragraphs under each section are gone.
+2. [ ] Tap **Start / resume (first pass also captures Prod)** and let a few photos finish. Each photo shows “Running Lab v4 + capturing Prod v1.0, Prod v2.0, Prod v3.0”. The matrix shows all four rows.
+3. [ ] Stop, force-stop the app, reopen the screen: the Prod rows show the same numbers as before the restart, and **Prod baselines captured: n/125 photos** is unchanged. Then tap **Start / resume** again: the per-photo message no longer names the Prod versions (only Lab v4), and the Prod rows do not move while Lab's row updates.
+4. [ ] Update/reinstall the APK over the existing install (same signing key, e.g. a new debug build), reopen the screen: **Prod baselines captured** still reports the old photo count and the OLD build SHA in “captured by …”. Prod rows are unchanged; no Prod version re-runs. (Uninstall or **Clear storage** is expected to lose the frozen records.)
+5. [ ] With an install that already has Prod checkpoints from an earlier build (the previous branch's four-version run), open the screen once: the status line reports **promoted** photos, and the Prod rows appear without a second OCR pass. Only completed attempts are promoted; photos whose newest attempt failed are still captured on the next Start.
+6. [ ] Under **Retry failed / partial**, retry after a photo whose Prod capture failed: only that photo's Prod version re-runs, and its frozen record is replaced. Photos already frozen correctly are never re-run.
+7. [ ] Prepare and save both CSVs: Prod rows carry `result_origin=frozen_baseline`, `run_id=frozen-baseline` and `captured_build`, while Lab rows carry this run's `run_id`; the raw file has the Lab `tokens`/`trace`/`pipelines`/`pipeline_funnel` rows and only the frozen Prod `pipeline_step` aggregates (no fabricated token rows).
+8. [ ] Confirm the retired page is gone: `PhoneCorpusActivity`, `PhoneCorpusViewModel`, `PhoneCorpusCsvTable`, the 168-photo `app/src/debug/assets/phone-corpus-v1/` bundle and its manifest entry no longer exist; there is no **Import scored results CSV** anywhere; the debug APK still installs (no missing-asset crash on the Settings screen, the OCR Labs or Database Lookup).
+9. [ ] Run `tools/run-pipeline-funnel-checks.sh` if Kotlin on the host is available, and on a disposable emulator run `PipelineFunnelDeviceTest` (it now reads `wine-app-labels-v1/inputs.json`).
+
+### Large image dataset test — no wrapped words in the diagnostics table
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Pipeline bottleneck matrix** on a phone-width screen. No header word breaks mid-line ("Wine name", "Sub-region" are on one line), no step label wraps onto a second or third line, and no count cell such as `12/3 · NR 1 · ? 0 · NA 2` wraps.
+2. [ ] The table scrolls horizontally to reach the later field columns, and the header row stays aligned with every body row while scrolling. Rotate to landscape: with more width, less (or no) scrolling is needed and the columns keep their measured widths.
+3. [ ] Tap **+** on a row: the definition panel spans the full table width and is not clipped by the scroll edge. Tap **−** to collapse.
+4. [ ] The scored-results section no longer shows the "Fully correct = …" legend, and the screen shows no "Ready. Only the 125 retained workbook labels…" line after loading (the counts and captions carry that information).
+
+## Branch `arena/18cd55a1-wine-manager-android`
+
+**Build it:** `git checkout arena/18cd55a1-wine-manager-android`; build/install the debug build as usual (wireless debugging is fine — nothing here writes cellar data).
+
+**What changed:** the Wine App Labels benchmark scores all four versions per photo in lockstep; Prod v3.0 is the current spatial pipeline against the LWIN producer index only, while Lab v4 (`lab-v4-expanded-producers`) runs the identical pipeline against the new Lab-only expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OpenStreetMap candidates, 78,615 rows); the Database Lookup Producer search covers all producer databases in one lookup (per-database listing with counts), with explanatory text removed from the top of the Database Lookup and Large image dataset test pages; the diagnostic bottleneck table is colored and condensed to fit the screen. Host checks: 219 Python contract tests pass; no Android build or device run yet.
+
+### Database Lookup — one search per type, databases listed
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Database Lookup**: the page starts directly at **Search in** — no paragraphs above it, and no explanatory text under the search field. The dropdown offers only **Producer**, **Wine name**, **Appellation**.
+2. [ ] With **Producer** selected, **Databases searched** lists **LWIN: 33,160**, **OpenStreetMap candidate: 11,661**, **TTB permit candidate: 14,849** and **X-Wines candidate: 18,945** records. Browsing with an empty search box pages through all **78,615** records via **Load next 50 producers**, and each card’s context names its database (e.g. “LWIN · France”, “X-Wines candidate”).
+3. [ ] Search a supplemental-only winery name (e.g. “001 Vintners”): it appears in the ordinary **Producer** results with the **TTB permit candidate** context. Search an LWIN producer: its context reads “LWIN · <country>”.
+4. [ ] Open the country selector: the first entry is **No country recorded · 45455 producers** (supplemental rows carry no country); country filtering still works (e.g. France · 13891).
+5. [ ] Switch to **Wine name**: **Databases searched** lists **LWIN wine names: 101,326** and **Scanner knowledge base wine names: 5** records (more only if you have imported OpenWines data). Search “Tignanello”: a result appears with the context **Producer: Antinori** from the LWIN wine index. Search “Koonunga”: **Koonunga Hill Chardonnay** and **Koonunga Hill Shiraz** are the first two results with **Edit distance 0** (exact word match), ahead of short look-alikes like Codalunga. Type “Koonunga” letter by letter: no red “coroutine scope left the composition” error may appear while typing; only the final query's results show.
+6. [ ] Switch to **Appellation**: **Databases searched** lists **Bundled origins appellations** (several hundred) and **Scanner knowledge base appellations: 9** records. Search “Oakville” or “Barolo”: results appear with their parent chain (region · country) as context — before this fix only the 9 fixture appellations could ever be found.
+
+### Large image dataset test — top text removed
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings → Large image dataset test**: directly under the title there are no explanatory paragraphs — the mode radio options follow immediately, with no per-version description text under them. The status line, **Checkpointed** count and Start/Stop controls work as before.
+
+### Benchmark — Prod v3.0 (LWIN-only) vs Lab v4 (expanded)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Wine App Labels** (125-label benchmark). Prod v3.0 keeps its existing LWIN-only checkpoints — Attempted/field counts are already populated without a full re-run (the 0/35 merged-readings run is ignored). Lab v4 starts fresh: Attempted begins at 0 and backfills photo by photo in lockstep with the other versions; the first Lab v4 photo may pause once while the ~27 MB expanded index copies into the cache.
+2. [ ] Let a few photos run, then compare rows: where the expanded index names a producer LWIN lacks, Lab v4's decision names the winning supplemental source and `lexical_support_sources` carries it; suggestions remain YELLOW / confirm manually. Prod v3.0 results for the same photos match the pre-round LWIN-only results.
+3. [ ] The bottleneck table fits the screen without horizontal scrolling: the step column shows only short labels, the six field columns stay readable (no mid-word header breaks), passed counts are green and failed red in light/dark themes, and **+** expands a row to the full step title, branch and definition.
+4. [ ] On **Large image dataset test**, select a mode whose results were saved by a previous build (e.g. Lab v4 from before the expanded-producers rename): the page restores them read-only (“Saved results from build … restored”) with **Scored results**, **Copy scored stats** and **Prepare scored CSV export** visible — not “Cannot load benchmark”. Prepare and Save the scored CSV, then **Import scored results CSV** on that file: it loads read-only too, and the per-photo details still show the file's own (old) pipeline ID rather than the current one.
 
 ## Branch `arena/259cc0eb-wine-manager-android`
 
@@ -32,7 +107,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 1. [ ] Keep this session's assigned branch. Build with the pinned real Android toolchain: `./gradlew :app:assembleDebug :app:testDebugUnitTest`. App Information must show **0.5.6 (57)** and retain 12-character commit, branch, dirty state, build time and ABI information (Bug-027 removed only a duplicate declaration).
 2. [ ] On a **disposable emulator only**, run `./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yourapp.wine.textlab.PipelineFunnelDeviceTest`. This synthetic-observation fixture opens the actual bundled producer/wine SQLite assets, verifies a supported pair reaches preview, compact checkpoint, scorer and CSV, and does not run OCR or claim recognition accuracy.
-3. [ ] Open **Profile → Settings → Run bundled 168-photo benchmark**. With no attempted photos, pass/fail cells must remain blank rather than inventing failures. On a disposable emulator at 320dp/360dp portrait widths, verify six columns (Producer, Wine name, Country, Region, Subregion, Vintage), horizontal scrolling, generalized Producer/Wine resolver rows, and one each for final-field population and per-field correctness. Each default row is one line; **+** reveals only its full, wrapped description while counts remain visible. Verify theme-colored borders separate every row and column, passed counts render green and failed counts red with adequate contrast in light and dark themes. Lab omits production-only preparation; Production omits Lab-only resolver stages. Shared stages display one merged shared count, not six copies. Field counts appear only where relevant. **All six fields correct** is last and matches the complete-label total. Verify matrix/copy stats and preserved scalar CSV schema, rotation persistence and large fonts. Device rendering remains unverified; host checks cover logic/source constraints only.
+3. [ ] Open **Profile → Settings → Large image dataset test**. With no attempted photos, pass/fail cells must remain blank rather than inventing failures. On a disposable emulator at 320dp/360dp portrait widths, verify six columns (Producer, Wine name, Country, Region, Subregion, Vintage), horizontal scrolling, generalized Producer/Wine resolver rows, and one each for final-field population and per-field correctness. Each default row is one line; **+** reveals only its full, wrapped description while counts remain visible. Verify theme-colored borders separate every row and column, passed counts render green and failed counts red with adequate contrast in light and dark themes. Lab omits production-only preparation; Production omits Lab-only resolver stages. Shared stages display one merged shared count, not six copies. Field counts appear only where relevant. **All six fields correct** is last and matches the complete-label total. Verify matrix/copy stats and preserved scalar CSV schema, rotation persistence and large fonts. Device rendering remains unverified; host checks cover logic/source constraints only.
 4. [ ] Run only a small chosen smoke subset by stopping after a few photos; do not request a fresh full 168-photo OCR pass for this feature. In Lab verify separate ML Kit/Paddle stages, LWIN setup, per-engine resolver gates, agreement/ambiguity/protection and final-field coverage. Successful empty OCR may complete but must not pass useful-text; a timeout may still have usable real partial readings.
 5. [ ] Copy scored stats and prepare/save **scored CSV** and **raw diagnostics CSV**. Filter `row_type=pipeline_step`: screen, copied stats and both CSVs must agree on counts. Each step's passed + blocked + not reached + not recorded + N/A must equal distinct attempted labels; reached = passed + blocked. Saved-v2/baseline comparison rows must remain but never supply a second live funnel.
 6. [ ] Stop/resume and restart the activity/process. Current small checkpoints must preserve the table after raw arrays are stripped. Retry one failure on a disposable fixture: one image contributes only its latest attempt to the aggregate, while raw rows retain older attempts.

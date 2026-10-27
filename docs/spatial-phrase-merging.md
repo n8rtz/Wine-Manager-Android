@@ -48,6 +48,8 @@ The **Lab** benchmark option now enables this module before guarded extraction. 
 
 Lab executes/scores only this latest variant, not a separate v2.0 contender. The scorer uses `spatial_evidence_summary`, with `spatial_phrase` and `spatial_evidence_*` trace rows available in raw CSV. There is no metadata subtraction or residual-cleanup stage in this update.
 
+**Update (2026-10-26, corrected):** both benchmark spatial contenders run the current raw-preserving pipeline described in the 2026-10-25 update — original readings feed extraction unchanged and spatial phrases serve only as lookup spans for the producer/linked-wine resolvers. They differ only in producer data: **Prod v3.0** (`production-v3.0-lwin-only`, stage `spatial_lwin_evidence_summary`, candidate `spatial_lwin_lab`) resolves producers against the verified LWIN producer index only, while **Lab v4** (`lab-v4-expanded-producers`, stage `spatial_evidence_summary`, candidate `spatial_lab`) uses the Lab expanded producer index (the same LWIN subset plus source-tagged X-Wines/TTB/OpenStreetMap winery candidates; see `producer-source-expansion.md`). The historical replacement-readings behavior described below is NOT used by any current contender; a brief experiment restoring it as Prod v3.0 (2026-10-26, one build) scored 0/35 fully correct and was reverted the same day.
+
 Geometry alone cannot distinguish a wrapped producer from a nearby cuvée, legal line or unrelated slogan. Preserve original readings alongside proposals; later semantic stages must be able to reject inappropriate joins. Future residual subtraction must remain a parallel candidate path, not erase evidence from the independent identity pipeline.
 
 ## Validation

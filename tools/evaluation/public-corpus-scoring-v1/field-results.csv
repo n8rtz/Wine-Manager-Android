@@ -233,19 +233,19 @@ review_number,image,identity_group,pipeline,field,reference_status,target,accept
 13,127dabca2115e60936586c92c7fd81df18a8d019.jpg,identity-013,experimental,region,known,Provence,"[""Provence""]",label_or_appellation_parent_mapping_see_notes,Provence,YELLOW,correct,False
 13,127dabca2115e60936586c92c7fd81df18a8d019.jpg,identity-013,experimental,subregion,known,Coteaux d'Aix-en-Provence,"[""Coteaux d'Aix-en-Provence""]",visible_appellation_normalized,Coteaux d'Aix-en-Provence,YELLOW,correct,False
 13,127dabca2115e60936586c92c7fd81df18a8d019.jpg,identity-013,experimental,vintage,known,2012,"[""2012""]",visible_label,2012,YELLOW,correct,False
-14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,producer,known,Club des Sommeliers,"[""Club des Sommeliers""]",visible_label,Appellotion rozes Hermitage Controle,YELLOW,wrong,True
+14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,producer,unknown,,[],not_established_from_photo,Appellotion rozes Hermitage Controle,YELLOW,unscored_filled,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,wine_name,known,Crozes-Hermitage,"[""Crozes-Hermitage""]",visible_label,Crozes-Hermitage,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,region,known,Rhône,"[""Rhône"", ""Rhône Valley"", ""Vallée du Rhône""]",label_or_appellation_parent_mapping_see_notes,Rhône,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,subregion,known,Crozes-Hermitage,"[""Crozes-Hermitage""]",visible_appellation_normalized,Crozes-Hermitage,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,production,vintage,known,2020,"[""2020""]",visible_label,2020,YELLOW,correct,True
-14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,producer,known,Club des Sommeliers,"[""Club des Sommeliers""]",visible_label,,RED,abstained,True
+14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,producer,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,wine_name,known,Crozes-Hermitage,"[""Crozes-Hermitage""]",visible_label,Crozes-Hermitage,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,region,known,Rhône,"[""Rhône"", ""Rhône Valley"", ""Vallée du Rhône""]",label_or_appellation_parent_mapping_see_notes,Rhône,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,subregion,known,Crozes-Hermitage,"[""Crozes-Hermitage""]",visible_appellation_normalized,Crozes-Hermitage,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,lab_baseline,vintage,known,2020,"[""2020""]",visible_label,2020,YELLOW,correct,True
-14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,experimental,producer,known,Club des Sommeliers,"[""Club des Sommeliers""]",visible_label,,RED,abstained,True
+14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,experimental,producer,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,experimental,wine_name,known,Crozes-Hermitage,"[""Crozes-Hermitage""]",visible_label,CROZES-HERMITAGE,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,experimental,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 14,1312f082dcbacf739b6edcc04b4a55d731254782.jpg,identity-014,experimental,region,known,Rhône,"[""Rhône"", ""Rhône Valley"", ""Vallée du Rhône""]",label_or_appellation_parent_mapping_see_notes,,RED,abstained,True
@@ -269,19 +269,19 @@ review_number,image,identity_group,pipeline,field,reference_status,target,accept
 15,17e6154f4689e66187a9b5a1395788463188aa50.jpg,identity-015,experimental,region,known,Rhône,"[""Rhône"", ""Rhône Valley"", ""Vallée du Rhône""]",label_or_appellation_parent_mapping_see_notes,,RED,abstained,True
 15,17e6154f4689e66187a9b5a1395788463188aa50.jpg,identity-015,experimental,subregion,known,Costières de Nîmes,"[""Costières de Nîmes""]",visible_appellation_normalized,,RED,abstained,True
 15,17e6154f4689e66187a9b5a1395788463188aa50.jpg,identity-015,experimental,vintage,known,2019,"[""2019""]",visible_label,2019,YELLOW,correct,True
-16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,producer,known,A. Kolb,"[""A. Kolb"", ""Club des Sommeliers"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,True
+16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,producer,known,A. Kolb,"[""A. Kolb"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,wine_name,known,Crémant d'Alsace Brut,"[""Crémant d'Alsace Brut"", ""Crémant d'Alsace""]",visible_label,Brut,YELLOW,wrong,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,region,known,Alsace,"[""Alsace""]",label_or_appellation_parent_mapping_see_notes,Alsace,YELLOW,correct,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,subregion,unknown,,[],not_established_from_photo,Crémant d'Alsace,YELLOW,unscored_filled,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,production,vintage,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
-16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,producer,known,A. Kolb,"[""A. Kolb"", ""Club des Sommeliers"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,True
+16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,producer,known,A. Kolb,"[""A. Kolb"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,wine_name,known,Crémant d'Alsace Brut,"[""Crémant d'Alsace Brut"", ""Crémant d'Alsace""]",visible_label,,RED,abstained,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,region,known,Alsace,"[""Alsace""]",label_or_appellation_parent_mapping_see_notes,Alsace,YELLOW,correct,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,subregion,unknown,,[],not_established_from_photo,Crémant d'Alsace,YELLOW,unscored_filled,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,lab_baseline,vintage,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
-16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,experimental,producer,known,A. Kolb,"[""A. Kolb"", ""Club des Sommeliers"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,True
+16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,experimental,producer,known,A. Kolb,"[""A. Kolb"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,experimental,wine_name,known,Crémant d'Alsace Brut,"[""Crémant d'Alsace Brut"", ""Crémant d'Alsace""]",visible_label,Brut,YELLOW,wrong,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,experimental,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 16,196206ba90b4bcec8df902c946dfc3a839e352e8.jpg,identity-016,experimental,region,known,Alsace,"[""Alsace""]",label_or_appellation_parent_mapping_see_notes,Alsace,YELLOW,correct,True
@@ -1169,19 +1169,19 @@ review_number,image,identity_group,pipeline,field,reference_status,target,accept
 65,60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,identity-065,experimental,region,known,Bordeaux,"[""Bordeaux""]",label_or_appellation_parent_mapping_see_notes,Bordeaux,YELLOW,correct,True
 65,60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,identity-065,experimental,subregion,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
 65,60f32c1cae4fb186ae16fd16ea44209da217e2c2.jpg,identity-065,experimental,vintage,known,2013,"[""2013""]",visible_label,2013,YELLOW,correct,True
-66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,producer,known,A. Kolb,"[""A. Kolb"", ""Club des Sommeliers"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,False
+66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,producer,known,A. Kolb,"[""A. Kolb"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,wine_name,known,Crémant d'Alsace Brut,"[""Crémant d'Alsace Brut"", ""Crémant d'Alsace""]",visible_label,Brut,YELLOW,wrong,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,region,known,Alsace,"[""Alsace""]",label_or_appellation_parent_mapping_see_notes,,RED,abstained,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,subregion,unknown,,[],not_established_from_photo,,RED,unscored_blank,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,production,vintage,unknown,,[],not_established_from_photo,,RED,unscored_blank,False
-66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,producer,known,A. Kolb,"[""A. Kolb"", ""Club des Sommeliers"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,False
+66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,producer,known,A. Kolb,"[""A. Kolb"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,wine_name,known,Crémant d'Alsace Brut,"[""Crémant d'Alsace Brut"", ""Crémant d'Alsace""]",visible_label,Methode Traditionnelle,YELLOW,wrong,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,region,known,Alsace,"[""Alsace""]",label_or_appellation_parent_mapping_see_notes,,RED,abstained,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,subregion,unknown,,[],not_established_from_photo,,RED,unscored_blank,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,lab_baseline,vintage,unknown,,[],not_established_from_photo,,RED,unscored_blank,False
-66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,experimental,producer,known,A. Kolb,"[""A. Kolb"", ""Club des Sommeliers"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,False
+66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,experimental,producer,known,A. Kolb,"[""A. Kolb"", ""A Kolb"", ""Kolb""]",visible_label,,RED,abstained,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,experimental,wine_name,known,Crémant d'Alsace Brut,"[""Crémant d'Alsace Brut"", ""Crémant d'Alsace""]",visible_label,Crémant d'Alsace,YELLOW,correct,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,experimental,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,False
 66,645b894ff7240c2defda4b99137192b003f0cebc.jpg,identity-016,experimental,region,known,Alsace,"[""Alsace""]",label_or_appellation_parent_mapping_see_notes,Alsace,YELLOW,correct,False
@@ -1925,19 +1925,19 @@ review_number,image,identity_group,pipeline,field,reference_status,target,accept
 107,a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,identity-107,experimental,region,known,Loire Valley,"[""Loire Valley"", ""Loire"", ""Val de Loire"", ""Vallée de la Loire""]",label_or_appellation_parent_mapping_see_notes,Loire,YELLOW,correct,False
 107,a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,identity-107,experimental,subregion,known,Anjou,"[""Anjou"", ""Rosé d'Anjou"", ""Cabernet d'Anjou""]",visible_appellation_normalized,Cabernet d'Anjou,YELLOW,correct,False
 107,a722f8a82285db1174d13bac9ae3c1d01ebb3982.jpg,identity-107,experimental,vintage,known,2020,"[""2020""]",visible_label,,RED,abstained,False
-108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,producer,known,Club des Sommeliers,"[""Club des Sommeliers""]",visible_label,SOM MELIERS,YELLOW,wrong,True
+108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,producer,unknown,,[],not_established_from_photo,SOM MELIERS,YELLOW,unscored_filled,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,wine_name,known,Médoc,"[""Médoc""]",visible_label,Médoc,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,region,known,Bordeaux,"[""Bordeaux""]",label_or_appellation_parent_mapping_see_notes,Bordeaux,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,subregion,known,Médoc,"[""Médoc""]",visible_appellation_normalized,Médoc,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,production,vintage,known,2017,"[""2017""]",visible_label,2017,YELLOW,correct,True
-108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,producer,known,Club des Sommeliers,"[""Club des Sommeliers""]",visible_label,,RED,abstained,True
+108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,producer,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,wine_name,known,Médoc,"[""Médoc""]",visible_label,Médoc,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,region,known,Bordeaux,"[""Bordeaux""]",label_or_appellation_parent_mapping_see_notes,Bordeaux,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,subregion,known,Médoc,"[""Médoc""]",visible_appellation_normalized,Médoc,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,lab_baseline,vintage,known,2017,"[""2017""]",visible_label,2017,YELLOW,correct,True
-108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,experimental,producer,known,Club des Sommeliers,"[""Club des Sommeliers""]",visible_label,,RED,abstained,True
+108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,experimental,producer,unknown,,[],not_established_from_photo,,RED,unscored_blank,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,experimental,wine_name,known,Médoc,"[""Médoc""]",visible_label,MÉDOC,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,experimental,country,known,France,"[""France""]",label_or_appellation_inference_see_notes,France,YELLOW,correct,True
 108,a7c1d1ed5545107151c48162125da00767ebe922.jpg,identity-108,experimental,region,known,Bordeaux,"[""Bordeaux""]",label_or_appellation_parent_mapping_see_notes,Bordeaux,YELLOW,correct,True

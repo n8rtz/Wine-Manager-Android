@@ -1,21 +1,16 @@
-# Producer reference data — Settings lookup and debug Lab
+# Producer reference data included in the app
 
-## Primary producer/brand layer
+## Primary producer/brand and linked-wine data
 
 LWIN by Liv-ex — https://www.liv-ex.com/lwin/
 Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
 
-Derived from the user-supplied LWINdatabase.xlsx. Input SHA-256, supplied GitHub blob and acquisition review are recorded in manifest.json. This records user-supplied primary-export provenance, not an independent download or a digital signature from Liv-ex.
+Derived from the user-supplied LWINdatabase.xlsx. Input SHA-256, supplied GitHub blob, and acquisition review are recorded in `manifest.json`. This records user-supplied primary-export provenance, not an independent download or a digital signature from Liv-ex.
 
-Changes: retain explicit producer title/name and country groups plus explicit WINE names and producer–wine relationships for eligible live wine records; normalize matching keys separately from display names; retain LWIN7 relationships; exclude spirits, beer, cider, other/unknown types, inactive records, explicit mixed/gift packs and missing producer identities. Wine names are stored in a separate index, never as producer aliases. Missing WINE values are not reconstructed. No DISPLAY_NAME fallback, inferred producer aliases or geography autofill. A producer/brand group is not necessarily one physical winery.
+The packaged producer database retains explicit producer title/name and country groups for eligible live wine records. A separate linked-wine database retains explicit LWIN WINE names and producer relationships; wine names are not producer aliases. The build excludes spirits, beer, cider, other/unknown types, inactive records, explicit mixed/gift packs, and missing producer identities. Missing WINE values are not reconstructed. No DISPLAY_NAME fallback, inferred producer aliases, or geography autofill is used. A producer/brand group is not necessarily one physical winery.
 
-## Supporting layers (separate files; never replacement names)
+## Sources deliberately not included in the producer database
 
-OSM: © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
-ODbL 1.0: https://opendatacommons.org/licenses/odbl/1-0/
-Snapshot via OpenHistoryMap/openwinemap, commit 98a5bf983abd23b1f6255bcb60bc73bd99b6b69e.
-Changes: explicit named craft/industrial wineries only; exclude non-winery, inactive, unnamed and flagged non-grape-name features. Store normalized name and source ID only. Available for attribution/diagnostic support, not independent OCR votes. The separately licensed derived layer remains redistributable under ODbL; review obligations before merging into any other database.
+TTB permit-holder lists, OpenStreetMap winery listings, and X-Wines winery/producer/brand name lists were not independently verified as label producers. They are **not packaged in `app/src/main/assets` or loaded by producer matching**. Their historical source notes and offline review tooling remain under `tools/producer-sources`; the source-refresh script writes review outputs outside app assets and does not modify the packaged manifest.
 
-TTB: supplied cached FOIA List of Permittees, Git blob 8bf9737463092b0a2ef233139dee8e88a0f6fae8 in n8rtz/Wine-Reference-Drop. Only filtered Wine Producer operating-name records; no legal-owner alias substitution. The source archive claims public-domain/CC0; its freshness/authenticity has not been independently checked with TTB. Exact source record IDs retained.
-
-Build tools, source revisions and reproduction instructions: tools/producer-sources and docs/lab-primary-producer-resolver.md. No label artwork included. All suggestions require confirmation; reference membership is not proof of identity or wine origin.
+The 125 workbook-linked label photographs are included in the normal app assets at the owner's direction for the on-device benchmark. The source repository declares no image license. Do not redistribute the photos or an APK containing them beyond authorized project use without confirming rights.
