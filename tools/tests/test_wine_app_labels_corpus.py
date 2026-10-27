@@ -376,6 +376,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("currentOnDismiss()", activity)
 
     def test_lab_v4_last_build_row_and_scalar_results_log_contracts(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
 
@@ -403,6 +404,18 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             '"unsupported"',
             '"unresolved"',
             '"deadline_partial"',
+            '"producer_correct"',
+            '"producer_incorrect"',
+            '"wine_name_correct"',
+            '"wine_name_incorrect"',
+            '"country_correct"',
+            '"country_incorrect"',
+            '"region_correct"',
+            '"region_incorrect"',
+            '"subregion_correct"',
+            '"subregion_incorrect"',
+            '"vintage_correct"',
+            '"vintage_incorrect"',
         ):
             self.assertIn(field, build_log)
         for forbidden in ('"raw_text"', '"tokens"', '"trace"', "BitmapFactory", "images/"):
@@ -414,6 +427,14 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("val lastBuildEntry = buildLog?.previousBuildEntry()", viewmodel)
         self.assertIn("backfillBuildLog(logStore, signature)", viewmodel)
         self.assertIn('WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))', viewmodel)
+
+        # Granular per-field Current build vs Last build table sits at the bottom of Scored results
+        # (above CSV export) using green/red "correct/incorrect" passFailLabel formatting.
+        scored_section = activity.split('Text("Scored results"', 1)[1].split('Text("CSV export"', 1)[0]
+        self.assertIn("BuildFieldComparisonTable(", scored_section)
+        self.assertIn('"Current build" to currentScores', activity)
+        self.assertIn('"Last build" to lastBuildScores', activity)
+        self.assertIn("passFailLabel(score.correct, score.incorrect, passColor, failColor)", activity)
 
     def test_background_execution_and_lab_ocr_cache_contracts(self):
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()

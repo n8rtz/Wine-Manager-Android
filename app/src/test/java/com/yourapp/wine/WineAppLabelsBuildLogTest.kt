@@ -91,4 +91,60 @@ class WineAppLabelsBuildLogTest {
             assertFalse(rawCsv.contains(forbidden))
         }
     }
+
+    @Test
+    fun summarizesAndPersistsPerFieldCorrectIncorrectScoresAcrossBuilds() {
+        val logFile = temp.newFile("benchmark-field-scores-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+
+        val csvRows = listOf(
+            mapOf("row_type" to "summary", "Pipeline" to "Lab v4"),
+            mapOf("row_type" to "field", "field" to "producer", "reference_status" to "expected_value", "outcome" to "correct_value"),
+            mapOf("row_type" to "field", "field" to "producer", "reference_status" to "expected_value", "outcome" to "wrong_value"),
+            mapOf("row_type" to "field", "field" to "wine_name", "reference_status" to "unresolved", "outcome" to "unscored_blank"),
+            mapOf("row_type" to "field", "field" to "wine_name", "reference_status" to "expected_value", "outcome" to "missing_value"),
+            mapOf("row_type" to "field", "field" to "country", "reference_status" to "expected_value", "outcome" to "correct_value"),
+            mapOf("row_type" to "field", "field" to "country", "reference_status" to "expected_blank", "outcome" to "correct_blank"),
+            mapOf("row_type" to "field", "field" to "region", "reference_status" to "expected_value", "outcome" to "correct_value"),
+            mapOf("row_type" to "field", "field" to "region", "reference_status" to "expected_blank", "outcome" to "unsupported_fill"),
+            mapOf("row_type" to "field", "field" to "subregion", "reference_status" to "expected_blank", "outcome" to "correct_blank"),
+            mapOf("row_type" to "field", "field" to "subregion", "reference_status" to "expected_value", "outcome" to "execution_failed"),
+            mapOf("row_type" to "field", "field" to "vintage", "reference_status" to "expected_value", "outcome" to "correct_value"),
+            mapOf("row_type" to "field", "field" to "vintage", "reference_status" to "unresolved", "outcome" to "unscored_filled"),
+        )
+        val fieldScores = WineAppLabelsBuildLog.summarizeFieldRows(csvRows)
+        assertEquals(WineAppLabelsBuildLog.FieldScore(1, 1), fieldScores["producer"])
+        // Unresolved reference rows are excluded from both correct and incorrect counts.
+        assertEquals(WineAppLabelsBuildLog.FieldScore(0, 1), fieldScores["wine_name"])
+        assertEquals(WineAppLabelsBuildLog.FieldScore(2, 0), fieldScores["country"])
+        assertEquals(WineAppLabelsBuildLog.FieldScore(1, 1), fieldScores["region"])
+        assertEquals(WineAppLabelsBuildLog.FieldScore(1, 1), fieldScores["subregion"])
+        assertEquals(WineAppLabelsBuildLog.FieldScore(1, 0), fieldScores["vintage"])
+
+        val buildPrev = WineAppLabelsBuildLog.BuildInfo(
+            buildKey = "prev:clean",
+            buildNumber = "#57 (prev)",
+            versionCode = "57",
+            buildCommit = "prev",
+            branch = "main",
+        )
+        log.recordSummary(
+            runId = "run-prev",
+            buildInfo = buildPrev,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v4", "2", "1", "0/1", "1", "0", "0", "4", "1", "1", "2", "1", "2", "0"),
+            timestampMs = 1_700_100_000_000L,
+            fieldScores = fieldScores,
+        )
+
+        val restored = log.previousBuildEntry("curr:clean")
+        assertNotNull(restored)
+        assertTrue(restored!!.hasFieldScores)
+        assertEquals("1/1", restored.fieldScores["producer"]?.label())
+        assertEquals("0/1", restored.fieldScores["wine_name"]?.label())
+        assertEquals("2/0", restored.fieldScores["country"]?.label())
+        assertEquals("1/1", restored.fieldScores["region"]?.label())
+        assertEquals("1/1", restored.fieldScores["subregion"]?.label())
+        assertEquals("1/0", restored.fieldScores["vintage"]?.label())
+    }
 }

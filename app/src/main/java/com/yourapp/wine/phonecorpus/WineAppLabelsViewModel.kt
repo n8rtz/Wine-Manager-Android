@@ -67,6 +67,10 @@ internal data class WineAppLabelsState(
     val currentImageStartedRealtimeMs: Long? = null,
     /** Remaining images to process in the active pass (or remaining uncheckpointed/uncaptured when idle). */
     val remainingImages: Int = WINE_APP_LABEL_COUNT,
+    /** Per-field correct/incorrect counts for the current build's Lab v4 run. */
+    val currentBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
+    /** Per-field correct/incorrect counts for the immediately preceding distinct build's Lab v4 run. */
+    val lastBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
 )
 
 private data class RunTiming(
@@ -313,19 +317,23 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private fun scoreboard() = PhoneCorpusScoreboard(app, "wine-app-labels-v1")
 
     private fun backfillBuildLog(log: WineAppLabelsBuildLog, expectedCorpus: String) {
-        val recordedRunIds = log.readEntries().mapTo(hashSetOf()) { it.runId }
+        val existingByRunId = log.readEntries().associateBy { it.runId }
         val scorer = scoreboard()
         for (dir in matchingRunFolders(expectedCorpus).asReversed()) {
-            if (dir.name in recordedRunIds) continue
+            val prior = existingByRunId[dir.name]
+            if (prior != null && prior.hasFieldScores) continue
             val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
             if (metadata.optString("mode") != PhoneCorpusRunner.Mode.LAB.name) continue
             val preds = runCatching { predictions(dir) }.getOrNull().orEmpty()
             if (preds.isEmpty()) continue
-            val summaryRow = runCatching { scorer.build(preds, PhoneCorpusRunner.Mode.LAB).rows.single() }.getOrNull() ?: continue
+            val built = runCatching { scorer.build(preds, PhoneCorpusRunner.Mode.LAB) }.getOrNull() ?: continue
+            val summaryRow = built.rows.singleOrNull() ?: continue
+            val fieldScores = WineAppLabelsBuildLog.summarizeFieldRows(built.csv)
             val info = WineAppLabelsBuildLog.buildInfoFromSavedRun(metadata, preds)
-            val ts = File(dir, "current").listFiles().orEmpty().maxOfOrNull { it.lastModified() }
+            val ts = prior?.timestampMs
+                ?: File(dir, "current").listFiles().orEmpty().maxOfOrNull { it.lastModified() }
                 ?: metadata.optLong("created_ms", dir.lastModified())
-            log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts)
+            log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts, fieldScores)
         }
     }
 
@@ -343,6 +351,12 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         }
         val labPreds = byMode.getValue(PhoneCorpusRunner.Mode.LAB)
         val labCount = labPreds.size
+        val labCsv = if (mode == PhoneCorpusRunner.Mode.LAB) {
+            currentBoard.csv
+        } else {
+            scoreboard.build(labPreds, PhoneCorpusRunner.Mode.LAB).csv
+        }
+        val currentFieldScores = WineAppLabelsBuildLog.summarizeFieldRows(labCsv)
         val activeLabDir = labFolder
         if (activeLabDir != null && labCount > 0) {
             val runMeta = runCatching { JSONObject(File(activeLabDir, "run.json").readText()) }.getOrNull()
@@ -355,7 +369,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     ?: runMeta?.optLong("created_ms", activeLabDir.lastModified())
                     ?: System.currentTimeMillis()
             }
-            buildLog?.recordSummary(activeLabDir.name, info, PhoneCorpusRunner.Mode.LAB, modeRows.first(), ts)
+            buildLog?.recordSummary(activeLabDir.name, info, PhoneCorpusRunner.Mode.LAB, modeRows.first(), ts, currentFieldScores)
         }
         val ocrReady = ocrCache?.count(inputHashes()) ?: 0
         val captures = BASELINE_MODES.mapNotNull { version -> baselines?.capture(version) }.associateBy { it.mode }
@@ -366,6 +380,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val lastBuildEntry = buildLog?.previousBuildEntry()
         val lastBuildRow = lastBuildEntry?.toTableRow()
             ?: WineAppLabelsBuildLog.emptyLastBuildRow(displayHeaders.size)
+        val lastBuildFieldScores = lastBuildEntry?.fieldScores.orEmpty()
         val comparisonRows = listOf(modeRows.first(), lastBuildRow) + modeRows.drop(1)
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · Lab v4 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
@@ -377,6 +392,11 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
+            appendLine("Build | Producer | Wine name | Country | Region | Subregion | Vintage")
+            fun formatFieldRow(title: String, scores: Map<String, WineAppLabelsBuildLog.FieldScore>): String =
+                (listOf(title) + PhoneCorpusMath.fields.map { scores[it]?.label() ?: "—" }).joinToString(" | ")
+            appendLine(formatFieldRow("Current build", currentFieldScores))
+            appendLine(formatFieldRow("Last build", lastBuildFieldScores))
         }
         val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
         val timing = readRunTiming(activeLabDir)
@@ -388,6 +408,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     completed = captured, total = WINE_APP_LABEL_COUNT, board = board,
                     labCompleted = labCount, ocrCached = ocrReady,
                     captures = captures, captureRemaining = captureRemaining,
+                    currentBuildFieldScores = currentFieldScores,
+                    lastBuildFieldScores = lastBuildFieldScores,
                 )
             } else {
                 it.copy(
@@ -400,6 +422,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     etaPerImageMs = idleAvg,
                     currentImageStartedRealtimeMs = null,
                     remainingImages = idleRemaining,
+                    currentBuildFieldScores = currentFieldScores,
+                    lastBuildFieldScores = lastBuildFieldScores,
                 )
             }
         }
@@ -579,6 +603,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 elapsedRunMs = 0L, runSegmentStartedRealtimeMs = null, avgImageMs = null,
                 etaPerImageMs = null, currentImageStartedRealtimeMs = null,
                 remainingImages = WINE_APP_LABEL_COUNT,
+                currentBuildFieldScores = emptyMap(), lastBuildFieldScores = emptyMap(),
                 message = "Loading saved 125-label results…",
             )
         }

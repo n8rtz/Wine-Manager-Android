@@ -299,6 +299,11 @@ class WineAppLabelsActivity : ComponentActivity() {
                             }
                         }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    BuildFieldComparisonTable(
+                        currentScores = state.currentBuildFieldScores,
+                        lastBuildScores = state.lastBuildFieldScores,
+                    )
                 }
                 item {
                     Text("CSV export", style = MaterialTheme.typography.titleMedium)
@@ -780,6 +785,68 @@ private fun BenchmarkTimersRow(state: WineAppLabelsState, nowRealtimeMs: Long) {
                     maxLines = 1,
                     softWrap = false,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuildFieldComparisonTable(
+    currentScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    lastBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+) {
+    val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val failColor = MaterialTheme.colorScheme.error
+    val buildColumnWidth = 96.dp
+    val fieldColumnWidth = 88.dp
+    val totalWidth = buildColumnWidth + (fieldColumnWidth.value * FAILURE_FILTER_OPTIONS.size).dp
+    val buildRows = listOf(
+        "Current build" to currentScores,
+        "Last build" to lastBuildScores,
+    )
+    SelectionContainer {
+        Column(Modifier.horizontalScroll(rememberScrollState())) {
+            Row {
+                Text(
+                    "Build",
+                    Modifier.width(buildColumnWidth).padding(4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                FAILURE_FILTER_OPTIONS.forEach { (_, label) ->
+                    Text(
+                        label,
+                        Modifier.width(fieldColumnWidth).padding(4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+            }
+            buildRows.forEach { (title, scores) ->
+                HorizontalDivider(Modifier.width(totalWidth))
+                Row {
+                    Text(
+                        title,
+                        Modifier.width(buildColumnWidth).padding(4.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
+                        val cell = scores[fieldKey]?.let { score ->
+                            passFailLabel(score.correct, score.incorrect, passColor, failColor)
+                        } ?: AnnotatedString("—")
+                        Text(
+                            cell,
+                            Modifier.width(fieldColumnWidth).padding(4.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
             }
         }
     }

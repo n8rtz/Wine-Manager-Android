@@ -34,6 +34,13 @@ internal class WineAppLabelsBuildLog(
         val branch: String,
     )
 
+    data class FieldScore(
+        val correct: Int,
+        val incorrect: Int,
+    ) {
+        fun label(): String = "$correct/$incorrect"
+    }
+
     data class Entry(
         val date: String,
         val time: String,
@@ -59,7 +66,11 @@ internal class WineAppLabelsBuildLog(
         val unsupported: Int,
         val unresolved: Int,
         val deadlinePartial: Int,
+        val fieldScores: Map<String, FieldScore> = emptyMap(),
     ) {
+        val hasFieldScores: Boolean
+            get() = PhoneCorpusMath.fields.all { it in fieldScores }
+
         fun toTableRow(title: String = LAST_BUILD_ROW_TITLE): List<String> = listOf(
             title,
             attempted.toString(),
@@ -102,6 +113,18 @@ internal class WineAppLabelsBuildLog(
             "unsupported" to unsupported.toString(),
             "unresolved" to unresolved.toString(),
             "deadline_partial" to deadlinePartial.toString(),
+            "producer_correct" to (fieldScores["producer"]?.correct?.toString() ?: ""),
+            "producer_incorrect" to (fieldScores["producer"]?.incorrect?.toString() ?: ""),
+            "wine_name_correct" to (fieldScores["wine_name"]?.correct?.toString() ?: ""),
+            "wine_name_incorrect" to (fieldScores["wine_name"]?.incorrect?.toString() ?: ""),
+            "country_correct" to (fieldScores["country"]?.correct?.toString() ?: ""),
+            "country_incorrect" to (fieldScores["country"]?.incorrect?.toString() ?: ""),
+            "region_correct" to (fieldScores["region"]?.correct?.toString() ?: ""),
+            "region_incorrect" to (fieldScores["region"]?.incorrect?.toString() ?: ""),
+            "subregion_correct" to (fieldScores["subregion"]?.correct?.toString() ?: ""),
+            "subregion_incorrect" to (fieldScores["subregion"]?.incorrect?.toString() ?: ""),
+            "vintage_correct" to (fieldScores["vintage"]?.correct?.toString() ?: ""),
+            "vintage_incorrect" to (fieldScores["vintage"]?.incorrect?.toString() ?: ""),
         )
     }
 
@@ -140,6 +163,7 @@ internal class WineAppLabelsBuildLog(
         mode: PhoneCorpusRunner.Mode,
         summaryRow: List<String>,
         timestampMs: Long = System.currentTimeMillis(),
+        fieldScores: Map<String, FieldScore> = emptyMap(),
     ) {
         if (runId.isBlank() || summaryRow.size < EXPECTED_TABLE_COLUMNS) return
         val attempted = summaryRow[1].toIntOrNull() ?: return
@@ -172,15 +196,21 @@ internal class WineAppLabelsBuildLog(
             unsupported = summaryRow[11].toIntOrNull() ?: 0,
             unresolved = summaryRow[12].toIntOrNull() ?: 0,
             deadlinePartial = summaryRow[13].toIntOrNull() ?: 0,
+            fieldScores = fieldScores,
         )
 
         val existing = readEntries().toMutableList()
         val idx = existing.indexOfFirst { it.runId == runId && it.modelVersion == mode.title }
         if (idx >= 0) {
-            if (existing[idx].copy(date = newEntry.date, time = newEntry.time, timestampMs = newEntry.timestampMs) == newEntry) {
+            val merged = if (newEntry.fieldScores.isEmpty() && existing[idx].fieldScores.isNotEmpty()) {
+                newEntry.copy(fieldScores = existing[idx].fieldScores)
+            } else {
+                newEntry
+            }
+            if (existing[idx].copy(date = merged.date, time = merged.time, timestampMs = merged.timestampMs) == merged) {
                 return
             }
-            existing[idx] = newEntry
+            existing[idx] = merged
         } else {
             existing.add(newEntry)
         }
@@ -238,6 +268,26 @@ internal class WineAppLabelsBuildLog(
 
         fun emptyLastBuildRow(columnCount: Int = EXPECTED_TABLE_COLUMNS): List<String> =
             listOf(LAST_BUILD_ROW_TITLE) + List((columnCount - 1).coerceAtLeast(0)) { "—" }
+
+        /**
+         * Summarizes per-field correct / incorrect counts from scored CSV rows (`row_type == "field"`),
+         * excluding `unresolved` reference fields so counts match `score.field.*` and `isFieldFailure`.
+         */
+        fun summarizeFieldRows(csvRows: List<Map<String, String>>): Map<String, FieldScore> {
+            val fieldRows = csvRows.filter { it["row_type"] == "field" }
+            if (fieldRows.isEmpty()) return emptyMap()
+            val byField = fieldRows.groupBy { it["field"].orEmpty() }
+            return PhoneCorpusMath.fields.associateWith { field ->
+                val rows = byField[field].orEmpty()
+                var correct = 0
+                var incorrect = 0
+                for (row in rows) {
+                    if (row["reference_status"] == "unresolved") continue
+                    if (PhoneCorpusMath.correct(row["outcome"].orEmpty())) correct++ else incorrect++
+                }
+                FieldScore(correct = correct, incorrect = incorrect)
+            }
+        }
 
         fun currentBuildKey(): String {
             val commit = BuildConfig.BUILD_COMMIT.ifBlank { "unknown" }
@@ -319,6 +369,15 @@ internal class WineAppLabelsBuildLog(
                 unsupported = map["unsupported"]?.toIntOrNull() ?: 0,
                 unresolved = map["unresolved"]?.toIntOrNull() ?: 0,
                 deadlinePartial = map["deadline_partial"]?.toIntOrNull() ?: 0,
+                fieldScores = buildMap {
+                    for (field in PhoneCorpusMath.fields) {
+                        val correct = map["${field}_correct"]?.toIntOrNull()
+                        val incorrect = map["${field}_incorrect"]?.toIntOrNull()
+                        if (correct != null && incorrect != null) {
+                            put(field, FieldScore(correct = correct, incorrect = incorrect))
+                        }
+                    }
+                },
             )
         }
     }
