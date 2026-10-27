@@ -77,8 +77,8 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         # (editorial + UC Davis AVA) folded into the knowledge-base place list.
         # The nested catalog adds the Bordeaux, Portuguese, Georgian and Italian names the
         # workbook prints; geography-role rows are counted as regions, not appellations.
-        self.assertEqual(rows["kb_appellations"]["matched_labels"], 75)
-        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 40)
+        self.assertEqual(rows["kb_appellations"]["matched_labels"], 77)
+        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 42)
         self.assertEqual(rows["kb_producers"]["matched_labels"], 13)
         self.assertTrue(all(0 <= row["matched_labels"] <= 125 for row in rows.values()))
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()

@@ -76,7 +76,7 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
     }
 
     private companion object {
-        val containment = mapOf(
+        val containment = GeneratedWineKnowledge.avaContainment + mapOf(
             "Brunello di Montalcino" to "Montalcino", "Rosso di Montalcino" to "Montalcino",
             "Alexander Valley" to "Sonoma County", "Russian River Valley" to "Sonoma County",
             "Oakville" to "Napa Valley", "Rutherford" to "Napa Valley",

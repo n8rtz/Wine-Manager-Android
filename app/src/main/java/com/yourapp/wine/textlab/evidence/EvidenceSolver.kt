@@ -20,6 +20,10 @@ internal object EvidenceSolver {
         }
     }
 
+    private fun compatibleEmbeddedVintage(old:Hypothesis,next:Hypothesis):Boolean =
+        next.values.keys==setOf(FieldId.VINTAGE) && next.reason.startsWith("embedded observed vintage") &&
+            FieldId.VINTAGE !in old.values
+
     fun solve(input:List<Hypothesis>,hierarchy:PlaceHierarchy.View,graph:EvidenceGraph,checkBudget:()->Unit,trace:EvidenceTrace=EvidenceTrace(),config:EvidenceSearchConfig=EvidenceSearchConfig()):List<List<Hypothesis>> {
         val observations=graph.observations.associateBy { it.id }
         fun overlaps(a:Hypothesis,b:Hypothesis):Boolean = a.phrase.observations.any { ai -> b.phrase.observations.any { bi ->
@@ -54,7 +58,7 @@ internal object EvidenceSolver {
                 checkBudget()
                 listOf(state)+options.mapNotNull { next ->
                     if(state.selected.any { old ->
-                        !samePrintedAppellation(old,next.place) && (overlaps(old,next) ||
+                        !samePrintedAppellation(old,next.place) && !compatibleEmbeddedVintage(old,next) && (overlaps(old,next) ||
                         BoxMath.iou(old.phrase.box,next.phrase.box)>.5f) }) { trace.add("ownership_conflict") { "phrase=${next.phrase.id}; values=${next.values}" };return@mapNotNull null }
                     var rank=next.rank
                     // Geography must explain all competing explicit geographic observations, not producer headquarters.

@@ -47,7 +47,7 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
             "engines=${engines.joinToString("+")}; confirm"
     }
 
-    private class Form(val place:Place,val text:String,val key:String)
+    private class Form(val place:Place,val text:String,val key:String,val words:Int)
 
     private var indexed: List<Place>? = null
     private var byLength: Map<Int, List<Form>> = emptyMap()
@@ -66,8 +66,9 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
                 if(place.type=="country") continue
                 for(text in (listOf(place.name)+BundledOrigins.spellingForms(place)).distinct()) {
                     val key=BoundedSpelling.key(text)
-                    if(key.length !in 5..64) continue
-                    forms+=Form(place,text,key)
+                    val words=BoundedSpelling.wordCount(key)
+                    if(key.length !in 5..64 || words>7 || key.any(Char::isDigit)) continue
+                    forms+=Form(place,text,key,words)
                 }
             }
             byLength=forms.groupBy { it.key.length };indexed=places
@@ -102,7 +103,7 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
         val view=hierarchy.snapshot()
         // Wide net: distinct spellings of the same phrase, from the merged phrase and from each engine.
         val attempts=(listOf(observed)+readings.map { it.text }).map { text -> text to BoundedSpelling.key(text) }
-            .filter { (_,key) -> key.length in 5..64 && key.split(' ').size<=6 }.distinctBy { it.second }
+            .filter { (_,key) -> key.length in 5..64 && !key.any(Char::isDigit) && BoundedSpelling.wordCount(key)<=6 }.distinctBy { it.second }
         if(attempts.isEmpty()) return null
         val restrictCountries:Set<String> = when {
             anchors.isNotEmpty() -> emptySet() // Search worldwide so cross-country ties still abstain cleanly.
@@ -112,16 +113,19 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
         var best:Int?=null
         val winners=mutableListOf<Form>()
         val bestByPlace=mutableMapOf<Long,Int>()
-        // A bounded edit can only span this window; BoundedSpelling.distance enforces the rest.
-        for((text,query) in attempts) for(length in (query.length-2)..(query.length+2)) for(form in index[length].orEmpty()) {
-            if(restrictCountries.isNotEmpty() && form.place.countryCode !in restrictCountries) continue
-            if(form.key==query) continue // Exact forms belong to the trie, not to a repair.
-            val distance=BoundedSpelling.distance(text,form.text) ?: continue
-            val previousPlaceBest=bestByPlace[form.place.id]
-            if(previousPlaceBest==null || distance<previousPlaceBest) bestByPlace[form.place.id]=distance
-            val previous=best
-            if(previous==null || distance<previous) { best=distance;winners.clear();winners+=form }
-            else if(distance==previous) winners+=form
+        // A bounded edit can only span this window; BoundedSpelling.distanceNormalized enforces the rest.
+        for((_,query) in attempts) {
+            val queryWords=BoundedSpelling.wordCount(query)
+            for(length in (query.length-2)..(query.length+2)) for(form in index[length].orEmpty()) {
+                if(restrictCountries.isNotEmpty() && form.place.countryCode !in restrictCountries) continue
+                if(form.key==query) continue // Exact forms belong to the trie, not to a repair.
+                val distance=BoundedSpelling.distanceNormalized(query,form.key,queryWords,form.words) ?: continue
+                val previousPlaceBest=bestByPlace[form.place.id]
+                if(previousPlaceBest==null || distance<previousPlaceBest) bestByPlace[form.place.id]=distance
+                val previous=best
+                if(previous==null || distance<previous) { best=distance;winners.clear();winners+=form }
+                else if(distance==previous) winners+=form
+            }
         }
         // Competing places at the winning distance abstain; never pick one by distance or by list order.
         val candidates=winners.map { it.place }.distinctBy { it.id }
@@ -152,7 +156,7 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
         }
         val canonical=BoundedSpelling.key(place.name)
         val form=winners.firstOrNull { it.key==canonical } ?: winners.first()
-        val engines=readings.filter { reading -> BoundedSpelling.distance(reading.text,form.text)!=null }
+        val engines=readings.filter { reading -> BoundedSpelling.distanceNormalized(BoundedSpelling.key(reading.text),form.key,bWords=form.words)!=null }
             .map { it.family }.distinct().sorted()
         return Resolution(place,observed,form.text,bestDist,engines.ifEmpty { listOf("phrase") },penalty,anchorKind)
     }

@@ -154,5 +154,50 @@ object EvidenceArchitectureChecks {
         val baroloGeo=extractor.resolveLinkedWineGeography("Barolo","","","","Italy")
         check(baroloGeo[FieldId.COUNTRY]=="Italy" && baroloGeo[FieldId.REGION]=="Piedmont" && baroloGeo[FieldId.SUBREGION]=="Barolo") { baroloGeo.toString() }
         check(extractor.resolveLinkedWineGeography("Cuvee Speciale","","","","France").isEmpty())
+        // Year-attached classification lines (#7, #115, #140) detach the vintage without losing subregion or wine name.
+        val emilionYear=extractor.extract(listOf(
+            line("Château Améliss",.2f),
+            line("SAINT-ÉMILION GRAND CRU 2016",.45f),
+            line("Bordeaux-Produit de France",.75f)),2026).fill
+        check(emilionYear.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { emilionYear.fields }
+        check(emilionYear.fields.getValue(FieldId.WINE_NAME).value=="SAINT-EMILION GRAND CRU") { emilionYear.fields }
+        check(emilionYear.fields.getValue(FieldId.VINTAGE).value=="2016") { emilionYear.fields }
+        // Bare legal classification codes (`DOCG`, `AVA`, `AOC`) never become wine names (#173).
+        check(WineDesignations.isBareClassification("DOCG"))
+        val barbarescoDocg=extractor.extract(listOf(
+            line("CIABOT",.15f),line("BARBARESCO",.35f),line("DOCG",.55f),line("Baronetto",.75f)),2026).fill
+        check(barbarescoDocg.fields.getValue(FieldId.WINE_NAME).value!="DOCG") { barbarescoDocg.fields }
+        check(barbarescoDocg.fields.getValue(FieldId.SUBREGION).value=="Barbaresco") { barbarescoDocg.fields }
+        // Embedded `Sicilia` in a Spanish estate name (#128) does not override Ribera del Duero; Cosecha year is read.
+        val vegaSicilia=extractor.extract(listOf(
+            line("VIEGAI-SICILIA",.15f),line("OOSECHA 1991 UNICO",.35f),
+            line("Ribera del Duero",.55f),line("MODEGAS VEGA SICILIA, &. A",.8f)),2026).fill
+        check(vegaSicilia.fields.getValue(FieldId.COUNTRY).value=="Spain") { vegaSicilia.fields }
+        check(vegaSicilia.fields.getValue(FieldId.REGION).value=="Ribera del Duero") { vegaSicilia.fields }
+        check(vegaSicilia.fields.getValue(FieldId.SUBREGION).value.isBlank()) { vegaSicilia.fields }
+        check(vegaSicilia.fields.getValue(FieldId.VINTAGE).value=="1991") { vegaSicilia.fields }
+        // Nested US AVAs (#150 St. Helena, #182 Stags Leap District) and Hautes-Cotes de Beaune (#30) resolve under their parent.
+        val stHelena=extractor.extract(listOf(line("SPOTTSWOODE",.2f),line("CABERNET SAUVIGNON",.45f),line("ST.HELENA·NAPA VALLEY",.75f)),2026).fill
+        check(stHelena.fields.getValue(FieldId.COUNTRY).value=="California") { stHelena.fields }
+        check(stHelena.fields.getValue(FieldId.REGION).value=="Napa Valley") { stHelena.fields }
+        check(stHelena.fields.getValue(FieldId.SUBREGION).value=="St. Helena") { stHelena.fields }
+        val stagsLeap=extractor.extract(listOf(line("REPUTATION",.2f),line("STAGS LEAP DISTRICT",.5f),line("NAPA VALLEY",.7f)),2026).fill
+        check(stagsLeap.fields.getValue(FieldId.REGION).value=="Napa Valley") { stagsLeap.fields }
+        check(stagsLeap.fields.getValue(FieldId.SUBREGION).value=="Stags Leap District") { stagsLeap.fields }
+        val hautesBeaune=extractor.extract(listOf(line("Maison Chandesais",.2f),line("BOURGOGNE",.45f),line("HAUTES CÔTES DE BEAUNE",.65f)),2026).fill
+        check(hautesBeaune.fields.getValue(FieldId.SUBREGION).value=="Bourgogne Hautes-Cotes de Beaune") { hautesBeaune.fields }
+        // French Commune - Department - France bottler headquarters (#57) does not override Chablis.
+        val chablisAddress=extractor.extract(listOf(
+            line("DOMAINE MARGUERITE CARILLON",.2f),line("CHABLIS",.45f),line("MEURSAULT - CÔTE D'OR - FRANCE",.8f)),2026).fill
+        check(chablisAddress.fields.getValue(FieldId.REGION).value=="Burgundy") { chablisAddress.fields }
+        check(chablisAddress.fields.getValue(FieldId.SUBREGION).value=="Chablis") { chablisAddress.fields }
+        // Regional-wide indications (`Pays d'Oc`, `Coteaux du Languedoc`) fill Region without inventing a Subregion (#44, #129).
+        val paysDoc=extractor.extract(listOf(line("ROCHE MAZET",.2f),line("CABERNET SAUVIGNON",.45f),line("PAYS D'OC",.7f)),2026).fill
+        check(paysDoc.fields.getValue(FieldId.COUNTRY).value=="France") { paysDoc.fields }
+        check(paysDoc.fields.getValue(FieldId.REGION).value=="Languedoc") { paysDoc.fields }
+        check(paysDoc.fields.getValue(FieldId.SUBREGION).value.isBlank()) { paysDoc.fields }
+        val gascogne=extractor.extract(listOf(line("SAUVIGNON BLANC",.3f),line("CÔTES DE GASCOGNE",.65f)),2026).fill
+        check(gascogne.fields.getValue(FieldId.REGION).value=="South West France") { gascogne.fields }
+        check(gascogne.fields.getValue(FieldId.SUBREGION).value=="Cotes de Gascogne") { gascogne.fields }
     }
 }

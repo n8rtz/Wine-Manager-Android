@@ -6,10 +6,13 @@ import com.yourapp.wine.merge.TextNorm
 /** Designations qualify a name; none of these words by itself establishes a country or producer. */
 object WineDesignations {
     val names = com.yourapp.wine.kb.ReferenceWineCatalog.names("suffix")
+    val classificationCodes = com.yourapp.wine.kb.ReferenceWineCatalog.names("classification")
     private fun key(text: String) = TextNorm.normalize(text).filter(Char::isLetterOrDigit)
     private val standalone = names.associateBy(::key)
+    private val classificationCodeKeys = classificationCodes.map(::key).toSet()
     fun display(text: String): String? = standalone[key(text)]
     fun isDesignation(text: String): Boolean = display(text) != null
+    fun isBareClassification(text: String): Boolean = key(text) in classificationCodeKeys
 
     private val patterns = names.sortedByDescending { it.length }.map { name ->
         val pattern = name.split(' ').joinToString("\\s+") { Regex.escape(it) }

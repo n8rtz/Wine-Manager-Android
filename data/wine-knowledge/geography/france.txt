@@ -85,6 +85,7 @@ Bonnes-Mares
 Clos de la Roche
 Clos Saint-Denis
 Clos des Lambrays
+Bourgogne Hautes-Côtes de Nuits ~ Hautes-Côtes de Nuits
 FR|France|Burgundy/Côte de Beaune|appellation
 Aloxe-Corton
 Ladoix
@@ -112,6 +113,7 @@ Bâtard-Montrachet
 Bienvenues-Bâtard-Montrachet
 Criots-Bâtard-Montrachet
 Montrachet
+Bourgogne Hautes-Côtes de Beaune ~ Hautes-Côtes de Beaune
 FR|France|Burgundy/Côte Chalonnaise|appellation
 Bouzeron
 Rully
@@ -129,8 +131,6 @@ Viré-Clessé
 FR|France|Burgundy|appellation
 Bourgogne
 Bourgogne Aligoté
-Bourgogne Hautes-Côtes de Beaune
-Bourgogne Hautes-Côtes de Nuits
 Bourgogne Passe-tout-grains
 Bourgogne Côte Saint-Jacques
 Crémant de Bourgogne
@@ -358,6 +358,7 @@ Muscat de Mireval
 Muscat de Lunel
 Muscat de Saint-Jean-de-Minervois
 Saint-Jean-de-Minervois
+Pays d'Hérault
 FR|France|Roussillon|appellation
 Côtes du Roussillon
 Côtes du Roussillon Villages
@@ -399,6 +400,7 @@ Saint-Mont
 Tursan
 Côtes de Duras
 Côtes du Marmandais
+Côtes du Tarn
 Buzet
 FR|France|Jura|appellation
 Arbois
@@ -436,9 +438,10 @@ Figari
 Porto-Vecchio
 FR|France|Languedoc|geography
 Pays d'Oc
-Comté Tolosan
-Côtes de Gascogne
 Coteaux du Languedoc
+FR|France|South West France|geography
+Comté Tolosan
+Côtes de Gascogne ~ Gascogne
 FR|France||geography
 Val de Loire
 Atlantique

@@ -189,6 +189,62 @@ class FramedAppellationAndLabelContextTests(unittest.TestCase):
         self.assertIn("val attempted: Set<String> = lab.mapNotNullTo(linkedSetOf())", vm)
         self.assertIn("if (attempted.isEmpty()) frozen.values.toList() else attempted.mapNotNull(frozen::get)", vm)
 
+    def test_five_benchmark_issues_resolved_and_kotlin_generic_lexer_safe(self):
+        import csv as _csv
+
+        # Issue 1: lazy lookupDeadline + pre-normalized BoundedSpelling distance.
+        extraction = (WINE / "textlab/TextLabWineExtraction.kt").read_text(encoding="utf-8")
+        self.assertIn("var lookupDeadline=0L", extraction)
+        self.assertIn(
+            "if(lookupDeadline==0L) lookupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_LOOKUP_MS",
+            extraction,
+        )
+        spelling = (WINE / "extract/BoundedSpelling.kt").read_text(encoding="utf-8")
+        self.assertIn("private val nonAlnum = Regex(", spelling)
+        self.assertIn("fun distanceNormalized(", spelling)
+        place_repair = (WINE / "textlab/evidence/PlaceRepair.kt").read_text(encoding="utf-8")
+        self.assertIn("BoundedSpelling.distanceNormalized(query,form.key,queryWords,form.words)", place_repair)
+
+        # Issue 2: year-attached classification/appellation lines and embedded harvest vintages.
+        extractor = (WINE / "textlab/evidence/EvidenceExtractor.kt").read_text(encoding="utf-8")
+        solver = (WINE / "textlab/evidence/EvidenceSolver.kt").read_text(encoding="utf-8")
+        self.assertIn("detachEdgeVintage(text,year)", extractor)
+        self.assertIn('offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage")', extractor)
+        self.assertIn("!compatibleEmbeddedVintage(old,next)", solver)
+
+        # Issue 3: bare context_only legal classifications (`DOCG`, `AVA`, `AOC`) blocked from WINE_NAME.
+        designations = (WINE / "extract/WineDesignations.kt").read_text(encoding="utf-8")
+        self.assertIn("fun isBareClassification(text: String): Boolean", designations)
+        self.assertIn('if(WineDesignations.isBareClassification(text)) { trace.add("bare_classification"', extractor)
+
+        # Issue 4 & 5: catalog policies, AVA containment, French headquarters filter, region-wide indications.
+        with (ROOT / "data/wine-knowledge/origins.csv").open(encoding="utf-8", newline="") as f:
+            origins = {(r["country_code"], r["name"]): r for r in _csv.DictReader(f)}
+        self.assertEqual(origins[("IT", "Sicilia")]["match_policy"], "context_required")
+        self.assertEqual(origins[("FR", "Bourgogne Hautes-Cotes de Beaune")]["path"], "Burgundy/Cote de Beaune")
+        self.assertIn("Hautes-Cotes de Beaune", origins[("FR", "Bourgogne Hautes-Cotes de Beaune")]["aliases"].split(";"))
+        self.assertEqual(origins[("FR", "Cotes de Gascogne")]["regions"], "South West France")
+        self.assertEqual(origins[("FR", "Pays d'Herault")]["regions"], "Languedoc")
+        self.assertEqual(origins[("FR", "Cotes du Tarn")]["regions"], "South West France")
+
+        generated = (WINE / "kb/GeneratedWineKnowledge.kt").read_text(encoding="utf-8")
+        self.assertIn('"St. Helena" to "Napa Valley"', generated)
+        self.assertIn('"Stags Leap District" to "Napa Valley"', generated)
+        supplemented = (WINE / "kb/SupplementedWineKnowledgeBase.kt").read_text(encoding="utf-8")
+        self.assertIn("GeneratedWineKnowledge.avaContainment", supplemented)
+
+        label_ctx = (WINE / "textlab/evidence/LabelContext.kt").read_text(encoding="utf-8")
+        self.assertIn("fun isFrenchHeadquartersAddress(norm: String): Boolean", label_ctx)
+        catalog = (WINE / "kb/ReferenceWineCatalog.kt").read_text(encoding="utf-8")
+        self.assertIn("fun isRegionWideIndication(place: Place): Boolean", catalog)
+        self.assertIn("val regionWide=ReferenceWineCatalog.isRegionWideIndication(place)", extractor)
+
+        # Kotlin lexer guard: nested generic `>>=` without whitespace is lexed as RSHIFT+EQ or GTEQ.
+        bad_generic_eq = re.compile(r"<[^>\n]+<[^>\n]+>>=")
+        for kt in list((ROOT / "app").rglob("*.kt")) + list((ROOT / "tools").rglob("*.kt")):
+            src = kt.read_text(encoding="utf-8")
+            self.assertIsNone(bad_generic_eq.search(src), f"Unspaced nested generic `>>=` in {kt}")
+
 
 if __name__ == "__main__":
     unittest.main()

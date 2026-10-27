@@ -19,6 +19,35 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
     private val repairs=PlaceRepair(kb,hierarchy)
     private val roles=ProducerLineSelector()
     private fun family(engineId:String)=if(engineId.startsWith("paddle")) "paddle" else engineId
+    private val foundingYearCue = Regex("\\b(?:fondee?|founded|established|est\\.?|since|depuis|first\\s+vintage|anno|dal)\\b")
+    private val leadingYearPattern = Regex("^((?:19|20)\\d{2})\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*(.+)$")
+    private val trailingYearPattern = Regex("^(.+?)\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*((?:19|20)\\d{2})$")
+    private val harvestYearPattern = Regex("(?i)\\b(?:[cgos]osecha|vendimia|annata|millesime|recolte|harvest)\\s+((?:19|20)\\d{2})\\b")
+
+    private fun detachEdgeVintage(raw: String, maxYear: Int): Pair<String, String?> {
+        val trimmed = raw.trim()
+        val norm = TextNorm.normalize(trimmed)
+        if (foundingYearCue.containsMatchIn(norm)) return trimmed to null
+        val lead = leadingYearPattern.matchEntire(trimmed)
+        if (lead != null) {
+            val yr = lead.groupValues[1]
+            val rest = lead.groupValues[2].trim()
+            if (yr.toInt() in 1900..maxYear && rest.count(Char::isLetter) >= 3) return rest to yr
+        }
+        val trail = trailingYearPattern.matchEntire(trimmed)
+        if (trail != null) {
+            val rest = trail.groupValues[1].trim()
+            val yr = trail.groupValues[2]
+            if (yr.toInt() in 1900..maxYear && rest.count(Char::isLetter) >= 3) return rest to yr
+        }
+        return trimmed to null
+    }
+
+    private fun explicitHarvestVintage(norm: String, maxYear: Int): String? {
+        if (foundingYearCue.containsMatchIn(norm)) return null
+        val yr = harvestYearPattern.find(norm)?.groupValues?.get(1) ?: return null
+        return yr.takeIf { it.toInt() in 1900..maxYear }
+    }
 
     /** Maps an LWIN `country_group` string to a verified catalog country name, or null when unknown. */
     fun canonicalCountryName(countryGroup:String):String? {
@@ -75,7 +104,7 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             val multiRegion=(ReferenceWineCatalog.origin(place)?.regions?.size ?: 0)>1
             if(existingRegion.isBlank() && !multiRegion) path.firstOrNull { it.type=="region" }?.let { missing[FieldId.REGION]=it.name }
             val resolvedRegion=existingRegion.ifBlank { missing[FieldId.REGION].orEmpty() }
-            if(existingSubregion.isBlank() && place.type !in setOf("country","region") && !place.name.equals(resolvedRegion,ignoreCase=true)) {
+            if(existingSubregion.isBlank() && place.type !in setOf("country","region") && !place.name.equals(resolvedRegion,ignoreCase=true) && !ReferenceWineCatalog.isRegionWideIndication(place)) {
                 missing[FieldId.SUBREGION]=place.name
             }
             return missing
@@ -115,15 +144,18 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             val namedEstate=typedIdentity && EvidenceIdentityRoles.namedEstate(text)
             if(nonOriginAdmin || headingOnly) { trace.add(if(nonOriginAdmin) "administrative" else "incomplete_producer_heading", "phrase=${p.id}; text=$text");continue }
             val framed=WineDesignations.framedAppellation(text)
-            val placeSubject=framed ?: text
+            val (yearlessText,attachedYear)=if(framed==null) detachEdgeVintage(text,year) else (text to null)
+            val placeSubject=framed ?: yearlessText
             val subjectNorm=TextNorm.normalize(placeSubject)
             val contextCountries=labelContext.contextCountriesForPhrase(p.id)
             val contextRegions=labelContext.contextRegionsForPhrase(p.id)
-            val standaloneOrFramed=framed!=null || (!originFramingAdmin && norm.split(' ').size<=4)
+            val standaloneOrFramed=framed!=null || (!originFramingAdmin && subjectNorm.split(' ').size<=4)
             val exact=if(namedEstate) emptyList() else {
                 val subjectMatches=gazetteer.matches(subjectNorm,contextCountries,contextRegions,standaloneOrFramed)
-                if(subjectMatches.isNotEmpty() || framed==null) subjectMatches
-                else gazetteer.matches(norm,contextCountries,contextRegions,false)
+                if(subjectMatches.isNotEmpty() || framed!=null) {
+                    if(subjectMatches.isNotEmpty() || framed==null) subjectMatches
+                    else gazetteer.matches(norm,contextCountries,contextRegions,false)
+                } else emptyList()
             }
             // A classification-qualified catalog name (`Saint-Emilion Grand Cru`, `Bordeaux Superieur`)
             // names the same place as its base: the geography comes from the base, the printed form
@@ -182,6 +214,10 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             }
             if(!originFramingAdmin && Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
                 offer(mapOf(FieldId.VINTAGE to norm),55.0,"complete observed vintage")
+            else if(!originFramingAdmin) {
+                val embeddedYear=(attachedYear?.takeIf { places.isNotEmpty() }) ?: explicitHarvestVintage(norm,year)
+                if(embeddedYear!=null) offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage")
+            }
             for(place in places.take(4)) {
                 val path=view.ancestors(place)
                 val values=mutableMapOf<FieldId,String>()
@@ -197,8 +233,11 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 // One name may fill one level only: a collapsed hierarchy must not repeat the region.
                 if(place.type !in setOf("country","region") && !unresolvedSuffix && values[FieldId.REGION]!=place.name)
                     values[FieldId.SUBREGION]=place.name
+                val regionWide=ReferenceWineCatalog.isRegionWideIndication(place)
+                if(regionWide) values.remove(FieldId.SUBREGION)
                 val repairPenalty=if(repair!=null) maxOf(placeRepair.rankPenalty,repair.penalty) else 0.0
-                offer(values,50.0+path.size*5+lexicalBonus-repairPenalty,
+                val effectiveDepth=if(regionWide && path.size>2) 2 else path.size
+                offer(values,50.0+effectiveDepth*5+lexicalBonus-repairPenalty,
                     "observed geography and actual ancestors; no producer-origin inference"+
                         (if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else "")+
                         (repair?.let { "; "+it.reason } ?: ""),place)
@@ -213,10 +252,13 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 trace.add("administrative", "phrase=${p.id}; text=$text; places=${places.size}")
                 continue
             }
-            if(repair==null && classificationName && places.isNotEmpty())
-                offer(mapOf(FieldId.WINE_NAME to text),70.0,"printed classification qualifies the matched appellation")
+            if(repair==null && classificationName && places.isNotEmpty() && printedBase!=null &&
+                places.any { pl -> (listOf(pl.name)+BundledOrigins.spellingForms(pl)).any { EvidenceRanking.nameKey(it)==EvidenceRanking.nameKey(printedBase) } })
+                offer(mapOf(FieldId.WINE_NAME to placeSubject),70.0,"printed classification qualifies the matched appellation")
             else if(repair==null && places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
+            else if(repair==null && attachedYear!=null && places.any { TextNorm.normalize(it.name)==subjectNorm } && WineDesignations.isAppellationName(placeSubject))
+                offer(mapOf(FieldId.WINE_NAME to placeSubject),65.0,"exact printed appellation may also name the wine")
             if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
             if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
                 offer(mapOf(FieldId.WINE_NAME to text),75.0,"explicit named cuvee role; not producer attribution")
@@ -232,6 +274,7 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             }
             // A bare designation (`GRAND CRU`, `DOCG`, `RISERVA`) qualifies a name and never is one.
             if(WineDesignations.isDesignation(text)) { trace.add("bare_designation","phrase=${p.id}; text=$text");continue }
+            if(WineDesignations.isBareClassification(text)) { trace.add("bare_classification","phrase=${p.id}; text=$text");continue }
             if(roles.isWineDescription(text)) {
                 offer(mapOf(FieldId.WINE_NAME to (WineDesignations.display(text) ?: text)),75.0,"observed varietal")
                 continue

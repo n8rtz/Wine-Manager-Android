@@ -36,6 +36,20 @@ object ReferenceWineCatalog {
     }
     fun isDescription(text:String):Boolean = TextNorm.normalize(text) in descriptions
 
+    private val regionWideIndicationKeys = setOf(
+        "FR" to "paysdoc",
+        "FR" to "coteauxdulanguedoc",
+        "FR" to "comtetolosan",
+        "IT" to "sicilia",
+        "IT" to "terresiciliane",
+        "IT" to "toscana",
+        "IT" to "piemonte",
+    )
+
+    /** Regional-scale PGIs/IGPs/IGTs/DOCs coextensive with their parent region (not a sub-locality). */
+    fun isRegionWideIndication(place: Place): Boolean =
+        (place.countryCode to place.nameNorm.filter(Char::isLetterOrDigit)) in regionWideIndicationKeys
+
     private val regionRequiredContextNames = setOf(
         "bianco", "denmark", "orange", "augusta", "hermann", "warren hills", "douglas"
     )

@@ -154,8 +154,9 @@ internal object TextLabWineExtraction {
                 setup.visit(setupStep,false,unavailable)
             }
             journal.add(candidate,"gazetteer_setup",if(producers!=null) "complete" else "unavailable",setup.fields(),unavailable.takeIf { producers==null }.orEmpty())
-            val lookupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_LOOKUP_MS
+            var lookupDeadline=0L
             val lookupBudget={
+                if(lookupDeadline==0L) lookupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_LOOKUP_MS
                 if(android.os.SystemClock.elapsedRealtime()>=lookupDeadline)
                     throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
             }

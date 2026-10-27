@@ -87,6 +87,27 @@ internal class LabelContext(
         private val spanishFramedCue = Regex("\\b(?:denominacion de origen|vino de la tierra)\\b")
         private val usAvaCue = Regex("\\bamerican viticultural area\\b")
         private val zaWoCue = Regex("\\bwine of origin\\b")
+        private val frenchDeptAddress = Regex(
+            "(?:[-\\u2013\\u2014\\u00b7,(]\\s*(?:cote[- ']?d[- ']?or|gironde|yonne|saone[- ]et[- ]loire|" +
+                "marne|aube|haut[- ]rhin|bas[- ]rhin|indre[- ]et[- ]loire|loir[- ]et[- ]cher|" +
+                "maine[- ]et[- ]loire|loire[- ]atlantique|charente(?:-maritime)?|dordogne|" +
+                "lot[- ]et[- ]garonne|pyrenees[- ]orientales|aude|herault|gard|vaucluse|" +
+                "bouches[- ]du[- ]rhone|var|drome|ardeche)\\s*(?:[-\\u2013\\u2014\\u00b7,)]\\s*france\\b|\\)\\s*france\\b))"
+        )
+        private val frenchOperatorAddress = Regex(
+            "^(?:[a-z]{0,4}oitant|exploitant|[a-z]{0,3}prietaire|proprietaire|negociant|recoltant|vigneron)\\s+a\\s+"
+        )
+        private val frenchPostalOrPhoneAddress = Regex(
+            "(?:\\b\\d{5}\\b.*\\bfrance\\b|\\bfrance\\b.*\\btel\\b|\\btel\\.?\\s*0\\d)"
+        )
+
+        fun isFrenchHeadquartersAddress(norm: String): Boolean =
+            frenchDeptAddress.containsMatchIn(norm) ||
+                frenchOperatorAddress.containsMatchIn(norm) ||
+                frenchPostalOrPhoneAddress.containsMatchIn(norm)
+
+        fun postalAddressCountryCode(norm: String): String? =
+            if (isFrenchHeadquartersAddress(norm) && wordPresent(norm, "france")) "FR" else null
 
         /**
          * True when a line is commercial, importer/bottler, warning, packaging, founding or alcohol
@@ -100,7 +121,8 @@ internal class LabelContext(
                 EvidenceIdentityRoles.ownerGrowerLegalLine(text) ||
                 ReferenceWineCatalog.isAdministrative(text) ||
                 LabelTextRoles.isFoundingStatement(text) ||
-                commercialOrWarning.containsMatchIn(norm)
+                commercialOrWarning.containsMatchIn(norm) ||
+                isFrenchHeadquartersAddress(norm)
 
         private fun wordPresent(norm: String, token: String): Boolean =
             Regex("(?<![\\p{L}\\p{N}])${Regex.escape(token)}(?![\\p{L}\\p{N}])").containsMatchIn(norm)
@@ -145,7 +167,9 @@ internal class LabelContext(
                 val text = WineTermSpacing.wineWords.repair(phrase.text).text
                 val norm = TextNorm.normalize(text)
                 val (single, narrowing) = legalCues(norm)
-                if (single.isNotEmpty()) singleCues[phrase.id] = single
+                val postalCode = postalAddressCountryCode(norm)
+                val combinedSingle = if (postalCode != null) single + postalCode else single
+                if (combinedSingle.isNotEmpty()) singleCues[phrase.id] = combinedSingle
                 if (narrowing.isNotEmpty()) narrowingCues[phrase.id] = narrowing
 
                 val nonOrigin = isNonOriginAdministrative(text, norm)

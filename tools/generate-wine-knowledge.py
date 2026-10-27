@@ -13,7 +13,7 @@ def scrub(s):
 def norm(s): return ''.join(c for c in unicodedata.normalize('NFKD',scrub(s).lower()) if not unicodedata.combining(c)).strip()
 def slug(s): return re.sub('[^a-z0-9]+','-',norm(s)).strip('-')
 STATES=dict(x.split(':') for x in ('AL:Alabama|AK:Alaska|AZ:Arizona|AR:Arkansas|CA:California|CO:Colorado|CT:Connecticut|DE:Delaware|FL:Florida|GA:Georgia|HI:Hawaii|ID:Idaho|IL:Illinois|IN:Indiana|IA:Iowa|KS:Kansas|KY:Kentucky|LA:Louisiana|ME:Maine|MD:Maryland|MA:Massachusetts|MI:Michigan|MN:Minnesota|MS:Mississippi|MO:Missouri|MT:Montana|NE:Nebraska|NV:Nevada|NH:New Hampshire|NJ:New Jersey|NM:New Mexico|NY:New York|NC:North Carolina|ND:North Dakota|OH:Ohio|OK:Oklahoma|OR:Oregon|PA:Pennsylvania|RI:Rhode Island|SC:South Carolina|SD:South Dakota|TN:Tennessee|TX:Texas|UT:Utah|VT:Vermont|VA:Virginia|WA:Washington|WV:West Virginia|WI:Wisconsin|WY:Wyoming').split('|'))
-ambiguous={scrub(x) for x in {'Bianco','Orange','Denmark','Bourg','Graves','Cassis','Palette','Asti','Gavi','Faro','Pico','Samos','Eger','Kent','Surrey','Dorset','Cornwall','Douglas','Colonia','Rivera','Augusta','Hermann','Warren Hills','Hudson River Region'}}
+ambiguous={scrub(x) for x in {'Bianco','Orange','Denmark','Bourg','Graves','Cassis','Palette','Asti','Gavi','Faro','Pico','Samos','Eger','Kent','Surrey','Dorset','Cornwall','Douglas','Colonia','Rivera','Augusta','Hermann','Warren Hills','Hudson River Region','Sicilia'}}
 rows={};country_names={}
 
 def parent_path(path):
@@ -102,13 +102,31 @@ for (code,_),item in sorted(implied.items()):
     add(code,item['country'],item['regions'],item['name'],[],'geography','editorial-v1',
         'Implied containing place of an authored geography path',item['path'])
 snapshot=json.loads((DATA/'sources/ucd-ava-properties.json').read_text())
+ava_meta={}
 for item in snapshot['records']:
     for p in item['properties']:
         states=sorted(set(STATES.get(s.strip(),s.strip()) for s in p['state'].split('|')))
         assert all(s in STATES.values() for s in states),(p['name'],states)
         alias=(p.get('aka') or '').strip()
         aliases=[a.strip() for a in alias.split('|') if a.strip() and a.strip().lower() not in ('n/a','none','null')]
+        ava_name=scrub(p['name'].strip())
+        within_names={scrub(w.strip()) for w in re.split(r'[|,]',p.get('within') or '') if w.strip()}
+        ava_meta[ava_name]=dict(states=states,within=within_names-{ava_name})
         add('US','United States',';'.join(states),p['name'].strip(),aliases,'geography','ucd-ava',item['file'])
+for d in ava_meta.values(): d['within']={w for w in d['within'] if w in ava_meta}
+def _ava_ancestors(name,seen=frozenset()):
+    res=set()
+    for w in ava_meta[name]['within']:
+        if w not in seen: res.add(w);res|=_ava_ancestors(w,seen|{w})
+    return res
+ava_closure={n:_ava_ancestors(n) for n in ava_meta}
+ava_containment=[]
+for n in sorted(ava_meta):
+    st=ava_meta[n]['states']
+    if len(st)!=1: continue
+    cands={w for w in ava_closure[n] if ava_meta[w]['states']==st}
+    imm={w for w in cands if not any(w in ava_closure[u] for u in cands if u!=w)}
+    if len(imm)==1: ava_containment.append((n,next(iter(imm))))
 rows=sorted(rows.values(),key=lambda r:r['id'])
 assert len({r['id'] for r in rows})==len(rows)
 for r in rows:
@@ -133,6 +151,8 @@ for r in rows:
     code+='        '+quoted('|'.join(r[k] for k in ['name','country_code','country','regions','aliases','name_role','match_policy','source_id','path']))+',\n'
 code+='    )\n    val labelTerms = listOf(\n'
 for t in terms:code+='        '+quoted('|'.join(t.values()))+',\n'
+code+='    )\n    val avaContainment = mapOf(\n'
+for child,parent in ava_containment:code+='        '+quoted(child)+' to '+quoted(parent)+',\n'
 code+='    )\n}\n'
 outputs={DATA/'origins.csv':out.getvalue(),ROOT/'app/src/main/java/com/yourapp/wine/kb/GeneratedWineKnowledge.kt':code}
 check=argparse.ArgumentParser();check.add_argument('--check',action='store_true');args=check.parse_args()
