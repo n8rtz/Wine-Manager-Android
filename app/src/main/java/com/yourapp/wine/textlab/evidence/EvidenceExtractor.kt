@@ -10,12 +10,15 @@ internal data class Hypothesis(val values:Map<FieldId,String>,val phrase:Phrase,
 internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,val hypotheses:List<Hypothesis>,val elapsedMs:Long,val trace:EvidenceTrace)
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
-internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig()) {
+internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
     companion object { const val VERSION="evidence-lab-v3-heading-roles";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
     private val kb=SupplementedWineKnowledgeBase(base)
     private val gazetteer=PlaceGazetteer(kb)
-    private val hierarchy=PlaceHierarchy(kb).snapshot()
+    private val hierarchy=PlaceHierarchy(kb)
+    private val view=hierarchy.snapshot()
+    private val repairs=PlaceRepair(kb,hierarchy)
     private val roles=ProducerLineSelector()
+    private fun family(engineId:String)=if(engineId.startsWith("paddle")) "paddle" else engineId
     fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {
@@ -27,6 +30,13 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
         trace.add("graph", "observations=${graph.observations.size}; phrases=${graph.phrases.size}; truncated=${graph.truncated}")
         val hypotheses=mutableListOf<Hypothesis>()
         val roleNotes=mutableListOf<String>()
+        // Lab repair experiment only: one trie scan per phrase, never one per repair attempt.
+        val anchorsByPhrase=if(placeRepair.enabled) graph.phrases.associate { phrase ->
+            val otherText=WineTermSpacing.wineWords.repair(phrase.text).text
+            phrase.id to gazetteer.matches(TextNorm.normalize(otherText)).filter { place ->
+                place.type in setOf("country","region") && IdentityRoles.originOnly(otherText,listOf(place)) }
+        } else emptyMap()
+        val allAnchors=anchorsByPhrase.flatMap { (id,places) -> places.map { id to it } }
         for(p in graph.phrases.sortedByDescending { it.construction.contains("alternative") }) {
             checkBudget()
             if(hypotheses.size>=MAX_HYPOTHESES) { trace.add("hypothesis_limit", "remaining phrases not searched");break }
@@ -43,8 +53,16 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 kotlin.math.abs(other.box.left-p.box.left)<.04f && kotlin.math.abs(other.box.centerY()-p.box.centerY())<.12f }>=3
             val headingOnly=typedIdentity && EvidenceIdentityRoles.headingOnly(text)
             val namedEstate=typedIdentity && EvidenceIdentityRoles.namedEstate(text)
-            val places=if(administrative || headingOnly || namedEstate) emptyList() else gazetteer.matches(norm)
-            roleNotes+="phrase=${p.id}; administrative=$administrative; paragraph=$paragraph; places=${places.joinToString { it.name }}"
+            val exact=if(administrative || headingOnly || namedEstate) emptyList() else gazetteer.matches(norm)
+            // Lab-only, off by default: a bounded repair may name a place the exact trie could not read.
+            // It needs another line's explicit country/region anchor and two engines that read it plausibly.
+            val repair=if(placeRepair.enabled && exact.isEmpty() && !administrative && !headingOnly && !namedEstate) {
+                val anchors=allAnchors.filter { (id,_) -> id!=p.id }.map { it.second }.distinctBy { it.id }
+                repairs.resolve(text,sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) },anchors,placeRepair)
+            } else null
+            if(repair!=null) trace.add("place_repair","phrase=${p.id}; ${repair.reason}")
+            val places=repair?.let { listOf(it.place) } ?: exact
+            roleNotes+="phrase=${p.id}; administrative=$administrative; paragraph=$paragraph; places=${places.joinToString { it.name }}"+(if(repair!=null) "; ${repair.reason}" else "")
             if(administrative || headingOnly) { trace.add(if(administrative) "administrative" else "incomplete_producer_heading", "phrase=${p.id}; text=$text");continue }
             fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null) {
                 val incomplete=sources.count { source ->
@@ -62,20 +80,23 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             if(Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
                 offer(mapOf(FieldId.VINTAGE to norm),55.0,"complete observed vintage")
             for(place in places.take(4)) {
-                val path=hierarchy.ancestors(place)
+                val path=view.ancestors(place)
                 val values=mutableMapOf<FieldId,String>()
                 path.lastOrNull { it.type=="country" }?.let { values[FieldId.COUNTRY]=it.name }
                 path.firstOrNull { it.type=="region" }?.let { values[FieldId.REGION]=it.name }
                 val core=place.nameNorm.filter(Char::isLetterOrDigit)
                 val compact=norm.filter(Char::isLetterOrDigit)
                 val suffix=if(compact.startsWith(core)) compact.removePrefix(core) else ""
-                val unresolvedSuffix=place.type=="appellation" && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
+                val unresolvedSuffix=repair==null && place.type=="appellation" && suffix.length in 1..8 && suffix.all(Char::isLetter) &&
                     suffix !in setOf("aoc","aop","doc","docg","dop","igp") && gazetteer.matches(suffix).none { it.type=="country" } &&
                     places.none { it.nameNorm.filter(Char::isLetterOrDigit)==compact }
                 if(place.type !in setOf("country","region") && !unresolvedSuffix) values[FieldId.SUBREGION]=place.name
-                offer(values,50.0+path.size*5+lexicalBonus,"observed geography and actual ancestors; no producer-origin inference"+(if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else ""),place)
+                offer(values,50.0+path.size*5+lexicalBonus-(if(repair!=null) placeRepair.rankPenalty else 0.0),
+                    "observed geography and actual ancestors; no producer-origin inference"+
+                        (if(unresolvedSuffix) "; unresolved appellation suffix: finer locality withheld" else "")+
+                        (repair?.let { "; "+it.reason } ?: ""),place)
             }
-            if(places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
+            if(repair==null && places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
             if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
             if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
@@ -101,7 +122,7 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
             if(!namedEstate) offer(mapOf(FieldId.WINE_NAME to text),(if(joined) 88.0 else 43.0)+lexicalBonus,"title interpretation; ${p.construction}")
         }
         val ranked=hypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
-        val solution=EvidenceSolver.solve(ranked,hierarchy,graph,::checkBudget,trace,search)
+        val solution=EvidenceSolver.solve(ranked,view,graph,::checkBudget,trace,search)
         val fields=FieldId.entries.associateWith { field ->
             val values=solution.map { assignment -> assignment.firstOrNull { field in it.values }?.values?.get(field).orEmpty() }.distinctBy { value ->
                 if(ranking.equivalentNames && field in setOf(FieldId.PRODUCER,FieldId.WINE_NAME)) EvidenceRanking.nameKey(value) else TextNorm.normalize(value)
@@ -112,7 +133,7 @@ internal class EvidenceExtractor(base:WineKnowledgeBase,private val typedIdentit
                 if(value.isBlank()) "Experimental abstention: missing or competing assignments" else "${winner?.reason}; phrase=${winner?.phrase?.id}; observations=${winner?.phrase?.observations}; experimental rank, not probability; confirm",
                 emptyList())
         }
-        val path=solution.firstOrNull()?.firstOrNull { it.place!=null }?.place?.let(hierarchy::ancestors).orEmpty()
+        val path=solution.firstOrNull()?.firstOrNull { it.place!=null }?.place?.let(view::ancestors).orEmpty()
         val alternatives=FieldId.entries.associateWith { f -> ranked.filter { f in it.values }.sortedByDescending { it.rank }.distinctBy { it.values[f] }.take(6).map {
             FieldCandidate(f,it.values.getValue(f),UiState.YELLOW,"${it.reason}; phrase=${it.phrase.id}; observations=${it.phrase.observations}; rank=${it.rank}",emptyList())
         } }

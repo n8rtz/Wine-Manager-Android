@@ -33,6 +33,18 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **What changed:** the bundled wine catalog grew from 1,020 to **2,065 names across 48 countries** (1,095 appellations + 970 geographies, 399 nested under a region or subregion). Authored `ISO|country|region path|role` headers may now carry a slash path (`AU|Australia|South Australia/Barossa`), `origins.csv` and the generated Kotlin carry a `path` column, and `SupplementedWineKnowledgeBase` walks that chain so places are created as `country → region → subregion` instead of one flat region. No OCR, scoring, deadline or benchmark behaviour changed. Host checks: 216 Python contract tests pass and the catalog `--check` is clean; no Android build or device run yet.
 
+### Lab v4 appellation repair (experimental, off by default)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] **Profile → Settings → OCR Labs**, enable **Compare experimental evidence pipeline** and then **Use guarded hybrid**: a new **Repair appellations with bounded spelling (experimental)** checkbox sits under the producer-repair checkbox. It is **unchecked** on a fresh install and on every upgrade.
+2. [ ] Tick it and run one image whose label prints a clean appellation (e.g. `Pauillac`): the experimental row is unchanged from the unticked run — a repair never fires when the exact match already worked (the raw CSV shows no `place_repair` decision row).
+3. [ ] Run an image where OCR misspells the appellation by one or two letters (`Pauilac`, `Bordeux`, long names only): the experimental row keeps its country/region and may add the matched sub-region. The raw CSV gains one `place_repair` decision row and the field reason names the before/after with `confirm`.
+4. [ ] Confirm the gates: a sample whose misspelled word is the **only** origin text on the label (no separate printed country/region line) does **not** repair; neither does one where ML Kit and Paddle disagree on that word (only one engine read it). A candidate that contradicts the printed country (e.g. `Pauilac` on a label saying **Italy**) does not repair.
+5. [ ] Confirm nothing is written: the saved form, the cellar record and every other field are untouched, all repaired values stay **YELLOW**, and the raw OCR text and scores in the CSV are byte-identical to the unticked run.
+6. [ ] Tick **New Lab run** on the **Large image dataset test** after changing `PhoneCorpusRunner.REPAIR_PLACES_IN_BENCHMARK`: the benchmark CSV carries `place_repair_enabled=true` on every row of that run, and a mixed corpus (some photos before, some after) never happens because the flag is fixed per batch.
+7. [ ] Timings: the run still finishes inside the per-photo budget on a mid-range phone (repair only runs for unmatched phrases and only when the experiment is on).
+
 ### Nested regions and subregions reach the form
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*

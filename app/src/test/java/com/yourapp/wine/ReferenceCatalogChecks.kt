@@ -2,6 +2,7 @@ package com.yourapp.wine
 
 import com.yourapp.wine.fill.*
 import com.yourapp.wine.kb.*
+import com.yourapp.wine.textlab.evidence.PlaceRepair
 
 /** Synthetic semantic tests, not pixel-OCR or legal-registry certification. */
 object ReferenceCatalogChecks {
@@ -52,6 +53,30 @@ object ReferenceCatalogChecks {
         check(prosecco.fields.getValue(FieldId.REGION).state==UiState.RED) { prosecco.fields }
         val cava=fill("Cava")
         check(cava.fields.getValue(FieldId.REGION).state==UiState.RED) { cava.fields }
+    }
+    /** Lab-only bounded appellation repair: off by default, anchored, two-engine, never an override. */
+    fun placeRepairIsBoundedAnchoredAndTwoEngineGated() {
+        val kb=SupplementedWineKnowledgeBase(FixtureKnowledgeBase())
+        val hierarchy=PlaceHierarchy(kb)
+        val repairs=PlaceRepair(kb,hierarchy)
+        val view=hierarchy.snapshot()
+        val bordeaux=view.byName.getValue("bordeaux").first()
+        val california=view.byName.getValue("california").first()
+        val on=PlaceRepair.Config.experimental
+        val both=listOf(PlaceRepair.Reading("mlkit","Pauilac"),PlaceRepair.Reading("paddle","Pauilac"))
+        val repaired=repairs.resolve("Pauilac",both,listOf(bordeaux),on)
+        check(repaired?.place?.name=="Pauillac") { repaired.toString() }
+        check(repaired?.editDistance==1) { repaired.toString() }
+        // Off by default, and each gate alone is enough to abstain.
+        check(repairs.resolve("Pauilac",both,listOf(bordeaux),PlaceRepair.Config.off)==null)
+        check(repairs.resolve("Pauilac",both,emptyList(),on)==null)
+        check(repairs.resolve("Pauilac",both.take(1),listOf(bordeaux),on)==null)
+        // A repair may never contradict the printed anchor, and never re-derives an exact reading.
+        check(repairs.resolve("Pauilac",both,listOf(california),on)==null)
+        check(repairs.resolve("Pauillac",both,listOf(bordeaux),on)==null)
+        check(repairs.resolve("Chateau Mouton",both,listOf(bordeaux),on)==null)
+        // Short words are outside the production spelling budget, so they are never repaired.
+        check(repairs.resolve("Pom",both,listOf(bordeaux),on)==null)
     }
     fun labelTermsNeverInventFacts() {
         for(term in listOf("DOCG","DAC","VQA","AVA","AOC","Brut","Kabinett","Blanc de Blancs")) {
