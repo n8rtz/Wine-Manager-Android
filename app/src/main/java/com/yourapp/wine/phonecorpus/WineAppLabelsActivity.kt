@@ -147,7 +147,7 @@ class WineAppLabelsActivity : ComponentActivity() {
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
                     val capture = state.captures[mode]
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(
                             selected = state.mode == mode,
                             // The Prod versions are frozen comparators: they are not re-run and
@@ -155,11 +155,15 @@ class WineAppLabelsActivity : ComponentActivity() {
                             onClick = { if (mode == PhoneCorpusRunner.Mode.LAB) vm.load(mode) },
                             enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,
                         )
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(mode.title)
                             Text(
                                 if (mode == PhoneCorpusRunner.Mode.LAB) {
-                                    "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                    if (state.useCachedOcr) {
+                                        "Cached OCR (${state.ocrCached}/${state.total} ready) · ${state.labCompleted}/${state.total} checkpointed"
+                                    } else {
+                                        "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                    }
                                 } else if (capture == null) {
                                     "Baseline not captured yet · will run once for each remaining photo"
                                 } else {
@@ -167,6 +171,16 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                             )
+                        }
+                        if (mode == PhoneCorpusRunner.Mode.LAB) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = state.useCachedOcr,
+                                    onCheckedChange = vm::setUseCachedOcr,
+                                    enabled = !state.busy,
+                                )
+                                Text("Cached OCR", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }

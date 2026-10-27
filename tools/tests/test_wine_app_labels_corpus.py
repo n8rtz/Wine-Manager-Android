@@ -313,6 +313,43 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
                      'Pipeline bottleneck matrix', 'Gazetteer database coverage', 'Reviewed labels'):
             self.assertIn(kept, activity)
 
+    def test_background_execution_and_lab_ocr_cache_contracts(self):
+        manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
+        service = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsRunService.kt").read_text()
+        cache = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt").read_text()
+
+        # 1. Background execution: process-scoped coroutine session + non-exported foreground service;
+        #    leaving WineAppLabelsActivity (Back or app switch) no longer calls stop().
+        self.assertIn("private class WineAppLabelsSession", viewmodel)
+        self.assertIn("CoroutineScope(SupervisorJob() + Dispatchers.IO)", viewmodel)
+        pause_body = viewmodel.split("fun onBackgroundPause(resumeWhenForeground: Boolean) {", 1)[1].split("\n    }", 1)[0]
+        self.assertNotIn("stop()", pause_body)
+        self.assertIn("WineAppLabelsRunService.start(app,", viewmodel)
+        self.assertIn("WineAppLabelsRunService.update(", viewmodel)
+        self.assertIn("WineAppLabelsRunService.stop(app)", viewmodel)
+        self.assertIn('android:name="com.yourapp.wine.phonecorpus.WineAppLabelsRunService"', manifest)
+        self.assertIn('android:foregroundServiceType="specialUse"', manifest)
+        self.assertIn("ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE", service)
+        self.assertIn("PowerManager.PARTIAL_WAKE_LOCK", service)
+
+        # 2. Cached OCR checkbox sits next to Lab v4 only and reuses verified OCR outputs without
+        #    ever replaying cached OCR into Prod baselines.
+        self.assertIn("if (mode == PhoneCorpusRunner.Mode.LAB) {", activity)
+        self.assertIn("Checkbox(", activity)
+        self.assertIn("checked = state.useCachedOcr", activity)
+        self.assertIn("onCheckedChange = vm::setUseCachedOcr", activity)
+        self.assertIn('Text("Cached OCR"', activity)
+        self.assertIn('File(app.noBackupFilesDir, "wine-app-labels-v1/ocr-cache-v1/$signature")', cache)
+        for forbidden in ("packageManager", "lastUpdateTime", "firstInstallTime", "BuildConfig.BUILD_COMMIT).take("):
+            self.assertNotIn(forbidden, cache)
+        self.assertIn("fun promote(runFolders: List<File>, expectedHashes: Map<String, String>): Int", cache)
+        self.assertIn("Mode.PRODUCTION_V1 !in modes && modes==setOf(Mode.LAB) && it.image==image && it.imageSha256==hash", runner)
+        self.assertIn("useCachedOcr && needed == setOf(PhoneCorpusRunner.Mode.LAB)", viewmodel)
+        self.assertIn("onFreshOcr = { meta, rows -> ocrStore?.save(image, imageSha, meta, rows) }", viewmodel)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -73,18 +73,27 @@ internal object PhoneCorpusRunner {
      * only in producer data — v3.0 verified LWIN only, Lab v4 the Lab expanded producer index.
      * Every requested version returns a result; one that could not run is failed, never missing.
      */
-    suspend fun runImageAllModes(context:Context,image:String,hash:String,modes:Set<Mode>,work:File,traceParents:List<File>,assetRoot:String="wine-app-labels-v1"):Map<Mode,JSONObject> {
+    suspend fun runImageAllModes(context:Context,image:String,hash:String,modes:Set<Mode>,work:File,traceParents:List<File>,
+        assetRoot:String="wine-app-labels-v1",
+        cachedOcr:WineAppLabelsOcrCache.Entry?=null,
+        onFreshOcr:(Map<String,String>,List<Map<String,String>>) -> Unit = { _,_ -> },
+    ):Map<Mode,JSONObject> {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         require(modes.isNotEmpty()) { "At least one pipeline version is required" }
+        val replayOcr=cachedOcr?.takeIf {
+            Mode.PRODUCTION_V1 !in modes && modes==setOf(Mode.LAB) && it.image==image && it.imageSha256==hash
+        }
         work.mkdirs()
         val input=File(work,"input.jpg");val preview=File(work,"preview.png");val crop=File(work,"crop.png")
         val outputs=linkedMapOf<Mode,JSONObject>()
         val recordedByMode=linkedMapOf<Mode,MutableMap<String,F.Gate>>()
         for(mode in Mode.entries) if(mode in modes) {
-            outputs[mode]=JSONObject().put("image",image).put("build",BuildConfig.BUILD_COMMIT).put("mode",mode.name)
+            val usedCache=replayOcr!=null && mode==Mode.LAB
+            outputs[mode]=JSONObject().put("image",image).put("image_sha256",hash).put("build",BuildConfig.BUILD_COMMIT).put("mode",mode.name)
                 .put("pipeline",mode.pipelineId).put("spatial_merging",mode.usesSpatialEvidence)
                 .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
-                .put("runtime","on-device benchmark; fresh OCR; no saved-text replay")
+                .put("ocr_source",if(usedCache) "cached_ocr" else "fresh_ocr")
+                .put("runtime",if(usedCache) "on-device benchmark; cached OCR outputs; live Lab v4 extraction" else "on-device benchmark; fresh OCR; no saved-text replay")
             recordedByMode[mode]=linkedMapOf()
         }
         fun mark(mode:Mode,id:String,passed:Boolean,reason:String="") {
@@ -181,10 +190,22 @@ internal object PhoneCorpusRunner {
                         resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK)
                     val journal=batch.journals.single()
                     diagnosticJournal=journal
-                    labModes.forEach { mark(it,"input.decoded",false,"image decode did not complete") }
-                    val photo=TextLabRunner.preview(input,preview)
-                    labModes.forEach { mark(it,"input.decoded",true) }
-                    TextLabRunner.recognize(context,photo,TextCrop(0f,0f,1f,1f),false,crop,journal)
+                    if(replayOcr!=null) {
+                        journal.metadata.putAll(replayOcr.metadata)
+                        journal.metadata["build"]=BuildConfig.BUILD_COMMIT
+                        journal.metadata["test_id"]=journal.id
+                        journal.metadata["ocr_source"]="cached_ocr"
+                        journal.metadata["ocr_cached_build"]=replayOcr.capturedBuild
+                        journal.rows.addAll(replayOcr.rows)
+                        labModes.forEach { mark(it,"input.decoded",true) }
+                    } else {
+                        labModes.forEach { mark(it,"input.decoded",false,"image decode did not complete") }
+                        val photo=TextLabRunner.preview(input,preview)
+                        labModes.forEach { mark(it,"input.decoded",true) }
+                        TextLabRunner.recognize(context,photo,TextCrop(0f,0f,1f,1f),false,crop,journal)
+                        journal.metadata["ocr_source"]="fresh_ocr"
+                        onFreshOcr(LinkedHashMap(journal.metadata),ArrayList(journal.rows))
+                    }
                     TextLabWineExtraction.append(context,batch)
                     val engineRows=listOf("mlkit_reference" to "summary","candidate_3" to "candidate_summary").map { (candidate,stage) ->
                         journal.rows.lastOrNull { it["candidate"]==candidate && it["stage"]==stage }
