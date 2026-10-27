@@ -9,11 +9,9 @@ import com.yourapp.wine.diagnostics.PipelineFunnel as F
 /** Scores only committed predictions. Targets are never supplied to the runner. */
 internal class PhoneCorpusScoreboard(
     context:Context,
-    private val assetRoot:String="phone-corpus-v1",
-    private val includeLegacyComparisons:Boolean=assetRoot=="phone-corpus-v1"
+    private val assetRoot:String="wine-app-labels-v1"
 ) {
     private val reference=JSONObject(context.assets.open("$assetRoot/scoring.json").bufferedReader().use { it.readText() })
-    private val savedV2=if(includeLegacyComparisons) JSONObject(context.assets.open("phone-corpus-v1/saved-production-v2.json").bufferedReader().use { it.readText() }) else JSONObject()
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
     private val includedImages=run {
@@ -81,7 +79,6 @@ internal class PhoneCorpusScoreboard(
             rows+=row
             csv+=mapOf("row_type" to "summary")+headers.zip(row).toMap()+provenance
         }
-        val ids=predictions.map { it.getString("image") }.toSet()
         for(name in names) {
             val items=predictions.map { p ->
                 val ps=p.optJSONArray("pipelines")
@@ -190,34 +187,13 @@ internal class PhoneCorpusScoreboard(
             }
         }
         csv.addAll(funnel.map { it.csv(mode.pipelineId) })
-        if(includeLegacyComparisons) {
-            // Frozen legacy predictions are scored only after current predictions, never supplied to OCR.
-            val savedPredictions=savedV2.getJSONObject("predictions")
-            check(savedPredictions.keys().asSequence().toSet()==targets.keys) { "Saved v2 corpus differs from reference" }
-            val v2Provenance=mapOf("result_origin" to "saved_phone_run", "source_build" to savedV2.getString("source_build"),
-                "source_pipeline" to savedV2.getString("source_pipeline"),"source_csv_sha256" to savedV2.getString("source_csv_sha256"))
-            fun savedV2Items(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",savedPredictions.getJSONObject(im)) }
-            score("Saved Production v2.0 · same attempted photos",savedV2Items(ids),v2Provenance)
-            score("Saved Production v2.0 · same curated set",savedV2Items(includedImages),v2Provenance)
-            val baseline=reference.getJSONObject("baseline")
-            fun baselineItems(subset:Set<String>)=subset.sorted().map { im -> im to JSONObject().put("status","complete").put("fields",baseline.getJSONObject(im)) }
-            score("Frozen baseline · same attempted photos",baselineItems(ids))
-            score("Frozen baseline · same curated set",baselineItems(includedImages))
-        }
         val text=buildString {
-            appendLine("${if(includeLegacyComparisons) "CURATED PHONE CORPUS" else "WINE APP LABELS"} · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
-            if(includeLegacyComparisons) {
-                appendLine("106 selected labels are run. Red/yellow/omitted/owner-excluded labels remain out of OCR. The selected set has 105 fully scorable forms and one partly unresolved form; reference judgments are provisional.")
-                appendLine("Saved Production v2.0 comes from the full phone run on build ${savedV2.getString("source_build")} (then named lab-guarded-producer). Saved result rows are loaded, NOT rerun.")
-                appendLine("The older Frozen baseline is historical, NOT Production v1.0. For partial runs, compare same-attempted-photo rows.")
-            } else {
-                appendLine("This test uses all 125 retained rows in the updated, owner-reviewed workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded. The full legacy 168-photo run is not replayed.")
-                appendLine("Unresolved workbook references remain unscorable; other unknown locations/vintages are expected blank. These development references are not held-out accuracy.")
-            }
+            appendLine("WINE APP LABELS · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
+            appendLine("This test uses all 125 retained rows in the updated, owner-reviewed workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded.")
+            appendLine("Unresolved workbook references remain unscorable; other unknown locations/vintages are expected blank. These development references are not held-out accuracy.")
             appendLine(headers.joinToString(" | "));rows.forEach { appendLine(it.joinToString(" | ")) }
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
-            if(includeLegacyComparisons) appendLine("The former 168-photo acceptance threshold is retired for this curated subset. Set new acceptance thresholds only after reviewing the remaining reference data; partial runs do not establish full-set acceptance.")
-            else appendLine("This screen scores the 125 retained workbook rows; it does not replay the full legacy 168-photo run.")
+            appendLine("This screen scores the 125 retained workbook rows.")
             appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v3.0 and Lab v4 use the same current spatial pipeline (original readings plus producer and linked-wine resolution over spatial spans) and differ only in producer data: Prod v3.0 uses the verified LWIN producer index only, Lab v4 uses the Lab expanded producer index (the same LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates). Each mode runs and scores only its selected implementation.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")

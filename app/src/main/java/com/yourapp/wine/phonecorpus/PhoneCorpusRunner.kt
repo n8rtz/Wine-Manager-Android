@@ -20,8 +20,6 @@ import java.time.Year
 
 /** Fresh pixels only. Receives input identity/hash, NEVER target fields or saved predictions. */
 internal object PhoneCorpusRunner {
-    const val PACKAGED_IMAGE_COUNT=168
-    const val ACTIVE_IMAGE_COUNT=106
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
         LAB("Lab v4", "lab-v4-expanded-producers", "spatial_evidence_summary"),
         PRODUCTION_V3("Prod v3.0", "production-v3.0-lwin-only", "spatial_lwin_evidence_summary"),
@@ -50,9 +48,6 @@ internal object PhoneCorpusRunner {
         file.inputStream().use { input -> val b=ByteArray(65536);while(true) { val n=input.read(b);if(n<0) break;md.update(b,0,n) } }
         return md.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
     }
-    suspend fun runImage(context:Context,image:String,hash:String,mode:Mode,work:File,assetRoot:String="phone-corpus-v1"):JSONObject =
-        runImageAllModes(context,image,hash,setOf(mode),work,listOf(work.parentFile ?: work),assetRoot).getValue(mode)
-
     /**
      * Runs every requested version against one verified copy of the photo, so the versions'
      * Attempted counts advance together instead of depending on separate per-version runs.
@@ -64,7 +59,7 @@ internal object PhoneCorpusRunner {
      * only in producer data — v3.0 verified LWIN only, Lab v4 the Lab expanded producer index.
      * Every requested version returns a result; one that could not run is failed, never missing.
      */
-    suspend fun runImageAllModes(context:Context,image:String,hash:String,modes:Set<Mode>,work:File,traceParents:List<File>,assetRoot:String="phone-corpus-v1"):Map<Mode,JSONObject> {
+    suspend fun runImageAllModes(context:Context,image:String,hash:String,modes:Set<Mode>,work:File,traceParents:List<File>,assetRoot:String="wine-app-labels-v1"):Map<Mode,JSONObject> {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         require(modes.isNotEmpty()) { "At least one pipeline version is required" }
         work.mkdirs()

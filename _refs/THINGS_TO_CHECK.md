@@ -16,6 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/5dc78d5f-wine-manager-android` | not opened | current work | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
 | `arena/259cc0eb-wine-manager-android` | not opened | current work; main synced through PR #9 | W-058 debug pipeline bottleneck table, current-label checkpoint/CSV counts, merged build-metadata correction | [Jump](#branch-arena259cc0eb-wine-manager-android) |
 | `arena/814c691f-wine-manager-android` | not opened yet | historical checklist | Cleanup of dead code, Profile + Settings, build info in App Information, debug test-data restore, backlog and docs rewrite | [Jump](#branch-arena814c691f-wine-manager-android) |
@@ -24,6 +25,47 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/5dc78d5f-wine-manager-android`
+
+**Build it:** `git checkout arena/5dc78d5f-wine-manager-android`; build/install the debug build as usual (nothing here writes cellar data).
+
+**What changed:** the **Large image dataset test** row in Settings opens the 125-label Wine App Labels page, which had no export controls; it now prepares a scored or raw diagnostics CSV and saves each part through the system document picker. On the same screen, **Prod v1.0 / v2.0 / v3.0 are now captured once per photo and frozen on the device** (only Lab v4 re-runs), and the legacy 168-photo `PhoneCorpusActivity` page, its importer and its debug photo bundle were deleted.
+
+### Large image dataset test — CSV save restored
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings → Large image dataset test**. Under **Scored results** there is a **CSV export** section with **Copy scored stats**, **Prepare scored CSV export**, **Prepare raw diagnostics CSV export** and **Split an existing CSV for upload**. With no checkpointed photos the two Prepare buttons are disabled; after a few photos they enable.
+2. [ ] Tap **Prepare scored CSV export**: a **Save CSV · n.nn MB** button appears. Tap it, pick a folder in the system picker and save. The status line names the saved file, and the file opens in a spreadsheet with one summary row plus field and `pipeline_step` rows for each version (the `mode` and `pipeline` columns tell Prod v1.0 / v2.0 / v3.0 / Lab v4 apart).
+3. [ ] Tap **Prepare raw diagnostics CSV export** and save it the same way. It adds `image_summary`, `tokens`, `engine_timings`, `trace`, `pipelines` and `pipeline_funnel` rows; no image, photo path or account information appears in either file.
+4. [ ] Tap a **Save** button and cancel the system dialog: nothing is written, the button stays, and no error message appears. Save the same part again successfully.
+5. [ ] Watch the status while preparing/saving an export and then returning from the picker: there is no "Stopping after the current photo" message and no run starts by itself (opening the picker is not a benchmark background pause).
+6. [ ] Use **Split an existing CSV for upload** on a saved export larger than 25 MB: numbered parts appear with the same header and complete records; each one saves separately. A small file is offered as a single part, unchanged.
+7. [ ] Start a run, then try the export buttons during it: they stay disabled until the run stops, and **Start / resume remaining photos** stays disabled while a CSV is being prepared or saved.
+
+### Large image dataset test — Prod versions frozen, legacy page retired
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a **fresh install** (clear app data first), open **Profile → Settings → Large image dataset test**. Only **Lab v4** has a selectable radio; **Prod v1.0**, **Prod v2.0** and **Prod v3.0** are greyed out and show `Baseline not captured yet · will run once for each remaining photo`. The page now carries only the title, the one-line subtitle, the mode rows and the counts — the long explanatory paragraphs under each section are gone.
+2. [ ] Tap **Start / resume (first pass also captures Prod)** and let a few photos finish. Each photo shows “Running Lab v4 + capturing Prod v1.0, Prod v2.0, Prod v3.0”. The matrix shows all four rows.
+3. [ ] Stop, force-stop the app, reopen the screen: the Prod rows show the same numbers as before the restart, and **Prod baselines captured: n/125 photos** is unchanged. Then tap **Start / resume** again: the per-photo message no longer names the Prod versions (only Lab v4), and the Prod rows do not move while Lab's row updates.
+4. [ ] Update/reinstall the APK over the existing install (same signing key, e.g. a new debug build), reopen the screen: **Prod baselines captured** still reports the old photo count and the OLD build SHA in “captured by …”. Prod rows are unchanged; no Prod version re-runs. (Uninstall or **Clear storage** is expected to lose the frozen records.)
+5. [ ] With an install that already has Prod checkpoints from an earlier build (the previous branch's four-version run), open the screen once: the status line reports **promoted** photos, and the Prod rows appear without a second OCR pass. Only completed attempts are promoted; photos whose newest attempt failed are still captured on the next Start.
+6. [ ] Under **Retry failed / partial**, retry after a photo whose Prod capture failed: only that photo's Prod version re-runs, and its frozen record is replaced. Photos already frozen correctly are never re-run.
+7. [ ] Prepare and save both CSVs: Prod rows carry `result_origin=frozen_baseline`, `run_id=frozen-baseline` and `captured_build`, while Lab rows carry this run's `run_id`; the raw file has the Lab `tokens`/`trace`/`pipelines`/`pipeline_funnel` rows and only the frozen Prod `pipeline_step` aggregates (no fabricated token rows).
+8. [ ] Confirm the retired page is gone: `PhoneCorpusActivity`, `PhoneCorpusViewModel`, `PhoneCorpusCsvTable`, the 168-photo `app/src/debug/assets/phone-corpus-v1/` bundle and its manifest entry no longer exist; there is no **Import scored results CSV** anywhere; the debug APK still installs (no missing-asset crash on the Settings screen, the OCR Labs or Database Lookup).
+9. [ ] Run `tools/run-pipeline-funnel-checks.sh` if Kotlin on the host is available, and on a disposable emulator run `PipelineFunnelDeviceTest` (it now reads `wine-app-labels-v1/inputs.json`).
+
+### Large image dataset test — no wrapped words in the diagnostics table
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Pipeline bottleneck matrix** on a phone-width screen. No header word breaks mid-line ("Wine name", "Sub-region" are on one line), no step label wraps onto a second or third line, and no count cell such as `12/3 · NR 1 · ? 0 · NA 2` wraps.
+2. [ ] The table scrolls horizontally to reach the later field columns, and the header row stays aligned with every body row while scrolling. Rotate to landscape: with more width, less (or no) scrolling is needed and the columns keep their measured widths.
+3. [ ] Tap **+** on a row: the definition panel spans the full table width and is not clipped by the scroll edge. Tap **−** to collapse.
+4. [ ] The scored-results section no longer shows the "Fully correct = …" legend, and the screen shows no "Ready. Only the 125 retained workbook labels…" line after loading (the counts and captions carry that information).
 
 ## Branch `arena/18cd55a1-wine-manager-android`
 

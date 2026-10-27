@@ -5,8 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 ORIGINAL = ROOT / "tools/evaluation/public-corpus-reference-v1/reference.json"
-SCORING = ROOT / "app/src/debug/assets/phone-corpus-v1/scoring.json"
-ADJUDICATIONS = ROOT / "app/src/debug/assets/phone-corpus-v1/reference-adjudications-v1.json"
+# The 168-photo corpus is retired from the APK; these inputs live in tools/ (see its README).
+SCORING = ROOT / "tools/evaluation/retired-phone-corpus-v1/scoring.json"
+ADJUDICATIONS = ROOT / "tools/evaluation/retired-phone-corpus-v1/reference-adjudications-v1.json"
 OUTPUT = Path(__file__).resolve().parent / "reference-data-168.csv"
 FIELDS = ("producer", "wine_name", "country", "region", "subregion", "vintage")
 

@@ -3,7 +3,9 @@ package com.yourapp.wine.phonecorpus
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -16,19 +18,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withStyle
+import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -55,6 +64,11 @@ private data class LabelTestCase(
     val vintage: String,
 )
 
+/** Measured diagnostics-matrix widths: each column is as wide as its own longest single-line text. */
+private data class MatrixWidths(val step: Dp, val fields: List<Dp>) {
+    val total: Dp get() = fields.fold(step) { total, width -> total + width }
+}
+
 class WineAppLabelsActivity : ComponentActivity() {
     private val vm: WineAppLabelsViewModel by viewModels()
 
@@ -77,6 +91,15 @@ class WineAppLabelsActivity : ComponentActivity() {
     private fun Screen() {
         val state by vm.state.collectAsState()
         val context = LocalContext.current
+        val clipboard = LocalClipboardManager.current
+        var exportIndex by rememberSaveable { mutableStateOf(0) }
+        // Same save flow as the legacy Large image dataset test page: prepare, then Save each part.
+        val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+            uri?.let { vm.saveExportPart(it, exportIndex) }
+        }
+        val splitExisting = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let(vm::splitExistingCsv)
+        }
         val cases = remember {
             val scoring = JSONObject(context.assets.open("wine-app-labels-v1/scoring.json").bufferedReader().use { it.readText() })
             val images = scoring.getJSONArray("images")
@@ -120,43 +143,63 @@ class WineAppLabelsActivity : ComponentActivity() {
             item {
                 Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
                 Text("125 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
-                Text("This normal-app benchmark uses all 125 retained rows in the updated workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded. The full legacy 168-photo run is not replayed.", style = MaterialTheme.typography.bodySmall)
-                Text("Private on-device benchmark. The source repository declares no image license; do not redistribute these photos or an APK containing them beyond authorized project use.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
+                    val capture = state.captures[mode]
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = state.mode == mode, onClick = { vm.load(mode) }, enabled = !state.busy)
-                        Text(mode.title)
+                        RadioButton(
+                            selected = state.mode == mode,
+                            // The Prod versions are frozen comparators: they are not re-run and
+                            // their diagnostics are read straight from the stored capture.
+                            onClick = { if (mode == PhoneCorpusRunner.Mode.LAB) vm.load(mode) },
+                            enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,
+                        )
+                        Column {
+                            Text(mode.title)
+                            Text(
+                                if (mode == PhoneCorpusRunner.Mode.LAB) {
+                                    "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                } else if (capture == null) {
+                                    "Baseline not captured yet · will run once for each remaining photo"
+                                } else {
+                                    "Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                 }
-                Text("Prod v3.0 uses verified LWIN producer data only. Lab v4 uses the Lab-only expanded producer index: the same verified LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates. Supplemental candidates never reach production or the Prod versions, and every suggestion still requires confirmation.", style = MaterialTheme.typography.bodySmall)
-                Text("Every photo runs through all four versions before the test moves on, so Attempted stays equal across versions. Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index — while Prod v1.0 runs the Add Wine scanner separately. The version selected above only chooses which diagnostics are shown below. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen this screen and tap Start / resume — versions already checkpointed for a photo are not rerun.", style = MaterialTheme.typography.bodySmall)
             }
             item {
-                Text(state.message)
-                Text("All four versions checkpointed: ${state.completed}/${state.total}")
+                if (state.message.isNotBlank()) Text(state.message)
+                Text("Lab v4 checkpointed: ${state.labCompleted}/${state.total}")
+                val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
+                Text(
+                    if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v3.0 frozen on this device: $frozen/${state.total} photos"
+                    else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
+                )
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Button(
                     onClick = { vm.start() },
-                    enabled = !state.busy && state.completed < state.total,
+                    enabled = !state.busy && (state.labCompleted < state.total || state.captureRemaining > 0),
                 ) {
-                    Text("Start / resume remaining photos")
+                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v4 only")
                 }
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
-                    TextButton(onClick = { vm.start(retryFailures = true) }, enabled = !state.busy && state.completed > 0) {
-                        Text("Retry failed / partial")
-                    }
+                    TextButton(
+                        onClick = { vm.start(retryFailures = true) },
+                        enabled = !state.busy && (state.labCompleted > 0 || state.captures.isNotEmpty()),
+                    ) { Text("Retry failed / partial") }
                 }
-                TextButton(onClick = { vm.load(state.mode, fresh = true) }, enabled = !state.busy) {
-                    Text("New run (keep old results)")
+                TextButton(onClick = { vm.load(PhoneCorpusRunner.Mode.LAB, fresh = true) }, enabled = !state.busy) {
+                    Text("New Lab run (keeps old results and frozen Prod)")
                 }
             }
             state.board?.let { board ->
                 item {
                     Text("Scored results", style = MaterialTheme.typography.titleMedium)
-                    Text("Attempted is the saved-photo tally. Fully correct (for example, 2/5) means all six scorable fields matched on that many photos; it is an accuracy score, not run progress. Expected blanks count as correct when matched; unresolved references are unscorable. Partial runs do not establish full-set accuracy.", style = MaterialTheme.typography.bodySmall)
                     SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
                             val columnWidth = 88.dp
@@ -173,14 +216,41 @@ class WineAppLabelsActivity : ComponentActivity() {
                         }
                     }
                 }
+                item {
+                    Text("CSV export", style = MaterialTheme.typography.titleMedium)
+                    TextButton(
+                        onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + board.text)) },
+                        enabled = !state.busy,
+                    ) { Text("Copy scored stats") }
+                    Button(
+                        onClick = { vm.prepareExport(raw = false) },
+                        enabled = !state.busy && board.csv.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Prepare scored CSV export") }
+                    OutlinedButton(
+                        onClick = { vm.prepareExport(raw = true) },
+                        enabled = !state.busy && board.csv.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Prepare raw diagnostics CSV export") }
+                    state.exportParts.forEachIndexed { index, file ->
+                        OutlinedButton(
+                            onClick = { exportIndex = index; export.launch(file.name) },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Save ${if (state.exportParts.size > 1) "part ${index + 1}/${state.exportParts.size}" else "CSV"} · ${"%.2f".format(file.length() / 1_000_000.0)} MB")
+                        }
+                    }
+                    TextButton(
+                        onClick = { splitExisting.launch(arrayOf("text/*", "application/csv", "application/octet-stream")) },
+                        enabled = !state.busy,
+                    ) { Text("Split an existing CSV for upload") }
+                }
             }
             state.board?.let { board ->
                 item {
                     Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Step-level diagnostics for the selected version only. ML Kit runs before Paddle; post-OCR rows describe the selected pipeline. Counts show passed (green) / failed (red) plus not-reached, not-recorded, and not-applicable cases. Tap + for step definitions.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
                     TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
                         Text(if (showDiagnostics) "Hide diagnostics table" else "Show diagnostics table")
                     }
@@ -195,88 +265,141 @@ class WineAppLabelsActivity : ComponentActivity() {
                         val gridColor = MaterialTheme.colorScheme.outlineVariant
                         val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
                         val failColor = MaterialTheme.colorScheme.error
-                        BoxWithConstraints(Modifier.fillMaxWidth()) {
-                            val viewportWidth = maxWidth
-                            // The step column is severely condensed (short label only; the full
-                            // title, branch and definition live in the expanded row) so the six
-                            // field columns get readable widths and the whole matrix fits the
-                            // screen without horizontal scrolling.
-                            val stepWidth = maxWidth * 0.19f
-                            val fieldWidth = (maxWidth - stepWidth) / PhoneCorpusMath.fields.size
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "Step",
-                                        Modifier.width(stepWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(4.dp),
-                                        style = MaterialTheme.typography.labelMedium,
-                                    )
-                                    fieldTitles.forEach { title ->
-                                        Text(
-                                            title,
-                                            Modifier.width(fieldWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            textAlign = TextAlign.Center,
-                                        )
+                        val labelStyle = MaterialTheme.typography.labelSmall
+                        val cellStyle = MaterialTheme.typography.bodySmall
+                        val measurer = rememberTextMeasurer()
+                        val density = LocalDensity.current
+                        // Columns are measured, not guessed: every step label, header and cell gets
+                        // the width its own text needs on ONE line, so words never wrap onto two or
+                        // three lines. The grid scrolls horizontally only when the measured width
+                        // exceeds the screen.
+                        fun textWidth(text: AnnotatedString, style: TextStyle): Dp = with(density) {
+                            measurer.measure(text, style, maxLines = 1, softWrap = false).size.width.toDp()
+                        }
+                        // 4.dp padding on each side plus a little rounding headroom so a measured
+                        // line is never clipped by a fractional-pixel boundary.
+                        val cellPadding = 10.dp
+                        val expandButtonWidth = 24.dp
+                        val matrixWidths = remember(board, labelStyle, cellStyle, passColor, failColor) {
+                            val stepText = listOf(AnnotatedString("Step")) +
+                                board.matrix.map { AnnotatedString(it.step.shortTitle) }
+                            val step = stepText.maxOf { textWidth(it, labelStyle) } + cellPadding + expandButtonWidth
+                            val fields = PhoneCorpusMath.fields.mapIndexed { index, field ->
+                                val cells = board.matrix.mapNotNull { row ->
+                                    row.fields[field]?.let {
+                                        passFailLabel(it.passed, it.failed, passColor, failColor, notReached = it.notReached,
+                                            notRecorded = it.notRecorded, notApplicable = it.notApplicable)
                                     }
                                 }
-                                board.matrix.forEachIndexed { index, row ->
-                                    val section = when {
-                                        row.step.branch.startsWith("OCR table · ML Kit") -> "OCR 1 · ML KIT"
-                                        row.step.branch.startsWith("OCR table · Paddle") -> "OCR 2 · PADDLE"
-                                        else -> "POST-OCR REQUIREMENTS"
+                                maxOf(
+                                    textWidth(AnnotatedString(fieldTitles[index]), labelStyle),
+                                    cells.maxOfOrNull { textWidth(it, cellStyle) } ?: 0.dp,
+                                ) + cellPadding
+                            }
+                            // A shared step spans all six field columns; if its own text is wider,
+                            // the last column grows so it still fits on one line.
+                            val shared = board.matrix.mapNotNull { it.shared }.maxOfOrNull { cell ->
+                                textWidth(passFailLabel(cell.passed, cell.failed, passColor, failColor, shared = true,
+                                    notReached = cell.notReached, notRecorded = cell.notRecorded, notApplicable = cell.notApplicable), cellStyle)
+                            } ?: 0.dp
+                            val fieldsTotal = fields.fold(0.dp) { total, width -> total + width }
+                            val widened = if (shared + cellPadding > fieldsTotal) {
+                                fields.mapIndexed { index, width ->
+                                    if (index == fields.lastIndex) width + (shared + cellPadding - fieldsTotal) else width
+                                }
+                            } else fields
+                            MatrixWidths(step = step, fields = widened)
+                        }
+                        val stepWidth = matrixWidths.step
+                        val fieldWidths = matrixWidths.fields
+                        val gridWidth = matrixWidths.total
+                        Column(Modifier.horizontalScroll(rememberScrollState())) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Step",
+                                    Modifier.width(stepWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(4.dp),
+                                    style = labelStyle,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                                fieldTitles.forEachIndexed { index, title ->
+                                    Text(
+                                        title,
+                                        Modifier.width(fieldWidths[index]).heightIn(min = 48.dp).border(1.dp, gridColor).padding(horizontal = 4.dp, vertical = 4.dp),
+                                        style = labelStyle,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                }
+                            }
+                            board.matrix.forEachIndexed { index, row ->
+                                val section = when {
+                                    row.step.branch.startsWith("OCR table · ML Kit") -> "OCR 1 · ML KIT"
+                                    row.step.branch.startsWith("OCR table · Paddle") -> "OCR 2 · PADDLE"
+                                    else -> "POST-OCR REQUIREMENTS"
+                                }
+                                val previous = board.matrix.getOrNull(index - 1)?.step?.branch
+                                val previousSection = when {
+                                    previous?.startsWith("OCR table · ML Kit") == true -> "OCR 1 · ML KIT"
+                                    previous?.startsWith("OCR table · Paddle") == true -> "OCR 2 · PADDLE"
+                                    previous == null -> null
+                                    else -> "POST-OCR REQUIREMENTS"
+                                }
+                                if (section != previousSection) {
+                                    Text(section, Modifier.width(gridWidth).padding(top = 10.dp, bottom = 4.dp), style = MaterialTheme.typography.titleSmall)
+                                }
+                                val expanded = row.step.id in expandedDiagnostics
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        Modifier.width(stepWidth).heightIn(min = 56.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
+                                            },
+                                            modifier = Modifier.width(24.dp),
+                                            contentPadding = PaddingValues(0.dp),
+                                        ) { Text(if (expanded) "−" else "+") }
+                                        Text(
+                                            row.step.shortTitle,
+                                            Modifier.weight(1f),
+                                            style = labelStyle,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                        )
                                     }
-                                    val previous = board.matrix.getOrNull(index - 1)?.step?.branch
-                                    val previousSection = when {
-                                        previous?.startsWith("OCR table · ML Kit") == true -> "OCR 1 · ML KIT"
-                                        previous?.startsWith("OCR table · Paddle") == true -> "OCR 2 · PADDLE"
-                                        previous == null -> null
-                                        else -> "POST-OCR REQUIREMENTS"
-                                    }
-                                    if (section != previousSection) {
-                                        Text(section, Modifier.width(viewportWidth).padding(top = 10.dp, bottom = 4.dp), style = MaterialTheme.typography.titleSmall)
-                                    }
-                                    val expanded = row.step.id in expandedDiagnostics
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Row(
-                                            Modifier.width(stepWidth).heightIn(min = 56.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            TextButton(
-                                                onClick = {
-                                                    expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
-                                                },
-                                                modifier = Modifier.width(24.dp),
-                                                contentPadding = PaddingValues(0.dp),
-                                            ) { Text(if (expanded) "−" else "+") }
-                                            Text(row.step.shortTitle, Modifier.weight(1f), style = MaterialTheme.typography.labelSmall)
-                                        }
-                                        if (row.shared != null) {
+                                    if (row.shared != null) {
+                                        Text(
+                                            passFailLabel(row.shared.passed, row.shared.failed, passColor, failColor, shared = true, notReached = row.shared.notReached, notRecorded = row.shared.notRecorded, notApplicable = row.shared.notApplicable),
+                                            Modifier.width(fieldWidths.fold(0.dp) { total, width -> total + width }).heightIn(min = 48.dp).border(1.dp, gridColor).padding(horizontal = 4.dp, vertical = 4.dp),
+                                            style = cellStyle,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                        )
+                                    } else {
+                                        PhoneCorpusMath.fields.forEachIndexed { index, field ->
+                                            val cell = row.fields[field]
                                             Text(
-                                                passFailLabel(row.shared.passed, row.shared.failed, passColor, failColor, shared = true, notReached = row.shared.notReached, notRecorded = row.shared.notRecorded, notApplicable = row.shared.notApplicable),
-                                                Modifier.width(fieldWidth * PhoneCorpusMath.fields.size).heightIn(min = 48.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
-                                                style = MaterialTheme.typography.bodySmall,
+                                                cell?.let { passFailLabel(it.passed, it.failed, passColor, failColor, notReached = it.notReached, notRecorded = it.notRecorded, notApplicable = it.notApplicable) } ?: AnnotatedString("—"),
+                                                Modifier.width(fieldWidths[index]).heightIn(min = 48.dp).border(1.dp, gridColor).padding(horizontal = 4.dp, vertical = 4.dp),
+                                                style = cellStyle,
                                                 textAlign = TextAlign.Center,
+                                                maxLines = 1,
+                                                softWrap = false,
                                             )
-                                        } else {
-                                            PhoneCorpusMath.fields.forEach { field ->
-                                                val cell = row.fields[field]
-                                                Text(
-                                                    cell?.let { passFailLabel(it.passed, it.failed, passColor, failColor, notReached = it.notReached, notRecorded = it.notRecorded, notApplicable = it.notApplicable) } ?: AnnotatedString("—"),
-                                                    Modifier.width(fieldWidth).heightIn(min = 48.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    textAlign = TextAlign.Center,
-                                                )
-                                            }
                                         }
                                     }
-                                    if (expanded) {
-                                        Column(
-                                            Modifier.width(viewportWidth).border(1.dp, gridColor).padding(horizontal = 8.dp, vertical = 8.dp),
-                                        ) {
-                                            Text(row.step.title, style = MaterialTheme.typography.titleSmall)
-                                            Text(row.step.branch, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            Text(row.step.definition, style = MaterialTheme.typography.bodySmall)
-                                        }
+                                }
+                                if (expanded) {
+                                    Column(
+                                        Modifier.width(gridWidth).border(1.dp, gridColor).padding(horizontal = 8.dp, vertical = 8.dp),
+                                    ) {
+                                        Text(row.step.title, style = MaterialTheme.typography.titleSmall)
+                                        Text(row.step.branch, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(row.step.definition, style = MaterialTheme.typography.bodySmall)
                                     }
                                 }
                             }
@@ -286,7 +409,6 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             item {
                 Text("Gazetteer database coverage", style = MaterialTheme.typography.titleMedium)
-                Text("Known workbook values and accepted aliases are matched exactly after normalization. Counts are distinct test labels present in each database, checked on the scoring side only. The expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) is packaged for Lab v4 only; Prod versions and production never open it, and no coverage values are passed to OCR.", style = MaterialTheme.typography.bodySmall)
                 SelectionContainer {
                     Column(Modifier.horizontalScroll(rememberScrollState())) {
                         val width = 72.dp
