@@ -32,13 +32,17 @@ internal object PhoneCorpusCsvTable {
         val required=listOf("image","field","recognized","outcome","reference_status","execution_status","attempt")
         require(columns.containsAll(required)) { "Select a scored Phone Corpus results CSV, not a raw diagnostics export" }
         val included=readIncludedImages(context)
+        // A saved CSV keeps the pipeline ID of the build that wrote it, which may be a
+        // retired legacy ID; resolve rows to their owning mode instead of matching only
+        // the current ID, or every pre-rename saved table fails to restore.
+        fun ownerOf(row:Map<String,String>)=PhoneCorpusRunner.Mode.fromPipelineId(row["pipeline"].orEmpty())
         val modeCounts=PhoneCorpusRunner.Mode.entries.associateWith { mode ->
-            records.count { it["row_type"]=="field" && it["pipeline"]==mode.pipelineId }
+            records.count { it["row_type"]=="field" && ownerOf(it)==mode }
         }
         val mode=modeCounts.maxByOrNull { it.value }?.key
             ?: throw IllegalArgumentException("CSV has no scored field rows for a supported Phone Corpus pipeline")
         require(modeCounts.values.count { it>0 }==1) { "Import one pipeline's scored table at a time" }
-        val selectedFields=records.filter { it["row_type"]=="field" && it["pipeline"]==mode.pipelineId }
+        val selectedFields=records.filter { it["row_type"]=="field" && ownerOf(it)==mode }
         require(selectedFields.none { it["image"].orEmpty() !in included }) {
             "This file includes photos outside the active 107-label set. Those review-excluded labels are not imported."
         }
@@ -51,13 +55,17 @@ internal object PhoneCorpusCsvTable {
                 "Each imported photo must have exactly one row for each of the six fields ($image)"
             }
         }
-        val currentSummaries=records.filter { it["row_type"]=="summary" && it["Pipeline"]==mode.pipelineId }
+        // The pipeline ID exactly as written in the file (current or legacy): summary
+        // rows carry it under "Pipeline", and display strings must show the file's own
+        // ID, never relabel saved results as the current pipeline generation.
+        val csvPipeline=selectedFields.first()["pipeline"].orEmpty()
+        val currentSummaries=records.filter { it["row_type"]=="summary" && it["Pipeline"]==csvPipeline }
         require(currentSummaries.size==1 && currentSummaries.single().keys.containsAll(scoreHeaders)) {
-            "Exactly one complete scored summary row is required for ${mode.pipelineId}"
+            "Exactly one complete scored summary row is required for $csvPipeline"
         }
         val summaries=records.filter { it["row_type"]=="summary" && it.keys.containsAll(scoreHeaders) }
         val summaryRows=summaries.map { row -> scoreHeaders.map { row[it].orEmpty() } }
-        val stepRows=records.filter { it["row_type"]=="pipeline_step" && it["pipeline"]==mode.pipelineId }
+        val stepRows=records.filter { it["row_type"]=="pipeline_step" && ownerOf(it)==mode }
         require(stepRows.map { it["step_id"].orEmpty() }.toSet().size==stepRows.size) {
             "Duplicate aggregate pipeline_step rows make the matrix ambiguous"
         }
@@ -65,7 +73,7 @@ internal object PhoneCorpusCsvTable {
         val details=byImage.entries.sortedBy { entry -> entry.value.first()["review_number"]?.toIntOrNull() ?: Int.MAX_VALUE }
             .map { (image,rows) ->
                 val first=rows.first()
-                listOf("Photo #${first["review_number"].orEmpty()} · ${mode.pipelineId} · ${first["form_status"].orEmpty()}" )+
+                listOf("Photo #${first["review_number"].orEmpty()} · $csvPipeline · ${first["form_status"].orEmpty()}" )+
                     PhoneCorpusMath.fields.map { field ->
                         val row=rows.single { it["field"]==field }
                         "$field: ${row["recognized"].orEmpty().ifBlank { "(blank)" }} — ${row["outcome"].orEmpty()}\n"+

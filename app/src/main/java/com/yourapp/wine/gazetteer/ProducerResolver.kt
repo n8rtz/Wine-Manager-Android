@@ -4,14 +4,21 @@ import java.text.Normalizer
 import java.util.Locale
 import com.yourapp.wine.diagnostics.PipelineFunnel
 
-/** Conservative resolver over verified primary LWIN producer/brand names; suggestions always require confirmation. */
+/** Conservative resolver over integrity-checked producer/brand names; suggestions always require confirmation.
+ * The primary index is the verified LWIN export. The Lab benchmark may substitute an expanded
+ * index whose LWIN subset is that same export plus source-tagged supplemental candidates; the
+ * evidence rules below (two engines, separation, existing-value protection) are unchanged. */
 internal class ProducerResolver(private val index:Index,
     private val onFailureTelemetry:(Map<String,String>)->Unit={}) {
     data class Entity(val id:String,val name:String,val key:String,val support:Set<String> = emptySet())
     data class Span(val text:String,val engine:String,val observationIds:Set<Int>,val estimated:Boolean=false)
     interface Index {
         val version:String
+        /** Producer content is exactly the verified primary LWIN export. */
         val primaryVerified:Boolean
+        /** Lab-benchmark only: integrity-checked expanded index (verified LWIN subset plus
+         * supplemental candidates, each tagged per entity in Entity.support). */
+        val labSupplemental:Boolean get()=false
         fun lookup(key:String,limit:Int,checkBudget:()->Unit):List<Entity>
     }
     data class Match(val entity:Entity,val observed:String,val engine:String,val observationIds:Set<Int>,val distance:Int)
@@ -19,7 +26,7 @@ internal class ProducerResolver(private val index:Index,
         val telemetry:Map<String,String> = emptyMap())
     class BudgetExceeded:RuntimeException()
     companion object {
-        const val VERSION="producer-primary-lwin-v3"
+        const val VERSION="producer-resolver-v4"
         const val MAX_SPANS=128
         const val MAX_HITS=32
 
@@ -62,8 +69,9 @@ internal class ProducerResolver(private val index:Index,
             trace.visit("execution",completed,reason)
             return Decision(value,reason,matches,id,trace.fields())
         }
-        trace.visit("primary",index.primaryVerified,"primary LWIN export required")
-        if(!index.primaryVerified) return finish(existing,"primary LWIN export required; unchanged",emptyList())
+        val indexPermitted=index.primaryVerified || index.labSupplemental
+        trace.visit("primary",indexPermitted,"primary LWIN export required")
+        if(!indexPermitted) return finish(existing,"primary LWIN export required; unchanged",emptyList())
         trace.visit("spans",spans.size<=MAX_SPANS,"span limit")
         if(spans.size>MAX_SPANS) return finish(existing,"span limit; abstained",emptyList())
         val matches=mutableListOf<Match>()
@@ -125,6 +133,10 @@ internal class ProducerResolver(private val index:Index,
         }
         trace.visit("existing",true);trace.visit("selected",true)
         trace.visit("changed",entity.name!=existing,"existing supported producer retained")
-        return finish(entity.name,"primary LWIN producer/brand name supported by two engines; confirm manually",matches,id)
+        val supplementalSources=entity.support.filter { it!="lwin" }.sorted()
+        val reason=if(supplementalSources.isEmpty())
+            "primary LWIN producer/brand name supported by two engines; confirm manually"
+            else "Lab expanded producer candidate (${supplementalSources.joinToString()}) supported by two engines; confirm manually"
+        return finish(entity.name,reason,matches,id)
     }
 }

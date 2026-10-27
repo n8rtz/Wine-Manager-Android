@@ -16,8 +16,11 @@ refresh = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(refresh)
 
 
+EXPANDED = ROOT / "app/src/main/assets/producer-gazetteer-expanded-v1"
+
+
 class XWinesCandidateDataTests(unittest.TestCase):
-    def test_unverified_sources_are_audit_only_and_not_packaged(self):
+    def test_supplemental_sources_packaged_only_as_lab_expanded_index(self):
         report = json.loads(REPORT.read_text())
         manifest = json.loads((MAIN / "manifest.json").read_text())
         source = report["xwines"]
@@ -31,11 +34,41 @@ class XWinesCandidateDataTests(unittest.TestCase):
         self.assertEqual(source["role"], "unverified winery/producer/brand name candidate; no country or aliases inferred")
         self.assertIsNone(source["atlas_repo_license"])
         self.assertFalse(report["artifacts"].get("app_manifest_modified", True))
+        # The primary verified database and manifest remain supplement-free; supplemental
+        # candidates ship only inside the separate Lab expanded producer index.
         self.assertNotIn("support", manifest)
         self.assertNotIn("support_attribution", manifest)
+        self.assertEqual(manifest["records"], 33160)
+        self.assertEqual(manifest["database_sha256"], refresh.db_hash(MAIN / "producers.sqlite"))
         for root in (MAIN, ROOT / "app/src/debug/assets/producer-gazetteer-v1"):
             for filename in ("ttb-support.sqlite", "osm-support.sqlite", "xwines-candidates.sqlite"):
                 self.assertFalse((root / filename).exists())
+        expanded_manifest = json.loads((EXPANDED / "manifest.json").read_text())
+        self.assertEqual(expanded_manifest["kind"], "lab-expanded-producer-index")
+        self.assertTrue(expanded_manifest["lab_only"])
+        self.assertEqual(expanded_manifest["primary_records"], 33160)
+        self.assertEqual(expanded_manifest["records"], 78615)
+        self.assertEqual(expanded_manifest["supplemental_records"], 45455)
+        self.assertEqual(expanded_manifest["primary_database_sha256"], manifest["database_sha256"])
+        self.assertEqual(expanded_manifest["wine_database_sha256"], manifest["wine_database_sha256"])
+        by_id = {entry["id"]: entry for entry in expanded_manifest["sources"]}
+        self.assertEqual(by_id["xwines"]["records"], 18945)
+        self.assertEqual(by_id["ttb"]["records"], 14849)
+        self.assertEqual(by_id["osm"]["records"], 11661)
+        expanded_db = EXPANDED / "producers-expanded.sqlite"
+        self.assertEqual(expanded_manifest["database_sha256"], refresh.db_hash(expanded_db))
+        import sqlite3
+        with sqlite3.connect(expanded_db) as expanded, sqlite3.connect(MAIN / "producers.sqlite") as primary:
+            self.assertEqual(expanded.execute("SELECT COUNT(*) FROM producers").fetchone()[0], 78615)
+            primary_ids = {row[0] for row in primary.execute("SELECT id FROM producers")}
+            expanded_ids = {row[0] for row in expanded.execute("SELECT id FROM producers")}
+            self.assertTrue(primary_ids <= expanded_ids)
+            tagged = expanded.execute("SELECT source,COUNT(*) FROM producer_sources GROUP BY source").fetchall()
+            self.assertEqual(dict(tagged), {"xwines": 18945, "ttb": 14849, "osm": 11661})
+            untagged = expanded.execute(
+                "SELECT COUNT(*) FROM producers p LEFT JOIN producer_sources s ON s.id=p.id WHERE s.id IS NULL"
+            ).fetchone()[0]
+            self.assertEqual(untagged, 33160)
 
     def test_candidate_database_builder_is_review_fixture_only(self):
         with tempfile.TemporaryDirectory() as temp:

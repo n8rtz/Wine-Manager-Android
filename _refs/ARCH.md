@@ -134,6 +134,10 @@ app/src/test/java/...                  # JVM tests: aromawheel, drinkingwindow, 
 app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
+app/src/main/assets/producer-gazetteer-v1/ # Verified primary LWIN producer/wine indexes (producers.sqlite 33,160, wines.sqlite) + manifest/NOTICE; primary_verified gate
+app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OSM, 78,615); opened only by Lab v4 benchmark + Database Lookup
+tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report
+app/src/main/java/com/yourapp/wine/kb/WineIndexDatabaseLookup.kt # Read-only Database Lookup access to the packaged LWIN wine index (wines.sqlite); cache shared with ProducerGazetteer
 app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt # Debug-only per-label pipeline gates, definitions and latest-attempt aggregation
 app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusPipelineDiagnostics.kt # Original traces -> label gates, including separate OCR branches
 app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusFunnelJson.kt # Compact funnel checkpoint/raw-export JSON, with honest legacy unknowns

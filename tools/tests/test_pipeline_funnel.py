@@ -46,16 +46,20 @@ class PipelineFunnelChecks(unittest.TestCase):
     def test_field_matrix_keeps_six_columns_and_each_step_description_collapsed_by_default(self):
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusActivity.kt").read_text()
         table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('TextButton(onClick={importCsv.launch', 1)[0]
-        self.assertIn("val stepWidth=320.dp", table)
-        self.assertIn("val fieldWidth=88.dp", table)
+        self.assertIn("val stepWidth=maxWidth*0.19f", table)
+        self.assertIn("val fieldWidth=(maxWidth-stepWidth)/PhoneCorpusMath.fields.size", table)
+        self.assertNotIn("horizontalScroll", table)
         self.assertIn("PhoneCorpusMath.fields.forEach", table)
         self.assertIn("board.matrix.forEach", table)
         self.assertIn('Text(if(expanded) "−" else "+")', table)
-        self.assertIn("if(expanded) Text(row.step.definition", table)
-        self.assertIn("Text(row.step.title,style=MaterialTheme.typography.bodySmall)", table)
+        # Collapsed rows show only the severely condensed short label; the full title,
+        # branch and definition live in the expanded Column.
+        self.assertIn("Text(row.step.shortTitle,Modifier.weight(1f)", table)
+        self.assertIn("if(expanded) Column(Modifier.width(viewportWidth)", table)
+        self.assertIn("Text(row.step.title,style=MaterialTheme.typography.titleSmall)", table)
         self.assertIn("Text(row.step.branch,style=MaterialTheme.typography.labelSmall", table)
-        self.assertNotIn("Text(row.step.title,style=MaterialTheme.typography.bodySmall,maxLines", table)
-        self.assertNotIn("Text(row.step.branch,style=MaterialTheme.typography.labelSmall,maxLines", table)
+        self.assertIn("Text(row.step.definition,style=MaterialTheme.typography.bodySmall)", table)
+        self.assertNotIn("Text(row.step.title,style=MaterialTheme.typography.bodySmall", table)
         self.assertIn("passFailLabel(it.passed,it.failed,passColor,failColor,notReached=it.notReached", table)
         self.assertIn("if(row.shared!=null)", table)
         self.assertIn("Modifier.width(viewportWidth).border(1.dp,gridColor)", table)
@@ -65,10 +69,28 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn("failColor=MaterialTheme.colorScheme.error", table)
         self.assertIn("passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true,notReached=", table)
         self.assertIn("passFailLabel(it.passed,it.failed,passColor,failColor,notReached=it.notReached", table)
-        self.assertIn("Modifier.horizontalScroll(matrixScroll)", table)
         self.assertIn("rememberSaveable(state.mode)", source)
         self.assertNotIn("showFunnelDetails", source)
         self.assertNotIn("fontSize", table)
+
+    def test_labels_matrix_colors_pass_fail_and_fits_screen(self):
+        source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Gazetteer database coverage"', 1)[0]
+        self.assertIn("private fun passFailLabel", source)
+        self.assertIn("passFailLabel(it.passed, it.failed, passColor, failColor, notReached = it.notReached", table)
+        self.assertIn("passFailLabel(row.shared.passed, row.shared.failed, passColor, failColor, shared = true", table)
+        self.assertIn("val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)", table)
+        self.assertIn("val failColor = MaterialTheme.colorScheme.error", table)
+        self.assertIn("val stepWidth = maxWidth * 0.19f", table)
+        self.assertIn("val fieldWidth = (maxWidth - stepWidth) / PhoneCorpusMath.fields.size", table)
+        self.assertIn("Text(row.step.shortTitle, Modifier.weight(1f)", table)
+        self.assertIn("Text(row.step.title, style = MaterialTheme.typography.titleSmall)", table)
+        self.assertIn("Text(row.step.definition, style = MaterialTheme.typography.bodySmall)", table)
+        self.assertNotIn("horizontalScroll", table)
+        self.assertNotIn("320.dp", table)
+        funnel = (ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
+        self.assertIn("val shortTitle: String get()", funnel)
+        self.assertIn('"resolver.mlkit.eligible" to "ML eligible"', funnel)
 
     def test_scored_result_import_and_persistence_are_separate_from_upload_splitting(self):
         base = ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus"

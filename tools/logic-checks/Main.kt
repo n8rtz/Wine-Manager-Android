@@ -114,8 +114,9 @@ fun main() {
     com.yourapp.wine.capture.RetiredModelChecks.run()
     com.yourapp.wine.kb.DatabaseNameLookupChecks.exactAndNearMatchesRankAheadOfUnrelatedEntries()
     com.yourapp.wine.kb.DatabaseNameLookupChecks.aliasesCanMatchWhileCanonicalNameRemainsVisible()
+    com.yourapp.wine.kb.DatabaseNameLookupChecks.exactWordMatchesRankFirstWithZeroDistance()
     com.yourapp.wine.kb.DatabaseNameLookupChecks.resultsAreBoundedAndEmptyQueriesReturnNothing()
-    println("PASS: local database lookup ranking / aliases / bounded results / empty query")
+    println("PASS: local database lookup ranking / aliases / exact-word matches / bounded results / empty query")
     com.yourapp.wine.textlab.TextLabFieldChecks.run()
 
 }

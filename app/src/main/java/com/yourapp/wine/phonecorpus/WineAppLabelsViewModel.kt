@@ -39,7 +39,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     @Volatile private var stopping = false
     @Volatile private var activityForeground = false
     @Volatile private var resumeAfterBackgroundPause = false
-    private var folder: File? = null
+    /** One current run folder per version; every photo is checkpointed into all of them together. */
+    private var folders: Map<PhoneCorpusRunner.Mode, File> = emptyMap()
 
     init { load(PhoneCorpusRunner.Mode.LAB) }
 
@@ -110,84 +111,48 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         .map { JSONObject(it.readText()) }
         .filter { it.optString("image") in includedIds() }
 
-    /** Merge saved Wine App Labels runs and older phone-corpus checkpoints; never runs OCR. */
-    private fun savedPredictions(mode: PhoneCorpusRunner.Mode): Map<String, JSONObject> {
-        val saved = linkedMapOf<String, JSONObject>()
-        val currentIds = includedIds()
-        val legacyMapJson = assetJson("legacy-phone-corpus-image-map.json")
-        val legacyImages = legacyMapJson.getJSONArray("images")
-        val legacyToCurrent = (0 until legacyImages.length()).associate { index ->
-            val row = legacyImages.getJSONObject(index)
-            row.getString("legacy_image") to row.getString("image")
-        }
-
-        // The old 168-photo test used different filenames. Reuse a result only when the
-        // packaged image bytes have an exact SHA-256 mapping to one of these 125 labels.
-        val legacyRoot = File(app.noBackupFilesDir, "phone-corpus-v1")
-        val legacyDirs = legacyRoot.listFiles().orEmpty().filter { it.isDirectory }.sortedBy { it.lastModified() }
-        for (dir in legacyDirs) {
-            val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
-            if (metadata.optString("mode") != mode.name || metadata.optString("pipeline") != mode.pipelineId) continue
-            File(dir, "current").listFiles().orEmpty().filter { it.extension == "json" }.sortedBy { it.name }.forEach { file ->
-                val result = runCatching { JSONObject(file.readText()) }.getOrNull() ?: return@forEach
-                if (result.optString("pipeline") != mode.pipelineId) return@forEach
-                val image = legacyToCurrent[result.optString("image")] ?: return@forEach
-                if (image !in currentIds) return@forEach
-                result.put("image", image)
-                saved[image] = result
-            }
-        }
-
-        // Current 125-label runs take precedence over legacy matches. Aggregate folders so
-        // starting a new run never hides saved per-photo checkpoints from an earlier run.
-        val expectedCorpus = corpusSignature(assetJson("manifest.json"))
-        val currentDirs = root.listFiles().orEmpty().filter { it.isDirectory }.sortedBy { it.lastModified() }
-        for (dir in currentDirs) {
-            val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
-            val corpus = metadata.optJSONObject("corpus_manifest") ?: continue
-            if (metadata.optString("mode") != mode.name || metadata.optString("pipeline") != mode.pipelineId ||
-                corpusSignature(corpus) != expectedCorpus
-            ) continue
-            predictions(dir).forEach { saved[it.getString("image")] = it }
-        }
-        return saved
-    }
-
-    private fun refresh(dir: File, mode: PhoneCorpusRunner.Mode) {
+    private fun refresh() {
+        val dirs = folders
+        if (dirs.isEmpty()) return
+        val mode = mutable.value.mode
         val scoreboard = PhoneCorpusScoreboard(app, "wine-app-labels-v1", includeLegacyComparisons = false)
-        val current = predictions(dir)
-        val currentBoard = scoreboard.build(current, mode)
-        val currentByImage = current.associateBy { it.getString("image") }
-        val cohortImages = current.map { it.getString("image") }
+        // Each row is scored from that version's own current-run checkpoints only, so Attempted
+        // is exactly the photos this run has checkpointed for that version.
+        val byMode = PhoneCorpusRunner.Mode.entries.associateWith { predictions(dirs.getValue(it)) }
+        val currentBoard = scoreboard.build(byMode.getValue(mode), mode)
         val comparisonRows = PhoneCorpusRunner.Mode.entries.map { comparedMode ->
-            val byImage = if (comparedMode == mode) currentByImage else savedPredictions(comparedMode)
-            val comparisonPredictions = cohortImages.mapNotNull { byImage[it] }
-            scoreboard.build(comparisonPredictions, comparedMode).rows.single()
+            val comparisonPredictions = byMode.getValue(comparedMode)
+            if (comparedMode == mode) currentBoard.rows.single()
+            else scoreboard.build(comparisonPredictions, comparedMode).rows.single()
         }
+        val fullyCheckpointed = byMode.values
+            .map { preds -> preds.map { it.getString("image") }.toSet() }
+            .reduceOrNull { common, images -> common intersect images }?.size ?: 0
         val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
         val comparisonText = buildString {
-            appendLine("WINE APP LABELS · ${current.size}/$WINE_APP_LABEL_COUNT attempted in ${mode.title}")
-            appendLine("Only the selected version runs fresh OCR. Comparison rows use saved results for the same photo cohort; no other version is rerun.")
+            appendLine("WINE APP LABELS · $fullyCheckpointed/$WINE_APP_LABEL_COUNT photos checkpointed in all four versions")
+            appendLine("Every photo runs through all four versions before the test moves on. Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately. Attempted therefore stays equal across versions.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
         }
         val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
-        mutable.update { it.copy(completed = current.size, total = WINE_APP_LABEL_COUNT, board = board) }
+        mutable.update { it.copy(completed = fullyCheckpointed, total = WINE_APP_LABEL_COUNT, board = board) }
     }
 
     fun load(mode: PhoneCorpusRunner.Mode, fresh: Boolean = false) {
         if (mutable.value.busy) return
-        folder = null
+        folders = emptyMap()
         mutable.update { it.copy(busy = true, mode = mode, completed = 0, total = WINE_APP_LABEL_COUNT, board = null, message = "Loading saved 125-label results…") }
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val dir = selectFolder(mode, fresh)
-                folder = dir
-                refresh(dir, mode)
+                // The selected version only chooses which diagnostics are displayed; a run always
+                // covers all four versions, so all four current folders load (or start fresh) together.
+                folders = PhoneCorpusRunner.Mode.entries.associateWith { selectFolder(it, fresh) }
+                refresh()
                 mutable.update { it.copy(message = "Ready. Only the 125 retained workbook labels are eligible for this test.") }
             } catch (e: Exception) {
-                folder = null
+                folders = emptyMap()
                 mutable.update { it.copy(message = "Cannot load the 125-label test: ${e.message}") }
             } finally {
                 mutable.update { it.copy(busy = false) }
@@ -221,10 +186,16 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         }
     }
 
+    private fun isFailed(result: JSONObject): Boolean =
+        result.optString("status") != "complete" || result.optBoolean("engine_incomplete") ||
+            result.optJSONArray("pipelines")?.let { rows ->
+                (0 until rows.length()).any { rows.getJSONObject(it).optString("status") != "complete" }
+            } == true
+
     fun start(retryFailures: Boolean = false) {
         if (mutable.value.busy) return
-        val dir = folder ?: return
-        val mode = mutable.value.mode
+        val dirs = folders
+        if (dirs.isEmpty()) return
         mutable.update { it.copy(busy = true, message = "Checking the 125 retained workbook photos and OCR engines…") }
         stopping = false
         viewModelScope.launch(Dispatchers.IO) {
@@ -251,27 +222,32 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 check(manifest.size == WINE_APP_LABEL_COUNT && manifest.map { it.getString("image") }.toSet() == included) {
                     "The packaged inputs do not match the selected workbook set"
                 }
-                val existing = predictions(dir).associateBy { it.getString("image") }
-                File(dir, "current").mkdirs()
-                File(dir, "attempts").mkdirs()
+                val existing = PhoneCorpusRunner.Mode.entries.associateWith { version ->
+                    predictions(dirs.getValue(version)).associateBy { it.getString("image") }
+                }
+                dirs.values.forEach { File(it, "current").mkdirs(); File(it, "attempts").mkdirs() }
                 for ((index, input) in manifest.withIndex()) {
                     if (stopping) break
                     val image = input.getString("image")
-                    val previous = existing[image]
-                    val failed = previous?.let { result ->
-                        result.optString("status") != "complete" || result.optBoolean("engine_incomplete") ||
-                            result.optJSONArray("pipelines")?.let { rows ->
-                                (0 until rows.length()).any { rows.getJSONObject(it).optString("status") != "complete" }
-                            } == true
-                    } ?: false
-                    if (if (retryFailures) !failed else previous != null) continue
-                    mutable.update { it.copy(message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\n$mode · keep the phone plugged in; switching apps pauses after this photo and resumes on return.") }
-                    val result = PhoneCorpusRunner.runImage(
-                        app, image, input.getString("sha256"), mode, File(dir, "work"), "wine-app-labels-v1"
+                    // A photo is done only when every version has a checkpoint for it. Versions
+                    // already checkpointed (for example by an older single-version run) are kept;
+                    // only the missing or failed versions run, and they run now, for this photo.
+                    val needed = PhoneCorpusRunner.Mode.entries.filter { version ->
+                        val previous = existing.getValue(version)[image]
+                        if (retryFailures) previous != null && isFailed(previous) else previous == null
+                    }
+                    if (needed.isEmpty()) continue
+                    mutable.update { it.copy(message = "Photo ${index + 1}/${manifest.size} · review #${input.getInt("review_number")} · ${input.getString("source_filename")}\nRunning ${needed.joinToString(", ") { version -> version.title }} · keep the phone plugged in; switching apps pauses after this photo and resumes on return.") }
+                    val results = PhoneCorpusRunner.runImageAllModes(
+                        app, image, input.getString("sha256"), needed.toSet(), File(root, "work"),
+                        needed.filter { it != PhoneCorpusRunner.Mode.PRODUCTION_V1 }.map { dirs.getValue(it) },
+                        "wine-app-labels-v1",
                     )
-                    persistResult(dir, image, result, previous?.optInt("attempt") ?: 0)
-                    refresh(dir, mode)
-                    if (result.optBoolean("abort_run")) { stopping = true; break }
+                    for ((version, result) in results) {
+                        persistResult(dirs.getValue(version), image, result, existing.getValue(version)[image]?.optInt("attempt") ?: 0)
+                    }
+                    refresh()
+                    if (results.values.any { it.optBoolean("abort_run") }) { stopping = true; break }
                 }
                 mutable.update { it.copy(message = if (stopping) "Stopped safely. Resume continues with unattempted photos." else "Pass finished. Results are saved on this device; failed photos can be retried.") }
             } catch (cancel: CancellationException) {

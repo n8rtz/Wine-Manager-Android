@@ -79,23 +79,19 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
                 }
                 candidates
             }
-            DatabaseLookupCategory.APPELLATION -> {
-                val byId = gazetteer.associateBy { it.id }
-                gazetteer.asSequence().filter { it.type == "appellation" }.map { place ->
-                    val parents = mutableListOf<String>()
-                    var parent = place.parentId?.let(byId::get)
-                    while (parent != null) {
-                        parents += parent.name
-                        parent = parent.parentId?.let(byId::get)
-                    }
-                    DatabaseLookupCandidate(
-                        identity = "appellation:${place.id}", name = place.name,
-                        context = parents.asReversed().joinToString(" · ")
-                    )
-                }.toList()
-            }
+            // Raw place table only. The Database Lookup page instead searches the
+            // supplemented origins view (SupplementedWineKnowledgeBase.places()), which
+            // is where the bundled appellation database becomes visible at runtime.
+            DatabaseLookupCategory.APPELLATION -> DatabaseNameLookup.appellationCandidates(gazetteer)
         }
         DatabaseNameLookup.rank(query, candidates, limit)
+    }
+
+    /** Wine-name records searchable by [searchDiagnostic] (Database Lookup database listing). */
+    fun wineNameCount(): Int = access {
+        connection.prepare("SELECT COUNT(*) FROM cuvee c JOIN producer p ON p.id=c.producer_id").use { s ->
+            check(s.step()); s.getLong(0).toInt()
+        }
     }
 
     override fun findCuvee(producerId:Long,text:String):CuveeHit? = findCuvees(producerId,text).firstOrNull()

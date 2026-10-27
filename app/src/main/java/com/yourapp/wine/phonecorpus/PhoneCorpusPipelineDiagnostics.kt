@@ -9,10 +9,12 @@ internal object PhoneCorpusPipelineDiagnostics {
     private val verifiedPairVersion = Regex("[^:;]+:producer=[0-9a-f]{64};wine=[0-9a-f]{64}")
     fun capture(image: String, attempt: Int, mode: String, rows: List<Map<String, String>>,
         recorded: Map<String, F.Gate>, fields: Map<String, String>?, status: String?, fresh: Boolean): F.Label {
-        val spatial = mode == "LAB" || mode == "PRODUCTION_V3"
+        // Both spatial contenders run the producer/linked-wine resolvers; only the producer
+        // index differs (Prod v3.0 verified LWIN only, Lab v4 the Lab expanded index).
+        val labResolvers = mode == "LAB" || mode == "PRODUCTION_V3"
         val production = mode == "PRODUCTION_V1"
         val gates = F.steps.associate { step -> step.id to when {
-            step.labOnly && !spatial -> F.Gate(F.State.NOT_APPLICABLE)
+            step.labOnly && !labResolvers -> F.Gate(F.State.NOT_APPLICABLE)
             step.productionOnly && !production -> F.Gate(F.State.NOT_APPLICABLE)
             step.id.startsWith("score.") -> F.Gate(F.State.NOT_RECORDED, "Scoring not attached")
             production && step.id.startsWith("extract.") && step.id !in setOf("extract.form", "extract.kb") -> F.Gate(F.State.NOT_APPLICABLE)
@@ -68,14 +70,18 @@ internal object PhoneCorpusPipelineDiagnostics {
                 mark("extract.form", form["status"] in successfulSummary, form["status"].orEmpty())
                 if (form["status"] in successfulSummary) mark("extract.kb", true)
             }
-            val prefix = if (spatial) "spatial_evidence_" else "evidence_"
+            val prefix = when (mode) {
+                "LAB" -> "spatial_evidence_"
+                "PRODUCTION_V3" -> "spatial_lwin_evidence_"
+                else -> "evidence_"
+            }
             val summary = stage(prefix + "summary").lastOrNull()
             if (summary != null) {
                 mark("extract.assignment", summary["status"] in successfulSummary, summary["status"].orEmpty())
                 mark("extract.observations", stage(prefix + "observation").isNotEmpty(), "no valid evidence observations")
                 mark("extract.hypotheses", stage(prefix + "hypothesis").isNotEmpty(), "no field hypotheses")
             }
-            if (spatial && summary != null) legacyResolverEvidence(rows, summary, gates)
+            if (labResolvers && summary != null) legacyResolverEvidence(rows, summary, gates)
             rows.forEach { gates.putAll(F.fromFields(it)) }
         }
         if (status != null) mark("final.output", status == "complete", status)

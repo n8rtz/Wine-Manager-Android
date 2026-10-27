@@ -27,7 +27,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
@@ -66,9 +65,6 @@ class PhoneCorpusActivity:ComponentActivity() {
         LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
             item {
                 Text("Large image dataset test",style=MaterialTheme.typography.headlineSmall)
-                Text("Build ${BuildConfig.BUILD_COMMIT} · 107 uncolored labels are run. 55 red, 4 yellow, and 2 omitted labels are excluded from OCR. All 168 source photos remain packaged for provenance.")
-                Text("Private test corpus; image redistribution rights are unresolved. Do not publish this APK. Frozen references are provisional development judgments, not held-out accuracy.",style=MaterialTheme.typography.bodySmall)
-                Text("Fresh ML Kit + Medium OCR. Plug in your phone and keep this screen open; long runs can take hours and generate heat. Going to the background requests a stop after the current image. Abrupt process death preserves completed checkpoints.")
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
@@ -77,7 +73,6 @@ class PhoneCorpusActivity:ComponentActivity() {
                         Text(mode.title,Modifier.padding(top=10.dp))
                     }
                 }
-                Text("Each option runs only its selected implementation. Prod v1.0 is the Add Wine scanner; Prod v2.0 is the guarded-producer path; Prod v3.0 reproduces the pre-supplement Lab pipeline with LWIN-only producer data; Lab v4 uses the current spatial pipeline with verified LWIN producer data only. Saved historical rows are comparisons only, never rerun.",style=MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
@@ -94,43 +89,48 @@ class PhoneCorpusActivity:ComponentActivity() {
             state.board?.let { board ->
                 item {
                     Text("Scored results",style=MaterialTheme.typography.titleMedium)
-                    Text("Swipe sideways to see all metrics. Saved Production v2.0 is your full phone run from build 28bce9e81cc3; it is not rerun. Compare same-attempted-photo rows when stopping early. The older Frozen baseline is not Production v1.0. Complete = all six correct, including expected blanks; failures get no correct-blank credit.")
                     SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
                             Row { board.headers.forEach { Text(it,Modifier.width(145.dp).padding(6.dp),style=MaterialTheme.typography.labelMedium) } }
                             board.rows.forEach { row -> HorizontalDivider(Modifier.width((145*board.headers.size).dp));Row { row.forEach { Text(it,Modifier.width(145.dp).padding(6.dp)) } } }
                         }
                     }
-                    TextButton(onClick={clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n"+board.text))}) { Text("Copy scored stats") }
-                    Button(onClick={vm.prepareExport(false)},enabled=!state.busy && state.csv!=null) { Text("Prepare scored CSV export") }
-                    TextButton(onClick={vm.prepareExport(true)},enabled=!state.busy && state.completed>0 && !state.readOnly) { Text("Prepare raw diagnostics CSV export") }
                     Text("Scored CSV includes field outcomes and aggregate pipeline_step bottleneck rows. Imported scored files do not contain per-image pipeline gate telemetry; no gates are inferred. Raw CSV retains stage statuses for on-device runs. No images or account information are exported.",style=MaterialTheme.typography.bodySmall)
                 }
                 item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(horizontal = 8.dp)) {
+                        TextButton(onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + (board.text ?: ""))) }, enabled = !state.busy) { Text("Copy scored stats") }
+                        Button(onClick = { vm.prepareExport(false) }, enabled = !state.busy && state.csv != null) { Text("Prepare scored CSV export") }
+                        TextButton(onClick = { vm.prepareExport(true) }, enabled = !state.busy && state.completed > 0 && !state.readOnly) { Text("Prepare raw diagnostics CSV export") }
+                    }
+                }
+                item {
                     Text("Pipeline bottleneck matrix",style=MaterialTheme.typography.titleMedium)
-                    Text("Three requirement tables: ML Kit OCR, Paddle OCR, then post-OCR. OCR tables are distinct outputs, not parallel execution (the runner executes ML Kit before Paddle). Post-OCR combines shared assignment and dependent resolver gates; evidence hypotheses are jointly assigned, not a serial per-field chain. Counts are passed/failed; NR, ?, and N/A preserve not-reached, unrecorded, and not-applicable cohorts. Tap + for definitions.",
-                        style=MaterialTheme.typography.bodySmall)
                     TextButton(onClick={showFunnel=!showFunnel}) { Text(if(showFunnel) "Hide table" else "Show table") }
                     if(showFunnel) SelectionContainer {
-                        val stepWidth=320.dp
-                        val fieldWidth=88.dp
                         val fieldTitles=PhoneCorpusMath.fields.map { field -> when(field) {
                             "wine_name" -> "Wine name"
+                            "subregion" -> "Sub-region"
                             else -> field.replaceFirstChar { it.uppercase() }
                         } }
-                        val matrixScroll=rememberScrollState()
                         val gridColor=MaterialTheme.colorScheme.outlineVariant
                         val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
                         val failColor=MaterialTheme.colorScheme.error
                         BoxWithConstraints(Modifier.fillMaxWidth()) {
                             val viewportWidth=maxWidth
-                            Column(Modifier.horizontalScroll(matrixScroll)) {
+                            // The step column is severely condensed (short label only; the full
+                            // title, branch and definition live in the expanded row) so the six
+                            // field columns get readable widths and the whole matrix fits the
+                            // screen without horizontal scrolling.
+                            val stepWidth=maxWidth*0.28f
+                            val fieldWidth=(maxWidth-stepWidth)/PhoneCorpusMath.fields.size
+                            Column {
                             Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                Text("Pipeline step",Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
+                                Text("Step",Modifier.width(stepWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
                                     style=MaterialTheme.typography.labelMedium)
                                 fieldTitles.forEach { title ->
-                                    Text(title,Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
-                                        style=MaterialTheme.typography.labelMedium,textAlign=TextAlign.Center,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                    Text(title,Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(horizontal=2.dp,vertical=4.dp),
+                                        style=MaterialTheme.typography.labelSmall,textAlign=TextAlign.Center)
                                 }
                             }
                             board.matrix.forEachIndexed { index,row ->
@@ -149,33 +149,34 @@ class PhoneCorpusActivity:ComponentActivity() {
                                 if(section!=previousSection) Text(section,Modifier.width(viewportWidth).padding(top=10.dp,bottom=4.dp),style=MaterialTheme.typography.titleSmall)
                                 val expanded=row.step.id in expandedFunnelSteps
                                 Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                    Row(Modifier.width(stepWidth).heightIn(min=56.dp).border(1.dp,gridColor).padding(4.dp),
+                                    Row(Modifier.width(stepWidth).heightIn(min=56.dp).border(1.dp,gridColor).padding(horizontal=2.dp,vertical=4.dp),
                                         verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
                                         TextButton(onClick={expandedFunnelSteps=if(expanded) expandedFunnelSteps-row.step.id else expandedFunnelSteps+row.step.id},
-                                            modifier=Modifier.width(40.dp),contentPadding=PaddingValues(0.dp)) {
+                                            modifier=Modifier.width(24.dp),contentPadding=PaddingValues(0.dp)) {
                                             Text(if(expanded) "−" else "+")
                                         }
-                                        Column(Modifier.weight(1f).padding(end=4.dp)) {
-                                            Text(row.step.title,style=MaterialTheme.typography.bodySmall)
-                                            Text(row.step.branch,style=MaterialTheme.typography.labelSmall,
-                                                color=MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
+                                        Text(row.step.shortTitle,Modifier.weight(1f),style=MaterialTheme.typography.labelSmall)
                                     }
                                     if(row.shared!=null) {
                                         Text(passFailLabel(row.shared.passed,row.shared.failed,passColor,failColor,shared=true,notReached=row.shared.notReached,notRecorded=row.shared.notRecorded,notApplicable=row.shared.notApplicable),
-                                            Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
-                                            style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
+                                            Modifier.width(fieldWidth*PhoneCorpusMath.fields.size).heightIn(min=48.dp).border(1.dp,gridColor).padding(horizontal=2.dp,vertical=4.dp),
+                                            style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center)
                                     } else {
                                         PhoneCorpusMath.fields.forEach { field ->
                                             val cell=row.fields[field]
                                             Text(cell?.let { passFailLabel(it.passed,it.failed,passColor,failColor,notReached=it.notReached,notRecorded=it.notRecorded,notApplicable=it.notApplicable) } ?: AnnotatedString(""),
-                                                Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(4.dp),
-                                                style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center,maxLines=1)
+                                                Modifier.width(fieldWidth).heightIn(min=48.dp).border(1.dp,gridColor).padding(horizontal=2.dp,vertical=4.dp),
+                                                style=MaterialTheme.typography.bodySmall,textAlign=TextAlign.Center)
                                         }
                                     }
                                 }
-                                if(expanded) Text(row.step.definition,Modifier.width(viewportWidth).border(1.dp,gridColor)
-                                    .padding(start=48.dp,end=8.dp,top=8.dp,bottom=8.dp),style=MaterialTheme.typography.bodySmall)
+                                if(expanded) Column(Modifier.width(viewportWidth).border(1.dp,gridColor)
+                                    .padding(horizontal=8.dp,vertical=8.dp)) {
+                                    Text(row.step.title,style=MaterialTheme.typography.titleSmall)
+                                    Text(row.step.branch,style=MaterialTheme.typography.labelSmall,
+                                        color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(row.step.definition,style=MaterialTheme.typography.bodySmall)
+                                }
                             }
                             }
                         }

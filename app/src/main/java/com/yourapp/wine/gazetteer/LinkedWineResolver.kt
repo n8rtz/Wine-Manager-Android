@@ -33,8 +33,11 @@ internal class LinkedWineResolver(private val index:Index,
             trace.visit("execution",completed,reason)
             return Decision(producer.value,existingWine,reason,matches,telemetry=trace.fields())
         }
-        trace.visit("primary",index.primaryVerified,"primary wine index unavailable")
-        if(!index.primaryVerified) return unchanged("primary wine index unavailable")
+        // The wine index is the verified primary export in both index variants; supplemental
+        // Lab producers simply have no linked wines and abstain below.
+        val indexPermitted=index.primaryVerified || index.labSupplemental
+        trace.visit("primary",indexPermitted,"primary wine index unavailable")
+        if(!indexPermitted) return unchanged("primary wine index unavailable")
         trace.visit("spans",spans.size<=ProducerResolver.MAX_SPANS,"wine span limit")
         if(spans.size>ProducerResolver.MAX_SPANS) return unchanged("wine span limit; unchanged")
         val matches=mutableListOf<Match>()

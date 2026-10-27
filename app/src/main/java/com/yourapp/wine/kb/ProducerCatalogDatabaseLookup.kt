@@ -8,12 +8,22 @@ import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
 
-/** Read-only lookup over the complete verified LWIN producer layer. Call only from a worker thread. */
+/** Read-only lookup over a packaged producer catalog. Call only from a worker thread. */
 class ProducerCatalogDatabaseLookup private constructor(
     private val connection: SQLiteConnection,
-    val totalProducers: Int
+    val totalProducers: Int,
+    val catalog: Catalog
 ) : AutoCloseable {
+    /** Packaged producer catalogs inspectable on the Database Lookup page.
+     * Owner rule (2026-10-26, .agents/instructions.md #17): every future packaged
+     * database addition/change must be wired into that page in the same change. */
+    enum class Catalog(val assetDir:String,val databaseName:String) {
+        PRIMARY("producer-gazetteer-v1","producers.sqlite"),
+        EXPANDED("producer-gazetteer-expanded-v1","producers-expanded.sqlite")
+    }
     data class Country(val name:String,val producerCount:Int)
+    data class Source(val id:String,val producerCount:Int)
+    private val trackSources:Boolean get()=catalog==Catalog.EXPANDED
 
     fun countries():List<Country> {
         val rows=mutableListOf<Country>()
@@ -23,25 +33,65 @@ class ProducerCatalogDatabaseLookup private constructor(
         return rows
     }
 
-    fun producerCount(country:String?=null):Int {
-        val sql=if(country==null) "SELECT COUNT(*) FROM producers" else "SELECT COUNT(*) FROM producers WHERE country_group=?"
-        connection.prepare(sql).use { s ->
-            if(country!=null) s.bindText(1,country)
+    /** Per-source record counts; only the expanded catalog tracks sources. Untagged rows are the LWIN subset. */
+    fun sources():List<Source> {
+        if(!trackSources) return emptyList()
+        val rows=mutableListOf<Source>()
+        connection.prepare("SELECT COALESCE(s.source,'lwin'),COUNT(*) FROM producers p LEFT JOIN producer_sources s ON s.id=p.id GROUP BY COALESCE(s.source,'lwin') ORDER BY 1").use { s ->
+            while(s.step()) rows += Source(s.getText(0),s.getLong(1).toInt())
+        }
+        return rows
+    }
+
+    /** Display names for producer ids (wine-name result context); unknown ids are omitted. */
+    fun producerNames(ids: Collection<String>): Map<String,String> {
+        if(ids.isEmpty()) return emptyMap()
+        val names=mutableMapOf<String,String>()
+        ids.distinct().chunked(400).forEach { chunk ->
+            val placeholders=chunk.joinToString(",") { "?" }
+            connection.prepare("SELECT id,name FROM producers WHERE id IN ($placeholders)").use { s ->
+                chunk.forEachIndexed { index,id -> s.bindText(index+1,id) }
+                while(s.step()) names[s.getText(0)]=s.getText(1)
+            }
+        }
+        return names
+    }
+
+    /** FROM clause with the selected scope filters plus its bind arguments, in order. */
+    private fun scope(country:String?,source:String?):Pair<String,List<String>> {
+        val from=if(trackSources) "producers p LEFT JOIN producer_sources s ON s.id=p.id" else "producers p"
+        val clauses=mutableListOf<String>();val args=mutableListOf<String>()
+        if(country!=null) { clauses+="p.country_group=?";args+=country }
+        if(trackSources && source!=null) { clauses+="COALESCE(s.source,'lwin')=?";args+=source }
+        return (from+if(clauses.isEmpty()) "" else clauses.joinToString(" AND "," WHERE ")) to args
+    }
+
+    private val sourceColumn:String get()=if(trackSources) ",COALESCE(s.source,'lwin')" else ""
+
+    private fun contextOf(nation:String,sourceId:String?):String =
+        if(!trackSources) nation else listOfNotNull(nation.ifBlank { null },sourceLabel(sourceId ?: "lwin")).joinToString(" · ")
+
+    fun producerCount(country:String?=null,source:String?=null):Int {
+        val (from,args)=scope(country,source)
+        connection.prepare("SELECT COUNT(*) FROM $from").use { s ->
+            args.forEachIndexed { index,arg -> s.bindText(index+1,arg) }
             check(s.step())
             return s.getLong(0).toInt()
         }
     }
 
-    /** Page through every record in the selected country or complete catalog, without fuzzy ranking. */
-    fun browseProducers(country:String?=null,offset:Int=0,limit:Int=50):List<DatabaseLookupMatch> {
+    /** Page through every record in the selected scope or complete catalog, without fuzzy ranking. */
+    fun browseProducers(country:String?=null,source:String?=null,offset:Int=0,limit:Int=50):List<DatabaseLookupMatch> {
         require(offset>=0 && limit in 1..200)
-        val countryClause=if(country==null) "" else " WHERE country_group=?"
+        val (from,args)=scope(country,source)
         val rows=mutableListOf<DatabaseLookupMatch>()
-        connection.prepare("SELECT name,country_group FROM producers$countryClause ORDER BY name,id LIMIT ? OFFSET ?").use { s ->
+        connection.prepare("SELECT p.name,p.country_group$sourceColumn FROM $from ORDER BY p.name,p.id LIMIT ? OFFSET ?").use { s ->
             var parameter=1
-            if(country!=null) s.bindText(parameter++,country)
+            args.forEach { s.bindText(parameter++,it) }
             s.bindLong(parameter++,limit.toLong());s.bindLong(parameter,offset.toLong())
-            while(s.step()) rows += DatabaseLookupMatch(s.getText(0),s.getText(1),s.getText(0),0,100)
+            while(s.step()) rows += DatabaseLookupMatch(
+                s.getText(0),contextOf(s.getText(1),if(trackSources) s.getText(2) else null),s.getText(0),0,100
+            )
         }
         return rows
     }
@@ -50,11 +100,11 @@ class ProducerCatalogDatabaseLookup private constructor(
      * Rank every producer in the selected scope, not only an FTS shortlist. Chunking bounds memory;
      * keeping each chunk's top N is sufficient to compute the global top N exactly.
      */
-    fun searchProducers(query:String,country:String?=null,limit:Int=12):List<DatabaseLookupMatch> {
+    fun searchProducers(query:String,country:String?=null,source:String?=null,limit:Int=12):List<DatabaseLookupMatch> {
         require(limit in 1..50)
         val normalized=producerKey(query)
         if(normalized.isBlank()) return emptyList()
-        val countryClause=if(country==null) "" else " WHERE country_group=?"
+        val (from,args)=scope(country,source)
         val ranked=mutableListOf<DatabaseLookupMatch>()
         var chunk=mutableListOf<DatabaseLookupCandidate>()
         fun rankChunk() {
@@ -63,11 +113,13 @@ class ProducerCatalogDatabaseLookup private constructor(
                 chunk=mutableListOf()
             }
         }
-        connection.prepare("SELECT id,name,key,country_group FROM producers$countryClause ORDER BY id").use { s ->
-            if(country!=null) s.bindText(1,country)
+        connection.prepare("SELECT p.id,p.name,p.key,p.country_group$sourceColumn FROM $from ORDER BY p.id").use { s ->
+            args.forEachIndexed { index,arg -> s.bindText(index+1,arg) }
             while(s.step()) {
-                val id=s.getText(0);val name=s.getText(1);val key=s.getText(2);val nation=s.getText(3)
-                chunk += DatabaseLookupCandidate(identity="lwin-producer:$id",name=name,context=nation,searchTerms=listOf(name,key))
+                val id=s.getText(0);val name=s.getText(1);val key=s.getText(2)
+                val context=contextOf(s.getText(3),if(trackSources) s.getText(4) else null)
+                val identity=if(trackSources) "expanded-producer:$id" else "lwin-producer:$id"
+                chunk += DatabaseLookupCandidate(identity=identity,name=name,context=context,searchTerms=listOf(name,key))
                 if(chunk.size==512) rankChunk()
             }
         }
@@ -79,26 +131,46 @@ class ProducerCatalogDatabaseLookup private constructor(
     override fun close()=connection.close()
 
     companion object {
-        private const val ASSET_DIR="producer-gazetteer-v1"
-        private const val DATABASE_NAME="producers.sqlite"
-        private const val MAX_DATABASE_BYTES=32L*1024*1024
+        // Self-imposed sanity bound for copying a packaged catalog asset into the cache —
+        // NOT an Android or SQLite limit. Raise it deliberately when a packaged catalog
+        // legitimately grows past it; the practical constraints are APK size, ~2x on-device
+        // storage (compressed asset + cache copy), and cold-install copy+hash time. The
+        // benchmark budget loader in ProducerGazetteer carries the matching cap; keep them
+        // in step. (Owner question, 2026-10-26.)
+        private const val MAX_DATABASE_BYTES=64L*1024*1024
 
-        fun open(context:Context):ProducerCatalogDatabaseLookup {
+        /** Human-facing label for a producer_sources tag (also used by the lookup screen). */
+        fun sourceLabel(source:String):String=when(source) {
+            "lwin" -> "LWIN"
+            "xwines" -> "X-Wines candidate"
+            "ttb" -> "TTB permit candidate"
+            "osm" -> "OpenStreetMap candidate"
+            else -> source
+        }
+
+        fun open(context:Context,catalog:Catalog=Catalog.PRIMARY):ProducerCatalogDatabaseLookup {
             check(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper()) {
                 "Open the producer catalog on Dispatchers.IO, never the UI thread"
             }
             val app=context.applicationContext
-            val manifest=app.assets.open("$ASSET_DIR/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
-            require(manifest.getInt("schema")==2 && manifest.getBoolean("primary_verified")) { "Verified producer catalog is required" }
-            val expectedHash=manifest.getJSONObject("provenance").getString("sha256")
+            val manifest=app.assets.open("${catalog.assetDir}/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
+            when(catalog) {
+                Catalog.PRIMARY -> {
+                    require(manifest.getInt("schema")==2 && manifest.getBoolean("primary_verified")) { "Verified producer catalog is required" }
+                    require(manifest.getJSONObject("provenance").getString("sha256").matches(Regex("[0-9a-f]{64}")))
+                }
+                Catalog.EXPANDED -> require(
+                    manifest.getInt("schema")==1 && manifest.getString("kind")=="lab-expanded-producer-index" && manifest.getBoolean("lab_only")
+                ) { "Lab expanded producer catalog is required" }
+            }
             val databaseHash=manifest.getString("database_sha256")
-            require(expectedHash.matches(Regex("[0-9a-f]{64}")) && databaseHash.matches(Regex("[0-9a-f]{64}")))
-            val cache=File(app.cacheDir,ASSET_DIR).apply { mkdirs() }
+            require(databaseHash.matches(Regex("[0-9a-f]{64}")))
+            val cache=File(app.cacheDir,catalog.assetDir).apply { mkdirs() }
             val target=File(cache,"$databaseHash.sqlite")
             if(!target.isFile || target.length() !in 1..MAX_DATABASE_BYTES || sha256(target)!=databaseHash) {
                 val temporary=File.createTempFile("producer-catalog-",".tmp",cache)
                 try {
-                    app.assets.open("$ASSET_DIR/$DATABASE_NAME").use { input ->
+                    app.assets.open("${catalog.assetDir}/${catalog.databaseName}").use { input ->
                         temporary.outputStream().use { output ->
                             val buffer=ByteArray(65536);var written=0L
                             while(true) {
@@ -118,8 +190,12 @@ class ProducerCatalogDatabaseLookup private constructor(
                 db.prepare("PRAGMA query_only=ON").use { it.step() }
                 val count=db.prepare("SELECT COUNT(*) FROM producers").use { s -> check(s.step());s.getLong(0).toInt() }
                 check(count==manifest.getInt("records")) { "Producer catalog count does not match its manifest" }
+                if(catalog==Catalog.EXPANDED) {
+                    val supplemental=db.prepare("SELECT COUNT(*) FROM producer_sources").use { s -> check(s.step());s.getLong(0).toInt() }
+                    check(supplemental==manifest.getInt("supplemental_records")) { "Expanded producer source count does not match its manifest" }
+                }
                 db.prepare("SELECT id FROM names WHERE names MATCH '\"win\"' LIMIT 1").use { it.step() }
-                return ProducerCatalogDatabaseLookup(db,count)
+                return ProducerCatalogDatabaseLookup(db,count,catalog)
             } catch(failure:Throwable) {
                 db.close();throw failure
             }

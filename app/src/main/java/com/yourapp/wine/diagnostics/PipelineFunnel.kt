@@ -6,6 +6,13 @@ internal object PipelineFunnel {
     enum class State { PASSED, BLOCKED, NOT_REACHED, NOT_RECORDED, NOT_APPLICABLE }
     data class Gate(val state: State, val reason: String = "")
     data class Step(val id: String, val branch: String, val title: String, val definition: String, val labOnly: Boolean = false, val productionOnly: Boolean = false) {
+        /** Severely condensed row label for the on-screen matrix's narrow step column; the full
+         * title, branch and definition live in the expanded row. Synthetic matrix steps derive
+         * theirs from the group id (matrix.resolver.*, matrix.step.*, matrix.field.*). */
+        val shortTitle: String get() {
+            val key = id.removePrefix("matrix.").removePrefix("step.")
+            return shortTitles[id] ?: shortTitles[key] ?: key.substringAfterLast('.')
+        }
         /** Field attribution exists only where the step actually concerns a single output field. */
         val field: String? get() = when {
             id.startsWith("producer.") -> "producer"
@@ -17,6 +24,17 @@ internal object PipelineFunnel {
         }
     }
     val FIELD_IDS = setOf("producer", "wine_name", "country", "region", "subregion", "vintage")
+    private val shortTitles = mapOf(
+        "score.complete" to "all correct", "score.at_most_one" to "≤1 error",
+        "resolver.primary" to "index",
+        "resolver.mlkit.eligible" to "ML eligible", "resolver.mlkit.lookup" to "ML lookup",
+        "resolver.mlkit.retrieved" to "ML found", "resolver.mlkit.distance" to "ML distance",
+        "resolver.paddle.eligible" to "PD eligible", "resolver.paddle.lookup" to "PD lookup",
+        "resolver.paddle.retrieved" to "PD found", "resolver.paddle.distance" to "PD distance",
+        "wine.mlkit.disjoint" to "ML disjoint", "wine.paddle.disjoint" to "PD disjoint",
+        "wine.producer_observed" to "prod. seen", "wine.producer_compatible" to "prod. compat",
+        "wine.producer_bound" to "prod. bound", "wine.producer_consistent" to "prod. consist",
+        "field.correct" to "correct", "field.populated" to "populated")
     data class Label(val image: String, val attempt: Int, val gates: Map<String, Gate>)
     data class Count(val step: Step, val labels: Int, val passed: Int, val blocked: Int,
         val notReached: Int, val notRecorded: Int, val notApplicable: Int, val reasons: Map<String, Int>) {
@@ -74,7 +92,7 @@ internal object PipelineFunnel {
             val title = if (kind == "producer") "Producer" else "Linked wine"
             step("$kind.invoked", title, "Resolver invoked", "The resolver was actually called.", true)
             step("$kind.execution", title, "Resolver completed within budget", "Returned normally, including abstention; exceptions and budget exhaustion block this row.", true)
-            step("$kind.primary", title, "Verified primary index available", "The resolver received a verified primary index.", true)
+            step("$kind.primary", title, "Verified producer index available", "The resolver received an integrity-checked producer index (verified primary LWIN; Lab v4 also admits source-tagged supplemental candidates).", true)
             step("$kind.spans", title, "Span-count bound passed", "The preserved-original/alternative span list is within its bound.", true)
             if (kind == "wine") {
                 step("wine.producer_observed", title, "Independently observed producer", "At least one producer has two-engine/disjoint evidence, including exact validation of an existing name.", true)

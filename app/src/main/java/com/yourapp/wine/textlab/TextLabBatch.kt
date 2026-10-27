@@ -29,11 +29,18 @@ internal data class TextLabSavedBatch(val id:String,val build:String,val status:
         appendLine("\nExport this run's CSV for raw OCR text, coordinates, timings and full diagnostics.")
     }
 }
-internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val spatialPhrases:Boolean=false,val benchmarkOnly:Boolean=false) {
+/** The benchmark flags are set only by the phone-corpus runner when one shared OCR pass must
+ * feed several benchmark contenders for a photo (see PhoneCorpusRunner.runImageAllModes):
+ * with [benchmarkAllPipelines] set, [benchmarkEvidence], [benchmarkLwinSpatial] and
+ * [spatialPhrases] independently select which contender summaries are appended to each
+ * journal (Prod v2.0 evidence, Prod v3.0 spatial with LWIN-only producers, Lab v4 spatial
+ * with the expanded producer index). Every other caller keeps the legacy single-extractor
+ * behavior. */
+internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val spatialPhrases:Boolean=false,val benchmarkOnly:Boolean=false,val benchmarkAllPipelines:Boolean=false,val benchmarkEvidence:Boolean=false,val benchmarkLwinSpatial:Boolean=false) {
     val id:String=UUID.randomUUID().toString()
     val journals=images.mapIndexed { index,image ->
         TextLabJournal(selected,build,detectLines).apply {
-            metadata.putAll(mapOf("spatial_phrases_enabled" to spatialPhrases.toString(),"benchmark_selected_only" to benchmarkOnly.toString(),"residual_enabled" to residualCandidates.toString(),"gazetteer_enabled" to compareGazetteer.toString(),"schema_version" to "2","batch_id" to this@TextLabBatch.id,
+            metadata.putAll(mapOf("spatial_phrases_enabled" to spatialPhrases.toString(),"benchmark_selected_only" to benchmarkOnly.toString(),"benchmark_all_pipelines" to benchmarkAllPipelines.toString(),"benchmark_evidence" to benchmarkEvidence.toString(),"benchmark_lwin_spatial" to benchmarkLwinSpatial.toString(),"residual_enabled" to residualCandidates.toString(),"gazetteer_enabled" to compareGazetteer.toString(),"schema_version" to "2","batch_id" to this@TextLabBatch.id,
                 "image_id" to image.id,"image_name" to image.name,"image_index" to (index+1).toString(),"image_count" to images.size.toString(),"batch_status" to "running","extraction_mode" to if(compareEvidence && anchorHybrid && repairProducer) "baseline_and_producer_repair_v2" else if(compareEvidence && anchorHybrid) "baseline_and_anchor_hybrid_v1" else if(compareEvidence) "baseline_and_evidence_v1" else "baseline"))
             add("shared","image_queued","queued")
         }
@@ -89,7 +96,7 @@ internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,bu
     }
 
     companion object {
-        private val viewStages=setOf("image_summary","candidate_summary","pass_summary","error","lm_fallback","recognition","field_summary","form_summary","evidence_summary","gazetteer_summary","spatial_evidence_summary","residual_summary")
+        private val viewStages=setOf("image_summary","candidate_summary","pass_summary","error","lm_fallback","recognition","field_summary","form_summary","evidence_summary","gazetteer_summary","spatial_evidence_summary","spatial_lwin_evidence_summary","residual_summary")
 
         /** Rebuilds a read-only in-app view from a checkpoint or completed batch CSV. */
         fun readSaved(file:File):TextLabSavedBatch {

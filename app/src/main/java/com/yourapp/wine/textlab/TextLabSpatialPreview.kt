@@ -8,20 +8,25 @@ import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.gazetteer.LinkedWineResolver
 import com.yourapp.wine.diagnostics.PipelineFunnel
 
-/** Latest Lab only. No second OCR pass and no separate v2.0 contender execution.
+/** Current spatial pipeline, shared by the two gazetteer benchmark contenders. No second OCR pass.
  * The raw form summary is an internal anchor required by the existing guarded algorithm.
- * Original observations feed extraction unchanged; spatial alternatives feed producer and linked wine lookup.
+ * Original observations feed extraction unchanged; spatial alternatives feed producer and linked
+ * wine lookup. The contenders differ ONLY in the producer index handed in: Prod v3.0 gets the
+ * verified LWIN-only index (candidate "spatial_lwin_lab", stage prefix "spatial_lwin_"), Lab v4
+ * gets the Lab expanded index (defaults here). Each writes only its own candidate/stage rows.
  */
 internal object TextLabSpatialPreview {
     const val VERSION="raw-plus-linked-wine-v2"
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
-        producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={}) {
-        if(journal.rows.any { it["stage"]=="spatial_evidence_summary" }) return
+        producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
+        candidate:String="spatial_lab",stagePrefix:String="spatial_") {
+        val summaryStage=stagePrefix+"evidence_summary"
+        if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
             val original=TextLabFormPreview.records(journal)
             val proposals=TextLabSpatialPhrases.propose(original)
             for((index,proposal) in proposals.withIndex()) {
-                journal.add("spatial_lab","spatial_phrase",values=mapOf("post_processing_version" to VERSION,
+                journal.add(candidate,stagePrefix+"phrase",values=mapOf("post_processing_version" to VERSION,
                     "region_id" to index.toString(),"raw_text" to proposal.phrase.mergedText,
                     "source_engine" to proposal.engineId,"source_variant" to proposal.variantId,
                     "source_indices_in_engine_pass" to proposal.phrase.sourceIndices.joinToString(" "),
@@ -65,7 +70,7 @@ internal object TextLabSpatialPreview {
                         row["producer_gazetteer_ms"]=producerMs.toString()
                         row["work_ms"]=((row["work_ms"]?.toLongOrNull() ?: 0L)+producerMs).toString()
                         row["producer_gazetteer_entity_id"]=decision.acceptedId.orEmpty()
-                        decision.matches.take(128).forEach { m -> journal.add("spatial_lab","producer_gazetteer_candidate",values=mapOf(
+                        decision.matches.take(128).forEach { m -> journal.add(candidate,"producer_gazetteer_candidate",values=mapOf(
                             "raw_text" to m.observed,"source_engine" to m.engine,"source_observation_ids" to m.observationIds.sorted().joinToString(" "),
                             "producer_entity_id" to m.entity.id,"producer_display_name" to m.entity.name,
                             "edit_distance" to m.distance.toString(),"lexical_support_sources" to m.entity.support.sorted().joinToString(" | "),
@@ -95,7 +100,7 @@ internal object TextLabSpatialPreview {
                             row["wine_gazetteer_id"]=linked.wineId.orEmpty()
                             row["wine_gazetteer_producer_id"]=linked.producerId.orEmpty()
                             row["wine_gazetteer_lwin7"]=linked.lwin7
-                            linked.matches.take(128).forEach { m -> journal.add("spatial_lab","linked_wine_candidate",values=mapOf(
+                            linked.matches.take(128).forEach { m -> journal.add(candidate,"linked_wine_candidate",values=mapOf(
                                 "raw_text" to m.span.text,"source_engine" to m.span.engine,
                                 "source_observation_ids" to m.span.observationIds.sorted().joinToString(" "),
                                 "wine_name_id" to m.wine.id,"wine_display_name" to m.wine.name,"producer_entity_id" to m.wine.producerId,
@@ -118,16 +123,16 @@ internal object TextLabSpatialPreview {
                         }
                     }
                 }
-                journal.add("spatial_lab","spatial_"+row.getValue("stage"),row.getValue("status"),
+                journal.add(candidate,stagePrefix+row.getValue("stage"),row.getValue("status"),
                     row.filterKeys { it !in setOf("candidate","stage","status","sequence","details") }+
                         mapOf("post_processing_version" to "$VERSION+${ProducerRepair.VERSION}+${ProducerResolver.VERSION}+${LinkedWineResolver.VERSION}",
                             "spatial_source_count" to original.size.toString(),"spatial_reading_count" to readings.size.toString(),
                             "spatial_merged_groups" to proposals.count { it.sources.size>1 }.toString()),row["details"].orEmpty())
             }
-            check(journal.rows.any { it["stage"]=="spatial_evidence_summary" }) { "Spatial extractor produced no summary" }
+            check(journal.rows.any { it["stage"]==summaryStage }) { "Spatial extractor produced no summary" }
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
-            journal.add("spatial_lab","spatial_evidence_summary","failed",mapOf("post_processing_version" to VERSION),"${error.javaClass.simpleName}: ${error.message}")
+            journal.add(candidate,summaryStage,"failed",mapOf("post_processing_version" to VERSION),"${error.javaClass.simpleName}: ${error.message}")
         }
     }
 }

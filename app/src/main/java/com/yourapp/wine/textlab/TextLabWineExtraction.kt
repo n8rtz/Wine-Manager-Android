@@ -76,40 +76,27 @@ internal object TextLabWineExtraction {
                 val experimental=kb?.let { TextLabEvidencePreview.engine(it,batch.anchorHybrid) }
                 val hybrid=if(batch.anchorHybrid) kb?.let { com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
                 val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
-                if(batch.spatialPhrases) {
-                    batch.journals.forEach { journal ->
-                        // One selected Lab extraction. Primary-data gate fails closed; never run a second contender.
-                        val deadline=android.os.SystemClock.elapsedRealtime()+500L
-                        val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=deadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
-                        var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=null
-                        var unavailable="primary LWIN export required"
-                        val setup=com.yourapp.wine.diagnostics.PipelineFunnel.Recorder()
-                        var setupStep="asset.manifest"
-                        try {
-                            try {
-                                if(!skip) producers=com.yourapp.wine.gazetteer.ProducerGazetteer.open(
-                                    context.applicationContext,checkBudget) { step,passed ->
-                                    setupStep=step;setup.visit(step,passed,"asset validation did not complete")
-                                }
-                            }
-                            catch(cancel:CancellationException) { throw cancel }
-                            catch(e:Exception) {
-                                unavailable="Primary producer gazetteer unavailable: ${e.javaClass.simpleName}; ${e.message}"
-                                setup.visit(setupStep,false,unavailable)
-                            }
-                            journal.add("spatial_lab","gazetteer_setup",if(producers!=null) "complete" else "unavailable",setup.fields(),unavailable.takeIf { producers==null }.orEmpty())
-                            val remaining=(deadline-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L)
-                            var lookupDeadline:Long?=null
-                            val lookupBudget={
-                                val now=android.os.SystemClock.elapsedRealtime()
-                                if(lookupDeadline==null) lookupDeadline=now+remaining
-                                if(now>=lookupDeadline!!) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
-                            }
-                            TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget)
-                        } finally { producers?.close() }
-                    }
-                } else {
+                // Benchmark batches select their contenders explicitly and append each selected
+                // summary to the one OCR journal: evidence_summary (Prod v2.0),
+                // spatial_lwin_evidence_summary (Prod v3.0, LWIN-only producers) and
+                // spatial_evidence_summary (Lab v4, expanded producer index). The spatial
+                // previews read only OCR rows plus the shared form anchor through their own
+                // scratch journals, so one contender's rows neither feed nor alter another's.
+                // Every other caller keeps exactly one extractor, as before.
+                val runEvidence=if(batch.benchmarkAllPipelines) batch.benchmarkEvidence else !batch.spatialPhrases && !batch.benchmarkLwinSpatial
+                val runLwinSpatial=batch.benchmarkLwinSpatial
+                val runExpandedSpatial=if(batch.benchmarkAllPipelines) batch.spatialPhrases else batch.spatialPhrases && !batch.benchmarkLwinSpatial
+                if(runEvidence) {
                     batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
+                }
+                // The two spatial contenders run the identical pipeline; only the producer index
+                // differs (Prod v3.0: verified LWIN only; Lab v4: Lab expanded index). Each keeps
+                // its own candidate/stage namespace, setup telemetry and 500 ms stage budget.
+                if(runLwinSpatial) {
+                    batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false) }
+                }
+                if(runExpandedSpatial) {
+                    batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=true) }
                 }
             }
             if(batch.compareGazetteer || batch.residualCandidates) {
@@ -124,6 +111,50 @@ internal object TextLabWineExtraction {
                 } finally { resolver?.close() }
             }
         } finally { kb?.close() }
+    }
+    /** One spatial contender: gazetteer setup under its own 500 ms budget, then the shared
+     * spatial preview in the contender's candidate/stage namespace. The producer-data gate
+     * fails closed per contender; one contender's unavailable index never alters another's. */
+    private fun appendSpatialContender(context:Context,journal:TextLabJournal,
+        experimental:com.yourapp.wine.textlab.evidence.EvidenceExtractor?,
+        hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
+        repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean) {
+        val candidate=if(expanded) "spatial_lab" else "spatial_lwin_lab"
+        val deadline=android.os.SystemClock.elapsedRealtime()+500L
+        val checkBudget={ if(android.os.SystemClock.elapsedRealtime()>=deadline) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded() }
+        var producers:com.yourapp.wine.gazetteer.ProducerGazetteer?=null
+        var unavailable=if(expanded) "Lab expanded producer index required" else "primary LWIN export required"
+        val setup=com.yourapp.wine.diagnostics.PipelineFunnel.Recorder()
+        var setupStep="asset.manifest"
+        try {
+            try {
+                if(!skip) producers=if(expanded)
+                    com.yourapp.wine.gazetteer.ProducerGazetteer.openExpanded(
+                        context.applicationContext,checkBudget) { step,passed ->
+                        setupStep=step;setup.visit(step,passed,"asset validation did not complete")
+                    }
+                    else com.yourapp.wine.gazetteer.ProducerGazetteer.open(
+                        context.applicationContext,checkBudget) { step,passed ->
+                        setupStep=step;setup.visit(step,passed,"asset validation did not complete")
+                    }
+            }
+            catch(cancel:CancellationException) { throw cancel }
+            catch(e:Exception) {
+                unavailable=(if(expanded) "Lab expanded producer gazetteer unavailable: " else "Primary producer gazetteer unavailable: ")+
+                    "${e.javaClass.simpleName}; ${e.message}"
+                setup.visit(setupStep,false,unavailable)
+            }
+            journal.add(candidate,"gazetteer_setup",if(producers!=null) "complete" else "unavailable",setup.fields(),unavailable.takeIf { producers==null }.orEmpty())
+            val remaining=(deadline-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+            var lookupDeadline:Long?=null
+            val lookupBudget={
+                val now=android.os.SystemClock.elapsedRealtime()
+                if(lookupDeadline==null) lookupDeadline=now+remaining
+                if(now>=lookupDeadline!!) throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
+            }
+            TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget,
+                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_")
+        } finally { producers?.close() }
     }
     private fun box(value:String?):RectF? {
         val v=value?.trim()?.split(Regex("\\s+"))?.mapNotNull { it.toFloatOrNull() } ?: return null

@@ -137,7 +137,7 @@ internal class PhoneCorpusScoreboard(
             else -> when(key.removePrefix("resolver.")) {
                 "invoked" -> "Resolver invoked"
                 "execution" -> "Resolver completed within budget"
-                "primary" -> "Verified primary index available"
+                "primary" -> "Verified producer index available"
                 "spans" -> "Span-count bound passed"
                 "independent" -> "Two-engine + disjoint agreement"
                 "unambiguous" -> "One viable identity/name group"
@@ -218,7 +218,7 @@ internal class PhoneCorpusScoreboard(
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
             if(includeLegacyComparisons) appendLine("The former 168-photo acceptance threshold is retired for this curated subset. Set new acceptance thresholds only after reviewing the remaining reference data; partial runs do not establish full-set acceptance.")
             else appendLine("This screen scores the 125 retained workbook rows; it does not replay the full legacy 168-photo run.")
-            appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v3.0 uses the prior spatial Lab pipeline with an LWIN-only producer source; Lab v4 uses the current spatial pipeline with LWIN-only producer data. Each mode runs and scores only its selected implementation.")
+            appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v3.0 and Lab v4 use the same current spatial pipeline (original readings plus producer and linked-wine resolution over spatial spans) and differ only in producer data: Prod v3.0 uses the verified LWIN producer index only, Lab v4 uses the Lab expanded producer index (the same LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates). Each mode runs and scores only its selected implementation.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")
             appendLine("Three tables: ML Kit OCR, Paddle OCR (sequential in runner), and post-OCR. Post-OCR evidence hypotheses use joint field assignment; only genuine dependencies are conditional. NR, unrecorded, and N/A remain distinct. Scores are correctness gates, including correct expected blanks.")
