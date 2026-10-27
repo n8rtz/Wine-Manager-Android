@@ -71,6 +71,7 @@ private class WineAppLabelsSession {
     @Volatile var labFolder: File? = null
     @Volatile var baselines: WineAppLabelsBaselines? = null
     @Volatile var ocrCache: WineAppLabelsOcrCache? = null
+    @Volatile var buildLog: WineAppLabelsBuildLog? = null
     @Volatile var expectedHashes: Map<String, String>? = null
 
     companion object {
@@ -111,6 +112,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private var ocrCache: WineAppLabelsOcrCache?
         get() = session.ocrCache
         set(value) { session.ocrCache = value }
+    private var buildLog: WineAppLabelsBuildLog?
+        get() = session.buildLog
+        set(value) { session.buildLog = value }
 
     init { load(PhoneCorpusRunner.Mode.LAB) }
 
@@ -205,6 +209,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val cachedOcrEnabled = mode == PhoneCorpusRunner.Mode.LAB && mutable.value.useCachedOcr
         val metadata = JSONObject()
             .put("build", BuildConfig.BUILD_COMMIT)
+            .put("branch", BuildConfig.BUILD_BRANCH)
+            .put("version_code", BuildConfig.VERSION_CODE.toString())
+            .put("build_key", WineAppLabelsBuildLog.currentBuildKey())
             .put("working_tree", BuildConfig.BUILD_WORKING_TREE)
             .put("mode", mode.name)
             .put("pipeline", mode.pipelineId)
@@ -254,6 +261,23 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
 
     private fun scoreboard() = PhoneCorpusScoreboard(app, "wine-app-labels-v1")
 
+    private fun backfillBuildLog(log: WineAppLabelsBuildLog, expectedCorpus: String) {
+        val recordedRunIds = log.readEntries().mapTo(hashSetOf()) { it.runId }
+        val scorer = scoreboard()
+        for (dir in matchingRunFolders(expectedCorpus).asReversed()) {
+            if (dir.name in recordedRunIds) continue
+            val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
+            if (metadata.optString("mode") != PhoneCorpusRunner.Mode.LAB.name) continue
+            val preds = runCatching { predictions(dir) }.getOrNull().orEmpty()
+            if (preds.isEmpty()) continue
+            val summaryRow = runCatching { scorer.build(preds, PhoneCorpusRunner.Mode.LAB).rows.single() }.getOrNull() ?: continue
+            val info = WineAppLabelsBuildLog.buildInfoFromSavedRun(metadata, preds)
+            val ts = File(dir, "current").listFiles().orEmpty().maxOfOrNull { it.lastModified() }
+                ?: metadata.optLong("created_ms", dir.lastModified())
+            log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts)
+        }
+    }
+
     private fun refresh() {
         val mode = mutable.value.mode
         val scoreboard = PhoneCorpusScoreboard(app, "wine-app-labels-v1")
@@ -261,20 +285,42 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         // photo subset so side-by-side totals stay apples-to-apples while a pass is running.
         val byMode = predictionsByMode()
         val currentBoard = scoreboard.build(byMode.getValue(mode), mode)
-        val comparisonRows = PhoneCorpusRunner.Mode.entries.map { comparedMode ->
+        val modeRows = PhoneCorpusRunner.Mode.entries.map { comparedMode ->
             val comparisonPredictions = byMode.getValue(comparedMode)
             if (comparedMode == mode) currentBoard.rows.single()
             else scoreboard.build(comparisonPredictions, comparedMode).rows.single()
         }
-        val labCount = byMode.getValue(PhoneCorpusRunner.Mode.LAB).size
+        val labPreds = byMode.getValue(PhoneCorpusRunner.Mode.LAB)
+        val labCount = labPreds.size
+        val activeLabDir = labFolder
+        if (activeLabDir != null && labCount > 0) {
+            val runMeta = runCatching { JSONObject(File(activeLabDir, "run.json").readText()) }.getOrNull()
+            val info = WineAppLabelsBuildLog.buildInfoFromSavedRun(runMeta, labPreds)
+            val isCurrentBuild = info.buildKey == WineAppLabelsBuildLog.currentBuildKey()
+            val ts = if (isCurrentBuild) {
+                System.currentTimeMillis()
+            } else {
+                File(activeLabDir, "current").listFiles().orEmpty().maxOfOrNull { it.lastModified() }
+                    ?: runMeta?.optLong("created_ms", activeLabDir.lastModified())
+                    ?: System.currentTimeMillis()
+            }
+            buildLog?.recordSummary(activeLabDir.name, info, PhoneCorpusRunner.Mode.LAB, modeRows.first(), ts)
+        }
         val ocrReady = ocrCache?.count(inputHashes()) ?: 0
         val captures = BASELINE_MODES.mapNotNull { version -> baselines?.capture(version) }.associateBy { it.mode }
         val captured = captures.values.map { it.count }.minOrNull() ?: 0
         val frozenReady = captures.size == BASELINE_MODES.size
         val captureRemaining = if (frozenReady) 0 else WINE_APP_LABEL_COUNT - captured
         val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
+        val lastBuildEntry = buildLog?.previousBuildEntry()
+        val lastBuildRow = lastBuildEntry?.toTableRow()
+            ?: WineAppLabelsBuildLog.emptyLastBuildRow(displayHeaders.size)
+        val comparisonRows = listOf(modeRows.first(), lastBuildRow) + modeRows.drop(1)
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · Lab v4 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
+            if (lastBuildEntry != null) {
+                appendLine("Lab v4 Last build: ${lastBuildEntry.buildNumber} · branch ${lastBuildEntry.branch} · ${lastBuildEntry.date} ${lastBuildEntry.time}")
+            }
             appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v4 has attempted so far, so all four rows compare side by side without re-running Prod. Lab v4 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
             appendLine("Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
@@ -451,7 +497,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
      */
     fun load(mode: PhoneCorpusRunner.Mode, fresh: Boolean = false) {
         if (mutable.value.busy) return
-        if (session.loaded && !fresh && labFolder != null && baselines != null && ocrCache != null) {
+        if (session.loaded && !fresh && labFolder != null && baselines != null && ocrCache != null && buildLog != null) {
             mutable.update { it.copy(mode = mode) }
             bgScope.launch { runCatching { refresh() } }
             return
@@ -475,8 +521,11 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 val promoted = store.promote(BASELINE_MODES, legacy)
                 val ocrStore = WineAppLabelsOcrCache(app, signature)
                 val promotedOcr = ocrStore.promote(matchingRunFolders(signature), inputHashes())
+                val logStore = WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))
+                backfillBuildLog(logStore, signature)
                 baselines = store
                 ocrCache = ocrStore
+                buildLog = logStore
                 labFolder = selectFolder(PhoneCorpusRunner.Mode.LAB, fresh)
                 session.loaded = true
                 refresh()
@@ -495,6 +544,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 labFolder = null
                 baselines = null
                 ocrCache = null
+                buildLog = null
                 mutable.update { it.copy(message = "Cannot load the 125-label test: ${e.message}") }
             } finally {
                 mutable.update { it.copy(busy = false) }

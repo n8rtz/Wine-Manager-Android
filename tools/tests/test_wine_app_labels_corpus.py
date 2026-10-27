@@ -339,6 +339,46 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('row["reference_status"] != "unresolved" && !PhoneCorpusMath.correct(row["outcome"].orEmpty())', activity)
         self.assertIn("failedFieldsByImage[wineCase.image].orEmpty().any { it in selectedFailureFields }", activity)
 
+    def test_lab_v4_last_build_row_and_scalar_results_log_contracts(self):
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+
+        # Separate scalar log file (never mixed into scored/raw export CSVs, zero raw OCR/image data).
+        self.assertIn('const val FILE_NAME = "benchmark-results-log.csv"', build_log)
+        self.assertIn('const val LAST_BUILD_ROW_TITLE = "Lab v4 Last build"', build_log)
+        for field in (
+            '"date"',
+            '"time"',
+            '"build_number"',
+            '"version_code"',
+            '"build_commit"',
+            '"branch"',
+            '"model_version"',
+            '"attempted"',
+            '"eligible"',
+            '"complete"',
+            '"one_error"',
+            '"two_plus_errors"',
+            '"failed"',
+            '"correct_values"',
+            '"wrong"',
+            '"missing"',
+            '"correct_blanks"',
+            '"unsupported"',
+            '"unresolved"',
+            '"deadline_partial"',
+        ):
+            self.assertIn(field, build_log)
+        for forbidden in ('"raw_text"', '"tokens"', '"trace"', "BitmapFactory", "images/"):
+            self.assertNotIn(forbidden, build_log)
+
+        # Score table places "Lab v4 Last build" directly below "Lab v4" and above Prod v3.0/v2.0/v1.0,
+        # and backfills existing saved Lab runs on load.
+        self.assertIn("val comparisonRows = listOf(modeRows.first(), lastBuildRow) + modeRows.drop(1)", viewmodel)
+        self.assertIn("val lastBuildEntry = buildLog?.previousBuildEntry()", viewmodel)
+        self.assertIn("backfillBuildLog(logStore, signature)", viewmodel)
+        self.assertIn('WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))', viewmodel)
+
     def test_background_execution_and_lab_ocr_cache_contracts(self):
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
