@@ -124,8 +124,10 @@ internal object TextLabCsv {
 /** Experimental Text Lab only; never changes the normal scanner deadline. */
 internal object TextLabBudgets {
     const val OCR_MS = 60_000L
-    /** Manifest checks, asset copy/verification and SQLite open for one spatial contender. */
-    const val GAZETTEER_SETUP_MS = 500L
+    /** Manifest checks, asset copy/verification and SQLite open for one spatial contender.
+     * Raised from 500 ms on the owner's request (2026-10-27): a cold first photo copies and verifies
+     * 34-50 MB, and the measured `producer_gazetteer_ms` on a warm run already reached 607 ms. */
+    const val GAZETTEER_SETUP_MS = 800L
     /** One contender's producer lookup plus linked-wine lookup, measured from the end of setup.
      * A fuzzy span costs ~11 ms of SQLite work on a desktop CPU and more on a phone, and a label
      * can produce tens of eligible spans, so the old 500 ms shared slice was routinely exhausted. */

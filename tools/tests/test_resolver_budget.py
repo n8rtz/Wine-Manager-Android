@@ -18,7 +18,7 @@ GAZETTEER = ROOT / 'app/src/main/java/com/yourapp/wine/gazetteer/ProducerGazette
 class ResolverBudgetTests(unittest.TestCase):
     def test_setup_and_lookup_have_separate_budgets(self):
         budgets = BUDGETS.read_text()
-        self.assertIn('const val GAZETTEER_SETUP_MS = 500L', budgets)
+        self.assertIn('const val GAZETTEER_SETUP_MS = 800L', budgets)
         self.assertIn('const val GAZETTEER_LOOKUP_MS = 2_000L', budgets)
         extraction = EXTRACTION.read_text()
         self.assertIn('setupDeadline=android.os.SystemClock.elapsedRealtime()+TextLabBudgets.GAZETTEER_SETUP_MS', extraction)
