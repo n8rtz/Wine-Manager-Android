@@ -173,7 +173,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val displayHeaders = currentBoard.headers.map { if (it == "Complete") "Fully correct" else it }
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · Lab v4 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen")
-            appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is then frozen on this device and every later pass scores that record instead of re-running them, so their rows only change when a new photo is captured. Only Lab v4 runs fresh OCR on every pass. The frozen Prod matrix rows come from the stored pipeline funnel of the capturing run.")
+            appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is then frozen on this device and every later pass scores that record instead of re-running them, so their rows only change when a new photo is captured. Only Lab v4 runs fresh OCR on every pass. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
             appendLine("Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
@@ -365,10 +365,10 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 baselines = store
                 labFolder = selectFolder(PhoneCorpusRunner.Mode.LAB, fresh)
                 refresh()
-                val message = when {
-                    promoted > 0 -> "Ready. Froze $promoted Prod baseline outcome(s) from this device's earlier checkpoints; only Lab v4 runs now."
-                    else -> "Ready. Only the 125 retained workbook labels are eligible for this test."
-                }
+                // A plain "ready" line said nothing the counts above do not already show.
+                val message = if (promoted > 0) {
+                    "Froze $promoted Prod baseline outcome(s) from this device's earlier checkpoints."
+                } else ""
                 mutable.update { it.copy(message = message) }
             } catch (e: Exception) {
                 labFolder = null

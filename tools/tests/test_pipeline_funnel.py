@@ -54,15 +54,21 @@ class PipelineFunnelChecks(unittest.TestCase):
         # step column) instead of the deleted file.
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Gazetteer database coverage"', 1)[0]
-        self.assertIn("val stepWidth = maxWidth * 0.19f", table)
-        self.assertIn("val fieldWidth = (maxWidth - stepWidth) / PhoneCorpusMath.fields.size", table)
-        self.assertNotIn("horizontalScroll", table)
-        self.assertIn("PhoneCorpusMath.fields.forEach", table)
+        # Columns are measured from their own text instead of being guessed from a fraction of
+        # the screen, so headers, step labels and counts each stay on one line.
+        self.assertIn("val matrixWidths = remember(board, labelStyle, cellStyle, passColor, failColor) {", table)
+        self.assertIn("MatrixWidths(step = step, fields = widened)", table)
+        self.assertIn("measurer.measure(text, style, maxLines = 1, softWrap = false).size.width.toDp()", table)
+        self.assertIn("board.matrix.map { AnnotatedString(it.step.shortTitle) }", table)
+        self.assertIn("Column(Modifier.horizontalScroll(rememberScrollState())) {", table)
+        self.assertNotIn("maxWidth * 0.19f", table)
+        self.assertIn("PhoneCorpusMath.fields.forEachIndexed { index, field ->", table)
         self.assertIn("board.matrix.forEach", table)
         self.assertIn('Text(if (expanded) "−" else "+")', table)
         # Collapsed rows show only the condensed short label; the full title, branch and
         # definition live in the expanded Column.
-        self.assertIn("Text(row.step.shortTitle, Modifier.weight(1f)", table)
+        self.assertIn("row.step.shortTitle,", table)
+        self.assertIn("Modifier.weight(1f),", table)
         self.assertIn("Text(row.step.title, style = MaterialTheme.typography.titleSmall)", table)
         self.assertIn("Text(row.step.branch, style = MaterialTheme.typography.labelSmall", table)
         self.assertIn("Text(row.step.definition, style = MaterialTheme.typography.bodySmall)", table)
@@ -71,7 +77,7 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn("val shortTitle: String get()", funnel)
         self.assertIn('"resolver.mlkit.eligible" to "ML eligible"', funnel)
 
-    def test_labels_matrix_colors_pass_fail_and_fits_screen(self):
+    def test_labels_matrix_colors_pass_fail_and_measures_its_columns(self):
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         table = source.split('Text("Pipeline bottleneck matrix"', 1)[1].split('Text("Gazetteer database coverage"', 1)[0]
         self.assertIn("private fun passFailLabel", source)
@@ -79,12 +85,16 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertIn("passFailLabel(row.shared.passed, row.shared.failed, passColor, failColor, shared = true", table)
         self.assertIn("val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)", table)
         self.assertIn("val failColor = MaterialTheme.colorScheme.error", table)
-        self.assertIn("val stepWidth = maxWidth * 0.19f", table)
-        self.assertIn("val fieldWidth = (maxWidth - stepWidth) / PhoneCorpusMath.fields.size", table)
-        self.assertIn("Text(row.step.shortTitle, Modifier.weight(1f)", table)
+        self.assertIn("Modifier.width(fieldWidths[index]).heightIn(min = 48.dp)", table)
+        self.assertIn("Modifier.width(fieldWidths.fold(0.dp) { total, width -> total + width }).heightIn(min = 48.dp)", table)
+        self.assertIn("row.step.shortTitle,", table)
+        self.assertIn("Modifier.weight(1f),", table)
+        # Single-line cells: no wrapping anywhere in the matrix (one measure + five Text cells).
+        self.assertEqual(table.count("maxLines = 1"), 6)
+        self.assertEqual(table.count("softWrap = false"), 6)
         self.assertIn("Text(row.step.title, style = MaterialTheme.typography.titleSmall)", table)
         self.assertIn("Text(row.step.definition, style = MaterialTheme.typography.bodySmall)", table)
-        self.assertNotIn("horizontalScroll", table)
+        self.assertIn("Column(Modifier.horizontalScroll(rememberScrollState())) {", table)
         self.assertNotIn("320.dp", table)
         funnel = (ROOT / "app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt").read_text()
         self.assertIn("val shortTitle: String get()", funnel)

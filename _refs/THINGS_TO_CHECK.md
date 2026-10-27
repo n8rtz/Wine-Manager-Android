@@ -58,6 +58,15 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 8. [ ] Confirm the retired page is gone: `PhoneCorpusActivity`, `PhoneCorpusViewModel`, `PhoneCorpusCsvTable`, the 168-photo `app/src/debug/assets/phone-corpus-v1/` bundle and its manifest entry no longer exist; there is no **Import scored results CSV** anywhere; the debug APK still installs (no missing-asset crash on the Settings screen, the OCR Labs or Database Lookup).
 9. [ ] Run `tools/run-pipeline-funnel-checks.sh` if Kotlin on the host is available, and on a disposable emulator run `PipelineFunnelDeviceTest` (it now reads `wine-app-labels-v1/inputs.json`).
 
+### Large image dataset test — no wrapped words in the diagnostics table
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Pipeline bottleneck matrix** on a phone-width screen. No header word breaks mid-line ("Wine name", "Sub-region" are on one line), no step label wraps onto a second or third line, and no count cell such as `12/3 · NR 1 · ? 0 · NA 2` wraps.
+2. [ ] The table scrolls horizontally to reach the later field columns, and the header row stays aligned with every body row while scrolling. Rotate to landscape: with more width, less (or no) scrolling is needed and the columns keep their measured widths.
+3. [ ] Tap **+** on a row: the definition panel spans the full table width and is not clipped by the scroll edge. Tap **−** to collapse.
+4. [ ] The scored-results section no longer shows the "Fully correct = …" legend, and the screen shows no "Ready. Only the 125 retained workbook labels…" line after loading (the counts and captions carry that information).
+
 ## Branch `arena/18cd55a1-wine-manager-android`
 
 **Build it:** `git checkout arena/18cd55a1-wine-manager-android`; build/install the debug build as usual (wireless debugging is fine — nothing here writes cellar data).

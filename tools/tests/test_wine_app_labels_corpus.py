@@ -159,7 +159,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
         self.assertIn("RadioButton(", activity)
         self.assertNotIn("RUNNABLE_MODES", viewmodel)
-        self.assertIn('Text("Fully correct = all six scorable fields matched."', activity)
+        self.assertNotIn("Fully correct = all six scorable", activity)
+        # The plain "Ready…" line was removed; the counts say the same thing.
+        self.assertNotIn("Only the 125 retained workbook labels are eligible", viewmodel)
+        self.assertIn("if (state.message.isNotBlank()) Text(state.message)", activity)
         self.assertIn('"Lab v4 checkpointed: ${state.labCompleted}/${state.total}"', activity)
         self.assertIn("Prod baselines captured: $frozen/${state.total} photos", activity)
         start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
