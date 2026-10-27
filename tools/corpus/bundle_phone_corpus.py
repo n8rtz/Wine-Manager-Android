@@ -11,6 +11,9 @@ from rescore_expected_blanks import disposition
 from score_public_corpus import normalize
 ROOT=Path(__file__).resolve().parents[2]
 REF=ROOT/'tools/evaluation/public-corpus-reference-v1/reference.json'
+# Historical builder for the retired 168-photo debug corpus. That corpus is no longer packaged
+# (the offline inputs live in tools/evaluation/retired-phone-corpus-v1/); running this only
+# regenerates a directory nothing reads, so do not re-package it into an APK.
 ADJUDICATIONS=ROOT/'app/src/debug/assets/phone-corpus-v1/reference-adjudications-v1.json'
 DEST=ROOT/'app/src/debug/assets/phone-corpus-v1'
 REV='eb2c14ba4f9a1b6efaa476696439754a9abde8ce'

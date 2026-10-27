@@ -30,7 +30,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/5dc78d5f-wine-manager-android`; build/install the debug build as usual (nothing here writes cellar data).
 
-**What changed:** the **Large image dataset test** row in Settings opens the 125-label Wine App Labels page, which had no export controls; it now prepares a scored or raw diagnostics CSV and saves each part through the system document picker, like the main branch's phone-corpus page.
+**What changed:** the **Large image dataset test** row in Settings opens the 125-label Wine App Labels page, which had no export controls; it now prepares a scored or raw diagnostics CSV and saves each part through the system document picker. On the same screen, **Prod v1.0 / v2.0 / v3.0 are now captured once per photo and frozen on the device** (only Lab v4 re-runs), and the legacy 168-photo `PhoneCorpusActivity` page, its importer and its debug photo bundle were deleted.
 
 ### Large image dataset test — CSV save restored
 
@@ -43,6 +43,20 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 5. [ ] Watch the status while preparing/saving an export and then returning from the picker: there is no "Stopping after the current photo" message and no run starts by itself (opening the picker is not a benchmark background pause).
 6. [ ] Use **Split an existing CSV for upload** on a saved export larger than 25 MB: numbered parts appear with the same header and complete records; each one saves separately. A small file is offered as a single part, unchanged.
 7. [ ] Start a run, then try the export buttons during it: they stay disabled until the run stops, and **Start / resume remaining photos** stays disabled while a CSV is being prepared or saved.
+
+### Large image dataset test — Prod versions frozen, legacy page retired
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a **fresh install** (clear app data first), open **Profile → Settings → Large image dataset test**. Only **Lab v4** has a selectable radio; **Prod v1.0**, **Prod v2.0** and **Prod v3.0** are shown greyed with “Frozen 0/125 photos” (or “no frozen capture yet” wording from `Frozen …`/`Runs fresh OCR on every pass`). The intro text says the Prod versions “are frozen benchmarks, not live contenders”.
+2. [ ] Tap **Start / resume (first pass also captures Prod)** and let a few photos finish. Each photo shows “Running Lab v4 + capturing Prod v1.0, Prod v2.0, Prod v3.0”. The matrix shows all four rows.
+3. [ ] Stop, force-stop the app, reopen the screen: the Prod rows show the same numbers as before the restart, and **Prod baselines captured: n/125 photos** is unchanged. Then tap **Start / resume** again: the per-photo message no longer names the Prod versions (only Lab v4), and the Prod rows do not move while Lab's row updates.
+4. [ ] Update/reinstall the APK over the existing install (same signing key, e.g. a new debug build), reopen the screen: **Prod baselines captured** still reports the old photo count and the OLD build SHA in “captured by …”. Prod rows are unchanged; no Prod version re-runs. (Uninstall or **Clear storage** is expected to lose the frozen records.)
+5. [ ] With an install that already has Prod checkpoints from an earlier build (the previous branch's four-version run), open the screen once: the status line reports **promoted** photos, and the Prod rows appear without a second OCR pass. Only completed attempts are promoted; photos whose newest attempt failed are still captured on the next Start.
+6. [ ] Under **Retry failed / partial**, retry after a photo whose Prod capture failed: only that photo's Prod version re-runs, and its frozen record is replaced. Photos already frozen correctly are never re-run.
+7. [ ] Prepare and save both CSVs: Prod rows carry `result_origin=frozen_baseline`, `run_id=frozen-baseline` and `captured_build`, while Lab rows carry this run's `run_id`; the raw file has the Lab `tokens`/`trace`/`pipelines`/`pipeline_funnel` rows and only the frozen Prod `pipeline_step` aggregates (no fabricated token rows).
+8. [ ] Confirm the retired page is gone: `PhoneCorpusActivity`, `PhoneCorpusViewModel`, `PhoneCorpusCsvTable`, the 168-photo `app/src/debug/assets/phone-corpus-v1/` bundle and its manifest entry no longer exist; there is no **Import scored results CSV** anywhere; the debug APK still installs (no missing-asset crash on the Settings screen, the OCR Labs or Database Lookup).
+9. [ ] Run `tools/run-pipeline-funnel-checks.sh` if Kotlin on the host is available, and on a disposable emulator run `PipelineFunnelDeviceTest` (it now reads `wine-app-labels-v1/inputs.json`).
 
 ## Branch `arena/18cd55a1-wine-manager-android`
 

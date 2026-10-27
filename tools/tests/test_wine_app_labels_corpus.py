@@ -32,23 +32,31 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256((ASSETS / "scoring.json").read_bytes()).hexdigest(), manifest["scoring_sha256"])
         for row in inputs:
             self.assertEqual(hashlib.sha256((ASSETS / "images" / row["image"]).read_bytes()).hexdigest(), row["sha256"])
+        by_sha = {row["sha256"]: row["image"] for row in inputs}
         for row in labels["records"]:
-            source_path = ROOT / row["source_path"]
-            self.assertEqual(hashlib.sha256(source_path.read_bytes()).hexdigest(), row["source_sha256"])
+            # The review workbook's source_path pointed into the retired debug corpus; the same
+            # bytes are packaged under wine-app-labels-v1, so verify provenance there.
+            packaged = ASSETS / "images" / by_sha[row["source_sha256"]]
+            self.assertEqual(hashlib.sha256(packaged.read_bytes()).hexdigest(), row["source_sha256"], row["source_path"])
         self.assertEqual({row["review_number"] for row in targets}, {row["review_number"] for row in labels["records"]})
         self.assertFalse({14, 49, 52, 55, 64, 73, 133, 159, 168} & {row["review_number"] for row in targets})
         self.assertTrue(all(set(row["fields"]) == {"producer", "wine_name", "country", "region", "subregion", "vintage"} for row in targets))
 
     def test_legacy_saved_photo_map_uses_exact_bytes(self):
+        # The 168-photo debug corpus is retired, so the map is checked for internal consistency
+        # against the live corpus: every legacy photo maps to a retained photo with the same bytes.
         mapping = json.loads((ASSETS / "legacy-phone-corpus-image-map.json").read_text())
-        old_inputs = json.loads((ROOT / "app/src/debug/assets/phone-corpus-v1/inputs.json").read_text())["images"]
         new_inputs = json.loads((ASSETS / "inputs.json").read_text())["images"]
-        old_by_hash = {row["sha256"]: row["image"] for row in old_inputs}
-        new_by_hash = {row["sha256"]: row["image"] for row in new_inputs}
-        expected = {digest: (old_by_hash[digest], new_by_hash[digest]) for digest in old_by_hash.keys() & new_by_hash.keys()}
-        actual = {row["sha256"]: (row["legacy_image"], row["image"]) for row in mapping["images"]}
+        by_image = {row["image"]: row["sha256"] for row in new_inputs}
+        rows = mapping["images"]
         self.assertEqual(mapping["mapping_count"], 103)
-        self.assertEqual(actual, expected)
+        self.assertEqual(len(rows), 103)
+        self.assertEqual(len({row["legacy_image"] for row in rows}), 103)
+        self.assertEqual(len({row["image"] for row in rows}), 103)
+        for row in rows:
+            self.assertRegex(row["legacy_image"], r"^[0-9a-f]{40}\.jpg$")
+            self.assertEqual(by_image[row["image"]], row["sha256"], row["legacy_image"])
+            self.assertNotEqual(row["legacy_image"], row["image"])
 
     def test_gazetteer_coverage_counts_unique_known_labels_on_scoring_side(self):
         coverage = json.loads((ASSETS / "gazetteer-coverage.json").read_text())
@@ -129,22 +137,33 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("Lab v4 uses the Lab-only expanded producer index", activity)
         self.assertIn("Supplemental candidates never reach production or the Prod versions", activity)
         self.assertIn("Pipeline bottleneck matrix", activity)
-        self.assertIn("Every photo runs through all four versions", activity)
-        self.assertIn("Attempted stays equal across versions", activity)
-        self.assertNotIn("Only the selected version runs fresh OCR", activity)
+        self.assertIn("are frozen benchmarks, not live contenders", activity)
+        self.assertIn("every later pass scores that saved record instead of re-running them", activity)
+        self.assertNotIn("Every photo runs through all four versions", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
         self.assertNotIn("savedPredictions", viewmodel)
         self.assertNotIn('File(app.noBackupFilesDir, "phone-corpus-v1")', viewmodel)
-        self.assertIn("Mode.entries.associateWith { selectFolder(it, fresh) }", viewmodel)
+        self.assertIn("val legacy = PhoneCorpusRunner.Mode.entries.mapNotNull { mode -> latestFolder(mode)?.let { mode to it } }.toMap()", viewmodel)
+        self.assertIn("val promoted = store.promote(BASELINE_MODES, legacy)", viewmodel)
         self.assertIn("val comparisonPredictions = byMode.getValue(comparedMode)", viewmodel)
         self.assertIn('if (it == "Complete") "Fully correct" else it', viewmodel)
         self.assertIn("Attempted is the saved-photo tally", viewmodel)
+        self.assertIn('BASELINE_MODES = listOf(', viewmodel)
+        # Only Lab is offered as a runnable mode; Prod versions are frozen comparators.
+        self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
+        self.assertIn("RadioButton(", activity)
+        self.assertNotIn("RUNNABLE_MODES", viewmodel)
         self.assertIn("Fully correct (for example, 2/5) means all six scorable fields matched", activity)
-        self.assertIn('"All four versions checkpointed: ${state.completed}/${state.total}"', activity)
+        self.assertIn('"Lab v4 checkpointed: ${state.labCompleted}/${state.total}"', activity)
+        self.assertIn("Prod baselines captured: $frozen/${state.total} photos", activity)
         start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
         self.assertEqual(start_body.count("PhoneCorpusRunner.runImageAllModes("), 1)
-        self.assertIn('app, image, input.getString("sha256"), needed.toSet(),', start_body)
-        self.assertIn("val needed = PhoneCorpusRunner.Mode.entries.filter", start_body)
+        self.assertIn('app, image, input.getString("sha256"), needed, File(root, "work"),', start_body)
+        # Only photos without a frozen record enter a Prod version; Lab is always eligible.
+        self.assertIn("val neededBaselines = BASELINE_MODES.filter", start_body)
+        self.assertIn("val frozen = store.record(version, image)", start_body)
+        self.assertIn("if (!runLab && neededBaselines.isEmpty()) continue", start_body)
+        self.assertIn("store.save(version, image, result)", start_body)
         self.assertIn("for ((version, result) in results)", start_body)
         self.assertIn("init { load(PhoneCorpusRunner.Mode.LAB) }", viewmodel)
         self.assertIn("fun onBackgroundPause(resumeWhenForeground: Boolean)", viewmodel)
@@ -180,13 +199,81 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("fun prepareExport(raw: Boolean)", viewmodel)
         self.assertIn("fun saveExportPart(uri: Uri, index: Int)", viewmodel)
         self.assertIn("fun splitExistingCsv(uri: Uri)", viewmodel)
-        # Both exports cover every version and are split with the shared 25 MB splitter.
-        self.assertIn("for (mode in PhoneCorpusRunner.Mode.entries)", viewmodel)
-        self.assertIn("private fun writeScoredCsv(target: File, dirs: Map<PhoneCorpusRunner.Mode, File>)", viewmodel)
-        self.assertIn("private fun writeRawCsv(target: File, dirs: Map<PhoneCorpusRunner.Mode, File>)", viewmodel)
+        # Both exports cover every version (frozen Prod + live Lab) and use the shared splitter.
+        self.assertIn("for ((mode, records) in predictionsByMode())", viewmodel)
+        self.assertIn("private fun writeScoredCsv(target: File)", viewmodel)
+        self.assertIn("private fun writeRawCsv(target: File)", viewmodel)
+        self.assertIn('"result_origin" to "frozen_baseline"', viewmodel)
         self.assertIn("CsvUploadParts.split(target, exportDir)", viewmodel)
         # Saving a CSV opens the document picker, which must not be treated as pausing a run.
         self.assertIn("if (mutable.value.busy && !exporting) {", viewmodel)
+
+    def test_prod_versions_are_captured_once_and_then_read_from_the_frozen_store(self):
+        # Owner rule: Prod v1.0/v2.0/v3.0 are benchmarks, not contenders. Each photo runs through
+        # them once, the outcome is saved, and later passes score the saved outcome. Only Lab v4
+        # re-runs, so the comparison rows stay meaningful across builds.
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        store = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt").read_text()
+
+        # 1. Frozen records are keyed by corpus signature, never by build SHA or install time:
+        #    that is what makes them survive an app update.
+        self.assertIn('File(app.noBackupFilesDir, "wine-app-labels-v1/baselines-v1/$signature")', store)
+        self.assertIn("MessageDigest.getInstance(\"SHA-256\").digest(corpusSignature.toByteArray())", store)
+        for forbidden in ("packageManager", "lastUpdateTime", "firstInstallTime", "BuildConfig.BUILD_COMMIT).take("):
+            self.assertNotIn(forbidden, store)
+        self.assertIn("record.put(\"corpus_signature\", signature)", store)
+        self.assertIn("record.put(\"captured_build\", BuildConfig.BUILD_COMMIT)", store)
+
+        # 2. A frozen record keeps what the scoreboard/diagnostics/CSV read and drops raw evidence.
+        self.assertIn('record.remove("trace")', store)
+        self.assertIn('record.remove("tokens")', store)
+        self.assertIn('record.remove("diagnostics")', store)
+        self.assertIn('record.put("frozen", true)', store)
+        self.assertIn('if (PhoneCorpusRunner.Mode.fromPipelineId(row.optString("pipeline")) == mode) row.put("pipeline", mode.pipelineId)', store)
+
+        # 3. Upgrading must not demand a second Prod pass: a completed checkpoint of the frozen
+        #    pipeline is promoted as the capture, failures stay pending, existing records win.
+        promote_body = store.split("fun promote(", 1)[1]
+        self.assertIn('if (previous.optString("status") != "complete") continue', promote_body)
+        self.assertIn("if (image.isBlank() || record(mode, image) != null) continue", promote_body)
+        self.assertIn("save(mode, image, previous)", promote_body)
+        self.assertIn("runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf { it.optBoolean(\"frozen\") }", store)
+
+        # 4. Selection rule, mirrored from start(); the source must encode the same predicate.
+        def needed(has_lab, lab_failed, frozen, frozen_failed, retry):
+            """Modes still to run for one photo. A mode runs only when it has nothing usable."""
+            def prod(version):
+                record = frozen.get(version)
+                return (record is not None and frozen_failed.get(version, False)) if retry else record is None
+            return (["LAB"] if (lab_failed if has_lab else True) else []) + [v for v in ("V1", "V2", "V3") if prod(v)]
+        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1, "V3": 1}, {}, False), [])
+        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1}, {}, False), ["V3"])
+        self.assertEqual(needed(False, False, {"V1": 1, "V2": 1, "V3": 1}, {}, False), ["LAB"])
+        self.assertEqual(needed(True, False, {}, {}, False), ["V1", "V2", "V3"])
+        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1, "V3": 1}, {"V2": True}, True), ["V2"])
+        self.assertEqual(needed(True, True, {"V1": 1, "V2": 1, "V3": 1}, {}, True), ["LAB"])
+        start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
+        self.assertIn("val runLab = if (retryFailures) labPrevious == null || isFailed(labPrevious) else labPrevious == null", start_body)
+        self.assertIn("if (retryFailures) frozen != null && isFailed(frozen) else frozen == null", start_body)
+        self.assertIn("if (!runLab && neededBaselines.isEmpty()) continue", start_body)
+        # One OCR pass serves every mode still needed for that photo.
+        self.assertEqual(start_body.count("PhoneCorpusRunner.runImageAllModes("), 1)
+        self.assertIn("val needed = neededBaselines.toSet() + if (runLab) setOf(PhoneCorpusRunner.Mode.LAB) else emptySet()", start_body)
+
+        # 5. Frozen rows are labelled as such and never claim a live run id.
+        self.assertIn('"result_origin" to "frozen_baseline"', viewmodel)
+        # Lab rows keep the live run folder's id; frozen rows never borrow it.
+        self.assertIn('"run_id" to (labFolder?.name ?: "")', viewmodel)
+        self.assertEqual(viewmodel.count('"run_id" to "frozen-baseline"'), 2)  # scored + raw exports
+        self.assertIn('"captured_build" to baselines?.capture(mode)?.build.orEmpty()', viewmodel)
+
+        # 6. The screen never offers a Prod version as a live run and says the rows are frozen.
+        self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", activity)
+        self.assertIn("are frozen benchmarks, not live contenders", activity)
+        self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
+        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', activity)
+        self.assertIn('Text("New Lab run (keeps old results and frozen Prod)")', activity)
 
 
 if __name__ == "__main__":

@@ -1,24 +1,36 @@
-# Large image dataset test (debug only)
+# Large image dataset test
 
-## Use on the phone
+> **Retired 2026-10-26:** the 168-photo `phone-corpus-v1` page (`PhoneCorpusActivity`), its
+> ViewModel, its scored-CSV importer and its 31 MB debug asset bundle were removed. **Profile /
+> Settings → Large image dataset test** now opens the 125-label `WineAppLabelsActivity`, and the
+> Prod v1.0/v2.0/v3.0 rows on it are frozen comparators, not live contenders. Sections below
+> describing the 168-photo run, the "Saved Production v2.0" comparison rows and **Import scored
+> results CSV** describe the retired page and no longer exist in the app; the historical inputs are
+> kept offline in `tools/evaluation/retired-phone-corpus-v1/`.
 
-Build/install **debug** from this branch, then open **Profile / Settings → Large image dataset test**. It is separate from both existing OCR Labs. Normal release source sets do not contain these photos or this Activity.
+## Use on the phone (live 125-label benchmark)
 
-The full 168-image bundle remains for provenance and hash checks, but 106 selected labels are sent through OCR. The 55 red and 4 yellow rows are excluded, as are review numbers 27 and 47, which were absent from the workbook, and review 14 at the owner's request because Club des Sommeliers is branding rather than an established producer. Thus 62 images never enter OCR. Review 108 is already excluded as red. The 106 included rows contain 105 fully scorable forms and one partly unresolved form; the former 160-label acceptance target is retired pending review of the curated reference set.
+Build/install the app, then open **Profile / Settings → Large image dataset test**. It is separate from both existing OCR Labs and uses `app/src/main/assets/wine-app-labels-v1/` (125 retained workbook photos).
 
-1. Choose **Production v1.0** (shared 15-second scanner), **Production v2.0** (guarded producer, 60 seconds per OCR engine), or **Lab** (latest spatial-merging variant, 60 seconds per engine). Each option runs only its selected implementation.
+**Prod v1.0, Prod v2.0 and Prod v3.0 are frozen baselines.** Each photo runs through them once; the outcome (fields, status, engine flags and the compact pipeline funnel) is saved on the device under `noBackupFilesDir/wine-app-labels-v1/baselines-v1/<corpus signature>/<MODE>/` and every later pass scores that record instead of re-running the version. Only **Lab v4** runs fresh OCR on later passes, so a re-run measures the current model against a fixed baseline. Records are keyed by the corpus signature (inputs/evaluation-set/scoring hashes), so a revised reference set never mixes with an older capture, and they survive app updates (uninstall/clear data removes them). The first pass after upgrading freezes any Prod checkpoints an earlier build already produced instead of asking for a second run. **Retry failed / partial** re-runs a Prod version only for photos whose frozen record is a failure.
+
+All 125 retained rows of the updated, owner-reviewed workbook are eligible and no photo is filtered out of OCR: Club des Sommeliers #14 and the marked-red rows were removed from both workbook tabs, IMG_2732.jpeg stays excluded, and the 168-photo bundle is no longer packaged. The legacy 168/106 selection, its 62 exclusions and its retired 160-label acceptance target therefore no longer apply to this screen.
+
+1. **Lab v4** is the only selectable version (latest spatial-merging variant, 60 seconds per engine). The Prod radios are display-only and show each version's frozen photo count and capturing build. On a first pass the Prod versions run alongside Lab, once per photo.
 2. Tap **Start / resume remaining photos**. No picker, image download, desktop OCR or saved-text replay is used.
 3. Keep the screen open and the phone powered. The screen stays awake while working; runs can take hours and generate heat. Stop requests take effect after the current photo. Backgrounding requests a stop. Closing the Activity or process death may interrupt the current photo, which will be reattempted on resume.
 4. Read the horizontally scrollable aggregate table and expand **Show per-photo results** for expected/recognized values and outcomes.
-5. **Export scored CSV** uses Android's document picker. Copy stats and a separate **Export raw diagnostics CSV** (tokens, boxes, scores, engine traces and retained earlier attempts) are also available. Export before switching to a new run or installing another APK.
+5. **Copy scored stats**, **Prepare scored CSV export** and **Prepare raw diagnostics CSV export** are in the **CSV export** section; each prepared file gets a **Save** button that opens Android's document picker. Both exports cover all four versions in one file: scored rows carry `build`/`mode`/`run_id` (frozen rows also carry `result_origin=frozen_baseline` and `captured_build`), and the raw file adds the Lab pass's tokens, engine timings, traces, pipelines, funnel rows and every retained attempt plus the frozen Prod aggregate `pipeline_step` rows — frozen records keep no OCR tokens, so the raw file never claims evidence that was not stored. No images or account information are exported.
 
 Resume skips all checkpointed attempts, including failures. **Retry failed / partial** explicitly reattempts failed/incomplete/deadline-limited images; it does not retry images merely because their answers disagree with the reference. The latest attempt replaces that image's scored result; earlier attempts remain on disk. There is no automatic best-result selection. Exported attempt numbers distinguish retries.
 
 New runs preserve old files. Runs are isolated by build SHA, APK install/update timestamp, mode, and UUID. An APK reinstall/update starts a new namespace, even for the same source SHA: outputs from changed binaries cannot silently mix. Old run files remain private app data, but this first UI does not browse old run archives; export before changing runs/builds. Uninstall/clear app data removes checkpoints.
 
-## Exactly which photos?
+## Exactly which photos? (retired 168-photo bundle)
 
-`app/src/debug/assets/phone-corpus-v1/images/` contains **168 JPEGs, 31,163,745 bytes (29.72 MiB)**. Their bytes match the previously evaluated, EXIF-oriented, maximum-1600-edge JPEGs—not newly substituted labels. All transformed SHA-256 hashes match the frozen reference. The builder additionally verified each original source Git blob SHA-1.
+*The bundle described in this section is no longer packaged; it lives in `tools/evaluation/retired-phone-corpus-v1/` and the commit history. The live corpus is `app/src/main/assets/wine-app-labels-v1/` (125 photos).*
+
+`app/src/debug/assets/phone-corpus-v1/images/` contained **168 JPEGs, 31,163,745 bytes (29.72 MiB)**. Their bytes match the previously evaluated, EXIF-oriented, maximum-1600-edge JPEGs—not newly substituted labels. All transformed SHA-256 hashes match the frozen reference. The builder additionally verified each original source Git blob SHA-1.
 
 - Source: `AntoninLeroy/wine_label_reader_toolkit`, commit `eb2c14ba4f9a1b6efaa476696439754a9abde8ce`.
 - `inputs.json`: identities/hashes for all 168 bundled images, used for integrity checks.
@@ -28,13 +40,7 @@ New runs preserve old files. Runs are isolated by build SHA, APK install/update 
 
 The upstream images have no declared redistribution license. The user expressly requested private test embedding. **Do not publish this debug APK as a public release.** Release APKs are not inflated by this corpus. Genuine Medium model assets are still supplied by the existing `preparePaddleMedium` build task; no new OCR models were introduced.
 
-Reproduction requires the pinned upstream archive and Pillow 13.0.0:
-
-```sh
-python tools/corpus/bundle_phone_corpus.py /path/to/pinned-source.zip
-```
-
-The builder does not fetch anything or change frozen reference hashes. The large upstream ZIP is not checked into Git.
+Reproduction of that retired bundle requires the pinned upstream archive and Pillow 13.0.0 (`python tools/corpus/bundle_phone_corpus.py /path/to/pinned-source.zip`). It rebuilds `app/src/debug/assets/phone-corpus-v1/`, which **nothing in the app reads any more** — the live corpus is already committed under `app/src/main/assets/wine-app-labels-v1/` and is regenerated by `tools/evaluation/wine-app-labels-review-v1/build_phone_test_assets.py`. Neither builder fetches anything or changes frozen reference hashes, and the large upstream ZIP is not checked into Git.
 
 ## Execution, isolation and scoring
 
@@ -84,7 +90,7 @@ Build on the normal Android/Code on the Go setup with `./gradlew :app:assembleDe
 
 Benchmark exports now use **Prepare scored CSV export** / **Prepare raw diagnostics CSV export**, followed by a **Save** button for each prepared file. Files over **25,000,000 bytes** are split at CSV record boundaries, with the exact header repeated in every numbered part. A typical 35 MB file produces two parts; larger exports can produce more so every file stays below the upload cap. Quoted newlines, escaped quotes and UTF-8 bytes are preserved. A single record too large to fit is an explicit error, never silently truncated. The original checkpoint data is unchanged.
 
-**Split an existing CSV for upload** opens Android's document picker and can split a previously saved 35 MB export from an older build, without rerunning OCR or accessing that build's run namespace. Save and upload all resulting parts. No broad storage permission or uploads are added. Both preparation and file copying run off the UI thread. Prepared parts are temporary cache files; if the app is killed or cache cleared, prepare/select the source again.
+**Split an existing CSV for upload** (live page) opens Android's document picker and can split a previously saved 35 MB export from an older build, without rerunning OCR or accessing that build's run namespace. Save and upload all resulting parts. No broad storage permission or uploads are added. Both preparation and file copying run off the UI thread. Prepared parts are temporary cache files; if the app is killed or cache cleared, prepare/select the source again.
 
 Validation: 77 actual Kotlin JVM split checks pass, including a ~35 MB file → two parts, exact byte boundaries, multiline/escaped/unicode fields, header repetition, multiple parts and byte-for-byte reconstruction. Android SAF/Compose integration still requires a device smoke test; this sandbox cannot establish APK build success.
 
@@ -92,14 +98,16 @@ Validation: 77 actual Kotlin JVM split checks pass, including a ~35 MB file → 
 
 The selected implementation is identified in the run metadata and CSV pipeline ID. Mode/build/install isolation prevents mixing old LAB checkpoints with the new spatial variant. Export earlier runs before updating. Mode labels and scoreboard routing have host wiring checks; 160 host tests, 85 actual Kotlin spatial-merger checks, 12 actual Kotlin spatial-to-guarded integration checks and 2,030 scorer/stat/CSV checks pass. Android Activity/ViewModel wiring and a full APK build still require verification in Android Studio. No phone accuracy improvement is claimed before testing.
 
-## Saved Production v2.0 comparison
+## Saved Production v2.0 comparison (retired with the 168-photo page)
 
-Every benchmark mode now displays two additional rows from the user's completed 168-photo phone run on build `28bce9e81cc3`, whose original pipeline ID was `lab-guarded-producer`:
+*This section documents the removed debug page. The live page has no saved-v2/baseline comparison rows; its Prod v1.0/v2.0/v3.0 rows are that device's own frozen capture. The offline data is retained in `tools/evaluation/retired-phone-corpus-v1/saved-production-v2.json` for the historical analyses below.*
+
+The retired page displayed two additional rows from the user's completed 168-photo phone run on build `28bce9e81cc3`, whose original pipeline ID was `lab-guarded-producer`:
 
 - **Saved Production v2.0 · same attempted photos** — scored only on the image IDs checkpointed in the current run.
 - **Saved Production v2.0 · same curated set** — the historical 168-photo predictions are filtered to the same 106 included image IDs. This is the valid matched reference for current runs; the original all-168 historical totals below are context only and must not be compared directly to the curated denominator.
 
-The saved predictions are bundled in debug assets as `phone-corpus-v1/saved-production-v2.json`. `tools/corpus/bundle_saved_phone_v2.py` reproduces them from the compact full-run analysis, retaining the source CSV/build/pipeline and hashes. They are loaded only by the scoreboard, never supplied to recognition/extraction, and never rerun. No new photos or models are included.
+The saved predictions are no longer bundled in app assets; the offline copy is `tools/evaluation/retired-phone-corpus-v1/saved-production-v2.json`, reproduced from the compact full-run analysis in `tools/evaluation/phone-full-run-28bce9e/` (source CSV/build/pipeline and hashes retained). They are loaded only by the scoreboard, never supplied to recognition/extraction, and never rerun. No new photos or models are included.
 
 These rows appear in the on-screen table, copied statistics, and scored CSV (including per-field expected/recognized values). Exported saved-v2 rows include `result_origin`, `source_build`, `source_pipeline` and `source_csv_sha256`, distinct from the current export build. Existing historical frozen-baseline rows remain labeled historical; **they are not Production v1.0**. Running v1.0 or Lab therefore provides a matched-photo comparison against saved v2.0, without running the other contenders. This does not invent a full saved v1.0 result.
 

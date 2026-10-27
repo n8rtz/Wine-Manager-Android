@@ -19,9 +19,10 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('"lab-v4-lwin-only" to Mode.LAB',runner)
         self.assertIn('"production-v3.0-spatial-merged" to Mode.PRODUCTION_V3',runner)
         self.assertIn('fun fromPipelineId(id:String):Mode?',runner)
-        csv_table=(PHONE/'PhoneCorpusCsvTable.kt').read_text()
-        self.assertIn('PhoneCorpusRunner.Mode.fromPipelineId(row["pipeline"].orEmpty())',csv_table)
-        self.assertIn('it["Pipeline"]==csvPipeline',csv_table)
+        # The retired corpus importer is gone; the aliases now normalize a promoted frozen record
+        # so an older build's ID never hides its version from the scorer.
+        baselines=(PHONE/'WineAppLabelsBaselines.kt').read_text()
+        self.assertIn('if (PhoneCorpusRunner.Mode.fromPipelineId(row.optString("pipeline")) == mode) row.put("pipeline", mode.pipelineId)',baselines)
         diagnostics=(PHONE/'PhoneCorpusPipelineDiagnostics.kt').read_text()
         self.assertIn('val labResolvers = mode == "LAB" || mode == "PRODUCTION_V3"',diagnostics)
         self.assertIn('"PRODUCTION_V3" -> "spatial_lwin_evidence_"',diagnostics)
@@ -42,8 +43,12 @@ class BenchmarkVersionChecks(unittest.TestCase):
         page=(PHONE/'WineAppLabelsViewModel.kt').read_text()
         self.assertIn('PhoneCorpusRunner.Mode.entries.map { comparedMode ->',page)
         self.assertIn('scoreboard.build(comparisonPredictions, comparedMode).rows.single()',page)
-        ui=(PHONE/'PhoneCorpusActivity.kt').read_text()
-        self.assertIn('Mode.entries.forEach',ui);self.assertIn('Text(mode.title,',ui)
+        ui=(PHONE/'WineAppLabelsActivity.kt').read_text()
+        self.assertIn('PhoneCorpusRunner.Mode.entries.forEach { mode ->',ui)
+        self.assertIn('Text(mode.title)',ui)
+        # Prod versions are frozen comparators: their radios are display-only.
+        self.assertIn('enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,',ui)
+        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"',ui)
     def test_all_versions_share_one_fresh_ocr_run(self):
         runner=(PHONE/'PhoneCorpusRunner.kt').read_text()
         self.assertEqual(runner.count('TextLabRunner.recognize('),1)
@@ -52,7 +57,9 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin',runner)
         self.assertIn('Mode.PRODUCTION_V3 -> "spatial_lwin_lab"',runner)
         self.assertIn('it["stage"]==mode.summaryStage',runner)
-        self.assertIn('runImageAllModes(context,image,hash,setOf(mode)',runner)
+        self.assertIn('suspend fun runImageAllModes(context:Context,image:String,hash:String,modes:Set<Mode>',runner)
+        # Every caller goes through the multi-mode entry point; the single-mode wrapper is retired.
+        self.assertNotIn('suspend fun runImage(context:Context',runner)
         self.assertNotIn('compareGazetteer=true',runner)
         board=(PHONE/'PhoneCorpusScoreboard.kt').read_text()
         self.assertIn('val names=listOf(mode.pipelineId)',board)
@@ -78,7 +85,12 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('candidate:String="spatial_lab",stagePrefix:String="spatial_"',spatial)
         self.assertIn('summaryStage,"failed"',spatial)
     def test_checkpoint_and_export_version_identity(self):
-        vm=(PHONE/'PhoneCorpusViewModel.kt').read_text()
+        vm=(PHONE/'WineAppLabelsViewModel.kt').read_text()
         self.assertIn('${mode.name}',vm)
-        self.assertIn('.put("pipeline",mode.pipelineId)',vm)
+        self.assertIn('.put("pipeline", mode.pipelineId)',vm)
         self.assertIn('CsvUploadParts.split',vm)
+        # Prod rows are scored from frozen records and say so in both exports.
+        self.assertIn('"result_origin" to "frozen_baseline"',vm)
+        baselines=(PHONE/'WineAppLabelsBaselines.kt').read_text()
+        self.assertIn('.put("stored_pipeline", result.optString("pipeline"))',baselines)
+        self.assertIn('record.put("corpus_signature", signature)',baselines)

@@ -139,32 +139,57 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
+                    val capture = state.captures[mode]
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = state.mode == mode, onClick = { vm.load(mode) }, enabled = !state.busy)
-                        Text(mode.title)
+                        RadioButton(
+                            selected = state.mode == mode,
+                            // The Prod versions are frozen comparators: they are not re-run and
+                            // their diagnostics are read straight from the stored capture.
+                            onClick = { if (mode == PhoneCorpusRunner.Mode.LAB) vm.load(mode) },
+                            enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,
+                        )
+                        Column {
+                            Text(mode.title)
+                            Text(
+                                if (mode == PhoneCorpusRunner.Mode.LAB) {
+                                    "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                } else if (capture == null) {
+                                    "Baseline not captured yet · will run once for each remaining photo"
+                                } else {
+                                    "Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                 }
                 Text("Prod v3.0 uses verified LWIN producer data only. Lab v4 uses the Lab-only expanded producer index: the same verified LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates. Supplemental candidates never reach production or the Prod versions, and every suggestion still requires confirmation.", style = MaterialTheme.typography.bodySmall)
-                Text("Every photo runs through all four versions before the test moves on, so Attempted stays equal across versions. Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index — while Prod v1.0 runs the Add Wine scanner separately. The version selected above only chooses which diagnostics are shown below. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen this screen and tap Start / resume — versions already checkpointed for a photo are not rerun.", style = MaterialTheme.typography.bodySmall)
+                Text("Prod v1.0, Prod v2.0 and Prod v3.0 are frozen benchmarks, not live contenders. Each photo runs through them once, the outcome is saved on this device, and every later pass scores that saved record instead of re-running them — so their rows stay put while Lab v4 moves. Their bottleneck matrix comes from the funnel recorded during the capturing run. Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing (guarded evidence only / spatial with LWIN-only producers / spatial with the expanded producer index), while Prod v1.0 runs the Add Wine scanner separately. Switching apps pauses after the current photo and resumes when you return; if Android kills the process, reopen this screen and tap Start / resume — photos and captures already saved are not rerun.", style = MaterialTheme.typography.bodySmall)
             }
             item {
                 Text(state.message)
-                Text("All four versions checkpointed: ${state.completed}/${state.total}")
+                Text("Lab v4 checkpointed: ${state.labCompleted}/${state.total}")
+                val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
+                Text(
+                    if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v3.0 frozen on this device: $frozen/${state.total} photos"
+                    else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
+                )
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Button(
                     onClick = { vm.start() },
-                    enabled = !state.busy && state.completed < state.total,
+                    enabled = !state.busy && (state.labCompleted < state.total || state.captureRemaining > 0),
                 ) {
-                    Text("Start / resume remaining photos")
+                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v4 only")
                 }
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
-                    TextButton(onClick = { vm.start(retryFailures = true) }, enabled = !state.busy && state.completed > 0) {
-                        Text("Retry failed / partial")
-                    }
+                    TextButton(
+                        onClick = { vm.start(retryFailures = true) },
+                        enabled = !state.busy && (state.labCompleted > 0 || state.captures.isNotEmpty()),
+                    ) { Text("Retry failed / partial") }
                 }
-                TextButton(onClick = { vm.load(state.mode, fresh = true) }, enabled = !state.busy) {
-                    Text("New run (keep old results)")
+                TextButton(onClick = { vm.load(PhoneCorpusRunner.Mode.LAB, fresh = true) }, enabled = !state.busy) {
+                    Text("New Lab run (keeps old results and frozen Prod)")
                 }
             }
             state.board?.let { board ->

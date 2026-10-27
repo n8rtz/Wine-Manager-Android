@@ -10,15 +10,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 FIELDS = ("producer", "wine_name", "country", "region", "subregion", "vintage")
 PIPELINE = "lab-v4-expanded-producers"
+# Offline analysis of the user's frozen full phone v2.0 run. The retired debug corpus that used to
+# bundle a copy of these values is gone; this is the same source data, outside the APK.
+SAVED_V2_SOURCE = ROOT / "tools/evaluation/phone-full-run-28bce9e"
 
 
 def prepare(scored=None, raw=()):
     metadata = {"analysis": "saved evidence evaluation only; no OCR, matching or baseline rerun"}
     if scored is None:
-        saved = json.loads((ROOT / "app/src/debug/assets/phone-corpus-v1/saved-production-v2.json").read_text())
+        fields_by_image = {}
+        with (SAVED_V2_SOURCE / "paired-fields.csv").open(encoding="utf-8", newline="") as stream:
+            for row in csv.DictReader(stream):
+                fields_by_image.setdefault(row["image"], {})[row["field"]] = row["lab-guarded-producer_output"]
+        if len(fields_by_image) != 168 or not all(len(f) == 6 for f in fields_by_image.values()):
+            raise ValueError("Saved v2 analysis no longer has 168 six-field photos")
         predictions = [{"image": image, "attempt": 1, "status": "complete", "pipelines": [
-            {"pipeline": PIPELINE, "status": "complete", "fields": fields}]} for image, fields in saved["predictions"].items()]
-        metadata["fixture_origin"] = "bundled saved v2 values; no stage evidence, NOT a measured latest Lab run"
+            {"pipeline": PIPELINE, "status": "complete", "fields": fields}]} for image, fields in fields_by_image.items()]
+        metadata["fixture_origin"] = "saved v2 values from tools/evaluation/phone-full-run-28bce9e; no stage evidence, NOT a measured latest Lab run"
+        metadata["source_summary_build"] = json.loads((SAVED_V2_SOURCE / "summary.json").read_text())["build"]
         expected = dict(complete="34/160", one_error="43", multi_error="83", producer_changed=0, wine_changed=0, producer_invoked=0, wine_invoked=0)
     else:
         scored = Path(scored)

@@ -139,8 +139,12 @@ app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer
 tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report
 app/src/main/java/com/yourapp/wine/kb/WineIndexDatabaseLookup.kt # Read-only Database Lookup access to the packaged LWIN wine index (wines.sqlite); cache shared with ProducerGazetteer
 app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt # Debug-only per-label pipeline gates, definitions and latest-attempt aggregation
-app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusPipelineDiagnostics.kt # Original traces -> label gates, including separate OCR branches
-app/src/debug/java/com/yourapp/wine/phonecorpus/PhoneCorpusFunnelJson.kt # Compact funnel checkpoint/raw-export JSON, with honest legacy unknowns
+app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt # The only benchmark screen: 125-label run, frozen Prod rows, matrix, CSV save
+app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt # Lab pass + one-time Prod capture; exports scored/raw CSV through CsvUploadParts
+app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt # Frozen Prod v1.0/v2.0/v3.0 outcomes per photo, keyed by corpus signature
+app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt # Fresh OCR per photo; runImageAllModes is the only entry point
+app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt # Scoring, bottleneck matrix and CSV rows for the 125-label corpus
+app/src/main/assets/wine-app-labels-v1/ # Live benchmark assets: 125 photos + inputs/evaluation-set/scoring/manifest
 tools/logic-checks/PipelineFunnelChecks.kt # Actual Kotlin telemetry, legacy evidence, checkpoint/scorer/CSV regression checks
 tools/logic-checks/PipelineFunnelHostContext.kt # Host asset-reader stand-in, not an Android runtime
 tools/logic-checks/PipelineFunnelHostRunner.kt # Host-only mode constants; does not execute OCR
@@ -148,6 +152,8 @@ tools/logic-checks/generate-funnel-fixture.py # Validates/reuses saved scored+ra
 tools/run-pipeline-funnel-checks.sh       # Runs actual Kotlin funnel/checkpoint/scorer/CSV checks; optional saved-export analysis
 app/src/androidTest/java/com/yourapp/wine/textlab/PipelineFunnelDeviceTest.kt # Disposable-device native SQLite -> preview/checkpoint/scorer/CSV smoke test
 tools/tests/test_pipeline_funnel.py      # Host fixture, compact-mobile layout contract, export wiring and build metadata checks
+tools/tests/test_wine_app_labels_corpus.py # 125-label asset/route contract + frozen-baseline capture and CSV-save wiring
+tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals and proposed staged accuracy plan (not recognition changes)
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
