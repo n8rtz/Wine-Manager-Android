@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -209,17 +210,21 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
         }
 
-        SelectionContainer {
-            LazyColumn(
-                Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item {
-                    Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
-                    Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
+        LazyColumn(
+            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                SelectionContainer {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
+                        Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
+                    }
                 }
-                item {
-                    Card(Modifier.fillMaxWidth()) {
+            }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    SelectionContainer {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(
                                 Modifier.fillMaxWidth(),
@@ -227,15 +232,17 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
-                                Row {
-                                    TextButton(
-                                        onClick = { vm.setAllLabModules(false) },
-                                        enabled = !state.busy && state.labModules != LabPostOcrModules.none,
-                                    ) { Text("All off (Best V5)") }
-                                    TextButton(
-                                        onClick = { vm.setAllLabModules(true) },
-                                        enabled = !state.busy && state.labModules != LabPostOcrModules.all,
-                                    ) { Text("All on") }
+                                DisableSelection {
+                                    Row {
+                                        TextButton(
+                                            onClick = { vm.setAllLabModules(false) },
+                                            enabled = !state.busy && state.labModules != LabPostOcrModules.none,
+                                        ) { Text("All off (Best V5)") }
+                                        TextButton(
+                                            onClick = { vm.setAllLabModules(true) },
+                                            enabled = !state.busy && state.labModules != LabPostOcrModules.all,
+                                        ) { Text("All on") }
+                                    }
                                 }
                             }
                             Text(
@@ -248,11 +255,13 @@ class WineAppLabelsActivity : ComponentActivity() {
                                     Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Checkbox(
-                                        checked = checked,
-                                        onCheckedChange = { vm.setLabModule(moduleId, it) },
-                                        enabled = !state.busy,
-                                    )
+                                    DisableSelection {
+                                        Checkbox(
+                                            checked = checked,
+                                            onCheckedChange = { vm.setLabModule(moduleId, it) },
+                                            enabled = !state.busy,
+                                        )
+                                    }
                                     Column(Modifier.weight(1f)) {
                                         Text(moduleId.uiTitle, style = MaterialTheme.typography.bodyMedium)
                                         Text(moduleId.uiDetail, style = MaterialTheme.typography.bodySmall)
@@ -262,8 +271,10 @@ class WineAppLabelsActivity : ComponentActivity() {
                         }
                     }
                 }
-                item {
-                    val mode = PhoneCorpusRunner.Mode.LAB
+            }
+            item {
+                val mode = PhoneCorpusRunner.Mode.LAB
+                SelectionContainer {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(mode.title)
@@ -277,23 +288,30 @@ class WineAppLabelsActivity : ComponentActivity() {
                             )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = state.useCachedOcr,
-                                onCheckedChange = vm::setUseCachedOcr,
-                                enabled = !state.busy,
-                            )
+                            DisableSelection {
+                                Checkbox(
+                                    checked = state.useCachedOcr,
+                                    onCheckedChange = vm::setUseCachedOcr,
+                                    enabled = !state.busy,
+                                )
+                            }
                             Text("Cached OCR", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
+            }
             item {
-                if (state.message.isNotBlank()) Text(state.message)
-                Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
-                val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
-                Text(
-                    if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v4.0 frozen on this device: $frozen/${state.total} photos"
-                    else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
-                )
+                SelectionContainer {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (state.message.isNotBlank()) Text(state.message)
+                        Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
+                        val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
+                        Text(
+                            if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v4.0 frozen on this device: $frozen/${state.total} photos"
+                            else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
+                        )
+                    }
+                }
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Button(
                     onClick = { vm.start() },
@@ -301,7 +319,9 @@ class WineAppLabelsActivity : ComponentActivity() {
                 ) {
                     Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v5 only")
                 }
-                BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
+                SelectionContainer {
+                    BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
+                }
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
                     TextButton(
@@ -315,29 +335,35 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             state.board?.let { board ->
                 item {
-                    Text("Scored results", style = MaterialTheme.typography.titleMedium)
-                    Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        val columnWidth = 88.dp
-                        Row {
-                            board.headers.forEach {
-                                Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    SelectionContainer {
+                        Column {
+                            Text("Scored results", style = MaterialTheme.typography.titleMedium)
+                            Column(Modifier.horizontalScroll(rememberScrollState())) {
+                                val columnWidth = 88.dp
+                                Row {
+                                    board.headers.forEach {
+                                        Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    }
+                                }
+                                board.rows.forEach { row ->
+                                    HorizontalDivider(Modifier.width((88 * board.headers.size).dp))
+                                    Row { row.forEach { Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.bodySmall) } }
+                                }
                             }
-                        }
-                        board.rows.forEach { row ->
-                            HorizontalDivider(Modifier.width((88 * board.headers.size).dp))
-                            Row { row.forEach { Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.bodySmall) } }
+                            Spacer(Modifier.height(8.dp))
+                            BuildFieldComparisonTable(
+                                currentScores = state.currentBuildFieldScores,
+                                bestBuildScores = state.bestBuildFieldScores,
+                                prodV4Scores = state.prodV4FieldScores,
+                            )
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
-                    BuildFieldComparisonTable(
-                        currentScores = state.currentBuildFieldScores,
-                        bestBuildScores = state.bestBuildFieldScores,
-                        prodV4Scores = state.prodV4FieldScores,
-                    )
                 }
                 item {
-                    Text("CSV export", style = MaterialTheme.typography.titleMedium)
+                    SelectionContainer {
+                        Text("CSV export", style = MaterialTheme.typography.titleMedium)
+                    }
                     TextButton(
                         onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + board.text)) },
                         enabled = !state.busy,
@@ -369,12 +395,16 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             state.board?.let { board ->
                 item {
-                    Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
-                    Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
+                            Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                     TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
                         Text(if (showDiagnostics) "Hide diagnostics table" else "Show diagnostics table")
                     }
-                    if (showDiagnostics) {
+                    if (showDiagnostics) SelectionContainer {
                         val fieldTitles = PhoneCorpusMath.fields.map { field ->
                             when (field) {
                                 "wine_name" -> "Wine name"
@@ -475,13 +505,15 @@ class WineAppLabelsActivity : ComponentActivity() {
                                         Modifier.width(stepWidth).heightIn(min = 56.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        TextButton(
-                                            onClick = {
-                                                expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
-                                            },
-                                            modifier = Modifier.width(24.dp),
-                                            contentPadding = PaddingValues(0.dp),
-                                        ) { Text(if (expanded) "−" else "+") }
+                                        DisableSelection {
+                                            TextButton(
+                                                onClick = {
+                                                    expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
+                                                },
+                                                modifier = Modifier.width(24.dp),
+                                                contentPadding = PaddingValues(0.dp),
+                                            ) { Text(if (expanded) "−" else "+") }
+                                        }
                                         Text(
                                             row.step.shortTitle,
                                             Modifier.weight(1f),
@@ -528,24 +560,28 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
             item {
-                Text("Database coverage", style = MaterialTheme.typography.titleMedium)
-                Column(Modifier.horizontalScroll(rememberScrollState())) {
-                    val width = 88.dp
-                    Row {
-                        Text("Parameter", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1, softWrap = false)
-                        coverage.forEach { (label, _) ->
-                            Text(label, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1, softWrap = false)
-                        }
-                    }
-                    HorizontalDivider(Modifier.width((width.value * (coverage.size + 1)).dp))
-                    Row {
-                        Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1, softWrap = false)
-                        coverage.forEach { (_, count) ->
-                            Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1, softWrap = false)
+                SelectionContainer {
+                    Column {
+                        Text("Database coverage", style = MaterialTheme.typography.titleMedium)
+                        Column(Modifier.horizontalScroll(rememberScrollState())) {
+                            val width = 88.dp
+                            Row {
+                                Text("Parameter", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1, softWrap = false)
+                                coverage.forEach { (label, _) ->
+                                    Text(label, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1, softWrap = false)
+                                }
+                            }
+                            HorizontalDivider(Modifier.width((width.value * (coverage.size + 1)).dp))
+                            Row {
+                                Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1, softWrap = false)
+                                coverage.forEach { (_, count) ->
+                                    Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1, softWrap = false)
+                                }
+                            }
                         }
                     }
                 }
@@ -619,45 +655,51 @@ class WineAppLabelsActivity : ComponentActivity() {
                         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        "#${wineCase.reviewNumber} · ${wineCase.producer}",
-                                        style = MaterialTheme.typography.titleSmall,
-                                    )
-                                    Text(
-                                        wineCase.wineName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                    val locationLine = listOf(
-                                        wineCase.country,
-                                        wineCase.region,
-                                        wineCase.subregion,
-                                        wineCase.vintage,
-                                    ).filter { it != "(blank)" }.joinToString(" · ")
-                                    if (locationLine.isNotEmpty()) {
+                                SelectionContainer(Modifier.weight(1f)) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         Text(
-                                            locationLine,
-                                            style = MaterialTheme.typography.bodySmall,
+                                            "#${wineCase.reviewNumber} · ${wineCase.producer}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                        )
+                                        Text(
+                                            wineCase.wineName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                        val locationLine = listOf(
+                                            wineCase.country,
+                                            wineCase.region,
+                                            wineCase.subregion,
+                                            wineCase.vintage,
+                                        ).filter { it != "(blank)" }.joinToString(" · ")
+                                        if (locationLine.isNotEmpty()) {
+                                            Text(
+                                                locationLine,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        Text(
+                                            wineCase.sourceFilename,
+                                            style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
                                         )
                                     }
-                                    Text(
-                                        wineCase.sourceFilename,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
                                 }
                             }
                             if (failedResults.isNotEmpty()) {
-                                FailedParametersTable(failedResults)
+                                SelectionContainer {
+                                    FailedParametersTable(failedResults)
+                                }
                             } else if (results.values.any { it["form_status"] == "execution_failed" }) {
-                                Text(
-                                    "Execution failed before field scoring.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
+                                SelectionContainer {
+                                    Text(
+                                        "Execution failed before field scoring.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                             }
                             Column {
                                 Row(
@@ -694,26 +736,27 @@ class WineAppLabelsActivity : ComponentActivity() {
                                     ) {
                                         value = vm.loadRawOcrText(wineCase.image, state.mode)
                                     }
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                                            .padding(8.dp),
-                                    ) {
-                                        Text(
-                                            rawOcr ?: "Loading OCR...",
-                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                fontFamily = FontFamily.Monospace,
-                                            ),
-                                        )
+                                    SelectionContainer {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                                .padding(8.dp),
+                                        ) {
+                                            Text(
+                                                rawOcr ?: "Loading OCR...",
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                ),
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
             }
         }
         expandedImage?.let { image ->

@@ -221,8 +221,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('BASELINE_MODES = listOf(', viewmodel)
         # Only Lab is offered as a runnable mode; Prod versions are frozen comparators.
         self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
-        self.assertEqual(activity.count("SelectionContainer {"), 1)
-        self.assertIn("SelectionContainer {\n            LazyColumn(", activity)
+        self.assertGreaterEqual(activity.count("SelectionContainer {"), 8)
+        self.assertIn("DisableSelection {", activity)
+        self.assertNotIn("SelectionContainer {\n            LazyColumn(", activity)
         self.assertNotIn("RUNNABLE_MODES", viewmodel)
         self.assertNotIn("Fully correct = all six scorable", activity)
         # The plain "Ready…" line was removed; the counts say the same thing.
