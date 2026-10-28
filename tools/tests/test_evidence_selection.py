@@ -106,6 +106,14 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         # The combined offer that promoted GRAND CRU / DOCG to a wine name must be gone.
         self.assertNotIn('"observed varietal or designation"', source)
 
+    def test_bounded_title_pair_hypothesis_passes_rank_and_reason_to_offer(self):
+        source = EVIDENCE.read_text()
+        self.assertIn(
+            'offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),116.0,\n'
+            '                        "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed")',
+            source,
+        )
+
     def test_one_word_fragments_cannot_become_an_identity(self):
         source = EVIDENCE.read_text()
         self.assertIn("val fragmentOnly=norm.split(' ').size==1 && incomplete>0", source)

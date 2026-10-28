@@ -539,8 +539,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 val placeMatchesAreAppellations=places.isEmpty() ||
                     (lowerIsCatalogAppellation && places.all { WineDesignations.isAppellationName(it.name) })
                 if(MetadataRules.isIdentity(text) && placeMatchesAreAppellations && !endsConnector && !beginsConnector)
-                    offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text),116.0,
-                        "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed"))
+                    offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),116.0,
+                        "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed")
                 trace.add("bounded_title_pair","phrase=${p.id}; text=$text")
                 continue
             }
