@@ -244,11 +244,11 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 }
                             }
                             Text(
-                                "Best build = the 5 modules your best Lab v5 run (636dda970fa4) used.",
+                                "Best build = measured best: producer, vintage & spatial guards.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             Text(
-                                "All off = pre-improvement baseline. Each combo isolates its own run & keeps Cached OCR.",
+                                "Wine-title pairs off (they lost 11 wine names). All off = pre-improvement baseline.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             LabPostOcrModules.ModuleId.entries.forEach { moduleId ->

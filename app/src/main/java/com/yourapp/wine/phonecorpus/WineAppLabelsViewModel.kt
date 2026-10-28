@@ -249,6 +249,20 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         "inputs_sha256", "evaluation_set_sha256", "scoring_sha256",
     ).joinToString(":") { manifest.getString(it) }
 
+    /** Short stable id of the loaded label corpus, so the build log never mixes reference sets. */
+    private fun corpusLogKey(signature: String): String =
+        java.security.MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
+            .joinToString("") { "%02x".format(it.toInt() and 255) }.take(12)
+
+    private var cachedCorpusLogKey: String? = null
+
+    private fun loadedCorpusLogKey(): String {
+        cachedCorpusLogKey?.let { return it }
+        val key = runCatching { corpusLogKey(corpusSignature(assetJson("manifest.json"))) }.getOrDefault("")
+        if (key.isNotBlank()) cachedCorpusLogKey = key
+        return key
+    }
+
     private fun matchingRunFolders(expectedCorpus: String): List<File> =
         root.listFiles().orEmpty().mapNotNull { dir ->
             if (!dir.isDirectory) return@mapNotNull null
@@ -419,7 +433,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             val ts = prior?.timestampMs
                 ?: File(dir, "current").listFiles().orEmpty().maxOfOrNull { it.lastModified() }
                 ?: metadata.optLong("created_ms", dir.lastModified())
-            log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts, fieldScores)
+            log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts, fieldScores,
+                corpusKey = corpusLogKey(expectedCorpus))
         }
         log.syncBestBuildSummary(PhoneCorpusRunner.Mode.LAB)
     }
@@ -467,7 +482,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     ?: runMeta?.optLong("created_ms", activeLabDir.lastModified())
                     ?: System.currentTimeMillis()
             }
-            buildLog?.recordSummary(activeLabDir.name, info, PhoneCorpusRunner.Mode.LAB, modeRows.first(), ts, currentFieldScores)
+            buildLog?.recordSummary(activeLabDir.name, info, PhoneCorpusRunner.Mode.LAB, modeRows.first(), ts, currentFieldScores,
+                corpusKey = loadedCorpusLogKey())
         }
         val ocrReady = ocrCache?.count(inputHashes()) ?: 0
         val captures = BASELINE_MODES.mapNotNull { version -> baselines?.capture(version) }.associateBy { it.mode }

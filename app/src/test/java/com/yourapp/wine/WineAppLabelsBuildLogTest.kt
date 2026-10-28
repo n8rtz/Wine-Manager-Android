@@ -242,4 +242,60 @@ class WineAppLabelsBuildLogTest {
         assertEquals(48 to 124, best!!.complete.value)
         assertTrue(best.complete.buildNumber.endsWith(" [subregion-fuzzy]"))
     }
+
+    @Test
+    fun bestBuildHighWaterMarkNeverMixesTwoCorpora() {
+        val logFile = temp.newFile("corpus-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+        val oldBuild = WineAppLabelsBuildLog.BuildInfo("old:clean", "#55 (aaaaaaaaaaaa)", "55", "aaaaaaaaaaaa", "main")
+        val newBuild = WineAppLabelsBuildLog.BuildInfo("new:clean", "#70 (bbbbbbbbbbbb)", "70", "bbbbbbbbbbbb", "arena/lab")
+
+        // The 125-label corpus (123 eligible) holds the higher headline numbers.
+        log.recordSummary(
+            runId = "run-125",
+            buildInfo = oldBuild,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "125", "123", "52/123", "54", "21", "0", "588", "70", "40", "60", "3", "2", "0"),
+            timestampMs = 1_700_000_000_000L,
+            corpusKey = "corpus-old",
+        )
+        // Two runs on the 124-label corpus (122 eligible) - the newest one is only 40 photos in.
+        log.recordSummary(
+            runId = "run-124-a",
+            buildInfo = newBuild,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "122", "48/122", "58", "16", "0", "586", "68", "26", "59", "3", "2", "0"),
+            timestampMs = 1_700_100_000_000L,
+            corpusKey = "corpus-new",
+        )
+        log.recordSummary(
+            runId = "run-124-b-partial",
+            buildInfo = newBuild,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "40", "40", "16/40", "16", "8", "0", "180", "15", "12", "18", "3", "0", "0"),
+            timestampMs = 1_700_200_000_000L,
+            corpusKey = "corpus-new",
+        )
+
+        val best = log.bestBuildSummary()
+        assertNotNull(best)
+        // Every value comes from the current corpus, never from the 125-label run above it.
+        assertEquals(124, best!!.attempted.value)
+        assertEquals(122, best.eligible.value)
+        assertEquals(48 to 122, best.complete.value)
+        assertEquals(586, best.correctValues.value)
+        assertEquals(58, best.oneError.value)
+        assertEquals("corpus-new", best.corpusKey)
+        assertEquals("run-124-a", best.complete.runId)
+        // The partial 40-photo row shares the corpus but must still not claim the error minimums.
+        assertEquals(16, best.twoPlusErrors.value)
+        assertEquals("run-124-a", best.twoPlusErrors.runId)
+        // The persisted composite row carries the corpus it was measured on.
+        val persisted = logFile.readLines().first { BEST_BUILD_MARKER in it }
+        assertTrue(persisted.contains("corpus-new"))
+    }
+
+    private companion object {
+        const val BEST_BUILD_MARKER = "best_build"
+    }
 }

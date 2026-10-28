@@ -4,10 +4,10 @@ package com.yourapp.wine.textlab.evidence
  * Mix-and-match post-OCR processing modules for Lab v5 benchmark isolation.
  *
  * When all flags are `false` ([none]), Lab reproduces the pre-improvement baseline post-OCR behavior
- * (the state of `main` at `ce9225f`) - that is the clean control, not the best measured build. Five
- * of the seven flags describe behavior the last best measured Lab v5 build (`636dda970fa4`) already
- * shipped with, so [bestBuild] switches exactly those five on and leaves the two genuinely new
- * modules (blank-subregion raw-OCR fallback, stacked two-line appellations) off.
+ * (the state of `main` at `ce9225f`) - that is the clean control, not the best measured build. Four
+ * of the seven flags are measured net wins on the 124-label corpus; [bestBuild] switches exactly
+ * those four on and leaves vertical wine-title pairs plus the two modules that postdate every
+ * measured build (blank-subregion raw-OCR fallback, stacked two-line appellations) off.
  *
  * Each flag independently enables one post-OCR improvement so its isolated and combined effects can
  * be measured scientifically against Cached OCR and frozen Prod baselines.
@@ -114,11 +114,23 @@ internal data class LabPostOcrModules(
     companion object {
         val none = LabPostOcrModules()
         /**
-         * The module set the last best measured Lab v5 run shipped with (`636dda970fa4`): producer
-         * anchor/evidence spans and spatial join guards, `de`-particle/role rules with the 256-name
-         * producer shortlist, the final producer near-match pass, OCR vintage recovery (including
-         * split crest halves and the hybrid fill), and bounded vertical wine-title pairs. The two
-         * flags left off here postdate that build and have never been part of a best run.
+         * The best combination measured on the 124-label corpus, module by module:
+         *
+         * | run | modules | producer | wine name | vintage | complete |
+         * | --- | --- | ---: | ---: | ---: | ---: |
+         * | `636dda970fa4` | five (below + wine-title pairs) | 92 | 63 | 122 | 46/122 |
+         * | `a24a9683968b` | none | 91 | 74 | 119 | 48/122 |
+         * | `187a01ae7732` | five | 97 | 63 | 123 | 46/122 |
+         *
+         * Producer anchor/evidence spans and spatial join guards, the `de`-particle/role rules with
+         * the 256-name producer shortlist, the final producer near-match pass and OCR vintage
+         * recovery are net wins (`+6` producer, `+4` vintage). Vertical wine-title pairs are the
+         * opposite: they won one label (`#142`) and lost eleven, because an unrecognised first line
+         * (an OCR'd estate name such as `Trancette`, `BOUSQUET`, `VANGELYS`) is paired with the
+         * varietal below it and offered as the wine name at a rank nothing else can beat
+         * (`Trancette Cabernet Sauvignon` instead of `Cabernet Sauvignon`). They stay off here and
+         * remain selectable on their own for a future isolated run. The two modules that postdate
+         * every measured build (blank-subregion raw-OCR fallback, stacked appellations) stay off.
          */
         val bestBuild = LabPostOcrModules(
             blankSubregionFuzzy = false,
@@ -127,7 +139,7 @@ internal data class LabPostOcrModules(
             finalProducerNearMatch = true,
             producerRoleAndParticle = true,
             spatialSemanticGuards = true,
-            verticalWineTitlePairs = true,
+            verticalWineTitlePairs = false,
         )
         val all = LabPostOcrModules(
             blankSubregionFuzzy = true,

@@ -685,15 +685,17 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             activity.index("Start / resume Lab v5 only"),
         )
 
-        # 2b. The Best build preset restores exactly the modules the last best measured Lab v5 build
-        #     (636dda970fa4) shipped with; the two post-best modules stay off.
+        # 2b. The Best build preset holds only modules measured as net wins on the 124-label corpus.
+        #     Vertical wine-title pairs lost 10 wine names in run 187a01ae7732 (one label won), so it
+        #     is deliberately off in the preset and still selectable on its own.
         self.assertIn("val bestBuild = LabPostOcrModules(", modules)
         preset = modules[modules.index("val bestBuild = LabPostOcrModules("):]
         preset = preset[:preset.index("val all = LabPostOcrModules(")]
         self.assertIn("blankSubregionFuzzy = false", preset)
         self.assertIn("stackedAppellations = false", preset)
+        self.assertIn("verticalWineTitlePairs = false", preset)
         for flag in ("vintageRecovery", "finalProducerNearMatch", "producerRoleAndParticle",
-                     "spatialSemanticGuards", "verticalWineTitlePairs"):
+                     "spatialSemanticGuards"):
             self.assertIn(f"{flag} = true", preset)
 
         # 2c. Frozen Prod comparators never follow a Lab module flag: the hybrid vintage fill that
@@ -705,6 +707,17 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             "val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery",
             extraction,
         )
+
+        # 2d. The "Best build" high-water-mark row is measured on one corpus only. A 125-label-era row
+        #     (123 eligible) can never be the target of a 124-label run (122 eligible), so the composite
+        #     cohorts by the corpus key of the newest logged run and records that key in the CSV.
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+        self.assertIn("val corpusKey = candidates.maxByOrNull { it.timestampMs }?.corpusKey.orEmpty()", build_log)
+        self.assertIn("val cohort = if (corpusKey.isBlank()) candidates else candidates.filter { it.corpusKey == corpusKey }", build_log)
+        self.assertIn('"corpus_key" to corpusKey', build_log)
+        self.assertIn("corpusKey: String = \"\",", build_log)
+        self.assertIn("corpusKey = corpusLogKey(expectedCorpus)", viewmodel)
+        self.assertIn("loadedCorpusLogKey()", viewmodel)
 
         # 3. ViewModel defaults to LabPostOcrModules.none, isolates Lab checkpoint folders by lab_modules_key,
         #    and logs active module keys to copied stats, CSV exports, and benchmark-results-log.csv.

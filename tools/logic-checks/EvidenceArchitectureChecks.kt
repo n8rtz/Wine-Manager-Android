@@ -436,18 +436,19 @@ object EvidenceArchitectureChecks {
         check(contradictoryLab.fields.getValue(FieldId.REGION).value.isBlank()) { contradictoryLab.fields }
 
         // Modular post-OCR isolation: LabPostOcrModules.none is the pre-improvement control (all 7
-        // modules off), and the Best build preset restores exactly the modules the last best measured
-        // Lab v5 build shipped with, leaving only the two post-best modules off.
+        // modules off), and the Best build preset holds only the modules measured as net wins.
         check(LabPostOcrModules.none.signatureKey()=="best-v5") { LabPostOcrModules.none.signatureKey() }
         check(LabPostOcrModules.none.summaryLabel()=="Baseline (pre-improvement)") { LabPostOcrModules.none.summaryLabel() }
-        check(LabPostOcrModules.bestBuild.summaryLabel()=="Best build (5 modules)") { LabPostOcrModules.bestBuild.summaryLabel() }
+        check(LabPostOcrModules.bestBuild.summaryLabel()=="Best build (4 modules)") { LabPostOcrModules.bestBuild.summaryLabel() }
         check(LabPostOcrModules.bestBuild.enabledModules()==listOf(
             LabPostOcrModules.ModuleId.VINTAGE_RECOVERY,
             LabPostOcrModules.ModuleId.FINAL_PRODUCER_NEAR_MATCH,
             LabPostOcrModules.ModuleId.PRODUCER_ROLE_AND_PARTICLE,
             LabPostOcrModules.ModuleId.SPATIAL_SEMANTIC_GUARDS,
-            LabPostOcrModules.ModuleId.VERTICAL_WINE_TITLE_PAIRS,
         )) { LabPostOcrModules.bestBuild.enabledKeys() }
+        // Vertical wine-title pairs measured -10 wine names on the 124-label corpus (187a01ae7732),
+        // so they stay out of the best combination while remaining selectable on their own.
+        check(!LabPostOcrModules.bestBuild.verticalWineTitlePairs)
         check(!LabPostOcrModules.bestBuild.blankSubregionFuzzy && !LabPostOcrModules.bestBuild.stackedAppellations)
         check(LabPostOcrModules.bestBuild!=LabPostOcrModules.none && LabPostOcrModules.bestBuild!=LabPostOcrModules.all)
         check(LabPostOcrModules.fromKeys(LabPostOcrModules.bestBuild.activeKeys())==LabPostOcrModules.bestBuild)
