@@ -20,7 +20,7 @@ internal object TextLabWineExtraction {
         private val appContext=context.applicationContext
         private var kb:SqliteWineKnowledgeBase?=null
         private var production:com.yourapp.wine.fill.FillEngine?=null
-        private val evidenceEngines=mutableMapOf<Pair<Boolean,Boolean>,com.yourapp.wine.textlab.evidence.EvidenceExtractor>()
+        private val evidenceEngines=mutableMapOf<Triple<Boolean,Boolean,String>,com.yourapp.wine.textlab.evidence.EvidenceExtractor>()
         private var hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?=null
         private var repair:com.yourapp.wine.textlab.evidence.ProducerRepair?=null
         internal data class WarmGazetteer(
@@ -40,10 +40,15 @@ internal object TextLabWineExtraction {
             return com.yourapp.wine.fill.FillEngine(base).also { if(base===kb) production=it }
         }
 
-        fun evidenceExtractor(base:SqliteWineKnowledgeBase,anchorHybrid:Boolean,repairPlaces:Boolean):com.yourapp.wine.textlab.evidence.EvidenceExtractor {
-            val key=anchorHybrid to repairPlaces
+        fun evidenceExtractor(
+            base:SqliteWineKnowledgeBase,
+            anchorHybrid:Boolean,
+            repairPlaces:Boolean,
+            labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault,
+        ):com.yourapp.wine.textlab.evidence.EvidenceExtractor {
+            val key=Triple(anchorHybrid,repairPlaces,labModules.signatureKey())
             if(base===kb) evidenceEngines[key]?.let { return it }
-            return TextLabEvidencePreview.engine(base,anchorHybrid,repairPlaces).also { engine ->
+            return TextLabEvidencePreview.engine(base,anchorHybrid,repairPlaces,labModules).also { engine ->
                 engine.isNonProducerCatalogTerm("")
                 if(base===kb) evidenceEngines[key]=engine
             }
@@ -145,9 +150,20 @@ internal object TextLabWineExtraction {
             batch.journals.forEach { TextLabFormPreview.append(it,production,Year.now().value) }
             if(batch.compareEvidence) {
                 val experimental=kb?.let {
-                    warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces)
-                        ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces)
+                    if(batch.benchmarkAllPipelines) {
+                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces,batch.labModules)
+                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces,batch.labModules)
+                    } else {
+                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces)
+                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces)
+                    }
                 }
+                val prodExperimental=if(batch.benchmarkAllPipelines && (batch.benchmarkEvidence || batch.benchmarkLwinSpatial)) {
+                    kb?.let {
+                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,false,com.yourapp.wine.textlab.evidence.LabPostOcrModules.none)
+                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,false,com.yourapp.wine.textlab.evidence.LabPostOcrModules.none)
+                    }
+                } else experimental
                 val hybrid=if(batch.anchorHybrid) kb?.let { warmSession?.anchorHybrid(it) ?: com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid(it) } else null
                 val repair=if(batch.anchorHybrid && batch.repairProducer) kb?.let { warmSession?.producerRepair(it) ?: com.yourapp.wine.textlab.evidence.ProducerRepair(it) } else null
                 fun appendSpatialContender(context:Context,journal:TextLabJournal,
@@ -155,7 +171,17 @@ internal object TextLabWineExtraction {
                     hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
                     repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean,
                     singleReading:Boolean=false)=appendSpatialContenderWithSession(
-                        context,journal,experimental,hybrid,repair,skip,expanded,singleReading,production,warmSession
+                        context,
+                        journal,
+                        if(!expanded && batch.benchmarkAllPipelines) prodExperimental else experimental,
+                        hybrid,
+                        repair,
+                        skip,
+                        expanded,
+                        singleReading,
+                        production,
+                        warmSession,
+                        if(expanded) batch.labModules else com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
                     )
                 // Benchmark batches select their contenders explicitly and append each selected
                 // summary to the one OCR journal: evidence_summary (Prod v2.0),
@@ -168,7 +194,22 @@ internal object TextLabWineExtraction {
                 val runLwinSpatial=batch.benchmarkLwinSpatial
                 val runExpandedSpatial=if(batch.benchmarkAllPipelines) batch.spatialPhrases else batch.spatialPhrases && !batch.benchmarkLwinSpatial
                 if(runEvidence) {
-                    batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
+                    val evEngine=if(batch.benchmarkAllPipelines) prodExperimental else experimental
+                    // The benchmark evidence row belongs to the frozen Prod v2.0 comparator, which keeps
+                    // its pre-module hybrid vintage fill. Only a non-benchmark Lab run follows the module.
+                    val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery
+                    batch.journals.forEach {
+                        TextLabEvidencePreview.append(
+                            it,
+                            evEngine,
+                            Year.now().value,
+                            batch.anchorHybrid,
+                            hybrid,
+                            batch.anchorHybrid && batch.repairProducer,
+                            repair,
+                            allowHybridVintageFallback=evVintageFallback,
+                        )
+                    }
                 }
                 // The two spatial contenders run the identical pipeline; only the producer index
                 // differs (Prod v4.0: verified LWIN only; Lab v5: Lab expanded index). Each keeps
@@ -202,7 +243,8 @@ internal object TextLabWineExtraction {
         repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean,
         singleReading:Boolean=false,
         fillEngine:com.yourapp.wine.fill.FillEngine?=null,
-        warmSession:WarmSession?=null) {
+        warmSession:WarmSession?=null,
+        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault) {
         // Lab v5 only, default off: the Prod v4.0 contender keeps the Prod two-engine rule so the
         // comparison stays "Prod policy vs Lab policy", not "old build vs new build".
         val policy=if(expanded && singleReading) com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading
@@ -253,7 +295,7 @@ internal object TextLabWineExtraction {
                     throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
             }
             TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget,
-                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",fillEngine=fillEngine,policy=policy)
+                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",fillEngine=fillEngine,labModules=labModules,policy=policy)
         } finally { if(ownsProducers) producers?.close() }
     }
     private fun box(value:String?):RectF? {

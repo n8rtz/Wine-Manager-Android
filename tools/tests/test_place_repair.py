@@ -197,7 +197,7 @@ class PlaceRepairWiringTests(unittest.TestCase):
         extractor = EVIDENCE.read_text()
         repair = REPAIR.read_text()
         for fragment in ('private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off',
-                         'if(placeRepair.enabled && matched.isEmpty()'):
+                         'if(repairConfig.enabled && matched.isEmpty()'):
             self.assertTrue(fragment in extractor, fragment)
         self.assertNotIn('placeRepair.enabled || exact.isEmpty()', extractor)
         for fragment in ('val off=Config()', 'val experimental=Config(enabled=true)'):
@@ -226,13 +226,31 @@ class PlaceRepairWiringTests(unittest.TestCase):
                          'IdentityRoles.originOnly(text, listOf(place))'):
             self.assertTrue(fragment in label_ctx, fragment)
 
-    def test_low_confidence_unique_repair_can_rescue_a_distinctive_appellation(self):
+    def test_blank_subregion_raw_ocr_fallback_is_last_resort_only(self):
         extractor = EVIDENCE.read_text()
-        for fragment in ('LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE=.15f',
-                         'sources.any { it.record.score.isFinite() && it.record.score>=LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE }',
-                         'low_confidence_place_repair',
-                         'classification base used for lookup; isolated OCR O ignored'):
+        spatial = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
+        # Weak unsupported lines never enter main hypothesis competition or rely on bespoke suffix hacks.
+        self.assertNotIn('LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE', extractor)
+        self.assertNotIn('withoutOrphanO', extractor)
+        self.assertNotIn('low_confidence_place_repair', extractor)
+        # Raw OCR appellation span search runs ONLY when subregion would otherwise remain blank.
+        for fragment in ('internal fun fallbackBlankSubregionFromRawOcr(',
+                         'fill.fields[FieldId.SUBREGION]?.value.isNullOrBlank()',
+                         'trace.add("raw_ocr_subregion_fallback"',
+                         'val compact=BoundedSpelling.key(form).replace(" ","")'):
             self.assertIn(fragment, extractor, fragment)
+        for fragment in ('if(isLabMode && engine!=null && row["subregion"].orEmpty().isBlank())',
+                         'engine.fallbackBlankSubregionFromRawOcr(',
+                         'engine.withDeferredBlankSubregionFallback',
+                         '"raw_ocr_subregion_fallback"'):
+            self.assertIn(fragment, spatial, fragment)
+        target_compact = key('Saint-Emilion').replace(' ', '')
+        self.assertEqual(target_compact, 'saintemilion')
+        for raw_span in ('aint-emilion', 'aint   emilion', 'aint\nemilion', 'AINT-ÉMILION'):
+            obs_compact = key(raw_span).replace(' ', '')
+            d = levenshtein(obs_compact, target_compact, 2)
+            self.assertEqual(d, 1, raw_span)
+            self.assertLessEqual(d / max(len(obs_compact), len(target_compact)), 0.2, raw_span)
 
     def test_a_repair_cannot_outrank_exact_evidence_or_name_the_wine(self):
         extractor = EVIDENCE.read_text()

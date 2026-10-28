@@ -49,16 +49,20 @@ internal class ProducerResolver(private val index:Index,
             private set
         var producerPenalty:(String)->Int={ 0 }
             private set
+        var useParticleAndRoleRules:Boolean=true
+            private set
         private fun copyWith(
             country:String=countryContext,
             exactFastPath:Boolean=exactMatchFastPath,
             excluded:(String)->Boolean=nonProducerTerm,
             penalty:(String)->Int=producerPenalty,
+            particleAndRole:Boolean=useParticleAndRoleRules,
         ):Policy=Policy(minimumIndependentEngines).also {
             it.countryContext=country
             it.exactMatchFastPath=exactFastPath
             it.nonProducerTerm=excluded
             it.producerPenalty=penalty
+            it.useParticleAndRoleRules=particleAndRole
         }
         fun withCountryContext(country:String):Policy=
             if(country.isBlank()) this else copyWith(country=country)
@@ -66,6 +70,8 @@ internal class ProducerResolver(private val index:Index,
             copyWith(exactFastPath=true,excluded=excluded)
         fun withProducerPenalty(penalty:(String)->Int):Policy=
             copyWith(penalty=penalty)
+        fun withParticleAndRoleRules(enabled:Boolean):Policy=
+            copyWith(particleAndRole=enabled)
         fun supports(rows:List<Match>)=minimumIndependentEngines<2 || rows.any { a -> rows.any { b ->
             a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
         companion object {
@@ -83,7 +89,7 @@ internal class ProducerResolver(private val index:Index,
          * 225th for `Chateau La Cour de By`; 256 clears that measured cutoff without widening wine lookup. */
         const val MAX_PRODUCER_FUZZY_CANDIDATES=256
         /** Maximum normalized edit distance for the final database-name canonicalization pass. */
-        const val MAX_FINAL_NEAR_MATCH_DISTANCE=2
+        const val MAX_FINAL_NEAR_MATCH_DISTANCE=1
         private val finalNearMatchLeadingArticles=setOf("la","le","les","the")
         private val minorProducerParticles=setOf("de")
         private val noise=Regex("\\b(?:imported|importer|imports|distributed|distributor|bottled|bottler|embouteille|mis en bouteille|produced by|product of|produit de|appellation|controlee|protegee|alcohol|alc|vol|contains|sulfites|sulphites|government|warning|llc|inc|corp|ltd|www|http)\\b")
@@ -222,26 +228,30 @@ internal class ProducerResolver(private val index:Index,
                 val engine=if(s.engine=="mlkit") "mlkit" else if(s.engine.startsWith("paddle")) "paddle" else "other"
                 val rejection=if(s.engine.isBlank() || s.observationIds.isEmpty()) "missing engine / original observation IDs" else ineligibilityReason(s.text)
                 val q=normalize(s.text)
-                val rolePenalty=policy.producerPenalty(s.text).coerceAtLeast(0)
+                val rolePenalty=if(policy.useParticleAndRoleRules) policy.producerPenalty(s.text).coerceAtLeast(0) else 0
                 val exactShortAllowed=rejection!=null && rolePenalty==0 && policy.exactMatchFastPath &&
                     s.engine.isNotBlank() && s.observationIds.isNotEmpty() &&
                     exactFastPathShortEligible(s.text) && !policy.nonProducerTerm(s.text) && !isSingleWordEstateFragment(q)
                 trace.visit("$engine.eligible",rejection==null || exactShortAllowed,rejection.orEmpty())
                 if(rejection!=null && !exactShortAllowed) continue
                 trace.visit("$engine.lookup",false,"lookup did not complete")
-                val hits=index.lookup(q,MAX_PRODUCER_FUZZY_CANDIDATES,checkBudget)
+                val candidateLimit=if(policy.useParticleAndRoleRules) MAX_PRODUCER_FUZZY_CANDIDATES else MAX_FUZZY_CANDIDATES
+                val hits=index.lookup(q,candidateLimit,checkBudget)
                 trace.visit("$engine.lookup",true)
                 trace.visit("$engine.retrieved",hits.isNotEmpty(),"no reference candidates")
                 if(hits.isNotEmpty()) trace.visit("$engine.distance",false,"no retrieved name passed distance / length bounds")
                 for(e in hits.distinctBy { it.id }) {
                     checkBudget()
                     if(e.key.length>96) continue
-                    val d=producerDistance(q,e.key)+rolePenalty
-                    val allowed=if(exactShortAllowed) d==0 && (index.primaryVerified || "lwin" in e.support)
-                        else d<=if(q.length>=20) 2 else 1
+                    val matchDist=if(policy.useParticleAndRoleRules) {
+                        val d=producerDistance(q,e.key)+rolePenalty
+                        d
+                    } else distance(q,e.key)
+                    val allowed=if(exactShortAllowed) matchDist==0 && (index.primaryVerified || "lwin" in e.support)
+                        else matchDist<=if(q.length >= 20) 2 else 1
                     if(allowed) {
                         trace.visit("$engine.distance",true)
-                        matches+=Match(e,s.text,s.engine,s.observationIds,d)
+                        matches+=Match(e,s.text,s.engine,s.observationIds,matchDist)
                     }
                 }
             }
@@ -303,7 +313,7 @@ internal class ProducerResolver(private val index:Index,
         fun independent(rows:List<Match>)=rows.any { a -> rows.any { b ->
             a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
         fun blockedSingleReadingSupplementalFuzzy(rows:List<Match>)=
-            index.labSupplemental && policy.minimumIndependentEngines<2 &&
+            policy.useParticleAndRoleRules && index.labSupplemental && policy.minimumIndependentEngines<2 &&
                 rows.none { it.distance==0 } && rows.none { "lwin" in it.entity.support } &&
                 !independent(rows)
         val supplementalFuzzyBlocked=groups.values.any { rows -> blockedSingleReadingSupplementalFuzzy(rows) }
@@ -348,13 +358,14 @@ internal class ProducerResolver(private val index:Index,
                 trace.visit("changed",false,"existing supported producer retained")
                 return finish(cleanExisting,"existing producer retained",matches)
             }
-            val conflictsWithObservedWinner=winner.none { normalize(it.observed)==old } || producerDistance(old,entity.key)>1
-            val existingRolePenalty=policy.producerPenalty(cleanExisting).coerceAtLeast(0)
+            val cmpDist=if(policy.useParticleAndRoleRules) producerDistance(old,entity.key) else distance(old,entity.key)
+            val conflictsWithObservedWinner=winner.none { normalize(it.observed)==old } || cmpDist>1
+            val existingRolePenalty=if(policy.useParticleAndRoleRules) policy.producerPenalty(cleanExisting).coerceAtLeast(0) else 0
             if(conflictsWithObservedWinner && existingRolePenalty<3) {
                 trace.visit("existing",false,"different existing producer protected")
                 return finish(cleanExisting,"different existing producer protected",matches)
             }
-            replacedStrongGrapeGuess=conflictsWithObservedWinner && existingRolePenalty>=3
+            replacedStrongGrapeGuess=conflictsWithObservedWinner && existingRolePenalty >= 3
         }
         if(replacedStrongGrapeGuess) trace.visit("existing",true,"replaced baseline with strong grape-variety cue")
         else trace.visit("existing",true)

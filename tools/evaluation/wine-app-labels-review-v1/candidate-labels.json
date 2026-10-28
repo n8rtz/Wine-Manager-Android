@@ -1613,8 +1613,9 @@
         "alsace"
       ],
       "region_status": "expected_value",
-      "subregion": null,
-      "subregion_status": "expected_blank",
+      "subregion": "Cremant d'Alsace",
+      "subregion_accepted_normalized": ["cremantdalsace"],
+      "subregion_status": "expected_value",
       "vintage": null,
       "vintage_status": "expected_blank"
     },
