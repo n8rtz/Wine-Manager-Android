@@ -199,7 +199,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 val producerLine=!framed && (
                     roles.hasProducerCue(scrubbed) ||
                         lineCompact in producerLineCompacts ||
-                        (words.size in 2..5 && kb.findProducer(scrubbed).any { it.editDistance <= 1 })
+                        (words.size in 2..5 && kb.findProducer(scrubbed).any { it.editDistance != null && it.editDistance <= 1 })
                     )
                 for((wIdx,w) in words.withIndex()) {
                     tokens+=OcrWordToken(w,lineIdx,wIdx,words.size,words,producerLine,framed)
