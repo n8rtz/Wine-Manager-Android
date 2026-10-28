@@ -33,6 +33,7 @@ internal class WineAppLabelsBuildLog(
         val versionCode: String,
         val buildCommit: String,
         val branch: String,
+        val labModules: String = "",
     )
 
     data class FieldScore(
@@ -162,6 +163,7 @@ internal class WineAppLabelsBuildLog(
                 "branch" to sourceBranches,
                 "model_version" to BEST_BUILD_ROW_TITLE,
                 "pipeline_id" to mode.pipelineId,
+                "lab_modules" to "",
                 "run_id" to BEST_BUILD_ROW_TYPE,
                 "attempted" to attempted.value.toString(),
                 "eligible" to eligible.value.toString(),
@@ -236,6 +238,7 @@ internal class WineAppLabelsBuildLog(
         val unresolved: Int,
         val deadlinePartial: Int,
         val fieldScores: Map<String, FieldScore> = emptyMap(),
+        val labModules: String = "",
     ) {
         val totalCorrect: Int
             get() = correctValues + correctBlanks
@@ -265,6 +268,7 @@ internal class WineAppLabelsBuildLog(
             "branch" to branch,
             "model_version" to modelVersion,
             "pipeline_id" to pipelineId,
+            "lab_modules" to labModules,
             "run_id" to runId,
             "attempted" to attempted.toString(),
             "eligible" to eligible.toString(),
@@ -390,6 +394,7 @@ internal class WineAppLabelsBuildLog(
             unresolved = summaryRow[12].toIntOrNull() ?: 0,
             deadlinePartial = summaryRow[13].toIntOrNull() ?: 0,
             fieldScores = fieldScores,
+            labModules = buildInfo.labModules,
         )
 
         val existing = readEntries().toMutableList()
@@ -630,16 +635,25 @@ internal class WineAppLabelsBuildLog(
         }
 
         fun buildInfoFromSavedRun(metadata: JSONObject?, predictions: List<JSONObject>): BuildInfo {
+            val savedModules = metadata?.optString("lab_modules_key").orEmpty()
+            fun withModules(base: BuildInfo): BuildInfo {
+                if (savedModules.isBlank()) return base
+                val keyWithModules = if (base.buildKey.endsWith(":$savedModules")) base.buildKey else "${base.buildKey}:$savedModules"
+                val tag = " [$savedModules]"
+                val numberWithModules = if (base.buildNumber.endsWith(tag)) base.buildNumber else "${base.buildNumber}$tag"
+                return base.copy(buildKey = keyWithModules, buildNumber = numberWithModules, labModules = savedModules)
+            }
             val currentCommit = BuildConfig.BUILD_COMMIT.ifBlank { "unknown" }
             val runCommit = metadata?.optString("build").orEmpty()
             val hasCurrentPrediction = predictions.any { it.optString("build") == currentCommit }
             if (runCommit == currentCommit || hasCurrentPrediction) {
                 val explicitKey = metadata?.optString("build_key").orEmpty()
-                return if (explicitKey.isNotBlank() && runCommit == currentCommit && !hasCurrentPrediction) {
+                val base = if (explicitKey.isNotBlank() && runCommit == currentCommit && !hasCurrentPrediction) {
                     currentBuildInfo().copy(buildKey = explicitKey)
                 } else {
                     currentBuildInfo()
                 }
+                return withModules(base)
             }
             val commit = runCommit.ifBlank {
                 predictions.firstNotNullOfOrNull { it.optString("build").takeIf(String::isNotBlank) } ?: "unknown"
@@ -651,12 +665,14 @@ internal class WineAppLabelsBuildLog(
             val suffix = if (dirty) "-dirty" else ""
             val buildNumber = if (versionCode.isNotBlank()) "#$versionCode ($commit$suffix)" else commit + suffix
             val branch = metadata?.optString("branch").orEmpty().ifBlank { "unknown" }
-            return BuildInfo(
-                buildKey = explicitKey,
-                buildNumber = buildNumber,
-                versionCode = versionCode,
-                buildCommit = commit,
-                branch = branch,
+            return withModules(
+                BuildInfo(
+                    buildKey = explicitKey,
+                    buildNumber = buildNumber,
+                    versionCode = versionCode,
+                    buildCommit = commit,
+                    branch = branch,
+                ),
             )
         }
 
@@ -709,6 +725,7 @@ internal class WineAppLabelsBuildLog(
                         }
                     }
                 },
+                labModules = map["lab_modules"].orEmpty(),
             )
         }
     }

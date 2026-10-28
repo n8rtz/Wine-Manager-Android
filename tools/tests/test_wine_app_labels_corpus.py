@@ -601,6 +601,90 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("finally { if(ownsProducers) producers?.close() }", extraction)
         self.assertIn("if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)", spatial)
 
+    def test_cached_ocr_defaults_on_carries_across_versions_and_bundles_verified_124_label_seed(self):
+        import gzip
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        ocr_cache = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt").read_text()
+        baselines = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt").read_text()
+
+        # 1. Cached OCR defaults to true for Lab runs while remaining toggleable via the UI checkbox.
+        self.assertIn("val useCachedOcr: Boolean = true,", viewmodel)
+        self.assertIn('optBoolean("use_cached_ocr_v2", true) else true', viewmodel)
+        self.assertIn("ocrStore.promote(matchingRunFolders(signature) + allRunFolders(), hashes)", viewmodel)
+
+        # 2. OCR cache signature depends only on OCR model + threshold signature (never corpus scoring signature),
+        #    migrates across sibling ocr-cache-v1/* dirs and prior run folders, and seeds from packaged asset.
+        self.assertIn('private val signature = anchor("ocr-cache-v2|$modelSig")', ocr_cache)
+        self.assertNotIn('$corpusSignature|ocr-cache-v1', ocr_cache)
+        self.assertIn('const val PACKAGED_SEED_ASSET = "wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"', ocr_cache)
+        self.assertIn("GZIPInputStream(rawStream)", ocr_cache)
+
+        # 3. Frozen Prod baselines migrate verified retained photos across scoring/reference updates.
+        self.assertIn("fun migrateRetainedBaselines(", baselines)
+        self.assertIn("val migratedBaselines = store.migrateRetainedBaselines(BASELINE_MODES, hashes)", viewmodel)
+
+        # 4. Packaged 124-label raw OCR seed asset is complete, SHA-256 aligned with inputs.json, and compact.
+        seed_path = ROOT / "app/src/main/assets/wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"
+        self.assertTrue(seed_path.is_file(), "Missing packaged raw OCR seed asset")
+        self.assertLess(seed_path.stat().st_size, 2 * 1024 * 1024, "Seed asset should stay compact (< 2 MiB)")
+        inputs = {
+            row["image"]: row["sha256"]
+            for row in json.loads((ROOT / "app/src/main/assets/wine-app-labels-v1/inputs.json").read_text())["images"]
+        }
+        seen = {}
+        with gzip.open(seed_path, "rt", encoding="utf-8") as gz:
+            for line in gz:
+                if not line.strip():
+                    continue
+                rec = json.loads(line)
+                img = rec["image"]
+                self.assertEqual(rec["image_sha256"], inputs[img], img)
+                self.assertEqual(rec["metadata"].get("input_sha256"), inputs[img], img)
+                rows = rec["rows"]
+                cands = {r.get("candidate") for r in rows}
+                self.assertIn("mlkit_reference", cands, img)
+                self.assertIn("candidate_3", cands, img)
+                seen[img] = rec["model_signature"]
+        self.assertEqual(set(seen.keys()), set(inputs.keys()))
+        self.assertEqual(len(set(seen.values())), 1)
+
+    def test_post_ocr_modules_are_individually_selectable_and_auto_isolated(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+        modules = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/evidence/LabPostOcrModules.kt").read_text()
+
+        # 1. All 7 post-Best-V5 modules exist and default to false (reproducing Best V5 when unchecked).
+        self.assertIn("val none = LabPostOcrModules()", modules)
+        for key in (
+            "blank_subregion_fuzzy",
+            "vintage_recovery",
+            "stacked_appellations",
+            "final_producer_near_match",
+            "producer_role_particle",
+            "spatial_semantic_guards",
+            "vertical_wine_title_pairs",
+        ):
+            self.assertIn(f'"{key}"', modules)
+
+        # 2. Checkboxes appear near the top of Large image dataset test before Start / resume.
+        self.assertIn('Text("Post-OCR test modules"', activity)
+        self.assertIn('Text("All off (Best V5)")', activity)
+        self.assertIn('Text("All on")', activity)
+        self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", activity)
+        self.assertLess(
+            activity.index('Text("Post-OCR test modules"'),
+            activity.index("Start / resume Lab v5 only"),
+        )
+
+        # 3. ViewModel defaults to LabPostOcrModules.none, isolates Lab checkpoint folders by lab_modules_key,
+        #    and logs active module keys to copied stats, CSV exports, and benchmark-results-log.csv.
+        self.assertIn("val labModules: LabPostOcrModules = LabPostOcrModules.none,", viewmodel)
+        self.assertIn('metadata.optString("lab_modules_key") != mutable.value.labModules.signatureKey()', viewmodel)
+        self.assertIn("labModules = activeModules,", viewmodel)
+        self.assertIn("Lab v5 post-OCR modules:", viewmodel)
+        self.assertIn('"lab_modules" to labModules', build_log)
+
 
 if __name__ == "__main__":
     unittest.main()

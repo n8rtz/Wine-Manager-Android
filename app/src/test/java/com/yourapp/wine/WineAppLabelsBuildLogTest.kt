@@ -93,7 +93,7 @@ class WineAppLabelsBuildLogTest {
         val best = log.bestBuildSummary()
         assertNotNull(best)
         assertEquals(
-            listOf("Lab v4 Best build", "125", "123", "46/123", "46", "31", "0", "566", "74", "49", "59", "14", "2", "0"),
+            listOf("Lab v5 Best build", "125", "123", "46/123", "46", "31", "0", "566", "74", "49", "59", "14", "2", "0"),
             best!!.toTableRow(),
         )
         // Producer & Vintage come from Build A; Complete, Total correct, Wine name, Country, Region, Subregion come from Build B.
@@ -121,7 +121,7 @@ class WineAppLabelsBuildLogTest {
         }
         assertEquals(4, parsedCsvRows.size)
         val bestCsvRow = parsedCsvRows.single { it["row_type"] == WineAppLabelsBuildLog.BEST_BUILD_ROW_TYPE }
-        assertEquals("Lab v4 Best build", bestCsvRow["model_version"])
+        assertEquals("Lab v5 Best build", bestCsvRow["model_version"])
         assertEquals("46", bestCsvRow["complete"])
         assertEquals("625", bestCsvRow["total_correct"])
         assertEquals("94", bestCsvRow["producer_correct"])
@@ -192,5 +192,54 @@ class WineAppLabelsBuildLogTest {
         assertEquals("1/1", restoredBest.fieldScores["subregion"]?.label())
         assertEquals("1/0", restoredBest.fieldScores["vintage"]?.label())
         assertEquals("#57 (prev)", restoredBest.fieldBests["producer"]?.buildNumber)
+    }
+
+    @Test
+    fun isolatesAndLogsPostOcrModuleCombinationsPerRun() {
+        val logFile = temp.newFile("benchmark-modules-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+
+        val baselineMeta = org.json.JSONObject()
+            .put("build", "dddddddddddd")
+            .put("version_code", "61")
+            .put("branch", "arena/test")
+            .put("lab_modules_key", "best-v5")
+        val subregionMeta = org.json.JSONObject()
+            .put("build", "dddddddddddd")
+            .put("version_code", "61")
+            .put("branch", "arena/test")
+            .put("lab_modules_key", "subregion-fuzzy")
+
+        val baselineInfo = WineAppLabelsBuildLog.buildInfoFromSavedRun(baselineMeta, emptyList())
+        val subregionInfo = WineAppLabelsBuildLog.buildInfoFromSavedRun(subregionMeta, emptyList())
+        assertEquals("best-v5", baselineInfo.labModules)
+        assertEquals("subregion-fuzzy", subregionInfo.labModules)
+        assertTrue(baselineInfo.buildNumber.endsWith(" [best-v5]"))
+        assertTrue(subregionInfo.buildNumber.endsWith(" [subregion-fuzzy]"))
+        assertFalse(baselineInfo.buildKey == subregionInfo.buildKey)
+
+        log.recordSummary(
+            runId = "run-best-v5",
+            buildInfo = baselineInfo,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "124", "45/124", "47", "32", "0", "562", "72", "50", "59", "14", "0", "0"),
+            timestampMs = 1_700_200_000_000L,
+        )
+        log.recordSummary(
+            runId = "run-subregion-fuzzy",
+            buildInfo = subregionInfo,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "124", "48/124", "45", "31", "0", "565", "72", "47", "59", "14", "0", "0"),
+            timestampMs = 1_700_210_000_000L,
+        )
+
+        val entries = log.readEntries()
+        assertEquals(2, entries.size)
+        assertEquals("best-v5", entries[0].labModules)
+        assertEquals("subregion-fuzzy", entries[1].labModules)
+        val best = log.bestBuildSummary()
+        assertNotNull(best)
+        assertEquals(48 to 124, best!!.complete.value)
+        assertTrue(best.complete.buildNumber.endsWith(" [subregion-fuzzy]"))
     }
 }

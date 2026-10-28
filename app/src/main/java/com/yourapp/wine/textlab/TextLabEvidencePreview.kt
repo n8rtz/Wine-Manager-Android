@@ -8,9 +8,11 @@ import kotlinx.coroutines.CancellationException
 internal object TextLabEvidencePreview {
     // equivalentNames: two spellings of one name differing only by spacing/punctuation (`CHATEAU
     // ABELYCE` / `CHATEAU ABELY CE`) are one answer, not an ambiguity that blanks the field.
-    fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
-        placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off)
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false):EvidenceResult? {
+    fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false,labModules:LabPostOcrModules=LabPostOcrModules.unitTestDefault)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
+        placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off,
+        allowWineTitlePairs=labModules.verticalWineTitlePairs,
+        modules=labModules)
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false,allowHybridVintageFallback:Boolean=true):EvidenceResult? {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return null
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer; populated vintage preserved, otherwise validated experimental vintage may fill; rules-001 wine/origin; heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
@@ -35,7 +37,11 @@ internal object TextLabEvidencePreview {
             if(useAnchors) {
                 val start=android.os.SystemClock.elapsedRealtime()
                 val original=FieldId.entries.associateWith { baseline!!.getValue(it.name.lowercase(java.util.Locale.ROOT)) }
-                val combined=hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year)
+                val combined=if(allowHybridVintageFallback) {
+                    hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year)
+                } else {
+                    hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year,allowVintageFallback=false)
+                }
                 hybridMs=android.os.SystemClock.elapsedRealtime()-start
                 combined.forEach { (field,value) ->
                     val key=field.name.lowercase(java.util.Locale.ROOT)

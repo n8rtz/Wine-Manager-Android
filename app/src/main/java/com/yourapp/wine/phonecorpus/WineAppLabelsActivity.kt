@@ -60,6 +60,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withStyle
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
+import com.yourapp.wine.textlab.evidence.LabPostOcrModules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -215,6 +216,52 @@ class WineAppLabelsActivity : ComponentActivity() {
             item {
                 Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
                 Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
+            }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
+                            Row {
+                                TextButton(
+                                    onClick = { vm.setAllLabModules(false) },
+                                    enabled = !state.busy && state.labModules != LabPostOcrModules.none,
+                                ) { Text("All off (Best V5)") }
+                                TextButton(
+                                    onClick = { vm.setAllLabModules(true) },
+                                    enabled = !state.busy && state.labModules != LabPostOcrModules.all,
+                                ) { Text("All on") }
+                            }
+                        }
+                        Text(
+                            "Unchecked = Best V5 baseline. Each combo isolates its own Lab run & keeps Cached OCR.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        LabPostOcrModules.ModuleId.entries.forEach { moduleId ->
+                            val checked = state.labModules.isEnabled(moduleId)
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !state.busy) { vm.setLabModule(moduleId, !checked) },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Checkbox(
+                                    checked = checked,
+                                    onCheckedChange = { vm.setLabModule(moduleId, it) },
+                                    enabled = !state.busy,
+                                )
+                                Column(Modifier.weight(1f)) {
+                                    Text(moduleId.uiTitle, style = MaterialTheme.typography.bodyMedium)
+                                    Text(moduleId.uiDetail, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
