@@ -88,6 +88,7 @@ internal object PhoneCorpusRunner {
         cachedOcr:WineAppLabelsOcrCache.Entry?=null,
         onFreshOcr:(Map<String,String>,List<Map<String,String>>) -> Unit = { _,_ -> },
         warmSession:WarmSession?=null,
+        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
     ):Map<Mode,JSONObject> {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         require(modes.isNotEmpty()) { "At least one pipeline version is required" }
@@ -104,6 +105,7 @@ internal object PhoneCorpusRunner {
                 .put("pipeline",mode.pipelineId).put("spatial_merging",mode.usesSpatialEvidence)
                 .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
                 .put("ocr_source",if(usedCache) "cached_ocr" else "fresh_ocr")
+                .put("lab_modules",if(mode==Mode.LAB) labModules.signatureKey() else "")
                 .put("runtime",if(usedCache) "on-device benchmark; cached OCR outputs; live Lab v5 extraction" else "on-device benchmark; fresh OCR; no saved-text replay")
             recordedByMode[mode]=linkedMapOf()
         }
@@ -198,7 +200,8 @@ internal object PhoneCorpusRunner {
                         compareEvidence=true,anchorHybrid=true,repairProducer=true,
                         spatialPhrases=needSpatial,benchmarkOnly=true,benchmarkAllPipelines=true,
                         benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,repairPlaces=REPAIR_PLACES_IN_BENCHMARK,
-                        resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK)
+                        resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK,
+                        labModules=labModules)
                     val journal=batch.journals.single()
                     diagnosticJournal=journal
                     if(replayOcr!=null) {
