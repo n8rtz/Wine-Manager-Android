@@ -218,7 +218,6 @@ class WineAppLabelsActivity : ComponentActivity() {
                 SelectionContainer {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
-                        Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
                     }
                 }
             }
@@ -243,14 +242,6 @@ class WineAppLabelsActivity : ComponentActivity() {
                                     ) { Text("All on") }
                                 }
                             }
-                            Text(
-                                "Best build = measured best: producer, vintage & spatial guards.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            Text(
-                                "Wine-title pairs off (they lost 11 wine names). All off = pre-improvement baseline.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
                             LabPostOcrModules.ModuleId.entries.forEach { moduleId ->
                                 val checked = state.labModules.isEnabled(moduleId)
                                 Row(
@@ -280,14 +271,6 @@ class WineAppLabelsActivity : ComponentActivity() {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(mode.title)
-                            Text(
-                                if (state.useCachedOcr) {
-                                    "Cached OCR (${state.ocrCached}/${state.total} ready) · ${state.labCompleted}/${state.total} checkpointed"
-                                } else {
-                                    "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                            )
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             DisableSelection {
@@ -308,10 +291,9 @@ class WineAppLabelsActivity : ComponentActivity() {
                         if (state.message.isNotBlank()) Text(state.message)
                         Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
                         val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
-                        Text(
-                            if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v4.0 frozen on this device: $frozen/${state.total} photos"
-                            else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
-                        )
+                        if (state.captures.size != 3 || frozen < state.total) {
+                            Text("Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture")
+                        }
                     }
                 }
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -358,6 +340,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 currentScores = state.currentBuildFieldScores,
                                 bestBuildScores = state.bestBuildFieldScores,
                                 prodV4Scores = state.prodV4FieldScores,
+                                recentRuns = state.recentLabRuns,
                             )
                         }
                     }
@@ -400,7 +383,6 @@ class WineAppLabelsActivity : ComponentActivity() {
                     SelectionContainer {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
-                            Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
@@ -1017,17 +999,20 @@ private fun BuildFieldComparisonTable(
     currentScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     bestBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     prodV4Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    recentRuns: List<WineAppLabelsBuildLog.Entry>,
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val failColor = MaterialTheme.colorScheme.error
-    val buildColumnWidth = 96.dp
+    val buildColumnWidth = 200.dp
     val fieldColumnWidth = 88.dp
     val totalWidth = buildColumnWidth + (fieldColumnWidth.value * FAILURE_FILTER_OPTIONS.size).dp
     val buildRows = listOf(
         "Current build" to currentScores,
         "Best build" to bestBuildScores,
         PhoneCorpusRunner.Mode.PRODUCTION_V4.title to prodV4Scores,
-    )
+    ) + recentRuns.mapIndexed { index, run ->
+        "Recent ${index + 1} · ${run.date} ${run.time}\n${run.buildNumber} · ${run.labModules.ifBlank { "legacy configuration" }}" to run.fieldScores
+    }
     Column(Modifier.horizontalScroll(rememberScrollState())) {
         Row {
             Text(
@@ -1054,8 +1039,7 @@ private fun BuildFieldComparisonTable(
                     title,
                     Modifier.width(buildColumnWidth).padding(4.dp),
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    softWrap = false,
+                    softWrap = true,
                 )
                 FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
                     val cell = scores[fieldKey]?.let { score ->

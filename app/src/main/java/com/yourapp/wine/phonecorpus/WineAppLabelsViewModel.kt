@@ -78,6 +78,7 @@ internal data class WineAppLabelsState(
     val bestBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     /** Per-field correct/incorrect counts for frozen Prod v4.0 (scoped to Lab v5's attempted subset). */
     val prodV4FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
+    val recentLabRuns: List<WineAppLabelsBuildLog.Entry> = emptyList(),
 )
 
 private data class RunTiming(
@@ -503,6 +504,12 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             ?: WineAppLabelsBuildLog.emptyBestBuildRow(displayHeaders.size)
         val bestBuildFieldScores = bestBuild?.fieldScores.orEmpty()
         val comparisonRows = listOf(modeRows.first(), bestBuildRow) + modeRows.drop(1)
+        val recentLabRuns = buildLog?.readEntries().orEmpty()
+            .filter { it.modelVersion == PhoneCorpusRunner.Mode.LAB.title &&
+                it.corpusKey == loadedCorpusLogKey() && it.fieldScores.isNotEmpty() }
+            .sortedByDescending { it.timestampMs }
+            .distinctBy { it.runId }
+            .take(10)
         val activeModules = mutable.value.labModules
         val comparisonText = buildString {
             appendLine("WINE APP LABELS · Lab v5 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
@@ -521,6 +528,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             appendLine(formatFieldRow("Current build", currentFieldScores))
             appendLine(formatFieldRow("Best build", bestBuildFieldScores))
             appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V4.title, prodV4FieldScores))
+            recentLabRuns.forEach { run ->
+                appendLine(formatFieldRow("${run.date} ${run.time} · ${run.buildNumber} · ${run.labModules}", run.fieldScores))
+            }
         }
         val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
         val timing = readRunTiming(activeLabDir)
@@ -535,6 +545,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
                     prodV4FieldScores = prodV4FieldScores,
+                    recentLabRuns = recentLabRuns,
                 )
             } else {
                 it.copy(
@@ -550,6 +561,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
                     prodV4FieldScores = prodV4FieldScores,
+                    recentLabRuns = recentLabRuns,
                 )
             }
         }
@@ -734,7 +746,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 elapsedRunMs = 0L, runSegmentStartedRealtimeMs = null, avgImageMs = null,
                 etaPerImageMs = null, currentImageStartedRealtimeMs = null,
                 remainingImages = WINE_APP_LABEL_COUNT,
-                currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(),
+                currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(), recentLabRuns = emptyList(),
                 prodV4FieldScores = emptyMap(),
                 message = "Loading saved 124-label results…",
             )
@@ -1052,7 +1064,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 mutable.update {
                     it.copy(message = when {
                         stopping -> "Stopped safely. Resume continues with unattempted photos."
-                        frozen -> "Pass finished. Prod v1.0/v2.0/v4.0 are frozen on this device; only Lab v5 runs from now on. Failed photos can be retried."
+                        frozen -> ""
                         else -> "Pass finished. Prod baselines still have photos to capture; run again to freeze the rest. Failed photos can be retried."
                     })
                 }
