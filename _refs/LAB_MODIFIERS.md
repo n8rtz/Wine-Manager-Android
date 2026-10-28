@@ -67,3 +67,14 @@ remains the measured preset, not a claim that these new methods have been evalua
    `AINT-EMILION` span for bounded repair. Check geography separately from wine name;
    this implementation does not bridge over the stray `O` to invent a qualified name.
 6. Do not promote a new combination into Best build until the full corpus is measured.
+
+## Recent builds export
+
+Use **Prepare recent builds CSV export**, then the existing Save button(s). It
+exports the same recent runs shown in the table, with run/configuration metadata,
+logged aggregate and per-parameter scores, and six final field-value rows for every
+dataset wine per run. Field rows include reference values and outcomes, not OCR
+observations, images, traces, candidate lists or bounding boxes. Unattempted wines
+and unavailable saved run results are explicitly marked. Field outcomes are scored
+against the currently packaged references; logged summary scores retain their saved
+values. Files use the existing 25 MB CSV splitting/document-picker save workflow.

@@ -353,6 +353,11 @@ class WineAppLabelsActivity : ComponentActivity() {
                         onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + board.text)) },
                         enabled = !state.busy,
                     ) { Text("Copy scored stats") }
+                    OutlinedButton(
+                        onClick = { vm.prepareRecentBuildsExport() },
+                        enabled = !state.busy && state.recentLabRuns.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Prepare recent builds CSV export") }
                     Button(
                         onClick = { vm.prepareExport(raw = false) },
                         enabled = !state.busy && board.csv.isNotEmpty(),

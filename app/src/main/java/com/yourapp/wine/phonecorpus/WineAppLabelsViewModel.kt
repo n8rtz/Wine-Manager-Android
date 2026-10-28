@@ -639,13 +639,68 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     }
 
     /** Prepares the chosen CSV in the cache, split under the 25 MB upload cap, so each part can be saved. */
-    fun prepareExport(raw: Boolean) {
+    /** Compact comparison export: an explicit scalar allowlist, never OCR/trace payloads. */
+    private fun writeRecentBuildsCsv(target: File, runs: List<WineAppLabelsBuildLog.Entry>) {
+        check(runs.isNotEmpty()) { "No recent Lab runs to export" }
+        val images = assetJson("scoring.json").getJSONArray("images")
+        val scorer = scoreboard()
+        val rows = sequence {
+            for ((index, run) in runs.withIndex()) {
+                val metadata = mapOf(
+                    "recent_rank" to (index + 1).toString(), "run_id" to run.runId,
+                    "date" to run.date, "time" to run.time, "build_number" to run.buildNumber,
+                    "build_commit" to run.buildCommit, "lab_modules" to run.labModules,
+                    "corpus_key" to run.corpusKey,
+                )
+                yield(metadata + mapOf("row_type" to "run_summary",
+                    "attempted" to run.attempted.toString(), "eligible" to run.eligible.toString(),
+                    "complete" to run.complete.toString(), "failed" to run.failed.toString(),
+                    "total_correct" to run.totalCorrect.toString()))
+                for (field in PhoneCorpusMath.fields) {
+                    val score = run.fieldScores[field]
+                    yield(metadata + mapOf("row_type" to "parameter_summary", "field" to field,
+                        "correct" to (score?.correct?.toString() ?: ""),
+                        "incorrect" to (score?.incorrect?.toString() ?: "")))
+                }
+                // Locate by an existing directory name, not an unchecked path from the log.
+                val dir = root.listFiles().orEmpty().firstOrNull { it.isDirectory && it.name == run.runId }
+                val saved = dir?.let(::predictions).orEmpty()
+                val fieldRows = if (saved.isEmpty()) emptyList() else
+                    scorer.build(saved, PhoneCorpusRunner.Mode.LAB).csv.filter { it["row_type"] == "field" }
+                val byField = fieldRows.associateBy { it["image"] to it["field"] }
+                for (i in 0 until images.length()) {
+                    val image = images.getJSONObject(i)
+                    val imageId = image.getString("image")
+                    for (field in PhoneCorpusMath.fields) {
+                        val scored = byField[imageId to field]
+                        val reference = image.getJSONObject("fields").getJSONObject(field)
+                        yield(metadata + mapOf(
+                            "row_type" to "wine_field", "image" to imageId,
+                            "review_number" to image.getInt("review_number").toString(),
+                            "source_filename" to image.optString("source_filename"), "field" to field,
+                            "recognized" to scored?.get("recognized").orEmpty(),
+                            "expected" to reference.optString("target"),
+                            "reference_status" to reference.optString("status"),
+                            "outcome" to (scored?.get("outcome") ?: if (dir == null || saved.isEmpty()) "results_unavailable" else "not_attempted"),
+                            "execution_status" to scored?.get("execution_status").orEmpty(),
+                        ))
+                    }
+                }
+            }
+        }
+        target.bufferedWriter(Charsets.UTF_8).use { TextLabCsv.write(it, rows) }
+    }
+
+    fun prepareRecentBuildsExport() = prepareExport(raw = false, recentBuilds = true)
+
+    fun prepareExport(raw: Boolean, recentBuilds: Boolean = false) {
         if (mutable.value.busy) return
         if (labFolder == null) {
             mutable.update { it.copy(message = "Load the 124-label test before preparing an export.") }
             return
         }
         val previousParts = mutable.value.exportParts
+        val recentRuns = mutable.value.recentLabRuns.toList()
         exporting = true
         mutable.update { it.copy(busy = true, exportParts = emptyList(), message = "Preparing upload-sized CSV files…") }
         bgScope.launch {
@@ -653,8 +708,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             try {
                 check(exportDir.mkdirs())
                 val target = File(exportDir,
-                    "wine-app-labels-${WINE_APP_LABEL_COUNT}-${if (raw) "raw-" else ""}all-versions-${BuildConfig.BUILD_COMMIT}.csv")
-                if (raw) writeRawCsv(target) else writeScoredCsv(target)
+                    "wine-app-labels-${WINE_APP_LABEL_COUNT}-${if (recentBuilds) "recent-builds" else if (raw) "raw-all-versions" else "all-versions"}-${BuildConfig.BUILD_COMMIT}.csv")
+                if (recentBuilds) writeRecentBuildsCsv(target, recentRuns)
+                else if (raw) writeRawCsv(target) else writeScoredCsv(target)
                 val parts = CsvUploadParts.split(target, exportDir)
                 if (parts.size > 1) target.delete()
                 previousParts.mapNotNull { it.parentFile }.distinct()

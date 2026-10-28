@@ -256,6 +256,19 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         for label in ("Lab v5", "Prod v4.0", "Prod v2.0", "Prod v1.0"):
             self.assertIn(f'("{label}"', runner)
 
+    def test_recent_build_export_is_scalar_only_and_covers_the_dataset(self):
+        vm = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        body = vm.split("private fun writeRecentBuildsCsv(", 1)[1].split("fun prepareRecentBuildsExport", 1)[0]
+        for required in ('"run_summary"', '"parameter_summary"', '"wine_field"',
+                         '"lab_modules" to run.labModules', '"recognized"', '"outcome"',
+                         '0 until images.length()', '"results_unavailable"', '"not_attempted"'):
+            self.assertIn(required, body)
+        for forbidden in ('"tokens"', '"trace"', '"fallback_choices"', '"diagnostics"', '"bbox"'):
+            self.assertNotIn(forbidden, body)
+        self.assertIn('vm.prepareRecentBuildsExport()', activity)
+        self.assertIn('val recentRuns = mutable.value.recentLabRuns.toList()', vm)
+
     def test_large_image_dataset_screen_prepares_and_saves_csv_exports(self):
         # The main-branch Large image dataset test page prepared CSVs, then saved each part via
         # the system document picker. The 124-label replacement screen lost that flow.
@@ -272,7 +285,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('Text("Split an existing CSV for upload")', activity)
         self.assertIn("vm::splitExistingCsv", activity)
         self.assertIn("val exportParts: List<File> = emptyList()", viewmodel)
-        self.assertIn("fun prepareExport(raw: Boolean)", viewmodel)
+        self.assertIn("fun prepareExport(raw: Boolean, recentBuilds: Boolean = false)", viewmodel)
         self.assertIn("fun saveExportPart(uri: Uri, index: Int)", viewmodel)
         self.assertIn("fun splitExistingCsv(uri: Uri)", viewmodel)
         # Both exports cover every version (frozen Prod + live Lab) and use the shared splitter.
