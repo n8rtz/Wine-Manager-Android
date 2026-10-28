@@ -49,4 +49,20 @@ internal object TextLabSpatialPhrases {
                 allowVerticalJoin={ upper,lower -> verticalAllowed(upper,lower) },
             ).map { phrase -> Proposal(key.first,key.second,phrase,phrase.sourceIndices.map { group[it] }) }
         }
+
+    /** Best-V5 baseline spatial merger without vertical-line count, height-ratio, or role gates. */
+    fun proposeUnconstrained(records:List<TokenRecord>):List<Proposal> = records.groupBy { it.engineId to it.variantId }
+        .flatMap { (key,group) ->
+            val detections=group.map { token ->
+                val box=token.bboxRect
+                SpatialPhraseMerger.Detection(token.textRaw,SpatialPhraseMerger.Box(box.left.toDouble(),box.top.toDouble(),box.right.toDouble(),box.bottom.toDouble()))
+            }
+            SpatialPhraseMerger.merge(
+                detections,
+                maxVerticalLines=Int.MAX_VALUE,
+                maxVerticalHeightRatio=Double.POSITIVE_INFINITY,
+                allowHorizontalJoin={ _,_ -> true },
+                allowVerticalJoin={ _,_ -> true },
+            ).map { phrase -> Proposal(key.first,key.second,phrase,phrase.sourceIndices.map { group[it] }) }
+        }
 }

@@ -191,7 +191,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('PhoneCorpusRunner.runImageAllModes(', viewmodel)
         self.assertNotIn('PhoneCorpusRunner.runImage(', viewmodel)
         self.assertIn('"wine-app-labels-v1"', viewmodel)
-        self.assertIn("124 retained workbook-linked wine labels", activity)
+        self.assertNotIn("124 retained workbook-linked wine labels", activity)
         producer_manifest = json.loads((ROOT / "app/src/main/assets/producer-gazetteer-v1/manifest.json").read_text())
         self.assertNotIn("support", producer_manifest)
         self.assertNotIn("support_attribution", producer_manifest)
@@ -204,9 +204,11 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates)", viewmodel)
         self.assertIn("LAB ONLY expanded producer index", (ROOT / "_refs/ARCH.md").read_text())
         self.assertIn("Pipeline bottleneck matrix", activity)
-        # Frozen state is shown per mode (short captions), not explained in a paragraph.
-        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
-        self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
+        # Top model section shows only Lab v5 + Cached OCR (retired Prod model rows removed from top).
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
+        self.assertNotIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", activity)
+        self.assertNotIn("RadioButton(", activity)
         self.assertNotIn("Every photo runs through all four versions", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
         self.assertNotIn("savedPredictions", viewmodel)
@@ -219,7 +221,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('BASELINE_MODES = listOf(', viewmodel)
         # Only Lab is offered as a runnable mode; Prod versions are frozen comparators.
         self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
-        self.assertIn("RadioButton(", activity)
+        self.assertGreaterEqual(activity.count("SelectionContainer {"), 8)
+        self.assertIn("DisableSelection {", activity)
+        self.assertNotIn("SelectionContainer {\n            LazyColumn(", activity)
         self.assertNotIn("RUNNABLE_MODES", viewmodel)
         self.assertNotIn("Fully correct = all six scorable", activity)
         # The plain "Ready…" line was removed; the counts say the same thing.
@@ -341,11 +345,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(viewmodel.count('"run_id" to "frozen-baseline"'), 2)  # scored + raw exports
         self.assertIn('"captured_build" to baselines?.capture(mode)?.build.orEmpty()', viewmodel)
 
-        # 6. The screen never offers a Prod version as a live run and says the rows are frozen.
-        self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", activity)
-        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
-        self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
-        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', activity)
+        # 6. The screen never offers a Prod version as a live run at the top; only Lab v5 + Cached OCR appear.
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", activity)
+        self.assertNotIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
         self.assertIn('Text("New Lab run (keeps old results and frozen Prod)")', activity)
 
 
@@ -368,7 +371,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         ):
             self.assertNotIn(removed, activity)
         # What must survive: the title, the subtitle, per-mode state and every control.
-        for kept in ('Text("Large image dataset test"', '"124 retained workbook-linked wine labels', 'Text(mode.title)',
+        for kept in ('Text("Large image dataset test"', 'Text(mode.title)',
                      'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
                      'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
                      'Pipeline bottleneck matrix', 'Database coverage', 'Incomplete labels ('):
@@ -517,7 +520,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
 
         # 2. Cached OCR checkbox sits next to Lab v5 only and reuses verified OCR outputs without
         #    ever replaying cached OCR into Prod baselines.
-        self.assertIn("if (mode == PhoneCorpusRunner.Mode.LAB) {", activity)
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
         self.assertIn("Checkbox(", activity)
         self.assertIn("checked = state.useCachedOcr", activity)
         self.assertIn("onCheckedChange = vm::setUseCachedOcr", activity)
@@ -600,6 +603,133 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("finally { if(ownsKb) kb?.close() }", extraction)
         self.assertIn("finally { if(ownsProducers) producers?.close() }", extraction)
         self.assertIn("if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)", spatial)
+
+    def test_cached_ocr_defaults_on_carries_across_versions_and_bundles_verified_124_label_seed(self):
+        import gzip
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        ocr_cache = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt").read_text()
+        baselines = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt").read_text()
+
+        # 1. Cached OCR defaults to true for Lab runs while remaining toggleable via the UI checkbox.
+        self.assertIn("val useCachedOcr: Boolean = true,", viewmodel)
+        self.assertIn('optBoolean("use_cached_ocr_v2", true) else true', viewmodel)
+        self.assertIn("ocrStore.promote(matchingRunFolders(signature) + allRunFolders(), hashes)", viewmodel)
+
+        # 2. OCR cache signature depends only on OCR model + threshold signature (never corpus scoring signature),
+        #    migrates across sibling ocr-cache-v1/* dirs and prior run folders, and seeds from packaged asset.
+        self.assertIn('private val signature = anchor("ocr-cache-v2|$modelSig")', ocr_cache)
+        self.assertNotIn('$corpusSignature|ocr-cache-v1', ocr_cache)
+        self.assertIn('const val PACKAGED_SEED_ASSET = "wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"', ocr_cache)
+        self.assertIn("GZIPInputStream(rawStream)", ocr_cache)
+
+        # 3. Frozen Prod baselines migrate verified retained photos across scoring/reference updates.
+        self.assertIn("fun migrateRetainedBaselines(", baselines)
+        self.assertIn("val migratedBaselines = store.migrateRetainedBaselines(BASELINE_MODES, hashes)", viewmodel)
+
+        # 4. Packaged 124-label raw OCR seed asset is complete, SHA-256 aligned with inputs.json, and compact.
+        seed_path = ROOT / "app/src/main/assets/wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"
+        self.assertTrue(seed_path.is_file(), "Missing packaged raw OCR seed asset")
+        self.assertLess(seed_path.stat().st_size, 2 * 1024 * 1024, "Seed asset should stay compact (< 2 MiB)")
+        inputs = {
+            row["image"]: row["sha256"]
+            for row in json.loads((ROOT / "app/src/main/assets/wine-app-labels-v1/inputs.json").read_text())["images"]
+        }
+        seen = {}
+        with gzip.open(seed_path, "rt", encoding="utf-8") as gz:
+            for line in gz:
+                if not line.strip():
+                    continue
+                rec = json.loads(line)
+                img = rec["image"]
+                self.assertEqual(rec["image_sha256"], inputs[img], img)
+                self.assertEqual(rec["metadata"].get("input_sha256"), inputs[img], img)
+                rows = rec["rows"]
+                cands = {r.get("candidate") for r in rows}
+                self.assertIn("mlkit_reference", cands, img)
+                self.assertIn("candidate_3", cands, img)
+                seen[img] = rec["model_signature"]
+        self.assertEqual(set(seen.keys()), set(inputs.keys()))
+        self.assertEqual(len(set(seen.values())), 1)
+
+    def test_post_ocr_modules_are_individually_selectable_and_auto_isolated(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+        modules = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/evidence/LabPostOcrModules.kt").read_text()
+
+        # 1. All 7 post-Best-V5 modules exist and default to false (reproducing Best V5 when unchecked).
+        self.assertIn("val none = LabPostOcrModules()", modules)
+        for key in (
+            "blank_subregion_fuzzy",
+            "vintage_recovery",
+            "stacked_appellations",
+            "final_producer_near_match",
+            "producer_role_particle",
+            "spatial_semantic_guards",
+            "vertical_wine_title_pairs",
+        ):
+            self.assertIn(f'"{key}"', modules)
+
+        # 2. Checkboxes appear near the top of Large image dataset test before Start / resume, with a
+        #    one-tap "Best build" preset because all-off is the pre-improvement control, not the best build.
+        self.assertIn('Text("Post-OCR test modules"', activity)
+        self.assertIn('Text("All off")', activity)
+        self.assertIn('Text("Best build")', activity)
+        self.assertIn('Text("All on")', activity)
+        self.assertIn("vm.setBestBuildLabModules()", activity)
+        self.assertIn("fun setBestBuildLabModules()", viewmodel)
+        self.assertIn("LabPostOcrModules.bestBuild", viewmodel)
+        self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", activity)
+        self.assertLess(
+            activity.index('Text("Post-OCR test modules"'),
+            activity.index("Start / resume Lab v5 only"),
+        )
+
+        # 2b. The Best build preset holds only modules measured as net wins on the 124-label corpus.
+        #     Vertical wine-title pairs lost 10 wine names in run 187a01ae7732 (one label won), so it
+        #     is deliberately off in the preset and still selectable on its own.
+        self.assertIn("val bestBuild = LabPostOcrModules(", modules)
+        preset = modules[modules.index("val bestBuild = LabPostOcrModules("):]
+        preset = preset[:preset.index("val all = LabPostOcrModules(")]
+        self.assertIn("blankSubregionFuzzy = false", preset)
+        self.assertIn("stackedAppellations = false", preset)
+        self.assertIn("verticalWineTitlePairs = false", preset)
+        for flag in ("vintageRecovery", "finalProducerNearMatch", "producerRoleAndParticle",
+                     "spatialSemanticGuards"):
+            self.assertIn(f"{flag} = true", preset)
+
+        # 2c. Frozen Prod comparators never follow a Lab module flag: the hybrid vintage fill that
+        #     Prod v2.0 and Prod v4.0 always had stays on regardless of the Lab vintage module.
+        spatial = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt").read_text()
+        extraction = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabWineExtraction.kt").read_text()
+        self.assertIn("val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true", spatial)
+        self.assertIn(
+            "val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery",
+            extraction,
+        )
+
+        # 2d. The "Best build" high-water-mark row is measured on one corpus only. A 125-label-era row
+        #     (123 eligible) can never be the target of a 124-label run (122 eligible), so the composite
+        #     cohorts by the corpus key of the newest logged run and records that key in the CSV.
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+        self.assertIn("val corpusKey = candidates.maxByOrNull { it.timestampMs }?.corpusKey.orEmpty()", build_log)
+        self.assertIn("val cohort = if (corpusKey.isBlank()) candidates else candidates.filter { it.corpusKey == corpusKey }", build_log)
+        self.assertIn('"corpus_key" to corpusKey', build_log)
+        self.assertIn("corpusKey: String = \"\",", build_log)
+        self.assertIn("corpusKey = corpusLogKey(expectedCorpus)", viewmodel)
+        self.assertIn("loadedCorpusLogKey()", viewmodel)
+        #     Runs scored before the column existed are tagged from their (already corpus-checked)
+        #     saved run folder, so one corpus reruns keep their high-water marks.
+        self.assertIn("fun stampCorpusKeys(", build_log)
+        self.assertIn("log.stampCorpusKeys(unstamped, corpusKey, PhoneCorpusRunner.Mode.LAB)", viewmodel)
+
+        # 3. ViewModel defaults to LabPostOcrModules.none, isolates Lab checkpoint folders by lab_modules_key,
+        #    and logs active module keys to copied stats, CSV exports, and benchmark-results-log.csv.
+        self.assertIn("val labModules: LabPostOcrModules = LabPostOcrModules.none,", viewmodel)
+        self.assertIn('metadata.optString("lab_modules_key") != mutable.value.labModules.signatureKey()', viewmodel)
+        self.assertIn("labModules = activeModules,", viewmodel)
+        self.assertIn("Lab v5 post-OCR modules:", viewmodel)
+        self.assertIn('"lab_modules" to labModules', build_log)
 
 
 if __name__ == "__main__":
