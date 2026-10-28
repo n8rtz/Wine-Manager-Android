@@ -435,10 +435,22 @@ object EvidenceArchitectureChecks {
         check(contradictoryLab.fields.getValue(FieldId.COUNTRY).value=="Italy") { contradictoryLab.fields }
         check(contradictoryLab.fields.getValue(FieldId.REGION).value.isBlank()) { contradictoryLab.fields }
 
-        // Modular post-OCR isolation: LabPostOcrModules.none reproduces Best V5 baseline (all 7 modules off),
-        // and each module activates independently when checked.
+        // Modular post-OCR isolation: LabPostOcrModules.none is the pre-improvement control (all 7
+        // modules off), and the Best build preset restores exactly the modules the last best measured
+        // Lab v5 build shipped with, leaving only the two post-best modules off.
         check(LabPostOcrModules.none.signatureKey()=="best-v5") { LabPostOcrModules.none.signatureKey() }
-        check(LabPostOcrModules.none.summaryLabel()=="Baseline (Best V5)") { LabPostOcrModules.none.summaryLabel() }
+        check(LabPostOcrModules.none.summaryLabel()=="Baseline (pre-improvement)") { LabPostOcrModules.none.summaryLabel() }
+        check(LabPostOcrModules.bestBuild.summaryLabel()=="Best build (5 modules)") { LabPostOcrModules.bestBuild.summaryLabel() }
+        check(LabPostOcrModules.bestBuild.enabledModules()==listOf(
+            LabPostOcrModules.ModuleId.VINTAGE_RECOVERY,
+            LabPostOcrModules.ModuleId.FINAL_PRODUCER_NEAR_MATCH,
+            LabPostOcrModules.ModuleId.PRODUCER_ROLE_AND_PARTICLE,
+            LabPostOcrModules.ModuleId.SPATIAL_SEMANTIC_GUARDS,
+            LabPostOcrModules.ModuleId.VERTICAL_WINE_TITLE_PAIRS,
+        )) { LabPostOcrModules.bestBuild.enabledKeys() }
+        check(!LabPostOcrModules.bestBuild.blankSubregionFuzzy && !LabPostOcrModules.bestBuild.stackedAppellations)
+        check(LabPostOcrModules.bestBuild!=LabPostOcrModules.none && LabPostOcrModules.bestBuild!=LabPostOcrModules.all)
+        check(LabPostOcrModules.fromKeys(LabPostOcrModules.bestBuild.activeKeys())==LabPostOcrModules.bestBuild)
         check(LabPostOcrModules.fromKeys(LabPostOcrModules.all.activeKeys())==LabPostOcrModules.all)
         val bestV5Extractor=EvidenceExtractor(base,placeRepair=PlaceRepair.Config.conservativeLab,modules=LabPostOcrModules.none)
         val bestV5SubregionOff=bestV5Extractor.extract(

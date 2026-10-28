@@ -144,7 +144,9 @@ internal object TextLabSpatialPreview {
             } else {
                 work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
             }
-            val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else false
+            // Lab honors the vintage module; the frozen Prod v4.0 contender keeps its own pre-module
+            // behavior (the hybrid vintage fill was always available there) so its row is unchanged.
+            val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true
             val evidenceResult=if(isLabSpatial && producerIndex!=null && engine!=null) {
                 engine.withDeferredBlankSubregionFallback {
                     TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,

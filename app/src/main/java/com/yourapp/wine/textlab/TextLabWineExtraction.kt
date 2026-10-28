@@ -195,7 +195,9 @@ internal object TextLabWineExtraction {
                 val runExpandedSpatial=if(batch.benchmarkAllPipelines) batch.spatialPhrases else batch.spatialPhrases && !batch.benchmarkLwinSpatial
                 if(runEvidence) {
                     val evEngine=if(batch.benchmarkAllPipelines) prodExperimental else experimental
-                    val evVintageFallback=!batch.benchmarkAllPipelines || batch.labModules.vintageRecovery
+                    // The benchmark evidence row belongs to the frozen Prod v2.0 comparator, which keeps
+                    // its pre-module hybrid vintage fill. Only a non-benchmark Lab run follows the module.
+                    val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery
                     batch.journals.forEach {
                         TextLabEvidencePreview.append(
                             it,
@@ -205,7 +207,7 @@ internal object TextLabWineExtraction {
                             hybrid,
                             batch.anchorHybrid && batch.repairProducer,
                             repair,
-                            allowHybridVintageFallback=evVintageFallback && !batch.benchmarkAllPipelines,
+                            allowHybridVintageFallback=evVintageFallback,
                         )
                     }
                 }

@@ -214,6 +214,11 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         switchLabModules(if (enabled) LabPostOcrModules.all else LabPostOcrModules.none)
     }
 
+    /** Restores the module set the last best measured Lab v5 run shipped with. */
+    fun setBestBuildLabModules() {
+        switchLabModules(LabPostOcrModules.bestBuild)
+    }
+
     private fun switchLabModules(next: LabPostOcrModules) {
         if (mutable.value.busy) return
         if (mutable.value.labModules == next && labFolder != null) return

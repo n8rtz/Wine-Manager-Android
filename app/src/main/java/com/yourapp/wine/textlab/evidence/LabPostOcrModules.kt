@@ -3,9 +3,14 @@ package com.yourapp.wine.textlab.evidence
 /**
  * Mix-and-match post-OCR processing modules for Lab v5 benchmark isolation.
  *
- * When all flags are `false` ([none]), Lab v5 reproduces the exact Best V5 (`ce9225f`) post-OCR
- * behavior. Each flag independently enables one post-OCR improvement so its isolated and combined
- * effects can be measured scientifically against Cached OCR and frozen Prod baselines.
+ * When all flags are `false` ([none]), Lab reproduces the pre-improvement baseline post-OCR behavior
+ * (the state of `main` at `ce9225f`) - that is the clean control, not the best measured build. Five
+ * of the seven flags describe behavior the last best measured Lab v5 build (`636dda970fa4`) already
+ * shipped with, so [bestBuild] switches exactly those five on and leaves the two genuinely new
+ * modules (blank-subregion raw-OCR fallback, stacked two-line appellations) off.
+ *
+ * Each flag independently enables one post-OCR improvement so its isolated and combined effects can
+ * be measured scientifically against Cached OCR and frozen Prod baselines.
  */
 internal data class LabPostOcrModules(
     val blankSubregionFuzzy: Boolean = false,
@@ -99,11 +104,31 @@ internal data class LabPostOcrModules(
 
     fun summaryLabel(): String {
         val active = enabledModules()
-        return if (active.isEmpty()) "Baseline (Best V5)" else active.joinToString(" + ") { it.shortName }
+        return when {
+            active.isEmpty() -> "Baseline (pre-improvement)"
+            this == bestBuild -> "Best build (${active.size} modules)"
+            else -> active.joinToString(" + ") { it.shortName }
+        }
     }
 
     companion object {
         val none = LabPostOcrModules()
+        /**
+         * The module set the last best measured Lab v5 run shipped with (`636dda970fa4`): producer
+         * anchor/evidence spans and spatial join guards, `de`-particle/role rules with the 256-name
+         * producer shortlist, the final producer near-match pass, OCR vintage recovery (including
+         * split crest halves and the hybrid fill), and bounded vertical wine-title pairs. The two
+         * flags left off here postdate that build and have never been part of a best run.
+         */
+        val bestBuild = LabPostOcrModules(
+            blankSubregionFuzzy = false,
+            vintageRecovery = true,
+            stackedAppellations = false,
+            finalProducerNearMatch = true,
+            producerRoleAndParticle = true,
+            spatialSemanticGuards = true,
+            verticalWineTitlePairs = true,
+        )
         val all = LabPostOcrModules(
             blankSubregionFuzzy = true,
             vintageRecovery = true,

@@ -670,14 +670,40 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         ):
             self.assertIn(f'"{key}"', modules)
 
-        # 2. Checkboxes appear near the top of Large image dataset test before Start / resume.
+        # 2. Checkboxes appear near the top of Large image dataset test before Start / resume, with a
+        #    one-tap "Best build" preset because all-off is the pre-improvement control, not the best build.
         self.assertIn('Text("Post-OCR test modules"', activity)
-        self.assertIn('Text("All off (Best V5)")', activity)
+        self.assertIn('Text("All off")', activity)
+        self.assertIn('Text("Best build")', activity)
         self.assertIn('Text("All on")', activity)
+        self.assertIn("vm.setBestBuildLabModules()", activity)
+        self.assertIn("fun setBestBuildLabModules()", viewmodel)
+        self.assertIn("LabPostOcrModules.bestBuild", viewmodel)
         self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", activity)
         self.assertLess(
             activity.index('Text("Post-OCR test modules"'),
             activity.index("Start / resume Lab v5 only"),
+        )
+
+        # 2b. The Best build preset restores exactly the modules the last best measured Lab v5 build
+        #     (636dda970fa4) shipped with; the two post-best modules stay off.
+        self.assertIn("val bestBuild = LabPostOcrModules(", modules)
+        preset = modules[modules.index("val bestBuild = LabPostOcrModules("):]
+        preset = preset[:preset.index("val all = LabPostOcrModules(")]
+        self.assertIn("blankSubregionFuzzy = false", preset)
+        self.assertIn("stackedAppellations = false", preset)
+        for flag in ("vintageRecovery", "finalProducerNearMatch", "producerRoleAndParticle",
+                     "spatialSemanticGuards", "verticalWineTitlePairs"):
+            self.assertIn(f"{flag} = true", preset)
+
+        # 2c. Frozen Prod comparators never follow a Lab module flag: the hybrid vintage fill that
+        #     Prod v2.0 and Prod v4.0 always had stays on regardless of the Lab vintage module.
+        spatial = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt").read_text()
+        extraction = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabWineExtraction.kt").read_text()
+        self.assertIn("val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true", spatial)
+        self.assertIn(
+            "val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery",
+            extraction,
         )
 
         # 3. ViewModel defaults to LabPostOcrModules.none, isolates Lab checkpoint folders by lab_modules_key,

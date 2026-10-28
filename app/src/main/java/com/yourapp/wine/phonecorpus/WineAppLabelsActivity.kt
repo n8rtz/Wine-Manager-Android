@@ -226,27 +226,29 @@ class WineAppLabelsActivity : ComponentActivity() {
                 Card(Modifier.fillMaxWidth()) {
                     SelectionContainer {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
-                                DisableSelection {
-                                    Row {
-                                        TextButton(
-                                            onClick = { vm.setAllLabModules(false) },
-                                            enabled = !state.busy && state.labModules != LabPostOcrModules.none,
-                                        ) { Text("All off (Best V5)") }
-                                        TextButton(
-                                            onClick = { vm.setAllLabModules(true) },
-                                            enabled = !state.busy && state.labModules != LabPostOcrModules.all,
-                                        ) { Text("All on") }
-                                    }
+                            Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
+                            DisableSelection {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    TextButton(
+                                        onClick = { vm.setAllLabModules(false) },
+                                        enabled = !state.busy && state.labModules != LabPostOcrModules.none,
+                                    ) { Text("All off") }
+                                    TextButton(
+                                        onClick = { vm.setBestBuildLabModules() },
+                                        enabled = !state.busy && state.labModules != LabPostOcrModules.bestBuild,
+                                    ) { Text("Best build") }
+                                    TextButton(
+                                        onClick = { vm.setAllLabModules(true) },
+                                        enabled = !state.busy && state.labModules != LabPostOcrModules.all,
+                                    ) { Text("All on") }
                                 }
                             }
                             Text(
-                                "Unchecked = Best V5 baseline. Each combo isolates its own Lab run & keeps Cached OCR.",
+                                "Best build = the 5 modules your best Lab v5 run (636dda970fa4) used.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Text(
+                                "All off = pre-improvement baseline. Each combo isolates its own run & keeps Cached OCR.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             LabPostOcrModules.ModuleId.entries.forEach { moduleId ->
