@@ -1003,8 +1003,8 @@ private fun BuildFieldComparisonTable(
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val failColor = MaterialTheme.colorScheme.error
-    var buildColumnExpanded by remember { mutableStateOf(false) }
-    val buildColumnWidth = if (buildColumnExpanded) 280.dp else 96.dp
+    var expandedBuilds by remember { mutableStateOf(emptySet<String>()) }
+    val buildColumnWidth = 128.dp
     val fieldColumnWidth = 88.dp
     val totalWidth = buildColumnWidth + (fieldColumnWidth.value * FAILURE_FILTER_OPTIONS.size).dp
     val buildRows = listOf(
@@ -1016,25 +1016,13 @@ private fun BuildFieldComparisonTable(
     }
     Column(Modifier.horizontalScroll(rememberScrollState())) {
         Row {
-            Row(
-                Modifier.width(buildColumnWidth),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "Build",
-                    Modifier.weight(1f).padding(4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-                DisableSelection {
-                    TextButton(
-                        onClick = { buildColumnExpanded = !buildColumnExpanded },
-                        contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.width(32.dp),
-                    ) { Text(if (buildColumnExpanded) "−" else "+") }
-                }
-            }
+            Text(
+                "Build",
+                Modifier.width(buildColumnWidth).padding(4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                softWrap = false,
+            )
             FAILURE_FILTER_OPTIONS.forEach { (_, label) ->
                 Text(
                     label,
@@ -1047,15 +1035,30 @@ private fun BuildFieldComparisonTable(
         }
         buildRows.forEach { (title, scores) ->
             HorizontalDivider(Modifier.width(totalWidth))
-            Row {
-                Text(
-                    if (buildColumnExpanded) title else title.substringBefore(" · "),
-                    Modifier.width(buildColumnWidth).padding(4.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = if (buildColumnExpanded) Int.MAX_VALUE else 1,
-                    overflow = TextOverflow.Ellipsis,
-                    softWrap = buildColumnExpanded,
-                )
+            val expanded = title in expandedBuilds
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.width(buildColumnWidth),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        title.substringBefore(" · "),
+                        Modifier.weight(1f).padding(4.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = false,
+                    )
+                    DisableSelection {
+                        TextButton(
+                            onClick = {
+                                expandedBuilds = if (expanded) expandedBuilds - title else expandedBuilds + title
+                            },
+                            contentPadding = PaddingValues(0.dp),
+                            modifier = Modifier.width(32.dp),
+                        ) { Text(if (expanded) "−" else "+") }
+                    }
+                }
                 FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
                     val cell = scores[fieldKey]?.let { score ->
                         val otherScores = listOf(bestBuildScores[fieldKey], prodV4Scores[fieldKey])
@@ -1073,6 +1076,14 @@ private fun BuildFieldComparisonTable(
                         softWrap = false,
                     )
                 }
+            }
+            if (expanded) {
+                Text(
+                    title,
+                    Modifier.width(totalWidth).padding(horizontal = 4.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    softWrap = true,
+                )
             }
         }
     }
