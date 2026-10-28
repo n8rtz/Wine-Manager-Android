@@ -148,7 +148,9 @@ class PipelineFunnelChecks(unittest.TestCase):
         for path in (ROOT / "app/src/main/java/com/yourapp/wine/capture").rglob("*.kt"):
             self.assertNotIn("PipelineFunnel", path.read_text())
         resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
-        self.assertIn("MAX_FUZZY_CANDIDATES=200", resolver)
+        self.assertIn("MAX_FUZZY_CANDIDATES=200", resolver)  # wine lookup cost bound remains unchanged
+        self.assertIn("MAX_PRODUCER_FUZZY_CANDIDATES=256", resolver)
+        self.assertIn("single-engine fuzzy supplemental candidate needs LWIN or independent engines", resolver)
         for name in ("ProducerResolver.kt", "LinkedWineResolver.kt"):
             source = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer" / name).read_text()
             self.assertNotIn("scoring.json", source)

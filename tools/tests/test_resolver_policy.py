@@ -65,6 +65,26 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertIn('"Independent-support agreement"', funnel)
         self.assertNotIn('"Two-engine + disjoint agreement"', funnel)
 
+    def test_span_fuzzy_supplemental_guard_and_final_value_pass_are_separate(self):
+        producer = PRODUCER.read_text()
+        self.assertIn('MAX_PRODUCER_FUZZY_CANDIDATES=256', producer)
+        self.assertIn('MAX_FINAL_NEAR_MATCH_DISTANCE=2', producer)
+        self.assertIn('fun finalNearMatch(value:String', producer)
+        self.assertIn('finalNearMatch(finalProducer,checkProducerBudget)', SPATIAL.read_text())
+        self.assertIn('rows.none { it.distance==0 }', producer)
+        self.assertIn('rows.none { "lwin" in it.entity.support }', producer)
+        self.assertIn('!independent(rows)', producer)
+        self.assertIn('single-engine fuzzy supplemental candidate needs LWIN or independent engines', producer)
+        final_start=producer.index('fun finalNearMatch(')
+        resolve_start=producer.index('fun resolve(',final_start)
+        final_pass=producer[final_start:resolve_start]
+        self.assertIn('index.lookup(query,MAX_PRODUCER_FUZZY_CANDIDATES',final_pass)
+        self.assertNotIn('policy.',final_pass)  # terminal pass is independent of span acceptance
+        self.assertGreater(SPATIAL.read_text().index('val finalProducer='),SPATIAL.read_text().index('if(backfilled)'))
+        replay=(ROOT/'tools/host-checks/producer_resolver_replay.py').read_text()
+        self.assertIn('MAX_PRODUCER_FUZZY_CANDIDATES = 256',replay)
+        self.assertIn('candidate_limit=MAX_PRODUCER_FUZZY_CANDIDATES',replay)
+
     def test_exact_match_fast_path_is_lab_only(self):
         producer = PRODUCER.read_text()
         linked = LINKED.read_text()

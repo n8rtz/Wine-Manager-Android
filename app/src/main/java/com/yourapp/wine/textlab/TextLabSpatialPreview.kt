@@ -17,7 +17,44 @@ import com.yourapp.wine.merge.TextNorm
  * gets the Lab expanded index (defaults here). Each writes only its own candidate/stage rows.
  */
 internal object TextLabSpatialPreview {
-    const val VERSION="raw-plus-linked-wine-v2"
+    const val VERSION="raw-plus-linked-wine-v4"
+
+    /**
+     * Re-query the producer value selected by the existing field extractor only when one same-engine
+     * spatial proposal contains every word in that value. The synthetic span keeps the IDs of the
+     * original source observations that supplied those words, so it cannot create a second OCR vote.
+     * Word order is not required: field extraction may assemble a producer differently from the
+     * spatial proposal's visual reading order. This recovers a clean producer phrase from a group
+     * that also contains a year/appellation, without sending that long mixed group to the matcher.
+     */
+    internal fun producerAnchorSpans(
+        producer:String,
+        original:List<com.yourapp.wine.ocr.TokenRecord>,
+        proposals:List<TextLabSpatialPhrases.Proposal>,
+    ):List<ProducerResolver.Span> {
+        val words=ProducerResolver.normalize(producer).split(' ').filter(String::isNotBlank)
+        if(words.isEmpty()) return emptyList()
+        return proposals.mapNotNull { proposal ->
+            val remaining=words.toMutableList()
+            val covering=mutableListOf<com.yourapp.wine.ocr.TokenRecord>()
+            if(proposal.engineId.isBlank() || proposal.sources.isEmpty()) return@mapNotNull null
+            for(source in proposal.sources) {
+                if(source.engineId!=proposal.engineId) return@mapNotNull null
+                var contributes=false
+                for(word in ProducerResolver.normalize(source.textRaw).split(' ').filter(String::isNotBlank)) {
+                    val index=remaining.indexOf(word)
+                    if(index>=0) { remaining.removeAt(index);contributes=true }
+                }
+                if(contributes) covering+=source
+                if(remaining.isEmpty()) break
+            }
+            if(remaining.isNotEmpty() || covering.isEmpty()) return@mapNotNull null
+            val ids=covering.map { source -> original.indexOfFirst { it===source } }
+            if(ids.any { it<0 } || ids.toSet().size!=ids.size) return@mapNotNull null
+            ProducerResolver.Span(producer,proposal.engineId,ids.toSet(),covering.any { it.scoreIsEstimated })
+        }.distinctBy { listOf(it.engine,it.observationIds.sorted().joinToString(",")) }
+    }
+
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
         candidate:String="spatial_lab",stagePrefix:String="spatial_",
@@ -77,13 +114,21 @@ internal object TextLabSpatialPreview {
                     if(producerIndex==null) {
                         row["producer_gazetteer_status"]="unavailable"
                         row["producer_gazetteer_reason"]=producerUnavailable
+                        row["producer_final_near_match_status"]="unavailable"
                         row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
                         val isLabMode=policy.minimumIndependentEngines<2
+                        val anchorSpans=producerAnchorSpans(before,original,proposals).filter { anchor ->
+                            spans.none { existing -> existing.engine==anchor.engine &&
+                                existing.observationIds==anchor.observationIds &&
+                                ProducerResolver.normalize(existing.text)==ProducerResolver.normalize(anchor.text) }
+                        }
+                        val lookupSpans=spans+anchorSpans
                         val started=android.os.SystemClock.elapsedRealtime()
                         var producerFailureTelemetry=emptyMap<String,String>()
+                        val producerResolver=ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it })
                         fun runProducerLookup(policy:ProducerResolver.Policy)=
-                            ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it }).resolve(before,spans,checkProducerBudget,policy)
+                            producerResolver.resolve(before,lookupSpans,checkProducerBudget,policy)
                         val activePolicy=if(isLabMode) {
                             policy.withCountryContext(row["country"].orEmpty())
                                 .withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }
@@ -193,6 +238,46 @@ internal object TextLabSpatialPreview {
                             if(backfilled) {
                                 row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
                                 row["status"]="suggestions"
+                            }
+                        }
+                        val finalProducer=row["producer"].orEmpty()
+                        if(finalProducer.isBlank()) {
+                            row["producer_final_near_match_status"]="blank"
+                        } else {
+                            val nearStarted=android.os.SystemClock.elapsedRealtime()
+                            var nearMatchError=""
+                            val nearMatch=try {
+                                producerResolver.finalNearMatch(finalProducer,checkProducerBudget)
+                            } catch(cancel:CancellationException) { throw cancel }
+                              catch(_:ProducerResolver.BudgetExceeded) { nearMatchError="budget_exceeded";null }
+                              catch(error:Exception) { nearMatchError=error.javaClass.simpleName;null }
+                            val nearMs=android.os.SystemClock.elapsedRealtime()-nearStarted
+                            row["producer_final_near_match_ms"]=nearMs.toString()
+                            row["producer_gazetteer_ms"]=((row["producer_gazetteer_ms"]?.toLongOrNull() ?: 0L)+nearMs).toString()
+                            row["work_ms"]=((row["work_ms"]?.toLongOrNull() ?: 0L)+nearMs).toString()
+                            if(nearMatch==null) {
+                                row["producer_final_near_match_status"]=if(nearMatchError.isBlank()) "no_unique_near_match" else nearMatchError
+                            } else {
+                                val cleanName=TextNorm.scrub(nearMatch.entity.name)
+                                val sources=nearMatch.entity.support.sorted().joinToString(" | ")
+                                val reason="final answer canonicalized to database value at edit distance ${nearMatch.distance} (${sources.ifBlank { "primary producer index" }}); confirm manually"
+                                row["producer_before_final_near_match"]=finalProducer
+                                row["producer"]=cleanName;row["producer_state"]="YELLOW";row["producer_reason"]=reason
+                                row["producer_alternatives"]=""
+                                row["producer_gazetteer_status"]="final_near_match"
+                                row["producer_gazetteer_reason"]=reason
+                                row["producer_gazetteer_entity_id"]=nearMatch.entity.id
+                                row["producer_final_near_match_status"]="suggestion"
+                                row["producer_final_near_match_entity_id"]=nearMatch.entity.id
+                                row["producer_final_near_match_distance"]=nearMatch.distance.toString()
+                                row["producer_final_near_match_sources"]=sources
+                                row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
+                                row["status"]="suggestions"
+                                journal.add(candidate,stagePrefix+"producer_final_near_match","suggestion",mapOf(
+                                    "post_processing_version" to VERSION,"raw_text" to finalProducer,
+                                    "producer_entity_id" to nearMatch.entity.id,"producer_display_name" to cleanName,
+                                    "edit_distance" to nearMatch.distance.toString(),"lexical_support_sources" to sources,
+                                    "producer_gazetteer_version" to producerIndex.version))
                             }
                         }
                     }

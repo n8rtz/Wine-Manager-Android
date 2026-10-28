@@ -29,7 +29,7 @@ fun main() {
     verify(resolver.resolve("keep",List(129) { spans()[0] }).acceptedId==null)
     verify(ProducerResolver(index(List(33) { primary.copy(id=it.toString()) })).resolve("",spans()).acceptedId==null)
     verify(ProducerResolver.normalize("Château d’Example")=="chateau d example")
-    // Lab v4 single-reading policy (owner, 2026-10-27): the engine quorum is the only difference.
+    // Lab v4 single-reading policy (owner, 2026-10-27): verified primary names can use one reading, with source-aware safeguards.
     val lab=ProducerResolver.Policy.singleReading
     val oneEngine=spans().take(1)
     verify(resolver.resolve("",oneEngine).acceptedId==null) // Prod keeps two engines
@@ -50,10 +50,38 @@ fun main() {
     verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("Argentina")).acceptedId==null)
     // Lab v4 d=0 exact-match fast-path: skips past noisy existing guesses and d>=1 rivals while preserving guards.
     val labFast=lab.withExactMatchFastPath { it.equals("Saint Julien",ignoreCase=true) }
+    val francette=ProducerResolver.Entity("la-francette","La Francette","la francette",setOf("lwin"))
+    val francetteIndex=object:ProducerResolver.Index {
+        override val version="fixture";override val primaryVerified=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(francette)
+    }
+    val trancette=ProducerResolver(francetteIndex).resolve("",listOf(ProducerResolver.Span("Trancette","paddle",setOf(1))),policy=labFast)
+    verify(ProducerResolver.distance("trancette","la francette")==4 && trancette.acceptedId==null)
+    val finalNearIndex=object:ProducerResolver.Index {
+        override val version="fixture-exp";override val primaryVerified=false;override val labSupplemental=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(
+            ProducerResolver.Entity("la-francette","La Francette","la francette",setOf("xwines")),
+            ProducerResolver.Entity("grangette","Grangette","grangette",setOf("lwin")),
+        ).take(limit)
+    }
+    val canonical=ProducerResolver(finalNearIndex).finalNearMatch("Trancette")
+    verify(canonical!=null && canonical.entity.id=="la-francette" && canonical.distance==1)
     verify(resolver.resolve("SIGNATURE SERIES NoisyGuess",oneEngine,policy=labFast).value=="Chateau Example")
     verify(ProducerResolver(index(listOf(primary,ProducerResolver.Entity("rival","Château Examplar",
         ProducerResolver.normalize("Château Examplar"))))).resolve("NoisyGuess",oneEngine,policy=labFast).acceptedId=="estate")
     verify(homonyms.resolve("MOUTONCADET",oneEngine,policy=labFast.withCountryContext("France")).acceptedId=="estate-fr")
+    val osmNeighbor=ProducerResolver.Entity("osm-neighbor","Chateau des Rochers","chateau des rochers",setOf("osm"))
+    val supplementalIndex=object:ProducerResolver.Index {
+        override val version="fixture-exp";override val primaryVerified=false;override val labSupplemental=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(osmNeighbor)
+    }
+    val observedRoches=listOf(ProducerResolver.Span("CHATEAU DES ROCHES","paddle",setOf(1)))
+    val nearNeighbor=ProducerResolver(supplementalIndex).resolve("CHATEAU DES ROCHES",observedRoches,policy=labFast)
+    verify(nearNeighbor.value=="CHATEAU DES ROCHES" && nearNeighbor.acceptedId==null)
+    verify(nearNeighbor.reason.contains("single-engine fuzzy supplemental candidate"))
+    val independentlyRead=listOf(ProducerResolver.Span("CHATEAU DES ROCHES","paddle",setOf(1)),
+        ProducerResolver.Span("CHATEAU DES ROCHES","mlkit",setOf(2)))
+    verify(ProducerResolver(supplementalIndex).resolve("",independentlyRead,policy=labFast).acceptedId=="osm-neighbor")
     val singleBrand=ProducerResolver.Entity("kaiken","Kaiken","kaiken",setOf("lwin"),"Argentina")
     val singleIdx=object:ProducerResolver.Index {
         override val version="fixture-exp";override val primaryVerified=false;override val labSupplemental=true

@@ -7,8 +7,10 @@ import com.yourapp.wine.merge.TextNorm
 
 /** Conservative resolver over integrity-checked producer/brand names; suggestions always require confirmation.
  * The primary index is the verified LWIN export. The Lab benchmark may substitute an expanded
- * index whose LWIN subset is that same export plus source-tagged supplemental candidates; the
- * evidence rules below (two engines, separation, existing-value protection) are unchanged. */
+ * index whose LWIN subset is that same export plus source-tagged supplemental candidates. OCR-span
+ * resolution keeps its support gates; a separate final-value pass canonicalizes the closest database
+ * name within its own small edit-distance bound, using FTS rank to break equal-distance ties.
+ */
 internal class ProducerResolver(private val index:Index,
     private val onFailureTelemetry:(Map<String,String>)->Unit={}) {
     data class Entity(val id:String,val name:String,val key:String,val support:Set<String> = emptySet(),val countryGroup:String="")
@@ -25,15 +27,17 @@ internal class ProducerResolver(private val index:Index,
     data class Match(val entity:Entity,val observed:String,val engine:String,val observationIds:Set<Int>,val distance:Int)
     data class Decision(val value:String,val reason:String,val matches:List<Match>,val acceptedId:String?=null,
         val telemetry:Map<String,String> = emptyMap())
+    data class FinalNearMatch(val entity:Entity,val distance:Int)
+
     /**
      * How much independent OCR support one identity needs before it may become a suggestion.
      *
      * Prod keeps the original two-engine/disjoint rule. The Lab v4 benchmark may lower the quorum to
      * one engine (owner, 2026-10-27): the ensemble is a wide net, not a vote, and ML Kit is the weaker
-     * engine, so a name only Paddle read should still reach the filter. Everything else - eligibility,
-     * edit distance, one identity group, separation from rivals, existing-value protection and the
-     * producer/wine observation split - is identical in both modes, so the delta measures the quorum
-     * and nothing else.
+     * engine, so a name only Paddle read should still reach the filter. In this span-based resolver,
+     * a one-engine fuzzy correction is still limited to verified primary LWIN names; a supplemental
+     * name may confirm exact OCR, but needs independent engine support to overrule a near miss. A
+     * separate final-value database pass is intentionally evaluated after these span-based safeguards.
      */
     data class Policy(val minimumIndependentEngines:Int=2) {
         init { require(minimumIndependentEngines in 1..2) }
@@ -65,14 +69,16 @@ internal class ProducerResolver(private val index:Index,
     }
     class BudgetExceeded:RuntimeException()
     companion object {
-        const val VERSION="producer-resolver-v4"
+        const val VERSION="producer-resolver-v6"
         const val MAX_SPANS=128
-        const val MAX_HITS=32
-
-        /** Fuzzy-lookup candidate bound. This bounds recall only; precision is still gated by
-         * edit distance, independent OCR observations, candidate separation and protection of an
-         * existing producer. Candidates are not truth merely because a source lists them. */
+        /** Existing wine-name shortlist; kept at its prior cost bound. */
         const val MAX_FUZZY_CANDIDATES=200
+        /** Producer FTS shortlist. In the Lab-expanded index, verified Château La Tour de By ranks
+         * 225th for `Chateau La Cour de By`; 256 clears that measured cutoff without widening wine lookup. */
+        const val MAX_PRODUCER_FUZZY_CANDIDATES=256
+        /** Maximum normalized edit distance for the final database-name canonicalization pass. */
+        const val MAX_FINAL_NEAR_MATCH_DISTANCE=2
+        private val finalNearMatchLeadingArticles=setOf("la","le","les","the")
         private val noise=Regex("\\b(?:imported|importer|imports|distributed|distributor|bottled|bottler|embouteille|mis en bouteille|produced by|product of|produit de|appellation|controlee|protegee|alcohol|alc|vol|contains|sulfites|sulphites|government|warning|llc|inc|corp|ltd|www|http)\\b")
         private val generic=setOf("chateau","domaine","domaines","estate","winery","wine","wines","vineyard","vineyards","cellar","cellars","bodega","bodegas","maison","de","du","des","la","le","les","the","and","et","of","family","reserve","reserva","grand","cru")
         internal val estatePrefixes=setOf("chateau","domaine","domaines","bodega","bodegas","maison","tenuta","castello","clos","mas","cave","caves")
@@ -132,6 +138,42 @@ internal class ProducerResolver(private val index:Index,
             return prev[b.length]
         }
     }
+
+    /**
+     * Last-resort canonicalization for the field extractor's completed producer value. This pass
+     * deliberately does not require OCR-span eligibility/support; it compares the final string with
+     * the bounded database shortlist and returns the closest non-generic name within two edits. A
+     * leading French/English article is ignored (`Trancette` / `La Francette`), while producer
+     * particles such as `de` and `du` remain significant. Exact values are retained; equal-distance
+     * candidates use the FTS relevance order as a deterministic tie-break.
+     */
+    fun finalNearMatch(value:String,checkBudget:()->Unit={}):FinalNearMatch? {
+        if(!index.primaryVerified && !index.labSupplemental) return null
+        val query=normalize(value)
+        if(query.isBlank()) return null
+        checkBudget()
+        val hits=index.lookup(query,MAX_PRODUCER_FUZZY_CANDIDATES,checkBudget).distinctBy { it.id }
+        if(hits.any { it.key==query }) return null // already a database value
+        fun comparable(key:String):String {
+            val words=key.split(' ').filter(String::isNotBlank)
+            return if(words.firstOrNull()?.let { it in finalNearMatchLeadingArticles }==true)
+                words.drop(1).joinToString(" ") else words.joinToString(" ")
+        }
+        val q=comparable(query)
+        if(q.isBlank()) return null
+        val candidates=hits.mapNotNull { entity ->
+            val candidateKey=comparable(entity.key)
+            val candidateWords=candidateKey.split(' ').filter(String::isNotBlank)
+            if(candidateWords.isEmpty() || candidateWords.none { it.length>=4 && it !in generic }) null else {
+                val d=distance(q,candidateKey)
+                if(d<=MAX_FINAL_NEAR_MATCH_DISTANCE) FinalNearMatch(entity,d) else null
+            }
+        }
+        val bestDistance=candidates.minOfOrNull { it.distance } ?: return null
+        // `hits` follow the gazetteer's FTS relevance order; retain it for deterministic ties.
+        return candidates.firstOrNull { it.distance==bestDistance }
+    }
+
     fun resolve(existing:String,spans:List<Span>,checkBudget:()->Unit={},policy:Policy=Policy.prod):Decision {
         val trace=PipelineFunnel.Recorder("producer.")
         trace.visit("invoked",true)
@@ -167,7 +209,7 @@ internal class ProducerResolver(private val index:Index,
                 trace.visit("$engine.eligible",rejection==null || exactShortAllowed,rejection.orEmpty())
                 if(rejection!=null && !exactShortAllowed) continue
                 trace.visit("$engine.lookup",false,"lookup did not complete")
-                val hits=index.lookup(q,MAX_FUZZY_CANDIDATES,checkBudget)
+                val hits=index.lookup(q,MAX_PRODUCER_FUZZY_CANDIDATES,checkBudget)
                 trace.visit("$engine.lookup",true)
                 trace.visit("$engine.retrieved",hits.isNotEmpty(),"no reference candidates")
                 if(hits.isNotEmpty()) trace.visit("$engine.distance",false,"no retrieved name passed distance / length bounds")
@@ -238,9 +280,23 @@ internal class ProducerResolver(private val index:Index,
             }
         }
         val groups=matches.groupBy { it.entity.id }
-        val viableRaw=groups.filterValues { rows -> policy.supports(rows) }
-        trace.visit("independent",viableRaw.isNotEmpty(),"no independently supported producer")
-        if(viableRaw.isEmpty()) return finish(existing,"no independently supported producer; unchanged",matches)
+        fun independent(rows:List<Match>)=rows.any { a -> rows.any { b ->
+            a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
+        fun blockedSingleReadingSupplementalFuzzy(rows:List<Match>)=
+            index.labSupplemental && policy.minimumIndependentEngines<2 &&
+                rows.none { it.distance==0 } && rows.none { "lwin" in it.entity.support } &&
+                !independent(rows)
+        val supplementalFuzzyBlocked=groups.values.any { rows -> blockedSingleReadingSupplementalFuzzy(rows) }
+        val viableRaw=groups.filterValues { rows ->
+            policy.supports(rows) && !blockedSingleReadingSupplementalFuzzy(rows)
+        }
+        val independentReason=if(supplementalFuzzyBlocked)
+            "single-engine fuzzy supplemental candidate needs LWIN or independent engines"
+            else "no independently supported producer"
+        trace.visit("independent",viableRaw.isNotEmpty(),independentReason)
+        if(viableRaw.isEmpty()) return finish(existing,
+            if(supplementalFuzzyBlocked) "single-engine fuzzy supplemental candidate needs LWIN or independent engines; unchanged"
+            else "no independently supported producer; unchanged",matches)
         val viable=if(viableRaw.size>1 && targetCountry.isNotEmpty() &&
             viableRaw.values.all { it.first().entity.countryGroup.isNotBlank() }) {
             val inCountry=viableRaw.filterValues { canonicalCountryKey(it.first().entity.countryGroup)==targetCountry }

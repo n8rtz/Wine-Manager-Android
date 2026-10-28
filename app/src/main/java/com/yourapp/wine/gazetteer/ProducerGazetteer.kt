@@ -22,7 +22,7 @@ internal class ProducerGazetteer private constructor(
 ) : LinkedWineResolver.Index, AutoCloseable {
 
     override fun lookup(key: String, limit: Int, checkBudget: () -> Unit): List<ProducerResolver.Entity> {
-        require(limit in 1..ProducerResolver.MAX_FUZZY_CANDIDATES)
+        require(limit in 1..ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES)
         checkBudget()
         fun read(sql: String, arg: String): List<ProducerResolver.Entity> {
             val rows = mutableListOf<ProducerResolver.Entity>()
