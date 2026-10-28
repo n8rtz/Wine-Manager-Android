@@ -175,6 +175,18 @@ class PlaceRepairPolicyTests(unittest.TestCase):
         synthetic = [('Alpha One', 'Alpha One'), ('Beta Twoo', 'Beta Twoo')]
         self.assertIsNone(resolve('Alpha Ono', synthetic, readings=(('paddle', 'Beta Two'),)))
 
+    def test_label34_uses_a_classification_base_and_drops_only_the_orphan_ocr_o(self):
+        # Saved OCR was "AINT-ÉMILION O GRAND CRU". The full phrase and the raw base
+        # exceed the two-edit repair budget; the recognized Grand Cru suffix gives a base,
+        # and only its isolated final O is omitted from the lookup query.
+        target = 'Saint-Emilion Grand Cru'
+        self.assertIsNone(bounded_distance('AINT-ÉMILION O GRAND CRU', target))
+        self.assertIsNone(bounded_distance('AINT-ÉMILION O', 'Saint-Emilion'))
+        self.assertEqual(bounded_distance('AINT-ÉMILION', 'Saint-Emilion'), 1)
+        near_places = {place for place, form in self.forms
+                       if bounded_distance('AINT-ÉMILION', form) is not None}
+        self.assertEqual(near_places, {'Saint-Emilion'})
+
     def test_unrelated_text_is_not_forced_onto_a_place(self):
         for query in ('Chateau Mouton', 'Grand Vin de Bordeaux', 'Mis en bouteille'):
             self.assertIsNone(resolve(query, self.forms), query)
@@ -213,6 +225,14 @@ class PlaceRepairWiringTests(unittest.TestCase):
         for fragment in ('place.type in setOf("country", "region")',
                          'IdentityRoles.originOnly(text, listOf(place))'):
             self.assertTrue(fragment in label_ctx, fragment)
+
+    def test_low_confidence_unique_repair_can_rescue_a_distinctive_appellation(self):
+        extractor = EVIDENCE.read_text()
+        for fragment in ('LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE=.15f',
+                         'sources.any { it.record.score.isFinite() && it.record.score>=LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE }',
+                         'low_confidence_place_repair',
+                         'classification base used for lookup; isolated OCR O ignored'):
+            self.assertIn(fragment, extractor, fragment)
 
     def test_a_repair_cannot_outrank_exact_evidence_or_name_the_wine(self):
         extractor = EVIDENCE.read_text()

@@ -8,9 +8,9 @@ import com.yourapp.wine.kb.*
  *
  * Policy is the production geography-spelling rule ([BoundedSpelling]): 5-64 characters, at most six
  * words, one edit below ten characters and two above, at most a 20% length change, and an unambiguous
- * winner. On top of that this path requires a separate explicit country/region anchor elsewhere in the
- * same label. The engines are a wide net, not a quorum: every engine's own reading of the phrase is
- * searched and the closest catalog form wins outright, so a form only Paddle read is repaired even when
+ * winner. A separate explicit country/region anchor is preferred; without one, only long, globally
+ * distinctive appellations with a strict margin may be repaired. The engines are a wide net, not a quorum:
+ * each provided engine reading is searched and the closest catalog form wins outright, so a form only Paddle read is repaired even when
  * ML Kit garbled it, and vice versa. Two readings that point at different places at the same distance
  * abstain rather than picking one. A repair only ever *proposes* geography: it never overrides an exact
  * match, never chooses between anchor countries, and never changes raw OCR, a score or a saved field.
@@ -38,7 +38,7 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
         val observed:String,
         val matchedForm:String,
         val editDistance:Int,
-        /** Engine families whose own reading was within budget of the repaired form; telemetry only, never a gate. */
+        /** Engine families whose supplied reading variant was within budget of the repaired form; telemetry only, never a gate. */
         val engines:List<String>,
         val penalty:Double=8.0,
         val anchorKind:String="separate origin anchor",
@@ -86,8 +86,9 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
      * Three progressively stricter gates apply:
      * 1. Explicit country/region [anchors] on another line (must agree on one country and be hierarchy-compatible).
      * 2. Label-wide [countryHints] from legal classifications (`DOCG`, `AVA`, framed `AOC`) or an unambiguous KB producer.
-     * 3. Unanchored distinctive appellation repair ([Config.allowUnanchored]): `>= 8`-letter globally unique
-     *    non-`context_required` names separated from every rival place worldwide by at least `best + 2` edits.
+     * 3. Unanchored distinctive appellation repair ([Config.allowUnanchored]): at least ten letters, a
+     *    globally unique non-`context_required` name separated from every rival place worldwide by at least
+     *    `best + 2` edits.
      */
     fun resolve(
         observed:String,

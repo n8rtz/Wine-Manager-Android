@@ -11,7 +11,12 @@ internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,v
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
-    companion object { const val VERSION="evidence-lab-v5-vintage-recovery";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
+    companion object {
+        const val VERSION="evidence-lab-v5-vintage-recovery"
+        const val DEFAULT_BUDGET_MS=60_000L
+        const val MAX_HYPOTHESES=384
+        private const val LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE=.15f
+    }
     private val kb=SupplementedWineKnowledgeBase(baseKb)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb)
@@ -19,6 +24,47 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     private val repairs=PlaceRepair(kb,hierarchy)
     private val roles=ProducerLineSelector()
     private fun family(engineId:String)=if(engineId.startsWith("paddle")) "paddle" else engineId
+
+    /**
+     * Search the full phrase, its catalogued classification base, and—only when that base ends in a
+     * solitary OCR "O"—a lookup-only form without that stray character. Keep the printed/raw text
+     * untouched, and abstain if these narrowly-derived queries disagree on the place.
+     */
+    private fun resolvePlaceRepair(
+        observed:String,
+        subject:String,
+        readings:List<PlaceRepair.Reading>,
+        anchors:List<Place>,
+        countryHints:Set<String>,
+    ):PlaceRepair.Resolution? {
+        data class Query(val text:String,val note:String)
+        val queries=mutableListOf(Query(subject,""))
+        val base=WineDesignations.classificationBase(subject)
+        if(base!=null) {
+            if(base!=subject) queries+=Query(base,"classification base used for lookup")
+            val withoutOrphanO=base.replace(Regex("(?i)\\s+o$"),"").trim()
+            if(withoutOrphanO!=base) queries+=Query(withoutOrphanO,"classification base used for lookup; isolated OCR O ignored")
+        }
+        val repairReadings=readings.flatMap { reading ->
+            val phrase=WineDesignations.framedAppellation(reading.text) ?: reading.text
+            val readingBase=WineDesignations.classificationBase(phrase) ?: return@flatMap listOf(reading)
+            val candidates=mutableListOf(reading)
+            if(readingBase!=phrase) candidates+=reading.copy(text=readingBase)
+            val withoutOrphanO=readingBase.replace(Regex("(?i)\\s+o$"),"").trim()
+            if(withoutOrphanO!=readingBase) candidates+=reading.copy(text=withoutOrphanO)
+            candidates
+        }.distinctBy { it.family to it.text }
+        val matches=queries.distinctBy { it.text }.mapNotNull { query ->
+            repairs.resolve(query.text,repairReadings,anchors,placeRepair,countryHints)?.let { query to it }
+        }
+        if(matches.map { it.second.place.id }.distinct().size!=1) return null
+        val (query,resolution)=matches.minByOrNull { it.second.editDistance } ?: return null
+        return resolution.copy(
+            observed=observed,
+            anchorKind=resolution.anchorKind+(query.note.takeIf { it.isNotBlank() }?.let { "; $it" } ?: ""),
+        )
+    }
+
     private val foundingYearCue = Regex("\\b(?:fondee?|founded|established|est\\.?|since|depuis|first\\s+vintage|anno|dal)\\b")
     // Keep the repair narrowly in a four-digit year context: I/l can stand for the leading 1,
     // and O can stand for the zero in 20xx. Whitespace between digits is allowed for tracked type.
@@ -342,6 +388,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             val lexicalBonus=6.0*p.construction.split("alternative").lastIndex
             val sources=graph.observations.filter { it.id in p.observations }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
+            var lowConfidenceRepair:PlaceRepair.Resolution?=null
             if(!supported) {
                 if(exactGeographyFastPath && sources.any { it.record.score >= .45f } &&
                     !LabelContext.isNonOriginAdministrative(text,norm) &&
@@ -392,8 +439,35 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                         }
                     }
                 }
-                trace.add("unsupported", "phrase=${p.id}");continue
-            } // original reading retained
+                val weakNonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
+                val weakFramed=WineDesignations.framedAppellation(text)
+                val weakOriginFramingAdmin=!weakNonOriginAdmin && MetadataRules.isBoilerplate(text)
+                val weakRepairEligible=placeRepair.enabled &&
+                    sources.any { it.record.score.isFinite() && it.record.score>=LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE } &&
+                    !weakNonOriginAdmin && (!weakOriginFramingAdmin || weakFramed!=null) &&
+                    !(typedIdentity && EvidenceIdentityRoles.headingOnly(text)) &&
+                    !(typedIdentity && EvidenceIdentityRoles.namedEstate(text))
+                if(weakRepairEligible) {
+                    val (weakYearless,_)=if(weakFramed==null) detachEdgeVintage(text,year) else (text to null)
+                    val weakSubject=weakFramed ?: weakYearless
+                    val weakAnchors=labelContext.anchorsExcluding(p.id)
+                    val weakCountryHints=labelContext.countryHintsExcluding(p.id)+
+                        labelContext.contextCountriesForPhrase(p.id).takeIf { weakFramed!=null }.orEmpty()
+                    val weakReadings=sources.map { source ->
+                        val raw=source.record.textRaw
+                        PlaceRepair.Reading(family(source.record.engineId),
+                            if(weakFramed!=null) WineDesignations.framedAppellation(raw) ?: raw else raw)
+                    }
+                    lowConfidenceRepair=resolvePlaceRepair(text,weakSubject,weakReadings,weakAnchors,weakCountryHints)
+                }
+                val admittedRepair=lowConfidenceRepair
+                if(admittedRepair==null) {
+                    trace.add("unsupported", "phrase=${p.id}");continue
+                }
+                val maxWeakScore=sources.maxOfOrNull { it.record.score } ?: 0f
+                trace.add("low_confidence_place_repair",
+                    "phrase=${p.id}; max_score=$maxWeakScore; ${admittedRepair.reason}")
+            } // original reading retained, or admitted only by a distinctive Lab place repair
             val nonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
             val originFramingAdmin=!nonOriginAdmin && MetadataRules.isBoilerplate(text)
             val administrative=nonOriginAdmin || originFramingAdmin
@@ -433,9 +507,9 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 exact.isNotEmpty() -> exact
                 else -> baseFromPrinted
             }
-            // Lab-only, off by default: a bounded repair may name a place the exact trie could not read.
-            // Uses explicit country/region anchors first, then LabelContext legal/producer country cues,
-            // then unanchored distinctive >=8-letter appellations separated from rivals by >= best+2 edits.
+            // Lab-only: a bounded repair may name a place the exact trie could not read. It uses
+            // explicit origin anchors or legal/producer country cues where available; otherwise it
+            // requires a long, globally distinctive appellation with a strict edit-distance margin.
             val repair=if(placeRepair.enabled && matched.isEmpty() && (!originFramingAdmin || framed!=null) && !namedEstate) {
                 val anchors=labelContext.anchorsExcluding(p.id)
                 val countryHints=labelContext.countryHintsExcluding(p.id)+(labelContext.contextCountriesForPhrase(p.id).takeIf { framed!=null }.orEmpty())
@@ -447,8 +521,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 } else {
                     sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) }
                 }
-                repairs.resolve(placeSubject,readings,anchors,placeRepair,countryHints)
-                    ?: printedBase?.takeIf { it!=placeSubject }?.let { base -> repairs.resolve(base,readings,anchors,placeRepair,countryHints) }
+                lowConfidenceRepair ?: resolvePlaceRepair(text,placeSubject,readings,anchors,countryHints)
             } else null
             if(repair!=null) trace.add("place_repair","phrase=${p.id}; ${repair.reason}")
             val places=repair?.let { listOf(it.place) } ?: matched

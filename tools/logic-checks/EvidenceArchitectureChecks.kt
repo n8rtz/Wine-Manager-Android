@@ -328,6 +328,31 @@ object EvidenceArchitectureChecks {
         check(corroboratedPessacLab.fields.getValue(FieldId.REGION).value=="Bordeaux") { corroboratedPessacLab.fields }
         check(corroboratedPessacLab.fields.getValue(FieldId.SUBREGION).value=="Pessac-Leognan") { corroboratedPessacLab.fields }
         check(corroboratedPessacLab.fields.getValue(FieldId.WINE_NAME).value=="Haut-Brion") { corroboratedPessacLab.fields }
+        // #34: ML Kit only returned this low-confidence reading; bounded classification-base repair
+        // drops the isolated OCR "O" for lookup, repairs the missing leading S, then follows the
+        // Saint-Emilion -> Bordeaux -> France hierarchy. The raw OCR and score remain untouched.
+        val weakSaintEmilion=labRepairExtractor.extract(
+            listOf(LogicChecks.token("AINT-ÉMILION O GRAND CRU",.17578125f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(weakSaintEmilion.fields.getValue(FieldId.COUNTRY).value=="France") { weakSaintEmilion.fields }
+        check(weakSaintEmilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { weakSaintEmilion.fields }
+        check(weakSaintEmilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { weakSaintEmilion.fields }
+        val noiseOnly=labRepairExtractor.extract(
+            listOf(LogicChecks.token("CHATEAU MOUTON",.175f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(noiseOnly.fields.getValue(FieldId.COUNTRY).value.isBlank()) { noiseOnly.fields }
+        check(noiseOnly.fields.getValue(FieldId.REGION).value.isBlank()) { noiseOnly.fields }
+        check(noiseOnly.fields.getValue(FieldId.SUBREGION).value.isBlank()) { noiseOnly.fields }
+        val belowWeakRepairFloor=labRepairExtractor.extract(
+            listOf(LogicChecks.token("AINT-ÉMILION O GRAND CRU",.149f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(belowWeakRepairFloor.fields.getValue(FieldId.COUNTRY).value.isBlank()) { belowWeakRepairFloor.fields }
         val contradictoryLab=extractor.extract(
             listOf(line("BAROLO",.25f),line("CHIANTI",.55f),line("2019",.85f)),
             2026,

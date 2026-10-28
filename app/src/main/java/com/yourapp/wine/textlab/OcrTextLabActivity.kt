@@ -151,7 +151,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                         Checkbox(state.repairPlaces,{vm.repairPlaces(it)},enabled=!state.busy)
                         Text("Repair appellations with bounded spelling (experimental)")
                     }
-                    if(state.repairPlaces) Text("Appellation-only repair of an unreadable phrase; needs a separate printed origin anchor. Both engines' readings are searched, so one engine is enough. One or two edits only, no ambiguous pick. Suggestions are never written to the form.",style=MaterialTheme.typography.bodySmall)
+                    if(state.repairPlaces) Text("Appellation-only repair: uses printed origin context when available; without it, only long, globally distinctive names. Both engines' readings are searched, so one engine is enough. One or two edits only, no ambiguous pick. Suggestions are never written to the form.",style=MaterialTheme.typography.bodySmall)
                     Row {
                         Checkbox(state.resolverSingleReading,{vm.resolverSingleReading(it)},enabled=!state.busy)
                         Text("Accept one engine reading for producer and linked wine (experimental)")
