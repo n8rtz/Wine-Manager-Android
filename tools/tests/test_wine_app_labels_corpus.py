@@ -204,9 +204,11 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates)", viewmodel)
         self.assertIn("LAB ONLY expanded producer index", (ROOT / "_refs/ARCH.md").read_text())
         self.assertIn("Pipeline bottleneck matrix", activity)
-        # Frozen state is shown per mode (short captions), not explained in a paragraph.
-        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
+        # Top model section shows only Lab v5 + Cached OCR (retired Prod model rows removed from top).
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
         self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", activity)
+        self.assertNotIn("RadioButton(", activity)
         self.assertNotIn("Every photo runs through all four versions", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
         self.assertNotIn("savedPredictions", viewmodel)
@@ -219,7 +221,8 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('BASELINE_MODES = listOf(', viewmodel)
         # Only Lab is offered as a runnable mode; Prod versions are frozen comparators.
         self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
-        self.assertIn("RadioButton(", activity)
+        self.assertEqual(activity.count("SelectionContainer {"), 1)
+        self.assertIn("SelectionContainer {\n            LazyColumn(", activity)
         self.assertNotIn("RUNNABLE_MODES", viewmodel)
         self.assertNotIn("Fully correct = all six scorable", activity)
         # The plain "Ready…" line was removed; the counts say the same thing.
@@ -341,11 +344,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(viewmodel.count('"run_id" to "frozen-baseline"'), 2)  # scored + raw exports
         self.assertIn('"captured_build" to baselines?.capture(mode)?.build.orEmpty()', viewmodel)
 
-        # 6. The screen never offers a Prod version as a live run and says the rows are frozen.
-        self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", activity)
-        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
+        # 6. The screen never offers a Prod version as a live run at the top; only Lab v5 + Cached OCR appear.
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", activity)
         self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
-        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', activity)
         self.assertIn('Text("New Lab run (keeps old results and frozen Prod)")', activity)
 
 
@@ -517,7 +519,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
 
         # 2. Cached OCR checkbox sits next to Lab v5 only and reuses verified OCR outputs without
         #    ever replaying cached OCR into Prod baselines.
-        self.assertIn("if (mode == PhoneCorpusRunner.Mode.LAB) {", activity)
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
         self.assertIn("Checkbox(", activity)
         self.assertIn("checked = state.useCachedOcr", activity)
         self.assertIn("onCheckedChange = vm::setUseCachedOcr", activity)
