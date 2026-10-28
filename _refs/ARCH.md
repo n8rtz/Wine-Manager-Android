@@ -145,10 +145,10 @@ app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsRunService.kt # Fore
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt # Frozen Prod v1.0/v2.0/v4.0 outcomes per photo; reads the legacy PRODUCTION_V3 folder after the relabel
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt # Separate scalar benchmark-results-log.csv (date, time, build #, branch, model version, counts, and per-parameter best-build provenance) powering the "Lab v5 Best build" / "Best build" comparison rows
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsTimers.kt # Pure formatting and monotonic live-tick arithmetic for Run time (mm ss), Avg / image (s), and Est. remaining countdown (mm ss)
-app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt # Per-photo cache of verified ML Kit + Paddle v6 Medium OCR outputs for Lab v5, keyed by corpus + model signature
-app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt # Fresh or opt-in Lab v5 cached OCR per photo; current Lab v5/Prod v4.0 IDs plus legacy aliases; runImageAllModes is the only entry point
+app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt # Per-photo cache of verified ML Kit + Paddle v6 Medium OCR outputs for Lab runs, keyed by OCR model signature + per-image SHA-256 with packaged fallback seed
+app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt # Fresh or default-on Lab cached OCR per photo; current Lab v5/Prod v4.0 IDs plus legacy aliases; runImageAllModes is the only entry point
 app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt # Scoring, bottleneck matrix and CSV rows for the 124-label corpus
-app/src/main/assets/wine-app-labels-v1/ # Live benchmark assets: 124 photos + inputs/evaluation-set/scoring/manifest
+app/src/main/assets/wine-app-labels-v1/ # Live benchmark assets: 124 photos + inputs/evaluation-set/scoring/manifest + ocr-raw-cache-v1.jsonl.gz verified raw OCR seed
 tools/logic-checks/PipelineFunnelChecks.kt # Actual Kotlin telemetry, legacy evidence, checkpoint/scorer/CSV regression checks
 tools/logic-checks/PipelineFunnelHostContext.kt # Host asset-reader stand-in, not an Android runtime
 tools/logic-checks/PipelineFunnelHostRunner.kt # Host-only mode constants; does not execute OCR
@@ -158,6 +158,7 @@ app/src/androidTest/java/com/yourapp/wine/textlab/PipelineFunnelDeviceTest.kt # 
 tools/tests/test_pipeline_funnel.py      # Host fixture, compact-mobile layout contract, export wiring and build metadata checks
 tools/tests/test_wine_app_labels_corpus.py # 124-label asset/route contract + frozen-baseline capture and CSV-save wiring
 app/src/main/java/com/yourapp/wine/textlab/TextLabBottleFilter.kt # LAB ONLY: post-OCR spatial bottle-column & medal/critic sticker filter (works with Cached OCR) + conditional padded tiny-footprint zoom-crop
+app/src/main/java/com/yourapp/wine/textlab/evidence/LabPostOcrModules.kt # LAB ONLY: mix-and-match post-OCR module toggles isolating each improvement over the Best V5 baseline
 app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt # LAB ONLY, off by default: bounded appellation repair (explicit origin anchor, LabelContext country cue, or >=10-letter globally unique unanchored appellation)
 app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt # LAB ONLY: per-label collector of explicit origin anchors, legal classification cues and unambiguous KB producer countries for cross-line disambiguation and PlaceRepair
 tools/tests/test_bottle_filter_and_zoom_crop.py # Host wiring & generality checks for Lab v5 bottle-column/sticker filter and conditional zoom-crop
@@ -212,3 +213,5 @@ WineDatabase (Room) ← SQLite
 - Migration 16→17 converts legacy archived bottle rows to events while preserving nullable `dateConsumed` as-is. It does not infer dates from tasting notes or add historical timestamps.
 - Add Note is a tasting-note-only operation; it does not decrement cellar inventory. Notes created from an event are linked to that specific event.
 - Normalize non-vintage aliases (`NV`, `(NV)`, and blank legacy values) for display, import, grouping, and lookup. Do not infer a missing vintage from an unrelated bottle.
+
+- `_refs/LAB_MODIFIERS.md` — Lab checkbox inventory, early candidate-discovery boundaries and combination-test protocol.

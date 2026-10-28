@@ -8,6 +8,30 @@ LAB = ROOT / "app/src/main/java/com/yourapp/wine/textlab"
 
 
 class BenchmarkVersionChecks(unittest.TestCase):
+    def test_candidate_discovery_modules_are_independent_and_documented(self):
+        modules = (LAB / "evidence/LabPostOcrModules.kt").read_text()
+        doc = (ROOT / "_refs/LAB_MODIFIERS.md").read_text()
+        ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
+        self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", ui)
+        best = modules.split("val bestBuild = LabPostOcrModules(", 1)[1].split("val all", 1)[0]
+        for prop, enum, key in [
+            ("geographySpans", "GEOGRAPHY_SPANS", "geography_spans"),
+            ("producerSpans", "PRODUCER_SPANS", "producer_spans"),
+            ("grapeSpans", "GRAPE_SPANS", "grape_spans"),
+            ("classificationSpans", "CLASSIFICATION_SPANS", "classification_spans"),
+            ("vintageSpans", "VINTAGE_SPANS", "vintage_spans"),
+            ("wineNameSpans", "WINE_NAME_SPANS", "wine_name_spans"),
+        ]:
+            self.assertIn(f"val {prop}: Boolean = false", modules)
+            self.assertIn(f"ModuleId.{enum} -> copy({prop} = enabled)", modules)
+            self.assertIn(f"ModuleId.{enum} -> {prop}", modules)
+            self.assertIn(key, doc)
+            self.assertNotIn(f"{prop} = true", best)
+        extractor = (LAB / "evidence/EvidenceExtractor.kt").read_text()
+        self.assertLess(extractor.index("discoverSpans(it,year"), extractor.index("val labelContext="))
+        self.assertIn('values.keys.any { it.name !in p.construction.substringAfter', extractor)
+        self.assertIn('setOf(o.id)', extractor)
+
     def test_four_explicit_versions_and_short_comparison_names(self):
         runner = (PHONE / "PhoneCorpusRunner.kt").read_text()
         for label, key in [
@@ -75,11 +99,10 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('savedMode == "PRODUCTION_V3"', page)
         self.assertIn("Lab v4 runs intentionally do not satisfy this", page)
         ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
-        self.assertIn("PhoneCorpusRunner.Mode.entries.forEach { mode ->", ui)
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", ui)
         self.assertIn("Text(mode.title)", ui)
-        # Prod versions are frozen comparators: their radios are display-only.
-        self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", ui)
-        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', ui)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", ui)
+        self.assertNotIn("RadioButton(", ui)
 
     def test_all_versions_share_one_fresh_ocr_run(self):
         runner = (PHONE / "PhoneCorpusRunner.kt").read_text()

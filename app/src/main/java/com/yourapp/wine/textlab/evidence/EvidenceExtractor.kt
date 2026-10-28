@@ -10,12 +10,38 @@ internal data class Hypothesis(val values:Map<FieldId,String>,val phrase:Phrase,
 internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,val hypotheses:List<Hypothesis>,val elapsedMs:Long,val trace:EvidenceTrace)
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
-internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
+internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off,private val allowWineTitlePairs:Boolean=false,internal val modules:LabPostOcrModules=LabPostOcrModules.unitTestDefault) {
     companion object {
         const val VERSION="evidence-lab-v5-vintage-recovery"
         const val DEFAULT_BUDGET_MS=60_000L
         const val MAX_HYPOTHESES=384
-        private const val LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE=.15f
+    }
+    internal data class RawOcrSubregionMatch(
+        val country:String,
+        val region:String,
+        val subregion:String,
+        val place:Place,
+        val matchedForm:String,
+        val observedSpan:String,
+        val editDistance:Int,
+        val engineId:String,
+    )
+    private data class RawOcrAppellationForm(
+        val country:String,
+        val region:String,
+        val subregion:String,
+        val place:Place,
+        val matchedForm:String,
+        val compactKey:String,
+        val contextRequired:Boolean,
+    )
+    private val deferRawOcrSubregionFallback=ThreadLocal<Boolean>()
+    internal fun <T> withDeferredBlankSubregionFallback(block:()->T):T {
+        val prev=deferRawOcrSubregionFallback.get()
+        deferRawOcrSubregionFallback.set(true)
+        return try { block() } finally {
+            if(prev==null) deferRawOcrSubregionFallback.remove() else deferRawOcrSubregionFallback.set(prev)
+        }
     }
     private val kb=SupplementedWineKnowledgeBase(baseKb)
     private val gazetteer=PlaceGazetteer(kb)
@@ -25,44 +51,222 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     private val roles=ProducerLineSelector()
     private fun family(engineId:String)=if(engineId.startsWith("paddle")) "paddle" else engineId
 
+    private val brandLeadingArticles=setOf("la","le","les","el","los","las","il","the")
+    private val rawOcrSubregionByCompactLen:Map<Int,List<RawOcrAppellationForm>> by lazy {
+        val entries=mutableListOf<RawOcrAppellationForm>()
+        for(place in kb.places()) {
+            if(place.type=="country") continue
+            val effectivePlace=WineDesignations.classificationBase(place.name)?.let { base ->
+                view.byName[TextNorm.normalize(base)].orEmpty()
+                    .filter { it.countryCode==place.countryCode && it.type!="country" }
+                    .singleOrNull()
+            } ?: place
+            if(effectivePlace.type in setOf("country","region") || isLabRegionWide(effectivePlace,true)) continue
+            val ancestors=view.ancestors(effectivePlace)
+            val rawCountry=ancestors.lastOrNull { it.type=="country" }?.name.orEmpty()
+            val multiRegion=(ReferenceWineCatalog.origin(effectivePlace)?.regions?.size ?: 0)>1
+            val rawRegion=if(!multiRegion) ancestors.firstOrNull { it.type=="region" }?.name.orEmpty() else ""
+            val rawSubregion=if(!effectivePlace.name.equals(rawRegion,ignoreCase=true)) effectivePlace.name else ""
+            if(rawSubregion.isBlank()) continue
+            val presented=CellarFieldPresentation.apply(
+                FillResult(
+                    FieldId.entries.associateWith { fid ->
+                        val v=when(fid) {
+                            FieldId.COUNTRY -> rawCountry
+                            FieldId.REGION -> rawRegion
+                            FieldId.SUBREGION -> rawSubregion
+                            else -> ""
+                        }
+                        FieldCandidate(fid,v,if(v.isBlank()) UiState.RED else UiState.YELLOW,"",emptyList())
+                    },
+                    "",
+                    emptyMap(),
+                    emptyList(),
+                    geographyPath=ancestors,
+                )
+            )
+            val presCountry=presented.fields[FieldId.COUNTRY]?.value.orEmpty()
+            val presRegion=presented.fields[FieldId.REGION]?.value.orEmpty()
+            val presSubregion=presented.fields[FieldId.SUBREGION]?.value.orEmpty()
+            if(presSubregion.isBlank() || presRegion.isBlank()) continue
+            val contextReq=ReferenceWineCatalog.origin(effectivePlace)?.contextRequired==true
+            for(form in (listOf(place.name)+BundledOrigins.spellingForms(place)).distinct()) {
+                val compact=BoundedSpelling.key(form).replace(" ","")
+                if(compact.length !in 5..64 || compact.any(Char::isDigit)) continue
+                entries+=RawOcrAppellationForm(presCountry,presRegion,presSubregion,effectivePlace,form,compact,contextReq)
+            }
+        }
+        entries.groupBy { it.compactKey.length }
+    }
+
+    private fun compactAppellationDistance(observedCompact:String,formCompact:String,maxEditsOverride:Int?=null):Int? {
+        if(observedCompact==formCompact) return 0
+        if(observedCompact.length !in 5..64 || formCompact.length !in 5..64) return null
+        if(observedCompact.any(Char::isDigit) || formCompact.any(Char::isDigit)) return null
+        val defaultLimit=if(minOf(observedCompact.length,formCompact.length) >= 10) 2 else 1
+        val limit=if(maxEditsOverride!=null) minOf(defaultLimit,maxEditsOverride) else defaultLimit
+        if(kotlin.math.abs(observedCompact.length-formCompact.length)>limit) return null
+        return TextNorm.editDistance(observedCompact,formCompact,limit)
+            ?.takeIf { it.toDouble()/maxOf(observedCompact.length,formCompact.length) <= .2 }
+    }
+
     /**
-     * Search the full phrase, its catalogued classification base, and—only when that base ends in a
-     * solitary OCR "O"—a lookup-only form without that stray character. Keep the printed/raw text
-     * untouched, and abstain if these narrowly-derived queries disagree on the place.
+     * Last-resort Lab fallback invoked ONLY when `SUBREGION` would otherwise be left blank:
+     * searches raw OCR streams across any contiguous token span (any length, number of spaces, or
+     * number of lines, plus glued multi-word tokens) for an unambiguous near match of a subregion-
+     * producing appellation entry compatible with any already-resolved Country/Region.
      */
-    private fun resolvePlaceRepair(
-        observed:String,
-        subject:String,
-        readings:List<PlaceRepair.Reading>,
-        anchors:List<Place>,
-        countryHints:Set<String>,
-    ):PlaceRepair.Resolution? {
-        data class Query(val text:String,val note:String)
-        val queries=mutableListOf(Query(subject,""))
-        val base=WineDesignations.classificationBase(subject)
-        if(base!=null) {
-            if(base!=subject) queries+=Query(base,"classification base used for lookup")
-            val withoutOrphanO=base.replace(Regex("(?i)\\s+o$"),"").trim()
-            if(withoutOrphanO!=base) queries+=Query(withoutOrphanO,"classification base used for lookup; isolated OCR O ignored")
+    internal fun fallbackBlankSubregionFromRawOcr(
+        records:List<TokenRecord>,
+        existingCountry:String="",
+        existingRegion:String="",
+        existingProducer:String="",
+        knownProducerLineObservations:Set<String> = emptySet(),
+        checkBudget:()->Unit={},
+    ):RawOcrSubregionMatch? {
+        if(records.isEmpty()) return null
+        val index=rawOcrSubregionByCompactLen
+        if(index.isEmpty()) return null
+        val existingProducerCompact=BoundedSpelling.key(existingProducer).replace(" ","")
+        val producerLineCompacts=buildSet {
+            if(existingProducerCompact.length >= 4) add(existingProducerCompact)
+            for(obs in knownProducerLineObservations) {
+                val c=BoundedSpelling.key(obs).replace(" ","")
+                if(c.length >= 4) add(c)
+            }
         }
-        val repairReadings=readings.flatMap { reading ->
-            val phrase=WineDesignations.framedAppellation(reading.text) ?: reading.text
-            val readingBase=WineDesignations.classificationBase(phrase) ?: return@flatMap listOf(reading)
-            val candidates=mutableListOf(reading)
-            if(readingBase!=phrase) candidates+=reading.copy(text=readingBase)
-            val withoutOrphanO=readingBase.replace(Regex("(?i)\\s+o$"),"").trim()
-            if(withoutOrphanO!=readingBase) candidates+=reading.copy(text=withoutOrphanO)
-            candidates
-        }.distinctBy { it.family to it.text }
-        val matches=queries.distinctBy { it.text }.mapNotNull { query ->
-            repairs.resolve(query.text,repairReadings,anchors,placeRepair,countryHints)?.let { query to it }
-        }
-        if(matches.map { it.second.place.id }.distinct().size!=1) return null
-        val (query,resolution)=matches.minByOrNull { it.second.editDistance } ?: return null
-        return resolution.copy(
-            observed=observed,
-            anchorKind=resolution.anchorKind+(query.note.takeIf { it.isNotBlank() }?.let { "; $it" } ?: ""),
+        data class OcrWordToken(
+            val word:String,
+            val lineIdx:Int,
+            val wordIdxInLine:Int,
+            val lineWordCount:Int,
+            val lineWords:List<String>,
+            val lineIsUnframedProducer:Boolean,
+            val lineIsFramed:Boolean,
         )
+        data class BestCandidate(
+            val match:RawOcrSubregionMatch,
+            val compactLen:Int,
+        )
+        val bestBySubregion=mutableMapOf<Triple<String,String,String>,BestCandidate>()
+        fun consider(form:RawOcrAppellationForm,dist:Int,observedSpan:String,engineId:String) {
+            if(existingCountry.isNotBlank() && !form.country.equals(existingCountry,ignoreCase=true)) return
+            if(existingRegion.isNotBlank() && !form.region.equals(existingRegion,ignoreCase=true)) return
+            if(existingCountry.isBlank() && existingRegion.isBlank() && (form.compactKey.length<10 || form.contextRequired)) return
+            if(form.contextRequired && existingRegion.isBlank()) return
+            val key=Triple(form.country.lowercase(java.util.Locale.ROOT),form.region.lowercase(java.util.Locale.ROOT),form.subregion.lowercase(java.util.Locale.ROOT))
+            val prev=bestBySubregion[key]
+            val better=prev==null ||
+                dist<prev.match.editDistance ||
+                (dist==prev.match.editDistance && form.compactKey.length>prev.compactLen)
+            if(better) {
+                bestBySubregion[key]=BestCandidate(
+                    RawOcrSubregionMatch(form.country,form.region,form.subregion,form.place,form.matchedForm,observedSpan,dist,engineId),
+                    form.compactKey.length,
+                )
+            }
+        }
+
+        val streams=records.take(EvidenceGraphBuilder.MAX_OBSERVATIONS)
+            .groupBy { it.engineId to it.variantId }
+        for((passKey,passRecords) in streams) {
+            val valid=passRecords.filter { r ->
+                val b=r.bboxRect
+                TextNorm.scrub(r.textRaw).isNotBlank() &&
+                    b.width()>0f && b.height()>0f &&
+                    listOf(b.left,b.top,b.right,b.bottom).all { it.isFinite() && it in 0f..1f }
+            }
+            if(valid.isEmpty()) continue
+            val byY=valid.sortedWith(compareBy<TokenRecord> { it.bboxRect.centerY() }.thenBy { it.bboxRect.centerX() })
+            val rows=mutableListOf<MutableList<TokenRecord>>()
+            for(rec in byY) {
+                val matchedRow=rows.lastOrNull { row ->
+                    val ref=row.last()
+                    val minH=minOf(rec.bboxRect.height(),ref.bboxRect.height())
+                    kotlin.math.abs(rec.bboxRect.centerY()-ref.bboxRect.centerY()) <= minH*.5f ||
+                        com.yourapp.wine.merge.BoxMath.verticalOverlap(rec.bboxRect,ref.bboxRect) >= .45f
+                }
+                if(matchedRow!=null) matchedRow+=rec else rows+=mutableListOf(rec)
+            }
+            val orderedLines=rows.flatMap { row -> row.sortedBy { it.bboxRect.centerX() } }
+            val tokens=mutableListOf<OcrWordToken>()
+            for((lineIdx,rec) in orderedLines.withIndex()) {
+                val scrubbed=TextNorm.scrub(rec.textRaw).trim()
+                val words=BoundedSpelling.key(scrubbed).split(' ').filter(String::isNotBlank)
+                if(words.isEmpty()) continue
+                val lineCompact=words.joinToString("")
+                val framed=WineDesignations.framedAppellation(scrubbed)!=null
+                val producerLine=!framed && (
+                    roles.hasProducerCue(scrubbed) ||
+                        lineCompact in producerLineCompacts ||
+                        (words.size in 2..5 && kb.findProducer(scrubbed).any { it.editDistance != null && it.editDistance <= 1 })
+                    )
+                for((wIdx,w) in words.withIndex()) {
+                    tokens+=OcrWordToken(w,lineIdx,wIdx,words.size,words,producerLine,framed)
+                }
+            }
+            var ops=0
+            for(start in tokens.indices) {
+                val acc=StringBuilder()
+                for(end in start until tokens.size) {
+                    if((++ops and 63)==0) checkBudget()
+                    val tok=tokens[end]
+                    if(tok.word.any(Char::isDigit)) break
+                    acc.append(tok.word)
+                    if(acc.length>64) break
+                    if(acc.length<5) continue
+                    val startTok=tokens[start]
+                    val singleLineSubSpan=startTok.lineIdx==tok.lineIdx && (end-start+1)<startTok.lineWordCount
+                    if(singleLineSubSpan && startTok.lineIsUnframedProducer) continue
+                    val compactSpan=acc.toString()
+                    val fullResolvedProducerLine=startTok.lineIdx==tok.lineIdx &&
+                        (end-start+1)==startTok.lineWordCount &&
+                        !startTok.lineIsFramed &&
+                        existingProducerCompact.isNotBlank() &&
+                        compactSpan==existingProducerCompact
+                    if(fullResolvedProducerLine) continue
+                    val omittedArticle=if(startTok.lineIdx==tok.lineIdx && startTok.wordIdxInLine==1) {
+                        startTok.lineWords[0].takeIf { it in brandLeadingArticles }
+                    } else null
+                    val displaySpan=tokens.subList(start,end+1).joinToString(" ") { it.word }
+                    for(len in (compactSpan.length-2)..(compactSpan.length+2)) {
+                        for(form in index[len].orEmpty()) {
+                            if(omittedArticle!=null && !form.compactKey.startsWith(omittedArticle)) continue
+                            val dist=compactAppellationDistance(compactSpan,form.compactKey) ?: continue
+                            consider(form,dist,displaySpan,passKey.first)
+                        }
+                    }
+                }
+            }
+            // Also scan glued multi-word tokens (>=16 letters with no spaces) for embedded >=10-letter appellations.
+            for(tok in tokens) {
+                if(tok.word.length<16 || tok.word.any(Char::isDigit) || tok.lineIsUnframedProducer) continue
+                val glued=tok.word
+                val maxSub=minOf(64,glued.length)
+                for(subLen in 10..maxSub) {
+                    for(s in 0..(glued.length-subLen)) {
+                        if((++ops and 63)==0) checkBudget()
+                        val sub=glued.substring(s,s+subLen)
+                        for(len in (subLen-1)..(subLen+1)) {
+                            for(form in index[len].orEmpty()) {
+                                if(form.compactKey.length<10) continue
+                                val dist=compactAppellationDistance(sub,form.compactKey,maxEditsOverride=1) ?: continue
+                                consider(form,dist,sub,passKey.first)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if(bestBySubregion.isEmpty()) return null
+        val ranked=bestBySubregion.values.sortedWith(
+            compareBy<BestCandidate> { it.match.editDistance }.thenByDescending { it.compactLen }
+        )
+        val winner=ranked.first()
+        val tied=ranked.count {
+            it.match.editDistance==winner.match.editDistance && it.compactLen==winner.compactLen
+        }
+        return if(tied==1) winner.match else null
     }
 
     private val foundingYearCue = Regex("\\b(?:fondee?|founded|established|est\\.?|since|depuis|first\\s+vintage|anno|dal)\\b")
@@ -127,7 +331,13 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     }
 
     private fun normalizeVintageCandidate(raw:String,maxYear:Int):String? {
-        val compact=TextNorm.normalize(raw).filter(Char::isLetterOrDigit)
+        val norm=TextNorm.normalize(raw)
+        if(!modules.vintageRecovery) {
+            if(!canonicalYearPattern.matches(norm)) return null
+            val numeric=norm.toIntOrNull() ?: return null
+            return norm.takeIf { numeric in 1900..maxYear }
+        }
+        val compact=norm.filter(Char::isLetterOrDigit)
         if(compact.length!=4) return null
         val chars=compact.toCharArray()
         if(chars[0] in setOf('i','l') && chars[1]=='9' && chars.drop(2).all(Char::isDigit)) chars[0]='1'
@@ -350,6 +560,37 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         return if(containsCatalogSequence(words,geographicCandidateKeys,geographicCandidateMaxWords)) 1 else 0
     }
 
+    /** Early alternatives retain the original observation IDs: never additional engine votes. */
+    private fun discoverSpans(graph:EvidenceGraph,year:Int,checkBudget:()->Unit):EvidenceGraph {
+        if(!(modules.geographySpans || modules.producerSpans || modules.grapeSpans ||
+            modules.classificationSpans || modules.vintageSpans || modules.wineNameSpans)) return graph
+        val out=graph.phrases.toMutableList()
+        var truncated=graph.truncated
+        for(o in graph.observations) {
+            val tokens=Regex("[\\p{L}\\p{N}]+(?:[-’'][\\p{L}\\p{N}]+)*").findAll(o.record.textRaw).take(24).toList()
+            // Longest first preserves compound terms before shorter competing interpretations.
+            for(size in minOf(6,tokens.size) downTo 1) for(start in 0..tokens.size-size) {
+                checkBudget()
+                val text=o.record.textRaw.substring(tokens[start].range.first,tokens[start+size-1].range.last+1)
+                if(TextNorm.normalize(text)==TextNorm.normalize(o.record.textRaw)) continue
+                val fields=linkedSetOf<FieldId>()
+                if(modules.geographySpans && (isBroadGeographyLine(text) ||
+                    repairs.resolve(text,emptyList(),emptyList(),PlaceRepair.Config.experimental)!=null))
+                    fields.addAll(listOf(FieldId.COUNTRY,FieldId.REGION,FieldId.SUBREGION))
+                if(modules.producerSpans && kb.findProducerFuzzy(text).any { (it.editDistance ?: Int.MAX_VALUE)<=1 }) fields+=FieldId.PRODUCER
+                if(modules.grapeSpans && catalogWordKey(text) in grapeCandidateKeys) fields+=FieldId.WINE_NAME
+                if(modules.classificationSpans && (WineDesignations.isDesignation(text) || WineDesignations.classificationBase(text)!=null)) fields+=FieldId.WINE_NAME
+                if(modules.vintageSpans && normalizeVintageCandidate(text,year)!=null) fields+=FieldId.VINTAGE
+                if(modules.wineNameSpans && size>=2 && text.count(Char::isLetter)>=5 && !text.any(Char::isDigit)) fields+=FieldId.WINE_NAME
+                if(fields.isEmpty()) continue
+                if(out.size>=EvidenceGraphBuilder.MAX_PHRASES) { truncated=true;continue }
+                out+=Phrase(out.size,text,setOf(o.id),android.graphics.RectF(o.record.bboxRect),
+                    "candidate-span:"+fields.joinToString(",") { it.name })
+            }
+        }
+        return graph.copy(phrases=out,truncated=truncated)
+    }
+
     fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS,exactGeographyFastPath:Boolean=false):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {
@@ -367,10 +608,13 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 records,::checkBudget,typedIdentity,
                 isBroadGeographyLine={ text -> isBroadGeographyLine(text) },
                 isKnownProducerLine={ text -> isKnownProducerLine(text) },
-                allowWineTitlePairs=true,
+                allowWineTitlePairs=allowWineTitlePairs || modules.verticalWineTitlePairs,
+                allowStackedAppellations=exactGeographyFastPath && modules.stackedAppellations,
+                allowSplitCrestVintage=modules.vintageRecovery,
+                enforceSpatialSemanticGuards=modules.spatialSemanticGuards,
             ),
             ::checkBudget,
-        )
+        ).let { discoverSpans(it,year,::checkBudget) }
         trace.add("graph", "observations=${graph.observations.size}; phrases=${graph.phrases.size}; truncated=${graph.truncated}")
         data class ExactGeoCandidate(val hypothesis:Hypothesis,val place:Place,val depth:Int)
         val hypotheses=mutableListOf<Hypothesis>()
@@ -381,15 +625,27 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         trace.add("label_context",labelContext.traceSummary)
         for(p in graph.phrases.sortedByDescending { it.construction.contains("alternative") }) {
             checkBudget()
-            if(hypotheses.size>=MAX_HYPOTHESES) { trace.add("hypothesis_limit", "remaining phrases not searched");break }
+            if(hypotheses.size >= MAX_HYPOTHESES) { trace.add("hypothesis_limit", "remaining phrases not searched");break }
             val text=WineTermSpacing.wineWords.repair(p.text).text;val norm=TextNorm.normalize(text)
             val endsConnector=Regex("\\b(de|du|di|des)$").containsMatchIn(norm)
             val beginsConnector=Regex("^(de|du|di|des)\\b").containsMatchIn(norm)
             val lexicalBonus=6.0*p.construction.split("alternative").lastIndex
             val sources=graph.observations.filter { it.id in p.observations }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
-            var lowConfidenceRepair:PlaceRepair.Resolution?=null
             if(!supported) {
+                if(exactGeographyFastPath && modules.vintageRecovery && sources.any { it.record.score >= .45f } && !LabelContext.isNonOriginAdministrative(text,norm)) {
+                    val rescuedYear=normalizeVintageCandidate(text,year)
+                    if(rescuedYear!=null && hypotheses.size<MAX_HYPOTHESES) {
+                        hypotheses+=Hypothesis(
+                            mapOf(FieldId.VINTAGE to rescuedYear),
+                            p,
+                            55.0-10.0,
+                            "complete observed vintage; moderate-confidence Lab year normalization",
+                        )
+                        trace.add("vintage_rescued","phrase=${p.id}; vintage=$rescuedYear")
+                        continue
+                    }
+                }
                 if(exactGeographyFastPath && sources.any { it.record.score >= .45f } &&
                     !LabelContext.isNonOriginAdministrative(text,norm) &&
                     !(typedIdentity && EvidenceIdentityRoles.headingOnly(text)) &&
@@ -405,16 +661,27 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                     val rescuedSubject=rescuedFramed ?: rescuedYearless
                     val rescuedNorm=TextNorm.normalize(rescuedSubject)
                     if(rescuedNorm.count(Char::isLetter) >= 8) {
+                        val rescuedContextCountries=labelContext.contextCountriesForPhrase(p.id)
+                        val rescuedContextRegions=labelContext.contextRegionsForPhrase(p.id)
                         val rescuedMatches=gazetteer.matches(
                             rescuedNorm,
-                            labelContext.contextCountriesForPhrase(p.id),
-                            labelContext.contextRegionsForPhrase(p.id),
+                            rescuedContextCountries,
+                            rescuedContextRegions,
                             true,
                         ).filter { it.type != "country" }
-                        val rescuedPlace=rescuedMatches.singleOrNull()
-                        if(rescuedPlace!=null) {
+                        val rawRescuedPlace=rescuedMatches.singleOrNull()
+                        val rescuedPlace=if(modules.blankSubregionFuzzy) {
+                            rawRescuedPlace?.let { rp ->
+                                WineDesignations.classificationBase(rp.name)?.let { base ->
+                                    gazetteer.matches(TextNorm.normalize(base),rescuedContextCountries,rescuedContextRegions,true)
+                                        .filter { it.type!="country" }.singleOrNull()
+                                } ?: rp
+                            }
+                        } else rawRescuedPlace
+                        if(rawRescuedPlace!=null && rescuedPlace!=null) {
+                            val rawRescuedPath=view.ancestors(rawRescuedPlace)
                             val rescuedPath=view.ancestors(rescuedPlace)
-                            if(isExactWholePhrasePlace(rescuedPlace,rescuedPath,rescuedFramed,rescuedSubject,rescuedYearless) && hypotheses.size<MAX_HYPOTHESES) {
+                            if(isExactWholePhrasePlace(rawRescuedPlace,rawRescuedPath,rescuedFramed,rescuedSubject,rescuedYearless) && hypotheses.size<MAX_HYPOTHESES) {
                                 val rescuedValues=mutableMapOf<FieldId,String>()
                                 rescuedPath.lastOrNull { it.type=="country" }?.let { rescuedValues[FieldId.COUNTRY]=it.name }
                                 val multiRegion=(ReferenceWineCatalog.origin(rescuedPlace)?.regions?.size ?: 0)>1
@@ -439,35 +706,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                         }
                     }
                 }
-                val weakNonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
-                val weakFramed=WineDesignations.framedAppellation(text)
-                val weakOriginFramingAdmin=!weakNonOriginAdmin && MetadataRules.isBoilerplate(text)
-                val weakRepairEligible=placeRepair.enabled &&
-                    sources.any { it.record.score.isFinite() && it.record.score>=LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE } &&
-                    !weakNonOriginAdmin && (!weakOriginFramingAdmin || weakFramed!=null) &&
-                    !(typedIdentity && EvidenceIdentityRoles.headingOnly(text)) &&
-                    !(typedIdentity && EvidenceIdentityRoles.namedEstate(text))
-                if(weakRepairEligible) {
-                    val (weakYearless,_)=if(weakFramed==null) detachEdgeVintage(text,year) else (text to null)
-                    val weakSubject=weakFramed ?: weakYearless
-                    val weakAnchors=labelContext.anchorsExcluding(p.id)
-                    val weakCountryHints=labelContext.countryHintsExcluding(p.id)+
-                        labelContext.contextCountriesForPhrase(p.id).takeIf { weakFramed!=null }.orEmpty()
-                    val weakReadings=sources.map { source ->
-                        val raw=source.record.textRaw
-                        PlaceRepair.Reading(family(source.record.engineId),
-                            if(weakFramed!=null) WineDesignations.framedAppellation(raw) ?: raw else raw)
-                    }
-                    lowConfidenceRepair=resolvePlaceRepair(text,weakSubject,weakReadings,weakAnchors,weakCountryHints)
-                }
-                val admittedRepair=lowConfidenceRepair
-                if(admittedRepair==null) {
-                    trace.add("unsupported", "phrase=${p.id}");continue
-                }
-                val maxWeakScore=sources.maxOfOrNull { it.record.score } ?: 0f
-                trace.add("low_confidence_place_repair",
-                    "phrase=${p.id}; max_score=$maxWeakScore; ${admittedRepair.reason}")
-            } // original reading retained, or admitted only by a distinctive Lab place repair
+                trace.add("unsupported", "phrase=${p.id}");continue
+            } // original reading retained; weak lines do not enter main hypothesis competition
             val nonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
             val originFramingAdmin=!nonOriginAdmin && MetadataRules.isBoilerplate(text)
             val administrative=nonOriginAdmin || originFramingAdmin
@@ -510,7 +750,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             // Lab-only: a bounded repair may name a place the exact trie could not read. It uses
             // explicit origin anchors or legal/producer country cues where available; otherwise it
             // requires a long, globally distinctive appellation with a strict edit-distance margin.
-            val repair=if(placeRepair.enabled && matched.isEmpty() && (!originFramingAdmin || framed!=null) && !namedEstate) {
+            val repairConfig=if(modules.geographySpans && p.construction.startsWith("candidate-span:")) PlaceRepair.Config.experimental else placeRepair
+            val repair=if(repairConfig.enabled && matched.isEmpty() && (!originFramingAdmin || framed!=null) && !namedEstate) {
                 val anchors=labelContext.anchorsExcluding(p.id)
                 val countryHints=labelContext.countryHintsExcluding(p.id)+(labelContext.contextCountriesForPhrase(p.id).takeIf { framed!=null }.orEmpty())
                 val readings=if(framed!=null) {
@@ -521,7 +762,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 } else {
                     sources.map { source -> PlaceRepair.Reading(family(source.record.engineId),source.record.textRaw) }
                 }
-                lowConfidenceRepair ?: resolvePlaceRepair(text,placeSubject,readings,anchors,countryHints)
+                repairs.resolve(placeSubject,readings,anchors,repairConfig,countryHints)
+                    ?: printedBase?.let { base -> repairs.resolve(base,readings,anchors,repairConfig,countryHints) }
             } else null
             if(repair!=null) trace.add("place_repair","phrase=${p.id}; ${repair.reason}")
             val places=repair?.let { listOf(it.place) } ?: matched
@@ -539,6 +781,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             // of that line (CRUCLASS for CRU CLASSE, HATEAU for CHATEAU), never a producer or wine name.
             val fragmentOnly=norm.split(' ').size==1 && incomplete>0
             fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null):Hypothesis? {
+                if(p.construction.startsWith("candidate-span:") &&
+                    values.keys.any { it.name !in p.construction.substringAfter(":").split(",") }) return null
                 if(fragmentOnly && values.keys.all { it==FieldId.PRODUCER || it==FieldId.WINE_NAME }) {
                     trace.add("fragment_identity","phrase=${p.id}; text=$text");return null
                 }
@@ -727,7 +971,35 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             FieldCandidate(f,it.values.getValue(f),UiState.YELLOW,"${it.reason}; phrase=${it.phrase.id}; observations=${it.phrase.observations}; rank=${it.rank}",emptyList())
         } }
         val fill=CellarFieldPresentation.apply(FillResult(fields,"Experimental saved-reading extraction; not production autofill",alternatives,
-            roleNotes.take(384)+"observations=${graph.observations.size}; phrases=${graph.phrases.size}; hypotheses=${hypotheses.size}; truncated=${graph.truncated || hypotheses.size>=MAX_HYPOTHESES}",geographyPath=path))
-        return EvidenceResult(fill,graph,ranked,(System.nanoTime()-started)/1_000_000,trace)
+            roleNotes.take(384)+"observations=${graph.observations.size}; phrases=${graph.phrases.size}; hypotheses=${hypotheses.size}; truncated=${graph.truncated || hypotheses.size >= MAX_HYPOTHESES}",geographyPath=path))
+        val finalFill=if(placeRepair.enabled && exactGeographyFastPath && modules.blankSubregionFuzzy &&
+            deferRawOcrSubregionFallback.get()!=true &&
+            fill.fields[FieldId.SUBREGION]?.value.isNullOrBlank()
+        ) {
+            val fallback=fallbackBlankSubregionFromRawOcr(
+                records=records,
+                existingCountry=fill.fields[FieldId.COUNTRY]?.value.orEmpty(),
+                existingRegion=fill.fields[FieldId.REGION]?.value.orEmpty(),
+                existingProducer=fill.fields[FieldId.PRODUCER]?.value.orEmpty(),
+                checkBudget=::checkBudget,
+            )
+            if(fallback!=null) {
+                val reason="raw OCR appellation fallback: '${fallback.observedSpan}' -> '${fallback.matchedForm}'; edits=${fallback.editDistance}; engine=${fallback.engineId}; confirm"
+                trace.add("raw_ocr_subregion_fallback","subregion=${fallback.subregion}; region=${fallback.region}; country=${fallback.country}; $reason")
+                val updatedFields=fill.fields.toMutableMap()
+                updatedFields[FieldId.SUBREGION]=FieldCandidate(FieldId.SUBREGION,fallback.subregion,UiState.YELLOW,reason,emptyList())
+                if(updatedFields[FieldId.REGION]?.value.isNullOrBlank() && fallback.region.isNotBlank()) {
+                    updatedFields[FieldId.REGION]=FieldCandidate(FieldId.REGION,fallback.region,UiState.YELLOW,reason,emptyList())
+                }
+                if(updatedFields[FieldId.COUNTRY]?.value.isNullOrBlank() && fallback.country.isNotBlank()) {
+                    updatedFields[FieldId.COUNTRY]=FieldCandidate(FieldId.COUNTRY,fallback.country,UiState.YELLOW,reason,emptyList())
+                }
+                fill.copy(
+                    fields=updatedFields,
+                    geographyPath=if(fill.geographyPath.isEmpty()) view.ancestors(fallback.place) else fill.geographyPath,
+                )
+            } else fill
+        } else fill
+        return EvidenceResult(finalFill,graph,ranked,(System.nanoTime()-started)/1_000_000,trace)
     }
 }

@@ -68,7 +68,8 @@ class ResolverPolicyWiringTests(unittest.TestCase):
     def test_span_fuzzy_supplemental_guard_and_final_value_pass_are_separate(self):
         producer = PRODUCER.read_text()
         self.assertIn('MAX_PRODUCER_FUZZY_CANDIDATES=256', producer)
-        self.assertIn('MAX_FINAL_NEAR_MATCH_DISTANCE=2', producer)
+        self.assertIn('MAX_FINAL_NEAR_MATCH_DISTANCE=1', producer)
+        self.assertIn('private val allowWineTitlePairs:Boolean=false', (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text())
         self.assertIn('policy.producerPenalty(cleanExisting).coerceAtLeast(0)', producer)
         self.assertIn('existingRolePenalty<3', producer)
         self.assertIn('strong grape-variety cue', producer)

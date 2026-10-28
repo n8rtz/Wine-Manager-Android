@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.withStyle
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
+import com.yourapp.wine.textlab.evidence.LabPostOcrModules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -213,58 +215,105 @@ class WineAppLabelsActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
-                Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
+                SelectionContainer {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
+                        Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
+                    }
+                }
             }
             item {
-                PhoneCorpusRunner.Mode.entries.forEach { mode ->
-                    val capture = state.captures[mode]
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = state.mode == mode,
-                            // The Prod versions are frozen comparators: they are not re-run and
-                            // their diagnostics are read straight from the stored capture.
-                            onClick = { if (mode == PhoneCorpusRunner.Mode.LAB) vm.load(mode) },
-                            enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,
-                        )
-                        Column(Modifier.weight(1f)) {
-                            Text(mode.title)
+                Card(Modifier.fillMaxWidth()) {
+                    SelectionContainer {
+                        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
+                            DisableSelection {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    TextButton(
+                                        onClick = { vm.setAllLabModules(false) },
+                                        enabled = !state.busy && state.labModules != LabPostOcrModules.none,
+                                    ) { Text("All off") }
+                                    TextButton(
+                                        onClick = { vm.setBestBuildLabModules() },
+                                        enabled = !state.busy && state.labModules != LabPostOcrModules.bestBuild,
+                                    ) { Text("Best build") }
+                                    TextButton(
+                                        onClick = { vm.setAllLabModules(true) },
+                                        enabled = !state.busy && state.labModules != LabPostOcrModules.all,
+                                    ) { Text("All on") }
+                                }
+                            }
                             Text(
-                                if (mode == PhoneCorpusRunner.Mode.LAB) {
-                                    if (state.useCachedOcr) {
-                                        "Cached OCR (${state.ocrCached}/${state.total} ready) · ${state.labCompleted}/${state.total} checkpointed"
-                                    } else {
-                                        "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
-                                    }
-                                } else if (capture == null) {
-                                    "Baseline not captured yet · will run once for each remaining photo"
-                                } else {
-                                    "Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"
-                                },
+                                "Best build = measured best: producer, vintage & spatial guards.",
                                 style = MaterialTheme.typography.bodySmall,
                             )
-                        }
-                        if (mode == PhoneCorpusRunner.Mode.LAB) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = state.useCachedOcr,
-                                    onCheckedChange = vm::setUseCachedOcr,
-                                    enabled = !state.busy,
-                                )
-                                Text("Cached OCR", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "Wine-title pairs off (they lost 11 wine names). All off = pre-improvement baseline.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            LabPostOcrModules.ModuleId.entries.forEach { moduleId ->
+                                val checked = state.labModules.isEnabled(moduleId)
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    DisableSelection {
+                                        Checkbox(
+                                            checked = checked,
+                                            onCheckedChange = { vm.setLabModule(moduleId, it) },
+                                            enabled = !state.busy,
+                                        )
+                                    }
+                                    Column(Modifier.weight(1f)) {
+                                        Text(moduleId.uiTitle, style = MaterialTheme.typography.bodyMedium)
+                                        Text(moduleId.uiDetail, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
             item {
-                if (state.message.isNotBlank()) Text(state.message)
-                Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
-                val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
-                Text(
-                    if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v4.0 frozen on this device: $frozen/${state.total} photos"
-                    else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
-                )
+                val mode = PhoneCorpusRunner.Mode.LAB
+                SelectionContainer {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(mode.title)
+                            Text(
+                                if (state.useCachedOcr) {
+                                    "Cached OCR (${state.ocrCached}/${state.total} ready) · ${state.labCompleted}/${state.total} checkpointed"
+                                } else {
+                                    "Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            DisableSelection {
+                                Checkbox(
+                                    checked = state.useCachedOcr,
+                                    onCheckedChange = vm::setUseCachedOcr,
+                                    enabled = !state.busy,
+                                )
+                            }
+                            Text("Cached OCR", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+            item {
+                SelectionContainer {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (state.message.isNotBlank()) Text(state.message)
+                        Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
+                        val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
+                        Text(
+                            if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v4.0 frozen on this device: $frozen/${state.total} photos"
+                            else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
+                        )
+                    }
+                }
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Button(
                     onClick = { vm.start() },
@@ -272,7 +321,9 @@ class WineAppLabelsActivity : ComponentActivity() {
                 ) {
                     Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v5 only")
                 }
-                BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
+                SelectionContainer {
+                    BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
+                }
                 Row {
                     TextButton(onClick = vm::stop, enabled = state.busy) { Text("Stop after photo") }
                     TextButton(
@@ -286,31 +337,35 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             state.board?.let { board ->
                 item {
-                    Text("Scored results", style = MaterialTheme.typography.titleMedium)
                     SelectionContainer {
-                        Column(Modifier.horizontalScroll(rememberScrollState())) {
-                            val columnWidth = 88.dp
-                            Row {
-                                board.headers.forEach {
-                                    Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Column {
+                            Text("Scored results", style = MaterialTheme.typography.titleMedium)
+                            Column(Modifier.horizontalScroll(rememberScrollState())) {
+                                val columnWidth = 88.dp
+                                Row {
+                                    board.headers.forEach {
+                                        Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    }
+                                }
+                                board.rows.forEach { row ->
+                                    HorizontalDivider(Modifier.width((88 * board.headers.size).dp))
+                                    Row { row.forEach { Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.bodySmall) } }
                                 }
                             }
-                            board.rows.forEach { row ->
-                                HorizontalDivider(Modifier.width((88 * board.headers.size).dp))
-                                Row { row.forEach { Text(it, Modifier.width(columnWidth).padding(4.dp), style = MaterialTheme.typography.bodySmall) } }
-                            }
+                            Spacer(Modifier.height(8.dp))
+                            BuildFieldComparisonTable(
+                                currentScores = state.currentBuildFieldScores,
+                                bestBuildScores = state.bestBuildFieldScores,
+                                prodV4Scores = state.prodV4FieldScores,
+                            )
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
-                    BuildFieldComparisonTable(
-                        currentScores = state.currentBuildFieldScores,
-                        bestBuildScores = state.bestBuildFieldScores,
-                        prodV4Scores = state.prodV4FieldScores,
-                    )
                 }
                 item {
-                    Text("CSV export", style = MaterialTheme.typography.titleMedium)
+                    SelectionContainer {
+                        Text("CSV export", style = MaterialTheme.typography.titleMedium)
+                    }
                     TextButton(
                         onClick = { clipboard.setText(AnnotatedString("Build ${BuildConfig.BUILD_COMMIT}\n" + board.text)) },
                         enabled = !state.busy,
@@ -342,8 +397,12 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             state.board?.let { board ->
                 item {
-                    Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
-                    Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("Pipeline bottleneck matrix", style = MaterialTheme.typography.titleMedium)
+                            Text("Passed (green) / failed (red). Tap + for a step definition.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                     TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
                         Text(if (showDiagnostics) "Hide diagnostics table" else "Show diagnostics table")
                     }
@@ -448,13 +507,15 @@ class WineAppLabelsActivity : ComponentActivity() {
                                         Modifier.width(stepWidth).heightIn(min = 56.dp).border(1.dp, gridColor).padding(horizontal = 2.dp, vertical = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        TextButton(
-                                            onClick = {
-                                                expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
-                                            },
-                                            modifier = Modifier.width(24.dp),
-                                            contentPadding = PaddingValues(0.dp),
-                                        ) { Text(if (expanded) "−" else "+") }
+                                        DisableSelection {
+                                            TextButton(
+                                                onClick = {
+                                                    expandedDiagnostics = if (expanded) expandedDiagnostics - row.step.id else expandedDiagnostics + row.step.id
+                                                },
+                                                modifier = Modifier.width(24.dp),
+                                                contentPadding = PaddingValues(0.dp),
+                                            ) { Text(if (expanded) "−" else "+") }
+                                        }
                                         Text(
                                             row.step.shortTitle,
                                             Modifier.weight(1f),
@@ -501,25 +562,27 @@ class WineAppLabelsActivity : ComponentActivity() {
                 }
             }
             item {
-                Text("Database coverage", style = MaterialTheme.typography.titleMedium)
                 SelectionContainer {
-                    Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        val width = 88.dp
-                        Row {
-                            Text("Parameter", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
-                                maxLines = 1, softWrap = false)
-                            coverage.forEach { (label, _) ->
-                                Text(label, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                    Column {
+                        Text("Database coverage", style = MaterialTheme.typography.titleMedium)
+                        Column(Modifier.horizontalScroll(rememberScrollState())) {
+                            val width = 88.dp
+                            Row {
+                                Text("Parameter", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
                                     maxLines = 1, softWrap = false)
+                                coverage.forEach { (label, _) ->
+                                    Text(label, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.labelSmall,
+                                        maxLines = 1, softWrap = false)
+                                }
                             }
-                        }
-                        HorizontalDivider(Modifier.width((width.value * (coverage.size + 1)).dp))
-                        Row {
-                            Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1, softWrap = false)
-                            coverage.forEach { (_, count) ->
-                                Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                            HorizontalDivider(Modifier.width((width.value * (coverage.size + 1)).dp))
+                            Row {
+                                Text("Labels found", Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
                                     maxLines = 1, softWrap = false)
+                                coverage.forEach { (_, count) ->
+                                    Text(count, Modifier.width(width).padding(4.dp), style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1, softWrap = false)
+                                }
                             }
                         }
                     }
@@ -594,45 +657,51 @@ class WineAppLabelsActivity : ComponentActivity() {
                         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 LabelThumbnail(wineCase.image, onClick = { expandedImage = wineCase.image })
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        "#${wineCase.reviewNumber} · ${wineCase.producer}",
-                                        style = MaterialTheme.typography.titleSmall,
-                                    )
-                                    Text(
-                                        wineCase.wineName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                    val locationLine = listOf(
-                                        wineCase.country,
-                                        wineCase.region,
-                                        wineCase.subregion,
-                                        wineCase.vintage,
-                                    ).filter { it != "(blank)" }.joinToString(" · ")
-                                    if (locationLine.isNotEmpty()) {
+                                SelectionContainer(Modifier.weight(1f)) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         Text(
-                                            locationLine,
-                                            style = MaterialTheme.typography.bodySmall,
+                                            "#${wineCase.reviewNumber} · ${wineCase.producer}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                        )
+                                        Text(
+                                            wineCase.wineName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                        val locationLine = listOf(
+                                            wineCase.country,
+                                            wineCase.region,
+                                            wineCase.subregion,
+                                            wineCase.vintage,
+                                        ).filter { it != "(blank)" }.joinToString(" · ")
+                                        if (locationLine.isNotEmpty()) {
+                                            Text(
+                                                locationLine,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        Text(
+                                            wineCase.sourceFilename,
+                                            style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
                                         )
                                     }
-                                    Text(
-                                        wineCase.sourceFilename,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
                                 }
                             }
                             if (failedResults.isNotEmpty()) {
-                                FailedParametersTable(failedResults)
+                                SelectionContainer {
+                                    FailedParametersTable(failedResults)
+                                }
                             } else if (results.values.any { it["form_status"] == "execution_failed" }) {
-                                Text(
-                                    "Execution failed before field scoring.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
+                                SelectionContainer {
+                                    Text(
+                                        "Execution failed before field scoring.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                             }
                             Column {
                                 Row(
@@ -703,68 +772,66 @@ private fun FailedParametersTable(failedResults: List<Pair<String, Map<String, S
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val failColor = MaterialTheme.colorScheme.error
-    SelectionContainer {
-        Column(
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .border(0.5.dp, gridColor),
+    ) {
+        Row(
             Modifier
                 .fillMaxWidth()
-                .border(0.5.dp, gridColor),
+                .height(IntrinsicSize.Min)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Text(
+                "Parameter",
+                Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+            Text(
+                "Expected",
+                Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
+            Text(
+                "Output",
+                Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        failedResults.forEach { (field, result) ->
+            val expected = result["expected"].takeUnless { it.isNullOrBlank() }
+                ?: if (result["reference_status"] == "expected_blank") "(blank)"
+                else result["reference_status"].orEmpty()
+            val output = result["recognized"].orEmpty().ifBlank { "(blank)" }
+            HorizontalDivider(thickness = 0.5.dp, color = gridColor)
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .height(IntrinsicSize.Min)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                verticalAlignment = Alignment.CenterVertically,
+                    .height(IntrinsicSize.Min),
             ) {
                 Text(
-                    "Parameter",
+                    FIELD_DISPLAY_NAMES[field] ?: field,
                     Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                 )
                 Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
                 Text(
-                    "Expected",
+                    expected,
                     Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = passColor,
                 )
                 Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
                 Text(
-                    "Output",
+                    output,
                     Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = failColor,
                 )
-            }
-            failedResults.forEach { (field, result) ->
-                val expected = result["expected"].takeUnless { it.isNullOrBlank() }
-                    ?: if (result["reference_status"] == "expected_blank") "(blank)"
-                    else result["reference_status"].orEmpty()
-                val output = result["recognized"].orEmpty().ifBlank { "(blank)" }
-                HorizontalDivider(thickness = 0.5.dp, color = gridColor)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
-                ) {
-                    Text(
-                        FIELD_DISPLAY_NAMES[field] ?: field,
-                        Modifier.weight(0.26f).padding(horizontal = 6.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
-                    Text(
-                        expected,
-                        Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = passColor,
-                    )
-                    Box(Modifier.fillMaxHeight().width(0.5.dp).background(gridColor))
-                    Text(
-                        output,
-                        Modifier.weight(0.37f).padding(horizontal = 6.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = failColor,
-                    )
-                }
             }
         }
     }
@@ -961,48 +1028,51 @@ private fun BuildFieldComparisonTable(
         "Best build" to bestBuildScores,
         PhoneCorpusRunner.Mode.PRODUCTION_V4.title to prodV4Scores,
     )
-    SelectionContainer {
-        Column(Modifier.horizontalScroll(rememberScrollState())) {
-            Row {
+    Column(Modifier.horizontalScroll(rememberScrollState())) {
+        Row {
+            Text(
+                "Build",
+                Modifier.width(buildColumnWidth).padding(4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                softWrap = false,
+            )
+            FAILURE_FILTER_OPTIONS.forEach { (_, label) ->
                 Text(
-                    "Build",
-                    Modifier.width(buildColumnWidth).padding(4.dp),
+                    label,
+                    Modifier.width(fieldColumnWidth).padding(4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     softWrap = false,
                 )
-                FAILURE_FILTER_OPTIONS.forEach { (_, label) ->
-                    Text(
-                        label,
-                        Modifier.width(fieldColumnWidth).padding(4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                }
             }
-            buildRows.forEach { (title, scores) ->
-                HorizontalDivider(Modifier.width(totalWidth))
-                Row {
+        }
+        buildRows.forEach { (title, scores) ->
+            HorizontalDivider(Modifier.width(totalWidth))
+            Row {
+                Text(
+                    title,
+                    Modifier.width(buildColumnWidth).padding(4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
+                    val cell = scores[fieldKey]?.let { score ->
+                        val otherScores = listOf(bestBuildScores[fieldKey], prodV4Scores[fieldKey])
+                        val uniquelyBest = title == "Current build" && otherScores.all { other ->
+                            other != null && score.correct > other.correct
+                        }
+                        passFailLabel(score.correct, score.incorrect, passColor, failColor) +
+                            AnnotatedString(if (uniquelyBest) "*" else "")
+                    } ?: AnnotatedString("—")
                     Text(
-                        title,
-                        Modifier.width(buildColumnWidth).padding(4.dp),
+                        cell,
+                        Modifier.width(fieldColumnWidth).padding(4.dp),
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         softWrap = false,
                     )
-                    FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
-                        val cell = scores[fieldKey]?.let { score ->
-                            passFailLabel(score.correct, score.incorrect, passColor, failColor)
-                        } ?: AnnotatedString("—")
-                        Text(
-                            cell,
-                            Modifier.width(fieldColumnWidth).padding(4.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
                 }
             }
         }
