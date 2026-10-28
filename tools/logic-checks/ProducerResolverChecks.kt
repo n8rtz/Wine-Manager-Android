@@ -29,7 +29,7 @@ fun main() {
     verify(resolver.resolve("keep",List(129) { spans()[0] }).acceptedId==null)
     verify(ProducerResolver(index(List(33) { primary.copy(id=it.toString()) })).resolve("",spans()).acceptedId==null)
     verify(ProducerResolver.normalize("Château d’Example")=="chateau d example")
-    // Lab v4 single-reading policy (owner, 2026-10-27): verified primary names can use one reading, with source-aware safeguards.
+    // Lab v5 single-reading policy (owner, 2026-10-27): verified primary names can use one reading, with source-aware safeguards.
     val lab=ProducerResolver.Policy.singleReading
     val oneEngine=spans().take(1)
     verify(resolver.resolve("",oneEngine).acceptedId==null) // Prod keeps two engines
@@ -48,7 +48,7 @@ fun main() {
     verify(homonyms.resolve("",oneEngine,policy=lab).acceptedId==null)
     verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("France")).acceptedId=="estate-fr")
     verify(homonyms.resolve("",oneEngine,policy=lab.withCountryContext("Argentina")).acceptedId==null)
-    // Lab v4 d=0 exact-match fast-path: skips past noisy existing guesses and d>=1 rivals while preserving guards.
+    // Lab v5 d=0 exact-match fast-path: skips past noisy existing guesses and d>=1 rivals while preserving guards.
     val labFast=lab.withExactMatchFastPath { it.equals("Saint Julien",ignoreCase=true) }
     val francette=ProducerResolver.Entity("la-francette","La Francette","la francette",setOf("lwin"))
     val francetteIndex=object:ProducerResolver.Index {
@@ -56,7 +56,9 @@ fun main() {
         override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(francette)
     }
     val trancette=ProducerResolver(francetteIndex).resolve("",listOf(ProducerResolver.Span("Trancette","paddle",setOf(1))),policy=labFast)
-    verify(ProducerResolver.distance("trancette","la francette")==4 && trancette.acceptedId==null)
+    verify(ProducerResolver.producerDistance("trancette","la francette")==3 && trancette.acceptedId==null) // bounded-distance sentinel above the two-edit gate
+    verify(ProducerResolver.producerDistance("les ormes cambras","les ormes de cambras")==0)
+    verify(ProducerResolver.distance("les ormes cambras","les ormes de cambras")==3) // the shared linked-wine comparator stays unchanged
     val finalNearIndex=object:ProducerResolver.Index {
         override val version="fixture-exp";override val primaryVerified=false;override val labSupplemental=true
         override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(
@@ -66,6 +68,21 @@ fun main() {
     }
     val canonical=ProducerResolver(finalNearIndex).finalNearMatch("Trancette")
     verify(canonical!=null && canonical.entity.id=="la-francette" && canonical.distance==1)
+    val cambras=ProducerResolver.Entity("cambras","Les Ormes de Cambras","les ormes de cambras",setOf("xwines"))
+    val cambrasIndex=object:ProducerResolver.Index {
+        override val version="fixture-exp";override val primaryVerified=false;override val labSupplemental=true
+        override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(cambras)
+    }
+    val rolePolicy=lab.withProducerPenalty { text -> when {
+        text.contains("Cabernet Sauvignon",ignoreCase=true) -> 3
+        text.contains("Pays d'Oc",ignoreCase=true) -> 1
+        else -> 0
+    } }
+    val correctedGrapeGuess=ProducerResolver(cambrasIndex).resolve("Cabernet Sauvignon Pays d'Oc",
+        listOf(ProducerResolver.Span("Les Ormes Cambras","mlkit",setOf(1))),policy=rolePolicy)
+    verify(correctedGrapeGuess.acceptedId=="cambras" && correctedGrapeGuess.reason.contains("strong grape-variety cue"))
+    verify(ProducerResolver(cambrasIndex).resolve("Pays d'Oc",
+        listOf(ProducerResolver.Span("Les Ormes Cambras","mlkit",setOf(1))),policy=rolePolicy).acceptedId==null)
     verify(resolver.resolve("SIGNATURE SERIES NoisyGuess",oneEngine,policy=labFast).value=="Chateau Example")
     verify(ProducerResolver(index(listOf(primary,ProducerResolver.Entity("rival","Château Examplar",
         ProducerResolver.normalize("Château Examplar"))))).resolve("NoisyGuess",oneEngine,policy=labFast).acceptedId=="estate")

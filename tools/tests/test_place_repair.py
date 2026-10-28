@@ -224,7 +224,7 @@ class PlaceRepairWiringTests(unittest.TestCase):
 
     def test_the_switch_is_recorded_and_marked_lab_only(self):
         runner = RUNNER.read_text()
-        # Turned on for the measurement run (owner, 2026-10-27); Prod v3.0 is a frozen baseline,
+        # Turned on for the measurement run (owner, 2026-10-27); Prod v4.0 is a frozen baseline,
         # so enabling the Lab switch cannot change the comparison row it is measured against.
         for fragment in ('internal const val REPAIR_PLACES_IN_BENCHMARK=true',
                          'repairPlaces=REPAIR_PLACES_IN_BENCHMARK'):

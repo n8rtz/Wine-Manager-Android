@@ -100,7 +100,7 @@ internal class WineAppLabelsBuildLog(
                 val best = fieldBests[field] ?: continue
                 parts += "$field ${best.value.label()} [${best.buildNumber}]"
             }
-            return "Lab v4 Best build sources: " + parts.joinToString(" · ")
+            return "Lab v5 Best build sources: " + parts.joinToString(" · ")
         }
 
         fun toCsvMap(zoneId: ZoneId, mode: PhoneCorpusRunner.Mode): Map<String, String> {
@@ -329,8 +329,12 @@ internal class WineAppLabelsBuildLog(
                     if (headers == null) {
                         headers = record
                     } else {
-                        val idx = headers.orEmpty().indexOf("row_type")
-                        if (idx >= 0 && record.getOrNull(idx) == BEST_BUILD_ROW_TYPE) {
+                        val cols = headers.orEmpty()
+                        val typeIdx = cols.indexOf("row_type")
+                        val modelIdx = cols.indexOf("model_version")
+                        if (typeIdx >= 0 && record.getOrNull(typeIdx) == BEST_BUILD_ROW_TYPE &&
+                            modelIdx >= 0 && record.getOrNull(modelIdx) == BEST_BUILD_ROW_TITLE
+                        ) {
                             found = true
                         }
                     }
@@ -424,7 +428,7 @@ internal class WineAppLabelsBuildLog(
      * Computes the composite "Best build" across all logged runs for [mode]: each parameter
      * independently selects the highest score ever achieved along with the build it came from.
      * Error/failure minimums are evaluated over the fullest attempted run cohort so a partial
-     * in-progress run (e.g. 5/125 photos) never claims a false low error count.
+     * in-progress run (e.g. 5/124 photos) never claims a false low error count.
      */
     @Synchronized
     fun bestBuildSummary(
@@ -576,7 +580,7 @@ internal class WineAppLabelsBuildLog(
 
     companion object {
         const val FILE_NAME = "benchmark-results-log.csv"
-        const val BEST_BUILD_ROW_TITLE = "Lab v4 Best build"
+        const val BEST_BUILD_ROW_TITLE = "Lab v5 Best build"
         const val RUN_ROW_TYPE = "run"
         const val BEST_BUILD_ROW_TYPE = "best_build"
         const val EXPECTED_TABLE_COLUMNS = 14
@@ -663,6 +667,14 @@ internal class WineAppLabelsBuildLog(
             val buildKey = map["build_key"].orEmpty().ifBlank { if (buildCommit.isNotBlank()) "$buildCommit:clean" else "" }
             val attempted = map["attempted"]?.toIntOrNull() ?: return null
             if (buildKey.isBlank() || buildKey == BEST_BUILD_ROW_TYPE || attempted <= 0) return null
+            val savedPipeline = map["pipeline_id"].orEmpty()
+            val ownerMode = PhoneCorpusRunner.Mode.fromPipelineId(savedPipeline)
+            val savedModel = map["model_version"].orEmpty()
+            val modelVersion = ownerMode?.title ?: when (savedModel) {
+                "Lab v4" -> PhoneCorpusRunner.Mode.LAB.title
+                "Prod v3.0" -> PhoneCorpusRunner.Mode.PRODUCTION_V4.title
+                else -> savedModel.ifBlank { PhoneCorpusRunner.Mode.LAB.title }
+            }
             return Entry(
                 date = map["date"].orEmpty(),
                 time = map["time"].orEmpty(),
@@ -672,8 +684,8 @@ internal class WineAppLabelsBuildLog(
                 buildCommit = buildCommit,
                 buildKey = buildKey,
                 branch = map["branch"].orEmpty().ifBlank { "unknown" },
-                modelVersion = map["model_version"].orEmpty().ifBlank { PhoneCorpusRunner.Mode.LAB.title },
-                pipelineId = map["pipeline_id"].orEmpty().ifBlank { PhoneCorpusRunner.Mode.LAB.pipelineId },
+                modelVersion = modelVersion,
+                pipelineId = savedPipeline.ifBlank { ownerMode?.pipelineId ?: PhoneCorpusRunner.Mode.LAB.pipelineId },
                 runId = runId.ifBlank { "$buildKey:${map["timestamp_ms"].orEmpty()}" },
                 attempted = attempted,
                 eligible = map["eligible"]?.toIntOrNull() ?: 0,

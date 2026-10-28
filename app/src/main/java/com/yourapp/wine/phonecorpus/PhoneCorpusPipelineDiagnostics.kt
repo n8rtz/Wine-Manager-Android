@@ -10,8 +10,8 @@ internal object PhoneCorpusPipelineDiagnostics {
     fun capture(image: String, attempt: Int, mode: String, rows: List<Map<String, String>>,
         recorded: Map<String, F.Gate>, fields: Map<String, String>?, status: String?, fresh: Boolean): F.Label {
         // Both spatial contenders run the producer/linked-wine resolvers; only the producer
-        // index differs (Prod v3.0 verified LWIN only, Lab v4 the Lab expanded index).
-        val labResolvers = mode == "LAB" || mode == "PRODUCTION_V3"
+        // index differs (Prod v4.0 verified LWIN only, Lab v5 the Lab expanded index).
+        val labResolvers = mode == "LAB" || mode == "PRODUCTION_V4"
         val production = mode == "PRODUCTION_V1"
         val gates = F.steps.associate { step -> step.id to when {
             step.labOnly && !labResolvers -> F.Gate(F.State.NOT_APPLICABLE)
@@ -72,7 +72,7 @@ internal object PhoneCorpusPipelineDiagnostics {
             }
             val prefix = when (mode) {
                 "LAB" -> "spatial_evidence_"
-                "PRODUCTION_V3" -> "spatial_lwin_evidence_"
+                "PRODUCTION_V4" -> "spatial_lwin_evidence_"
                 else -> "evidence_"
             }
             val summary = stage(prefix + "summary").lastOrNull()

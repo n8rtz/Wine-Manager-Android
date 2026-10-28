@@ -1,6 +1,6 @@
 {
-  "count": 125,
-  "bytes": 20334648,
+  "count": 124,
+  "bytes": 20080218,
   "source_repositories": [
     "AntoninLeroy/wine_label_reader_toolkit",
     "n8rtz/Wine-Reference-Drop"
@@ -9,10 +9,10 @@
     "eb2c14ba4f9a1b6efaa476696439754a9abde8ce",
     "main"
   ],
-  "updated_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
+  "updated_workbook_sha256": "825618b3b54d6dfd74eb213741b57ee9e2c8cfcb0911353eb7b345b6b2b143b5",
   "rights": "No license is declared for the two source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
-  "inputs_sha256": "63c14f70914fcfc84c58ae9bc5b18cc77bb31349e46878ab34cb175e608bfa85",
-  "evaluation_set_sha256": "3cdf0d56f6472cd4538e1cd633c4073ed12352411064fe136f45727b392a9d3b",
-  "scoring_sha256": "f93d8bf27079803687f5e11e8e5529b494bbbe534eb00926f568b135ff03da35",
-  "gazetteer_coverage_sha256": "35224d31530eb356456ff8411a7805b60bf294a87b3e05152b6ca3ef9c1db3f3"
+  "inputs_sha256": "9a0d78f0a79c0a75ac8f552029a9f717bef28edcfd8274b9ee863ab2885e9d59",
+  "evaluation_set_sha256": "584ce0990caa817beb64374c0416afbe235f2d0b56b620c9738b01bc45aa2c24",
+  "scoring_sha256": "aa7557ad4e5b3ba6afd356ab3d6a7185a2016989743d3ad807622f41cafe1812",
+  "gazetteer_coverage_sha256": "ba843f745fadb86c8b5fcdc793dcf44b0f0e92e4c47e0bcdd0848be95fb5eb76"
 }

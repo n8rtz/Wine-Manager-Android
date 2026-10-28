@@ -2,6 +2,7 @@ package com.yourapp.wine.gazetteer
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Regression checks for the fuzzy lookup bound.
@@ -95,7 +96,7 @@ class ProducerResolverFuzzyLookupTest {
         val decision=ProducerResolver(index).resolve("",listOf(span("Trancette","paddle-v6-medium",0)),
             policy=ProducerResolver.Policy.singleReading.withExactMatchFastPath())
         assertEquals(1,index.calls)
-        assertEquals(4,ProducerResolver.distance("trancette","la francette"))
+        assertEquals(3,ProducerResolver.producerDistance("trancette","la francette")) // bounded-distance sentinel above the two-edit gate
         assertNull(decision.acceptedId)
         assertEquals("no independently supported producer; unchanged",decision.reason)
     }
@@ -111,6 +112,30 @@ class ProducerResolverFuzzyLookupTest {
         assertEquals(ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES,index.lastLimit)
         assertEquals("tour-de-by",decision.acceptedId)
         assertEquals("Chateau La Tour de By",decision.value)
+    }
+
+    @Test
+    fun `strong grape-variety baseline can yield to a supported producer but geography-only stays protected`() {
+        val candidate=entity("cambras","Les Ormes de Cambras","les ormes de cambras",setOf("xwines"))
+        val index=FakeIndex(listOf(candidate),primaryVerified=false,labSupplemental=true)
+        val policy=ProducerResolver.Policy.singleReading.withProducerPenalty { text ->
+            when {
+                text.contains("Cabernet Sauvignon",ignoreCase=true) -> 3
+                text.contains("Pays d'Oc",ignoreCase=true) -> 1
+                else -> 0
+            }
+        }
+        val reading=span("Les Ormes Cambras","mlkit",0)
+        assertEquals(0,ProducerResolver.producerDistance("les ormes cambras","les ormes de cambras"))
+        assertEquals(3,ProducerResolver.distance("les ormes cambras","les ormes de cambras")) // generic distance remains for wine matching
+        val corrected=ProducerResolver(index).resolve("Cabernet Sauvignon Pays d'Oc",listOf(reading),policy=policy)
+        assertEquals("cambras",corrected.acceptedId)
+        assertEquals("Les Ormes de Cambras",corrected.value)
+        assertTrue(corrected.reason.contains("strong grape-variety cue"))
+
+        val protected=ProducerResolver(index).resolve("Pays d'Oc",listOf(reading),policy=policy)
+        assertEquals("Pays d'Oc",protected.value)
+        assertNull(protected.acceptedId)
     }
 
     @Test

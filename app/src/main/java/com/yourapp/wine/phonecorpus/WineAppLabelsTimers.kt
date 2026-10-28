@@ -3,7 +3,7 @@ package com.yourapp.wine.phonecorpus
 import java.util.Locale
 
 /**
- * Pure formatting and live-tick arithmetic for the three 125-label benchmark timers:
+ * Pure formatting and live-tick arithmetic for the three 124-label benchmark timers:
  * 1. Total active test run time (`mm ss`),
  * 2. Average execution time per image (`s`),
  * 3. Live countdown of estimated time remaining (`mm ss`).

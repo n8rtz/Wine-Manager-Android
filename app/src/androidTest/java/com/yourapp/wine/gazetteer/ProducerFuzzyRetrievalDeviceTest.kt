@@ -3,6 +3,7 @@ package com.yourapp.wine.gazetteer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -18,6 +19,22 @@ class ProducerFuzzyRetrievalDeviceTest {
         val gazetteer=ProducerGazetteer.openExpanded(context)
         try {
             assertEquals(256,ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES)
+            val missingParticle="Les Ormes Cambras"
+            val cambrasId="a86fa916e58801673863a652"
+            val cambrasHits=gazetteer.lookup(ProducerResolver.normalize(missingParticle),
+                ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES) {}
+            val cambras=cambrasHits.firstOrNull { it.id==cambrasId }
+            assertNotNull("Omitting French producer particle `de` must still retrieve Les Ormes de Cambras",cambras)
+            assertEquals(0,ProducerResolver.producerDistance(ProducerResolver.normalize(missingParticle),cambras!!.key))
+            assertEquals(3,ProducerResolver.distance(ProducerResolver.normalize(missingParticle),cambras!!.key)) // linked-wine distance stays particle-sensitive
+            val cambrasDecision=ProducerResolver(gazetteer).resolve("Cabernet Sauvignon Pays d'Oc",listOf(
+                ProducerResolver.Span(missingParticle,"mlkit",setOf(0)),
+            ),policy=ProducerResolver.Policy.singleReading.withExactMatchFastPath())
+            assertEquals(cambrasId,cambrasDecision.acceptedId)
+            assertEquals("Les Ormes de Cambras",cambrasDecision.value)
+            val cambrasFinal=ProducerResolver(gazetteer).finalNearMatch(missingParticle)
+            assertEquals(cambrasId,cambrasFinal?.entity?.id)
+            assertEquals(0,cambrasFinal?.distance ?: -1)
             val id="2dfc220744b222c6705c181f"
             val observed="CHATEAU La Cour de By"
             val hits=gazetteer.lookup(ProducerResolver.normalize(observed),

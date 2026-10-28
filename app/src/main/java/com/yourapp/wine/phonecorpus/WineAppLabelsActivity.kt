@@ -214,7 +214,7 @@ class WineAppLabelsActivity : ComponentActivity() {
         ) {
             item {
                 Text("Large image dataset test", style = MaterialTheme.typography.headlineSmall)
-                Text("125 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
+                Text("124 retained workbook-linked wine labels · owner-reviewed values · fresh on-device OCR")
             }
             item {
                 PhoneCorpusRunner.Mode.entries.forEach { mode ->
@@ -259,10 +259,10 @@ class WineAppLabelsActivity : ComponentActivity() {
             }
             item {
                 if (state.message.isNotBlank()) Text(state.message)
-                Text("Lab v4 checkpointed: ${state.labCompleted}/${state.total}")
+                Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
                 val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
                 Text(
-                    if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v3.0 frozen on this device: $frozen/${state.total} photos"
+                    if (state.captures.size == 3 && frozen >= state.total) "Prod v1.0/v2.0/v4.0 frozen on this device: $frozen/${state.total} photos"
                     else "Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture",
                 )
                 if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -270,7 +270,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     onClick = { vm.start() },
                     enabled = !state.busy && (state.labCompleted < state.total || state.captureRemaining > 0),
                 ) {
-                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v4 only")
+                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v5 only")
                 }
                 BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
                 Row {
@@ -306,7 +306,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     BuildFieldComparisonTable(
                         currentScores = state.currentBuildFieldScores,
                         bestBuildScores = state.bestBuildFieldScores,
-                        prodV3Scores = state.prodV3FieldScores,
+                        prodV4Scores = state.prodV4FieldScores,
                     )
                 }
                 item {
@@ -949,7 +949,7 @@ private fun BenchmarkTimersRow(state: WineAppLabelsState, nowRealtimeMs: Long) {
 private fun BuildFieldComparisonTable(
     currentScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     bestBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
-    prodV3Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    prodV4Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val failColor = MaterialTheme.colorScheme.error
@@ -959,7 +959,7 @@ private fun BuildFieldComparisonTable(
     val buildRows = listOf(
         "Current build" to currentScores,
         "Best build" to bestBuildScores,
-        PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores,
+        PhoneCorpusRunner.Mode.PRODUCTION_V4.title to prodV4Scores,
     )
     SelectionContainer {
         Column(Modifier.horizontalScroll(rememberScrollState())) {

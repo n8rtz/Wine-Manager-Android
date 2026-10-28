@@ -49,7 +49,7 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertNotIn('record.remove("pipeline_funnel")', baselines)
 
     def test_field_matrix_keeps_six_columns_and_each_step_description_collapsed_by_default(self):
-        # The 168-photo debug page that used to carry this table is retired; the live 125-label
+        # The 168-photo debug page that used to carry this table is retired; the live 124-label
         # page is the only bench, so this contract is asserted against it (and its condensed
         # step column) instead of the deleted file.
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()

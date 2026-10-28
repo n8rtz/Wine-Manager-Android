@@ -290,14 +290,6 @@
       "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/144.jpg"
     },
     {
-      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
-      "sha256": "84982e263302dcba533da989992e317e081a808421c036c48dd2cbad52760497",
-      "review_number": 67,
-      "source_filename": "000.jpg",
-      "source_repo": "AntoninLeroy/wine_label_reader_toolkit",
-      "source_url": "https://github.com/AntoninLeroy/wine_label_reader_toolkit/blob/eb2c14ba4f9a1b6efaa476696439754a9abde8ce/img/train_and_valid/X/000.jpg"
-    },
-    {
       "image": "378ab5b4ee821ac346f104411908796ee907230c.jpg",
       "sha256": "e336a7bd476400b35a5bb3a8c44bf5c57c84fe7956e80c5805d45b24582153ea",
       "review_number": 68,

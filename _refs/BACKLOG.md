@@ -96,7 +96,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Goal:** widen lab-only appellation repair beyond the bounded edit distance shipped in `PlaceRepair` (one to two edits, at most 20 % length change, so a dropped or reordered word in a long name never resolves).
 * **Shape:** a `debug`-only FTS5 trigram asset built deterministically from `data/wine-knowledge/origins.csv` (licensing is clean: project-authored plus pinned CC0 UC Davis metadata), with manifest + SHA-256 + record count, a `--check` freshness test, and the existing `TrigramGazetteer` shortlist→rerank policy (≤64 candidates, similarity ≥0.82, ≥0.06 margin, abstain on ambiguity).
 * **Why parked:** a second copy of the catalog in another format is a new source of truth to keep honest, and the owner's rule is that Lab v4 should stay comparable to Prod, which repairs with bounded spelling. Wiring `PlaceRepair` first keeps the Prod/Lab delta about the producer index and solver, not about a third matching engine.
-* **Revisit when:** measurement over the 125 labels shows anchor-gated near-misses failing on a meaningful share, those failures are mainly word-order/dropped-word cases, or the catalog passes roughly 4,000 names and the in-memory scan starts to matter.
+* **Revisit when:** measurement over the 124 labels shows anchor-gated near-misses failing on a meaningful share, those failures are mainly word-order/dropped-word cases, or the catalog passes roughly 4,000 names and the in-memory scan starts to matter.
 
 ### 1. W-056 — Automated build-and-test (CI) and tag-based releases *(new)*
 **Complexity:** S · **Status:** Open

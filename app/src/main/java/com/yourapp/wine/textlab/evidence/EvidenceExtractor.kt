@@ -11,7 +11,7 @@ internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,v
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off) {
-    companion object { const val VERSION="evidence-lab-v4-context";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
+    companion object { const val VERSION="evidence-lab-v5-vintage-recovery";const val DEFAULT_BUDGET_MS=60_000L;const val MAX_HYPOTHESES=384 }
     private val kb=SupplementedWineKnowledgeBase(baseKb)
     private val gazetteer=PlaceGazetteer(kb)
     private val hierarchy=PlaceHierarchy(kb)
@@ -20,9 +20,13 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     private val roles=ProducerLineSelector()
     private fun family(engineId:String)=if(engineId.startsWith("paddle")) "paddle" else engineId
     private val foundingYearCue = Regex("\\b(?:fondee?|founded|established|est\\.?|since|depuis|first\\s+vintage|anno|dal)\\b")
-    private val leadingYearPattern = Regex("^((?:19|20)\\d{2})\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*(.+)$")
-    private val trailingYearPattern = Regex("^(.+?)\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*((?:19|20)\\d{2})$")
-    private val harvestYearPattern = Regex("(?i)\\b(?:[cgos]osecha|vendimia|annata|millesime|recolte|harvest)\\s+((?:19|20)\\d{2})\\b")
+    // Keep the repair narrowly in a four-digit year context: I/l can stand for the leading 1,
+    // and O can stand for the zero in 20xx. Whitespace between digits is allowed for tracked type.
+    private val yearTokenPattern = "(?:[il1]\\s*9|2\\s*[o0])\\s*\\d\\s*\\d"
+    private val canonicalYearPattern = Regex("(?:19|20)\\d{2}")
+    private val leadingYearPattern = Regex("^($yearTokenPattern)\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*(.+)$",RegexOption.IGNORE_CASE)
+    private val trailingYearPattern = Regex("^(.+?)\\s*[-\\u2013\\u2014\\u00b7,:|/ ]+\\s*($yearTokenPattern)$",RegexOption.IGNORE_CASE)
+    private val harvestYearPattern = Regex("(?i)\\b(?:[cgos]osecha|vendimia|annata|millesime|recolte|harvest)\\s+($yearTokenPattern)\\b")
     private val originFramingWrapper = Regex(
         "(?i)^(?:product\\s+of|produce\\s+of|produced\\s+in|produit\\s+de|wine\\s+of|" +
             "vin\\s+de|vin\\s+du|vin\\s+des|grand\\s+vin\\s+de|grand\\s+vin\\s+du|grand\\s+vin\\s+des)\\s+(.+?)(?:\\s+wine)?$"
@@ -76,21 +80,33 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             words.any { EvidenceRanking.nameKey(it) in placeKeys }
     }
 
+    private fun normalizeVintageCandidate(raw:String,maxYear:Int):String? {
+        val compact=TextNorm.normalize(raw).filter(Char::isLetterOrDigit)
+        if(compact.length!=4) return null
+        val chars=compact.toCharArray()
+        if(chars[0] in setOf('i','l') && chars[1]=='9' && chars.drop(2).all(Char::isDigit)) chars[0]='1'
+        if(chars[0]=='2' && chars[1]=='o') chars[1]='0'
+        val year=String(chars)
+        if(!canonicalYearPattern.matches(year)) return null
+        val numeric=year.toIntOrNull() ?: return null
+        return year.takeIf { numeric in 1900..maxYear }
+    }
+
     private fun detachEdgeVintage(raw: String, maxYear: Int): Pair<String, String?> {
         val trimmed = raw.trim()
         val norm = TextNorm.normalize(trimmed)
         if (foundingYearCue.containsMatchIn(norm)) return trimmed to null
         val lead = leadingYearPattern.matchEntire(trimmed)
         if (lead != null) {
-            val yr = lead.groupValues[1]
+            val yr = normalizeVintageCandidate(lead.groupValues[1],maxYear)
             val rest = lead.groupValues[2].trim()
-            if (yr.toInt() in 1900..maxYear && rest.count(Char::isLetter) >= 3) return rest to yr
+            if (yr!=null && rest.count(Char::isLetter) >= 3) return rest to yr
         }
         val trail = trailingYearPattern.matchEntire(trimmed)
         if (trail != null) {
             val rest = trail.groupValues[1].trim()
-            val yr = trail.groupValues[2]
-            if (yr.toInt() in 1900..maxYear && rest.count(Char::isLetter) >= 3) return rest to yr
+            val yr = normalizeVintageCandidate(trail.groupValues[2],maxYear)
+            if (yr!=null && rest.count(Char::isLetter) >= 3) return rest to yr
         }
         return trimmed to null
     }
@@ -98,7 +114,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     private fun explicitHarvestVintage(norm: String, maxYear: Int): String? {
         if (foundingYearCue.containsMatchIn(norm)) return null
         val yr = harvestYearPattern.find(norm)?.groupValues?.get(1) ?: return null
-        return yr.takeIf { it.toInt() in 1900..maxYear }
+        return normalizeVintageCandidate(yr,maxYear)
     }
 
     /** Maps an LWIN `country_group` string to a verified catalog country name, or null when unknown. */
@@ -110,7 +126,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     }
 
     /**
-     * Lab v4 only: when `LinkedWineResolver` confirms a `supported_pair` LWIN wine whose name (or
+     * Lab v5 only: when `LinkedWineResolver` confirms a `supported_pair` LWIN wine whose name (or
      * classification/designation base) is itself an unambiguous catalog appellation compatible with
      * any already-resolved geography and producer country, returns only the still-missing ancestors.
      */
@@ -169,36 +185,100 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         java.text.Normalizer.Form.NFKD,
     ).replace(Regex("\\p{M}+"),"").replace(Regex("[^\\p{L}\\p{N}]+")," ").trim().replace(Regex("\\s+")," ")
 
-    private val nonProducerCatalogKeys:Set<String> by lazy {
+    private val broadGeographyKeys:Set<String> by lazy {
+        buildSet {
+            for(place in kb.places().filter { it.type in setOf("country","region","subregion") }) {
+                add(catalogWordKey(place.name))
+                BundledOrigins.spellingForms(place).forEach { add(catalogWordKey(it)) }
+            }
+            for(origin in ReferenceWineCatalog.origins.filter { it.nameRole=="geography" }) {
+                add(catalogWordKey(origin.name));origin.aliases.forEach { add(catalogWordKey(it)) }
+                origin.regions.forEach { add(catalogWordKey(it)) };origin.path.forEach { add(catalogWordKey(it)) }
+            }
+            remove("")
+        }
+    }
+    private val broadGeographyWords:Set<String> by lazy {
+        broadGeographyKeys.flatMap { it.split(' ') }.filter(String::isNotBlank).toSet()
+    }
+    private val broadGeographyMaxWords:Int by lazy {
+        broadGeographyKeys.maxOfOrNull { it.count { c -> c==' ' }+1 } ?: 0
+    }
+    private val geographyGlueWords=setOf("de","del","du","des","d","la","le","les","the","of","and")
+    fun isBroadGeographyLine(rawText:String):Boolean {
+        val key=catalogWordKey(rawText)
+        if(key.isEmpty()) return false
+        if(key in broadGeographyKeys) return true
+        val words=key.split(' ')
+        val geographicContent=words.filterNot { it in geographyGlueWords }
+        return words.size in 2..(broadGeographyMaxWords+2) && geographicContent.size>=2 &&
+            geographicContent.all { it in broadGeographyWords }
+    }
+
+    private val spatialSemanticBoundaryYear=Regex(
+        """(?<![\p{L}\p{N}])(?:18|19|20|[il1]\s*9|2\s*[o0])\s*\d\s*\d(?![\p{L}\p{N}])""",
+        RegexOption.IGNORE_CASE,
+    )
+    private val spatialVintageFraming=Regex("(?iu)\\b(?:vintage|millesime|annata|cosecha|vendimia|harvest)\\b")
+    private fun hasSpatialSemanticBoundary(text:String):Boolean = spatialSemanticBoundaryYear.containsMatchIn(text) ||
+        spatialVintageFraming.containsMatchIn(TextNorm.normalize(text)) || MetadataRules.isBoilerplate(text) ||
+        MetadataRules.isPackaging(text) || WineDesignations.framedAppellation(text)!=null
+
+    /** Spatial supplemental spans are producer lookups only, never rewritten readings. */
+    internal fun allowsSpatialProducerJoin(upperText:String,lowerText:String):Boolean {
+        val upper=TextNorm.scrub(upperText).trim();val lower=TextNorm.scrub(lowerText).trim()
+        val combined="$upper $lower"
+        if(upper.isBlank() || lower.isBlank() || hasSpatialSemanticBoundary(upper) || hasSpatialSemanticBoundary(lower) ||
+            hasSpatialSemanticBoundary(combined) || isBroadGeographyLine(upper) || isBroadGeographyLine(lower) ||
+            isBroadGeographyLine(combined)) return false
+        val producerCue=roles.hasProducerCue(upper)
+        if(roles.isWineDescription(upper) || WineDesignations.isDesignation(upper) ||
+            WineDesignations.isBareClassification(upper) || WineDesignations.framedAppellation(upper)!=null) return false
+        val lowerAppellation=WineDesignations.isAppellationName(lower) || WineDesignations.hasNameAndDesignation(lower)
+        val lowerVarietalOrStyle=roles.isWineDescription(lower) && !lowerAppellation
+        if(lowerVarietalOrStyle) return false
+        if(lowerAppellation || isNonProducerCatalogTerm(lower)) return producerCue
+        return true
+    }
+
+    private val grapeCandidateKeys:Set<String> by lazy {
+        BundledGrapes.terms.flatMap { listOf(it.name)+it.aliases }.map(::catalogWordKey).filter(String::isNotBlank).toSet()
+    }
+    private val geographicCandidateKeys:Set<String> by lazy {
         buildSet {
             for(place in kb.places()) {
                 add(catalogWordKey(place.name))
                 BundledOrigins.spellingForms(place).forEach { add(catalogWordKey(it)) }
             }
             for(origin in ReferenceWineCatalog.origins) {
-                add(catalogWordKey(origin.name))
-                add(catalogWordKey(origin.country))
+                add(catalogWordKey(origin.name));add(catalogWordKey(origin.country))
                 origin.regions.forEach { add(catalogWordKey(it)) }
-                origin.aliases.forEach { add(catalogWordKey(it)) }
-                origin.path.forEach { add(catalogWordKey(it)) }
+                origin.aliases.forEach { add(catalogWordKey(it)) };origin.path.forEach { add(catalogWordKey(it)) }
             }
             for(term in BundledOrigins.terms) {
-                add(catalogWordKey(term.name))
-                add(catalogWordKey(term.country))
+                add(catalogWordKey(term.name));add(catalogWordKey(term.country))
                 if(term.region.isNotBlank()) add(catalogWordKey(term.region))
                 term.aliases.forEach { add(catalogWordKey(it)) }
             }
-            for(term in BundledGrapes.terms) {
-                add(catalogWordKey(term.name))
-                term.aliases.forEach { add(catalogWordKey(it)) }
-            }
+            remove("")
+        }
+    }
+    private val grapeCandidateMaxWords:Int by lazy { grapeCandidateKeys.maxOfOrNull { it.count { c -> c==' ' }+1 } ?: 0 }
+    private val geographicCandidateMaxWords:Int by lazy { geographicCandidateKeys.maxOfOrNull { it.count { c -> c==' ' }+1 } ?: 0 }
+    private fun containsCatalogSequence(words:List<String>,terms:Set<String>,maxLength:Int):Boolean {
+        if(words.isEmpty() || maxLength==0) return false
+        for(start in words.indices) for(size in 1..minOf(maxLength,words.size-start))
+            if(words.subList(start,start+size).joinToString(" ") in terms) return true
+        return false
+    }
+
+    private val nonProducerCatalogKeys:Set<String> by lazy {
+        buildSet {
+            addAll(geographicCandidateKeys);addAll(grapeCandidateKeys)
             for(term in BundledWineStyles.terms) {
-                add(catalogWordKey(term.name))
-                term.aliases.forEach { add(catalogWordKey(it)) }
+                add(catalogWordKey(term.name));term.aliases.forEach { add(catalogWordKey(it)) }
             }
-            for(term in ReferenceWineCatalog.labelTerms) {
-                add(catalogWordKey(term.name))
-            }
+            for(term in ReferenceWineCatalog.labelTerms) add(catalogWordKey(term.name))
             remove("")
         }
     }
@@ -216,6 +296,14 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         return false
     }
 
+    /** Edit-equivalent discouragement passed to producer lookup: grape terms are a hard penalty;
+     * a geographic term costs only one character so a real place-named estate can still win. */
+    fun producerCandidatePenalty(rawText:String):Int {
+        val words=catalogWordKey(rawText).split(' ').filter(String::isNotBlank)
+        if(containsCatalogSequence(words,grapeCandidateKeys,grapeCandidateMaxWords)) return 3
+        return if(containsCatalogSequence(words,geographicCandidateKeys,geographicCandidateMaxWords)) 1 else 0
+    }
+
     fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS,exactGeographyFastPath:Boolean=false):EvidenceResult {
         val started=System.nanoTime()
         fun checkBudget() {
@@ -223,7 +311,20 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             check((System.nanoTime()-started)/1_000_000<budgetMs) { "Evidence extraction budget exceeded" }
         }
         val trace=EvidenceTrace()
-        val graph=EvidenceLexicon.expand(EvidenceGraphBuilder.build(records,::checkBudget,typedIdentity),::checkBudget)
+        val knownProducerLineCache=mutableMapOf<String,Boolean>()
+        fun isKnownProducerLine(text:String):Boolean {
+            val key=catalogWordKey(text)
+            return knownProducerLineCache.getOrPut(key) { kb.findProducer(text).any { it.editDistance==0 } }
+        }
+        val graph=EvidenceLexicon.expand(
+            EvidenceGraphBuilder.build(
+                records,::checkBudget,typedIdentity,
+                isBroadGeographyLine={ text -> isBroadGeographyLine(text) },
+                isKnownProducerLine={ text -> isKnownProducerLine(text) },
+                allowWineTitlePairs=true,
+            ),
+            ::checkBudget,
+        )
         trace.add("graph", "observations=${graph.observations.size}; phrases=${graph.phrases.size}; truncated=${graph.truncated}")
         data class ExactGeoCandidate(val hypothesis:Hypothesis,val place:Place,val depth:Int)
         val hypotheses=mutableListOf<Hypothesis>()
@@ -296,7 +397,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             val nonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
             val originFramingAdmin=!nonOriginAdmin && MetadataRules.isBoilerplate(text)
             val administrative=nonOriginAdmin || originFramingAdmin
-            val paragraph=p.box.width()<.25f && graph.phrases.count { other -> other.id!=p.id &&
+            val boundedTitlePair=p.construction=="bounded vertical wine-title pair"
+            val paragraph=!boundedTitlePair && p.box.width()<.25f && graph.phrases.count { other -> other.id!=p.id &&
                 kotlin.math.abs(other.box.left-p.box.left)<.04f && kotlin.math.abs(other.box.centerY()-p.box.centerY())<.12f }>=3
             val headingOnly=typedIdentity && EvidenceIdentityRoles.headingOnly(text)
             val namedEstate=typedIdentity && EvidenceIdentityRoles.namedEstate(text)
@@ -373,8 +475,9 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 hypotheses+=added
                 return added
             }
-            if(!originFramingAdmin && Regex("(?:19|20)\\d{2}").matches(norm) && norm.toInt() in 1900..year)
-                offer(mapOf(FieldId.VINTAGE to norm),55.0,"complete observed vintage")
+            val standaloneYear=normalizeVintageCandidate(text,year)
+            if(!originFramingAdmin && standaloneYear!=null)
+                offer(mapOf(FieldId.VINTAGE to standaloneYear),55.0,"complete observed vintage")
             else if(!originFramingAdmin) {
                 val embeddedYear=(attachedYear?.takeIf { places.isNotEmpty() }) ?: explicitHarvestVintage(norm,year)
                 if(embeddedYear!=null) offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage")
@@ -429,6 +532,18 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
             else if(repair==null && attachedYear!=null && places.any { TextNorm.normalize(it.name)==subjectNorm } && WineDesignations.isAppellationName(placeSubject))
                 offer(mapOf(FieldId.WINE_NAME to placeSubject),65.0,"exact printed appellation may also name the wine")
+            if(boundedTitlePair) {
+                val lowerTitleLine=sources.maxByOrNull { it.record.bboxRect.centerY() }?.record?.textRaw.orEmpty()
+                val lowerIsCatalogAppellation=WineDesignations.isAppellationName(lowerTitleLine) ||
+                    WineDesignations.hasNameAndDesignation(lowerTitleLine)
+                val placeMatchesAreAppellations=places.isEmpty() ||
+                    (lowerIsCatalogAppellation && places.all { WineDesignations.isAppellationName(it.name) })
+                if(MetadataRules.isIdentity(text) && placeMatchesAreAppellations && !endsConnector && !beginsConnector)
+                    offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text),116.0,
+                        "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed"))
+                trace.add("bounded_title_pair","phrase=${p.id}; text=$text")
+                continue
+            }
             if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
             if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
                 offer(mapOf(FieldId.WINE_NAME to text),75.0,"explicit named cuvee role; not producer attribution")
@@ -452,7 +567,10 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             if(norm.count(Char::isLetter)<4 || norm.any(Char::isDigit)) continue
             val joined=p.construction.contains("connector")
             val titleCue=Regex("\\b(reserve|reserva|riserva)\\b").containsMatchIn(norm)
-            if(!titleCue) offer(mapOf(FieldId.PRODUCER to text),(if(roles.hasProducerCue(text)) 85.0 else if(joined) 82.0 else 32.0)+lexicalBonus,"producer/brand interpretation; ${p.construction}")
+            val producerRolePenalty=producerCandidatePenalty(text)*24.0
+            if(!titleCue) offer(mapOf(FieldId.PRODUCER to text),
+                (if(roles.hasProducerCue(text)) 85.0 else if(joined) 82.0 else 32.0)+lexicalBonus-producerRolePenalty,
+                "producer/brand interpretation; ${p.construction}"+(if(producerRolePenalty>0) "; grape/geography role penalty=$producerRolePenalty" else ""))
             if(!namedEstate) offer(mapOf(FieldId.WINE_NAME to text),(if(joined) 88.0 else 43.0)+lexicalBonus,"title interpretation; ${p.construction}")
         }
         fun coherentExactPair(a:ExactGeoCandidate,b:ExactGeoCandidate):Boolean {

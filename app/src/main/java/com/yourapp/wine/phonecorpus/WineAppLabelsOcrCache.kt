@@ -15,9 +15,9 @@ import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Per-photo cache of verified OCR model outputs (ML Kit + Paddle v6 Medium) for the 125-label
- * benchmark so Lab v4 extraction rules can be iterated without re-running both OCR models on every
- * pass when the user checks "Cached OCR" next to Lab v4.
+ * Per-photo cache of verified OCR model outputs (ML Kit + Paddle v6 Medium) for the 124-label
+ * benchmark so Lab v5 extraction rules can be iterated without re-running both OCR models on every
+ * pass when the user checks "Cached OCR" next to Lab v5.
  *
  * Keyed by corpus signature + OCR model/threshold signature (never by build SHA or install time),
  * so cached OCR outputs survive app updates while invalidating automatically if any corpus image
@@ -125,7 +125,7 @@ internal class WineAppLabelsOcrCache(
 
     /**
      * Seeds missing OCR cache entries from completed attempts already stored on this device under
-     * the same verified corpus signature, so upgrading immediately makes prior 125-label OCR runs
+     * the same verified corpus signature, so upgrading immediately makes prior 124-label OCR runs
      * reusable without requiring another cold OCR pass first.
      */
     fun promote(runFolders: List<File>, expectedHashes: Map<String, String>): Int {

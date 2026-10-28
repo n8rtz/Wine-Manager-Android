@@ -33,7 +33,7 @@ fun main() {
     verify(LinkedWineResolver(index(ws=listOf(wine.copy(producerId="b")))).resolve("","",pd,producers+wineSpans).wineId==null)
     verify(LinkedWineResolver(idx).resolve("","Keep",pd,producers+wineSpans) { throw ProducerResolver.BudgetExceeded() }.wine=="Keep")
     verify(!LinkedWineResolver.eligible("Imported by Moonlight Cuvee"))
-    // Lab v4 single-reading policy: one engine carries both sides; Prod behaviour is untouched above.
+    // Lab v5 single-reading policy: one engine carries both sides; Prod behaviour is untouched above.
     val lab=ProducerResolver.Policy.singleReading
     val oneProducer=ProducerResolver(idx).resolve("",producers.take(1),policy=lab)
     verify(oneProducer.acceptedId=="a")
@@ -63,7 +63,7 @@ fun main() {
     // remain one name group, not 33 OCR votes; the independent two-engine requirement still applies.
     verify(LinkedWineResolver(index(ws=List(33) { wine.copy(id=it.toString()) })).resolve("","",pd,producers+wineSpans).wineId!=null)
     verify(resolve(spans=List(129) { producers[0] }).wineId==null)
-    // Lab v4 d=0 exact-match fast-path: pairs with newly resolved d=0 producer and skips noisy existingWine/rivals.
+    // Lab v5 d=0 exact-match fast-path: pairs with newly resolved d=0 producer and skips noisy existingWine/rivals.
     val catalogTerms=setOf("chianti classico","pinot noir")
     val labFast=lab.withExactMatchFastPath { ProducerResolver.normalize(it) in catalogTerms }
     val fastProducer=ProducerResolver(idx).resolve("LEO",producers.take(1),policy=labFast)

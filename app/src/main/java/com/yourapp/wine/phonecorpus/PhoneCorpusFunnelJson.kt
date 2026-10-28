@@ -17,6 +17,9 @@ internal object PhoneCorpusFunnelJson {
         val image = output.getString("image")
         val attempt = output.optInt("attempt", 1)
         val array = output.optJSONArray("pipeline_funnel")
+        val ownerMode = PhoneCorpusRunner.Mode.fromPipelineId(pipelineId)
+            ?: PhoneCorpusRunner.Mode.entries.firstOrNull { it.name == mode }
+        val acceptedPipelineIds = ownerMode?.acceptedPipelineIds ?: setOf(pipelineId)
         if (array != null && output.optInt("pipeline_funnel_version") == F.VERSION) {
             val gates = buildMap {
                 for (i in 0 until array.length()) {
@@ -32,7 +35,7 @@ internal object PhoneCorpusFunnelJson {
             val row = trace.getJSONObject(i);row.keys().asSequence().associateWith { row.optString(it) }
         } }.orEmpty()
         val pipelines = output.optJSONArray("pipelines")
-        val current = pipelines?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.optString("pipeline") == pipelineId } }
+        val current = pipelines?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.optString("pipeline") in acceptedPipelineIds } }
         val fields = current?.optJSONObject("fields")?.let { f -> PhoneCorpusMath.fields.associateWith { f.optString(it) } }
         val status = if (output.optString("status") != "complete") "failed" else current?.optString("status")
         return PhoneCorpusPipelineDiagnostics.capture(image, attempt, mode, rows, emptyMap(), fields, status, fresh = false)

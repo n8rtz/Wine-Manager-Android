@@ -33,7 +33,7 @@ internal data class TextLabSavedBatch(val id:String,val build:String,val status:
  * feed several benchmark contenders for a photo (see PhoneCorpusRunner.runImageAllModes):
  * with [benchmarkAllPipelines] set, [benchmarkEvidence], [benchmarkLwinSpatial] and
  * [spatialPhrases] independently select which contender summaries are appended to each
- * journal (Prod v2.0 evidence, Prod v3.0 spatial with LWIN-only producers, Lab v4 spatial
+ * journal (Prod v2.0 evidence, Prod v4.0 spatial with LWIN-only producers, Lab v5 spatial
  * with the expanded producer index). Every other caller keeps the legacy single-extractor
  * behavior. */
 internal class TextLabBatch(images:List<TextLabImageKey>,selected:Set<String>,build:String,detectLines:Boolean,val compareEvidence:Boolean=false,val anchorHybrid:Boolean=false,val repairProducer:Boolean=false,val compareGazetteer:Boolean=false,val residualCandidates:Boolean=false,val spatialPhrases:Boolean=false,val benchmarkOnly:Boolean=false,val benchmarkAllPipelines:Boolean=false,val benchmarkEvidence:Boolean=false,val benchmarkLwinSpatial:Boolean=false,val repairPlaces:Boolean=false,val resolverSingleReading:Boolean=false) {

@@ -1,6 +1,8 @@
-# Lab v4 125-Label Accuracy Roadmap & Root-Cause Checklist
+# Lab v5 125-Label Accuracy Roadmap & Root-Cause Checklist
 
-Grounded in the full 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 125 attempted / 123 fully scorable bottles, 748 scorable field cells). Work through the unchecked items (`- [ ]`) **one at a time**, verifying each step against the 125-label benchmark and host/Kotlin check suites while keeping `Prod v3.0` (`ProducerResolver.Policy.prod` and non-Lab extraction paths) untouched.
+> **Version-label note (2026-10-27):** the just-before-refresh captured results are now named **Lab v5** and **Prod v4.0**. Older snapshots and implementation notes in this roadmap keep their original version names when they describe historical builds; the latest `a838c0ffb01b` capture below is explicitly relabeled and retains its original pipeline IDs for provenance.
+
+Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 125 attempted / 123 fully scorable bottles, 748 scorable field cells). Work through the unchecked items (`- [ ]`) **one at a time**, verifying each step against the 125-label benchmark and host/Kotlin check suites while keeping the frozen Prod v4.0 (`ProducerResolver.Policy.prod` and non-Lab extraction paths) untouched.
 
 ---
 
@@ -159,3 +161,51 @@ Grounded in the full 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 125 
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceAnchorHybrid.kt`
   - **Root cause:** Ensures any vintage recovered by 6a–6c in `EvidenceExtractor` flows into the final summary whenever `form_summary` (`anchor`) missed the vintage.
   - **Target bottles:** `#26, #56, #96, #160`.
+
+---
+
+## Latest Analysis — Pre-refresh capture relabeled Lab v5 / Prod v4.0 (2026-10-27)
+
+### Capture provenance and re-scoring boundary
+
+The user-supplied scored export is `wine-app-labels-125-all-versions-a838c0ffb01b (1).csv` (3,226 rows; SHA-256 `93554bc392d7956cf2b860a53b3c692f1ceb17859a2d9ea0c2a5987d3ae6173d`). It was exported by build `a838c0ffb01b`; its Lab rows were produced under legacy pipeline `lab-v4-expanded-producers`, and its frozen Prod v3 rows were captured by build `14d18846f50a` under `production-v3.0-lwin-only`. For the current benchmark naming, these results are **Lab v5** and **Prod v4.0**; the original CSV values remain provenance, not current IDs. The matching raw exports are `wine-app-labels-125-raw-all-versions-a838c0ffb01b-part-01 (1).csv` (21,841 rows; SHA-256 `976f149afcce03e134d0a2328e2d9f6a7349993629b002c68d3830ca01fbc3a1`) and `wine-app-labels-125-raw-all-versions-a838c0ffb01b-part-02 (2).csv` (12,398 rows; SHA-256 `2cf9465a59e214e30c92d2aaefb0434496fcb679d8564d383c67d92c2960e748`). The scored field rows match the earlier unsuffixed export; the Lab `run_id` is the identified difference.
+
+The uploaded summary row records the capture-time reference score (`579` correct values, `65` wrong, `33` missing, `60` correct blanks, `11` unsupported fills, `2` unscored; `639/748` correct including blanks; `52/123` complete). The owner-adjudicated workbook changes below were applied after capture, so the same predictions were re-scored against the current generated `scoring.json` without rerunning OCR. A local mirror of `PhoneCorpusMath`/`TextNorm.scrub` applied the scoring rules below; no Android/Kotlin execution was available in this environment.
+
+| Current-reference rescore | Lab v5 (`a838c0ffb01b`, captured predictions) | Frozen Prod v4.0 (`14d18846f50a`, not same-build A/B) |
+| --- | ---: | ---: |
+| Correct values | `589` | `561` |
+| Wrong values | `59` | `78` |
+| Missing values | `33` | `42` |
+| Correct blanks | `60` | `59` |
+| Unsupported fills | `7` | `8` |
+| Unscored | `2` | `2` |
+| Correct including blanks | `649/748` (`86.8%`) | `620/748` (`82.9%`) |
+| Complete labels | `53/123` (`43.1%`) | `42/123` (`34.1%`) |
+
+This is a **reference-only rescore** of saved outputs; no model behavior changed in that comparison. Against the uploaded summary rows, owner corrections change 10 Lab field outcomes and 9 frozen Prod outcomes. Lab's remaining `59` wrong values are all in producer and wine name (`29` producer, `30` wine name). Lab field totals: Producer `95/29/1` correct/wrong/missing; Wine name `74/30/19` plus `1` unsupported and `1` unscored; Country `122` correct, `2` missing, `1` unsupported; Region `117` correct, `3` missing, `1` unsupported, `4` correct blanks; Subregion `77` correct, `4` missing, `4` unsupported, `40` correct blanks; Vintage `104` correct, `4` missing, `16` correct blanks (`1` unscored cell is included in the total of two unscored). Frozen Prod field totals: Producer `79/44/2`; Wine name `70/34/19` plus `1` unsupported and `1` unscored; Country `121` correct, `3` missing, `1` unsupported; Region `115` correct, `5` missing, `1` unsupported, `4` correct blanks; Subregion `72` correct, `9` missing, `5` unsupported, `39` correct blanks; Vintage `104` correct, `4` missing, `16` correct blanks (`1` unscored).
+
+### Owner-adjudicated benchmark targets (now reflected in both workbook tabs and generated assets)
+
+| Review | Producer | Wine name | Region | Subregion |
+| ---: | --- | --- | --- | --- |
+| `#171` | Bodegas Vatan | Triton | Castilla y Leon | Toro |
+| `#179` | Campo Eliseo | Cuvée Alegre | Castilla y Leon | Toro |
+| `#181` | Marqués de Casa Concha | Heritage | Maipo Valley | Puente Alto |
+| `#184` | Patricia Green Cellars | Volcanic Pinot Noir | Willamette Valley | Dundee Hills |
+
+Use canonical/catalog spelling **Willamette Valley**. The saved Lab predictions already contain these parent/child geography assignments; correcting the reference moves four Region errors and four unsupported Subregion fills into correct values. The #179 producer and wine-name predictions also become correct under the owner's adjudication. Remaining captured-run errors include #171 wine name (`Toro` vs `Triton`), #181 producer (`Marquesa` vs `Marqués de Casa Concha`), and #184 wine name (blank vs `Volcanic Pinot Noir`).
+
+### Root-cause recommendations from the latest run
+
+1. **Keep the final producer/database comparison as an independent last pass.** It is additive to the upstream span resolver, not gated on upstream span eligibility or acceptance, per owner direction. The current implementation interprets “a few characters” as at most two normalized edits; that threshold is a working choice, not an owner-specified exact value. The owner accepts occasional correct-to-wrong canonicalizations. In the previous 14-replacement audit, however, the pass was net `-3` correct (3 wrong→correct, 6 correct→wrong, 5 still wrong). FTS-first ties selected `Chateau Labat` over OCR-supported `Chateau Fabas` (#116); other ties include #62, #181 and #70. Unique-nearest false replacements included #146 `CITRAN`→`Citra` and #160 `CHATEAU DES ROCHES`→`Chateau des Rochers`. Improve tie ranking with OCR-supported producer-role evidence while preserving the independent terminal comparison and its deliberate owner-approved recall trade-off.
+2. **Prioritize wine-name phrase/role/layout ranking, not a larger beam alone.** Before reference corrections, wine name had `32` wrong and `19` missing; all 19 missing cases abstained with competing assignments. Thirteen expected names were already recoverable by OCR-token concatenation, 13 reached the 64-state beam cap, and 16 showed ownership conflicts. The target is better segmentation, phrase ownership and role ranking; simply increasing beam width does not address these conflicts.
+3. **Normalize vintage OCR conservatively and keep hybrid fallback guarded.** Missing reads were #56 `I998`→1998, #96 `I996`→1996, #160 `2 0 2 0`→2020, and #26 split `20` + `16`→2016. The current worktree now recognizes context-bounded `I`/`l` and `O` confusions, spaced digits, and same-engine split halves with level/similar-size boxes and tolerant symmetry around the observed text center (not a brittle fixed `x=0.5`). The hybrid preserves every populated baseline vintage and fills only a blank with a canonical `19xx`/`20xx` year within the supplied maximum year. Instrumented regression coverage was added; keep Item 6 open until Android compilation/device validation and the saved-reading replay pass.
+4. **Apply global producer-name normalization and role penalties (regression example: #58).** These are shared, catalog-driven rules for every producer candidate and completed producer value, not special cases for one wine; #58 is a motivating regression only. The zero-cost `de` omission applies only to producer-name distance, leaving linked-wine name comparison unchanged. Grape-variety phrases receive a strong producer penalty (3 edit-equivalent units); geography receives a lighter penalty (1). A unique, supported producer may replace an existing baseline only when that baseline carries the strong grape-variety penalty; a geography-only baseline remains protected. For #58, both OCR engines read `Les Ormes` and `Cambras`; candidate 3 also reads `de`. The expanded producer index has `Les Ormes de Cambras`, while the primary LWIN-only index does not. The worktree passes clean same-engine, same-variant producer hypotheses from the evidence graph into `ProducerResolver`; omission of `de` has zero producer-name edit cost. Re-run #58 with the expanded index as one regression, while measuring these shared rules across the full Lab v5 corpus.
+5. **Protect field-hierarchy correctness in scoring.** The four corrected references show why Region and Subregion must be evaluated as separate hierarchy levels. Regenerate workbook-derived targets and coverage after every owner correction; never count an old local appellation in Region as correct merely because the OCR text is present somewhere on the label.
+
+### Implementation and validation status
+
+The working tree contains the vintage normalization/split-pair/blank-baseline fallback, producer evidence-span routing, zero-cost `de`, stronger grape and lighter geography penalties, workbook corrections, regenerated `candidate-labels.json`, `scoring.json`, `gazetteer-coverage.json`, phone-test assets and assertions. The workbook builder also falls back to the already packaged, hash-verified legacy image map when the retired debug corpus files are absent, so the documented build order remains reproducible without duplicating the old photo set. Host validation passed after the version-rename contract tests were updated: `268` Python tests. Android/Kotlin/Gradle and device validation remain unavailable in this environment (no Java/JDK, Android SDK, Gradle, or adb); do not mark Items 3/6 measured-complete until those checks and the saved-reading replay confirm behavior and regressions.
+
+**Small performance improvement:** producer-role penalties reuse lazily computed maximum catalog phrase lengths, and vintage regexes compile once per extractor/hybrid rather than once per candidate. Keep the current `MAX_SPANS` and existing bounded search limits; the measured wine-name root cause does not justify widening them blindly.

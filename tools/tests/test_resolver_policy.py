@@ -1,4 +1,4 @@
-"""Lab v4 single-reading resolver policy: Prod untouched, Lab v4 opt-in, every other gate kept.
+"""Lab v5 single-reading resolver policy: Prod untouched, Lab v5 opt-in, every other gate kept.
 
 The resolvers are Kotlin, so this asserts the wiring contract and the exact Prod wording that
 host replays and stored CSVs already depend on. The behaviour itself is exercised by the Kotlin
@@ -28,7 +28,7 @@ class ResolverPolicyWiringTests(unittest.TestCase):
             self.assertTrue(fragment in producer, fragment)
         self.assertTrue('policy:ProducerResolver.Policy=ProducerResolver.Policy.prod' in LINKED.read_text())
         # The Lab switch (on for the 2026-10-27 measurement run) is the only path to the lab policy;
-        # the Prod v3.0 contender still never receives it.
+        # the Prod v4.0 contender still never receives it.
         self.assertTrue('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true' in RUNNER.read_text())
 
     def test_every_independence_check_follows_the_policy(self):
@@ -41,12 +41,12 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertNotIn('a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() }\n        trace.visit("independent"',
                          PRODUCER.read_text())
 
-    def test_the_lab_policy_reaches_lab_v4_only(self):
+    def test_the_lab_policy_reaches_lab_v5_only(self):
         extraction = EXTRACTION.read_text()
         self.assertIn('val policy=if(expanded && singleReading)', extraction)
         self.assertIn('Policy.singleReading', extraction)
         self.assertIn('expanded=true,singleReading=batch.resolverSingleReading', extraction)
-        # The Prod v3.0 contender must never receive the flag.
+        # The Prod v4.0 contender must never receive the flag.
         self.assertIn('appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false) }', extraction)
         self.assertNotIn('expanded=false,singleReading', extraction)
         self.assertIn(',policy=policy)', extraction)
@@ -59,7 +59,7 @@ class ResolverPolicyWiringTests(unittest.TestCase):
                       LINKED.read_text())
         self.assertIn('"resolver_single_reading_enabled" to resolverSingleReading.toString()', BATCH.read_text())
         self.assertIn('Accept one engine reading for producer and linked wine (experimental)', LAB_SCREEN.read_text())
-        self.assertIn('Lab v4 only; Prod v3.0 keeps the two-engine rule.', LAB_SCREEN.read_text())
+        self.assertIn('Lab v5 only; Prod v4.0 keeps the two-engine rule.', LAB_SCREEN.read_text())
         # The table must not keep claiming a two-engine quorum the lab run may not have used.
         funnel = FUNNEL.read_text()
         self.assertIn('"Independent-support agreement"', funnel)
@@ -69,6 +69,9 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         producer = PRODUCER.read_text()
         self.assertIn('MAX_PRODUCER_FUZZY_CANDIDATES=256', producer)
         self.assertIn('MAX_FINAL_NEAR_MATCH_DISTANCE=2', producer)
+        self.assertIn('policy.producerPenalty(cleanExisting).coerceAtLeast(0)', producer)
+        self.assertIn('existingRolePenalty<3', producer)
+        self.assertIn('strong grape-variety cue', producer)
         self.assertIn('fun finalNearMatch(value:String', producer)
         self.assertIn('finalNearMatch(finalProducer,checkProducerBudget)', SPATIAL.read_text())
         self.assertIn('rows.none { it.distance==0 }', producer)
@@ -100,7 +103,7 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         label_ctx = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt').read_text()
         preview = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
         spatial = SPATIAL.read_text()
-        # Default stays false so Prod v3.0 and SavedEvidenceReplayTest stay untouched.
+        # Default stays false so Prod v4.0 and SavedEvidenceReplayTest stay untouched.
         self.assertIn('fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS,exactGeographyFastPath:Boolean=false):EvidenceResult', evidence)
         self.assertIn('exactGeographyFastPath: Boolean = false,', label_ctx)
         self.assertIn('exactGeographyFastPath:Boolean=false', preview)

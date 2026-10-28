@@ -8,7 +8,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
- * Lab v4 spatial bottle-column & medal-sticker filter plus conditional tiny-footprint zoom-crop.
+ * Lab v5 spatial bottle-column & medal-sticker filter plus conditional tiny-footprint zoom-crop.
  *
  * Operates purely on normalized `[0, 1]` coordinates and general wine-industry competition/critic
  * sticker vocabulary (never corpus-specific strings), so:

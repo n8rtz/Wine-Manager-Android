@@ -16,7 +16,11 @@ WORKBOOK = HERE / "reference-data-scrubbed-updated.xlsx"
 OUTPUT = HERE / "candidate-labels.json"
 SOURCE_MANIFEST = HERE / "source-manifest.json"
 OLD_ASSET_ROOT = ROOT / "app/src/debug/assets/phone-corpus-v1/images"
+PACKAGED_IMAGE_ROOT = ROOT / "app/src/main/assets/wine-app-labels-v1/images"
+PACKAGED_LEGACY_MAP = ROOT / "app/src/main/assets/wine-app-labels-v1/legacy-phone-corpus-image-map.json"
 ZIP_REVIEW_IDS = set(range(169, 191))
+EXPECTED_LABELS = 124
+OWNER_REMOVED_REVIEW_IDS = {67}
 DISPLAY_ALTERNATES = {
     (180, "wine_name"): ["Peppoli"],
     (182, "subregion"): ["Stags Leap"],
@@ -50,6 +54,11 @@ def main() -> None:
     def value(row: int, key: str):
         return sheet.cell(row, headers[key]).value
 
+    packaged_legacy_images = {}
+    if PACKAGED_LEGACY_MAP.is_file():
+        mapping = json.loads(PACKAGED_LEGACY_MAP.read_text())
+        packaged_legacy_images = {row["legacy_image"]: row for row in mapping.get("images", [])}
+
     records = []
     source_entries = []
     seen_reviews = set()
@@ -79,6 +88,15 @@ def main() -> None:
             source_path = f"app/src/debug/assets/phone-corpus-v1/images/{image}"
             source_repo = "AntoninLeroy/wine_label_reader_toolkit"
         staged_source = ROOT / source_path
+        if not staged_source.is_file() and source_repo == "AntoninLeroy/wine_label_reader_toolkit":
+            # The retired debug corpus is not kept as a duplicate dataset. Reuse the packaged
+            # byte-identical image via its audited legacy-ID map when rebuilding workbook targets.
+            mapped = packaged_legacy_images.get(image)
+            if mapped is not None:
+                packaged_image = PACKAGED_IMAGE_ROOT / mapped["image"]
+                if packaged_image.is_file():
+                    source_path = str(packaged_image.relative_to(ROOT))
+                    staged_source = packaged_image
         if not staged_source.is_file():
             raise FileNotFoundError(f"Workbook image is not staged: {source_path}")
         actual_sha256 = hashlib.sha256(staged_source.read_bytes()).hexdigest()
@@ -135,15 +153,16 @@ def main() -> None:
             "source_bytes": staged_source.stat().st_size,
         })
 
-    if len(records) != 125 or len(seen_reviews) != 125:
-        raise ValueError(f"Expected 125 retained workbook rows, got {len(records)}")
-    if 14 in seen_reviews or {49, 52, 55, 64, 73, 133, 159, 168} & seen_reviews:
-        raise ValueError("An owner-removed Club/red row entered the active dataset")
+    if len(records) != EXPECTED_LABELS or len(seen_reviews) != EXPECTED_LABELS:
+        raise ValueError(f"Expected {EXPECTED_LABELS} retained workbook rows, got {len(records)}")
+    removed_ids = {14, 49, 52, 55, 64, 73, 133, 159, 168} | OWNER_REMOVED_REVIEW_IDS
+    if removed_ids & seen_reviews:
+        raise ValueError(f"An owner-removed workbook row entered the active dataset: {sorted(removed_ids & seen_reviews)}")
     if all(entry["source_repo"] != "AntoninLeroy/wine_label_reader_toolkit" for entry in source_entries):
         raise ValueError("No linked workbook photos were included")
 
     candidate_doc = {
-        "dataset": "Wine App Labels — 125 retained reviewed workbook labels",
+        "dataset": f"Wine App Labels — {EXPECTED_LABELS} retained reviewed workbook labels",
         "source_workbook": "reference-data-scrubbed-updated.xlsx",
         "source_workbook_sha256": hashlib.sha256(WORKBOOK.read_bytes()).hexdigest(),
         "country_convention": "For U.S. wines, Country contains the U.S. state. Region and Subregion are separate fields.",
@@ -154,7 +173,7 @@ def main() -> None:
 
     manifest = json.loads(SOURCE_MANIFEST.read_text())
     manifest["image_count"] = len(records)
-    manifest["status"] = "125 retained workbook rows staged for the normal-app benchmark; owner-removed workbook rows and IMG_2732.jpeg remain excluded"
+    manifest["status"] = f"{EXPECTED_LABELS} retained workbook rows staged for the normal-app benchmark; owner-removed workbook rows and IMG_2732.jpeg remain excluded"
     manifest["repository_images"] = {
         "source_repo": "AntoninLeroy/wine_label_reader_toolkit",
         "source_commit": OLD_SOURCE_COMMIT,
@@ -166,10 +185,11 @@ def main() -> None:
     manifest["validation"].pop("decoded_jpegs", None)
     manifest["validation"].pop("total_image_bytes", None)
     manifest["validation"].pop("all_individually_opened_and_visually_checked", None)
+    manifest["validation"].pop("all_125_packaged_jpegs_decoded_and_hash_verified", None)
     manifest["validation"].update({
         "added_zip_images_decoded": 23,
         "added_zip_images_visual_reviewed": 22,
-        "all_125_packaged_jpegs_decoded_and_hash_verified": True,
+        f"all_{EXPECTED_LABELS}_packaged_jpegs_decoded_and_hash_verified": True,
         "source_archive_image_bytes": manifest["archive_bytes"],
         "active_benchmark_modified": True,
         "legacy_full_168_photo_evaluation_reactivated": False,
@@ -177,11 +197,14 @@ def main() -> None:
         "included_test_candidates": len(records),
         "app_test_candidate_count": len(records),
         "workbook_data_rows_per_tab_after_update": len(records),
-        "workbook_rows_removed_from_both_tabs": [14, 49, 52, 55, 64, 73, 133, 159, 168],
+        "workbook_owner_directive_rows_removed": len(OWNER_REMOVED_REVIEW_IDS),
+        "workbook_rows_removed_from_both_tabs": [14, 49, 52, 55, 64, 67, 73, 133, 159, 168],
+        "owner_removed_dataset_review_numbers": sorted(OWNER_REMOVED_REVIEW_IDS),
         "exact_workbook_image_hashes_verified": len(source_entries),
         "included_image_bytes": sum(entry["source_bytes"] for entry in source_entries),
         "new_zip_photos_visually_checked": 22,
     })
+    manifest["validation"]["debug_only_test_assets_added"] = False
     manifest["included_images"] = source_entries
     manifest.pop("app_debug_asset_root", None)
     manifest["app_main_asset_root"] = "app/src/main/assets/wine-app-labels-v1"

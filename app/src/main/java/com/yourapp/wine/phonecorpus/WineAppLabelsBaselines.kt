@@ -10,7 +10,7 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
 /**
- * Frozen Prod v1.0 / v2.0 / v3.0 outcomes for the 125-label benchmark.
+ * Frozen Prod v1.0 / v2.0 / v4.0 outcomes for the 124-label benchmark.
  *
  * The Prod versions are retired comparators: each photo runs through them once, the outcome is
  * written here under the current corpus signature, and every later pass reads that record instead
@@ -35,19 +35,31 @@ internal class WineAppLabelsBaselines(app: Application, corpusSignature: String)
 
     private fun folder(mode: PhoneCorpusRunner.Mode) = File(root, mode.name)
 
+    /** The owner relabeled the captured Prod v3 baseline as Prod v4; read the old store path too. */
+    private fun legacyFolders(mode: PhoneCorpusRunner.Mode): List<File> = when (mode) {
+        PhoneCorpusRunner.Mode.PRODUCTION_V4 -> listOf(File(root, "PRODUCTION_V3"))
+        else -> emptyList()
+    }
+
+    /** Legacy first, current last so a migrated/current record wins if both exist. */
+    private fun readFolders(mode: PhoneCorpusRunner.Mode) = legacyFolders(mode) + folder(mode)
+
     /** Frozen outcomes for this version, keyed by photo. Unreadable records are treated as missing. */
     fun all(mode: PhoneCorpusRunner.Mode): Map<String, JSONObject> {
-        val files = folder(mode).listFiles().orEmpty().filter { it.extension == "json" && !it.name.startsWith("_") }
+        val files = readFolders(mode).flatMap { dir ->
+            dir.listFiles().orEmpty().filter { it.extension == "json" && !it.name.startsWith("_") }
+        }
         val records = files.mapNotNull { file -> runCatching { JSONObject(file.readText()) }.getOrNull() }
             .filter { it.optBoolean("frozen") && it.optString("image").isNotBlank() }
         return records.associateBy { it.getString("image") }
     }
 
-    fun record(mode: PhoneCorpusRunner.Mode, image: String): JSONObject? {
-        val file = File(folder(mode), "$image.json")
-        if (!file.isFile) return null
-        return runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf { it.optBoolean("frozen") }
-    }
+    fun record(mode: PhoneCorpusRunner.Mode, image: String): JSONObject? =
+        readFolders(mode).asReversed().asSequence()
+            .map { File(it, "$image.json") }
+            .filter { it.isFile }
+            .mapNotNull { file -> runCatching { JSONObject(file.readText()) }.getOrNull() }
+            .firstOrNull { it.optBoolean("frozen") }
 
     /** Freezes one photo's outcome. Called only for a capture this device just produced. */
     fun save(mode: PhoneCorpusRunner.Mode, image: String, result: JSONObject) {
@@ -87,11 +99,12 @@ internal class WineAppLabelsBaselines(app: Application, corpusSignature: String)
             .put("updated_ms", System.currentTimeMillis()).toString())
     }
 
-    private fun index(mode: PhoneCorpusRunner.Mode): JSONObject? {
-        val file = File(folder(mode), "_capture.json")
-        if (!file.isFile) return null
-        return runCatching { JSONObject(file.readText()) }.getOrNull()
-    }
+    private fun index(mode: PhoneCorpusRunner.Mode): JSONObject? =
+        readFolders(mode).asReversed().asSequence()
+            .map { File(it, "_capture.json") }
+            .filter { it.isFile }
+            .mapNotNull { file -> runCatching { JSONObject(file.readText()) }.getOrNull() }
+            .firstOrNull()
 
     /** Capture summary for the screen; count is always read back from the records themselves. */
     fun capture(mode: PhoneCorpusRunner.Mode): Capture? {

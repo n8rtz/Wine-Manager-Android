@@ -1,6 +1,6 @@
 # Things to Check
 
-> **Status:** these are verification steps, not results. No Android build, unit test or emulator run has been done for any branch below. Each section carries a **Last run** line to fill in.
+> **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
 
 ## How to use this file
 
@@ -16,6 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/ab7b824f-wine-manager-android` | not opened | active | Pre-refresh 125-label results relabeled Lab v5 / Prod v4.0; legacy pipeline and frozen-baseline compatibility | [Jump](#branch-arenaab7b824f-wine-manager-android) |
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
 | `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
@@ -26,6 +27,21 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/ab7b824f-wine-manager-android`
+
+*Last run: `python3 -m unittest discover -s tools/tests -v` — 268 Python host tests passed. No Java/JDK, Android SDK, Gradle or adb is available here; Android/Kotlin/device checks remain pending.*
+
+**What changed:** the just-before-refresh Wine App Labels capture is now labeled **Lab v5** and **Prod v4.0**. New runs use `lab-v5-expanded-producers` and `production-v4.0-lwin-only`; the uploaded capture retains `lab-v4-expanded-producers` / `production-v3.0-lwin-only` as provenance. Retired IDs, the legacy `PRODUCTION_V3` baseline folder, saved build-log titles and nested funnel/scoreboard lookups have compatibility paths. The latest reference-only rescore and uploaded CSV/raw-part hashes are in `docs/lab-v5-accuracy-roadmap.md`.
+
+### Version labels and saved-result compatibility
+
+1. [ ] Build/install a debug APK on a disposable device and open **Profile → Settings → Large image dataset test**. Confirm the selectable row is **Lab v5**, the frozen spatial comparator is **Prod v4.0**, and Prod v1.0/v2.0 remain unchanged. Do not run a fresh full corpus just to check labels.
+2. [ ] Upgrade an install that contains frozen records under `baselines-v1/<signature>/PRODUCTION_V3/`. Confirm the screen still shows the old captured count/build as **Prod v4.0**, does not request a duplicate Prod run, and exports current display labels with `stored_pipeline=production-v3.0-lwin-only` retained as provenance.
+3. [ ] With saved prediction fixtures containing retired IDs (`lab-v4-expanded-producers`, `lab-v4-lwin-only`, `production-v3.0-lwin-only`, `production-v3.0-spatial-merged`), confirm nested pipeline selection restores the correct final fields and compact funnel rather than creating a failed placeholder. On device, confirm any old Prod run folder can be promoted to the frozen Prod v4.0 store.
+4. [ ] Confirm a new Lab v5 pass writes `pipeline=lab-v5-expanded-producers` and starts a fresh Lab v5 run folder; a pre-refresh Lab v4 run must not be silently reused as the current Lab v5 extraction. The old run remains available to the Lab v5 best-build history; any previously saved CSV continues to carry its original pipeline ID.
+5. [ ] Open an existing `benchmark-results-log.csv` with Lab v4 rows. Confirm the best-build comparison displays **Lab v5 Best build**, keeps original `pipeline_id` provenance until that run is updated, and refreshes the persisted best-build row title.
+6. [ ] Check the side-by-side score and per-field table against `docs/lab-v5-accuracy-roadmap.md`. The supplied capture is a reference-only rescore, not a new OCR run; do not describe it as a same-build live A/B for frozen Prod.
 
 ## Branch `arena/673cafd4-wine-manager-android`
 

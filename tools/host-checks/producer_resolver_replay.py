@@ -80,7 +80,7 @@ def eligible(text):
             and any(len(w) >= 4 and w not in GENERIC for w in words))
 
 
-def distance(a, b, allow=2):
+def _character_distance(a, b, allow):
     if abs(len(a) - len(b)) > allow:
         return allow + 1
     previous = list(range(len(b) + 1))
@@ -91,6 +91,14 @@ def distance(a, b, allow=2):
                                  previous[j] + (0 if a[i] == b[j] else 1))
         previous = current
     return previous[-1]
+
+
+def distance(a, b, allow=2):
+    """Resolver edit distance; omission of the French particle `de` costs zero."""
+    without_de_a = " ".join(word for word in a.split() if word != "de")
+    without_de_b = " ".join(word for word in b.split() if word != "de")
+    return min(_character_distance(a, b, allow),
+               _character_distance(without_de_a, without_de_b, allow))
 
 
 def passes(q, key, word_boundary_tolerant):

@@ -4,11 +4,11 @@
   "source_workbook": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/reference-data-scrubbed.xlsx",
   "source_workbook_blob_sha": "5e1e2b0f8938f1ed789c9f2430cd37881a2b2bdc",
   "updated_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
-  "updated_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
+  "updated_workbook_sha256": "825618b3b54d6dfd74eb213741b57ee9e2c8cfcb0911353eb7b345b6b2b143b5",
   "source_zip": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/Wine%20App%20Labels.zip",
-  "review_decision": "Run all 125 retained rows in the updated owner-reviewed workbook. The owner-removed workbook rows and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run.",
-  "included_count": 125,
-  "excluded_count": 10,
+  "review_decision": "Run all 124 retained rows in the updated owner-reviewed workbook. Owner-removed workbook rows including review #67 and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run.",
+  "included_count": 124,
+  "excluded_count": 11,
   "included_images": [
     {
       "review_number": 2,
@@ -224,12 +224,6 @@
       "review_number": 66,
       "image": "274621fc56a805f64d0cc0a2e3902db10b88a275.jpg",
       "source_filename": "144.jpg",
-      "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
-    },
-    {
-      "review_number": 67,
-      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
-      "source_filename": "000.jpg",
       "source_repo": "AntoninLeroy/wine_label_reader_toolkit"
     },
     {
@@ -767,6 +761,7 @@
     52,
     55,
     64,
+    67,
     73,
     133,
     159,

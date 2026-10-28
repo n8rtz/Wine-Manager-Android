@@ -10,11 +10,11 @@ internal object TextLabEvidencePreview {
     // ABELYCE` / `CHATEAU ABELY CE`) are one answer, not an ambiguity that blanks the field.
     fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
         placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off)
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false) {
-        if(journal.rows.any { it["stage"]=="evidence_summary" }) return
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false):EvidenceResult? {
+        if(journal.rows.any { it["stage"]=="evidence_summary" }) return null
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
-            "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer/vintage, rules-001 wine/origin, heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
-        try {
+            "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer; populated vintage preserved, otherwise validated experimental vintage may fill; rules-001 wine/origin; heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
+        return try {
             check(engine!=null) { "Experimental extractor unavailable or skipped after memory pressure" }
             check(journal.detectLines) { "Experimental layout requires Detect text lines; single-line coordinates are insufficient" }
             if(useProducerRepair) check(useAnchors && producerRepair!=null) { "Producer repair requires guarded hybrid and its repair engine" }
@@ -35,14 +35,24 @@ internal object TextLabEvidencePreview {
             if(useAnchors) {
                 val start=android.os.SystemClock.elapsedRealtime()
                 val original=FieldId.entries.associateWith { baseline!!.getValue(it.name.lowercase(java.util.Locale.ROOT)) }
-                val combined=hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true))
+                val combined=hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year)
                 hybridMs=android.os.SystemClock.elapsedRealtime()-start
                 combined.forEach { (field,value) ->
                     val key=field.name.lowercase(java.util.Locale.ROOT)
                     values[key]=value;values["${key}_state"]=if(value.isBlank()) "RED" else "YELLOW"
                     if(field in setOf(FieldId.PRODUCER,FieldId.VINTAGE)) {
                         values["${key}_alternatives"]=baseline!!.get("${key}_alternatives").orEmpty()
-                        values["${key}_reason"]=if(value.isBlank() && original.getValue(field).isNotBlank()) "Incomplete producer heading suppressed; confirm manually" else "Saved baseline anchor; confirm manually"
+                        values["${key}_reason"]=when(field) {
+                            FieldId.PRODUCER -> if(value.isBlank() && original.getValue(field).isNotBlank())
+                                "Incomplete producer heading suppressed; confirm manually"
+                            else "Saved baseline producer anchor; confirm manually"
+                            FieldId.VINTAGE -> when {
+                                original.getValue(field).isNotBlank() -> "Saved baseline vintage anchor preserved; confirm manually"
+                                value.isNotBlank() -> "Validated experimental vintage filled a blank baseline anchor; confirm manually"
+                                else -> "No validated vintage evidence; baseline anchor was blank"
+                            }
+                            else -> "Saved baseline anchor; confirm manually"
+                        }
                     }
                 }
             }
@@ -76,7 +86,11 @@ internal object TextLabEvidencePreview {
             values["trace_counts"]=result.trace.counts.toString()
             journal.add("experimental_evidence","evidence_summary",if(values["field_values_found"]=="0") "no_fields" else "suggestions",values,
                 "Experimental, not ground truth. Same saved OCR as production baseline; shared lexical KB and cellar display only.")
+            result
         } catch(cancel:CancellationException) { throw cancel }
-        catch(error:Exception) { journal.add("experimental_evidence","evidence_summary","failed",values,details="${error.javaClass.simpleName}: ${error.message}") }
+        catch(error:Exception) {
+            journal.add("experimental_evidence","evidence_summary","failed",values,details="${error.javaClass.simpleName}: ${error.message}")
+            null
+        }
     }
 }

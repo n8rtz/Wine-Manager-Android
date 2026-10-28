@@ -25,23 +25,23 @@ import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
-private const val WINE_APP_LABEL_COUNT = 125
+private const val WINE_APP_LABEL_COUNT = 124
 
 /**
  * The retired comparators. Each photo runs through these once, the outcome is frozen on this
- * device, and later passes score the frozen record instead of re-running them. Only Lab v4
+ * device, and later passes score the frozen record instead of re-running them. Only Lab v5
  * consumes OCR on a later pass, so a captured corpus never reruns a Prod version.
  */
 private val BASELINE_MODES = listOf(
     PhoneCorpusRunner.Mode.PRODUCTION_V1,
     PhoneCorpusRunner.Mode.PRODUCTION_V2,
-    PhoneCorpusRunner.Mode.PRODUCTION_V3,
+    PhoneCorpusRunner.Mode.PRODUCTION_V4,
 )
 
 internal data class WineAppLabelsState(
     val busy: Boolean = false,
     val mode: PhoneCorpusRunner.Mode = PhoneCorpusRunner.Mode.LAB,
-    val message: String = "Loading the 125 retained wine labels…",
+    val message: String = "Loading the 124 retained wine labels…",
     val completed: Int = 0,
     val total: Int = WINE_APP_LABEL_COUNT,
     val board: PhoneCorpusScoreboard.Board? = null,
@@ -49,7 +49,7 @@ internal data class WineAppLabelsState(
     /** Photos the current Lab run has checkpointed. */
     val labCompleted: Int = 0,
     val labRunning: Boolean = false,
-    /** When checked next to Lab v4, reuses verified cached OCR outputs instead of re-running both OCR models. */
+    /** When checked next to Lab v5, reuses verified cached OCR outputs instead of re-running both OCR models. */
     val useCachedOcr: Boolean = false,
     /** Photos with verified ML Kit + Paddle Medium OCR outputs cached on this device. */
     val ocrCached: Int = 0,
@@ -69,12 +69,12 @@ internal data class WineAppLabelsState(
     val currentImageStartedRealtimeMs: Long? = null,
     /** Remaining images to process in the active pass (or remaining uncheckpointed/uncaptured when idle). */
     val remainingImages: Int = WINE_APP_LABEL_COUNT,
-    /** Per-field correct/incorrect counts for the current build's Lab v4 run. */
+    /** Per-field correct/incorrect counts for the current build's Lab v5 run. */
     val currentBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
-    /** Highest per-field correct/incorrect counts achieved across all logged Lab v4 builds. */
+    /** Highest per-field correct/incorrect counts achieved across all logged Lab v5 builds. */
     val bestBuildFieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
-    /** Per-field correct/incorrect counts for frozen Prod v3.0 (scoped to Lab v4's attempted subset). */
-    val prodV3FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
+    /** Per-field correct/incorrect counts for frozen Prod v4.0 (scoped to Lab v5's attempted subset). */
+    val prodV4FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
 )
 
 private data class RunTiming(
@@ -84,7 +84,7 @@ private data class RunTiming(
 )
 
 /**
- * Process-scoped holder so an active 125-label benchmark run survives navigating away from
+ * Process-scoped holder so an active 124-label benchmark run survives navigating away from
  * [WineAppLabelsActivity] (Back to the cellar or switching apps while WineTracker stays open).
  */
 private class WineAppLabelsSession {
@@ -109,7 +109,7 @@ private class WineAppLabelsSession {
     }
 }
 
-/** Runs the 125 retained workbook labels. Targets stay on the scoring side of the boundary. */
+/** Runs the 124 retained workbook labels. Targets stay on the scoring side of the boundary. */
 internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) {
     private val app get() = getApplication<Application>()
     private val session = WineAppLabelsSession.get()
@@ -210,10 +210,17 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             runCatching {
                 val metadata = JSONObject(File(dir, "run.json").readText())
                 val savedCorpus = metadata.optJSONObject("corpus_manifest") ?: return@runCatching null
-                if (metadata.optString("mode") != mode.name ||
-                    metadata.optString("pipeline") != mode.pipelineId ||
-                    corpusSignature(savedCorpus) != expectedCorpus
-                ) return@runCatching null
+                val savedMode = metadata.optString("mode")
+                val savedPipeline = metadata.optString("pipeline")
+                val isCurrentRun = savedMode == mode.name && savedPipeline == mode.pipelineId
+                // Preserve frozen Prod v3 results after the enum/folder was promoted to Prod v4.
+                // Lab v4 runs intentionally do not satisfy this: Lab v5 must start on its new pipeline.
+                val isLegacyProdV3Run = mode == PhoneCorpusRunner.Mode.PRODUCTION_V4 &&
+                    savedMode == "PRODUCTION_V3" &&
+                    PhoneCorpusRunner.Mode.fromPipelineId(savedPipeline) == mode
+                if ((!isCurrentRun && !isLegacyProdV3Run) || corpusSignature(savedCorpus) != expectedCorpus) {
+                    return@runCatching null
+                }
                 dir to metadata.optLong("created_ms", dir.lastModified())
             }.getOrNull()
         }.maxByOrNull { it.second }?.first
@@ -297,8 +304,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private fun labPredictions(): List<JSONObject> = labFolder?.let(::predictions).orEmpty()
 
     /**
-     * One record per photo for each version, scoped to the photos Lab v4 has attempted in this
-     * pass so all four rows compare side by side over the exact same subset before all 125 finish
+     * One record per photo for each version, scoped to the photos Lab v5 has attempted in this
+     * pass so all four rows compare side by side over the exact same subset before all 124 finish
      * (while still showing the full frozen baseline when Lab has 0 checkpoints).
      * On-disk Prod baselines remain frozen at full dataset size in [WineAppLabelsBaselines].
      */
@@ -362,16 +369,16 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             scoreboard.build(labPreds, PhoneCorpusRunner.Mode.LAB).csv
         }
         val currentFieldScores = WineAppLabelsBuildLog.summarizeFieldRows(labCsv)
-        val prodV3Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V3)
-        val prodV3FieldScores = if (prodV3Preds.isEmpty()) {
+        val prodV4Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V4)
+        val prodV4FieldScores = if (prodV4Preds.isEmpty()) {
             emptyMap()
         } else {
-            val prodV3Csv = if (mode == PhoneCorpusRunner.Mode.PRODUCTION_V3) {
+            val prodV4Csv = if (mode == PhoneCorpusRunner.Mode.PRODUCTION_V4) {
                 currentBoard.csv
             } else {
-                scoreboard.build(prodV3Preds, PhoneCorpusRunner.Mode.PRODUCTION_V3).csv
+                scoreboard.build(prodV4Preds, PhoneCorpusRunner.Mode.PRODUCTION_V4).csv
             }
-            WineAppLabelsBuildLog.summarizeFieldRows(prodV3Csv)
+            WineAppLabelsBuildLog.summarizeFieldRows(prodV4Csv)
         }
         val activeLabDir = labFolder
         if (activeLabDir != null && labCount > 0) {
@@ -399,12 +406,12 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val bestBuildFieldScores = bestBuild?.fieldScores.orEmpty()
         val comparisonRows = listOf(modeRows.first(), bestBuildRow) + modeRows.drop(1)
         val comparisonText = buildString {
-            appendLine("WINE APP LABELS · Lab v4 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
+            appendLine("WINE APP LABELS · Lab v5 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
             if (bestBuild != null) {
                 appendLine(bestBuild.provenanceLine())
             }
-            appendLine("Prod v1.0, Prod v2.0 and Prod v3.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v4 has attempted so far, so all four rows compare side by side without re-running Prod. Lab v4 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
-            appendLine("Prod v2.0, Prod v3.0 and Lab v4 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v3.0: the spatial pipeline with LWIN-only producer data; Lab v4: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
+            appendLine("Prod v1.0, Prod v2.0 and Prod v4.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v5 has attempted so far, so all four rows compare side by side without re-running Prod. Lab v5 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
+            appendLine("Prod v2.0, Prod v4.0 and Lab v5 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v4.0: the spatial pipeline with LWIN-only producer data; Lab v5: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
@@ -413,7 +420,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 (listOf(title) + PhoneCorpusMath.fields.map { scores[it]?.label() ?: "—" }).joinToString(" | ")
             appendLine(formatFieldRow("Current build", currentFieldScores))
             appendLine(formatFieldRow("Best build", bestBuildFieldScores))
-            appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V3.title, prodV3FieldScores))
+            appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V4.title, prodV4FieldScores))
         }
         val board = currentBoard.copy(headers = displayHeaders, rows = comparisonRows, text = comparisonText)
         val timing = readRunTiming(activeLabDir)
@@ -427,7 +434,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     captures = captures, captureRemaining = captureRemaining,
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
-                    prodV3FieldScores = prodV3FieldScores,
+                    prodV4FieldScores = prodV4FieldScores,
                 )
             } else {
                 it.copy(
@@ -442,7 +449,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     remainingImages = idleRemaining,
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
-                    prodV3FieldScores = prodV3FieldScores,
+                    prodV4FieldScores = prodV4FieldScores,
                 )
             }
         }
@@ -519,7 +526,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     fun prepareExport(raw: Boolean) {
         if (mutable.value.busy) return
         if (labFolder == null) {
-            mutable.update { it.copy(message = "Load the 125-label test before preparing an export.") }
+            mutable.update { it.copy(message = "Load the 124-label test before preparing an export.") }
             return
         }
         val previousParts = mutable.value.exportParts
@@ -623,8 +630,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 etaPerImageMs = null, currentImageStartedRealtimeMs = null,
                 remainingImages = WINE_APP_LABEL_COUNT,
                 currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(),
-                prodV3FieldScores = emptyMap(),
-                message = "Loading saved 125-label results…",
+                prodV4FieldScores = emptyMap(),
+                message = "Loading saved 124-label results…",
             )
         }
         bgScope.launch {
@@ -663,7 +670,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 baselines = null
                 ocrCache = null
                 buildLog = null
-                mutable.update { it.copy(message = "Cannot load the 125-label test: ${e.message}") }
+                mutable.update { it.copy(message = "Cannot load the 124-label test: ${e.message}") }
             } finally {
                 mutable.update { it.copy(busy = false) }
             }
@@ -691,7 +698,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     /**
      * Loads captured raw OCR lines per engine for [image] on demand when an incomplete-label card's
      * Raw OCR section is expanded. Reads from the latest saved attempt trace or verified OCR cache
-     * on Dispatchers.IO so normal score refreshes never carry 125 raw OCR payloads in memory.
+     * on Dispatchers.IO so normal score refreshes never carry 124 raw OCR payloads in memory.
      */
     suspend fun loadRawOcrText(
         image: String,
@@ -770,7 +777,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             } == true
 
     /**
-     * Runs the pass. Lab v4 is re-run for every photo; each Prod version runs only for photos that
+     * Runs the pass. Lab v5 is re-run for every photo; each Prod version runs only for photos that
      * have no frozen record yet (first pass) or whose stored record is a failure ([retryFailures]).
      * Once a photo is frozen, later passes score the stored outcome and never re-run Prod.
      */
@@ -795,11 +802,11 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 avgImageMs = initialAvg,
                 etaPerImageMs = initialAvg,
                 currentImageStartedRealtimeMs = null,
-                message = "Checking the 125 retained workbook photos and OCR engines…",
+                message = "Checking the 124 retained workbook photos and OCR engines…",
             )
         }
         stopping = false
-        WineAppLabelsRunService.start(app, "Preparing 125-label benchmark…")
+        WineAppLabelsRunService.start(app, "Preparing 124-label benchmark…")
         bgScope.launch {
             var locked = false
             var warmSession: PhoneCorpusRunner.WarmSession? = null
@@ -816,7 +823,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     "Medium model assets are missing; the test will not silently run ML Kit only."
                 }
                 val packaged = assetJson("inputs.json").getJSONArray("images")
-                check(packaged.length() == WINE_APP_LABEL_COUNT) { "The packaged workbook photo count is not 125" }
+                check(packaged.length() == WINE_APP_LABEL_COUNT) { "The packaged workbook photo count is not 124" }
                 val included = includedIds()
                 val manifest = (0 until packaged.length()).map { packaged.getJSONObject(it) }
                     .filter { it.getString("image") in included }
@@ -936,7 +943,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 mutable.update {
                     it.copy(message = when {
                         stopping -> "Stopped safely. Resume continues with unattempted photos."
-                        frozen -> "Pass finished. Prod v1.0/v2.0/v3.0 are frozen on this device; only Lab v4 runs from now on. Failed photos can be retried."
+                        frozen -> "Pass finished. Prod v1.0/v2.0/v4.0 are frozen on this device; only Lab v5 runs from now on. Failed photos can be retried."
                         else -> "Pass finished. Prod baselines still have photos to capture; run again to freeze the rest. Failed photos can be retried."
                     })
                 }

@@ -156,7 +156,7 @@ private fun TextLabScreen(onClose:()->Unit,vm:TextLabViewModel=viewModel()) {
                         Checkbox(state.resolverSingleReading,{vm.resolverSingleReading(it)},enabled=!state.busy)
                         Text("Accept one engine reading for producer and linked wine (experimental)")
                     }
-                    if(state.resolverSingleReading) Text("Lab v4 only; Prod v3.0 keeps the two-engine rule. Same eligibility, edit distance, single-identity, separation and existing-value rules, so the difference measured is the engine quorum alone.",style=MaterialTheme.typography.bodySmall)
+                    if(state.resolverSingleReading) Text("Lab v5 only; Prod v4.0 keeps the two-engine rule. Same eligibility, edit distance, single-identity, separation and existing-value rules, so the difference measured is the engine quorum alone.",style=MaterialTheme.typography.bodySmall)
                 }
                 Text("Off: previous evidence architecture. On: development candidate, not validated on fresh labels. Incomplete producer headings remain blank. Production is unchanged.",style=MaterialTheme.typography.bodySmall)
             }

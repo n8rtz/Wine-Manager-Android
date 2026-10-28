@@ -1,4 +1,4 @@
-"""Tests for Lab v4 LabelContext, context-clue modules, Prod subset scoping, and accent scrubbing."""
+"""Tests for Lab v5 LabelContext, context-clue modules, Prod subset scoping, and accent scrubbing."""
 from __future__ import annotations
 
 import re

@@ -1,31 +1,31 @@
 {
   "schema_version": 2,
-  "dataset_count": 125,
+  "dataset_count": 124,
   "source_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
-  "source_workbook_sha256": "a8ccd117e52d70c9c36bf68b3d76da1793024b0eb8ae9d473e3c2be2dee4a4ad",
+  "source_workbook_sha256": "825618b3b54d6dfd74eb213741b57ee9e2c8cfcb0911353eb7b345b6b2b143b5",
   "method": "Exact normalized match of workbook-known targets and accepted alternatives across all packaged lookup databases consulted by the app. Parameter totals count labels with a known expected value for each parameter (excluding expected blanks and unresolved targets) matched in any consulted database for that parameter: producers across LWIN, Expanded Lab, and Scanner KB; wine names across LWIN wine names, Scanner KB cuvees, appellation/place databases for appellation-named wines, and bundled grape varietals; country, region, and subregion across packaged geography and appellation databases. Source-level database rows remain recorded under databases for provenance auditing. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
   "parameters": [
     {
       "id": "producer",
       "label": "Producer",
-      "matched_labels": 101,
-      "total_labels": 125,
-      "dataset_labels": 125,
+      "matched_labels": 100,
+      "total_labels": 124,
+      "dataset_labels": 124,
       "expected_blank_labels": 0,
       "unresolved_labels": 0,
-      "unique_known_values_matched": 73,
-      "database_records_matched": 135
+      "unique_known_values_matched": 72,
+      "database_records_matched": 134
     },
     {
       "id": "wine_name",
       "label": "Wine name",
       "matched_labels": 106,
       "total_labels": 123,
-      "dataset_labels": 125,
-      "expected_blank_labels": 1,
+      "dataset_labels": 124,
+      "expected_blank_labels": 0,
       "unresolved_labels": 1,
-      "unique_known_values_matched": 59,
-      "database_records_matched": 101,
+      "unique_known_values_matched": 58,
+      "database_records_matched": 98,
       "wine_index_matched_labels": 42,
       "appellation_or_varietal_matched_labels": 64
     },
@@ -34,8 +34,8 @@
       "label": "Country",
       "matched_labels": 124,
       "total_labels": 124,
-      "dataset_labels": 125,
-      "expected_blank_labels": 1,
+      "dataset_labels": 124,
+      "expected_blank_labels": 0,
       "unresolved_labels": 0,
       "unique_known_values_matched": 9,
       "database_records_matched": 12
@@ -45,22 +45,22 @@
       "label": "Region",
       "matched_labels": 120,
       "total_labels": 120,
-      "dataset_labels": 125,
-      "expected_blank_labels": 5,
+      "dataset_labels": 124,
+      "expected_blank_labels": 4,
       "unresolved_labels": 0,
-      "unique_known_values_matched": 25,
-      "database_records_matched": 47
+      "unique_known_values_matched": 24,
+      "database_records_matched": 45
     },
     {
       "id": "subregion",
       "label": "Subregion",
-      "matched_labels": 77,
-      "total_labels": 77,
-      "dataset_labels": 125,
-      "expected_blank_labels": 48,
+      "matched_labels": 81,
+      "total_labels": 81,
+      "dataset_labels": 124,
+      "expected_blank_labels": 43,
       "unresolved_labels": 0,
       "unique_known_values_matched": 48,
-      "database_records_matched": 87
+      "database_records_matched": 89
     }
   ],
   "databases": [
@@ -68,47 +68,47 @@
       "id": "lwin_producers",
       "label": "LWIN producers",
       "matched_labels": 86,
-      "total_labels": 125,
+      "total_labels": 124,
       "unique_known_values_matched": 56,
       "database_records_matched": 56
     },
     {
       "id": "expanded_producers",
       "label": "Expanded producers (Lab)",
-      "matched_labels": 101,
-      "total_labels": 125,
-      "unique_known_values_matched": 73,
-      "database_records_matched": 73
+      "matched_labels": 100,
+      "total_labels": 124,
+      "unique_known_values_matched": 72,
+      "database_records_matched": 72
     },
     {
       "id": "lwin_wines",
       "label": "LWIN wine names",
       "matched_labels": 42,
-      "total_labels": 125,
-      "unique_known_values_matched": 30,
-      "database_records_matched": 32
+      "total_labels": 124,
+      "unique_known_values_matched": 29,
+      "database_records_matched": 30
     },
     {
       "id": "appellations",
       "label": "Appellations",
       "matched_labels": 89,
-      "total_labels": 125,
-      "unique_known_values_matched": 55,
-      "database_records_matched": 53
+      "total_labels": 124,
+      "unique_known_values_matched": 54,
+      "database_records_matched": 52
     },
     {
       "id": "wine_geography",
       "label": "Regions/subregions",
-      "matched_labels": 115,
-      "total_labels": 125,
-      "unique_known_values_matched": 19,
-      "database_records_matched": 18
+      "matched_labels": 118,
+      "total_labels": 124,
+      "unique_known_values_matched": 21,
+      "database_records_matched": 20
     },
     {
       "id": "kb_producers",
       "label": "Scanner KB producers",
       "matched_labels": 13,
-      "total_labels": 125,
+      "total_labels": 124,
       "unique_known_values_matched": 6,
       "database_records_matched": 6
     },
@@ -116,15 +116,15 @@
       "id": "kb_wine_names",
       "label": "Scanner KB wine names",
       "matched_labels": 0,
-      "total_labels": 125,
+      "total_labels": 124,
       "unique_known_values_matched": 0,
       "database_records_matched": 0
     },
     {
       "id": "kb_appellations",
       "label": "Scanner KB appellations",
-      "matched_labels": 77,
-      "total_labels": 125,
+      "matched_labels": 78,
+      "total_labels": 124,
       "unique_known_values_matched": 44,
       "database_records_matched": 42
     },
@@ -132,9 +132,9 @@
       "id": "kb_geography",
       "label": "Scanner KB regions",
       "matched_labels": 124,
-      "total_labels": 125,
+      "total_labels": 124,
       "unique_known_values_matched": 38,
-      "database_records_matched": 37
+      "database_records_matched": 38
     }
   ]
 }

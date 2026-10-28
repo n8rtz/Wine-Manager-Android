@@ -2,7 +2,7 @@
 """Measure exact database coverage of workbook-known names; never run by OCR.
 
 Covers every lookup database the scanners consult: the LWIN producer/wine
-SQLite asset, the Lab v4 expanded producer index (LWIN subset plus X-Wines,
+SQLite asset, the Lab v5 expanded producer index (LWIN subset plus X-Wines,
 TTB and OpenStreetMap supplemental candidates), the debug appellation
 gazetteer, and the scanner knowledge base (fixture seed plus the bundled
 origins supplement: the generated editorial / UC Davis AVA catalog merged
@@ -22,6 +22,7 @@ ROOT = HERE.parents[2]
 LABELS = HERE / "candidate-labels.json"
 OUT = ROOT / "app/src/main/assets/wine-app-labels-v1/gazetteer-coverage.json"
 DBS = ROOT / "app/src"
+EXPECTED_LABELS = 124
 
 APOSTROPHE_ACUTE_RE = re.compile(r"\b([dlcnst]|qu)\u00b4(?=[aeiouyh])", re.IGNORECASE)
 SPACING_ACCENTS_RE = re.compile(r"[\u0060\u00b4\u00a8\u00b8\u00af\u02c6\u02dc\u02d8-\u02dd]")
@@ -209,8 +210,8 @@ def target_names(record: dict, field: str) -> set[str]:
 def main() -> None:
     doc = json.loads(LABELS.read_text())
     records = doc["records"]
-    if len(records) != 125:
-        raise ValueError(f"Expected 125 workbook labels, got {len(records)}")
+    if len(records) != EXPECTED_LABELS:
+        raise ValueError(f"Expected {EXPECTED_LABELS} workbook labels, got {len(records)}")
 
     producer_db = DBS / "main/assets/producer-gazetteer-v1/producers.sqlite"
     expanded_db = DBS / "main/assets/producer-gazetteer-expanded-v1/producers-expanded.sqlite"

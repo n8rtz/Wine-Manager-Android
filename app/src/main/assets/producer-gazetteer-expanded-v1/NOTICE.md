@@ -1,6 +1,6 @@
 # Lab expanded producer index — sources and attribution
 
-`producers-expanded.sqlite` is opened ONLY by the benchmark's Lab v4 pipeline.
+`producers-expanded.sqlite` is opened ONLY by the benchmark's Lab v5 pipeline.
 Production and Prod v1.0/v2.0/v3.0 never read it. Every suggestion it supports is
 YELLOW / confirm manually; membership is lexical support, not proof of identity.
 

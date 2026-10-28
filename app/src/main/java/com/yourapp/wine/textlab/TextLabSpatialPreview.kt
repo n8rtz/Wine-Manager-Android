@@ -12,8 +12,8 @@ import com.yourapp.wine.merge.TextNorm
 /** Current spatial pipeline, shared by the two gazetteer benchmark contenders. No second OCR pass.
  * The raw form summary is an internal anchor required by the existing guarded algorithm.
  * Original observations feed extraction unchanged; spatial alternatives feed producer and linked
- * wine lookup. The contenders differ ONLY in the producer index handed in: Prod v3.0 gets the
- * verified LWIN-only index (candidate "spatial_lwin_lab", stage prefix "spatial_lwin_"), Lab v4
+ * wine lookup. The contenders differ ONLY in the producer index handed in: Prod v4.0 gets the
+ * verified LWIN-only index (candidate "spatial_lwin_lab", stage prefix "spatial_lwin_"), Lab v5
  * gets the Lab expanded index (defaults here). Each writes only its own candidate/stage rows.
  */
 internal object TextLabSpatialPreview {
@@ -55,6 +55,41 @@ internal object TextLabSpatialPreview {
         }.distinctBy { listOf(it.engine,it.observationIds.sorted().joinToString(",")) }
     }
 
+    /**
+     * Feed only evidence-graph phrases that the extractor itself considered as producer hypotheses
+     * into the catalog resolver. The resolver then compares the OCR-supported reading against its
+     * producer index (including harmless omitted particles such as `de`). Require one original
+     * engine/pass so graph composition never manufactures independent OCR support.
+     */
+    internal fun producerEvidenceSpans(
+        result:com.yourapp.wine.textlab.evidence.EvidenceResult,
+        engine:EvidenceExtractor,
+    ):List<ProducerResolver.Span> {
+        val producerPhraseIds=result.hypotheses.filter { com.yourapp.wine.fill.FieldId.PRODUCER in it.values }
+            .map { it.phrase.id }.toSet()
+        val observations=result.graph.observations.associateBy { it.id }
+        val selector=com.yourapp.wine.extract.ProducerLineSelector()
+        return result.graph.phrases.asSequence().filter { phrase ->
+            phrase.id in producerPhraseIds && phrase.observations.size>=2 && phrase.text.length<=96 &&
+                phrase.text.none(Char::isDigit) &&
+                phrase.text.split(Regex("\\s+")).count { it.isNotBlank() } in 2..8
+        }.mapNotNull { phrase ->
+            val sources=phrase.observations.mapNotNull(observations::get)
+            if(sources.size!=phrase.observations.size) return@mapNotNull null
+            val engineIds=sources.map { it.record.engineId }.distinct()
+            val variants=sources.map { it.record.variantId }.distinct()
+            if(engineIds.size!=1 || variants.size!=1) return@mapNotNull null
+            val reading=phrase.text
+            if(engine.isNonProducerCatalogTerm(reading) || selector.isWineDescription(reading) ||
+                com.yourapp.wine.extract.MetadataRules.isBoilerplate(reading) ||
+                com.yourapp.wine.extract.MetadataRules.isPackaging(reading)) return@mapNotNull null
+            val engineId=engineIds.single()
+            if(sources.none { it.record.score >= if(engineId.startsWith("paddle")) .75f else .60f }) return@mapNotNull null
+            ProducerResolver.Span(reading,engineId,phrase.observations,sources.any { it.record.scoreIsEstimated })
+        }.distinctBy { listOf(it.engine,it.observationIds.sorted().joinToString(","),ProducerResolver.normalize(it.text)) }
+            .take(64).toList()
+    }
+
     fun append(journal:TextLabJournal,engine:EvidenceExtractor?,hybrid:EvidenceAnchorHybrid?,repair:ProducerRepair?,year:Int,producerIndex:ProducerResolver.Index?=null,
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
         candidate:String="spatial_lab",stagePrefix:String="spatial_",
@@ -73,7 +108,11 @@ internal object TextLabSpatialPreview {
                     "source_engine" to token.engineId,"filter_reason" to item.reason,
                     "base_box_normalized" to "${item.entry.rectBox.left} ${item.entry.rectBox.top} ${item.entry.rectBox.right} ${item.entry.rectBox.bottom}"))
             }
-            val proposals=TextLabSpatialPhrases.propose(original)
+            val proposals=TextLabSpatialPhrases.propose(
+                original,
+                allowHorizontalJoin={ left,right -> engine?.allowsSpatialProducerJoin(left,right)==true },
+                allowVerticalJoin={ upper,lower -> engine?.allowsSpatialProducerJoin(upper,lower)==true },
+            )
             for((index,proposal) in proposals.withIndex()) {
                 val mergedText=TextNorm.scrub(proposal.phrase.mergedText)
                 journal.add(candidate,stagePrefix+"phrase",values=mapOf("post_processing_version" to VERSION,
@@ -89,7 +128,7 @@ internal object TextLabSpatialPreview {
             val readings=original
             val work=TextLabJournal(journal.selected,journal.build,journal.detectLines)
             work.metadata.putAll(journal.metadata)
-            // Unchanged raw baseline anchor for Prod v3.0 and unfiltered images; when Lab v4 drops
+            // Unchanged raw baseline anchor for Prod v4.0 and unfiltered images; when Lab v5 drops
             // stray side-bottle or medal-sticker tokens, recompute the anchor on filtered readings so
             // dropped noise cannot leak back through EvidenceAnchorHybrid.
             if(filterOutcome!=null && filterOutcome.dropped.isNotEmpty() && engine!=null) {
@@ -99,9 +138,10 @@ internal object TextLabSpatialPreview {
             } else {
                 work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
             }
-            TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
+            val evidenceResult=TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                 useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                 exactGeographyFastPath=policy.minimumIndependentEngines<2)
+            val evidenceSpans=if(engine!=null && evidenceResult!=null) producerEvidenceSpans(evidenceResult,engine) else emptyList()
             val spans=original.mapIndexed { id,r -> ProducerResolver.Span(r.textRaw,r.engineId,setOf(id),r.scoreIsEstimated) }+
                 proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(TextNorm.scrub(p.phrase.mergedText),p.engineId,
                     p.sources.map { source -> original.indexOfFirst { it===source } }.filter { it>=0 }.toSet(),true) }
@@ -118,12 +158,13 @@ internal object TextLabSpatialPreview {
                         row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
                         val isLabMode=policy.minimumIndependentEngines<2
-                        val anchorSpans=producerAnchorSpans(before,original,proposals).filter { anchor ->
-                            spans.none { existing -> existing.engine==anchor.engine &&
-                                existing.observationIds==anchor.observationIds &&
-                                ProducerResolver.normalize(existing.text)==ProducerResolver.normalize(anchor.text) }
-                        }
-                        val lookupSpans=spans+anchorSpans
+                        val supplementalSpans=(producerAnchorSpans(before,original,proposals)+evidenceSpans)
+                            .distinctBy { listOf(it.engine,it.observationIds.sorted().joinToString(","),ProducerResolver.normalize(it.text)) }
+                            .filterNot { extra -> spans.any { existing -> existing.engine==extra.engine &&
+                                existing.observationIds==extra.observationIds &&
+                                ProducerResolver.normalize(existing.text)==ProducerResolver.normalize(extra.text) } }
+                            .take((ProducerResolver.MAX_SPANS-spans.size).coerceAtLeast(0))
+                        val lookupSpans=spans+supplementalSpans
                         val started=android.os.SystemClock.elapsedRealtime()
                         var producerFailureTelemetry=emptyMap<String,String>()
                         val producerResolver=ProducerResolver(producerIndex,onFailureTelemetry={ producerFailureTelemetry=it })
@@ -132,6 +173,7 @@ internal object TextLabSpatialPreview {
                         val activePolicy=if(isLabMode) {
                             policy.withCountryContext(row["country"].orEmpty())
                                 .withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }
+                                .withProducerPenalty { term -> engine?.producerCandidatePenalty(term) ?: 0 }
                         } else policy
                         val decision=try { runProducerLookup(activePolicy) }
                             catch(cancel:CancellationException) { throw cancel }
@@ -247,7 +289,7 @@ internal object TextLabSpatialPreview {
                             val nearStarted=android.os.SystemClock.elapsedRealtime()
                             var nearMatchError=""
                             val nearMatch=try {
-                                producerResolver.finalNearMatch(finalProducer,checkProducerBudget)
+                                producerResolver.finalNearMatch(finalProducer,checkProducerBudget) { term -> engine?.producerCandidatePenalty(term) ?: 0 }
                             } catch(cancel:CancellationException) { throw cancel }
                               catch(_:ProducerResolver.BudgetExceeded) { nearMatchError="budget_exceeded";null }
                               catch(error:Exception) { nearMatchError=error.javaClass.simpleName;null }
@@ -260,7 +302,7 @@ internal object TextLabSpatialPreview {
                             } else {
                                 val cleanName=TextNorm.scrub(nearMatch.entity.name)
                                 val sources=nearMatch.entity.support.sorted().joinToString(" | ")
-                                val reason="final answer canonicalized to database value at edit distance ${nearMatch.distance} (${sources.ifBlank { "primary producer index" }}); confirm manually"
+                                val reason="final answer canonicalized to database value at penalty-adjusted distance ${nearMatch.distance} (${sources.ifBlank { "primary producer index" }}); confirm manually"
                                 row["producer_before_final_near_match"]=finalProducer
                                 row["producer"]=cleanName;row["producer_state"]="YELLOW";row["producer_reason"]=reason
                                 row["producer_alternatives"]=""

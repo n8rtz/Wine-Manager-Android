@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "reference_sha256": "6c066495b5f48207cb41cbbb2be8e2fad02cdc6f61293629ea44cd378d513102",
-  "note": "Frozen owner-corrected values from the 125 retained rows of the updated workbook. Unresolved references remain unscorable; expected blanks are scored as blanks. Targets are scorer-only and never provided to OCR.",
+  "reference_sha256": "254d1446d7c2c068ae308ada34b9c618841601c00cc1499cfbe82b1b54f48b48",
+  "note": "Frozen owner-corrected values from the 124 retained rows of the updated workbook. Unresolved references remain unscorable; expected blanks are scored as blanks. Targets are scorer-only and never provided to OCR.",
   "images": [
     {
       "image": "fa02ff37350880d8b127ba9e8a98b6b1396fa3fd.jpg",
@@ -1766,58 +1766,6 @@
       }
     },
     {
-      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
-      "review_number": 67,
-      "source_filename": "000.jpg",
-      "fields": {
-        "producer": {
-          "status": "expected_value",
-          "accepted": [
-            "jeanchristopheicard"
-          ],
-          "target": "Jean-Christophe Icard"
-        },
-        "wine_name": {
-          "status": "expected_value",
-          "accepted": [
-            "sauvignonblanc",
-            "sauvignonblancpremium",
-            "premiumsauvignonblanc"
-          ],
-          "target": "Sauvignon Blanc"
-        },
-        "country": {
-          "status": "expected_value",
-          "accepted": [
-            "france"
-          ],
-          "target": "France"
-        },
-        "region": {
-          "status": "expected_value",
-          "accepted": [
-            "southwestfrance",
-            "sudouest",
-            "southwest",
-            "sudouestfrance"
-          ],
-          "target": "South West France"
-        },
-        "subregion": {
-          "status": "expected_value",
-          "accepted": [
-            "gascogne",
-            "cotesdegascogne"
-          ],
-          "target": "Gascogne"
-        },
-        "vintage": {
-          "status": "expected_blank",
-          "accepted": []
-        }
-      }
-    },
-    {
       "image": "378ab5b4ee821ac346f104411908796ee907230c.jpg",
       "review_number": 68,
       "source_filename": "97.jpg",
@@ -2568,20 +2516,32 @@
           "target": "Château Margaux"
         },
         "wine_name": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "premiergrandcruclasse"
+          ],
+          "target": "Premier Grand Cru Classé"
         },
         "country": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
         },
         "region": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
         },
         "subregion": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
         },
         "vintage": {
           "status": "expected_value",
@@ -5214,13 +5174,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "castillayleon"
+          ],
+          "target": "Castilla y Leon"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "toro"
           ],
           "target": "Toro"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_value",
@@ -5564,16 +5527,16 @@
         "producer": {
           "status": "expected_value",
           "accepted": [
-            "francoislurton"
+            "campoeliseo"
           ],
-          "target": "François Lurton"
+          "target": "Campo Eliseo"
         },
         "wine_name": {
           "status": "expected_value",
           "accepted": [
-            "campoeliseo"
+            "cuveealegre"
           ],
-          "target": "Campo Eliseo"
+          "target": "Cuvée Alegre"
         },
         "country": {
           "status": "expected_value",
@@ -5585,13 +5548,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "castillayleon"
+          ],
+          "target": "Castilla y Leon"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "toro"
           ],
           "target": "Toro"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_blank",
@@ -5678,13 +5644,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "maipovalley"
+          ],
+          "target": "Maipo Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "puentealto"
           ],
           "target": "Puente Alto"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_value",
@@ -5823,13 +5792,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "willamettevalley"
+          ],
+          "target": "Willamette Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "dundeehills"
           ],
           "target": "Dundee Hills"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_value",

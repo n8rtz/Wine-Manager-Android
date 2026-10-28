@@ -1,4 +1,4 @@
-"""Wiring and generality checks for Lab v4 bottle-column/sticker filter and conditional zoom-crop."""
+"""Wiring and generality checks for Lab v5 bottle-column/sticker filter and conditional zoom-crop."""
 import pathlib
 import re
 import unittest
@@ -15,7 +15,7 @@ SPATIAL_SCRIPT = ROOT / "tools/run-spatial-preview-checks.sh"
 class BottleFilterAndZoomCropTests(unittest.TestCase):
     def test_spatial_filter_is_lab_only_and_works_with_cached_ocr(self):
         spatial = SPATIAL.read_text()
-        # Filter runs exclusively when policy.minimumIndependentEngines < 2 (Lab v4), never Prod v3.0.
+        # Filter runs exclusively when policy.minimumIndependentEngines < 2 (Lab v5), never Prod v4.0.
         self.assertIn(
             "val filterOutcome=if(policy.minimumIndependentEngines<2) TextLabBottleFilter.filterTokens(rawOriginal) else null",
             spatial,

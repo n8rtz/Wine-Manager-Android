@@ -61,6 +61,80 @@ object EvidenceArchitectureChecks {
         check(variant.fields.getValue(FieldId.WINE_NAME).value.equals("Crianza",true))
         val partial=EvidenceGraphBuilder.build(listOf(t("COLINASde",.1f),t("COLINAS de",.1f,"paddle-v6-medium")))
         check(partial.phrases.none { it.observations.size>1 }) // Same location is not two consecutive phrases.
+        check(engine.isBroadGeographyLine("Willamette Valley"))
+        check(!engine.isBroadGeographyLine("Chianti Classico")) // Catalog appellation, not broad geography.
+        val inscriptionPinot=engine.extract(listOf(t("Inscription",.2f),t("Pinot Noir",.3f)),2026)
+        check(inscriptionPinot.graph.phrases.any { it.construction=="bounded vertical wine-title pair" && it.text=="Inscription Pinot Noir" })
+        check(com.yourapp.wine.merge.TextNorm.normalize(inscriptionPinot.fill.fields.getValue(FieldId.WINE_NAME).value)=="inscription pinot noir") {
+            inscriptionPinot.fill.fields
+        }
+        val peppoliChianti=engine.extract(listOf(t("Peppoli",.2f),t("Chianti Classico",.3f)),2026)
+        check(peppoliChianti.graph.phrases.any { it.construction=="bounded vertical wine-title pair" && it.text=="Peppoli Chianti Classico" })
+        check(com.yourapp.wine.merge.TextNorm.normalize(peppoliChianti.fill.fields.getValue(FieldId.WINE_NAME).value)=="peppoli chianti classico") {
+            peppoliChianti.fill.fields
+        }
+        val regionBoundary=engine.extract(listOf(t("Inscription",.2f),t("Willamette Valley",.3f)),2026)
+        check(regionBoundary.graph.phrases.none { it.construction=="bounded vertical wine-title pair" || it.observations.size>1 })
+        val vintageBoundary=engine.extract(listOf(t("Inscription",.2f),t("2019",.3f)),2026)
+        check(vintageBoundary.graph.phrases.none { it.construction=="bounded vertical wine-title pair" || it.observations.size>1 })
+        val vintageWordBoundary=engine.extract(listOf(t("VINTAGE",.2f),t("Pinot Noir",.3f)),2026)
+        check(vintageWordBoundary.graph.phrases.none { it.observations.size>1 })
+        val framingBoundary=engine.extract(listOf(t("APPELLATION",.2f),t("Pinot Noir",.3f)),2026)
+        check(framingBoundary.graph.phrases.none { it.observations.size>1 })
+        val horizontalRegionBoundary=engine.extract(listOf(
+            LogicChecks.token("Inscription",.9f,x=.1f,y=.4f,w=.22f,h=.06f),
+            LogicChecks.token("Willamette Valley",.9f,x=.34f,y=.4f,w=.35f,h=.06f),
+        ),2026)
+        check(horizontalRegionBoundary.graph.phrases.none { it.observations.size>1 })
+        val horizontalVintageBoundary=engine.extract(listOf(
+            LogicChecks.token("Inscription",.9f,x=.1f,y=.4f,w=.22f,h=.06f),
+            LogicChecks.token("2019",.9f,x=.34f,y=.4f,w=.12f,h=.06f),
+        ),2026)
+        check(horizontalVintageBoundary.graph.phrases.none { it.observations.size>1 })
+        val crossEngineTitle=engine.extract(listOf(t("Inscription",.2f,"mlkit"),t("Pinot Noir",.3f,"paddle-v6-medium")),2026)
+        check(crossEngineTitle.graph.phrases.none { it.observations.mapNotNull { id -> crossEngineTitle.graph.observations.firstOrNull { it.id==id }?.record?.engineId }.distinct().size>1 })
+        val crossPassTitle=engine.extract(listOf(
+            LogicChecks.token("Inscription",.9f,engine="mlkit",variant="V0",y=.2f,h=.1f),
+            LogicChecks.token("Pinot Noir",.9f,engine="mlkit",variant="V1",y=.3f,h=.1f),
+        ),2026)
+        check(crossPassTitle.graph.phrases.none { it.observations.size>1 })
+        val crossEngineConnector=EvidenceGraphBuilder.build(listOf(
+            LogicChecks.token("Domaine",.9f,engine="mlkit",variant="V0",y=.2f,h=.1f),
+            LogicChecks.token("de",.9f,engine="paddle-v6-medium",variant="V0",y=.3f,h=.1f),
+            LogicChecks.token("Romanée-Conti",.9f,engine="mlkit",variant="V0",y=.4f,h=.1f),
+        ),typedIdentity=true)
+        check(crossEngineConnector.phrases.none { it.observations.size>1 })
+        val crossPassConnector=EvidenceGraphBuilder.build(listOf(
+            LogicChecks.token("Domaine",.9f,engine="mlkit",variant="V0",y=.2f,h=.1f),
+            LogicChecks.token("de",.9f,engine="mlkit",variant="V1",y=.3f,h=.1f),
+            LogicChecks.token("Romanée-Conti",.9f,engine="mlkit",variant="V0",y=.4f,h=.1f),
+        ),typedIdentity=true)
+        check(crossPassConnector.phrases.none { it.observations.size>1 })
+        check(!engine.allowsSpatialProducerJoin("Domaine", "2019"))
+        check(!engine.allowsSpatialProducerJoin("Domaine", "Willamette Valley"))
+        check(!engine.allowsSpatialProducerJoin("Willamette", "Valley"))
+        check(!engine.allowsSpatialProducerJoin("Domaine", "Pinot Noir"))
+        check(engine.allowsSpatialProducerJoin("Domaine de la", "Romanée-Conti"))
+        fun producerSpatialJoin(a:String,b:String)=engine.allowsSpatialProducerJoin(a,b)
+        val horizontalWineTitle=listOf(
+            LogicChecks.token("Inscription",.9f,engine="mlkit",x=.1f,y=.4f,w=.22f,h=.06f),
+            LogicChecks.token("Pinot Noir",.9f,engine="mlkit",x=.34f,y=.4f,w=.25f,h=.06f),
+        )
+        val horizontalTitleProposals=TextLabSpatialPhrases.propose(horizontalWineTitle,
+            allowHorizontalJoin={ left,right -> producerSpatialJoin(left,right) },
+            allowVerticalJoin={ upper,lower -> producerSpatialJoin(upper,lower) })
+        check(horizontalTitleProposals.none { it.phrase.sourceIndices.size>1 })
+        val horizontalProducer=listOf(
+            LogicChecks.token("Domaine",.9f,engine="mlkit",x=.1f,y=.5f,w=.16f,h=.06f),
+            LogicChecks.token("de",.9f,engine="mlkit",x=.27f,y=.5f,w=.04f,h=.06f),
+            LogicChecks.token("la",.9f,engine="mlkit",x=.32f,y=.5f,w=.03f,h=.06f),
+            LogicChecks.token("Romanée-Conti",.9f,engine="mlkit",x=.36f,y=.5f,w=.35f,h=.06f),
+        )
+        val horizontalProducerProposals=TextLabSpatialPhrases.propose(horizontalProducer,
+            allowHorizontalJoin={ left,right -> producerSpatialJoin(left,right) },
+            allowVerticalJoin={ upper,lower -> producerSpatialJoin(upper,lower) })
+        check(horizontalProducerProposals.any { it.phrase.mergedText=="Domaine de la Romanée-Conti" })
+        check(horizontalProducerProposals.flatMap { it.sources }.toSet()==horizontalProducer.toSet())
         val novelReserve=engine.extract(listOf(t("BLACKSTONE",.02f),t("LUNAVISTA",.25f),t("GRAN RESERVA",.39f)),2026).fill
         check(novelReserve.fields.getValue(FieldId.WINE_NAME).value.equals("LUNAVISTA Gran Reserva",true)) { novelReserve.fields }
         val percentage=engine.extract(listOf(t("BLACKSTONE",.02f),t("100% TINTA DEL PAIS",.25f),t("CRIANZA",.39f)),2026).fill
@@ -199,7 +273,7 @@ object EvidenceArchitectureChecks {
         val gascogne=extractor.extract(listOf(line("SAUVIGNON BLANC",.3f),line("CÔTES DE GASCOGNE",.65f)),2026).fill
         check(gascogne.fields.getValue(FieldId.REGION).value=="South West France") { gascogne.fields }
         check(gascogne.fields.getValue(FieldId.SUBREGION).value=="Cotes de Gascogne") { gascogne.fields }
-        // Lab v4 d=0 exact geography fast-path: locks coherent exact appellation/region chains, populates
+        // Lab v5 d=0 exact geography fast-path: locks coherent exact appellation/region chains, populates
         // ancestral Country/Region/Subregion, feeds LabelContext, and leaves Prod default untouched.
         val labRepairExtractor=EvidenceExtractor(kb,placeRepair=PlaceRepair.Config.experimental)
         val heritageProd=labRepairExtractor.extract(

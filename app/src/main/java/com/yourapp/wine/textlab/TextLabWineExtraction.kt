@@ -159,8 +159,8 @@ internal object TextLabWineExtraction {
                     )
                 // Benchmark batches select their contenders explicitly and append each selected
                 // summary to the one OCR journal: evidence_summary (Prod v2.0),
-                // spatial_lwin_evidence_summary (Prod v3.0, LWIN-only producers) and
-                // spatial_evidence_summary (Lab v4, expanded producer index). The spatial
+                // spatial_lwin_evidence_summary (Prod v4.0, LWIN-only producers) and
+                // spatial_evidence_summary (Lab v5, expanded producer index). The spatial
                 // previews read only OCR rows plus the shared form anchor through their own
                 // scratch journals, so one contender's rows neither feed nor alter another's.
                 // Every other caller keeps exactly one extractor, as before.
@@ -171,7 +171,7 @@ internal object TextLabWineExtraction {
                     batch.journals.forEach { TextLabEvidencePreview.append(it,experimental,Year.now().value,batch.anchorHybrid,hybrid,batch.anchorHybrid && batch.repairProducer,repair) }
                 }
                 // The two spatial contenders run the identical pipeline; only the producer index
-                // differs (Prod v3.0: verified LWIN only; Lab v4: Lab expanded index). Each keeps
+                // differs (Prod v4.0: verified LWIN only; Lab v5: Lab expanded index). Each keeps
                 // its own candidate/stage namespace, setup telemetry and setup/lookup budgets.
                 if(runLwinSpatial) {
                     batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false) }
@@ -203,7 +203,7 @@ internal object TextLabWineExtraction {
         singleReading:Boolean=false,
         fillEngine:com.yourapp.wine.fill.FillEngine?=null,
         warmSession:WarmSession?=null) {
-        // Lab v4 only, default off: the Prod v3.0 contender keeps the Prod two-engine rule so the
+        // Lab v5 only, default off: the Prod v4.0 contender keeps the Prod two-engine rule so the
         // comparison stays "Prod policy vs Lab policy", not "old build vs new build".
         val policy=if(expanded && singleReading) com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading
             else com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod

@@ -1,4 +1,4 @@
-"""Lab v4 selection rules: designation bases, bare designations, fragments, level pairs.
+"""Lab v5 selection rules: designation bases, bare designations, fragments, level pairs.
 
 The extractor is Kotlin, so this pins the rules by mirroring the one deterministic part over the
 real catalog (`WineDesignations.split` + `classificationBase`) and by asserting the wiring of the
@@ -141,7 +141,7 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         runner = RUNNER.read_text()
         self.assertIn('internal const val REPAIR_PLACES_IN_BENCHMARK=true', runner)
         self.assertIn('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true', runner)
-        self.assertIn('evidence-lab-v4-context', EVIDENCE.read_text())
+        self.assertIn('evidence-lab-v5-vintage-recovery', EVIDENCE.read_text())
 
 
 if __name__ == '__main__':
