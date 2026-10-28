@@ -1033,7 +1033,7 @@ private fun BuildFieldComparisonTable(
                 )
             }
         }
-        buildRows.forEach { (title, scores) ->
+        buildRows.forEachIndexed { rowIndex, (title, scores) ->
             HorizontalDivider(Modifier.width(totalWidth))
             val expanded = title in expandedBuilds
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1061,9 +1061,11 @@ private fun BuildFieldComparisonTable(
                 }
                 FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
                     val cell = scores[fieldKey]?.let { score ->
-                        val otherScores = listOf(bestBuildScores[fieldKey], prodV4Scores[fieldKey])
-                        val uniquelyBest = title == "Current build" && otherScores.all { other ->
-                            other != null && score.correct > other.correct
+                        val otherScores = buildRows.mapIndexedNotNull { index, (_, rowScores) ->
+                            if (index == rowIndex) null else rowScores[fieldKey]
+                        }
+                        val uniquelyBest = otherScores.isNotEmpty() && otherScores.all { other ->
+                            score.correct > other.correct
                         }
                         passFailLabel(score.correct, score.incorrect, passColor, failColor) +
                             AnnotatedString(if (uniquelyBest) "*" else "")
