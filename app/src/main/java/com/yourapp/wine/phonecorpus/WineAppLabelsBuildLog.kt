@@ -438,6 +438,30 @@ internal class WineAppLabelsBuildLog(
     }
 
     /**
+     * Tags already-recorded runs with the corpus they were measured on, without rescoring them, so
+     * runs logged before `corpus_key` existed can still join the composite when their saved run
+     * folder proves they used the current corpus. Runs from another corpus are left alone.
+     */
+    @Synchronized
+    fun stampCorpusKeys(
+        runIds: Collection<String>,
+        corpusKey: String,
+        mode: PhoneCorpusRunner.Mode = PhoneCorpusRunner.Mode.LAB,
+    ) {
+        if (runIds.isEmpty() || corpusKey.isBlank()) return
+        val entries = readEntries().toMutableList()
+        var changed = false
+        for (i in entries.indices) {
+            val entry = entries[i]
+            if (entry.modelVersion != mode.title || entry.runId !in runIds) continue
+            if (entry.corpusKey == corpusKey) continue
+            entries[i] = entry.copy(corpusKey = corpusKey)
+            changed = true
+        }
+        if (changed) writeEntries(entries.sortedBy { it.timestampMs }, mode)
+    }
+
+    /**
      * Computes the composite "Best build" for [mode]: each parameter independently selects the
      * highest score ever achieved along with the build it came from. Error/failure minimums are
      * evaluated over the fullest attempted run cohort so a partial in-progress run (e.g. 5/124

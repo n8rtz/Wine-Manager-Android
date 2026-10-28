@@ -295,6 +295,45 @@ class WineAppLabelsBuildLogTest {
         assertTrue(persisted.contains("corpus-new"))
     }
 
+    @Test
+    fun stampsCorpusKeyOnAlreadyScoredRunsSoTheyJoinTheCohort() {
+        val logFile = temp.newFile("stamp-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+        val build = WineAppLabelsBuildLog.BuildInfo("b:clean", "#60 (cccccccccccc)", "60", "cccccccccccc", "arena/lab")
+
+        // A run scored before corpus_key existed: it is the only corpus-less candidate.
+        log.recordSummary(
+            runId = "run-now",
+            buildInfo = build,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "122", "50/122", "60", "12", "0", "600", "70", "30", "60", "3", "2", "0"),
+            timestampMs = 1_700_000_000_000L,
+        )
+        assertEquals("", log.bestBuildSummary()!!.corpusKey)
+
+        // A 125-label run from an older corpus stays untouched when the current reruns are stamped.
+        log.recordSummary(
+            runId = "run-old-corpus",
+            buildInfo = build,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "125", "123", "52/123", "54", "21", "0", "588", "70", "40", "60", "3", "2", "0"),
+            timestampMs = 1_699_000_000_000L,
+            corpusKey = "corpus-old",
+        )
+
+        log.stampCorpusKeys(listOf("run-now", "run-old-corpus"), "corpus-now")
+        assertEquals("corpus-now", log.readEntries().first { it.runId == "run-now" }.corpusKey)
+        assertEquals("corpus-old", log.readEntries().first { it.runId == "run-old-corpus" }.corpusKey)
+
+        // The stamped run is now the newest member of the current corpus, so it owns the composite
+        // and the 125-label row can no longer supply a target.
+        val best = log.bestBuildSummary()!!
+        assertEquals("corpus-now", best.corpusKey)
+        assertEquals(124, best.attempted.value)
+        assertEquals(122, best.eligible.value)
+        assertEquals(600, best.correctValues.value)
+    }
+
     private companion object {
         const val BEST_BUILD_MARKER = "best_build"
     }

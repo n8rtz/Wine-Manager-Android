@@ -419,9 +419,15 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private fun backfillBuildLog(log: WineAppLabelsBuildLog, expectedCorpus: String) {
         val existingByRunId = log.readEntries().associateBy { it.runId }
         val scorer = scoreboard()
+        val corpusKey = corpusLogKey(expectedCorpus)
+        val unstamped = mutableSetOf<String>()
         for (dir in matchingRunFolders(expectedCorpus).asReversed()) {
             val prior = existingByRunId[dir.name]
-            if (prior != null && prior.hasFieldScores) continue
+            if (prior != null && prior.hasFieldScores) {
+                // Already scored from this corpus's folder, so it only needs the cohort tag.
+                if (prior.corpusKey.isBlank()) unstamped += dir.name
+                continue
+            }
             val metadata = runCatching { JSONObject(File(dir, "run.json").readText()) }.getOrNull() ?: continue
             if (metadata.optString("mode") != PhoneCorpusRunner.Mode.LAB.name) continue
             val preds = runCatching { predictions(dir) }.getOrNull().orEmpty()
@@ -434,8 +440,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 ?: File(dir, "current").listFiles().orEmpty().maxOfOrNull { it.lastModified() }
                 ?: metadata.optLong("created_ms", dir.lastModified())
             log.recordSummary(dir.name, info, PhoneCorpusRunner.Mode.LAB, summaryRow, ts, fieldScores,
-                corpusKey = corpusLogKey(expectedCorpus))
+                corpusKey = corpusKey)
         }
+        log.stampCorpusKeys(unstamped, corpusKey, PhoneCorpusRunner.Mode.LAB)
         log.syncBestBuildSummary(PhoneCorpusRunner.Mode.LAB)
     }
 

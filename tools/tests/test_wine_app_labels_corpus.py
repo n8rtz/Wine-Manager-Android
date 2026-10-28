@@ -718,6 +718,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("corpusKey: String = \"\",", build_log)
         self.assertIn("corpusKey = corpusLogKey(expectedCorpus)", viewmodel)
         self.assertIn("loadedCorpusLogKey()", viewmodel)
+        #     Runs scored before the column existed are tagged from their (already corpus-checked)
+        #     saved run folder, so one corpus reruns keep their high-water marks.
+        self.assertIn("fun stampCorpusKeys(", build_log)
+        self.assertIn("log.stampCorpusKeys(unstamped, corpusKey, PhoneCorpusRunner.Mode.LAB)", viewmodel)
 
         # 3. ViewModel defaults to LabPostOcrModules.none, isolates Lab checkpoint folders by lab_modules_key,
         #    and logs active module keys to copied stats, CSV exports, and benchmark-results-log.csv.
