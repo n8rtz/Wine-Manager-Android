@@ -1003,7 +1003,8 @@ private fun BuildFieldComparisonTable(
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val failColor = MaterialTheme.colorScheme.error
-    val buildColumnWidth = 200.dp
+    var buildColumnExpanded by remember { mutableStateOf(false) }
+    val buildColumnWidth = if (buildColumnExpanded) 280.dp else 96.dp
     val fieldColumnWidth = 88.dp
     val totalWidth = buildColumnWidth + (fieldColumnWidth.value * FAILURE_FILTER_OPTIONS.size).dp
     val buildRows = listOf(
@@ -1015,13 +1016,25 @@ private fun BuildFieldComparisonTable(
     }
     Column(Modifier.horizontalScroll(rememberScrollState())) {
         Row {
-            Text(
-                "Build",
-                Modifier.width(buildColumnWidth).padding(4.dp),
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
-                softWrap = false,
-            )
+            Row(
+                Modifier.width(buildColumnWidth),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Build",
+                    Modifier.weight(1f).padding(4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                DisableSelection {
+                    TextButton(
+                        onClick = { buildColumnExpanded = !buildColumnExpanded },
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.width(32.dp),
+                    ) { Text(if (buildColumnExpanded) "−" else "+") }
+                }
+            }
             FAILURE_FILTER_OPTIONS.forEach { (_, label) ->
                 Text(
                     label,
@@ -1036,10 +1049,12 @@ private fun BuildFieldComparisonTable(
             HorizontalDivider(Modifier.width(totalWidth))
             Row {
                 Text(
-                    title,
+                    if (buildColumnExpanded) title else title.substringBefore(" · "),
                     Modifier.width(buildColumnWidth).padding(4.dp),
                     style = MaterialTheme.typography.bodySmall,
-                    softWrap = true,
+                    maxLines = if (buildColumnExpanded) Int.MAX_VALUE else 1,
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = buildColumnExpanded,
                 )
                 FAILURE_FILTER_OPTIONS.forEach { (fieldKey, _) ->
                     val cell = scores[fieldKey]?.let { score ->
