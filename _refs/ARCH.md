@@ -146,7 +146,7 @@ app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt # Froze
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt # Separate scalar benchmark-results-log.csv (date, time, build #, branch, model version, counts, and per-parameter best-build provenance) powering the "Lab v5 Best build" / "Best build" comparison rows
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsTimers.kt # Pure formatting and monotonic live-tick arithmetic for Run time (mm ss), Avg / image (s), and Est. remaining countdown (mm ss)
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt # Per-photo cache of verified ML Kit + Paddle v6 Medium OCR outputs for Lab runs, keyed by OCR model signature + per-image SHA-256 with packaged fallback seed
-app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt # Fresh or default-on Lab cached OCR per photo; current Lab v5/Prod v4.0 IDs plus legacy aliases; runImageAllModes is the only entry point
+app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt # Fresh or default-on Lab cached OCR per photo; modes Lab v6 / Prod v5.0 (frozen checkpoint contender `spatial_prod_v5`) / Prod v4.0 / v2.0 / v1.0 plus legacy ID aliases; runImageAllModes is the only entry point
 app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusScoreboard.kt # Scoring, bottleneck matrix and CSV rows for the 124-label corpus
 app/src/main/assets/wine-app-labels-v1/ # Live benchmark assets: 124 photos + inputs/evaluation-set/scoring/manifest + ocr-raw-cache-v1.jsonl.gz verified raw OCR seed
 tools/logic-checks/PipelineFunnelChecks.kt # Actual Kotlin telemetry, legacy evidence, checkpoint/scorer/CSV regression checks

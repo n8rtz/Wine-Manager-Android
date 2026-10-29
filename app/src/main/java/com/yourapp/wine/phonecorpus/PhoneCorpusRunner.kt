@@ -40,7 +40,8 @@ internal object PhoneCorpusRunner {
      */
     internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
-        LAB("Lab v5", "lab-v5-expanded-producers", "spatial_evidence_summary"),
+        LAB("Lab v6", "lab-v6-expanded-producers", "spatial_evidence_summary"),
+        PRODUCTION_V5("Prod v5.0", "production-v5.0-expanded-producers", "spatial_prod_v5_evidence_summary"),
         PRODUCTION_V4("Prod v4.0", "production-v4.0-lwin-only", "spatial_lwin_evidence_summary"),
         PRODUCTION_V2("Prod v2.0", "production-v2.0-guarded", "evidence_summary"),
         PRODUCTION_V1("Prod v1.0", "production-v1.0-15s", null);
@@ -48,7 +49,7 @@ internal object PhoneCorpusRunner {
         val acceptedPipelineIds:Set<String> get() = setOf(pipelineId) + Mode.legacyPipelineIds.filterValues { it == this }.keys
         /** Both spatial contenders run the producer/linked-wine resolvers; only the producer
          * index differs (Prod v4.0 verified LWIN only, Lab v5 the Lab expanded index). */
-        val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V4 || this==LAB
+        val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V4 || this==PRODUCTION_V5 || this==LAB
         companion object {
             /** Pipeline IDs written by earlier builds, mapped to the mode that owned them.
              * Saved scored CSVs keep the producing build's ID forever; without these aliases
@@ -57,6 +58,7 @@ internal object PhoneCorpusRunner {
              * Never reuse a retired ID for a different pipeline; append future renames here. */
             val legacyPipelineIds:Map<String,Mode> = mapOf(
                 // The just-before-refresh capture is now labeled Lab v5 / Prod v4.0.
+                "lab-v5-expanded-producers" to Mode.LAB,
                 "lab-v4-expanded-producers" to Mode.LAB,
                 "lab-v4-lwin-only" to Mode.LAB,
                 "production-v3.0-lwin-only" to Mode.PRODUCTION_V4,
@@ -110,7 +112,11 @@ internal object PhoneCorpusRunner {
                 .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
                 .put("input_source",if(sourceFile==null) "packaged_corpus" else "device_photo")
                 .put("ocr_source",if(usedCache) "cached_ocr" else "fresh_ocr")
-                .put("lab_modules",if(mode==Mode.LAB) labModules.signatureKey() else "")
+                .put("lab_modules",when(mode) {
+                    Mode.LAB -> labModules.signatureKey()
+                    Mode.PRODUCTION_V5 -> com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint.signatureKey()
+                    else -> ""
+                })
                 .put("runtime",if(usedCache) "on-device benchmark; cached OCR outputs; live Lab v5 extraction" else "on-device benchmark; fresh OCR; no saved-text replay")
             recordedByMode[mode]=linkedMapOf()
         }
@@ -203,10 +209,11 @@ internal object PhoneCorpusRunner {
                     val needEvidence=Mode.PRODUCTION_V2 in labModes
                     val needLwin=Mode.PRODUCTION_V4 in labModes
                     val needSpatial=Mode.LAB in labModes
+                    val needProdV5=Mode.PRODUCTION_V5 in labModes
                     val batch=TextLabBatch(listOf(TextLabImageKey(image,image)),setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true,
                         compareEvidence=true,anchorHybrid=true,repairProducer=true,
                         spatialPhrases=needSpatial,benchmarkOnly=true,benchmarkAllPipelines=true,
-                        benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,repairPlaces=REPAIR_PLACES_IN_BENCHMARK,
+                        benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,benchmarkProdV5Spatial=needProdV5,repairPlaces=REPAIR_PLACES_IN_BENCHMARK,
                         resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK,
                         labModules=labModules)
                     val journal=batch.journals.single()
@@ -272,10 +279,11 @@ internal object PhoneCorpusRunner {
                     val trace=if(mode==Mode.PRODUCTION_V1) emptyList() else diagnosticJournal?.let { journal ->
                         val ownCandidate=when(mode) {
                             Mode.LAB -> "spatial_lab"
+                            Mode.PRODUCTION_V5 -> "spatial_prod_v5"
                             Mode.PRODUCTION_V4 -> "spatial_lwin_lab"
                             Mode.PRODUCTION_V2,Mode.PRODUCTION_V1 -> "experimental_evidence"
                         }
-                        val contenderCandidates=setOf("experimental_evidence","spatial_lwin_lab","spatial_lab")
+                        val contenderCandidates=setOf("experimental_evidence","spatial_lwin_lab","spatial_lab","spatial_prod_v5")
                         journal.rows.filter { it["candidate"] !in contenderCandidates || it["candidate"]==ownCandidate }
                     }.orEmpty()
                     if(diagnosticJournal!=null && mode!=Mode.PRODUCTION_V1) output.put("trace",JSONArray(trace.map { JSONObject(it) }))

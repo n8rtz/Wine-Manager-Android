@@ -199,15 +199,26 @@ internal data class LabPostOcrModules(
          * are now retired from new selections and experiment plans. The two modules that postdate
          * every measured build (blank-subregion raw-OCR fallback, stacked appellations) stay off.
          */
-        val bestBuild = LabPostOcrModules(
-            blankSubregionFuzzy = false,
+        /**
+         * Prod v5.0 known-improvement checkpoint (2026-10-29): every module below was
+         * measured net-positive on the 124-label corpus against the prior configuration
+         * and verified on device (62/122 complete, 113/122 at most one error, zero
+         * losses vs the Lab v5 phone baseline). Prod v5.0 runs exactly this set; it is
+         * frozen and is not user-configurable. Lab v6 starts from this checkpoint.
+         */
+        val prodV5Checkpoint = LabPostOcrModules(
+            exactProducerProtection = true,
+            roleAwareJoins = true,
+            blankSubregionFuzzy = true,
+            appellationWineFallback = true,
+            appellationClassificationPrecedence = true,
             vintageRecovery = true,
-            stackedAppellations = false,
+            stackedAppellations = true,
             finalProducerNearMatch = true,
             producerRoleAndParticle = true,
             spatialSemanticGuards = true,
-            verticalWineTitlePairs = false,
         )
+        val bestBuild = prodV5Checkpoint
         val all = LabPostOcrModules(
             candidateIsolation = true,
             exactProducerProtection = true,

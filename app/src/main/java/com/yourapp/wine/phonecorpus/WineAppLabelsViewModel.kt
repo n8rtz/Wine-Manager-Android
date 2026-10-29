@@ -56,7 +56,9 @@ internal data class WineAppLabelsState(
     /** When checked next to Lab v5, reuses verified cached OCR outputs instead of re-running both OCR models. */
     val useCachedOcr: Boolean = true,
     /** Mix-and-match post-OCR modules added after Best V5; all false reproduces Best V5 exactly. */
-    val labModules: LabPostOcrModules = LabPostOcrModules.none,
+    // Lab v6 starts from the Prod v5.0 known-improvement checkpoint; experiments
+    // toggle modules away from (and back to) that measured configuration.
+    val labModules: LabPostOcrModules = LabPostOcrModules.prodV5Checkpoint,
     /** Photos with verified ML Kit + Paddle Medium OCR outputs cached on this device. */
     val ocrCached: Int = 0,
     /** Frozen Prod capture per version; absent until its first capture pass. */
@@ -532,8 +534,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             .take(10)
         val activeModules = mutable.value.labModules
         val comparisonText = buildString {
-            appendLine("WINE APP LABELS · Lab v5 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
-            appendLine("Lab v5 post-OCR modules: ${activeModules.summaryLabel()} (${activeModules.signatureKey()})")
+            appendLine("WINE APP LABELS · Lab v6 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
+            appendLine("Lab v6 post-OCR modules: ${activeModules.summaryLabel()} (${activeModules.signatureKey()})")
             if (bestBuild != null) {
                 appendLine(bestBuild.provenanceLine())
             }

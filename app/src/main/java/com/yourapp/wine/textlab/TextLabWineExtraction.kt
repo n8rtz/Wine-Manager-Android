@@ -158,6 +158,12 @@ internal object TextLabWineExtraction {
                             ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces)
                     }
                 }
+                val prodV5Experimental=if(batch.benchmarkAllPipelines && batch.benchmarkProdV5Spatial) {
+                    kb?.let {
+                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces,com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint)
+                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces,com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint)
+                    }
+                } else null
                 val prodExperimental=if(batch.benchmarkAllPipelines && (batch.benchmarkEvidence || batch.benchmarkLwinSpatial)) {
                     kb?.let {
                         warmSession?.evidenceExtractor(it,batch.anchorHybrid,false,com.yourapp.wine.textlab.evidence.LabPostOcrModules.none)
@@ -170,7 +176,9 @@ internal object TextLabWineExtraction {
                     experimental:com.yourapp.wine.textlab.evidence.EvidenceExtractor?,
                     hybrid:com.yourapp.wine.textlab.evidence.EvidenceAnchorHybrid?,
                     repair:com.yourapp.wine.textlab.evidence.ProducerRepair?,skip:Boolean,expanded:Boolean,
-                    singleReading:Boolean=false)=appendSpatialContenderWithSession(
+                    singleReading:Boolean=false,
+                    contenderCandidate:String?=null,contenderStagePrefix:String?=null,
+                    modulesOverride:com.yourapp.wine.textlab.evidence.LabPostOcrModules?=null)=appendSpatialContenderWithSession(
                         context,
                         journal,
                         if(!expanded && batch.benchmarkAllPipelines) prodExperimental else experimental,
@@ -181,7 +189,9 @@ internal object TextLabWineExtraction {
                         singleReading,
                         production,
                         warmSession,
-                        if(expanded) batch.labModules else com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
+                        modulesOverride ?: if(expanded) batch.labModules else com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
+                        contenderCandidate,
+                        contenderStagePrefix,
                     )
                 // Benchmark batches select their contenders explicitly and append each selected
                 // summary to the one OCR journal: evidence_summary (Prod v2.0),
@@ -220,6 +230,15 @@ internal object TextLabWineExtraction {
                 if(runExpandedSpatial) {
                     batch.journals.forEach { appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=true,singleReading=batch.resolverSingleReading) }
                 }
+                // Prod v5.0 checkpoint contender: the Lab spatial pipeline (expanded producer
+                // index, single-reading resolver rule) with the frozen proven module set.
+                // It is a known-improvement release, not an experiment: the module set is
+                // fixed here and never follows the Lab toggles.
+                if(batch.benchmarkProdV5Spatial) {
+                    batch.journals.forEach { appendSpatialContender(context,it,prodV5Experimental,hybrid,repair,skip,expanded=true,
+                        singleReading=batch.resolverSingleReading,contenderCandidate="spatial_prod_v5",
+                        contenderStagePrefix="spatial_prod_v5_",modulesOverride=com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint) }
+                }
             }
             if(batch.compareGazetteer || batch.residualCandidates) {
                 var resolver:com.yourapp.wine.gazetteer.TrigramGazetteer?=null
@@ -244,12 +263,13 @@ internal object TextLabWineExtraction {
         singleReading:Boolean=false,
         fillEngine:com.yourapp.wine.fill.FillEngine?=null,
         warmSession:WarmSession?=null,
-        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault) {
+        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault,
+        contenderCandidate:String?=null,contenderStagePrefix:String?=null) {
         // Lab v5 only, default off: the Prod v4.0 contender keeps the Prod two-engine rule so the
         // comparison stays "Prod policy vs Lab policy", not "old build vs new build".
         val policy=if(expanded && singleReading) com.yourapp.wine.gazetteer.ProducerResolver.Policy.singleReading
             else com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod
-        val candidate=if(expanded) "spatial_lab" else "spatial_lwin_lab"
+        val candidate=contenderCandidate ?: if(expanded) "spatial_lab" else "spatial_lwin_lab"
         // Setup and lookups get separate budgets on purpose. Asset verification reads 34-50 MB and
         // used to spend the lookups' time: the resolvers were handed the leftovers of one 500 ms
         // slice, so a slow open made them throw BudgetExceeded before the first query and the funnel
@@ -295,7 +315,7 @@ internal object TextLabWineExtraction {
                     throw com.yourapp.wine.gazetteer.ProducerResolver.BudgetExceeded()
             }
             TextLabSpatialPreview.append(journal,experimental,hybrid,repair,Year.now().value,producers,unavailable,lookupBudget,
-                candidate=candidate,stagePrefix=if(expanded) "spatial_" else "spatial_lwin_",fillEngine=fillEngine,labModules=labModules,policy=policy)
+                candidate=candidate,stagePrefix=contenderStagePrefix ?: if(expanded) "spatial_" else "spatial_lwin_",fillEngine=fillEngine,labModules=labModules,policy=policy)
         } finally { if(ownsProducers) producers?.close() }
     }
     private fun box(value:String?):RectF? {

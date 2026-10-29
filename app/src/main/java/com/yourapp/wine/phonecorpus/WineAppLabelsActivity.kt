@@ -239,7 +239,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                                             .putStringArrayListExtra(DevicePhotoLabActivity.EXTRA_MODULE_KEYS,
                                                 ArrayList(state.labModules.enabledKeys())))
                                     },
-                                ) { Text("Test Lab v5 on device photos") }
+                                ) { Text("Test Lab v6 on device photos") }
                             }
                             Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
                             DisableSelection {
@@ -326,7 +326,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                 SelectionContainer {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (state.message.isNotBlank()) Text(state.message)
-                        Text("Lab v5 checkpointed: ${state.labCompleted}/${state.total}")
+                        Text("Lab v6 checkpointed: ${state.labCompleted}/${state.total}")
                         val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
                         if (state.captures.size != 3 || frozen < state.total) {
                             Text("Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture")
@@ -338,7 +338,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     onClick = { vm.start() },
                     enabled = !state.busy && !state.suiteRunning && (state.labCompleted < state.total || state.captureRemaining > 0),
                 ) {
-                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v5 only")
+                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v6 only")
                 }
                 SelectionContainer {
                     BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
