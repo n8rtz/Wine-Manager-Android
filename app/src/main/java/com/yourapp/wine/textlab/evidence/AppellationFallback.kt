@@ -110,13 +110,22 @@ internal class AppellationFallback(private val kb:WineKnowledgeBase) {
         // the same passing observations, canonical spelling as the value.
         val fuzzyChoices=graph.observations.filter { o ->
             val r=o.record
-            r.score >= (if(r.engineId.startsWith("paddle")) .75f else .60f) &&
-                r.bboxRect.width()>0 && r.bboxRect.height()>0 &&
-                (!MetadataRules.isBoilerplate(r.textRaw) || WineDesignations.framedAppellation(r.textRaw)!=null)
+            // Boilerplate lines are welcome here: the framing-strip below is
+            // exactly what makes a garbled legal line usable, and the exact
+            // path above already had first refusal on non-boilerplate text.
+            r.score >= (if(r.engineId.startsWith("paddle")) .35f else .20f) &&
+                r.bboxRect.width()>0 && r.bboxRect.height()>0
         }.mapNotNull { o ->
             val rawText=o.record.textRaw
-            val candidateText=WineDesignations.framedAppellation(rawText) ?: rawText
-            val places=oneEditPlaces(EvidenceRanking.nameKey(candidateText)).filter { place ->
+            // Also try the legal framing stripped off, so a garbled framed
+            // line (`Appellation Bordeaus superieur coFoat`) can still offer
+            // its inner appellation to the one-edit repair.
+            val framingWords=setOf("appellation","origine","controlee","protegee","controllata","garantita","denominazione","indicazione","geografica","tipica","d","de","di","aoc","aop","doc","docg")
+            val stripped=rawText.split(Regex("\\s+")).filter { TextNorm.normalize(it).trimStart('.', ',', ';', ':').trimEnd('.', ',', ';', ':') !in framingWords }.joinToString(" ")
+            val strippedTokens=stripped.split(" ").filter(String::isNotBlank)
+            val candidateTexts=(listOf(WineDesignations.framedAppellation(rawText) ?: rawText, stripped)+
+                (if(strippedTokens.size>=3) listOf(strippedTokens.dropLast(1).joinToString(" "), strippedTokens.drop(1).joinToString(" ")) else emptyList())).distinct()
+            val places=candidateTexts.flatMap { oneEditPlaces(EvidenceRanking.nameKey(it)) }.distinct().filter { place ->
                 selected.all { alternatives -> alternatives.any { view.compatible(place,it) } }
             }
             if(places.size!=1) null else o to places.single()

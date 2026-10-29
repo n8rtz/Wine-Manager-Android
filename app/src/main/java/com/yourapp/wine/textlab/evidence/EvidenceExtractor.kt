@@ -874,7 +874,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             if(originFramingAdmin) {
                 if(repair==null && framed!=null && places.isNotEmpty()) {
                     if(classificationName)
-                        offer(mapOf(FieldId.WINE_NAME to framed),64.0,"framed printed classification qualifies the matched appellation")
+                        offer(mapOf(FieldId.WINE_NAME to framed),if(modules.appellationClassificationPrecedence) 96.0 else 64.0,"framed printed classification qualifies the matched appellation")
                     else if(places.any { TextNorm.normalize(it.name)==subjectNorm } && WineDesignations.isAppellationName(framed))
                         offer(mapOf(FieldId.WINE_NAME to framed),62.0,"framed printed appellation may also name the wine")
                 }
@@ -883,7 +883,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             }
             if(repair==null && classificationName && places.isNotEmpty() && printedBase!=null &&
                 places.any { pl -> (listOf(pl.name)+BundledOrigins.spellingForms(pl)).any { EvidenceRanking.nameKey(it)==EvidenceRanking.nameKey(printedBase) } })
-                offer(mapOf(FieldId.WINE_NAME to placeSubject),70.0,"printed classification qualifies the matched appellation")
+                offer(mapOf(FieldId.WINE_NAME to placeSubject),if(modules.appellationClassificationPrecedence) 96.0 else 70.0,"printed classification qualifies the matched appellation")
             else if(repair==null && places.any { TextNorm.normalize(it.name)==norm } && WineDesignations.isAppellationName(text))
                 offer(mapOf(FieldId.WINE_NAME to text),65.0,"exact printed appellation may also name the wine")
             else if(repair==null && attachedYear!=null && places.any { TextNorm.normalize(it.name)==subjectNorm } && WineDesignations.isAppellationName(placeSubject))
@@ -902,7 +902,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             }
             if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
             if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
-                offer(mapOf(FieldId.WINE_NAME to text),75.0,"explicit named cuvee role; not producer attribution")
+                offer(mapOf(FieldId.WINE_NAME to text),if(modules.appellationClassificationPrecedence) 100.0 else 75.0,"explicit named cuvee role; not producer attribution")
                 trace.add("explicit_cuvee_role", "phrase=${p.id}")
                 continue
             }

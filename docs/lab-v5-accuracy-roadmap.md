@@ -64,16 +64,19 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceRanking.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Hyphenated/apostrophe French appellation spellings (`Montagne-Saint-Emilion` vs `Montagne Saint Emilion`, `Cotes-du-Rhone` vs `Cotes du Rhone`, `Pessac-Leognan`) diverge between OCR spacing and catalog spelling during `WINE_NAME` hypothesis deduplication/selection.
   - **Target bottles:** `#46, #94, #122, #167`.
+  - **Covered (2026-10-29):** all four targets are correct via the Item 2c fallback route (supplemented-KB `AppellationFallback` + bounded one-edit repair; diagnostic report Sections 8/9); phone-verified 2026-10-29. The hypothesis-dedup root cause above remains as documented but no longer affects these bottles.
 
-- [ ] **2b. Fix `designation-linked` rank inversion in `EvidenceRanking` / `EvidenceSolver`**
+- [x] **2b. Fix `designation-linked` rank inversion in `EvidenceRanking` / `EvidenceSolver`**
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceRanking.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceSolver.kt`
   - **Root cause:** A shorter parent appellation or bare classification/designation hypothesis can outrank the fuller `<Appellation> <Grand Cru / Villages / Superieur>` phrase on the same label.
   - **Target bottles:** `#142, #157`.
+  - **Resolved (2026-10-29, host-verified 60/122, phone pending):** Lab module `appellation_classification_precedence` raises the classification-qualified appellation offer (70/64 -> 96) above designation-linked titles (90) while the explicit named-cuvee offer rises to 100 so a printed appellation cannot steal a named cuvee (#97 `Cuvee Garance`). #142 was already correct; #157 gained. Baseline parity unchanged (module default off).
 
 - [ ] **2c. Select deepest compatible appellation descendant in `AppellationFallback`**
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/AppellationFallback.kt`
   - **Root cause:** When Old World labels have no distinct cuvée or varietal and `AppellationFallback` fills `WINE_NAME` from resolved geography, broader region/parent candidates can win or tie instead of selecting the deepest compatible village/cru/subregion appellation printed on the label.
   - **Target bottles:** `#36, #99, #105, #164, #167`.
+  - **Progress (2026-10-29):** #36, #99, #164, #167 gained via supplemented-KB fallback + one-edit/framing-strip repair (phone-verified for #36/#164/#167; #99 host-verified). #105 remains open: its wine slot holds wrong free text, and the fallback deliberately only fills blanks.
 
 ---
 

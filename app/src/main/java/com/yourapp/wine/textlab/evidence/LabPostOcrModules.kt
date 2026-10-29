@@ -26,6 +26,7 @@ internal data class LabPostOcrModules(
     val wineNameSpans: Boolean = false,
     val blankSubregionFuzzy: Boolean = false,
     val appellationWineFallback: Boolean = false,
+    val appellationClassificationPrecedence: Boolean = false,
     val vintageRecovery: Boolean = false,
     val stackedAppellations: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
@@ -55,6 +56,12 @@ internal data class LabPostOcrModules(
             shortName = "subregion-fuzzy",
             uiTitle = "Blank subregion fuzzy search",
             uiDetail = "Raw-OCR multi-word/line appellation fallback when subregion is blank",
+        ),
+        APPELLATION_CLASSIFICATION_PRECEDENCE(
+            key = "appellation_classification_precedence",
+            shortName = "appellation-classification-precedence",
+            uiTitle = "Appellation classification precedence",
+            uiDetail = "Printed <appellation> <classification> outranks designation-linked title joins",
         ),
         APPELLATION_WINE_FALLBACK(
             key = "appellation_wine_fallback",
@@ -114,6 +121,7 @@ internal data class LabPostOcrModules(
         ModuleId.WINE_NAME_SPANS -> wineNameSpans
         ModuleId.BLANK_SUBREGION_FUZZY -> blankSubregionFuzzy
         ModuleId.APPELLATION_WINE_FALLBACK -> appellationWineFallback
+        ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE -> appellationClassificationPrecedence
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
         ModuleId.STACKED_APPELLATIONS -> stackedAppellations
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> finalProducerNearMatch
@@ -136,6 +144,7 @@ internal data class LabPostOcrModules(
         ModuleId.WINE_NAME_SPANS -> copy(wineNameSpans = enabled)
         ModuleId.BLANK_SUBREGION_FUZZY -> copy(blankSubregionFuzzy = enabled)
         ModuleId.APPELLATION_WINE_FALLBACK -> copy(appellationWineFallback = enabled)
+        ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE -> copy(appellationClassificationPrecedence = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
         ModuleId.STACKED_APPELLATIONS -> copy(stackedAppellations = enabled)
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> copy(finalProducerNearMatch = enabled)
