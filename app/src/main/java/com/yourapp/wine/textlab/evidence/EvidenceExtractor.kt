@@ -616,6 +616,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 isKnownProducerLine={ text -> isKnownProducerLine(text) },
                 allowWineTitlePairs=allowWineTitlePairs || modules.verticalWineTitlePairs || modules.boundedWineTitlePairs,
                 wineTitlePairMaxHeightRatio=if(modules.boundedWineTitlePairs) 5.5f else 1.45f,
+                allowProducerSpans=modules.splitProducerSpans,
+                allowStackedWineTitles=modules.stackedWineTitles,
                 allowStackedAppellations=exactGeographyFastPath && (modules.stackedAppellations || modules.broaderDiscovery),
                 requireRoleAwareJoins=modules.roleAwareJoins,
                 filterAdministrative=modules.administrativeFiltering,
@@ -637,7 +639,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         // A single-engine reading of the same varietal line must not compete
         // with the pair that subsumes it (Inscription PINOT NOIR vs PINOT NOIR).
         val pairLowerTextKeys=if(modules.boundedWineTitlePairs) graph.phrases
-            .filter { it.construction=="bounded vertical wine-title pair" }
+            .filter { it.construction=="bounded vertical wine-title pair" || it.construction=="three-line wine-title stack" }
             .mapNotNull { pair ->
                 val lowerObs=pair.observations.maxByOrNull { id ->
                     graph.observations.firstOrNull { it.id==id }?.record?.bboxRect?.centerY() ?: 0f
@@ -748,7 +750,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             val nonOriginAdmin=LabelContext.isNonOriginAdministrative(text,norm)
             val originFramingAdmin=!nonOriginAdmin && MetadataRules.isBoilerplate(text)
             val administrative=nonOriginAdmin || originFramingAdmin
-            val boundedTitlePair=p.construction=="bounded vertical wine-title pair"
+            val boundedTitlePair=p.construction=="bounded vertical wine-title pair" || p.construction=="three-line wine-title stack"
             val nearbyLines=if(modules.candidateIsolation) graph.observations.filter { other ->
                 other.id !in p.observations &&
                     sources.any { it.record.engineId==other.record.engineId && it.record.variantId==other.record.variantId } &&
@@ -917,7 +919,11 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                     }
                 }
                 val lowerIsCatalogAppellation=WineDesignations.isAppellationName(lowerTitleLine) ||
-                    WineDesignations.hasNameAndDesignation(lowerTitleLine)
+                    WineDesignations.hasNameAndDesignation(lowerTitleLine) ||
+                    (modules.stackedWineTitles && TextNorm.normalize(lowerTitleLine) in setOf("port","porto") &&
+                        (WineDesignations.isDesignation(upperTitleLine) ||
+                            Regex("""(?iu)\b(?:reserve|reserva|riserva|signature|series|brut|late bottled|lbv|blanc de)\b""")
+                                .containsMatchIn(TextNorm.normalize(upperTitleLine))))
                 val placeMatchesAreAppellations=places.isEmpty() ||
                     (lowerIsCatalogAppellation && places.all { WineDesignations.isAppellationName(it.name) })
                 // Item 1a refinement: the pair names the wine only over a varietal
@@ -925,9 +931,15 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 // names the wine (exact/classification offers and the appellation
                 // fallback own that case); a cuvee+appellation pair there only
                 // prepends producer fragments (BOUSQUET COTES DE BOURG).
+                // Item 4b exception: a tier/designation upper (LATE BOTTLED
+                // VINTAGE over PORT) heads the wine name even over an appellation.
+                val upperIsTierTitle=modules.stackedWineTitles &&
+                    (WineDesignations.isDesignation(upperTitleLine) ||
+                        Regex("""(?iu)\b(?:reserve|reserva|riserva|signature|series|brut|late bottled|lbv|blanc de)\b""")
+                            .containsMatchIn(TextNorm.normalize(upperTitleLine)))
                 if(MetadataRules.isIdentity(text) && placeMatchesAreAppellations && !endsConnector && !beginsConnector &&
                     !upperIsProducerFragment &&
-                    !(modules.boundedWineTitlePairs && WineDesignations.isAppellationName(lowerTitleLine)))
+                    !(modules.boundedWineTitlePairs && WineDesignations.isAppellationName(lowerTitleLine) && !upperIsTierTitle))
                     offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),
                         // Item 1a: a bounded pair must not outrank a classification-qualified
                         // appellation (96) or a named cuvee (100) printed on the same label.
@@ -937,8 +949,15 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                         if(modules.boundedWineTitlePairs) {
                             val upperBox=sources.minByOrNull { it.record.bboxRect.centerY() }?.record?.bboxRect
                             val lowerBox=sources.maxByOrNull { it.record.bboxRect.centerY() }?.record?.bboxRect
-                            if(upperBox!=null && lowerBox!=null && lowerBox.height()>0f &&
-                                upperBox.height()>=2.5f*lowerBox.height()) 88.0 else 70.0
+                            when {
+                                // Item 4b: a bounded three-line stack is the most
+                                // specific title reading on the label.
+                                modules.stackedWineTitles && p.construction=="three-line wine-title stack" -> 92.0
+                                modules.stackedWineTitles && upperIsTierTitle -> 90.0
+                                upperBox!=null && lowerBox!=null && lowerBox.height()>0f &&
+                                    upperBox.height()>=2.5f*lowerBox.height() -> 88.0
+                                else -> 70.0
+                            }
                         } else 116.0,
                         "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed")
                 trace.add("bounded_title_pair","phrase=${p.id}; text=$text")
@@ -988,7 +1007,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 offer(mapOf(FieldId.WINE_NAME to text),75.0,"printed classification-qualified numeric title")
                 continue
             }
-            val joined=p.construction.contains("connector")
+            val joined=p.construction.contains("connector") || p.construction.contains("producer span")
             val titleCue=Regex("\\b(reserve|reserva|riserva)\\b").containsMatchIn(norm)
             val producerRolePenalty=producerCandidatePenalty(text)*24.0
             if(!titleCue) offer(mapOf(FieldId.PRODUCER to text),

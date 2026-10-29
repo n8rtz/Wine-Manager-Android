@@ -110,12 +110,12 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
   - **Root cause:** Long appellations split across two centered lines (e.g. `SAINT-EMILION` / `GRAND CRU` or `COTES DU RHONE` / `VILLAGES`) fail to form a single candidate phrase when line spacing slightly exceeds the tight inline threshold.
   - **Target bottles:** `#103, #151, #163`.
 
-- [ ] **4b. Vertically stacked cuvée/tier + varietal or appellation (`WINE_NAME`)**
+- [x] **4b. Vertically stacked cuvée/tier + varietal or appellation (`WINE_NAME`)** — done 2026-10-29 as `stacked_wine_titles`, integrated into Lab v6: +4/−0 alone (#50, #152, #154, #183). Residual: #32/#89 (line not read), #60 (producer-pair competition), #174 (word-split upstream), #178 (three-line extension removed as unsafe). See diagnostic §14.
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceGraph.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Labels printing a short cuvée/tier line directly above a varietal or appellation (`Inscription` + `PINOT NOIR` `#170`, `ultra` + `MALBEC` `#177`, `Peppoli` + `CHIANTI CLASSICO` `#180`, `Cote des Roses` `#50/#152`, `Leo` + `by` + `Leo` `#32/#89`) need bounded 2-line `cuvée + varietal/appellation` hypothesis generation without pulling in region/vintage lines below.
   - **Target bottles:** `#32, #50, #60, #89, #152, #154, #170, #174, #177, #178, #180, #183, #184`.
 
-- [ ] **4c. Vertically split estate/particle producer names**
+- [x] **4c. Vertically split estate/particle producer names** — done 2026-10-29 as `split_producer_spans`, integrated into Lab v6: +4/−0 alone (#92, #136, #164 producer; #137 wine). Residual: #42/#61 (no catalog entity, `de` unprinted), #43 (rotated reading), #54/#104 (repair/resolver fragment preference). See diagnostic §14.
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceGraph.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/ProducerRepair.kt`
   - **Root cause:** Estate headers split across lines at particles or prefixes (`DOMAINE` + `DE CASSAN` `#43`, `LA PETITE` + `CHAPELLE DE BORDEAUX` `#42`, `DOMAINE ALLARY` + `HAUT-BRION` `#92/#136`, leading `d'` / `de la` lines `#54, #61, #104, #181`) lose their prefix or second line before `ProducerResolver` runs.
   - **Target bottles:** `#42, #43, #54, #61, #92, #104, #136, #181`.

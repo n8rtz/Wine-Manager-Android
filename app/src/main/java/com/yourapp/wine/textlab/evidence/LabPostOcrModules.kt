@@ -28,6 +28,8 @@ internal data class LabPostOcrModules(
     val appellationWineFallback: Boolean = false,
     val appellationClassificationPrecedence: Boolean = false,
     val boundedWineTitlePairs: Boolean = false,
+    val splitProducerSpans: Boolean = false,
+    val stackedWineTitles: Boolean = false,
     val vintageRecovery: Boolean = false,
     val stackedAppellations: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
@@ -57,6 +59,18 @@ internal data class LabPostOcrModules(
             shortName = "subregion-fuzzy",
             uiTitle = "Blank subregion fuzzy search",
             uiDetail = "Raw-OCR multi-word/line appellation fallback when subregion is blank",
+        ),
+        STACKED_WINE_TITLES(
+            key = "stacked_wine_titles",
+            shortName = "stacked-wine-titles",
+            uiTitle = "Stacked wine titles (4b)",
+            uiDetail = "Tier-line + varietal pairs, vintage-skipping pairs and bounded three-line wine titles",
+        ),
+        SPLIT_PRODUCER_SPANS(
+            key = "split_producer_spans",
+            shortName = "split-producer-spans",
+            uiTitle = "Split producer spans (4c)",
+            uiDetail = "Vertically stacked estate/particle producer lines joined into one producer span",
         ),
         BOUNDED_WINE_TITLE_PAIRS(
             key = "bounded_wine_title_pairs",
@@ -130,6 +144,8 @@ internal data class LabPostOcrModules(
         ModuleId.APPELLATION_WINE_FALLBACK -> appellationWineFallback
         ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE -> appellationClassificationPrecedence
         ModuleId.BOUNDED_WINE_TITLE_PAIRS -> boundedWineTitlePairs
+        ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
+        ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
         ModuleId.STACKED_APPELLATIONS -> stackedAppellations
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> finalProducerNearMatch
@@ -154,6 +170,8 @@ internal data class LabPostOcrModules(
         ModuleId.APPELLATION_WINE_FALLBACK -> copy(appellationWineFallback = enabled)
         ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE -> copy(appellationClassificationPrecedence = enabled)
         ModuleId.BOUNDED_WINE_TITLE_PAIRS -> copy(boundedWineTitlePairs = enabled)
+        ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
+        ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
         ModuleId.STACKED_APPELLATIONS -> copy(stackedAppellations = enabled)
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> copy(finalProducerNearMatch = enabled)
@@ -175,7 +193,7 @@ internal data class LabPostOcrModules(
         appellationWineFallback=true, appellationClassificationPrecedence=true,
         vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
         producerRoleAndParticle=true, spatialSemanticGuards=true,
-        boundedWineTitlePairs=true)
+        boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true)
 
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
@@ -207,7 +225,10 @@ internal data class LabPostOcrModules(
             ModuleId.STACKED_APPELLATIONS, ModuleId.FINAL_PRODUCER_NEAR_MATCH,
             ModuleId.PRODUCER_ROLE_AND_PARTICLE, ModuleId.SPATIAL_SEMANTIC_GUARDS,
             // Item 1a (host-verified +4/-0 on the Lab v6 floor: #170, #177, #184, #186).
-            ModuleId.BOUNDED_WINE_TITLE_PAIRS)
+            ModuleId.BOUNDED_WINE_TITLE_PAIRS,
+            // Items 4b/4c (host-verified +4/-0 each, +6 complete combined:
+            // #50, #152, #154, #183 wine; #92, #136, #164 producer; #137 wine).
+            ModuleId.STACKED_WINE_TITLES, ModuleId.SPLIT_PRODUCER_SPANS)
         val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**

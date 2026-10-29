@@ -29,6 +29,8 @@ internal object EvidenceGraphBuilder {
         isKnownProducerLine:(String)->Boolean={ false },
         allowWineTitlePairs:Boolean=false,
         wineTitlePairMaxHeightRatio:Float=1.45f,
+        allowProducerSpans:Boolean=false,
+        allowStackedWineTitles:Boolean=false,
         allowStackedAppellations:Boolean=false,
         allowSplitCrestVintage:Boolean=true,
         enforceSpatialSemanticGuards:Boolean=true,
@@ -109,16 +111,34 @@ internal object EvidenceGraphBuilder {
             }
             return true
         }
+        // Item 4b: a tier/designation line (GOLDEN RESERVE, SIGNATURE SERIES,
+        // LATE BOTTLED VINTAGE, BLANC DE BLANCS) is a wine title line, not a
+        // producer or a description to reject: it heads the wine name when it
+        // sits directly over a varietal or appellation line.
+        val tierTitleRegex=Regex("""(?iu)\b(?:reserve|reserva|riserva|signature|series|brut|late bottled|lbv|blanc de)\b""")
+        fun isTierTitle(text:String):Boolean =
+            WineDesignations.isDesignation(text) || tierTitleRegex.containsMatchIn(TextNorm.normalize(text))
         fun isBoundedWineTitlePair(upper:String,lower:String):Boolean {
             if(!allowWineTitlePairs || isHardBoundary(upper) || isHardBoundary(lower) ||
                 isGeographyLine(upper) || isGeographyLine(lower) || isGeographyLine("$upper $lower")) return false
+            // Item 4b: a grape-plus-style lower line (SYRAH ROSE) is a varietal
+            // description even when the role classifier wants an exact term.
+            val lowerGrape=allowStackedWineTitles && com.yourapp.wine.kb.BundledGrapes.terms.any { term ->
+                val key=TextNorm.normalize(term.name)
+                key.isNotEmpty() && TextNorm.normalize(lower).split(' ').contains(key)
+            }
             if(lower.count(Char::isLetter)<3 ||
-                (!lineRoles.isWineDescription(lower) && !WineDesignations.isDesignation(lower))) return false
-            if(upper.count(Char::isLetter)<3 || lineRoles.isWineDescription(upper) || lineRoles.hasProducerCue(upper) ||
+                (!lineRoles.isWineDescription(lower) && !WineDesignations.isDesignation(lower) && !lowerGrape)) return false
+            val tierUpper=allowStackedWineTitles && isTierTitle(upper)
+            if(upper.count(Char::isLetter)<3 || (lineRoles.isWineDescription(upper) && !tierUpper) ||
+                (lineRoles.hasProducerCue(upper) && !tierUpper) ||
                 (typedIdentity && (EvidenceIdentityRoles.headingOnly(upper) || EvidenceIdentityRoles.namedEstate(upper))) ||
                 isKnownProducer(upper)) return false
-            return !WineDesignations.isDesignation(lower) && !WineDesignations.isBareClassification(lower) &&
-                (lineRoles.isWineDescription(lower) || WineDesignations.isAppellationName(lower))
+            // Item 4b: PORT under a tier line (LATE BOTTLED VINTAGE PORT) is the
+            // wine's style appellation, not a geography line to reject.
+            val lowerFortified=tierUpper && TextNorm.normalize(lower) in setOf("port","porto")
+            return (!WineDesignations.isDesignation(lower) || tierUpper) && !WineDesignations.isBareClassification(lower) &&
+                (lineRoles.isWineDescription(lower) || WineDesignations.isAppellationName(lower) || lowerGrape || lowerFortified)
         }
         // Some labels print the two halves of a year on opposite sides of a central crest.
         // Rejoin only same-engine, same-variant two-digit fragments that are level, similarly
@@ -189,15 +209,36 @@ internal object EvidenceGraphBuilder {
                 kotlin.math.abs(a.box.centerX()-b.box.centerX())<=maxOf(a.box.width(),b.box.width())*.25f &&
                 b.box.top-a.box.bottom<=maxOf(a.box.height(),b.box.height())*.65f &&
                 b.box.centerY()-a.box.centerY()<=maxOf(a.box.height(),b.box.height())*1.8f
-            if(!horizontal && !vertical) continue
+            // Item 4b pair candidates may use the looser absolute-gap vertical;
+            // do not discard them on the strict vertical test.
+            val pairLooseVertical=allowStackedWineTitles && a.box.centerY()<b.box.centerY() &&
+                b.box.top-a.box.bottom<=.08f &&
+                kotlin.math.abs(a.box.centerX()-b.box.centerX())<=maxOf(a.box.width(),b.box.width())*.25f
+            if(!horizontal && !vertical && !pairLooseVertical) continue
             val combinedText=a.text+" "+b.text
             // A bounded wine-title pair (Item 1a) is its own role support: a title
             // line over a varietal/appellation line needs no catalog or producer
             // evidence, so the role-aware veto must not kill it before evaluation.
-            val pairCandidate=vertical && sameEnginePass(a,b) &&
+            // Item 4b: small-caps tier lines can sit a wide *relative* gap above
+            // the varietal (SIGNATURE SERIES over CABERNET SAUVIGNON); allow an
+            // absolute-gap vertical solely for bounded pair evaluation.
+            val pairVertical=vertical || pairLooseVertical
+            val pairCandidate=pairVertical && sameEnginePass(a,b) &&
                 maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())<=wineTitlePairMaxHeightRatio &&
                 isBoundedWineTitlePair(a.text,b.text)
-            if(requireRoleAwareJoins && !pairCandidate && !compatibleRoles(a.text,b.text)) continue
+            // Item 4c: a vertically stacked producer span (estate heading or
+            // particle line over a name line) is likewise its own role support.
+            val producerSpanCandidate=allowProducerSpans && vertical && sameEnginePass(a,b) &&
+                maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())<=1.85f &&
+                !isHardBoundary(a.text) && !isHardBoundary(b.text) &&
+                !isGeographyLine(a.text) && !isGeographyLine(b.text) &&
+                !lineRoles.isWineDescription(b.text) && !WineDesignations.isDesignation(b.text) &&
+                b.text.count(Char::isLetter)>=3 && !b.text.any(Char::isDigit) &&
+                (lineRoles.hasProducerCue(a.text) || EvidenceIdentityRoles.headingOnly(a.text) ||
+                    EvidenceIdentityRoles.namedEstate(a.text) ||
+                    Regex("\\b(de|du|di|des|la|le|les)$").containsMatchIn(TextNorm.normalize(a.text)) ||
+                    Regex("^(de|du|di|des|d|la|le|les)\\b").containsMatchIn(TextNorm.normalize(b.text)))
+            if(requireRoleAwareJoins && !pairCandidate && !producerSpanCandidate && !compatibleRoles(a.text,b.text)) continue
             if(filterAdministrative && (com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(a.text) ||
                 com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(b.text))) continue
             val heightRatio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
@@ -216,6 +257,7 @@ internal object EvidenceGraphBuilder {
                     val maxRatio=when {
                         stackedAppellation -> 1.85f
                         boundedPairCandidate -> wineTitlePairMaxHeightRatio
+                        producerSpanCandidate -> 1.85f
                         else -> 1.45f
                     }
                     if(heightRatio>maxRatio || isHardBoundary(a.text) || isHardBoundary(b.text)) continue
@@ -242,15 +284,17 @@ internal object EvidenceGraphBuilder {
                     !com.yourapp.wine.extract.MetadataRules.isPackaging(b.text) && !WineDesignations.isDesignation(b.text)
             }
             val wineTitlePair=boundedPairCandidate
-            val verticalAllowed=enforceSpatialSemanticGuards || (!stackedAppellation && !wineTitlePair) || stackedAppellation || wineTitlePair
+            val producerSpan=producerSpanCandidate
+            val verticalAllowed=enforceSpatialSemanticGuards || (!stackedAppellation && !wineTitlePair) || stackedAppellation || wineTitlePair || producerSpan
             if(verticalAllowed && (estateName || horizontal || designation || stackedAppellation || leadingConnector ||
-                Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des") || wineTitlePair)) {
+                Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des") || wineTitlePair || producerSpan)) {
                 val construction=when {
                     wineTitlePair -> "bounded vertical wine-title pair"
                     estateName -> "estate-heading composition"
                     horizontal -> "aligned horizontal phrase"
                     designation -> "designation-linked phrase"
                     stackedAppellation -> "aligned appellation phrase"
+                    producerSpan -> "vertical producer span"
                     else -> "connector-linked phrase"
                 }
                 add(combinedText,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),construction)
@@ -281,6 +325,71 @@ internal object EvidenceGraphBuilder {
             if(b.box.centerY()>connectorY && b.box.top-a.box.bottom<=.08f &&
                 kotlin.math.abs(a.box.centerX()-b.box.centerX())<=maxOf(a.box.width(),b.box.width())*.25f)
                 add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),"three-line connector phrase")
+        }
+        // Item 4b: a bounded pair may skip exactly one intervening standalone
+        // vintage line (Naturae / 2020 / MERLOT). The year line is excluded
+        // from the name; geography and framing lines still block the join.
+        if(allowStackedWineTitles && allowWineTitlePairs) {
+            val yearSingles=singles.filter { s ->
+                TextNorm.normalize(s.text).matches(Regex("(?:18|19|20)\\d\\d"))
+            }
+            for(a in singles) for(b in singles) {
+                checkBudget()
+                if(a.observations.intersect(b.observations).isNotEmpty()) continue
+                if(!sameEnginePass(a,b)) continue
+                if(a.box.centerY()>=b.box.centerY()) continue
+                val intervening=yearSingles.filter { y ->
+                    y.observations.none { it in a.observations || it in b.observations } &&
+                        y.box.centerY()>a.box.centerY() && y.box.centerY()<b.box.centerY() &&
+                        passFor(y.observations)==passFor(a.observations)
+                }
+                if(intervening.size!=1) continue
+                if(b.box.top-a.box.bottom>.22f) continue
+                if(kotlin.math.abs(a.box.centerX()-b.box.centerX())>maxOf(a.box.width(),b.box.width())*.25f) continue
+                val ratio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
+                if(ratio>wineTitlePairMaxHeightRatio) continue
+                if(!isBoundedWineTitlePair(a.text,b.text)) continue
+                if(phrases.any { it.observations==(a.observations+b.observations) }) continue
+                add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),"bounded vertical wine-title pair")
+            }
+            // Item 4b: brand stacks joined by a lone connector line (LEO / by / LEO).
+            for(a in singles) for(m in singles) for(b in singles) {
+                checkBudget()
+                if(TextNorm.normalize(m.text)!="by") continue
+                if(a.observations.intersect(m.observations).isNotEmpty() || m.observations.intersect(b.observations).isNotEmpty() ||
+                    a.observations.intersect(b.observations).isNotEmpty()) continue
+                if(!sameEnginePass(a,m) || !sameEnginePass(m,b)) continue
+                if(!(a.box.centerY()<m.box.centerY() && m.box.centerY()<b.box.centerY())) continue
+                if(isHardBoundary(a.text) || isHardBoundary(b.text) || isGeographyLine(a.text) || isGeographyLine(b.text) ||
+                    lineRoles.isWineDescription(a.text) || lineRoles.isWineDescription(b.text) ||
+                    lineRoles.hasProducerCue(a.text) || lineRoles.hasProducerCue(b.text) ||
+                    isKnownProducer(a.text) || isKnownProducer(b.text)) continue
+                if(a.text.count(Char::isLetter)<3 || b.text.count(Char::isLetter)<3) continue
+                val ratio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
+                if(ratio>1.85f) continue
+                if(m.box.top-a.box.bottom>.08f || b.box.top-m.box.bottom>.08f) continue
+                if(kotlin.math.abs(a.box.centerX()-m.box.centerX())>maxOf(a.box.width(),m.box.width())*.25f ||
+                    kotlin.math.abs(m.box.centerX()-b.box.centerX())>maxOf(m.box.width(),b.box.width())*.25f) continue
+                add(a.text+" "+m.text+" "+b.text,a.observations+m.observations+b.observations,
+                    BoxMath.union(listOf(a.box,m.box,b.box)),"three-line wine-title stack")
+            }
+        }
+        // Item 4c: a third stacked producer line, still bounded (LA PETITE /
+        // CHAPELLE / BORDEAUX shape). No recursive expansion beyond three lines.
+        // The base phrase (producer span or estate-heading composition) is its
+        // own role support, so the role-aware veto does not apply here either.
+        if(allowProducerSpans) {
+            for(a in phrases.toList().filter { it.construction=="vertical producer span" || it.construction=="estate-heading composition" }) for(b in singles) {
+                checkBudget()
+                if(a.observations.intersect(b.observations).isNotEmpty()) continue
+                if(enforceSpatialSemanticGuards && !sameEnginePass(a,b)) continue
+                if(isHardBoundary(b.text) || isGeographyLine(b.text) ||
+                    lineRoles.isWineDescription(b.text) || WineDesignations.isDesignation(b.text) ||
+                    b.text.count(Char::isLetter)<3 || b.text.any(Char::isDigit)) continue
+                if(b.box.centerY()>a.box.centerY() && b.box.top-a.box.bottom<=.10f &&
+                    kotlin.math.abs(a.box.centerX()-b.box.centerX())<=maxOf(a.box.width(),b.box.width())*.25f)
+                    add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),"three-line producer span")
+            }
         }
         return EvidenceGraph(observations,phrases,truncated)
     }

@@ -10,6 +10,14 @@
 - [ ] Spot-check #58, #66, #72, #126, #127: wine_name unchanged (`Cabernet Sauvignon`, `Cremant d'Alsace`, `Bordeaux Superieur`, `Cabernet Sauvignon`, `Corbieres`) — the pair must not prepend producer fragments.
 - [x] Prod v5.0 column unchanged everywhere (frozen ten-module checkpoint; it must NOT gain the 1a pairs). Confirmed: 62/122, wine_name 82.
 
+### 2g. Lab v6 Items 4b/4c integration (stacked wine titles, split producer spans)
+
+- [ ] Run Lab v6: fully correct should be 72/122 (was 66), wine_name 90, producer 99.
+- [ ] Wine gains: #50 `Naturae Merlot`, #152 `Naturae Syrah Rose`, #154 `LBV Port` (or `Late Bottled Vintage Port`), #183 `Golden Reserve Malbec`.
+- [ ] Producer gains: #92 and #136 `Domaine Allary Haut-Brion`, #164 (producer field), plus #137 wine_name.
+- [ ] No-steal spot checks: #58/#66/#72/#126/#127 wine unchanged (see 2f); #177 still `Ultra Malbec` (not `Kaiken Ultra Malbec`); #170 still `Inscription Pinot Noir`.
+- [ ] Prod v5.0 column unchanged at 62/122 (frozen; must NOT gain 4b/4c).
+
 ## How to use this file
 
 Checks are grouped **by branch**, newest first, so you can load one branch on the emulator and step through everything that branch changed.
