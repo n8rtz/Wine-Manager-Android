@@ -4,9 +4,11 @@
 
 ### 2f. Lab v6 Item 1a integration (bounded wine-title pairs)
 
-- [ ] Run Lab v6 on #170, #177, #184, #186: wine_name should be `Inscription Pinot Noir`, `Ultra Malbec`, `Volcanic Pinot Noir`, `Merlot` respectively, with no other field changes vs the previous Lab v6 run.
+**Phone-verified 2026-10-29 on build `d1e44611074f`: EXACT match with host.** Lab v6 = 66/122 fully correct, 47 one-error, 9 with 2+ errors; wine_name 86 (was 82, exactly the +4 host gains), producer 97, country/region 124, subregion 122, vintage 123. Prod v5.0 unchanged at 62/122 with wine_name 82 (frozen; did not gain the 1a pairs).
+
+- [x] Run Lab v6 on #170, #177, #184, #186: wine_name should be `Inscription Pinot Noir`, `Ultra Malbec`, `Volcanic Pinot Noir`, `Merlot` respectively, with no other field changes vs the previous Lab v6 run. (Aggregate wine_name delta is exactly +4 with all other fields identical, matching the host gain set.)
 - [ ] Spot-check #58, #66, #72, #126, #127: wine_name unchanged (`Cabernet Sauvignon`, `Cremant d'Alsace`, `Bordeaux Superieur`, `Cabernet Sauvignon`, `Corbieres`) — the pair must not prepend producer fragments.
-- [ ] Prod v5.0 column unchanged everywhere (frozen ten-module checkpoint; it must NOT gain the 1a pairs).
+- [x] Prod v5.0 column unchanged everywhere (frozen ten-module checkpoint; it must NOT gain the 1a pairs). Confirmed: 62/122, wine_name 82.
 
 ## How to use this file
 
