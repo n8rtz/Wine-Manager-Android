@@ -9,8 +9,8 @@ package com.yourapp.wine.textlab.evidence
  * those four on and leaves vertical wine-title pairs plus the two modules that postdate every
  * measured build (blank-subregion raw-OCR fallback, stacked two-line appellations) off.
  *
- * Each flag independently enables one post-OCR improvement so its isolated and combined effects can
- * be measured scientifically against Cached OCR and frozen Prod baselines.
+ * Selectable flags independently enable post-OCR experiments against Cached OCR and frozen Prod
+ * baselines. Retired flags remain representable only for historical signatures/regression coverage.
  */
 internal data class LabPostOcrModules(
     val candidateIsolation: Boolean = false,
@@ -135,6 +135,9 @@ internal data class LabPostOcrModules(
         ModuleId.VERTICAL_WINE_TITLE_PAIRS -> copy(verticalWineTitlePairs = enabled)
     }
 
+    /** Retired flags remain decodable for historical results, never enabled by new UI/run selection. */
+    fun withoutRetiredModules(): LabPostOcrModules = copy(wineNameSpans=false, verticalWineTitlePairs=false)
+
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
     fun enabledKeys(): List<String> = enabledModules().map { it.key }
@@ -156,6 +159,8 @@ internal data class LabPostOcrModules(
     }
 
     companion object {
+        val retiredModuleIds = setOf(ModuleId.WINE_NAME_SPANS, ModuleId.VERTICAL_WINE_TITLE_PAIRS)
+        val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds }
         val none = LabPostOcrModules()
         /**
          * The best combination measured on the 124-label corpus, module by module:
@@ -173,7 +178,7 @@ internal data class LabPostOcrModules(
          * (an OCR'd estate name such as `Trancette`, `BOUSQUET`, `VANGELYS`) is paired with the
          * varietal below it and offered as the wine name at a rank nothing else can beat
          * (`Trancette Cabernet Sauvignon` instead of `Cabernet Sauvignon`). They stay off here and
-         * remain selectable on their own for a future isolated run. The two modules that postdate
+         * are now retired from new selections and experiment plans. The two modules that postdate
          * every measured build (blank-subregion raw-OCR fallback, stacked appellations) stay off.
          */
         val bestBuild = LabPostOcrModules(
@@ -197,7 +202,7 @@ internal data class LabPostOcrModules(
             grapeSpans = true,
             classificationSpans = true,
             vintageSpans = true,
-            wineNameSpans = true,
+            wineNameSpans = false,
 
             blankSubregionFuzzy = true,
             vintageRecovery = true,
@@ -205,7 +210,7 @@ internal data class LabPostOcrModules(
             finalProducerNearMatch = true,
             producerRoleAndParticle = true,
             spatialSemanticGuards = true,
-            verticalWineTitlePairs = true,
+            verticalWineTitlePairs = false,
         )
         /** Defaults used by direct standalone unit/device tests when not running a benchmark ablation pass. */
         val unitTestDefault = LabPostOcrModules(

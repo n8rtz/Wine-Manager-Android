@@ -188,7 +188,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     private fun readLabModulesPref(): LabPostOcrModules = runCatching {
         val arr = readPrefsJson()?.optJSONArray("lab_post_ocr_modules") ?: return@runCatching LabPostOcrModules.none
         val keys = (0 until arr.length()).mapNotNull { idx -> arr.optString(idx).takeIf(String::isNotBlank) }.toSet()
-        LabPostOcrModules.fromKeys(keys)
+        LabPostOcrModules.fromKeys(keys).withoutRetiredModules()
     }.getOrDefault(LabPostOcrModules.none)
 
     private fun writeUiPrefs(useCachedOcr: Boolean, modules: LabPostOcrModules) {
@@ -211,6 +211,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     }
 
     fun setLabModule(moduleId: LabPostOcrModules.ModuleId, enabled: Boolean) {
+        if (moduleId !in LabPostOcrModules.selectableModuleIds) return
         switchLabModules(mutable.value.labModules.withModule(moduleId, enabled))
     }
 
@@ -223,7 +224,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         switchLabModules(LabPostOcrModules.bestBuild)
     }
 
-    private fun switchLabModules(next: LabPostOcrModules) {
+    private fun switchLabModules(requested: LabPostOcrModules) {
+        val next = requested.withoutRetiredModules()
         if (mutable.value.busy || mutable.value.suiteRunning) return
         if (mutable.value.labModules == next && labFolder != null) return
         writeUiPrefs(mutable.value.useCachedOcr, next)
@@ -999,13 +1001,12 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val originalModules = mutable.value.labModules
         val originalCached = mutable.value.useCachedOcr
         val control = LabPostOcrModules.bestBuild.copy(blankSubregionFuzzy = true)
-        val ids = LabPostOcrModules.ModuleId.entries
+        val ids = LabPostOcrModules.selectableModuleIds
         val plan = mutableListOf(control)
         if (focused) {
             val isolated = control.copy(candidateIsolation = true)
             plan += isolated
             plan += isolated.copy(vintageSpans = true)
-            plan += isolated.copy(wineNameSpans = true)
             plan += control.copy(roleAwareJoins = true)
             plan += control.copy(broaderDiscovery = true)
             plan += control.copy(

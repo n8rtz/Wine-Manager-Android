@@ -262,7 +262,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                             TextButton(
                                 onClick = { vm.startAutomatedSuite(focused = true) },
                                 enabled = !state.busy && !state.suiteRunning,
-                            ) { Text("Run focused diagnostics suite (7 configs)") }
+                            ) { Text("Run focused diagnostics suite (6 configs)") }
                             TextButton(
                                 onClick = { vm.startAutomatedSuite(foundations = true) },
                                 enabled = !state.busy && !state.suiteRunning,
@@ -270,7 +270,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                             TextButton(
                                 onClick = { vm.startAutomatedSuite() },
                                 enabled = !state.busy && !state.suiteRunning,
-                            ) { Text("Run control + individual toggles (${LabPostOcrModules.ModuleId.entries.size + 1} configs)") }
+                            ) { Text("Run control + individual toggles (${LabPostOcrModules.selectableModuleIds.size + 1} configs)") }
                             TextButton(
                                 onClick = { vm.startAutomatedSuite(includePairs = true) },
                                 enabled = !state.busy && !state.suiteRunning,
@@ -279,7 +279,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                             if (state.suiteRunning) {
                                 TextButton(onClick = vm::stop) { Text("Stop experiment suite") }
                             }
-                            LabPostOcrModules.ModuleId.entries.forEach { moduleId ->
+                            LabPostOcrModules.selectableModuleIds.forEach { moduleId ->
                                 val checked = state.labModules.isEnabled(moduleId)
                                 Row(
                                     Modifier.fillMaxWidth(),

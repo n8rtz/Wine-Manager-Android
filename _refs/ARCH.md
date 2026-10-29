@@ -247,3 +247,10 @@ compatibility distinction. `ProducerResolver.finalNearMatch` uses eligible earli
 for supplemental identities, keeps verified-primary/LWIN comparison, rejects identity ties,
 and emits explicit rejection telemetry. Corpus answers, module presets and numeric ranks
 are not changed by these safety repairs.
+
+### Active versus historical Lab modifiers
+`LabPostOcrModules.selectableModuleIds` supplies new UI checkboxes and generated single/pair
+plans (16 active). The full enum/fromKeys retain historical wine-name-span and vertical-title-pair
+keys. `withoutRetiredModules()` sanitizes stored manual preferences, new configuration switches
+and device-photo settings without changing retained result/export metadata. New focused suites
+have six configurations; saved seven-configuration manifests remain intact.

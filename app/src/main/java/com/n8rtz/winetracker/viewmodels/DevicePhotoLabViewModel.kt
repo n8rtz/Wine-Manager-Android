@@ -56,7 +56,7 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
     fun configure(keys:List<String>) {
         if(configured) return
         configured=true
-        mutable.update { it.copy(modules=LabPostOcrModules.fromKeys(keys)) }
+        mutable.update { it.copy(modules=LabPostOcrModules.fromKeys(keys).withoutRetiredModules()) }
     }
 
     fun runPhotos(uris:List<Uri>) {

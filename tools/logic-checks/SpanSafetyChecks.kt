@@ -51,6 +51,16 @@ fun main() {
         override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=listOf(supplemental,rival)
     }
     verify(ProducerResolver(collision).finalNearMatch("Domaine Meadows")==null)
+    val ids=LabPostOcrModules.selectableModuleIds
+    check(ids.size==16 && ids.none { it in LabPostOcrModules.retiredModuleIds })
+    check(LabPostOcrModules.all.enabledModules().toSet()==ids.toSet())
+    val historic=LabPostOcrModules.fromKeys(listOf("wine_name_spans","vertical_wine_title_pairs","vintage_spans"))
+    check(historic.wineNameSpans && historic.verticalWineTitlePairs && historic.vintageSpans)
+    check(!historic.withoutRetiredModules().wineNameSpans && !historic.withoutRetiredModules().verticalWineTitlePairs)
+    check(historic.withoutRetiredModules().vintageSpans)
+    val control=LabPostOcrModules.bestBuild.copy(blankSubregionFuzzy=true)
+    check(control.enabledModules().size==5 && control.withoutRetiredModules()==control)
+    println("PASS: retired modifier filtering, control preservation and historical signature decoding")
     val kb=FixtureKnowledgeBase()
     // Span discovery keeps founding-date context, even with numeric OCR spacing and moderate confidence.
     for(recovery in listOf(false,true)) for(confidence in listOf(.99f,.50f)) {

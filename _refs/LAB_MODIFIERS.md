@@ -1,7 +1,7 @@
 # Lab test modifiers
 
-Checkbox source of truth: `LabPostOcrModules.ModuleId`. The Wine App Labels Lab
-page renders every entry. Selections are independent booleans, serialized by stable
+Checkbox source of truth: `LabPostOcrModules.selectableModuleIds` (16 active entries).
+The full `ModuleId` enum additionally retains two retired keys for historical decoding. Selections are independent booleans, serialized by stable
 key into the run signature/export metadata. Cached OCR is reusable; derived results
 must be recomputed for a new combination. Frozen production comparators are unchanged.
 
@@ -15,11 +15,11 @@ must be recomputed for a new combination. Frozen production comparators are unch
 | `final_producer_near_match` | Final producer near-match (d<=1) | Canonicalize a final producer to a unique catalog identity within one edit. |
 | `producer_role_particle` | Producer role & 'de' rules | Particle omission, role/grape penalties and expanded producer shortlist. |
 | `spatial_semantic_guards` | Spatial join & anchor guards | Apply semantic boundaries to spatial joins and producer evidence/anchor spans. |
-| `vertical_wine_title_pairs` | Vertical wine-title pairs | Offer bounded two-line title interpretations. Known to regress estate-plus-grape labels; not in Best build. |
+| `vertical_wine_title_pairs` | **Retired — no checkbox/new tests** | Historical key retained for old results; rejected after estate-plus-grape regressions. |
 
 ## Early candidate discovery — experimental, default off
 
-These six checkboxes add alternatives **before label context collection and hypothesis
+These five active checkboxes add alternatives **before label context collection and hypothesis
 resolution**, regardless of whether a field already has a value. They do not rewrite
 OCR, change confidence, or save fields. Each OCR observation is searched separately,
 so one engine can supply a useful span without another engine agreeing.
@@ -31,7 +31,7 @@ so one engine can supply a useful span without another engine agreeing.
 | `grape_spans` | Grape span discovery | Keep exact normalized grape vocabulary spans, longest compounds first. Feed the existing varietal/wine-name interpretation; does not introduce a new saved grape field. |
 | `classification_spans` | Classification span discovery | Keep recognized designations and classification-qualified phrases. Feed wine-name hypotheses; does not invent a new classification field or independently assign geography. |
 | `vintage_spans` | Vintage span discovery | Keep spans accepted by the existing plausible-year normalizer; existing vintage ranking decides. OCR-year normalization is reused; broader vintage recovery remains a separate checkbox. |
-| `wine_name_spans` | Wine / cuvée span discovery | Open-ended alphabetic spans of at least two tokens and five letters, without digits. Existing title/cuvée/role rules decide. Deliberately broad and likely to over-segment; measure carefully. |
+| `wine_name_spans` | **Retired — no checkbox/new tests** | Open-ended title spans were tested without correctness gains and with regressions. Historical key only. |
 
 ### Shared boundaries and provenance
 
@@ -53,14 +53,14 @@ so one engine can supply a useful span without another engine agreeing.
 
 ## Presets and experiment protocol
 
-All six new methods are off in Baseline and Best build; All enables them. Best build
+All five active discovery methods are off in Baseline and Best build; All enables those five. Best build
 remains the measured preset, not a claim that these new methods have been evaluated.
 
 1. Run Baseline on the same cached OCR and corpus.
 2. Run each modifier alone; record per-field gains, losses, blanks, elapsed time and
    truncation. Inspect raw evidence, not just total score.
 3. Run pairs, then promising combinations. In particular compare geography +
-   classifications, producer + wine-name, and vintage discovery + vintage recovery.
+   classifications, producer + grape, and vintage discovery + vintage recovery.
 4. Compare combined changes against each single-method run. Check that one discovery
    family did not steal another's field, multiply engine votes, or exhaust budgets.
 5. Regression label #34 / 0064.jpg: `AINT-EMILION O GRAND CRU` must expose the isolated
@@ -81,8 +81,8 @@ values. Files use the existing 25 MB CSV splitting/document-picker save workflow
 
 ## One-click automated experiments
 
-The Lab page now offers control + individual toggles (14 configurations), or control
-+ toggles + every two-toggle combination (92 configurations). Control is the measured
+The Lab page now offers control + individual toggles (17 configurations), or control
++ toggles + every two-toggle combination (137 configurations). Control is the measured
 four-module preset plus blank-subregion fallback, not the currently checked UI selection.
 Each experiment flips a flag relative to control: enabled flags are tested by removal,
 disabled flags by addition. These are ablations, not only additive experiments.
@@ -113,8 +113,8 @@ rejected. Saved totals that differ from freshly scored field outcomes are flagge
 These modifiers contain no evaluation label IDs or reference-derived name exceptions.
 They default off in the measured preset and are enabled by All on. Use **Run ordered
 foundation checks (6 configs)** to compare control, then each cumulative stage below.
-The ordinary single-toggle suite now uses 19 configurations; the full pairwise suite
-uses 172. New single-toggle tests are not substitutes for the ordered cumulative suite.
+The ordinary single-toggle suite now uses 17 configurations; the full pairwise suite
+uses 137. New single-toggle tests are not substitutes for the ordered cumulative suite.
 
 1. `candidate_isolation`: collect label context before substring alternatives; use
    same-engine/pass physical observations rather than alternative-phrase counts for
@@ -186,19 +186,18 @@ may have missing results, which are marked rather than fabricated. Existing suit
 older builds have no manifests or pinned OCR snapshots and are not retroactively inferred.
 The shared OCR can contain label addresses/operator text; treat the export as private.
 
-## Focused diagnostics suite (7 configurations)
+## Focused diagnostics suite (6 active configurations)
 
-Use **Run focused diagnostics suite (7 configs)** for the targeted follow-up to the
+Use **Run focused diagnostics suite (6 configs)** for the targeted follow-up to the
 foundation results. Control remains the four measured modifiers plus blank-subregion
 fallback; the current manual checkbox selection does not alter it.
 
 1. Control.
 2. Control + candidate isolation.
 3. Control + candidate isolation + vintage-span discovery.
-4. Control + candidate isolation + wine-name-span discovery.
-5. Control + role-aware joins only.
-6. Control + broader discovery only.
-7. Control + all five foundation modifiers (isolation, exact producer protection,
+4. Control + role-aware joins only.
+5. Control + broader discovery only.
+6. Control + all five foundation modifiers (isolation, exact producer protection,
    administrative filtering, role-aware joins, broader discovery).
 
 These are explicit independent comparisons, not the six-stage cumulative foundation
@@ -340,3 +339,21 @@ The evidence version is `evidence-lab-v5-span-provenance-v2`, producer resolver 
 `producer-resolver-v8-safe-terminal`; UI model remains **Lab v5**. Historical results are not
 rewritten. Repeat the same focused suite on the same OCR/cohort and then unseen device photos;
 synthetic checks are not a measured improvement in corpus accuracy or proof against overfitting.
+
+
+## Retired checkbox experiments (current selection policy)
+
+The owner-approved conservative pruning removes **vertical wine-title pairs** and
+**wine/cuvée span discovery** from the UI, All on, focused tests and generated single/pair
+suites. Stored manual selections are sanitized for new runs, including device-photo checks.
+Historical signatures/exports are not rewritten: the full enum and implementation remain
+available internally to decode prior records and retain regression coverage.
+
+The five current-control modifiers are unchanged: blank subregion fuzzy search, vintage
+recovery, final producer near-match, producer role/particle rules and spatial semantic guards.
+Keep the repaired/inconclusive experiments (candidate isolation, exact producer protection,
+administrative filtering, role-aware joins, broader discovery, vintage spans) pending retesting.
+Keep the not-yet-tested geography, producer, grape and classification span discovery plus
+stacked appellations. That is 16 active checkboxes, 17 single-toggle configurations and
+137 single/pair configurations. The focused suite is now six configurations; previously
+saved seven-configuration suites still re-export their original complete plans.

@@ -562,3 +562,12 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 4. [ ] Verify unsupported single-engine supplemental fuzzy neighbors do not replace a selected producer, whether the terminal pass finishes or exhausts its budget. Confirm `insufficient_supplemental_support` in summaries, while exact eligible and truly independent/disjoint supporting cases can still pass.
 5. [ ] Enable exact-producer protection and test a confidently observed maker absent from the catalog; confirm it is retained. Test equal-distance catalog identities: no FTS-order tie-breaking. Confirm diagnostics retain `shares_vintage_source`, the updated post-processing versions and terminal rejection status.
 6. [ ] Repeat unseen device-photo checks under a recorded unchanged configuration. Originals, standardized truth and frozen Prod outputs must remain untouched.
+
+### Retired modifier cleanup — `arena/0a282176-wine-manager-android`
+
+*Last run: actual Kotlin checks passed for the 16-entry active list, All on, historical-key decoding and preservation of current control; source-contract checks pass. Android UI/device verification pending.*
+
+1. [ ] Open the Lab page: confirm no checkbox for **Vertical wine-title pairs** or **Wine / cuvée span discovery**. Candidate isolation, vintage spans, all five current-control modifiers and all untested modifiers must remain available.
+2. [ ] Upgrade from settings with either retired flag enabled. Confirm it is not secretly active in newly logged module signatures, including device-photo checks. No other selection should change.
+3. [ ] Check **All on** activates exactly 16 selectable flags and neither retired flag. Confirm control remains the same five keys. Single/pair suite counts must be 17/137, and **Run focused diagnostics suite (6 configs)** must omit the retired wine-name-span run.
+4. [ ] Re-export a saved older seven-configuration suite: its original wine-name-span configuration and results must still be included, with original historical keys and decisions.

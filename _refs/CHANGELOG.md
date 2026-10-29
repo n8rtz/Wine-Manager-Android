@@ -351,3 +351,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced the solver's diagnostic-reason-string ownership exception with structured `sharesVintageSource` provenance. Valid embedded year subspans can coexist with source appellation/title fields; real standalone-year ownership remains exclusive, and deduplication preserves compatibility distinctions.
 - Blocked unsupported supplemental terminal producer replacements: an exact eligible match or independent/disjoint engine evidence is required, identity ties abstain regardless of the experimental protection flag, and protected exact observed producer text is preserved even if absent from the catalog. Rejection reasons and provenance are retained in diagnostics; post-processing version stamps updated.
 - Added a focused, actual-Kotlin safety harness. Updated two existing host test budget callbacks to named arguments so the spatial sources compile with the current API; no production resolver acceptance rules or corpus reference answers were rewritten.
+
+### Prune rejected Lab checkbox experiments
+- Removed vertical wine-title pairs and wine/cuvée span discovery from active checkboxes, All on and generated experiment plans. Sanitized old manual preferences/new device-photo settings so retired flags cannot remain invisibly enabled.
+- Preserved the five current-control modifiers, six repaired/inconclusive experiments awaiting retesting, and five untested modifiers. Active single/pair suites now have 17/137 configurations; the focused suite has six.
+- Kept historical keys, saved-suite re-export and regression coverage; past results/configurations are not rewritten or deleted.

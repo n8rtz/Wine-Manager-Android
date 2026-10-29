@@ -711,7 +711,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("vm.setBestBuildLabModules()", activity)
         self.assertIn("fun setBestBuildLabModules()", viewmodel)
         self.assertIn("LabPostOcrModules.bestBuild", viewmodel)
-        self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", activity)
+        self.assertIn("LabPostOcrModules.selectableModuleIds.forEach", activity)
         self.assertLess(
             activity.index('Text("Post-OCR test modules"'),
             activity.index("Start / resume Lab v5 only"),

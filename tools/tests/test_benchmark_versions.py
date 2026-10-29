@@ -12,7 +12,7 @@ class BenchmarkVersionChecks(unittest.TestCase):
         modules = (LAB / "evidence/LabPostOcrModules.kt").read_text()
         doc = (ROOT / "_refs/LAB_MODIFIERS.md").read_text()
         ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
-        self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", ui)
+        self.assertIn("LabPostOcrModules.selectableModuleIds.forEach", ui)
         best = modules.split("val bestBuild = LabPostOcrModules(", 1)[1].split("val all", 1)[0]
         for prop, enum, key in [
             ("geographySpans", "GEOGRAPHY_SPANS", "geography_spans"),
@@ -52,27 +52,44 @@ class BenchmarkVersionChecks(unittest.TestCase):
         resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
         self.assertIn("if(candidates.count", resolver)
 
-    def test_focused_suite_has_seven_explicit_configurations_and_shared_export(self):
+    def test_focused_suite_has_six_explicit_configurations_and_shared_export(self):
         vm = (PHONE / "WineAppLabelsViewModel.kt").read_text()
         ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
         body = vm.split("if (focused) {", 1)[1].split("else if (foundations)", 1)[0]
-        # One control already in plan, then six explicit additions, not cumulative toggles.
-        self.assertEqual(body.count("plan +="), 6)
+        # One control already in plan, then five explicit additions, not cumulative toggles.
+        self.assertEqual(body.count("plan +="), 5)
         for expected in (
             "val isolated = control.copy(candidateIsolation = true)",
             "plan += isolated\n",
             "plan += isolated.copy(vintageSpans = true)",
-            "plan += isolated.copy(wineNameSpans = true)",
             "plan += control.copy(roleAwareJoins = true)",
             "plan += control.copy(broaderDiscovery = true)",
             "exactProducerProtection = true", "administrativeFiltering = true",
         ):
             self.assertIn(expected, body)
         self.assertIn('vm.startAutomatedSuite(focused = true)', ui)
-        self.assertIn('Run focused diagnostics suite (7 configs)', ui)
+        self.assertIn('Run focused diagnostics suite (6 configs)', ui)
         self.assertIn('focused -> "focused_diagnostics"', vm)
         self.assertLess(vm.index('if (focused) {'), vm.index('snapshotSuiteOcr(suite)'))
         self.assertIn('LabSuiteArchive.write(target,recentBuildRows(completedRuns,suite))', vm)
+
+    def test_retired_modifiers_are_readable_but_not_selectable_or_scheduled(self):
+        modules = (LAB / "evidence/LabPostOcrModules.kt").read_text()
+        vm = (PHONE / "WineAppLabelsViewModel.kt").read_text()
+        ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
+        self.assertIn("setOf(ModuleId.WINE_NAME_SPANS, ModuleId.VERTICAL_WINE_TITLE_PAIRS)", modules)
+        self.assertIn("ModuleId.entries.filterNot { it in retiredModuleIds }", modules)
+        self.assertIn("copy(wineNameSpans=false, verticalWineTitlePairs=false)", modules)
+        all_preset = modules.split("val all = LabPostOcrModules(", 1)[1].split("/** Defaults", 1)[0]
+        self.assertIn("wineNameSpans = false", all_preset)
+        self.assertIn("verticalWineTitlePairs = false", all_preset)
+        self.assertIn("LabPostOcrModules.fromKeys(keys).withoutRetiredModules()", vm)
+        self.assertIn("val ids = LabPostOcrModules.selectableModuleIds", vm)
+        self.assertIn("val next = requested.withoutRetiredModules()", vm)
+        self.assertNotIn("plan += isolated.copy(wineNameSpans = true)", vm)
+        self.assertIn("LabPostOcrModules.selectableModuleIds.size + 1", ui)
+        # Historical keys still parse through the full enum, not the filtered active list.
+        self.assertIn("for (id in ModuleId.entries)", modules)
 
     def test_four_explicit_versions_and_short_comparison_names(self):
         runner = (PHONE / "PhoneCorpusRunner.kt").read_text()
