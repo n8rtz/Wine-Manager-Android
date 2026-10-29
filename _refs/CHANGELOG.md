@@ -340,3 +340,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Arena-compatible suite packages
 - Replaced phone ZIP output with lossless normalized plain JSON parts (20 MB maximum), a checksum/part-count manifest and an optional scores CSV, using JSON-specific document saving.
 - Host analysis accepts JSON manifests/parts, verifies completeness and checksums, resolves renamed supplied parts by hash, and retains legacy CSV/ZIP support. Added old-CSV-to-JSON conversion and JSON round-trip/missing-part/corruption checks.
+
+### Device-photo Lab v5 sanity check
+- Added **Test Lab v5 on device photos** on the large dataset test page. Select multiple images, run the same Lab v5 extraction with fresh OCR and the selected modifier snapshot, and review each photo with producer, wine name, country, region, subregion and vintage on a separate results screen.
+- Preserved unassigned values, per-photo import/extraction failures and incomplete-OCR warnings; added copy-all results, stop-after-current and optional uploadable JSON diagnostic saves (OCR/decisions, no photo bytes).
+- Kept these unscored checks entirely outside the standardized corpus, cached OCR, frozen production baselines and best-build history. Reused the normal 32 MiB per-photo importer; temporary originals/diagnostics survive rotation but are cleared when this activity's session ends.

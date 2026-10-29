@@ -286,3 +286,30 @@ file extension. A real results-only 3,026,888-byte fixture becomes a roughly 330
 payload plus a small manifest when the optional scores CSV is omitted. Full diagnostic
 savings depend on repetition and must be measured on the actual export. A single record
 larger than the limit fails explicitly rather than truncating or producing invalid JSON.
+
+## Unscored device-photo sanity checks
+
+On **Large image dataset test**, choose the desired Lab modifier configuration (for
+example **Best build**), then tap **Test Lab v5 on device photos**. This snapshots the
+current modifier keys; they are displayed on the dedicated screen and cannot change
+mid-run. Select multiple images in the system document picker (image MIME types).
+Each is processed sequentially from its original bytes through **the same Lab v5
+pipeline**, always with fresh OCR. The normal selected-photo importer applies its
+32 MiB per-image bound. The picker can be cancelled without clearing current results.
+
+The finished screen pairs every photo with its six assigned parameters. Blank values
+stay unassigned, failures stay visible per photo, and incomplete OCR has an explicit
+warning. These photos have no reference answers, accuracy score, benchmark cohort or
+best-build promotion. They do not read corpus cached OCR/predictions or write corpus
+results/baselines/history. Normal packaged knowledge databases still support extraction.
+
+Use **Copy all results**, or save the optional diagnostic manifest and all JSON parts.
+Diagnostics include selected fields, per-photo status, build/configuration, linked raw
+OCR and all existing extraction decision records, but not photo bytes. Scores CSV is
+optional and empty of scored rows because there are no truth labels. The standard
+accuracy-comparison analyzer does not score these unlabelled sessions. OCR and filenames
+may be private; only share deliberately. Keep the screen open while running; rotation
+retains the session. Stop finishes the current photo and marks the rest not run. Back
+ends the activity session, cancels work and clears private temporary copies after work
+stops; saved external exports and source photos are untouched. Process-death restoration
+or a background-service guarantee is not provided by this separate sanity-check screen.

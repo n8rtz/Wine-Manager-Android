@@ -221,3 +221,17 @@ WineDatabase (Room) ← SQLite
 - `phonecorpus/LabSuiteArchive.kt` — streaming normalized ZIP suite writer with shared candidate/payload dictionaries, occurrence links and integrity/size manifest.
 - `tools/lab_suite_archive.py` — verified archive reader, existing CSV converter and lossless diagnostic-row reconstruction.
 - `tools/tests/test_lab_suite_archive.py` — round-trip, deduplication, unknown-field retention, integrity failure and archive UI wiring checks.
+
+### Device-photo Lab v5 sanity checks
+- `phonecorpus/DevicePhotoLabActivity.kt` — private activity with multi-image document picker and JSON/CSV save launchers; inherits a snapshot of the selected Lab modifier keys.
+- `ui/screens/DevicePhotoLabScreen.kt` — separate unscored progress/results screen showing each selected photo and all six assigned parameters, copyable results and optional diagnostics saving.
+- `viewmodels/DevicePhotoLabViewModel.kt` — sequential fresh-OCR session using the normal bounded photo importer, isolated private temporary copies, reusable extraction session and normalized JSON diagnostics; never writes corpus/baseline/best-build stores. Rotation preserves the ViewModel; leaving the activity cancels work and removes private copies after workers stop.
+- `phonecorpus/DevicePhotoLabResult.kt` — reads only the Lab v5 selected pipeline fields, preserving blanks and exposing failures/incomplete OCR.
+- `app/src/test/java/com/yourapp/wine/DevicePhotoLabTest.kt` — Robolectric contracts for exact selected values, blank/failure preservation, external-file checksum verification, production isolation and unreadable multi-photo sessions (no native OCR).
+- `tools/tests/test_device_photo_lab.py` — host source contracts for picker/results/configuration wiring, fresh OCR and isolation from standardized references/persistence.
+
+`PhoneCorpusRunner.runImageAllModes(sourceFile=...)` changes only verified input loading for
+Lab-only device photos; its default packaged-corpus behavior and downstream OCR/extraction
+remain unchanged. Native decoding determines the image format from original bytes: the
+40-hex `.jpg` identity is a runner key, not a conversion of PNG/HEIC/etc. No new model,
+scoring rule, label-specific heuristic, expected-value input or extraction tuning is added.

@@ -16,6 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/0a282176-wine-manager-android` | not opened | active | Multi-photo, unscored Lab v5 sanity checks | [Jump](#branch-arena0a282176-wine-manager-android) |
 | `arena/ab7b824f-wine-manager-android` | not opened | active | Pre-refresh 125-label results relabeled Lab v5 / Prod v4.0; legacy pipeline and frozen-baseline compatibility | [Jump](#branch-arenaab7b824f-wine-manager-android) |
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
 | `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
@@ -27,6 +28,21 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/0a282176-wine-manager-android`
+
+*Last run: 55 targeted host checks passed. Full host discovery: 291 tests, 289 passed and two resolver-policy source-contract failures reproduced on unmodified pre-change HEAD. Android compilation, Robolectric and device checks pending (no JDK/Android SDK here).*
+
+### Multi-photo Lab v5 sanity checks
+
+1. [ ] Build/install on a disposable device. Select **Best build** on **Large image dataset test**, tap **Test Lab v5 on device photos**, and verify the displayed module keys match. Repeat with a custom configuration; entering the new screen must not silently replace it.
+2. [ ] Select several previously unseen label photos together, including JPEG and PNG and a rotated portrait. Confirm sequential fresh-OCR progress and that each photo has the correct six parameters beside it when finished. Check the actual values manually, including blanks; there is no guessed reference or accuracy score.
+3. [ ] Include a non-wine/blank image, corrupt/unreadable photo and image above 32 MiB. Confirm blanks/errors remain visible for their own photos and another valid photo still runs. Incomplete OCR should warn rather than claim a fully successful read.
+4. [ ] Rotate during OCR and after completion. Confirm no duplicate scan starts, the same photo-to-results association is preserved, and copy-all includes build/module keys, all six fields, errors and incomplete-OCR warnings.
+5. [ ] Cancel the photo picker with existing results visible; results must remain unchanged. Pick a new batch after finishing and verify no old photo fields leak into it.
+6. [ ] Stop mid-batch. The current image finishes; remaining images read **Not run — stopped**. Hardware Back ends the session; original photos remain unchanged, private copies are eventually removed, and re-entering starts a new empty session.
+7. [ ] Save the diagnostic manifest and every numbered JSON part. Confirm valid JSON, matching hashes and no photo bytes; retained rows include input identity/build/configuration, selected parameters, original OCR and extraction decision records. Do not expect benchmark accuracy analysis without reference answers.
+8. [ ] Compare the standard dataset's scores, checkpoints, frozen baselines and best-build log before and after this check: all must be unchanged. Its normal packaged-photo runs must still work. Run `:app:testDebugUnitTest --tests com.yourapp.wine.DevicePhotoLabTest` and existing benchmark tests.
 
 ## Branch `arena/ab7b824f-wine-manager-android`
 

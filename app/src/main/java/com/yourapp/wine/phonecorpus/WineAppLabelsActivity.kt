@@ -1,6 +1,7 @@
 package com.yourapp.wine.phonecorpus
 
 import android.graphics.BitmapFactory
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
@@ -228,6 +229,18 @@ class WineAppLabelsActivity : ComponentActivity() {
                 Card(Modifier.fillMaxWidth()) {
                     SelectionContainer {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Device-photo sanity check", style = MaterialTheme.typography.titleSmall)
+                            Text("Uses the selected Lab modifiers below, with fresh OCR and no dataset scoring.")
+                            DisableSelection {
+                                TextButton(
+                                    enabled = !state.busy && !state.suiteRunning,
+                                    onClick = {
+                                        context.startActivity(Intent(context, DevicePhotoLabActivity::class.java)
+                                            .putStringArrayListExtra(DevicePhotoLabActivity.EXTRA_MODULE_KEYS,
+                                                ArrayList(state.labModules.enabledKeys())))
+                                    },
+                                ) { Text("Test Lab v5 on device photos") }
+                            }
                             Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
                             DisableSelection {
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

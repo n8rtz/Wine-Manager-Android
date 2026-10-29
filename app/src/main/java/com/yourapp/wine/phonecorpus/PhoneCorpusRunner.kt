@@ -89,9 +89,13 @@ internal object PhoneCorpusRunner {
         onFreshOcr:(Map<String,String>,List<Map<String,String>>) -> Unit = { _,_ -> },
         warmSession:WarmSession?=null,
         labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
+        sourceFile:File?=null,
     ):Map<Mode,JSONObject> {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         require(modes.isNotEmpty()) { "At least one pipeline version is required" }
+        require(sourceFile==null || (modes==setOf(Mode.LAB) && cachedOcr==null)) {
+            "Device photos require Lab v5 and fresh OCR"
+        }
         val replayOcr=cachedOcr?.takeIf {
             Mode.PRODUCTION_V1 !in modes && modes==setOf(Mode.LAB) && it.image==image && it.imageSha256==hash
         }
@@ -104,6 +108,7 @@ internal object PhoneCorpusRunner {
             outputs[mode]=JSONObject().put("image",image).put("image_sha256",hash).put("build",BuildConfig.BUILD_COMMIT).put("mode",mode.name)
                 .put("pipeline",mode.pipelineId).put("spatial_merging",mode.usesSpatialEvidence)
                 .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
+                .put("input_source",if(sourceFile==null) "packaged_corpus" else "device_photo")
                 .put("ocr_source",if(usedCache) "cached_ocr" else "fresh_ocr")
                 .put("lab_modules",if(mode==Mode.LAB) labModules.signatureKey() else "")
                 .put("runtime",if(usedCache) "on-device benchmark; cached OCR outputs; live Lab v5 extraction" else "on-device benchmark; fresh OCR; no saved-text replay")
@@ -127,8 +132,10 @@ internal object PhoneCorpusRunner {
         var memoryStopped=false
         try {
             markAll("input.verified",false,"input copy / checksum did not complete")
-            context.assets.open("$assetRoot/images/$image").use { stream -> input.outputStream().use { stream.copyTo(it) } }
-            check(sha(input)==hash) { "Packaged photo checksum mismatch" }
+            // Only the source changes for out-of-corpus sanity checks; identical decoding/OCR/extraction follows.
+            val source=sourceFile?.inputStream() ?: context.assets.open("$assetRoot/images/$image")
+            source.use { stream -> input.outputStream().use { stream.copyTo(it) } }
+            check(sha(input)==hash) { "Photo checksum mismatch" }
             markAll("input.verified",true)
             var aborted=false
             if(Mode.PRODUCTION_V1 in modes) {

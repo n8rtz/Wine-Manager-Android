@@ -334,6 +334,10 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 ## 4. Cleanup and technical debt
 
+* [ ] **Existing resolver-policy source contracts (2026-10-29).** Full host discovery has failures in `test_exact_geography_fast_path_is_lab_only_and_feeds_context` and `test_span_fuzzy_supplemental_guard_and_final_value_pass_are_separate`. Both reproduce using unmodified `497ad55` source/tests; not changed by device-photo work. Reconcile the tests with the actual resolver contracts in a separately authorized task.
+
+* [ ] **Compile/device-verify device-photo Lab v5 sanity checks (2026-10-29).** Host wiring checks pass; this sandbox has no JDK/Android SDK. Run `:app:assembleDebug`, `:app:testDebugUnitTest` (including `DevicePhotoLabTest`) and the multi-photo checklist for `arena/0a282176-wine-manager-android` before declaring device behavior verified.
+
 * [ ] **Compile and test the 2026-10-15 cleanup.** Dead code was removed without a build (no JDK in the authoring sandbox). Run `:app:assembleDebug`, `:app:testDebugUnitTest` and `:app:connectedDebugAndroidTest`, and fix any leftover reference.
 * [ ] **Unused leftovers from that cleanup** (left alone on purpose): legacy `ScannerViewModel` members (`scannedResult`, `onImageCaptured`, `clearScannedResult`), its unused `db` field and unused imports, and the unused `OpenFoodFactsApi` import in `WineViewModel`. The DAO query `getAllWithoutImages` stays because `WineImageImportRepositoryTest` uses it.
 * [x] **Test-fixture photos** *(decided 2026-10-16)*: kept as they are. `app/src/test/resources/scanner/labels/` holds 13 JPEGs (~45 MB) of the owner's own wine-label photos for the scanner regression test (see its README).
