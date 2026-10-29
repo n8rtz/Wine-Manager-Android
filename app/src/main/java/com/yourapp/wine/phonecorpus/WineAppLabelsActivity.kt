@@ -137,7 +137,7 @@ class WineAppLabelsActivity : ComponentActivity() {
         val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
             uri?.let { vm.saveExportPart(it, exportIndex) }
         }
-        val exportZip = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        val exportJson = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
             uri?.let { vm.saveExportPart(it, exportIndex) }
         }
         val splitExisting = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -407,12 +407,12 @@ class WineAppLabelsActivity : ComponentActivity() {
                         OutlinedButton(
                             onClick = {
                                 exportIndex = index
-                                if(file.extension=="zip") exportZip.launch(file.name) else export.launch(file.name)
+                                if(file.extension=="json") exportJson.launch(file.name) else export.launch(file.name)
                             },
                             enabled = !state.busy && !state.suiteRunning,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text("Save ${if (state.exportParts.size > 1) "part ${index + 1}/${state.exportParts.size}" else if(file.extension=="zip") "ZIP archive" else "CSV"} · ${"%.2f".format(file.length() / 1_000_000.0)} MB")
+                            Text("Save ${file.name} · ${"%.2f".format(file.length() / 1_000_000.0)} MB")
                         }
                     }
                     TextButton(

@@ -4,13 +4,12 @@ import argparse
 import csv
 from collections import defaultdict
 from pathlib import Path
-from lab_suite_archive import read_rows
+from lab_suite_archive import read_many
 
 
 def analyze(paths, control):
     rows = []
-    for path in paths:
-        rows.extend(read_rows(path, scores_only=True))
+    rows.extend(read_many(paths, scores_only=True))
     summaries = {r['run_id']: r for r in rows if r['row_type'] == 'run_summary'}
     if not summaries:
         raise ValueError('No run summaries in input')

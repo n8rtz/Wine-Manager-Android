@@ -300,7 +300,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("vm.prepareExport(raw = false)", activity)
         self.assertIn("vm.prepareExport(raw = true)", activity)
         self.assertIn("export.launch(file.name)", activity)
-        self.assertIn('"ZIP archive" else "CSV"', activity)
+        self.assertIn('CreateDocument("application/json")', activity)
         self.assertIn('Text("Split an existing CSV for upload")', activity)
         self.assertIn("vm::splitExistingCsv", activity)
         self.assertIn("val exportParts: List<File> = emptyList()", viewmodel)

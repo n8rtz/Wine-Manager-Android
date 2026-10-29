@@ -206,7 +206,10 @@ suite. The suite manifest records `focused_diagnostics` and the complete ordered
 plan. Existing fresh-run execution, pinned shared OCR, decision instrumentation, stop
 controls, automatic suite CSV preparation and saved-suite re-export apply unchanged.
 
-## Compressed normalized suite archives (current format)
+## Compressed normalized suite archives (superseded for phone exports)
+
+**Phone exports now use the uploadable JSON package described below. ZIP remains
+readable by host tools for older saved files but is not used by the phone.**
 
 Automatic and saved-suite exports now produce **one `.zip`**, not many uncompressed
 CSV parts. Tap **Save ZIP archive**. The document picker uses `application/zip`;
@@ -253,3 +256,33 @@ python3 tools/lab_suite_archive.py unpack suite.zip --output reconstructed.csv
 Unpacking restores the verbose representation and is optional; keep the archive as the
 source artifact. The SHA-256 manifest detects damaged files; it is an integrity check,
 not authentication or encryption. Archives may contain private label/operator text.
+
+
+## Arena-uploadable normalized JSON packages — current phone format
+
+Arena permits JSON and CSV but not ZIP. All automatic and retained-suite exports now
+save plain UTF-8 `.json` (application/json), never binary disguised as text, base64 or
+compressed archives. The same lossless dictionaries and event links are preserved.
+
+Save and upload the **manifest JSON and every numbered part JSON**. Each part is valid
+JSON and at most 20,000,000 bytes, with short numeric table codes and archive-local IDs.
+The small scores CSV is optional: all results are already represented in the JSON events.
+Its IDs resolve through the package. Shared dictionary entries may be in an earlier part;
+parts are not individually complete diagnostic packages. The manifest states the exact
+part count, schema/table mapping, dictionary/record counts, file sizes and SHA-256 hashes.
+The reader rejects missing parts or checksum mismatches rather than silently analyzing
+an incomplete package. Diagnostic record data and unknown future fields are retained.
+
+```sh
+python3 tools/analyze-lab-runs.py suite-manifest.json --control 1 --output analysis.md
+# If an upload renamed parts, supply all JSON files explicitly so hashes resolve them:
+python3 tools/analyze-lab-runs.py suite-manifest.json suite-part-1.json suite-part-2.json --output analysis.md
+# Convert previously saved verbose CSV parts to uploadable JSON without rerunning OCR:
+python3 tools/lab_suite_archive.py pack-json old-part-01.csv old-part-02.csv --output suite.json
+```
+
+Plain JSON is not compressed; savings come from normalization and deduplication, not the
+file extension. A real results-only 3,026,888-byte fixture becomes a roughly 330 KB JSON
+payload plus a small manifest when the optional scores CSV is omitted. Full diagnostic
+savings depend on repetition and must be measured on the actual export. A single record
+larger than the limit fails explicitly rather than truncating or producing invalid JSON.

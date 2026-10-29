@@ -336,3 +336,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced automatic and retained-suite diagnostic CSV saves with maximum-deflate ZIP archives, a scores CSV, shared run/image/candidate/pipeline dictionaries and ordered linked JSONL occurrences.
 - Kept unknown diagnostic fields, event timing/order and trace-limit explanations; added per-file SHA-256/size/count manifests and ZIP-specific document saving.
 - Added direct ZIP analysis plus conversion/reconstruction tools for existing large CSV exports; ordinary compact CSV exports remain unchanged.
+
+### Arena-compatible suite packages
+- Replaced phone ZIP output with lossless normalized plain JSON parts (20 MB maximum), a checksum/part-count manifest and an optional scores CSV, using JSON-specific document saving.
+- Host analysis accepts JSON manifests/parts, verifies completeness and checksums, resolves renamed supplied parts by hash, and retains legacy CSV/ZIP support. Added old-CSV-to-JSON conversion and JSON round-trip/missing-part/corruption checks.

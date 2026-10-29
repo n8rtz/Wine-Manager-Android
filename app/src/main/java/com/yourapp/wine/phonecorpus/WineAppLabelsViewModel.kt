@@ -704,10 +704,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 val runs=(0 until ids.length()).map { checkNotNull(entries[ids.getString(it)]) { "Saved run summary unavailable" } }
                 check(runs.isNotEmpty()) { "Suite has no saved runs" }
                 val dir=File(app.cacheDir,"wine-app-labels-exports/${UUID.randomUUID()}").apply { mkdirs() }
-                val target=File(dir,"wine-app-labels-suite-$suiteId.zip")
-                LabSuiteArchive.write(target,recentBuildRows(runs,suite))
-                val parts=listOf(target)
-                mutable.update { it.copy(exportParts=parts,message="Compressed suite archive ready. Save the ZIP below.") }
+                val target=File(dir,"wine-app-labels-suite-$suiteId.json")
+                val parts=LabSuiteArchive.write(target,recentBuildRows(runs,suite))
+                mutable.update { it.copy(exportParts=parts,message="Compact JSON package ready. Save the manifest and every numbered JSON part; scores CSV is optional.") }
             } catch(cancel:CancellationException) { throw cancel }
             catch(e:Exception) { mutable.update { it.copy(message="Suite export failed: ${e.message}") } }
             finally { exporting=false;mutable.update { it.copy(busy=false) } }
@@ -1081,15 +1080,14 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 if (completedRuns.isNotEmpty()) {
                     val dir = File(app.cacheDir, "wine-app-labels-exports/${UUID.randomUUID()}")
                     check(dir.mkdirs())
-                    val target = File(dir, "wine-app-labels-automated-suite.zip")
+                    val target = File(dir, "wine-app-labels-automated-suite.json")
                     // Unlike the recent-ten table, the suite export retains every completed configuration.
                     manifest.put("status",if(stopping) "stopped" else "complete")
                     writeSuiteManifest(suite,manifest)
-                    LabSuiteArchive.write(target,recentBuildRows(completedRuns,suite))
-                    val parts = listOf(target)
+                    val parts = LabSuiteArchive.write(target,recentBuildRows(completedRuns,suite))
                     mutable.update { it.copy(exportParts = parts) }
                 }
-                mutable.update { it.copy(suiteProgress = "${if (stopping) "Stopped" else "Finished"}: ${completedRuns.size}/${plan.size} configurations. Save the compressed suite ZIP below.") }
+                mutable.update { it.copy(suiteProgress = "${if (stopping) "Stopped" else "Finished"}: ${completedRuns.size}/${plan.size} configurations. Save all numbered JSON parts and the manifest below.") }
             } catch (cancel: CancellationException) {
                 throw cancel
             } catch (e: Exception) {

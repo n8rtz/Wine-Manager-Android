@@ -9,7 +9,7 @@ import zipfile
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
-from lab_suite_archive import pack_csv, read_rows, verify, unpack_csv
+from lab_suite_archive import pack_csv, read_rows, read_many, write_json_package, verify, unpack_csv
 
 
 class SuiteArchiveTests(unittest.TestCase):
@@ -78,15 +78,39 @@ class SuiteArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Integrity check failed'):
             list(read_rows(broken))
 
+    def test_uploadable_json_parts_round_trip_and_checksums(self):
+        outputs = write_json_package(self.target, self.root/'upload.json', max_bytes=2200)
+        self.assertGreater(len(outputs), 3)
+        restored = list(read_many([outputs[0]]))
+        expected = list(read_rows(self.target))
+        self.assertEqual(restored, expected)
+        for part in outputs[2:]:
+            self.assertLessEqual(part.stat().st_size, 2200)
+            json.loads(part.read_text())
+        # Convenience scores need not be uploaded.
+        outputs[1].unlink()
+        self.assertEqual(list(read_many([outputs[0]])), expected)
+        outputs[-1].write_text('{}')
+        with self.assertRaisesRegex(ValueError, 'Integrity check failed'):
+            list(read_many([outputs[0]]))
+
+    def test_missing_json_parts_cannot_silently_pass(self):
+        outputs = write_json_package(self.target, self.root/'upload.json', max_bytes=2200)
+        with self.assertRaisesRegex(ValueError, 'Include the JSON manifest'):
+            list(read_many([outputs[2]]))
+        outputs[-1].unlink()
+        with self.assertRaisesRegex(ValueError, 'Missing package file'):
+            list(read_many([outputs[0]]))
+
     def test_android_archive_path_and_mime_are_wired(self):
         root = TOOLS.parent/'app/src/main/java/com/yourapp/wine/phonecorpus'
         vm = (root/'WineAppLabelsViewModel.kt').read_text()
         ui = (root/'WineAppLabelsActivity.kt').read_text()
         self.assertIn('LabSuiteArchive.write(target,recentBuildRows(completedRuns,suite))', vm)
         self.assertIn('LabSuiteArchive.write(target,recentBuildRows(runs,suite))', vm)
-        self.assertIn('CreateDocument("application/zip")', ui)
-        self.assertIn('exportZip.launch(file.name)', ui)
+        self.assertIn('CreateDocument("application/json")', ui)
+        self.assertIn('exportJson.launch(file.name)', ui)
         writer = (root/'LabSuiteArchive.kt').read_text()
-        for expected in ['zip.setLevel(9)', '"candidates.jsonl"', '"common.jsonl"', '"events.jsonl"',
-                         '"manifest.json"', '"sha256"', '"scores.csv"']:
+        for expected in ['writeJsonParts(target,work', '"candidates.jsonl"', '"common.jsonl"', '"events.jsonl"',
+                         '-manifest.json', '"sha256"', '"scores.csv"']:
             self.assertIn(expected, writer)
