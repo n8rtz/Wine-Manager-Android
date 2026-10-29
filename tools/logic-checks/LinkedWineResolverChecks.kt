@@ -31,7 +31,7 @@ fun main() {
     val rival=wine.copy(id="wine-2",name="Moonlight Cuvea",key="moonlight cuvea")
     verify(LinkedWineResolver(index(ws=listOf(wine,rival))).resolve("","",pd,producers+wineSpans).wineId==null)
     verify(LinkedWineResolver(index(ws=listOf(wine.copy(producerId="b")))).resolve("","",pd,producers+wineSpans).wineId==null)
-    verify(LinkedWineResolver(idx).resolve("","Keep",pd,producers+wineSpans) { throw ProducerResolver.BudgetExceeded() }.wine=="Keep")
+    verify(LinkedWineResolver(idx).resolve("","Keep",pd,producers+wineSpans,checkBudget={ throw ProducerResolver.BudgetExceeded() }).wine=="Keep")
     verify(!LinkedWineResolver.eligible("Imported by Moonlight Cuvee"))
     // Lab v5 single-reading policy: one engine carries both sides; Prod behaviour is untouched above.
     val lab=ProducerResolver.Policy.singleReading

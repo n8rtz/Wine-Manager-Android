@@ -21,7 +21,7 @@ internal object EvidenceSolver {
     }
 
     private fun compatibleEmbeddedVintage(old:Hypothesis,next:Hypothesis):Boolean =
-        next.values.keys==setOf(FieldId.VINTAGE) && next.reason.startsWith("embedded observed vintage") &&
+        next.values.keys==setOf(FieldId.VINTAGE) && next.sharesVintageSource &&
             FieldId.VINTAGE !in old.values
 
     fun solve(input:List<Hypothesis>,hierarchy:PlaceHierarchy.View,graph:EvidenceGraph,checkBudget:()->Unit,trace:EvidenceTrace=EvidenceTrace(),config:EvidenceSearchConfig=EvidenceSearchConfig()):List<List<Hypothesis>> {
@@ -36,7 +36,7 @@ internal object EvidenceSolver {
         var beam=listOf(State(emptyList(),0.0))
         val groups=listOf(setOf(FieldId.PRODUCER),setOf(FieldId.WINE_NAME),setOf(FieldId.COUNTRY,FieldId.REGION,FieldId.SUBREGION),setOf(FieldId.VINTAGE))
         val allOptions=groups.map { group -> input.filter { it.values.keys.any(group::contains) }
-            .sortedByDescending { it.rank }.distinctBy { it.values to it.phrase.observations } }
+            .sortedByDescending { it.rank }.distinctBy { Triple(it.values,it.phrase.observations,it.sharesVintageSource) } }
         val combinations=allOptions.fold(1L) { total,options -> total*(options.size+1) }
         config.exhaustiveMaxCombinations?.let { cap ->
             if(combinations>cap) throw SearchSpaceTooLargeException(combinations)
@@ -69,7 +69,7 @@ internal object EvidenceSolver {
                     }
                     State(state.selected+next,state.score+rank)
                 }
-            }.sortedByDescending { it.score }.distinctBy { state -> state.selected.map { it.values to it.phrase.observations } }
+            }.sortedByDescending { it.score }.distinctBy { state -> state.selected.map { Triple(it.values,it.phrase.observations,it.sharesVintageSource) } }
             beam=if(config.exhaustiveMaxCombinations!=null) expanded else expanded.take(config.beamLimit)
             trace.count("beam_pruned_${groupIndex}",expanded.size-beam.size)
             trace.add("beam_pruning", "group=$group; distinct_expanded=${expanded.size}; retained=${beam.size}; pruned=${expanded.size-beam.size}")

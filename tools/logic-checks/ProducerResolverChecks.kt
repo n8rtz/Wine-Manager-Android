@@ -34,7 +34,7 @@ fun main() {
     verify(resolver.resolve("",spans("Margaux")).acceptedId==null)
     verify(resolver.resolve("",spans("Domaine Estate")).acceptedId==null)
     verify(resolver.resolve("",spans("Chateau Example Appellation Medoc Controlee")).acceptedId==null)
-    verify(resolver.resolve("keep",spans()) { throw ProducerResolver.BudgetExceeded() }.value=="keep")
+    verify(resolver.resolve("keep",spans(),checkBudget={ throw ProducerResolver.BudgetExceeded() }).value=="keep")
     verify(resolver.resolve("keep",List(129) { spans()[0] }).acceptedId==null)
     verify(ProducerResolver(index(List(33) { primary.copy(id=it.toString()) })).resolve("",spans()).acceptedId==null)
     verify(ProducerResolver.normalize("Château d’Example")=="chateau d example")
@@ -75,7 +75,11 @@ fun main() {
             ProducerResolver.Entity("grangette","Grangette","grangette",setOf("lwin")),
         ).take(limit)
     }
-    val canonical=ProducerResolver(finalNearIndex).finalNearMatch("Trancette")
+    val terminal=ProducerResolver(finalNearIndex)
+    verify(terminal.finalNearMatch("Trancette")==null) // a supplemental FTS hit is not OCR support
+    val terminalEntity=ProducerResolver.Entity("la-francette","La Francette","la francette",setOf("xwines"))
+    val eligibleExact=listOf(ProducerResolver.Match(terminalEntity,"La Francette","paddle",setOf(7),0))
+    val canonical=terminal.finalNearMatch("Trancette",supportingMatches=eligibleExact)
     verify(canonical!=null && canonical.entity.id=="la-francette" && canonical.distance==1)
     val cambras=ProducerResolver.Entity("cambras","Les Ormes de Cambras","les ormes de cambras",setOf("xwines"))
     val cambrasIndex=object:ProducerResolver.Index {

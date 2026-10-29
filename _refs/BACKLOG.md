@@ -349,3 +349,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 * [ ] **`AGENTS.md`:** revisit after W-050 is decided.
 * [ ] **`CHANGELOG.md`:** compare links assume `v*` Git tags, and the repo has none. Fixed by creating `v*` tags (W-056 / first release); otherwise drop the links.
+
+### Span-safety verification follow-up (2026-10-29)
+- [ ] Build Android and run the focused suite plus unseen device-photo sanity checks after the span-provenance/terminal-support fixes. Actual Kotlin host safety checks pass using a local JDK/Kotlin toolchain; this is not an Android build or native OCR run.
+- [ ] Reconcile broader host harness debt separately: `run-logic-checks.sh` has unresolved existing source/test references (ScanStats, TextLabStats/TextLabResidualPreview, obsolete architecture test helpers). The spatial suite's check 29 also fails on pre-change `1f55994` after only correcting its two budget-callback argument spellings. The dedicated `--span-safety-only` mode is explicit and does not report those broader suites as passed.

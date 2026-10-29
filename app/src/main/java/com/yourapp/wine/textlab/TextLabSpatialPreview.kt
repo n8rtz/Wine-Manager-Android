@@ -314,6 +314,7 @@ internal object TextLabSpatialPreview {
                         } else if(finalProducer.isBlank()) {
                             row["producer_final_near_match_status"]="blank"
                         } else {
+                            row["producer_final_near_match_policy"]="primary_or_exact_or_independent; identity_ties_abstain"
                             val nearStarted=android.os.SystemClock.elapsedRealtime()
                             var nearMatchError=""
                             val nearMatch=try {
@@ -321,7 +322,9 @@ internal object TextLabSpatialPreview {
                                     protectExact=labModules.exactProducerProtection,
                                     observedExact=if(labModules.exactProducerProtection) readings.filter {
                                         it.score >= if(it.engineId.startsWith("paddle")) .75f else .60f
-                                    }.map { it.textRaw } else emptyList()) { term ->
+                                    }.map { it.textRaw } else emptyList(),
+                                    supportingMatches=decision.matches,
+                                    onRejected={ reason -> nearMatchError=reason }) { term ->
                                     if(labModules.producerRoleAndParticle) (engine?.producerCandidatePenalty(term) ?: 0) else 0
                                 }
                             } catch(cancel:CancellationException) { throw cancel }

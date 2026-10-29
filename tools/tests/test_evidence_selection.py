@@ -149,7 +149,7 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         runner = RUNNER.read_text()
         self.assertIn('internal const val REPAIR_PLACES_IN_BENCHMARK=true', runner)
         self.assertIn('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true', runner)
-        self.assertIn('evidence-lab-v5-vintage-recovery', EVIDENCE.read_text())
+        self.assertIn('evidence-lab-v5-span-provenance-v2', EVIDENCE.read_text())
 
 
 if __name__ == '__main__':

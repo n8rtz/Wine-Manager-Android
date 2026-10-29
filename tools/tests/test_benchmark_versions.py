@@ -50,7 +50,7 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn("permits(FieldId.VINTAGE)", extractor)
         self.assertIn("permits(FieldId.SUBREGION)", extractor)
         resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
-        self.assertIn("if(protectExact && candidates.count", resolver)
+        self.assertIn("if(candidates.count", resolver)
 
     def test_focused_suite_has_seven_explicit_configurations_and_shared_export(self):
         vm = (PHONE / "WineAppLabelsViewModel.kt").read_text()

@@ -6,13 +6,14 @@ import com.yourapp.wine.kb.*
 import com.yourapp.wine.merge.TextNorm
 import com.yourapp.wine.ocr.TokenRecord
 
-internal data class Hypothesis(val values:Map<FieldId,String>,val phrase:Phrase,val rank:Double,val reason:String,val place:Place?=null,val baseRank:Double=rank)
+/** Year-sharing provenance is assigned from original source context, never parsed from diagnostic wording. */
+internal data class Hypothesis(val values:Map<FieldId,String>,val phrase:Phrase,val rank:Double,val reason:String,val place:Place?=null,val baseRank:Double=rank,val sharesVintageSource:Boolean=false)
 internal data class EvidenceResult(val fill:FillResult,val graph:EvidenceGraph,val hypotheses:List<Hypothesis>,val elapsedMs:Long,val trace:EvidenceTrace,val generatedHypotheses:List<Hypothesis> = hypotheses)
 
 /** Independent lab-only solver. Shared lexical catalogs, not production line/merge/extract/validate rules. */
 internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private val typedIdentity:Boolean=true,private val search:EvidenceSearchConfig=EvidenceSearchConfig(),private val ranking:EvidenceRankingConfig=EvidenceRankingConfig(),private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off,private val allowWineTitlePairs:Boolean=false,internal val modules:LabPostOcrModules=LabPostOcrModules.unitTestDefault) {
     companion object {
-        const val VERSION="evidence-lab-v5-vintage-recovery"
+        const val VERSION="evidence-lab-v5-span-provenance-v2"
         const val DEFAULT_BUDGET_MS=60_000L
         const val MAX_HYPOTHESES=384
     }
@@ -561,7 +562,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
     }
 
     /** Early alternatives retain the original observation IDs: never additional engine votes. */
-    private fun discoverSpans(graph:EvidenceGraph,year:Int,checkBudget:()->Unit):EvidenceGraph {
+    private fun discoverSpans(graph:EvidenceGraph,year:Int,checkBudget:()->Unit,trace:EvidenceTrace):EvidenceGraph {
         if(!(modules.geographySpans || modules.producerSpans || modules.grapeSpans ||
             modules.classificationSpans || modules.vintageSpans || modules.wineNameSpans)) return graph
         val out=graph.phrases.toMutableList()
@@ -581,7 +582,11 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 if(modules.producerSpans && kb.findProducerFuzzy(text).any { (it.editDistance ?: Int.MAX_VALUE)<=1 }) fields+=FieldId.PRODUCER
                 if(modules.grapeSpans && catalogWordKey(text) in grapeCandidateKeys) fields+=FieldId.WINE_NAME
                 if(modules.classificationSpans && (WineDesignations.isDesignation(text) || WineDesignations.classificationBase(text)!=null)) fields+=FieldId.WINE_NAME
-                if(modules.vintageSpans && normalizeVintageCandidate(text,year)!=null) fields+=FieldId.VINTAGE
+                if(modules.vintageSpans && normalizeVintageCandidate(text,year)!=null) {
+                    if(foundingYearCue.containsMatchIn(TextNorm.normalize(o.record.textRaw)))
+                        trace.add("vintage_context_rejected","observation=${o.id}; reason=founding_context")
+                    else fields+=FieldId.VINTAGE
+                }
                 if(modules.wineNameSpans && size>=2 && text.count(Char::isLetter)>=5 && !text.any(Char::isDigit)) fields+=FieldId.WINE_NAME
                 if(fields.isEmpty()) continue
                 if(out.size>=EvidenceGraphBuilder.MAX_PHRASES) { truncated=true;continue }
@@ -617,7 +622,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 enforceSpatialSemanticGuards=modules.spatialSemanticGuards,
             ),
             ::checkBudget,
-        ).let { discoverSpans(it,year,::checkBudget) }
+        ).let { discoverSpans(it,year,::checkBudget,trace) }
         trace.add("graph", "observations=${graph.observations.size}; phrases=${graph.phrases.size}; truncated=${graph.truncated}")
         data class ExactGeoCandidate(val hypothesis:Hypothesis,val place:Place,val depth:Int)
         val hypotheses=mutableListOf<Hypothesis>()
@@ -640,9 +645,16 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             val administrativeSource=modules.administrativeFiltering && sources.any {
                 com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(it.record.textRaw)
             }
+            val foundingSource=sources.any { foundingYearCue.containsMatchIn(TextNorm.normalize(it.record.textRaw)) }
+            // A subspan is not a new observation: retain the eligibility of the full source line.
+            fun sharesVintageContext(value:String)=sources.any { source ->
+                normalizeVintageCandidate(source.record.textRaw,year)==null &&
+                    (detachEdgeVintage(source.record.textRaw,year).second==value ||
+                        explicitHarvestVintage(TextNorm.normalize(source.record.textRaw),year)==value)
+            }
             val supported=sources.any { it.record.score >= if(it.record.engineId.startsWith("paddle")) .75f else .60f }
             if(!supported) {
-                if((!modules.candidateIsolation || permits(FieldId.VINTAGE)) && !administrativeSource && exactGeographyFastPath && modules.vintageRecovery && sources.any { it.record.score >= .45f } && !LabelContext.isNonOriginAdministrative(text,norm)) {
+                if((!modules.candidateIsolation || permits(FieldId.VINTAGE)) && !administrativeSource && !foundingSource && exactGeographyFastPath && modules.vintageRecovery && sources.any { it.record.score >= .45f } && !LabelContext.isNonOriginAdministrative(text,norm)) {
                     val rescuedYear=normalizeVintageCandidate(text,year)
                     if(rescuedYear!=null && hypotheses.size<MAX_HYPOTHESES) {
                         hypotheses+=Hypothesis(
@@ -650,6 +662,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                             p,
                             55.0-10.0,
                             "complete observed vintage; moderate-confidence Lab year normalization",
+                            sharesVintageSource=sharesVintageContext(rescuedYear),
                         )
                         trace.add("vintage_rescued","phrase=${p.id}; vintage=$rescuedYear")
                         continue
@@ -795,7 +808,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
             // One word that another engine read as the start of a longer overlapping line is a fragment
             // of that line (CRUCLASS for CRU CLASSE, HATEAU for CHATEAU), never a producer or wine name.
             val fragmentOnly=norm.split(' ').size==1 && incomplete>0
-            fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null):Hypothesis? {
+            fun offer(values:Map<FieldId,String>,rank:Double,why:String,place:Place?=null,sharesVintageSource:Boolean=false):Hypothesis? {
                 if(p.construction.startsWith("candidate-span:") &&
                     values.keys.any { it.name !in p.construction.substringAfter(":").split(",") }) {
                     trace.add("candidate_filtered","phrase=${p.id}; values=$values; reason=field_scope; base_rank=$rank");return null
@@ -811,16 +824,19 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 if(hypotheses.size>=MAX_HYPOTHESES) {
                     trace.add("hypothesis_limit","phrase=${p.id}; values=$values");return null
                 }
-                val added=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place,baseRank=rank)
+                val added=Hypothesis(values,p,rank-weakContent*10-incomplete*6,why+if(incomplete>0) "; overlapping engine supplies a fuller reading" else "",place,baseRank=rank,sharesVintageSource=sharesVintageSource)
                 hypotheses+=added
                 return added
             }
             val standaloneYear=normalizeVintageCandidate(text,year)
-            if(!originFramingAdmin && standaloneYear!=null)
-                offer(mapOf(FieldId.VINTAGE to standaloneYear),55.0,"complete observed vintage")
-            else if(!originFramingAdmin) {
+            if(foundingSource && (standaloneYear!=null || p.construction.startsWith("candidate-span:")))
+                trace.add("vintage_context_rejected","phrase=${p.id}; source_observations=${p.observations}; reason=founding_context")
+            if(!originFramingAdmin && !foundingSource && standaloneYear!=null)
+                offer(mapOf(FieldId.VINTAGE to standaloneYear),55.0,"complete observed vintage",
+                    sharesVintageSource=sharesVintageContext(standaloneYear))
+            else if(!originFramingAdmin && !foundingSource) {
                 val embeddedYear=(attachedYear?.takeIf { places.isNotEmpty() }) ?: explicitHarvestVintage(norm,year)
-                if(embeddedYear!=null) offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage")
+                if(embeddedYear!=null) offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage",sharesVintageSource=true)
             }
             val coherentPhrasePlaces=exactGeographyFastPath && places.isNotEmpty() &&
                 places.all { a -> places.all { b -> compatibleGeography(a,b,true) } }

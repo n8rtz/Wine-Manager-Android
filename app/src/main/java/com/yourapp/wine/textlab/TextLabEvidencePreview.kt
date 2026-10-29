@@ -90,6 +90,7 @@ internal object TextLabEvidencePreview {
                 "region_id" to index.toString(), "phrase_id" to h.phrase.id.toString(),
                 "base_rank" to h.baseRank.toString(), "generation_rank" to h.rank.toString(),
                 "candidate_values" to h.values.toString(), "source_observations" to h.phrase.observations.toString(),
+                "shares_vintage_source" to h.sharesVintageSource.toString(),
                 "candidate_status" to if(result.hypotheses.any { it.phrase.id==h.phrase.id && it.values==h.values }) "ranked" else "filtered_before_ranking",
                 "evidence_details" to h.reason)) }
             result.hypotheses.forEachIndexed { index,h -> journal.add("experimental_evidence","evidence_hypothesis",values=mapOf(
@@ -97,6 +98,7 @@ internal object TextLabEvidencePreview {
                 "base_rank" to h.baseRank.toString(), "adjusted_rank" to h.rank.toString(),
                 "rank_delta" to (h.rank-h.baseRank).toString(),
                 "candidate_values" to h.values.toString(), "source_observations" to h.phrase.observations.toString(),
+                "shares_vintage_source" to h.sharesVintageSource.toString(),
                 "matches_evidence_final_fields" to h.values.filter { (field,value) -> result.fill.fields[field]?.value==value }.keys.toString(),
                 "evidence_details" to "phrase=${h.phrase.id}; observations=${h.phrase.observations}; rank=${h.rank}; ${h.reason}; values=${h.values}")) }
             result.trace.rows.forEach { event -> journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to event)) }

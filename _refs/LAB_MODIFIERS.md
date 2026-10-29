@@ -313,3 +313,30 @@ retains the session. Stop finishes the current photo and marks the rest not run.
 ends the activity session, cancels work and clears private temporary copies after work
 stops; saved external exports and source photos are untouched. Process-death restoration
 or a background-service guarantee is not provided by this separate sanity-check screen.
+
+## General safety repairs after the focused-suite diagnostic review
+
+These repairs are not new score-tuned modules and do not enable any checkbox automatically:
+- Vintage subspans retain original observation context. Founding/since/establishment cues
+  block a vintage interpretation at discovery and selection, including moderate-confidence
+  recovery. Other field discovery still runs early; it is not gated on a final blank.
+- `sharesVintageSource` records a legitimate embedded/harvest year interpretation. The
+  joint solver uses this structured provenance rather than a reason-string prefix. Equivalent
+  numeric span candidates cannot lose their shared-source compatibility solely because their
+  display reason is “complete observed vintage”. Bare-year observations are still exclusive.
+- Terminal producer near-match remains controlled by `finalProducerNearMatch`, but cannot
+  promote a supplemental catalog neighbor from shortlist membership alone. It needs an exact
+  eligible OCR match or two independent engine families with disjoint original observations.
+  Verified-primary/LWIN candidates retain bounded comparison. Equally close producer identities
+  abstain before unsupported candidates can be discarded to manufacture a unique alternative.
+- `exactProducerProtection` additionally preserves an exact confident observed current producer
+  even when it is not a catalog entry. Safety against unsupported supplemental fuzzy replacement
+  and identity ties does not require that checkbox. Reasons include
+  `insufficient_supplemental_support`, `identity_tie`, and `observed_producer_preserved`.
+
+Generated/ranked hypothesis rows include `shares_vintage_source`; discovery reports
+`vintage_context_rejected`. Terminal summaries record their support policy and any rejection.
+The evidence version is `evidence-lab-v5-span-provenance-v2`, producer resolver version is
+`producer-resolver-v8-safe-terminal`; UI model remains **Lab v5**. Historical results are not
+rewritten. Repeat the same focused suite on the same OCR/cohort and then unseen device photos;
+synthetic checks are not a measured improvement in corpus accuracy or proof against overfitting.

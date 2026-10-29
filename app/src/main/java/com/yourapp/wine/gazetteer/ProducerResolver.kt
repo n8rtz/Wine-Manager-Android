@@ -37,7 +37,7 @@ internal class ProducerResolver(private val index:Index,
      * engine, so a name only Paddle read should still reach the filter. In this span-based resolver,
      * a one-engine fuzzy correction is still limited to verified primary LWIN names; a supplemental
      * name may confirm exact OCR, but needs independent engine support to overrule a near miss. A
-     * separate final-value database pass is intentionally evaluated after these span-based safeguards.
+     * separate final-value database pass runs afterward and must retain these supplemental-support safeguards.
      */
     data class Policy(val minimumIndependentEngines:Int=2) {
         init { require(minimumIndependentEngines in 1..2) }
@@ -81,7 +81,7 @@ internal class ProducerResolver(private val index:Index,
     }
     class BudgetExceeded:RuntimeException()
     companion object {
-        const val VERSION="producer-resolver-v7"
+        const val VERSION="producer-resolver-v8-safe-terminal"
         const val MAX_SPANS=128
         /** Existing wine-name shortlist; kept at its prior cost bound. */
         const val MAX_FUZZY_CANDIDATES=200
@@ -162,27 +162,40 @@ internal class ProducerResolver(private val index:Index,
         }
     }
 
-    /**
-     * Last-resort canonicalization for the field extractor's completed producer value. This pass
-     * deliberately does not require OCR-span eligibility/support; it compares the final string with
-     * the bounded database shortlist and returns the closest non-generic name within two edits. A
-     * leading French/English article is ignored (`Trancette` / `La Francette`), while producer
-     * omission of the minor French particle `de` is zero-cost. Grape terms and regional wording may
-     * add a producer-role penalty. Exact values are retained; equal-distance candidates use the FTS
-     * relevance order as a deterministic tie-break.
+    /** Final canonicalization must not turn an unsupported supplemental shortlist hit into evidence.
+     * Primary/LWIN candidates retain the bounded terminal comparison. Supplemental replacements need
+     * an exact eligible OCR match or independent, disjoint engine support from the earlier resolver.
+     * Identity ties abstain; FTS ordering is retrieval relevance, never proof of a producer identity.
      */
-    fun finalNearMatch(value:String,checkBudget:()->Unit={},protectExact:Boolean=false,observedExact:List<String> = emptyList(),producerPenalty:(String)->Int={0}):FinalNearMatch? {
+    fun finalNearMatch(value:String,checkBudget:()->Unit={},protectExact:Boolean=false,observedExact:List<String> = emptyList(),
+        supportingMatches:List<Match> = emptyList(),onRejected:(String)->Unit={},producerPenalty:(String)->Int={0}):FinalNearMatch? {
         if(!index.primaryVerified && !index.labSupplemental) return null
         val query=normalize(value)
         if(query.isBlank()) return null
+        val observed=observedExact.map(::normalize).toSet()
+        if(protectExact && query in observed) { onRejected("observed_producer_preserved");return null }
         checkBudget()
         val hits=index.lookup(query,MAX_PRODUCER_FUZZY_CANDIDATES,checkBudget).distinctBy { it.id }
         if(hits.any { it.key==query }) return null // already a database value
+        fun supported(entity:Entity):Boolean {
+            if(index.primaryVerified || "lwin" in entity.support) return true
+            val rows=supportingMatches.filter { it.entity.id==entity.id }
+            fun family(engine:String)=when {
+                engine.startsWith("paddle") -> "paddle"
+                engine.startsWith("mlkit") -> "mlkit"
+                else -> engine
+            }
+            val independent=rows.any { a -> rows.any { b -> a.engine.isNotBlank() && b.engine.isNotBlank() &&
+                family(a.engine)!=family(b.engine) && a.observationIds.isNotEmpty() && b.observationIds.isNotEmpty() &&
+                a.observationIds.intersect(b.observationIds).isEmpty() } }
+            val accepted=rows.any { it.distance==0 } || independent
+            if(!accepted) onRejected("insufficient_supplemental_support")
+            return accepted
+        }
         if(protectExact) {
-            val observed=observedExact.map(::normalize).toSet()
             val exact=hits.filter { it.key in observed && producerDistance(query,it.key)<=1 }
-            if(exact.size>1) return null
-            if(exact.size==1) return FinalNearMatch(exact.single(),0)
+            if(exact.size>1) { onRejected("identity_tie");return null }
+            if(exact.size==1) return if(supported(exact.single())) FinalNearMatch(exact.single(),0) else null
         }
         fun comparable(key:String):String {
             val words=key.split(' ').filter(String::isNotBlank)
@@ -201,9 +214,10 @@ internal class ProducerResolver(private val index:Index,
             }
         }
         val bestDistance=candidates.minOfOrNull { it.distance } ?: return null
-        if(protectExact && candidates.count { it.distance==bestDistance }!=1) return null
-        // Legacy comparators retain FTS ordering; protected experiments abstain on identity ties.
-        return candidates.firstOrNull { it.distance==bestDistance }
+        if(candidates.count { it.distance==bestDistance }!=1) { onRejected("identity_tie");return null }
+        // The terminal pass is Lab-only; production span acceptance remains unchanged.
+        val winner=candidates.first { it.distance==bestDistance }
+        return winner.takeIf { supported(it.entity) }
     }
 
     fun resolve(existing:String,spans:List<Span>,checkBudget:()->Unit={},policy:Policy=Policy.prod):Decision {

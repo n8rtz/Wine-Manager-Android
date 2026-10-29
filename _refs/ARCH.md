@@ -235,3 +235,15 @@ Lab-only device photos; its default packaged-corpus behavior and downstream OCR/
 remain unchanged. Native decoding determines the image format from original bytes: the
 40-hex `.jpg` identity is a runner key, not a conversion of PNG/HEIC/etc. No new model,
 scoring rule, label-specific heuristic, expected-value input or extraction tuning is added.
+
+### Span provenance and terminal producer safety
+- `tools/logic-checks/SpanSafetyChecks.kt` — executable Kotlin synthetic regressions for founding-date context, harvest/bare-year controls, an appellation/year extraction, typed shared-vintage ownership, and terminal supplemental support/identity ties. Runs via `tools/run-spatial-preview-checks.sh --span-safety-only`.
+- `tools/tests/test_span_safety.py` — source contracts for early discovery context, structured ownership exported at both hypothesis stages, and earlier-resolver evidence carried into terminal canonicalization.
+
+`Hypothesis.sharesVintageSource` is extractor-assigned provenance, not parsed diagnostic
+wording. Bare years retain exclusive ownership; valid embedded/harvest-derived year spans
+may coexist with other fields from their source. Option/state deduplication retains this
+compatibility distinction. `ProducerResolver.finalNearMatch` uses eligible earlier matches
+for supplemental identities, keeps verified-primary/LWIN comparison, rejects identity ties,
+and emits explicit rejection telemetry. Corpus answers, module presets and numeric ranks
+are not changed by these safety repairs.

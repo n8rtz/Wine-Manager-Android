@@ -209,7 +209,7 @@ class FramedAppellationAndLabelContextTests(unittest.TestCase):
         extractor = (WINE / "textlab/evidence/EvidenceExtractor.kt").read_text(encoding="utf-8")
         solver = (WINE / "textlab/evidence/EvidenceSolver.kt").read_text(encoding="utf-8")
         self.assertIn("detachEdgeVintage(text,year)", extractor)
-        self.assertIn('offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage")', extractor)
+        self.assertIn('offer(mapOf(FieldId.VINTAGE to embeddedYear),52.0,"embedded observed vintage",sharesVintageSource=true)', extractor)
         self.assertIn("!compatibleEmbeddedVintage(old,next)", solver)
 
         # Issue 3: bare context_only legal classifications (`DOCG`, `AVA`, `AOC`) blocked from WINE_NAME.

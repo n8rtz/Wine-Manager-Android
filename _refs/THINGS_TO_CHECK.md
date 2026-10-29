@@ -551,3 +551,14 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 1. [ ] First step, with the exact button or screen names.
 2. [ ] Expected result written as something you can see.
 ```
+
+### Span context / ownership / terminal fuzzy follow-up — `arena/0a282176-wine-manager-android`
+
+*Last run: actual Kotlin safety harness passed (12 terminal producer checks plus extraction/ownership synthetic regressions). Full Python discovery: 294 tests, 292 passed, two pre-existing resolver-policy source-contract failures. No Android build, native OCR execution, or new measured accuracy result.*
+
+1. [ ] Rebuild and run the focused seven configurations using the same corpus and pinned OCR; export/upload every JSON part and its manifest. Do not compare different reference cohorts or assume previous saved predictions were regenerated.
+2. [ ] Verify founding/establishment phrases with ordinary/spaced digits stay blank for vintage; explicit harvest wording and standalone valid years continue to work. Test ordinary and moderate-confidence inputs, with vintage recovery on/off.
+3. [ ] Compare isolation-only to isolation plus vintage spans on appellation/name lines with an attached year. The existing supported wine name must not be displaced merely because the same year is now offered as a separate numeric span.
+4. [ ] Verify unsupported single-engine supplemental fuzzy neighbors do not replace a selected producer, whether the terminal pass finishes or exhausts its budget. Confirm `insufficient_supplemental_support` in summaries, while exact eligible and truly independent/disjoint supporting cases can still pass.
+5. [ ] Enable exact-producer protection and test a confidently observed maker absent from the catalog; confirm it is retained. Test equal-distance catalog identities: no FTS-order tie-breaking. Confirm diagnostics retain `shares_vintage_source`, the updated post-processing versions and terminal rejection status.
+6. [ ] Repeat unseen device-photo checks under a recorded unchanged configuration. Originals, standardized truth and frozen Prod outputs must remain untouched.
