@@ -83,12 +83,14 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
 ## Item 3 — Non-`d = 0` Producer Recovery & Hybrid Anchor Fallback
 
 - [ ] **3a. Controlled `d = 1` / de-concatenation producer & linked-wine lookup in Lab v4**
+  - **Host-tested 2026-10-29:** the `d = 1` half already ships in the baseline config (`final_producer_near_match`). Extending the final canonicalization to `d = 2`, lifting the observed-producer preservation wholesale, and contiguous-word containment were each implemented behind a Lab gate and measured: `d = 2` +0, preservation-lift -4 producer (correct names replaced), containment net -1 (loses #105 producer, #119 not gained). All reverted. Conclusion: the remaining producer errors are decided at span-selection (see Item 4c), not final canonicalization; the Margaux-garbage cases (#56/#62/#69) have no catalog-proximate string to match against. The two dormant modules that DO help are now in the winning set: `exact_producer_protection` (+1: #146 Citran) and `role_aware_joins` (+1 wine: #105).
   - **Files:** `app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt`, `app/src/main/java/com/yourapp/wine/gazetteer/LinkedWineResolver.kt`
   - **Root cause:** OCR occasionally drops a single space (`MOUTONCADET` vs `Mouton Cadet` `#106`, `CHATEAUMARGAUX` `#56`) or has a 1-char OCR substitution (`SeanMinn` vs `Sean Minor`, `l`/`1` or `o`/`0`) while `before` holds a classification fragment (`CRUCLASS` `#56`).
   - **Suggested fix (Lab v4 only):** When no `d = 0` match exists and `existing` is blank, all-caps classification noise, or `d = 1` from the candidate, permit unambiguous well-separated (`rival >= d + 2`) primary LWIN `d = 1` matches to replace clearly non-producer `existing` noise.
   - **Target bottles:** `#56, #69, #96, #119, #126, #169`.
 
 - [ ] **3b. `EvidenceAnchorHybrid` fallback to `revised[PRODUCER]` when anchor producer is blank or dropped**
+  - **Host-tested 2026-10-29:** implemented behind a Lab gate (`producer_anchor_fallback`); measured **zero effect** on the 124-label corpus (the evidence extractor itself abstains on #43/#58/#62/#71, so there is no revised producer to fall back to) and reverted to keep the shipped tree evidence-only. Revisit together with Item 4c span generation.
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceAnchorHybrid.kt`
   - **Root cause:** When `form_summary` (`anchor`) leaves `PRODUCER` blank or its noisy token was removed, `EvidenceAnchorHybrid` can still reject a valid multi-word estate/producer found by `EvidenceExtractor` (`revised[PRODUCER]`).
   - **Target bottles:** `#43, #58, #62, #71`.

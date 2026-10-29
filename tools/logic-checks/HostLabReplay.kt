@@ -154,7 +154,7 @@ fun main(args: Array<String>) {
                 )
                 debugWriter?.let { dbg ->
                     for (row in current.rows) {
-                        val keys = listOf("candidate","stage","status","details","wine_name","wine_name_reason","producer","country","region","subregion","candidate_values","evidence_details","raw_text")
+                        val keys = listOf("candidate","stage","status","details","wine_name","wine_name_reason","producer","country","region","subregion","candidate_values","evidence_details","raw_text","producer_final_near_match_status","producer_reason")
                         dbg.write(image + keys.joinToString("") { "\t" + b64encode(row[it].orEmpty()) } + "\n")
                     }
                     dbg.flush()
