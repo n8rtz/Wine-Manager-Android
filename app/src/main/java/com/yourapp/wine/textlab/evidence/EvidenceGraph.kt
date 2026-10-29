@@ -28,6 +28,7 @@ internal object EvidenceGraphBuilder {
         isBroadGeographyLine:(String)->Boolean={ false },
         isKnownProducerLine:(String)->Boolean={ false },
         allowWineTitlePairs:Boolean=false,
+        wineTitlePairMaxHeightRatio:Float=1.45f,
         allowStackedAppellations:Boolean=false,
         allowSplitCrestVintage:Boolean=true,
         enforceSpatialSemanticGuards:Boolean=true,
@@ -190,19 +191,35 @@ internal object EvidenceGraphBuilder {
                 b.box.centerY()-a.box.centerY()<=maxOf(a.box.height(),b.box.height())*1.8f
             if(!horizontal && !vertical) continue
             val combinedText=a.text+" "+b.text
-            if(requireRoleAwareJoins && !compatibleRoles(a.text,b.text)) continue
+            // A bounded wine-title pair (Item 1a) is its own role support: a title
+            // line over a varietal/appellation line needs no catalog or producer
+            // evidence, so the role-aware veto must not kill it before evaluation.
+            val pairCandidate=vertical && sameEnginePass(a,b) &&
+                maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())<=wineTitlePairMaxHeightRatio &&
+                isBoundedWineTitlePair(a.text,b.text)
+            if(requireRoleAwareJoins && !pairCandidate && !compatibleRoles(a.text,b.text)) continue
             if(filterAdministrative && (com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(a.text) ||
                 com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(b.text))) continue
             val heightRatio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
             val stackedAppellation=allowStackedAppellations && vertical && sameEnginePass(a,b) &&
                 heightRatio<=1.85f && !isHardBoundary(a.text) && !isHardBoundary(b.text) &&
                 (WineDesignations.isAppellationName(combinedText) || WineDesignations.classificationBase(combinedText)!=null)
+            // Item 1a: a bounded wine-title pair is evaluated before the generic
+            // vertical caps, because a script cuvee line is legitimately several
+            // times taller than the small-caps varietal below it. The pair has its
+            // own hard boundaries (no framing/vintage/geography lines, same engine,
+            // lower line must be a varietal or appellation) in isBoundedWineTitlePair.
+            val boundedPairCandidate=pairCandidate
             if(enforceSpatialSemanticGuards) {
                 if(horizontal && !canJoinHorizontally(a,b)) continue
                 if(vertical) {
-                    val maxRatio=if(stackedAppellation) 1.85f else 1.45f
+                    val maxRatio=when {
+                        stackedAppellation -> 1.85f
+                        boundedPairCandidate -> wineTitlePairMaxHeightRatio
+                        else -> 1.45f
+                    }
                     if(heightRatio>maxRatio || isHardBoundary(a.text) || isHardBoundary(b.text)) continue
-                    if(!stackedAppellation && (isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(combinedText))) continue
+                    if(!stackedAppellation && !boundedPairCandidate && (isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(combinedText))) continue
                 }
             }
             val an=TextNorm.normalize(a.text);val bn=TextNorm.normalize(b.text)
@@ -224,7 +241,7 @@ internal object EvidenceGraphBuilder {
                     !b.text.any(Char::isDigit) && !com.yourapp.wine.extract.MetadataRules.isBoilerplate(b.text) &&
                     !com.yourapp.wine.extract.MetadataRules.isPackaging(b.text) && !WineDesignations.isDesignation(b.text)
             }
-            val wineTitlePair=vertical && sameEnginePass(a,b) && heightRatio<=1.45f && isBoundedWineTitlePair(a.text,b.text)
+            val wineTitlePair=boundedPairCandidate
             val verticalAllowed=enforceSpatialSemanticGuards || (!stackedAppellation && !wineTitlePair) || stackedAppellation || wineTitlePair
             if(verticalAllowed && (estateName || horizontal || designation || stackedAppellation || leadingConnector ||
                 Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des") || wineTitlePair)) {

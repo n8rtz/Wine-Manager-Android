@@ -24,7 +24,7 @@ FIELDS = ["producer", "wine_name", "country", "region", "subregion", "vintage"]
 # Lab v6 floor: the Prod v5.0 checkpoint (integrated modules) score. The historical
 # Lab v5 phone-baseline parity (53/111) was proven and phone-verified in Oct 2026;
 # see docs/lab-v5-124-diagnostic-a709ad6.md Sections 7-10.
-PARITY = {"complete": 62, "at_most_one": 113, "eligible": 122}
+PARITY = {"complete": 66, "at_most_one": 113, "eligible": 122}
 
 
 def b64(value: str) -> str:

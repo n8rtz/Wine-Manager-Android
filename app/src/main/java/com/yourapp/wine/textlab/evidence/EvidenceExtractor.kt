@@ -614,7 +614,8 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 records,::checkBudget,typedIdentity,
                 isBroadGeographyLine={ text -> isBroadGeographyLine(text) },
                 isKnownProducerLine={ text -> isKnownProducerLine(text) },
-                allowWineTitlePairs=allowWineTitlePairs || modules.verticalWineTitlePairs,
+                allowWineTitlePairs=allowWineTitlePairs || modules.verticalWineTitlePairs || modules.boundedWineTitlePairs,
+                wineTitlePairMaxHeightRatio=if(modules.boundedWineTitlePairs) 5.5f else 1.45f,
                 allowStackedAppellations=exactGeographyFastPath && (modules.stackedAppellations || modules.broaderDiscovery),
                 requireRoleAwareJoins=modules.roleAwareJoins,
                 filterAdministrative=modules.administrativeFiltering,
@@ -632,6 +633,20 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         val contextGraph=if(modules.candidateIsolation) graph.copy(phrases=graph.phrases.filterNot { it.construction.startsWith("candidate-span:") }) else graph
         val labelContext=if(exactGeographyFastPath) LabelContext.collect(contextGraph,gazetteer,view,kb,typedIdentity,true) else LabelContext.collect(contextGraph,gazetteer,view,kb,typedIdentity)
         trace.add("label_context",labelContext.traceSummary)
+        // Item 1a: lower-line texts of bounded title pairs, across all engines.
+        // A single-engine reading of the same varietal line must not compete
+        // with the pair that subsumes it (Inscription PINOT NOIR vs PINOT NOIR).
+        val pairLowerTextKeys=if(modules.boundedWineTitlePairs) graph.phrases
+            .filter { it.construction=="bounded vertical wine-title pair" }
+            .mapNotNull { pair ->
+                val lowerObs=pair.observations.maxByOrNull { id ->
+                    graph.observations.firstOrNull { it.id==id }?.record?.bboxRect?.centerY() ?: 0f
+                }
+                graph.observations.firstOrNull { it.id==lowerObs }?.record?.textRaw
+            }
+            .map { catalogWordKey(it) }
+            .toSet()
+        else emptySet()
         for(p in graph.phrases.sortedByDescending { it.construction.contains("alternative") }) {
             checkBudget()
             if(hypotheses.size >= MAX_HYPOTHESES) { trace.add("hypothesis_limit", "remaining phrases not searched");break }
@@ -890,17 +905,62 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 offer(mapOf(FieldId.WINE_NAME to placeSubject),65.0,"exact printed appellation may also name the wine")
             if(boundedTitlePair) {
                 val lowerTitleLine=sources.maxByOrNull { it.record.bboxRect.centerY() }?.record?.textRaw.orEmpty()
+                val upperTitleLine=sources.minByOrNull { it.record.bboxRect.centerY() }?.record?.textRaw.orEmpty()
+                // Item 1a: an upper line that is a proper token-subset of a catalog
+                // producer name is a producer fragment (CAMBRAS of Les Ormes de
+                // Cambras), not a wine title; it must not head a pair.
+                val upperIsProducerFragment=modules.boundedWineTitlePairs && run {
+                    val upperTokens=TextNorm.normalize(upperTitleLine).split(' ').filter { it.length>=3 }
+                    upperTokens.isNotEmpty() && kb.findProducer(upperTitleLine).any { hit ->
+                        val producerTokens=hit.producer.nameNorm.split(' ').filter(String::isNotBlank)
+                        producerTokens.size>upperTokens.size && upperTokens.all { token -> producerTokens.any { it==token } }
+                    }
+                }
                 val lowerIsCatalogAppellation=WineDesignations.isAppellationName(lowerTitleLine) ||
                     WineDesignations.hasNameAndDesignation(lowerTitleLine)
                 val placeMatchesAreAppellations=places.isEmpty() ||
                     (lowerIsCatalogAppellation && places.all { WineDesignations.isAppellationName(it.name) })
-                if(MetadataRules.isIdentity(text) && placeMatchesAreAppellations && !endsConnector && !beginsConnector)
-                    offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),116.0,
+                // Item 1a refinement: the pair names the wine only over a varietal
+                // lower line. Over an appellation lower line the appellation alone
+                // names the wine (exact/classification offers and the appellation
+                // fallback own that case); a cuvee+appellation pair there only
+                // prepends producer fragments (BOUSQUET COTES DE BOURG).
+                if(MetadataRules.isIdentity(text) && placeMatchesAreAppellations && !endsConnector && !beginsConnector &&
+                    !upperIsProducerFragment &&
+                    !(modules.boundedWineTitlePairs && WineDesignations.isAppellationName(lowerTitleLine)))
+                    offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),
+                        // Item 1a: a bounded pair must not outrank a classification-qualified
+                        // appellation (96) or a named cuvee (100) printed on the same label.
+                        // A tall script/display upper (>=2.5x the varietal) is the confident
+                        // cuvee pattern and may outrank the varietal alone (75); similar-height
+                        // stacked lines are estate/producer stacks and stay below it.
+                        if(modules.boundedWineTitlePairs) {
+                            val upperBox=sources.minByOrNull { it.record.bboxRect.centerY() }?.record?.bboxRect
+                            val lowerBox=sources.maxByOrNull { it.record.bboxRect.centerY() }?.record?.bboxRect
+                            if(upperBox!=null && lowerBox!=null && lowerBox.height()>0f &&
+                                upperBox.height()>=2.5f*lowerBox.height()) 88.0 else 70.0
+                        } else 116.0,
                         "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed")
                 trace.add("bounded_title_pair","phrase=${p.id}; text=$text")
                 continue
             }
-            if(!MetadataRules.isIdentity(text) || paragraph || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
+            // Item 1a: paragraph density must not suppress a pure varietal line.
+            // A narrow varietal in a dense label area (Merlot under Stags Leap)
+            // is still the printed wine description; only its varietal offer is
+            // admitted, not generic title/producer interpretations. The line must
+            // be exactly a grape term (not a style word like Brut), and a bounded
+            // pair covering the same observations subsumes the single-line offer.
+            val paragraphVarietal=modules.boundedWineTitlePairs && paragraph && places.isEmpty() &&
+                !endsConnector && !beginsConnector && catalogWordKey(text) !in pairLowerTextKeys &&
+                BundledGrapes.terms.any { term ->
+                    val key=catalogWordKey(text)
+                    key==catalogWordKey(term.name) || term.aliases.any { alias -> key==catalogWordKey(alias) }
+                }
+            if(!MetadataRules.isIdentity(text) || (paragraph && !paragraphVarietal) || places.isNotEmpty() || endsConnector || beginsConnector) { trace.add("identity_filtered", "phrase=${p.id}; paragraph=$paragraph; places=${places.size}; connector=${endsConnector || beginsConnector}");continue }
+            if(paragraphVarietal) {
+                offer(mapOf(FieldId.WINE_NAME to (WineDesignations.display(text) ?: text)),75.0,"observed varietal; paragraph density does not suppress a varietal line")
+                continue
+            }
             if(ranking.cuveeRole && EvidenceRanking.namedCuvee(text)) {
                 offer(mapOf(FieldId.WINE_NAME to text),if(modules.appellationClassificationPrecedence) 100.0 else 75.0,"explicit named cuvee role; not producer attribution")
                 trace.add("explicit_cuvee_role", "phrase=${p.id}")

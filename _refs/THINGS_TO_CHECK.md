@@ -2,6 +2,12 @@
 
 > **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
 
+### 2f. Lab v6 Item 1a integration (bounded wine-title pairs)
+
+- [ ] Run Lab v6 on #170, #177, #184, #186: wine_name should be `Inscription Pinot Noir`, `Ultra Malbec`, `Volcanic Pinot Noir`, `Merlot` respectively, with no other field changes vs the previous Lab v6 run.
+- [ ] Spot-check #58, #66, #72, #126, #127: wine_name unchanged (`Cabernet Sauvignon`, `Cremant d'Alsace`, `Bordeaux Superieur`, `Cabernet Sauvignon`, `Corbieres`) — the pair must not prepend producer fragments.
+- [ ] Prod v5.0 column unchanged everywhere (frozen ten-module checkpoint; it must NOT gain the 1a pairs).
+
 ## How to use this file
 
 Checks are grouped **by branch**, newest first, so you can load one branch on the emulator and step through everything that branch changed.

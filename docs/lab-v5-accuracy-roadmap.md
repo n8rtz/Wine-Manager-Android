@@ -46,7 +46,7 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
 
 ## Item 1 — Fix Cross-Engine / Multi-Line `paragraph=true` Pooling Bug (Highest Remaining Impact)
 
-- [ ] **1a. Scope `EvidenceGraph` / `TextLabSpatialPhrases` paragraph merging per engine pass and cap vertical/role span merges**
+- [x] **1a. Scope `EvidenceGraph` / `TextLabSpatialPhrases` paragraph merging per engine pass and cap vertical/role span merges** — done 2026-10-29 as `bounded_wine_title_pairs`, integrated into Lab v6: **66/122, +4/−0** (#170, #177, #184, #186). The boundary caps already existed; the residual fixes were pair evaluation before the 1.45 cap, a role-veto exemption, varietal-only pair lowers, height-tiered rank, and paragraph suppression lifted for exact grape lines. See diagnostic §13.
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceGraph.kt`, `app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPhrases.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Multi-line `paragraph=true` / spatial phrase merging concatenates vertically adjacent lines of completely different semantic roles (producer + cuvée + varietal + appellation + founding-year banner) into one mega-phrase (`71/125` labels affected; implicated in `35/53` `wine_name` errors). Examples from `0c88bda41164`:
     - `#170`: `'Inscription PINOT NOIR WILLAMETTE VALLEY'` (merges cuvée + varietal + region, blocking `d = 0` `'Inscription Pinot Noir'`).

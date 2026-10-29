@@ -27,6 +27,7 @@ internal data class LabPostOcrModules(
     val blankSubregionFuzzy: Boolean = false,
     val appellationWineFallback: Boolean = false,
     val appellationClassificationPrecedence: Boolean = false,
+    val boundedWineTitlePairs: Boolean = false,
     val vintageRecovery: Boolean = false,
     val stackedAppellations: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
@@ -56,6 +57,12 @@ internal data class LabPostOcrModules(
             shortName = "subregion-fuzzy",
             uiTitle = "Blank subregion fuzzy search",
             uiDetail = "Raw-OCR multi-word/line appellation fallback when subregion is blank",
+        ),
+        BOUNDED_WINE_TITLE_PAIRS(
+            key = "bounded_wine_title_pairs",
+            shortName = "bounded-wine-title-pairs",
+            uiTitle = "Bounded wine title pairs (1a)",
+            uiDetail = "Two-line cuvee/title + varietal-or-appellation hypotheses under hard semantic boundaries",
         ),
         APPELLATION_CLASSIFICATION_PRECEDENCE(
             key = "appellation_classification_precedence",
@@ -122,6 +129,7 @@ internal data class LabPostOcrModules(
         ModuleId.BLANK_SUBREGION_FUZZY -> blankSubregionFuzzy
         ModuleId.APPELLATION_WINE_FALLBACK -> appellationWineFallback
         ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE -> appellationClassificationPrecedence
+        ModuleId.BOUNDED_WINE_TITLE_PAIRS -> boundedWineTitlePairs
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
         ModuleId.STACKED_APPELLATIONS -> stackedAppellations
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> finalProducerNearMatch
@@ -145,6 +153,7 @@ internal data class LabPostOcrModules(
         ModuleId.BLANK_SUBREGION_FUZZY -> copy(blankSubregionFuzzy = enabled)
         ModuleId.APPELLATION_WINE_FALLBACK -> copy(appellationWineFallback = enabled)
         ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE -> copy(appellationClassificationPrecedence = enabled)
+        ModuleId.BOUNDED_WINE_TITLE_PAIRS -> copy(boundedWineTitlePairs = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
         ModuleId.STACKED_APPELLATIONS -> copy(stackedAppellations = enabled)
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> copy(finalProducerNearMatch = enabled)
@@ -165,7 +174,8 @@ internal data class LabPostOcrModules(
         exactProducerProtection=true, roleAwareJoins=true, blankSubregionFuzzy=true,
         appellationWineFallback=true, appellationClassificationPrecedence=true,
         vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
-        producerRoleAndParticle=true, spatialSemanticGuards=true)
+        producerRoleAndParticle=true, spatialSemanticGuards=true,
+        boundedWineTitlePairs=true)
 
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
@@ -195,7 +205,9 @@ internal data class LabPostOcrModules(
             ModuleId.BLANK_SUBREGION_FUZZY, ModuleId.APPELLATION_WINE_FALLBACK,
             ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE, ModuleId.VINTAGE_RECOVERY,
             ModuleId.STACKED_APPELLATIONS, ModuleId.FINAL_PRODUCER_NEAR_MATCH,
-            ModuleId.PRODUCER_ROLE_AND_PARTICLE, ModuleId.SPATIAL_SEMANTIC_GUARDS)
+            ModuleId.PRODUCER_ROLE_AND_PARTICLE, ModuleId.SPATIAL_SEMANTIC_GUARDS,
+            // Item 1a (host-verified +4/-0 on the Lab v6 floor: #170, #177, #184, #186).
+            ModuleId.BOUNDED_WINE_TITLE_PAIRS)
         val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**
@@ -224,7 +236,14 @@ internal data class LabPostOcrModules(
          * losses vs the Lab v5 phone baseline). Prod v5.0 runs exactly this set; it is
          * frozen and is not user-configurable. Lab v6 starts from this checkpoint.
          */
-        val prodV5Checkpoint = none.withIntegrated()
+        // Frozen: exactly the ten checkpoint modules. Do NOT derive this from
+        // withIntegrated() -- Lab v6 integration grows over time (Item 1a added
+        // BOUNDED_WINE_TITLE_PAIRS) and Prod v5.0 must never change.
+        val prodV5Checkpoint = none.copy(
+            exactProducerProtection=true, roleAwareJoins=true, blankSubregionFuzzy=true,
+            appellationWineFallback=true, appellationClassificationPrecedence=true,
+            vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
+            producerRoleAndParticle=true, spatialSemanticGuards=true)
         val bestBuild = prodV5Checkpoint
         val all = LabPostOcrModules(
             candidateIsolation = true,
