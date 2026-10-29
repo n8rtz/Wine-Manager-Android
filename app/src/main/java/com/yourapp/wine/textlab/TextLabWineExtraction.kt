@@ -151,8 +151,8 @@ internal object TextLabWineExtraction {
             if(batch.compareEvidence) {
                 val experimental=kb?.let {
                     if(batch.benchmarkAllPipelines) {
-                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces,batch.labModules)
-                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces,batch.labModules)
+                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces,batch.labModules.withIntegrated())
+                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces,batch.labModules.withIntegrated())
                     } else {
                         warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces)
                             ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces)
@@ -189,7 +189,7 @@ internal object TextLabWineExtraction {
                         singleReading,
                         production,
                         warmSession,
-                        modulesOverride ?: if(expanded) batch.labModules else com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
+                        modulesOverride ?: if(expanded) batch.labModules.withIntegrated() else com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
                         contenderCandidate,
                         contenderStagePrefix,
                     )
@@ -207,7 +207,7 @@ internal object TextLabWineExtraction {
                     val evEngine=if(batch.benchmarkAllPipelines) prodExperimental else experimental
                     // The benchmark evidence row belongs to the frozen Prod v2.0 comparator, which keeps
                     // its pre-module hybrid vintage fill. Only a non-benchmark Lab run follows the module.
-                    val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery
+                    val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.withIntegrated().vintageRecovery
                     batch.journals.forEach {
                         TextLabEvidencePreview.append(
                             it,

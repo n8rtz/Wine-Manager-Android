@@ -21,7 +21,10 @@ ROOT = Path(__file__).resolve().parents[2]
 FIELDS = ["producer", "wine_name", "country", "region", "subregion", "vintage"]
 # Phone baseline from the first compact-JSON diagnostic (a709ad6, cached OCR):
 # the parity gate a host run of the same module set must reproduce.
-PARITY = {"complete": 53, "at_most_one": 111, "eligible": 122}
+# Lab v6 floor: the Prod v5.0 checkpoint (integrated modules) score. The historical
+# Lab v5 phone-baseline parity (53/111) was proven and phone-verified in Oct 2026;
+# see docs/lab-v5-124-diagnostic-a709ad6.md Sections 7-10.
+PARITY = {"complete": 62, "at_most_one": 113, "eligible": 122}
 
 
 def b64(value: str) -> str:
@@ -106,7 +109,7 @@ def score(out_path: Path, report_path: Path, baseline_path: Path | None):
         lines.append(f"| {f} | {corr} | {c['wrong_value']} | {c['missing_value']} | "
                      f"{c['unsupported_fill']} | {corr}/{scored} = {100 * corr / scored:.1f}% |")
     parity_ok = complete == PARITY["complete"] and at_most_one == PARITY["at_most_one"]
-    lines += ["", f"Parity gate vs phone baseline (complete {PARITY['complete']}, "
+    lines += ["", f"Parity gate vs Lab v6 integrated floor (complete {PARITY['complete']}, "
                   f"≤1-error {PARITY['at_most_one']}): **{'PASS' if parity_ok else 'FAIL'}**"]
     if baseline_path:
         base = read_output(baseline_path)

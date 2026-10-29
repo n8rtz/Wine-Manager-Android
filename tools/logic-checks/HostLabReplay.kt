@@ -125,7 +125,9 @@ fun main(args: Array<String>) {
     val input = File(args[0])
     val output = File(args[1])
     val root = File(args[2])
-    val modules = LabPostOcrModules.fromKeys(args[3].split('+'))
+    // Lab v6: the Prod v5.0 checkpoint modules are integrated (always on); the
+    // signature lists only the experimental toggles being measured on top.
+    val modules = LabPostOcrModules.fromKeys(args[3].split('+')).withIntegrated()
     val year = args.getOrNull(4)?.toIntOrNull() ?: 2026
     val debugWriter = args.getOrNull(5)?.takeIf { it.isNotBlank() }?.let { File(it).bufferedWriter() }
 

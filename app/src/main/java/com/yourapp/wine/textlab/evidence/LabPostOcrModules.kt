@@ -156,6 +156,17 @@ internal data class LabPostOcrModules(
     /** Retired flags remain decodable for historical results, never enabled by new UI/run selection. */
     fun withoutRetiredModules(): LabPostOcrModules = copy(wineNameSpans=false, verticalWineTitlePairs=false)
 
+    /**
+     * The Prod v5.0 checkpoint set is integrated into Lab v6: always on, no longer
+     * user-toggleable. Applied at every Lab run boundary so a stored or restored
+     * module selection can never switch these off.
+     */
+    fun withIntegrated(): LabPostOcrModules = copy(
+        exactProducerProtection=true, roleAwareJoins=true, blankSubregionFuzzy=true,
+        appellationWineFallback=true, appellationClassificationPrecedence=true,
+        vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
+        producerRoleAndParticle=true, spatialSemanticGuards=true)
+
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
     fun enabledKeys(): List<String> = enabledModules().map { it.key }
@@ -178,7 +189,14 @@ internal data class LabPostOcrModules(
 
     companion object {
         val retiredModuleIds = setOf(ModuleId.WINE_NAME_SPANS, ModuleId.VERTICAL_WINE_TITLE_PAIRS)
-        val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds }
+        /** Module ids integrated into Lab v6 (the Prod v5.0 checkpoint set): always on, no checkbox. */
+        val integratedModuleIds = setOf(
+            ModuleId.EXACT_PRODUCER_PROTECTION, ModuleId.ROLE_AWARE_JOINS,
+            ModuleId.BLANK_SUBREGION_FUZZY, ModuleId.APPELLATION_WINE_FALLBACK,
+            ModuleId.APPELLATION_CLASSIFICATION_PRECEDENCE, ModuleId.VINTAGE_RECOVERY,
+            ModuleId.STACKED_APPELLATIONS, ModuleId.FINAL_PRODUCER_NEAR_MATCH,
+            ModuleId.PRODUCER_ROLE_AND_PARTICLE, ModuleId.SPATIAL_SEMANTIC_GUARDS)
+        val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**
          * The best combination measured on the 124-label corpus, module by module:
@@ -206,18 +224,7 @@ internal data class LabPostOcrModules(
          * losses vs the Lab v5 phone baseline). Prod v5.0 runs exactly this set; it is
          * frozen and is not user-configurable. Lab v6 starts from this checkpoint.
          */
-        val prodV5Checkpoint = LabPostOcrModules(
-            exactProducerProtection = true,
-            roleAwareJoins = true,
-            blankSubregionFuzzy = true,
-            appellationWineFallback = true,
-            appellationClassificationPrecedence = true,
-            vintageRecovery = true,
-            stackedAppellations = true,
-            finalProducerNearMatch = true,
-            producerRoleAndParticle = true,
-            spatialSemanticGuards = true,
-        )
+        val prodV5Checkpoint = none.withIntegrated()
         val bestBuild = prodV5Checkpoint
         val all = LabPostOcrModules(
             candidateIsolation = true,

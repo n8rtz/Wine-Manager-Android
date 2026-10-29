@@ -229,7 +229,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     }
 
     private fun switchLabModules(requested: LabPostOcrModules) {
-        val next = requested.withoutRetiredModules()
+        val next = requested.withoutRetiredModules().withIntegrated()
         if (mutable.value.busy || mutable.value.suiteRunning) return
         if (mutable.value.labModules == next && labFolder != null) return
         writeUiPrefs(mutable.value.useCachedOcr, next)
