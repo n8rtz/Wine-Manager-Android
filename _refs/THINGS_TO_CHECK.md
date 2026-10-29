@@ -571,3 +571,11 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 2. [ ] Upgrade from settings with either retired flag enabled. Confirm it is not secretly active in newly logged module signatures, including device-photo checks. No other selection should change.
 3. [ ] Check **All on** activates exactly 16 selectable flags and neither retired flag. Confirm control remains the same five keys. Single/pair suite counts must be 17/137, and **Run focused diagnostics suite (6 configs)** must omit the retired wine-name-span run.
 4. [ ] Re-export a saved older seven-configuration suite: its original wine-name-span configuration and results must still be included, with original historical keys and decisions.
+
+### Manual raw JSON export — `arena/0a282176-wine-manager-android`
+
+*Last run: targeted Python archive/routing checks passed; Android build/device verification pending.*
+
+1. [ ] With retained Lab attempts, tap **Prepare raw diagnostics JSON export**. Save the manifest and every numbered JSON part via the JSON document picker; each part must parse as JSON and be no larger than 20 MB. Do not send these through the CSV splitter.
+2. [ ] Verify per-attempt image identity/order, tokens, timings, traces, pipelines, nested fields and funnel records survive reconstruction. Confirm frozen Prod pipeline-step aggregates remain, without claiming raw traces absent from the frozen store. No photo bytes should be exported.
+3. [ ] Confirm **Prepare scored CSV export**, **Prepare recent builds CSV export**, and splitting an older CSV still produce their normal CSV outputs. Existing suite and device-photo JSON exports must be unaffected.

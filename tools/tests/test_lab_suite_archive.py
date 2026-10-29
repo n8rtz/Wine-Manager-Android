@@ -102,6 +102,28 @@ class SuiteArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Missing package file'):
             list(read_many([outputs[0]]))
 
+    def test_raw_diagnostics_use_native_json_and_never_the_csv_splitter(self):
+        root = TOOLS.parent/'app/src/main/java/com/yourapp/wine/phonecorpus'
+        vm = (root/'WineAppLabelsViewModel.kt').read_text()
+        ui = (root/'WineAppLabelsActivity.kt').read_text()
+        self.assertNotIn('writeRawCsv', vm)
+        self.assertIn('Prepare raw diagnostics JSON export', ui)
+        self.assertIn('LabSuiteArchive.write(target, rawExportRows())', vm)
+        body = vm.split('private fun rawExportRows()', 1)[1].split('private fun diagnosticHash', 1)[0]
+        self.assertIn('listOf("tokens", "engine_timings", "trace", "pipelines", "pipeline_funnel")', body)
+        self.assertIn('"diagnostic_json" to row.toString()', body)
+        self.assertIn('"record_index" to index.toString()', body)
+        self.assertIn('for ((mode, frozen) in predictionsByMode())', body)
+        self.assertIn('"frozen-baseline"', body)
+        self.assertIn('scorer.build(frozen, mode).csv.filter', body)
+        self.assertNotIn('row.optString(it)', body)
+        routing = vm.split('val parts = if (jsonDiagnostics)', 1)[1].split('previousParts.mapNotNull', 1)[0]
+        json_branch, csv_branch = routing.split('} else {', 1)
+        self.assertNotIn('CsvUploadParts', json_branch)
+        self.assertIn('writeRecentBuildsCsv(target, recentRuns)', csv_branch)
+        self.assertIn('writeScoredCsv(target)', csv_branch)
+        self.assertIn('CsvUploadParts.split', csv_branch)
+
     def test_android_archive_path_and_mime_are_wired(self):
         root = TOOLS.parent/'app/src/main/java/com/yourapp/wine/phonecorpus'
         vm = (root/'WineAppLabelsViewModel.kt').read_text()

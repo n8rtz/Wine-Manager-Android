@@ -356,3 +356,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed vertical wine-title pairs and wine/cuvée span discovery from active checkboxes, All on and generated experiment plans. Sanitized old manual preferences/new device-photo settings so retired flags cannot remain invisibly enabled.
 - Preserved the five current-control modifiers, six repaired/inconclusive experiments awaiting retesting, and five untested modifiers. Active single/pair suites now have 17/137 configurations; the focused suite has six.
 - Kept historical keys, saved-suite re-export and regression coverage; past results/configurations are not rewritten or deleted.
+
+### Raw diagnostics use compact JSON
+- Replaced **Prepare raw diagnostics CSV export** with **Prepare raw diagnostics JSON export**, using the same deduplicated, uploadable JSON package writer as suite exports (manifest/checksums and valid numbered parts up to 20 MB).
+- Kept all retained Lab attempts, token/timing/trace/pipeline/funnel records and frozen Prod pipeline-step aggregates; nested diagnostic objects/arrays stay native JSON rather than becoming escaped CSV strings. No images, new sampling or trace caps.
+- Ordinary scored/recent-build CSV exports and existing-CSV splitting remain unchanged.

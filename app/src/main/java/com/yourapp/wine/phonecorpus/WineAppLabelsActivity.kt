@@ -415,7 +415,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                         onClick = { vm.prepareExport(raw = true) },
                         enabled = !state.busy && !state.suiteRunning && board.csv.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Prepare raw diagnostics CSV export") }
+                    ) { Text("Prepare raw diagnostics JSON export") }
                     state.exportParts.forEachIndexed { index, file ->
                         OutlinedButton(
                             onClick = {

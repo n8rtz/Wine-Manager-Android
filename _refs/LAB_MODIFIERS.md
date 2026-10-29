@@ -357,3 +357,14 @@ Keep the not-yet-tested geography, producer, grape and classification span disco
 stacked appellations. That is 16 active checkboxes, 17 single-toggle configurations and
 137 single/pair configurations. The focused suite is now six configurations; previously
 saved seven-configuration suites still re-export their original complete plans.
+
+## Manual raw diagnostic export — JSON
+
+**Prepare raw diagnostics JSON export** now uses the same compact linked JSON package as
+suite exports. Save/upload the manifest JSON and every numbered JSON part (20 MB maximum);
+the convenience scores CSV is optional. All retained attempts and their tokens, engine timings,
+traces, pipelines and funnels remain, alongside the current/frozen pipeline-step aggregates.
+Nested values remain typed JSON and identical payloads are deduplicated. Frozen comparators
+still have only the evidence retained by their store; no missing raw OCR is invented.
+No extraction rerun or images are included. Scored and recent-build exports remain CSV;
+**Split an existing CSV for upload** remains available for older CSVs only.

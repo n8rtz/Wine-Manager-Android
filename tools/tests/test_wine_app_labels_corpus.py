@@ -296,7 +296,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('ActivityResultContracts.CreateDocument("text/csv")', activity)
         self.assertIn("vm.saveExportPart(it, exportIndex)", activity)
         self.assertIn('Text("Prepare scored CSV export")', activity)
-        self.assertIn('Text("Prepare raw diagnostics CSV export")', activity)
+        self.assertIn('Text("Prepare raw diagnostics JSON export")', activity)
         self.assertIn("vm.prepareExport(raw = false)", activity)
         self.assertIn("vm.prepareExport(raw = true)", activity)
         self.assertIn("export.launch(file.name)", activity)
@@ -307,10 +307,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("fun prepareExport(raw: Boolean, recentBuilds: Boolean = false)", viewmodel)
         self.assertIn("fun saveExportPart(uri: Uri, index: Int)", viewmodel)
         self.assertIn("fun splitExistingCsv(uri: Uri)", viewmodel)
-        # Both exports cover every version (frozen Prod + live Lab) and use the shared splitter.
+        # Both exports cover every version; only the ordinary CSV paths use the CSV splitter.
         self.assertIn("for ((mode, records) in predictionsByMode())", viewmodel)
         self.assertIn("private fun writeScoredCsv(target: File)", viewmodel)
-        self.assertIn("private fun writeRawCsv(target: File)", viewmodel)
+        self.assertIn("private fun rawExportRows(): Sequence<Map<String, String>>", viewmodel)
         self.assertIn('"result_origin" to "frozen_baseline"', viewmodel)
         self.assertIn("CsvUploadParts.split(target, exportDir)", viewmodel)
         # Saving a CSV opens the document picker, which must not be treated as pausing a run.
@@ -405,7 +405,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         # What must survive: the title, the subtitle, per-mode state and every control.
         for kept in ('Text("Large image dataset test"', 'Text(mode.title)',
                      'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
-                     'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
+                     'Prepare raw diagnostics JSON export', 'Split an existing CSV for upload',
                      'Pipeline bottleneck matrix', 'Database coverage', 'Incomplete labels ('):
             self.assertIn(kept, activity)
         self.assertNotIn('Gazetteer database coverage', activity)

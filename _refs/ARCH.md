@@ -254,3 +254,9 @@ plans (16 active). The full enum/fromKeys retain historical wine-name-span and v
 keys. `withoutRetiredModules()` sanitizes stored manual preferences, new configuration switches
 and device-photo settings without changing retained result/export metadata. New focused suites
 have six configurations; saved seven-configuration manifests remain intact.
+
+Raw diagnostics export now feeds `WineAppLabelsViewModel.rawExportRows()` into the existing
+`LabSuiteArchive` JSON package writer. It retains per-attempt order/indices, typed nested
+records and the frozen-production aggregates without an intermediate raw CSV or CSV splitting.
+The existing application/json picker saves the manifest and all numbered parts; ordinary
+scored/recent CSV routes retain their original writer/splitter behavior.

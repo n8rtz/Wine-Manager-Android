@@ -537,7 +537,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             if (bestBuild != null) {
                 appendLine(bestBuild.provenanceLine())
             }
-            appendLine("Prod v1.0, Prod v2.0 and Prod v4.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v5 has attempted so far, so all four rows compare side by side without re-running Prod. Lab v5 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored and raw CSV exports.")
+            appendLine("Prod v1.0, Prod v2.0 and Prod v4.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v5 has attempted so far, so all four rows compare side by side without re-running Prod. Lab v5 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored CSV and raw diagnostic JSON exports.")
             appendLine("Prod v2.0, Prod v4.0 and Lab v5 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v4.0: the spatial pipeline with LWIN-only producer data; Lab v5: the same spatial pipeline with the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates) — while Prod v1.0 runs the Add Wine scanner separately.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
@@ -612,12 +612,12 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
      * Raw diagnostics for the Lab pass plus the frozen Prod aggregates. Frozen records deliberately
      * carry no OCR tokens or traces, so this file cannot claim raw evidence it never kept.
      */
-    private fun writeRawCsv(target: File) {
+    private fun rawExportRows(): Sequence<Map<String, String>> {
         val scorer = scoreboard()
         val included = includedIds()
         val dir = labFolder
-        // Reiterable, one photo at a time: the CSV writer scans keys, then writes rows.
-        val records = sequence {
+        // One photo at a time; the normalized JSON writer interns shared metadata and payloads.
+        return sequence {
             if (dir != null) {
                 val files = File(dir, "attempts").listFiles().orEmpty()
                     .filter { it.extension == "json" }.sortedBy { it.name }
@@ -638,8 +638,8 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                         val rows = p.optJSONArray(key) ?: continue
                         for (index in 0 until rows.length()) {
                             val row = rows.getJSONObject(index)
-                            yield(meta + mapOf("row_type" to key) +
-                                row.keys().asSequence().associateWith { row.optString(it) })
+                            yield(meta + mapOf("row_type" to key, "record_index" to index.toString(),
+                                "diagnostic_json" to row.toString()))
                         }
                     }
                 }
@@ -657,7 +657,6 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     yield(provenance + row)
             }
         }
-        target.bufferedWriter(Charsets.UTF_8).use { writer -> TextLabCsv.write(writer, records) }
     }
 
     /** Prepares the chosen CSV in the cache, split under the 25 MB upload cap, so each part can be saved. */
@@ -840,27 +839,34 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val previousParts = mutable.value.exportParts
         val recentRuns = mutable.value.recentLabRuns.toList()
         exporting = true
-        mutable.update { it.copy(busy = true, exportParts = emptyList(), message = "Preparing upload-sized CSV files…") }
+        mutable.update { it.copy(busy = true, exportParts = emptyList(), message =
+            if (raw && !recentBuilds) "Preparing compact diagnostic JSON…" else "Preparing upload-sized CSV files…") }
         bgScope.launch {
             val exportDir = File(app.cacheDir, "wine-app-labels-exports/${UUID.randomUUID()}")
             try {
                 check(exportDir.mkdirs())
+                val jsonDiagnostics = raw && !recentBuilds
+                val extension = if (jsonDiagnostics) "json" else "csv"
                 val target = File(exportDir,
-                    "wine-app-labels-${WINE_APP_LABEL_COUNT}-${if (recentBuilds) "recent-builds" else if (raw) "raw-all-versions" else "all-versions"}-${BuildConfig.BUILD_COMMIT}.csv")
-                if (recentBuilds) writeRecentBuildsCsv(target, recentRuns)
-                else if (raw) writeRawCsv(target) else writeScoredCsv(target)
-                val parts = CsvUploadParts.split(target, exportDir)
-                if (parts.size > 1) target.delete()
+                    "wine-app-labels-${WINE_APP_LABEL_COUNT}-${if (recentBuilds) "recent-builds" else if (raw) "raw-all-versions" else "all-versions"}-${BuildConfig.BUILD_COMMIT}.$extension")
+                val parts = if (jsonDiagnostics) {
+                    LabSuiteArchive.write(target, rawExportRows())
+                } else {
+                    if (recentBuilds) writeRecentBuildsCsv(target, recentRuns) else writeScoredCsv(target)
+                    CsvUploadParts.split(target, exportDir).also { if (it.size > 1) target.delete() }
+                }
                 previousParts.mapNotNull { it.parentFile }.distinct()
                     .filter { it.parentFile == exportDir.parentFile }.forEach { it.deleteRecursively() }
                 mutable.update {
-                    it.copy(exportParts = parts, message = "${parts.size} CSV file(s) ready, each at most 25 MB. Tap each Save button below. Complete rows and headers are preserved.")
+                    it.copy(exportParts = parts, message = if (jsonDiagnostics)
+                        "Raw diagnostics JSON ready. Save the manifest and every numbered JSON part (at most 20 MB each). Scores CSV is optional."
+                    else "${parts.size} CSV file(s) ready, each at most 25 MB. Tap each Save button below. Complete rows and headers are preserved.")
                 }
             } catch (cancel: CancellationException) {
                 exportDir.deleteRecursively();throw cancel
             } catch (e: Exception) {
                 exportDir.deleteRecursively()
-                mutable.update { it.copy(message = "CSV preparation failed: ${e.message}. Original run data is unchanged.") }
+                mutable.update { it.copy(message = "Export preparation failed: ${e.message}. Original run data is unchanged.") }
             } finally {
                 exporting = false
                 mutable.update { it.copy(busy = false) }
