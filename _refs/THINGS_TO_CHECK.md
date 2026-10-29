@@ -12,7 +12,7 @@
 
 ### 2g. Lab v6 Items 4b/4c integration (stacked wine titles, split producer spans)
 
-- [ ] Run Lab v6: fully correct should be 72/122 (was 66), wine_name 90, producer 99.
+- [ ] Run Lab v6: fully correct should be 72/121 (was 66/122; dataset now excludes #169 producer — blown out by lighting, marked unresolved 2026-10-29), wine_name 91, producer 100.
 - [ ] Wine gains: #50 `Naturae Merlot`, #152 `Naturae Syrah Rose`, #154 `LBV Port` (or `Late Bottled Vintage Port`), #183 `Golden Reserve Malbec`.
 - [ ] Producer gains: #92 and #136 `Domaine Allary Haut-Brion`, #164 (producer field), plus #137 wine_name.
 - [ ] No-steal spot checks: #58/#66/#72/#126/#127 wine unchanged (see 2f); #177 still `Ultra Malbec` (not `Kaiken Ultra Malbec`); #170 still `Inscription Pinot Noir`.

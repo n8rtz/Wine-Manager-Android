@@ -5062,11 +5062,8 @@
       "source_filename": "IMG_2164-1774x2048.jpg",
       "fields": {
         "producer": {
-          "status": "expected_value",
-          "accepted": [
-            "lariojaalta"
-          ],
-          "target": "La Rioja Alta"
+          "status": "unresolved",
+          "accepted": []
         },
         "wine_name": {
           "status": "expected_value",
