@@ -1535,9 +1535,9 @@
         "producer": {
           "status": "expected_value",
           "accepted": [
-            "lapetitechapelledebordeaux"
+            "lapetitechapelle"
           ],
-          "target": "La Petite Chapelle de Bordeaux"
+          "target": "La Petite Chapelle"
         },
         "wine_name": {
           "status": "expected_value",
