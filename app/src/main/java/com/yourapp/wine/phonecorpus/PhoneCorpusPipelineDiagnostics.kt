@@ -11,7 +11,7 @@ internal object PhoneCorpusPipelineDiagnostics {
         recorded: Map<String, F.Gate>, fields: Map<String, String>?, status: String?, fresh: Boolean): F.Label {
         // Both spatial contenders run the producer/linked-wine resolvers; only the producer
         // index differs (Prod v4.0 verified LWIN only, Lab v5 the Lab expanded index).
-        val labResolvers = mode == "LAB" || mode == "PRODUCTION_V4"
+        val labResolvers = mode == "LAB" || mode == "PRODUCTION_V4" || mode == "PRODUCTION_V5"
         val production = mode == "PRODUCTION_V1"
         val gates = F.steps.associate { step -> step.id to when {
             step.labOnly && !labResolvers -> F.Gate(F.State.NOT_APPLICABLE)
@@ -73,6 +73,7 @@ internal object PhoneCorpusPipelineDiagnostics {
             val prefix = when (mode) {
                 "LAB" -> "spatial_evidence_"
                 "PRODUCTION_V4" -> "spatial_lwin_evidence_"
+                "PRODUCTION_V5" -> "spatial_prod_v5_evidence_"
                 else -> "evidence_"
             }
             val summary = stage(prefix + "summary").lastOrNull()

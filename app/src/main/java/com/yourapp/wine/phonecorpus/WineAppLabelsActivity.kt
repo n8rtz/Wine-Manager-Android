@@ -377,6 +377,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 currentScores = state.currentBuildFieldScores,
                                 bestBuildScores = state.bestBuildFieldScores,
                                 prodV4Scores = state.prodV4FieldScores,
+                                prodV5Scores = state.prodV5FieldScores,
                                 recentRuns = state.recentLabRuns,
                             )
                         }
@@ -1055,6 +1056,7 @@ private fun BuildFieldComparisonTable(
     currentScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     bestBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     prodV4Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    prodV5Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     recentRuns: List<WineAppLabelsBuildLog.Entry>,
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
@@ -1068,6 +1070,7 @@ private fun BuildFieldComparisonTable(
         "Current build" to currentScores,
         "Best build" to bestBuildScores,
         PhoneCorpusRunner.Mode.PRODUCTION_V4.title to prodV4Scores,
+        PhoneCorpusRunner.Mode.PRODUCTION_V5.title to prodV5Scores,
     ) + recentRuns.mapIndexed { index, run ->
         "Recent ${index + 1} · ${run.date} ${run.time}\n${run.buildNumber} · ${run.labModules.ifBlank { "legacy configuration" }}" to run.fieldScores
     }
