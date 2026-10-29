@@ -185,3 +185,23 @@ runs start/finish so stopped suites retain their association too. An interrupted
 may have missing results, which are marked rather than fabricated. Existing suites from
 older builds have no manifests or pinned OCR snapshots and are not retroactively inferred.
 The shared OCR can contain label addresses/operator text; treat the export as private.
+
+## Focused diagnostics suite (7 configurations)
+
+Use **Run focused diagnostics suite (7 configs)** for the targeted follow-up to the
+foundation results. Control remains the four measured modifiers plus blank-subregion
+fallback; the current manual checkbox selection does not alter it.
+
+1. Control.
+2. Control + candidate isolation.
+3. Control + candidate isolation + vintage-span discovery.
+4. Control + candidate isolation + wine-name-span discovery.
+5. Control + role-aware joins only.
+6. Control + broader discovery only.
+7. Control + all five foundation modifiers (isolation, exact producer protection,
+   administrative filtering, role-aware joins, broader discovery).
+
+These are explicit independent comparisons, not the six-stage cumulative foundation
+suite. The suite manifest records `focused_diagnostics` and the complete ordered module
+plan. Existing fresh-run execution, pinned shared OCR, decision instrumentation, stop
+controls, automatic suite CSV preparation and saved-suite re-export apply unchanged.

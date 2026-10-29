@@ -244,6 +244,10 @@ class WineAppLabelsActivity : ComponentActivity() {
                             }
                             Text("Automated cached-OCR experiments", style = MaterialTheme.typography.titleSmall)
                             TextButton(
+                                onClick = { vm.startAutomatedSuite(focused = true) },
+                                enabled = !state.busy && !state.suiteRunning,
+                            ) { Text("Run focused diagnostics suite (7 configs)") }
+                            TextButton(
                                 onClick = { vm.startAutomatedSuite(foundations = true) },
                                 enabled = !state.busy && !state.suiteRunning,
                             ) { Text("Run ordered foundation checks (6 configs)") }

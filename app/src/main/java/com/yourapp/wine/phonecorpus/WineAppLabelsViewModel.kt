@@ -987,7 +987,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
     }
 
     /** Fresh, sequential ablations over one verified OCR cache; no automatic promotion of winners. */
-    fun startAutomatedSuite(includePairs: Boolean = false, foundations: Boolean = false) {
+    fun startAutomatedSuite(includePairs: Boolean = false, foundations: Boolean = false, focused: Boolean = false) {
         if (mutable.value.busy || mutable.value.suiteRunning) return
         if (ocrCache?.count(inputHashes()) != WINE_APP_LABEL_COUNT ||
             BASELINE_MODES.any { baselines?.capture(it)?.count != WINE_APP_LABEL_COUNT }) {
@@ -999,7 +999,21 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         val control = LabPostOcrModules.bestBuild.copy(blankSubregionFuzzy = true)
         val ids = LabPostOcrModules.ModuleId.entries
         val plan = mutableListOf(control)
-        if (foundations) {
+        if (focused) {
+            val isolated = control.copy(candidateIsolation = true)
+            plan += isolated
+            plan += isolated.copy(vintageSpans = true)
+            plan += isolated.copy(wineNameSpans = true)
+            plan += control.copy(roleAwareJoins = true)
+            plan += control.copy(broaderDiscovery = true)
+            plan += control.copy(
+                candidateIsolation = true,
+                exactProducerProtection = true,
+                administrativeFiltering = true,
+                roleAwareJoins = true,
+                broaderDiscovery = true,
+            )
+        } else if (foundations) {
             var staged = control
             for (id in listOf(LabPostOcrModules.ModuleId.CANDIDATE_ISOLATION,
                 LabPostOcrModules.ModuleId.EXACT_PRODUCER_PROTECTION,
@@ -1023,6 +1037,12 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             val suite=File(root,"suites/${System.currentTimeMillis()}-${UUID.randomUUID()}").apply { mkdirs() }
             val manifest=JSONObject().put("schema",1).put("suite_id",suite.name).put("build",BuildConfig.BUILD_COMMIT)
                 .put("corpus_key",loadedCorpusLogKey()).put("status","running").put("run_ids",JSONArray())
+                .put("suite_kind",when {
+                    focused -> "focused_diagnostics"
+                    foundations -> "ordered_foundations"
+                    includePairs -> "single_and_pair_ablations"
+                    else -> "single_ablations"
+                })
                 .put("planned_modules",JSONArray(plan.map { it.signatureKey() }))
             try {
                 writeSuiteManifest(suite,manifest)

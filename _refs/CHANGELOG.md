@@ -327,3 +327,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Future suites archive manifests, reference snapshots and shared hashed OCR, and export configuration-specific existing traces alongside scores without repeated recognition blocks.
 - Added saved-suite re-export independent of the current run/recent-ten list; missing diagnostics and bounded-trace drops are explicit.
 - Filled diagnostic gaps for generated/filtered hypotheses, base/adjusted ranks, final field selection and joint penalties without changing ranking rules.
+
+### Focused diagnostics suite
+- Added the seven-configuration targeted suite: control, isolation, isolation with each problematic discovery family, role-aware joins alone, broader discovery alone and the complete foundation combination.
+- Retained the existing cumulative and ablation suites; manifests now identify the suite kind explicitly.

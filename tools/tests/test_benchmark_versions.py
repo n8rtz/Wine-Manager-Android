@@ -52,6 +52,28 @@ class BenchmarkVersionChecks(unittest.TestCase):
         resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
         self.assertIn("if(protectExact && candidates.count", resolver)
 
+    def test_focused_suite_has_seven_explicit_configurations_and_shared_export(self):
+        vm = (PHONE / "WineAppLabelsViewModel.kt").read_text()
+        ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
+        body = vm.split("if (focused) {", 1)[1].split("else if (foundations)", 1)[0]
+        # One control already in plan, then six explicit additions, not cumulative toggles.
+        self.assertEqual(body.count("plan +="), 6)
+        for expected in (
+            "val isolated = control.copy(candidateIsolation = true)",
+            "plan += isolated\n",
+            "plan += isolated.copy(vintageSpans = true)",
+            "plan += isolated.copy(wineNameSpans = true)",
+            "plan += control.copy(roleAwareJoins = true)",
+            "plan += control.copy(broaderDiscovery = true)",
+            "exactProducerProtection = true", "administrativeFiltering = true",
+        ):
+            self.assertIn(expected, body)
+        self.assertIn('vm.startAutomatedSuite(focused = true)', ui)
+        self.assertIn('Run focused diagnostics suite (7 configs)', ui)
+        self.assertIn('focused -> "focused_diagnostics"', vm)
+        self.assertLess(vm.index('if (focused) {'), vm.index('snapshotSuiteOcr(suite)'))
+        self.assertIn('writeRecentBuildsCsv(target, completedRuns,suite)', vm)
+
     def test_four_explicit_versions_and_short_comparison_names(self):
         runner = (PHONE / "PhoneCorpusRunner.kt").read_text()
         for label, key in [
