@@ -28,6 +28,11 @@ internal object EvidenceGraphBuilder {
         isBroadGeographyLine:(String)->Boolean={ false },
         isKnownProducerLine:(String)->Boolean={ false },
         allowWineTitlePairs:Boolean=false,
+        allowStackedAppellations:Boolean=false,
+        allowSplitCrestVintage:Boolean=true,
+        enforceSpatialSemanticGuards:Boolean=true,
+        requireRoleAwareJoins:Boolean=false,
+        filterAdministrative:Boolean=false,
     ):EvidenceGraph {
         val observations=records.take(MAX_OBSERVATIONS).mapIndexedNotNull { i,r ->
             val b=r.bboxRect
@@ -74,9 +79,25 @@ internal object EvidenceGraphBuilder {
             vintageFramingBoundary.containsMatchIn(TextNorm.normalize(text)) ||
             MetadataRules.isBoilerplate(text) || MetadataRules.isPackaging(text) || WineDesignations.framedAppellation(text)!=null
         val lineRoles=ProducerLineSelector()
+        fun compatibleRoles(a:String,b:String):Boolean {
+            val combined="$a $b"
+            if(filterAdministrative && (com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(a) ||
+                com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(b))) return false
+            val producerA=isKnownProducer(a) || lineRoles.hasProducerCue(a)
+            val producerB=isKnownProducer(b) || lineRoles.hasProducerCue(b)
+            val descriptionA=isGeographyLine(a) || lineRoles.isWineDescription(a) || WineDesignations.isDesignation(a)
+            val descriptionB=isGeographyLine(b) || lineRoles.isWineDescription(b) || WineDesignations.isDesignation(b)
+            if((producerA && descriptionB) || (producerB && descriptionA)) return false
+            // Positive support: a catalog compound, producer heading continuation, or explicit cuvee.
+            return isKnownProducer(combined) || isGeographyLine(combined) ||
+                WineDesignations.isAppellationName(combined) || WineDesignations.classificationBase(combined)!=null ||
+                (producerA && !descriptionB) || (producerB && !descriptionA) ||
+                Regex("""(?iu)\b(?:cuvee|cuvée)\b""").containsMatchIn(combined)
+        }
         fun canJoinHorizontally(a:Phrase,b:Phrase):Boolean {
             val combined=a.text+" "+b.text
             if(isHardBoundary(a.text) || isHardBoundary(b.text) || isHardBoundary(combined)) return false
+            if(requireRoleAwareJoins && !compatibleRoles(a.text,b.text)) return false
             if(WineDesignations.isAppellationName(combined) || WineDesignations.classificationBase(combined)!=null) return true
             val aGeo=isGeographyLine(a.text);val bGeo=isGeographyLine(b.text);val combinedGeo=isGeographyLine(combined)
             if(aGeo || bGeo || combinedGeo) {
@@ -113,9 +134,9 @@ internal object EvidenceGraphBuilder {
             return repaired.takeIf { it.all(Char::isDigit) }?.joinToString("")
         }
         data class YearFragment(val observation:Observation,val digits:String)
-        val fragments=observations.mapNotNull { observation ->
+        val fragments=if(allowSplitCrestVintage) observations.mapNotNull { observation ->
             yearHalf(observation.record.textRaw)?.let { YearFragment(observation,it) }
-        }
+        } else emptyList()
         for((_,pass) in fragments.groupBy { it.observation.record.engineId to it.observation.record.variantId }) {
             val leftHalves=pass.filter { it.digits in setOf("19","20") }
             val rightHalves=pass.filter { it.digits.all(Char::isDigit) }
@@ -155,11 +176,12 @@ internal object EvidenceGraphBuilder {
         }
         for(a in singles) for(b in singles) {
             checkBudget()
-            if(a.observations.intersect(b.observations).isNotEmpty() || !sameEnginePass(a,b)) continue
+            if(a.observations.intersect(b.observations).isNotEmpty()) continue
+            if(enforceSpatialSemanticGuards && !sameEnginePass(a,b)) continue
             val ak=TextNorm.normalize(a.text).filter(Char::isLetterOrDigit);val bk=TextNorm.normalize(b.text).filter(Char::isLetterOrDigit)
             if(ak==bk || (BoxMath.iou(a.box,b.box)>.25f && TextNorm.editDistance(ak,bk,2)!=null)) continue
-            val horizontal=a.box.centerX()<b.box.centerX() && BoxMath.verticalOverlap(a.box,b.box)>=.55f &&
-                b.box.left>=a.box.left && b.box.left-a.box.right<=.06f &&
+            val horizontal=a.box.centerX()<b.box.centerX() && BoxMath.verticalOverlap(a.box,b.box) >= .55f &&
+                b.box.left >= a.box.left && b.box.left-a.box.right<=.06f &&
                 (minOf(a.box.right,b.box.right)-maxOf(a.box.left,b.box.left))<.6f*minOf(a.box.width(),b.box.width()) &&
                 kotlin.math.abs(a.box.centerY()-b.box.centerY())<=minOf(a.box.height(),b.box.height())*.5f
             val vertical=a.box.centerY()<b.box.centerY() &&
@@ -167,43 +189,63 @@ internal object EvidenceGraphBuilder {
                 b.box.top-a.box.bottom<=maxOf(a.box.height(),b.box.height())*.65f &&
                 b.box.centerY()-a.box.centerY()<=maxOf(a.box.height(),b.box.height())*1.8f
             if(!horizontal && !vertical) continue
-            if(horizontal && !canJoinHorizontally(a,b)) continue
-            if(vertical) {
-                val heightRatio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
-                if(heightRatio>1.45f || isHardBoundary(a.text) || isHardBoundary(b.text) ||
-                    isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(a.text+" "+b.text)) continue
+            val combinedText=a.text+" "+b.text
+            if(requireRoleAwareJoins && !compatibleRoles(a.text,b.text)) continue
+            if(filterAdministrative && (com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(a.text) ||
+                com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(b.text))) continue
+            val heightRatio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
+            val stackedAppellation=allowStackedAppellations && vertical && sameEnginePass(a,b) &&
+                heightRatio<=1.85f && !isHardBoundary(a.text) && !isHardBoundary(b.text) &&
+                (WineDesignations.isAppellationName(combinedText) || WineDesignations.classificationBase(combinedText)!=null)
+            if(enforceSpatialSemanticGuards) {
+                if(horizontal && !canJoinHorizontally(a,b)) continue
+                if(vertical) {
+                    val maxRatio=if(stackedAppellation) 1.85f else 1.45f
+                    if(heightRatio>maxRatio || isHardBoundary(a.text) || isHardBoundary(b.text)) continue
+                    if(!stackedAppellation && (isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(combinedText))) continue
+                }
             }
             val an=TextNorm.normalize(a.text);val bn=TextNorm.normalize(b.text)
             // Contained overlapping readings remain alternatives, not concatenations (LA / LA RESERVE).
             if(BoxMath.iou(a.box,b.box)>.10f && (" $an ".contains(" $bn ") || " $bn ".contains(" $an "))) continue
             val designation=WineDesignations.isDesignation(b.text) && !WineDesignations.isDesignation(a.text)
             val leadingConnector=Regex("^(de|du|di|des)\\b").containsMatchIn(bn)
-            val lowerNonProducerRole=lineRoles.isWineDescription(b.text) || isGeographyLine(b.text)
-            val knownProducerContinuation=lowerNonProducerRole && typedIdentity && EvidenceIdentityRoles.headingOnly(a.text) &&
-                lineRoles.hasProducerCue(a.text) && !isGeographyLine(b.text) && isKnownProducer(a.text+" "+b.text)
-            val estateName=typedIdentity && EvidenceIdentityRoles.headingOnly(a.text) &&
-                !EvidenceIdentityRoles.headingOnly(b.text) && b.text.count(Char::isLetter)>=3 &&
-                !b.text.any(Char::isDigit) && !isHardBoundary(b.text) &&
-                (!lowerNonProducerRole || knownProducerContinuation)
-            val wineTitlePair=vertical && isBoundedWineTitlePair(a.text,b.text)
-            if(estateName || horizontal || designation || leadingConnector ||
-                Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des") || wineTitlePair) {
+            val estateName=if(enforceSpatialSemanticGuards) {
+                val lowerNonProducerRole=lineRoles.isWineDescription(b.text) || isGeographyLine(b.text)
+                val knownProducerContinuation=lowerNonProducerRole && typedIdentity && EvidenceIdentityRoles.headingOnly(a.text) &&
+                    lineRoles.hasProducerCue(a.text) && !isGeographyLine(b.text) && isKnownProducer(a.text+" "+b.text)
+                typedIdentity && EvidenceIdentityRoles.headingOnly(a.text) &&
+                    !EvidenceIdentityRoles.headingOnly(b.text) && b.text.count(Char::isLetter) >= 3 &&
+                    !b.text.any(Char::isDigit) && !isHardBoundary(b.text) &&
+                    (!lowerNonProducerRole || knownProducerContinuation)
+            } else {
+                typedIdentity && EvidenceIdentityRoles.headingOnly(a.text) &&
+                    !EvidenceIdentityRoles.headingOnly(b.text) && b.text.count(Char::isLetter) >= 3 &&
+                    !b.text.any(Char::isDigit) && !com.yourapp.wine.extract.MetadataRules.isBoilerplate(b.text) &&
+                    !com.yourapp.wine.extract.MetadataRules.isPackaging(b.text) && !WineDesignations.isDesignation(b.text)
+            }
+            val wineTitlePair=vertical && sameEnginePass(a,b) && heightRatio<=1.45f && isBoundedWineTitlePair(a.text,b.text)
+            val verticalAllowed=enforceSpatialSemanticGuards || (!stackedAppellation && !wineTitlePair) || stackedAppellation || wineTitlePair
+            if(verticalAllowed && (estateName || horizontal || designation || stackedAppellation || leadingConnector ||
+                Regex("\\b(de|du|di|des)$").containsMatchIn(an) || bn in setOf("de","du","di","des") || wineTitlePair)) {
                 val construction=when {
                     wineTitlePair -> "bounded vertical wine-title pair"
                     estateName -> "estate-heading composition"
                     horizontal -> "aligned horizontal phrase"
                     designation -> "designation-linked phrase"
+                    stackedAppellation -> "aligned appellation phrase"
                     else -> "connector-linked phrase"
                 }
-                add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),construction)
+                add(combinedText,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),construction)
             }
         }
         // Horizontal heading fragments (e.g. article + title) can precede an isolated connector.
         for(a in phrases.toList().filter { it.construction=="aligned horizontal phrase" }) for(b in singles) {
             checkBudget()
-            if(TextNorm.normalize(b.text) !in setOf("de","du","di","des") || a.observations.intersect(b.observations).isNotEmpty() ||
-                !sameEnginePass(a,b) || isHardBoundary(a.text) || isHardBoundary(b.text) ||
-                isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(a.text+" "+b.text)) continue
+            if(TextNorm.normalize(b.text) !in setOf("de","du","di","des") || a.observations.intersect(b.observations).isNotEmpty()) continue
+            if(requireRoleAwareJoins && !compatibleRoles(a.text,b.text)) continue
+            if(enforceSpatialSemanticGuards && (!sameEnginePass(a,b) || isHardBoundary(a.text) || isHardBoundary(b.text) ||
+                isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(a.text+" "+b.text))) continue
             if(b.box.centerY()>a.box.centerY() && b.box.top-a.box.bottom<=.08f &&
                 kotlin.math.abs(a.box.centerX()-b.box.centerX())<=a.box.width()*.25f)
                 add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),"connector-linked phrase")
@@ -211,9 +253,11 @@ internal object EvidenceGraphBuilder {
         // Third title line, still bounded; do not recursively expand arbitrary paragraphs.
         for(a in phrases.toList().filter { it.construction=="connector-linked phrase" }) for(b in singles) {
             checkBudget()
-            if(a.observations.intersect(b.observations).isNotEmpty() || !sameEnginePass(a,b) ||
-                isHardBoundary(a.text) || isHardBoundary(b.text) || isGeographyLine(a.text) || isGeographyLine(b.text) ||
+            if(a.observations.intersect(b.observations).isNotEmpty() ||
                 !Regex("\\b(de|du|di|des)$").containsMatchIn(TextNorm.normalize(a.text))) continue
+            if(requireRoleAwareJoins && !compatibleRoles(a.text,b.text)) continue
+            if(enforceSpatialSemanticGuards && (!sameEnginePass(a,b) ||
+                isHardBoundary(a.text) || isHardBoundary(b.text) || isGeographyLine(a.text) || isGeographyLine(b.text))) continue
             if(TextNorm.normalize(b.text) in setOf("de","du","di","des") || b.text.count(Char::isLetter)<4) continue
             if(a.observations.any { id -> singles.any { s -> id in s.observations && TextNorm.normalize(s.text).filter(Char::isLetterOrDigit)==TextNorm.normalize(b.text).filter(Char::isLetterOrDigit) } }) continue
             val connectorY=observations.filter { it.id in a.observations && TextNorm.normalize(it.record.textRaw) in setOf("de","du","di","des") }.maxOfOrNull { it.record.bboxRect.centerY() } ?: a.box.centerY()

@@ -63,7 +63,10 @@ internal object EvidenceSolver {
                     var rank=next.rank
                     // Geography must explain all competing explicit geographic observations, not producer headquarters.
                     if(next.place!=null && input.any { it.place!=null && it.phrase.observations.intersect(next.phrase.observations).isEmpty() &&
-                            !hierarchy.compatible(next.place,it.place) }) rank-=45
+                            !hierarchy.compatible(next.place,it.place) }) {
+                        rank-=45
+                        trace.add("joint_geography_penalty") { "phrase=${next.phrase.id}; values=${next.values}; rank_before=${next.rank}; rank_after=$rank; penalty=45" }
+                    }
                     State(state.selected+next,state.score+rank)
                 }
             }.sortedByDescending { it.score }.distinctBy { state -> state.selected.map { it.values to it.phrase.observations } }

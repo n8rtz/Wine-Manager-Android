@@ -10,6 +10,15 @@ fun main() {
         override fun lookup(key:String,limit:Int,checkBudget:()->Unit)=rows.take(limit)
     }
     fun spans(text:String="Chateau Example")=listOf(ProducerResolver.Span(text,"mlkit",setOf(1)),ProducerResolver.Span(text,"paddle",setOf(2),true))
+    // Protected near-match: exact observed identities outrank fuzzy replacements; ties abstain.
+    val exactNorth=entity("north","Domaine North")
+    val exactNort=entity("nort","Domaine Nort")
+    val protection=ProducerResolver(index(listOf(exactNorth,exactNort)))
+    verify(protection.finalNearMatch("Domaine North",protectExact=true)==null)
+    verify(protection.finalNearMatch("Domaine Norr",protectExact=true,
+        observedExact=listOf("Domaine Nort"))?.entity?.id=="nort")
+    val tied=ProducerResolver(index(listOf(entity("one","Domaine Abca"),entity("two","Domaine Abcb"))))
+    verify(tied.finalNearMatch("Domaine Abcc",protectExact=true)==null)
     val resolver=ProducerResolver(index(listOf(primary)))
     verify(resolver.resolve("",spans()).value=="Chateau Example")
     verify(resolver.resolve("Existing Good Producer",spans()).value=="Existing Good Producer")

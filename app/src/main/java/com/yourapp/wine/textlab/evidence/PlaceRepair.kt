@@ -8,9 +8,9 @@ import com.yourapp.wine.kb.*
  *
  * Policy is the production geography-spelling rule ([BoundedSpelling]): 5-64 characters, at most six
  * words, one edit below ten characters and two above, at most a 20% length change, and an unambiguous
- * winner. A separate explicit country/region anchor is preferred; without one, only long, globally
- * distinctive appellations with a strict margin may be repaired. The engines are a wide net, not a quorum:
- * each provided engine reading is searched and the closest catalog form wins outright, so a form only Paddle read is repaired even when
+ * winner. On top of that this path requires a separate explicit country/region anchor elsewhere in the
+ * same label. The engines are a wide net, not a quorum: every engine's own reading of the phrase is
+ * searched and the closest catalog form wins outright, so a form only Paddle read is repaired even when
  * ML Kit garbled it, and vice versa. Two readings that point at different places at the same distance
  * abstain rather than picking one. A repair only ever *proposes* geography: it never overrides an exact
  * match, never chooses between anchor countries, and never changes raw OCR, a score or a saved field.

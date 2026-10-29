@@ -94,12 +94,14 @@ internal object TextLabSpatialPreview {
         producerUnavailable:String="primary LWIN export required",checkProducerBudget:()->Unit={},
         candidate:String="spatial_lab",stagePrefix:String="spatial_",
         policy:ProducerResolver.Policy=ProducerResolver.Policy.prod,
-        fillEngine:com.yourapp.wine.fill.FillEngine?=null) {
+        fillEngine:com.yourapp.wine.fill.FillEngine?=null,
+        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
             val rawOriginal=TextLabFormPreview.records(journal)
             val filterOutcome=if(policy.minimumIndependentEngines<2) TextLabBottleFilter.filterTokens(rawOriginal) else null
+            val isLabSpatial=policy.minimumIndependentEngines<2
             val original=filterOutcome?.kept ?: rawOriginal
             filterOutcome?.dropped?.forEachIndexed { index,item ->
                 val token=item.entry.payload
@@ -108,11 +110,15 @@ internal object TextLabSpatialPreview {
                     "source_engine" to token.engineId,"filter_reason" to item.reason,
                     "base_box_normalized" to "${item.entry.rectBox.left} ${item.entry.rectBox.top} ${item.entry.rectBox.right} ${item.entry.rectBox.bottom}"))
             }
-            val proposals=TextLabSpatialPhrases.propose(
-                original,
-                allowHorizontalJoin={ left,right -> engine?.allowsSpatialProducerJoin(left,right)==true },
-                allowVerticalJoin={ upper,lower -> engine?.allowsSpatialProducerJoin(upper,lower)==true },
-            )
+            val proposals=if(!isLabSpatial || labModules.spatialSemanticGuards) {
+                TextLabSpatialPhrases.propose(
+                    original,
+                    allowHorizontalJoin={ left,right -> engine?.allowsSpatialProducerJoin(left,right)==true },
+                    allowVerticalJoin={ upper,lower -> engine?.allowsSpatialProducerJoin(upper,lower)==true },
+                )
+            } else {
+                TextLabSpatialPhrases.proposeUnconstrained(original)
+            }
             for((index,proposal) in proposals.withIndex()) {
                 val mergedText=TextNorm.scrub(proposal.phrase.mergedText)
                 journal.add(candidate,stagePrefix+"phrase",values=mapOf("post_processing_version" to VERSION,
@@ -138,10 +144,24 @@ internal object TextLabSpatialPreview {
             } else {
                 work.rows.addAll(journal.rows.filter { it["stage"]=="form_summary" })
             }
-            val evidenceResult=TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
-                useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
-                exactGeographyFastPath=policy.minimumIndependentEngines<2)
-            val evidenceSpans=if(engine!=null && evidenceResult!=null) producerEvidenceSpans(evidenceResult,engine) else emptyList()
+            // Lab honors the vintage module; the frozen Prod v4.0 contender keeps its own pre-module
+            // behavior (the hybrid vintage fill was always available there) so its row is unchanged.
+            val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true
+            val evidenceResult=if(isLabSpatial && producerIndex!=null && engine!=null) {
+                engine.withDeferredBlankSubregionFallback {
+                    TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
+                        useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
+                        exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage)
+                }
+            } else {
+                TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
+                    useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
+                    exactGeographyFastPath=policy.minimumIndependentEngines<2,
+                    allowHybridVintageFallback=allowHybridVintage)
+            }
+            val evidenceSpans=if(engine!=null && evidenceResult!=null && (!isLabSpatial || labModules.spatialSemanticGuards)) {
+                producerEvidenceSpans(evidenceResult,engine)
+            } else emptyList()
             val spans=original.mapIndexed { id,r -> ProducerResolver.Span(r.textRaw,r.engineId,setOf(id),r.scoreIsEstimated) }+
                 proposals.filter { it.sources.size>1 }.map { p -> ProducerResolver.Span(TextNorm.scrub(p.phrase.mergedText),p.engineId,
                     p.sources.map { source -> original.indexOfFirst { it===source } }.filter { it>=0 }.toSet(),true) }
@@ -158,12 +178,14 @@ internal object TextLabSpatialPreview {
                         row["wine_gazetteer_status"]="unavailable";row["wine_gazetteer_reason"]=producerUnavailable
                     } else {
                         val isLabMode=policy.minimumIndependentEngines<2
-                        val supplementalSpans=(producerAnchorSpans(before,original,proposals)+evidenceSpans)
-                            .distinctBy { listOf(it.engine,it.observationIds.sorted().joinToString(","),ProducerResolver.normalize(it.text)) }
-                            .filterNot { extra -> spans.any { existing -> existing.engine==extra.engine &&
-                                existing.observationIds==extra.observationIds &&
-                                ProducerResolver.normalize(existing.text)==ProducerResolver.normalize(extra.text) } }
-                            .take((ProducerResolver.MAX_SPANS-spans.size).coerceAtLeast(0))
+                        val supplementalSpans=if(!isLabMode || labModules.spatialSemanticGuards) {
+                            (producerAnchorSpans(before,original,proposals)+evidenceSpans)
+                                .distinctBy { listOf(it.engine,it.observationIds.sorted().joinToString(","),ProducerResolver.normalize(it.text)) }
+                                .filterNot { extra -> spans.any { existing -> existing.engine==extra.engine &&
+                                    existing.observationIds==extra.observationIds &&
+                                    ProducerResolver.normalize(existing.text)==ProducerResolver.normalize(extra.text) } }
+                                .take((ProducerResolver.MAX_SPANS-spans.size).coerceAtLeast(0))
+                        } else emptyList()
                         val lookupSpans=spans+supplementalSpans
                         val started=android.os.SystemClock.elapsedRealtime()
                         var producerFailureTelemetry=emptyMap<String,String>()
@@ -171,9 +193,12 @@ internal object TextLabSpatialPreview {
                         fun runProducerLookup(policy:ProducerResolver.Policy)=
                             producerResolver.resolve(before,lookupSpans,checkProducerBudget,policy)
                         val activePolicy=if(isLabMode) {
-                            policy.withCountryContext(row["country"].orEmpty())
+                            val basePolicy=policy.withCountryContext(row["country"].orEmpty())
                                 .withExactMatchFastPath { term -> engine?.isNonProducerCatalogTerm(term)==true }
-                                .withProducerPenalty { term -> engine?.producerCandidatePenalty(term) ?: 0 }
+                                .withParticleAndRoleRules(labModules.producerRoleAndParticle)
+                            if(labModules.producerRoleAndParticle) {
+                                basePolicy.withProducerPenalty { term -> engine?.producerCandidatePenalty(term) ?: 0 }
+                            } else basePolicy
                         } else policy
                         val decision=try { runProducerLookup(activePolicy) }
                             catch(cancel:CancellationException) { throw cancel }
@@ -283,13 +308,22 @@ internal object TextLabSpatialPreview {
                             }
                         }
                         val finalProducer=row["producer"].orEmpty()
-                        if(finalProducer.isBlank()) {
+                        val runFinalNearMatch=if(isLabMode) labModules.finalProducerNearMatch else false
+                        if(!runFinalNearMatch) {
+                            row["producer_final_near_match_status"]="disabled"
+                        } else if(finalProducer.isBlank()) {
                             row["producer_final_near_match_status"]="blank"
                         } else {
                             val nearStarted=android.os.SystemClock.elapsedRealtime()
                             var nearMatchError=""
                             val nearMatch=try {
-                                producerResolver.finalNearMatch(finalProducer,checkProducerBudget) { term -> engine?.producerCandidatePenalty(term) ?: 0 }
+                                producerResolver.finalNearMatch(finalProducer,checkProducerBudget,
+                                    protectExact=labModules.exactProducerProtection,
+                                    observedExact=if(labModules.exactProducerProtection) readings.filter {
+                                        it.score >= if(it.engineId.startsWith("paddle")) .75f else .60f
+                                    }.map { it.textRaw } else emptyList()) { term ->
+                                    if(labModules.producerRoleAndParticle) (engine?.producerCandidatePenalty(term) ?: 0) else 0
+                                }
                             } catch(cancel:CancellationException) { throw cancel }
                               catch(_:ProducerResolver.BudgetExceeded) { nearMatchError="budget_exceeded";null }
                               catch(error:Exception) { nearMatchError=error.javaClass.simpleName;null }
@@ -320,6 +354,54 @@ internal object TextLabSpatialPreview {
                                     "producer_entity_id" to nearMatch.entity.id,"producer_display_name" to cleanName,
                                     "edit_distance" to nearMatch.distance.toString(),"lexical_support_sources" to sources,
                                     "producer_gazetteer_version" to producerIndex.version))
+                            }
+                        }
+                        if(isLabMode && engine!=null && row["subregion"].orEmpty().isBlank()) {
+                            if(labModules.blankSubregionFuzzy) {
+                                val prodMatchLines=decision.matches.filter { it.distance <= 1 }.map { it.observed }.toSet()
+                                val fallback=try {
+                                    engine.fallbackBlankSubregionFromRawOcr(
+                                        records=original,
+                                        existingCountry=row["country"].orEmpty(),
+                                        existingRegion=row["region"].orEmpty(),
+                                        existingProducer=row["producer"].orEmpty(),
+                                        knownProducerLineObservations=prodMatchLines,
+                                        checkBudget=checkProducerBudget,
+                                    )
+                                } catch(cancel:CancellationException) { throw cancel }
+                                  catch(_:ProducerResolver.BudgetExceeded) { null }
+                                  catch(_:Exception) { null }
+                                if(fallback!=null) {
+                                    val reason="raw OCR appellation fallback: '${fallback.observedSpan}' -> '${fallback.matchedForm}' (edits=${fallback.editDistance}, engine=${fallback.engineId}); confirm manually"
+                                    row["subregion"]=fallback.subregion
+                                    row["subregion_state"]="YELLOW"
+                                    row["subregion_reason"]=reason
+                                    row["subregion_alternatives"]=""
+                                    if(row["region"].orEmpty().isBlank() && fallback.region.isNotBlank()) {
+                                        row["region"]=fallback.region
+                                        row["region_state"]="YELLOW"
+                                        row["region_reason"]=reason
+                                        row["region_alternatives"]=""
+                                    }
+                                    if(row["country"].orEmpty().isBlank() && fallback.country.isNotBlank()) {
+                                        row["country"]=fallback.country
+                                        row["country_state"]="YELLOW"
+                                        row["country_reason"]=reason
+                                        row["country_alternatives"]=""
+                                    }
+                                    row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
+                                    row["status"]="suggestions"
+                                    journal.add(candidate,stagePrefix+"raw_ocr_subregion_fallback","suggestion",mapOf(
+                                        "post_processing_version" to VERSION,
+                                        "raw_text" to fallback.observedSpan,
+                                        "matched_form" to fallback.matchedForm,
+                                        "subregion" to fallback.subregion,
+                                        "region" to fallback.region,
+                                        "country" to fallback.country,
+                                        "edit_distance" to fallback.editDistance.toString(),
+                                        "source_engine" to fallback.engineId,
+                                    ))
+                                }
                             }
                         }
                     }
