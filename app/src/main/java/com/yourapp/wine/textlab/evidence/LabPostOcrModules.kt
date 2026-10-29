@@ -25,6 +25,7 @@ internal data class LabPostOcrModules(
     val vintageSpans: Boolean = false,
     val wineNameSpans: Boolean = false,
     val blankSubregionFuzzy: Boolean = false,
+    val appellationWineFallback: Boolean = false,
     val vintageRecovery: Boolean = false,
     val stackedAppellations: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
@@ -54,6 +55,12 @@ internal data class LabPostOcrModules(
             shortName = "subregion-fuzzy",
             uiTitle = "Blank subregion fuzzy search",
             uiDetail = "Raw-OCR multi-word/line appellation fallback when subregion is blank",
+        ),
+        APPELLATION_WINE_FALLBACK(
+            key = "appellation_wine_fallback",
+            shortName = "appellation-wine-fallback",
+            uiTitle = "Appellation as wine name fallback",
+            uiDetail = "Fill a blank wine name from the one printed appellation compatible with the resolved origin",
         ),
         VINTAGE_RECOVERY(
             key = "vintage_recovery",
@@ -106,6 +113,7 @@ internal data class LabPostOcrModules(
         ModuleId.VINTAGE_SPANS -> vintageSpans
         ModuleId.WINE_NAME_SPANS -> wineNameSpans
         ModuleId.BLANK_SUBREGION_FUZZY -> blankSubregionFuzzy
+        ModuleId.APPELLATION_WINE_FALLBACK -> appellationWineFallback
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
         ModuleId.STACKED_APPELLATIONS -> stackedAppellations
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> finalProducerNearMatch
@@ -127,6 +135,7 @@ internal data class LabPostOcrModules(
         ModuleId.VINTAGE_SPANS -> copy(vintageSpans = enabled)
         ModuleId.WINE_NAME_SPANS -> copy(wineNameSpans = enabled)
         ModuleId.BLANK_SUBREGION_FUZZY -> copy(blankSubregionFuzzy = enabled)
+        ModuleId.APPELLATION_WINE_FALLBACK -> copy(appellationWineFallback = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
         ModuleId.STACKED_APPELLATIONS -> copy(stackedAppellations = enabled)
         ModuleId.FINAL_PRODUCER_NEAR_MATCH -> copy(finalProducerNearMatch = enabled)

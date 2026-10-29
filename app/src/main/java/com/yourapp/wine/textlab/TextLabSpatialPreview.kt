@@ -151,13 +151,15 @@ internal object TextLabSpatialPreview {
                 engine.withDeferredBlankSubregionFallback {
                     TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                         useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
-                        exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage)
+                        exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage,
+                        appellationFallbackEngines=if(labModules.appellationWineFallback) 1 else 0)
                 }
             } else {
                 TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                     useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                     exactGeographyFastPath=policy.minimumIndependentEngines<2,
-                    allowHybridVintageFallback=allowHybridVintage)
+                    allowHybridVintageFallback=allowHybridVintage,
+                    appellationFallbackEngines=if(isLabSpatial && labModules.appellationWineFallback) 1 else 0)
             }
             val evidenceSpans=if(engine!=null && evidenceResult!=null && (!isLabSpatial || labModules.spatialSemanticGuards)) {
                 producerEvidenceSpans(evidenceResult,engine)

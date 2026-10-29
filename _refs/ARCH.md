@@ -170,6 +170,12 @@ docs/evidence-designation-levels.md # Why the Lab v5 designation/level/fragment 
 tools/tests/test_evidence_selection.py # Host checks for the classification-base mirror over the real catalog + wiring of the designation, fragment and level rules
 docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals and proposed staged accuracy plan (not recognition changes)
 docs/lab-v5-accuracy-roadmap.md        # Checkable (- [ ]) root-cause roadmap from the 0c88bda41164 125-label run + shipped Phase 0 d=0 fast-paths
+docs/lab-v5-124-diagnostic-a709ad6.md  # Host analysis of the first compact-JSON diagnostic (124-label raw export, cached OCR): integrity, scores, funnel bottlenecks
+tools/run-host-lab.sh                  # One host Lab iteration: prepare cached OCR -> replay -> score (~90 s); see tools/host-lab/README.md
+tools/run-host-lab-replay.sh           # Compiles the real Lab post-OCR Kotlin + HostLabReplay.kt and replays all 124 cached-OCR journals on the JVM
+tools/host-lab/host_lab.py             # Host replay driver: cached-OCR asset -> runner input; runner output -> scored report + gains/losses diff
+tools/host-lab/sqlite_bridge.py        # SQLite bridge mirroring ProducerGazetteer SQL against the packaged gazetteer/wine DBs for the host runner
+tools/logic-checks/HostLabReplay.kt    # Host-only Lab v5 replay main (FormPreview + SpatialPreview, single-reading policy); never in the app
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
 _backup/                               # Personal cellar JSON backups (source of the debug seed), one-off convert_csv.py (its CSV input was removed)

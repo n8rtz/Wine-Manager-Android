@@ -16,6 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/49fc9af5-wine-manager-android` | not opened | active | First compact-JSON diagnostic analysis; host Lab replay harness (phone = final verification only) | [Jump](#branch-arena49fc9af5-wine-manager-android) |
 | `arena/0a282176-wine-manager-android` | not opened | active | Multi-photo, unscored Lab v5 sanity checks | [Jump](#branch-arena0a282176-wine-manager-android) |
 | `arena/ab7b824f-wine-manager-android` | not opened | active | Pre-refresh 125-label results relabeled Lab v5 / Prod v4.0; legacy pipeline and frozen-baseline compatibility | [Jump](#branch-arenaab7b824f-wine-manager-android) |
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
@@ -28,6 +29,22 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/49fc9af5-wine-manager-android`
+
+**Build it:** `git checkout arena/49fc9af5-wine-manager-android`; build/install the debug build as usual (wireless debugging is fine — nothing here writes cellar data).
+
+**What changed:** host Lab replay harness (`tools/host-lab/`, `tools/run-host-lab.sh`, `tools/logic-checks/HostLabReplay.kt`; parity gate PASS, 0/744 field diffs vs the phone baseline — re-verified after the app changes below) plus a Lab-only wine-name winner: new opt-in module `appellation_wine_fallback` (Lab settings toggles it), `AppellationFallback` now reads the supplemented origins view (it previously saw only the 27 raw-KB places, so e.g. Montagne-Saint-Emilion could never match; it also gains a bounded one-edit repair used only when no exact printed appellation matches), wired through `TextLabEvidencePreview`/`TextLabSpatialPreview` with default 0 so Prod and every existing caller are unchanged. Winning Lab module set (host-measured): baseline `blank_subregion_fuzzy+vintage_recovery+final_producer_near_match+producer_role_particle+spatial_semantic_guards` **+ `appellation_wine_fallback` + `stacked_appellations`** = **58/122 complete, 113/122 ≤1 error** (+7 wine-name gains: #36, #46, #94, #122, #151, #164, #167; zero losses).
+
+### Host-first Lab verification (final phone check)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Only after a host run beats the baseline (53/122 complete, 111/122 ≤1 error): build/install this branch and confirm **Profile → Settings → App Information** shows the expected build commit.
+2. [ ] **Profile → Settings → Large image dataset test**: run Lab v5 over the 124 labels with cached OCR and the winning module set above (enable "Appellation as wine name fallback" and "Stacked appellations" on top of the usual five). Expected: **58/122 complete, 113/122 ≤1 error**, wine_name 79/123 correct; labels #36, #46, #94, #122, #151, #164, #167 gain their wine names with no other field changes. Any mismatch is a harness bug, not a tuning result — stop and report it.
+3. [ ] Re-run with fresh OCR (cache off) on at least the labels the host iteration changed: no new execution failures, and the changed labels' fields match the host prediction except where OCR itself read differently (note those labels).
+4. [ ] Export the compact JSON diagnostic (manifest + every numbered part) and confirm each part parses and stays ≤20 MB; the host rescore of that export must reproduce the phone's own `score.complete` / `score.at_most_one` rows.
+5. [ ] Confirm Prod v1.0/v2.0/v4.0 frozen rows, the Add Wine scanner, and all non-Lab behaviour are untouched, and that timings still complete without new budget-blocked labels beyond the known producer #105/#118 and wine #26/#105/#118/#165/#185.
 
 ## Branch `arena/0a282176-wine-manager-android`
 
