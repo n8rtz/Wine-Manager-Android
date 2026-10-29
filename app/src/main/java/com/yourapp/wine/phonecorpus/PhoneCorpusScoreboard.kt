@@ -9,13 +9,15 @@ import com.yourapp.wine.diagnostics.PipelineFunnel as F
 /** Scores only committed predictions. Targets are never supplied to the runner. */
 internal class PhoneCorpusScoreboard(
     context:Context,
-    private val assetRoot:String="wine-app-labels-v1"
+    private val assetRoot:String="wine-app-labels-v1",
+    savedReference:JSONObject?=null,
+    savedSelection:JSONObject?=null,
 ) {
-    private val reference=JSONObject(context.assets.open("$assetRoot/scoring.json").bufferedReader().use { it.readText() })
+    private val reference=savedReference ?: JSONObject(context.assets.open("$assetRoot/scoring.json").bufferedReader().use { it.readText() })
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
     private val includedImages=run {
-        val selection=JSONObject(context.assets.open("$assetRoot/evaluation-set.json").bufferedReader().use { it.readText() })
+        val selection=savedSelection ?: JSONObject(context.assets.open("$assetRoot/evaluation-set.json").bufferedReader().use { it.readText() })
         val list=selection.getJSONArray("included_images")
         (0 until list.length()).map { list.getJSONObject(it).getString("image") }.toSet().also {
             check(it.size==selection.optInt("included_count",list.length()) && it.all { id -> id in targets }) { "Curated evaluation set does not match packaged references" }

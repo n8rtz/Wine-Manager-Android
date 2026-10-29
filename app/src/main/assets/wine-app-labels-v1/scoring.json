@@ -1756,8 +1756,11 @@
           "target": "Alsace"
         },
         "subregion": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "cremantdalsace"
+          ],
+          "target": "Cremant d'Alsace"
         },
         "vintage": {
           "status": "expected_blank",

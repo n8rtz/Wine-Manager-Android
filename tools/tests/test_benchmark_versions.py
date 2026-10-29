@@ -8,6 +8,72 @@ LAB = ROOT / "app/src/main/java/com/yourapp/wine/textlab"
 
 
 class BenchmarkVersionChecks(unittest.TestCase):
+    def test_candidate_discovery_modules_are_independent_and_documented(self):
+        modules = (LAB / "evidence/LabPostOcrModules.kt").read_text()
+        doc = (ROOT / "_refs/LAB_MODIFIERS.md").read_text()
+        ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
+        self.assertIn("LabPostOcrModules.ModuleId.entries.forEach", ui)
+        best = modules.split("val bestBuild = LabPostOcrModules(", 1)[1].split("val all", 1)[0]
+        for prop, enum, key in [
+            ("geographySpans", "GEOGRAPHY_SPANS", "geography_spans"),
+            ("producerSpans", "PRODUCER_SPANS", "producer_spans"),
+            ("grapeSpans", "GRAPE_SPANS", "grape_spans"),
+            ("classificationSpans", "CLASSIFICATION_SPANS", "classification_spans"),
+            ("vintageSpans", "VINTAGE_SPANS", "vintage_spans"),
+            ("wineNameSpans", "WINE_NAME_SPANS", "wine_name_spans"),
+        ]:
+            self.assertIn(f"val {prop}: Boolean = false", modules)
+            self.assertIn(f"ModuleId.{enum} -> copy({prop} = enabled)", modules)
+            self.assertIn(f"ModuleId.{enum} -> {prop}", modules)
+            self.assertIn(key, doc)
+            self.assertNotIn(f"{prop} = true", best)
+        extractor = (LAB / "evidence/EvidenceExtractor.kt").read_text()
+        self.assertLess(extractor.index("discoverSpans(it,year"), extractor.index("val labelContext="))
+        self.assertIn('values.keys.any { it.name !in p.construction.substringAfter', extractor)
+        self.assertIn('setOf(o.id)', extractor)
+
+    def test_foundations_are_ordered_and_do_not_change_the_measured_preset(self):
+        modules = (LAB / "evidence/LabPostOcrModules.kt").read_text()
+        vm = (PHONE / "WineAppLabelsViewModel.kt").read_text()
+        best = modules.split("val bestBuild = LabPostOcrModules(", 1)[1].split("val all", 1)[0]
+        flags = ["candidateIsolation", "exactProducerProtection", "administrativeFiltering",
+                 "roleAwareJoins", "broaderDiscovery"]
+        for flag in flags:
+            self.assertIn(f"val {flag}: Boolean = false", modules)
+            self.assertNotIn(f"{flag} = true", best)
+        positions = [vm.index("ModuleId." + key, vm.index("if (foundations)")) for key in
+                     ["CANDIDATE_ISOLATION", "EXACT_PRODUCER_PROTECTION", "ADMINISTRATIVE_FILTERING",
+                      "ROLE_AWARE_JOINS", "BROADER_DISCOVERY"]]
+        self.assertEqual(positions, sorted(positions))
+        extractor = (LAB / "evidence/EvidenceExtractor.kt").read_text()
+        self.assertIn("graph.observations.filter { other ->", extractor)
+        self.assertIn("permits(FieldId.VINTAGE)", extractor)
+        self.assertIn("permits(FieldId.SUBREGION)", extractor)
+        resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
+        self.assertIn("if(protectExact && candidates.count", resolver)
+
+    def test_focused_suite_has_seven_explicit_configurations_and_shared_export(self):
+        vm = (PHONE / "WineAppLabelsViewModel.kt").read_text()
+        ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
+        body = vm.split("if (focused) {", 1)[1].split("else if (foundations)", 1)[0]
+        # One control already in plan, then six explicit additions, not cumulative toggles.
+        self.assertEqual(body.count("plan +="), 6)
+        for expected in (
+            "val isolated = control.copy(candidateIsolation = true)",
+            "plan += isolated\n",
+            "plan += isolated.copy(vintageSpans = true)",
+            "plan += isolated.copy(wineNameSpans = true)",
+            "plan += control.copy(roleAwareJoins = true)",
+            "plan += control.copy(broaderDiscovery = true)",
+            "exactProducerProtection = true", "administrativeFiltering = true",
+        ):
+            self.assertIn(expected, body)
+        self.assertIn('vm.startAutomatedSuite(focused = true)', ui)
+        self.assertIn('Run focused diagnostics suite (7 configs)', ui)
+        self.assertIn('focused -> "focused_diagnostics"', vm)
+        self.assertLess(vm.index('if (focused) {'), vm.index('snapshotSuiteOcr(suite)'))
+        self.assertIn('LabSuiteArchive.write(target,recentBuildRows(completedRuns,suite))', vm)
+
     def test_four_explicit_versions_and_short_comparison_names(self):
         runner = (PHONE / "PhoneCorpusRunner.kt").read_text()
         for label, key in [
@@ -75,11 +141,10 @@ class BenchmarkVersionChecks(unittest.TestCase):
         self.assertIn('savedMode == "PRODUCTION_V3"', page)
         self.assertIn("Lab v4 runs intentionally do not satisfy this", page)
         ui = (PHONE / "WineAppLabelsActivity.kt").read_text()
-        self.assertIn("PhoneCorpusRunner.Mode.entries.forEach { mode ->", ui)
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", ui)
         self.assertIn("Text(mode.title)", ui)
-        # Prod versions are frozen comparators: their radios are display-only.
-        self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", ui)
-        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', ui)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", ui)
+        self.assertNotIn("RadioButton(", ui)
 
     def test_all_versions_share_one_fresh_ocr_run(self):
         runner = (PHONE / "PhoneCorpusRunner.kt").read_text()

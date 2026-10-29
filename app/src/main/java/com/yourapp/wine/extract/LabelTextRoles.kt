@@ -6,6 +6,20 @@ import com.yourapp.wine.merge.TextNorm
 object LabelTextRoles {
     private fun compact(text: String) = TextNorm.normalize(text).filter(Char::isLetterOrDigit)
 
+    /** Role syntax, not producer-specific vocabulary. Legal origin frames remain usable as geography. */
+    fun isAdministrativeIdentity(text:String):Boolean {
+        val n=TextNorm.normalize(text)
+        return MetadataRules.isPackaging(text) || MetadataRules.isBoilerplate(text) ||
+            Regex("""\b(?:indication geographique|indicazione geografica|earl|sarl|s\.n\.c|exploitant|proprietaire|imported by|distributed by|bodegas fundadas)\b""").containsMatchIn(n)
+    }
+
+    /** A closed classification frame may contain a non-year cuvee number; packaging/years may not. */
+    fun isNumericTitle(text:String):Boolean {
+        val n=TextNorm.normalize(text)
+        if(isAdministrativeIdentity(text)) return false
+        return Regex("""^(?:(?:gran|grand)\s+)?(?:reserva|reserve|riserva)\s+[0-9]{1,3}$""").matches(n)
+    }
+
     /** Exact appellation core plus a bounded Villages suffix/fragment; a prefixed domaine is NOT matched. */
     fun isRhoneAppellation(text: String): Boolean {
         val value = compact(text)

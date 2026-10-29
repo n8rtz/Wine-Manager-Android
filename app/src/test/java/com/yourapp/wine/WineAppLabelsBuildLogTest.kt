@@ -93,7 +93,7 @@ class WineAppLabelsBuildLogTest {
         val best = log.bestBuildSummary()
         assertNotNull(best)
         assertEquals(
-            listOf("Lab v4 Best build", "125", "123", "46/123", "46", "31", "0", "566", "74", "49", "59", "14", "2", "0"),
+            listOf("Lab v5 Best build", "125", "123", "46/123", "46", "31", "0", "566", "74", "49", "59", "14", "2", "0"),
             best!!.toTableRow(),
         )
         // Producer & Vintage come from Build A; Complete, Total correct, Wine name, Country, Region, Subregion come from Build B.
@@ -121,7 +121,7 @@ class WineAppLabelsBuildLogTest {
         }
         assertEquals(4, parsedCsvRows.size)
         val bestCsvRow = parsedCsvRows.single { it["row_type"] == WineAppLabelsBuildLog.BEST_BUILD_ROW_TYPE }
-        assertEquals("Lab v4 Best build", bestCsvRow["model_version"])
+        assertEquals("Lab v5 Best build", bestCsvRow["model_version"])
         assertEquals("46", bestCsvRow["complete"])
         assertEquals("625", bestCsvRow["total_correct"])
         assertEquals("94", bestCsvRow["producer_correct"])
@@ -192,5 +192,149 @@ class WineAppLabelsBuildLogTest {
         assertEquals("1/1", restoredBest.fieldScores["subregion"]?.label())
         assertEquals("1/0", restoredBest.fieldScores["vintage"]?.label())
         assertEquals("#57 (prev)", restoredBest.fieldBests["producer"]?.buildNumber)
+    }
+
+    @Test
+    fun isolatesAndLogsPostOcrModuleCombinationsPerRun() {
+        val logFile = temp.newFile("benchmark-modules-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+
+        val baselineMeta = org.json.JSONObject()
+            .put("build", "dddddddddddd")
+            .put("version_code", "61")
+            .put("branch", "arena/test")
+            .put("lab_modules_key", "best-v5")
+        val subregionMeta = org.json.JSONObject()
+            .put("build", "dddddddddddd")
+            .put("version_code", "61")
+            .put("branch", "arena/test")
+            .put("lab_modules_key", "subregion-fuzzy")
+
+        val baselineInfo = WineAppLabelsBuildLog.buildInfoFromSavedRun(baselineMeta, emptyList())
+        val subregionInfo = WineAppLabelsBuildLog.buildInfoFromSavedRun(subregionMeta, emptyList())
+        assertEquals("best-v5", baselineInfo.labModules)
+        assertEquals("subregion-fuzzy", subregionInfo.labModules)
+        assertTrue(baselineInfo.buildNumber.endsWith(" [best-v5]"))
+        assertTrue(subregionInfo.buildNumber.endsWith(" [subregion-fuzzy]"))
+        assertFalse(baselineInfo.buildKey == subregionInfo.buildKey)
+
+        log.recordSummary(
+            runId = "run-best-v5",
+            buildInfo = baselineInfo,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "124", "45/124", "47", "32", "0", "562", "72", "50", "59", "14", "0", "0"),
+            timestampMs = 1_700_200_000_000L,
+        )
+        log.recordSummary(
+            runId = "run-subregion-fuzzy",
+            buildInfo = subregionInfo,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "124", "48/124", "45", "31", "0", "565", "72", "47", "59", "14", "0", "0"),
+            timestampMs = 1_700_210_000_000L,
+        )
+
+        val entries = log.readEntries()
+        assertEquals(2, entries.size)
+        assertEquals("best-v5", entries[0].labModules)
+        assertEquals("subregion-fuzzy", entries[1].labModules)
+        val best = log.bestBuildSummary()
+        assertNotNull(best)
+        assertEquals(48 to 124, best!!.complete.value)
+        assertTrue(best.complete.buildNumber.endsWith(" [subregion-fuzzy]"))
+    }
+
+    @Test
+    fun bestBuildHighWaterMarkNeverMixesTwoCorpora() {
+        val logFile = temp.newFile("corpus-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+        val oldBuild = WineAppLabelsBuildLog.BuildInfo("old:clean", "#55 (aaaaaaaaaaaa)", "55", "aaaaaaaaaaaa", "main")
+        val newBuild = WineAppLabelsBuildLog.BuildInfo("new:clean", "#70 (bbbbbbbbbbbb)", "70", "bbbbbbbbbbbb", "arena/lab")
+
+        // The 125-label corpus (123 eligible) holds the higher headline numbers.
+        log.recordSummary(
+            runId = "run-125",
+            buildInfo = oldBuild,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "125", "123", "52/123", "54", "21", "0", "588", "70", "40", "60", "3", "2", "0"),
+            timestampMs = 1_700_000_000_000L,
+            corpusKey = "corpus-old",
+        )
+        // Two runs on the 124-label corpus (122 eligible) - the newest one is only 40 photos in.
+        log.recordSummary(
+            runId = "run-124-a",
+            buildInfo = newBuild,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "122", "48/122", "58", "16", "0", "586", "68", "26", "59", "3", "2", "0"),
+            timestampMs = 1_700_100_000_000L,
+            corpusKey = "corpus-new",
+        )
+        log.recordSummary(
+            runId = "run-124-b-partial",
+            buildInfo = newBuild,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "40", "40", "16/40", "16", "8", "0", "180", "15", "12", "18", "3", "0", "0"),
+            timestampMs = 1_700_200_000_000L,
+            corpusKey = "corpus-new",
+        )
+
+        val best = log.bestBuildSummary()
+        assertNotNull(best)
+        // Every value comes from the current corpus, never from the 125-label run above it.
+        assertEquals(124, best!!.attempted.value)
+        assertEquals(122, best.eligible.value)
+        assertEquals(48 to 122, best.complete.value)
+        assertEquals(586, best.correctValues.value)
+        assertEquals(58, best.oneError.value)
+        assertEquals("corpus-new", best.corpusKey)
+        assertEquals("run-124-a", best.complete.runId)
+        // The partial 40-photo row shares the corpus but must still not claim the error minimums.
+        assertEquals(16, best.twoPlusErrors.value)
+        assertEquals("run-124-a", best.twoPlusErrors.runId)
+        // The persisted composite row carries the corpus it was measured on.
+        val persisted = logFile.readLines().first { BEST_BUILD_MARKER in it }
+        assertTrue(persisted.contains("corpus-new"))
+    }
+
+    @Test
+    fun stampsCorpusKeyOnAlreadyScoredRunsSoTheyJoinTheCohort() {
+        val logFile = temp.newFile("stamp-log.csv").apply { delete() }
+        val log = WineAppLabelsBuildLog(logFile, ZoneOffset.UTC)
+        val build = WineAppLabelsBuildLog.BuildInfo("b:clean", "#60 (cccccccccccc)", "60", "cccccccccccc", "arena/lab")
+
+        // A run scored before corpus_key existed: it is the only corpus-less candidate.
+        log.recordSummary(
+            runId = "run-now",
+            buildInfo = build,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "124", "122", "50/122", "60", "12", "0", "600", "70", "30", "60", "3", "2", "0"),
+            timestampMs = 1_700_000_000_000L,
+        )
+        assertEquals("", log.bestBuildSummary()!!.corpusKey)
+
+        // A 125-label run from an older corpus stays untouched when the current reruns are stamped.
+        log.recordSummary(
+            runId = "run-old-corpus",
+            buildInfo = build,
+            mode = PhoneCorpusRunner.Mode.LAB,
+            summaryRow = listOf("Lab v5", "125", "123", "52/123", "54", "21", "0", "588", "70", "40", "60", "3", "2", "0"),
+            timestampMs = 1_699_000_000_000L,
+            corpusKey = "corpus-old",
+        )
+
+        log.stampCorpusKeys(listOf("run-now", "run-old-corpus"), "corpus-now")
+        assertEquals("corpus-now", log.readEntries().first { it.runId == "run-now" }.corpusKey)
+        assertEquals("corpus-old", log.readEntries().first { it.runId == "run-old-corpus" }.corpusKey)
+
+        // The stamped run is now the newest member of the current corpus, so it owns the composite
+        // and the 125-label row can no longer supply a target.
+        val best = log.bestBuildSummary()!!
+        assertEquals("corpus-now", best.corpusKey)
+        assertEquals(124, best.attempted.value)
+        assertEquals(122, best.eligible.value)
+        assertEquals(600, best.correctValues.value)
+    }
+
+    private companion object {
+        const val BEST_BUILD_MARKER = "best_build"
     }
 }

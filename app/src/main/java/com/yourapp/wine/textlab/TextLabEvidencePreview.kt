@@ -8,9 +8,11 @@ import kotlinx.coroutines.CancellationException
 internal object TextLabEvidencePreview {
     // equivalentNames: two spellings of one name differing only by spacing/punctuation (`CHATEAU
     // ABELYCE` / `CHATEAU ABELY CE`) are one answer, not an ambiguity that blanks the field.
-    fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
-        placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off)
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false):EvidenceResult? {
+    fun engine(kb:WineKnowledgeBase,useAnchors:Boolean,repairPlaces:Boolean=false,labModules:LabPostOcrModules=LabPostOcrModules.unitTestDefault)=EvidenceExtractor(kb,ranking=EvidenceRankingConfig(equivalentNames=true,cuveeRole=useAnchors),
+        placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off,
+        allowWineTitlePairs=labModules.verticalWineTitlePairs,
+        modules=labModules)
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false,allowHybridVintageFallback:Boolean=true):EvidenceResult? {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return null
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer; populated vintage preserved, otherwise validated experimental vintage may fill; rules-001 wine/origin; heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
@@ -35,7 +37,11 @@ internal object TextLabEvidencePreview {
             if(useAnchors) {
                 val start=android.os.SystemClock.elapsedRealtime()
                 val original=FieldId.entries.associateWith { baseline!!.getValue(it.name.lowercase(java.util.Locale.ROOT)) }
-                val combined=hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year)
+                val combined=if(allowHybridVintageFallback) {
+                    hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year)
+                } else {
+                    hybrid!!.combine(original,fill.fields.mapValues { it.value.value },records,EvidenceAnchorHybrid.Config(true),year,allowVintageFallback=false)
+                }
                 hybridMs=android.os.SystemClock.elapsedRealtime()-start
                 combined.forEach { (field,value) ->
                     val key=field.name.lowercase(java.util.Locale.ROOT)
@@ -80,10 +86,24 @@ internal object TextLabEvidencePreview {
                 "base_box_normalized" to listOf(o.record.bboxRect.left,o.record.bboxRect.top,o.record.bboxRect.right,o.record.bboxRect.bottom).joinToString(" "))) }
             result.graph.phrases.forEach { p -> journal.add("experimental_evidence","evidence_phrase",values=mapOf(
                 "region_id" to p.id.toString(),"raw_text" to p.text,"evidence_details" to "${p.construction}; observations=${p.observations}")) }
+            result.generatedHypotheses.forEachIndexed { index,h -> journal.add("experimental_evidence","evidence_generated",values=mapOf(
+                "region_id" to index.toString(), "phrase_id" to h.phrase.id.toString(),
+                "base_rank" to h.baseRank.toString(), "generation_rank" to h.rank.toString(),
+                "candidate_values" to h.values.toString(), "source_observations" to h.phrase.observations.toString(),
+                "candidate_status" to if(result.hypotheses.any { it.phrase.id==h.phrase.id && it.values==h.values }) "ranked" else "filtered_before_ranking",
+                "evidence_details" to h.reason)) }
             result.hypotheses.forEachIndexed { index,h -> journal.add("experimental_evidence","evidence_hypothesis",values=mapOf(
-                "region_id" to index.toString(),"evidence_details" to "phrase=${h.phrase.id}; observations=${h.phrase.observations}; rank=${h.rank}; ${h.reason}; values=${h.values}")) }
+                "region_id" to index.toString(),"phrase_id" to h.phrase.id.toString(),
+                "base_rank" to h.baseRank.toString(), "adjusted_rank" to h.rank.toString(),
+                "rank_delta" to (h.rank-h.baseRank).toString(),
+                "candidate_values" to h.values.toString(), "source_observations" to h.phrase.observations.toString(),
+                "matches_evidence_final_fields" to h.values.filter { (field,value) -> result.fill.fields[field]?.value==value }.keys.toString(),
+                "evidence_details" to "phrase=${h.phrase.id}; observations=${h.phrase.observations}; rank=${h.rank}; ${h.reason}; values=${h.values}")) }
             result.trace.rows.forEach { event -> journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to event)) }
             values["trace_counts"]=result.trace.counts.toString()
+            values["trace_rows_retained"]=result.trace.rows.size.toString()
+            values["trace_rows_dropped"]=result.trace.droppedRows.toString()
+            values["graph_truncated"]=result.graph.truncated.toString()
             journal.add("experimental_evidence","evidence_summary",if(values["field_values_found"]=="0") "no_fields" else "suggestions",values,
                 "Experimental, not ground truth. Same saved OCR as production baseline; shared lexical KB and cellar display only.")
             result
