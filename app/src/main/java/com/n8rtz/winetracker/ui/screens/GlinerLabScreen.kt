@@ -59,7 +59,7 @@ internal fun GlinerLabScreen(
             SelectionContainer {
                 Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
                     Text("GLiNER lane lab",style=MaterialTheme.typography.headlineSmall)
-                    Text("PP-OCRv6 ➔ GLiNER-Small INT4 ➔ existing Lab v7 post-processing",style=MaterialTheme.typography.titleSmall)
+                    Text("ML Kit Latin + PP-OCRv6 ➔ GLiNER-Small INT4 ➔ existing Lab v7 post-processing",style=MaterialTheme.typography.titleSmall)
                     Text("Build ${BuildConfig.BUILD_COMMIT} · ${BuildConfig.BUILD_BRANCH} · ${BuildConfig.NATIVE_ABIS}")
                     Text("Same 124 packaged workbook labels as Lab v7. Fresh OCR every photo; nothing is written to a wine form.")
                     Text("Post-OCR module set: ${state.modules.signatureKey()}",style=MaterialTheme.typography.bodySmall)
@@ -145,11 +145,15 @@ private fun ArchitectureCard(state:GlinerLabState) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
             Text("1 · Pipeline",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.SemiBold)
-            Text("PP-OCRv6 Medium det+rec → "+if(state.modelsReady) "pinned models present" else "pinned models missing in this build",
+            Text("ML Kit Latin + PP-OCRv6 Medium det+rec → both engines read the same decoded label, started together, "+
+                "then their lines are fused. "+(if(state.modelsReady) "Pinned PP-OCRv6 models present." else "Pinned PP-OCRv6 models missing in this build."),
                 style=MaterialTheme.typography.bodySmall)
             Text("GLiNER-Small INT4 → labels PRODUCER / WINE_NAME / APPELLATION and keeps the unclaimed text as residual observations",
                 style=MaterialTheme.typography.bodySmall)
             Text("Existing post-processing → evidence extractor, producer repair, producer gazetteer, linked-wine resolver, Lab v7 modules",
+                style=MaterialTheme.typography.bodySmall)
+            Text("Each fused line keeps every engine that read it with that engine's own measured score, so the existing "+
+                "two-engine rules still see the ensemble rather than one fused engine.",
                 style=MaterialTheme.typography.bodySmall)
             Text("Country, region, subregion and vintage are never asked from GLiNER: they stay with the existing hierarchy and year rules.",
                 style=MaterialTheme.typography.bodySmall)

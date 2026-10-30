@@ -158,6 +158,7 @@ internal object GlinerLabRunner {
                 totalMs=SystemClock.elapsedRealtime()-started,
                 notes=buildString {
                     appendLine(ocr.description)
+                    appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
                     appendLine("GLiNER ${labelled.layout} · ${labelled.wordCount} words · ${labelled.spanCount} spans · ${labelled.entities.size} lane fragments")
                     appendLine(laneConfig.summaryLabel())
                     post.notes.forEach { appendLine(it) }

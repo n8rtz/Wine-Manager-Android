@@ -480,10 +480,10 @@ fun ProfileScreen(
 
                         ListItem(
                             headlineContent = {
-                                Text("GLiNER lane lab — PP-OCRv6 ➔ GLiNER-Small INT4")
+                                Text("GLiNER lane lab — ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4")
                             },
                             supportingContent = {
-                                Text("New structure: OCR, then GLiNER groups the label into producer / wine name / appellation before the existing Lab v7 post-processing")
+                                Text("New structure: both OCR engines read the label, GLiNER groups it into producer / wine name / appellation, then the existing Lab v7 post-processing")
                             },
                             modifier = Modifier.fillMaxWidth().clickable {
                                 context.startActivity(

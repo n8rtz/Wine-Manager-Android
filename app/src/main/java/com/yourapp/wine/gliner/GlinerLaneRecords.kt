@@ -12,6 +12,8 @@ internal data class GlinerLaneObservation(
     val score:Float,
     val box:RectF,
     val lines:Int,
+    /** Engine id to that engine's measured score for the underlying OCR lines. */
+    val engines:Map<String,Float> = emptyMap(),
 )
 
 /**
@@ -23,41 +25,65 @@ internal data class GlinerLaneObservation(
  * hierarchy still see the raw residual evidence (the three lanes intentionally do not cover
  * vintage, country, region or subregion).
  *
- * Every record uses the same engine id, `paddle-gliner-v1`. Its family prefix keeps the existing
- * independent-engine rules honest: lane text and residual text are two views of one OCR pass and
- * must never count as two supporting engines.
+ * Both OCR engines keep their own identity. An observation emits one record per engine that
+ * actually read the underlying lines (`mlkit`, `paddle-v6-medium`), each with that engine's own
+ * measured score, so the existing independent-engine rules see the same two-engine ensemble the
+ * production scanner produces. The scores are measured posteriors, not estimates: the value used
+ * is the weakest contributing line for that engine, which is why a lane record can support a
+ * suggestion but its grouped text is still marked with the lane variant for audit.
  */
 internal object GlinerLaneRecords {
-    const val ENGINE="paddle-gliner-v1"
+    /** Used only if a line somehow carries no engine attribution at all. */
+    const val FALLBACK_ENGINE=GlinerOcr.PADDLE_ID
 
     fun observations(result:GlinerLabelResult):List<GlinerLaneObservation> {
         val byLine=result.document.lines.withIndex().associate { (index,line) -> index to line }
         val laneRows=result.entities.map { entity ->
-            val posteriors=entity.lineIndices.mapNotNull { byLine[it]?.posterior }.ifEmpty { listOf(entity.score) }
+            val contributing=entity.lineIndices.mapNotNull { byLine[it] }
+            val posteriors=contributing.map { it.posterior }.ifEmpty { listOf(entity.score) }
             GlinerLaneObservation(entity.lane.key,entity.text,
-                posteriors.average().toFloat().coerceIn(0.01f,0.99f),entity.box,entity.lineIndices.size)
+                posteriors.average().toFloat().coerceIn(0.01f,0.99f),entity.box,entity.lineIndices.size,
+                enginesOf(contributing))
         }
         val residualRows=result.residualLines.map { residual ->
             val line=byLine[residual.lineIndex]
             GlinerLaneObservation("residual",residual.text,(line?.posterior ?: 0.5f).coerceIn(0.01f,0.99f),
-                residual.box,1)
+                residual.box,1,line?.let { enginesOf(listOf(it)) }.orEmpty())
         }
         return (laneRows+residualRows).sortedWith(compareBy({ it.box.top },{ it.box.left }))
     }
 
-    fun records(result:GlinerLabelResult):List<TokenRecord> = observations(result).map { observation ->
+    /** Weakest measured read per engine: a lane is never more certain than its worst line. */
+    private fun enginesOf(lines:List<GlinerOcrLine>):Map<String,Float> {
+        val scores=linkedMapOf<String,Float>()
+        lines.forEach { line ->
+            line.engines.forEach { (engine,score) ->
+                if(!score.isFinite() || score<=0f) return@forEach
+                val current=scores[engine]
+                scores[engine]=if(current==null) score else minOf(current,score)
+            }
+        }
+        return scores.toList().sortedBy { it.first }.toMap(LinkedHashMap())
+    }
+
+    fun records(result:GlinerLabelResult):List<TokenRecord> = observations(result).flatMap { observation ->
         val text=TextNorm.scrub(observation.text).trim()
-        TokenRecord(
-            textRaw=text,
-            textNorm=TextNorm.normalize(text),
-            score=observation.score,
-            bboxOrig=RectF(observation.box),
-            bboxRect=RectF(observation.box),
-            polyOrig=emptyList<PointF>(),
-            engineId=ENGINE,
-            variantId=if(observation.lane=="residual") "residual" else "lane:${observation.lane}",
-            // CTC posteriors are uncalibrated, so no lane observation may establish GREEN.
-            scoreIsEstimated=true,
-        )
-    }.filter { it.textRaw.isNotBlank() }
+        if(text.isBlank()) return@flatMap emptyList()
+        val variant=if(observation.lane=="residual") "residual" else "lane:${observation.lane}"
+        val engines=observation.engines.ifEmpty { mapOf(FALLBACK_ENGINE to observation.score) }
+        engines.map { (engine,score) ->
+            TokenRecord(
+                textRaw=text,
+                textNorm=TextNorm.normalize(text),
+                score=score.coerceIn(0.01f,0.99f),
+                bboxOrig=RectF(observation.box),
+                bboxRect=RectF(observation.box),
+                polyOrig=emptyList<PointF>(),
+                engineId=engine,
+                variantId=variant,
+                // Measured per-engine posterior of the underlying lines, not an invented score.
+                scoreIsEstimated=false,
+            )
+        }
+    }
 }

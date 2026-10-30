@@ -1,15 +1,16 @@
 # GLiNER lane lab (new structure, built on Lab v7)
 
-Settings → Scanner testing → **GLiNER lane lab — PP-OCRv6 ➔ GLiNER-Small INT4**.
+Settings → Scanner testing → **GLiNER lane lab — ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4**.
 
 This screen starts a structurally different reader next to Lab v7, not a new set of modules inside it:
 
 ```
-[PP-OCRv6 Medium det+rec] ➔ [GLiNER-Small (ONNX, INT4)] ➔ [existing Lab v7 post-processing]
+[ML Kit Latin + PP-OCRv6 Medium det+rec] ➔ [fuse] ➔ [GLiNER-Small (ONNX, INT4)] ➔ [existing Lab v7 post-processing]
 ```
 
 Lab v7 keeps one long rule stack deciding what a line *means* while it also decides what the line
-*is*. The new screen splits those jobs. OCR only reads text. GLiNER-Small is the contextual brain:
+*is*. The new screen splits those jobs. OCR only reads text, with both engines the scanner already
+ships (ML Kit Latin and PP-OCRv6) reading the same pixels. GLiNER-Small is the contextual brain:
 it is given the whole label as one word sequence and asked for three concepts, so scrambled
 fragments (`CHATEAU`, `MARGAUX`, a crest's `2015`) are grouped by meaning rather than by geometry
 and heuristics:
@@ -36,12 +37,32 @@ lanes, so a producer name cannot also become the wine name.
 
 ## Stage contracts
 
-### Stage 1 — PP-OCRv6 Medium (`GlinerOcr.kt`)
+### Stage 1 — ML Kit Latin + PP-OCRv6 Medium (`GlinerOcr.kt`, `GlinerFusion.kt`)
 
-The same pinned `v6-medium-det.onnx` + `v6-medium-rec.onnx` + `ppocrv6_dict.utf8` the production
-scanner and Lab v7 use, with the same DB thresholds and preprocessing. Output: line text, the
-rectified-label box and the mean CTC posterior. No ML Kit reference pass, no auto-zoom and no
-spatial phrases run in this stage.
+Both engines the production scanner already runs, over the same decoded label:
+
+* **ML Kit Latin** — the same bundled recognizer the scanner holds (`MlKitOcrEngine`, one
+  app-scoped client), line granularity, so a whole-line ML Kit box never swallows a Paddle word.
+* **PP-OCRv6 Medium** — the pinned `v6-medium-det.onnx` + `v6-medium-rec.onnx` +
+  `ppocrv6_dict.utf8`, same DB thresholds and preprocessing, CTC posterior per line.
+
+The two reads are launched together (`coroutineScope { async(ML Kit) … async(PP-OCRv6) }`) on one
+bitmap and awaited as a pair. The app-wide `NativeEngineGate` (a one-lease semaphore, exactly what
+the production ensemble takes) still serialises the native calls, so the phone never holds two OCR
+sessions at once — the same behaviour as the existing scanner, without serialising the *staging*:
+ML Kit starts while the Paddle detector initialises, and a slow engine no longer delays the other's
+setup.
+
+`GlinerFusion` then turns the two reading lists into one word sequence for GLiNER:
+
+* two readings become one line when the normalized texts match at (almost) the same place, or when
+  the boxes overlap strongly and the spellings are close;
+* everything else is kept, including duplicated or garbled fragments — that is the evidence the
+  contextual stage exists to resolve, so no score floor is applied here;
+* each fused line keeps **every** engine that read it with that engine's own measured score, and its
+  display posterior is `1 - Π(1 - score)`.
+
+No auto-zoom and no spatial phrases run in this stage; stage 3 owns all interpretation.
 
 ### Stage 2 — GLiNER-Small INT4 (`GlinerOnnxModel.kt`, `GlinerTokenizer.kt`, `GlinerDocument.kt`)
 
@@ -91,11 +112,11 @@ leaves every other caller byte-identical). The experiment is the *input readings
 
 Record conventions:
 
-* every observation uses engine id `paddle-gliner-v1` — lane text and residual text are two views of
-  one OCR pass and must never count as two supporting engines;
+* one observation becomes **one record per engine** that read its lines (`mlkit`,
+  `paddle-v6-medium`), so a fragment both engines saw is genuine two-engine support;
 * `variantId` is `lane:producer`, `lane:wine_name`, `lane:appellation` or `residual`;
-* the score is the mean CTC posterior of the contributing OCR lines, and `scoreIsEstimated` is always
-  true, so no lane observation can establish a GREEN field;
+* the score is that engine's **weakest** contributing line posterior, and `scoreIsEstimated` is
+  false because it is a measurement, not an invented value;
 * the box is the union of the contributing OCR line boxes, so existing spatial joins still work.
 
 ## Model bundle and INT4
@@ -158,13 +179,18 @@ knowledge base and the producer gazetteer stay warm for the length of one run.
 
 ## Known differences from the Lab v7 screen
 
-* No ML Kit reference pass, so any existing "two independent engines" rule sees one family per
-  observation (the lane and residual variants share `paddle-gliner-v1`).
+* Stage 1 keeps both engines, so the existing two-engine rules see the same ensemble as
+  production. Lane and residual observations still name the engine that read the underlying lines
+  (`mlkit`, `paddle-v6-medium`), and each observation's score is the weakest contributing line for
+  that engine — a lane is never more certain than its worst line. The lane variant
+  (`lane:producer`, `lane:wine_name`, `lane:appellation`, `residual`) stays on the record for audit.
 * No auto-zoom retry on tiny labels and no bottle-filter zoom pass.
 * Lane text is a *group* of OCR words: `EvidenceExtractor` sees fewer, longer observations, and the
   word budget (`maxWords`, default 320) truncates the tail of very dense labels.
-* Scores are OCR posteriors, not calibrated confidences.
-* Timings differ: GLiNER adds one encoder pass per photo (plus spans), while OCR runs once.
+* Scores are the engines' own posteriors (measured), not calibrated confidences; a two-engine fused
+  line reports its combined posterior for display and the per-engine values for evidence.
+* Timings differ: OCR is now two engines per photo (the ensemble the scanner already pays for) plus
+  one GLiNER encoder pass, so a label costs more than a single Paddle pass.
 
 ## Validation status
 
@@ -172,7 +198,7 @@ The models cannot be fetched in the hosted sandbox (Hugging Face is unreachable 
 not in Git), so this branch ships the pipeline, the screen, the provisioning tools and structural
 guards only. What was checked here:
 
-* `python3 -m unittest tools/tests/test_gliner_lab` — 21 tests. Three of them build a synthetic
+* `python3 -m unittest tools/tests/test_gliner_lab` — 25 tests. Three of them build a synthetic
   ONNX graph with the six documented inputs, one `MatMulNBits` node and a `[1, spans, classes]`
   output, then run `tools/inspect-gliner-bundle.py` end to end: the compatible bundle is accepted,
   a graph without `MatMulNBits` is refused, and a class count that is not the three lanes is
@@ -182,7 +208,7 @@ guards only. What was checked here:
   `List<Int>.toLongArray()` does not exist, `OnnxTensor.getFloatBuffer()` must be called explicitly
   and can return null, and `AndroidViewModel.getApplication()` is generic, so its result cannot be
   used as an `Application`.
-* Full `tools/tests` discovery: 317 tests, the same 15 pre-existing failures as unmodified HEAD.
+* Full `tools/tests` discovery: 320 tests, the same 15 pre-existing failures as unmodified HEAD.
 
 Still unverified, and therefore listed in `_refs/THINGS_TO_CHECK.md`: the real bundle's output
 layout, prompt token ids from the real `tokenizer.json`, INT4 confirmation on the phone, lane

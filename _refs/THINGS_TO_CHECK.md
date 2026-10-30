@@ -75,11 +75,11 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 ### GLiNER lane lab (new structure on top of Lab v7) — phone checks
 
-*Last run: 21 GLiNER unit tests pass (`python3 -m unittest tools.tests.test_gliner_lab`), including the
+*Last run: 25 GLiNER unit tests pass (`python3 -m unittest tools.tests.test_gliner_lab`), including the
 synthetic INT4 bundle / refusal cases. Full discovery has the same 15 pre-existing failures as
 unmodified HEAD. Kotlin type-checked with kotlinc against API stubs; Android build and device run pending.*
 
-Screen: **Settings → Scanner testing → GLiNER lane lab — PP-OCRv6 ➔ GLiNER-Small INT4**.
+Screen: **Settings → Scanner testing → GLiNER lane lab — ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4**.
 Structure and contracts: `_refs/GLINER_LAB.md`. Weights are not in Git, so this list starts with
 provisioning.
 
@@ -90,19 +90,25 @@ provisioning.
 2. [ ] Install with `-PglinerLabAssets=true` (baked bundle) or copy the three files to the phone and use
    **Import model files**. Confirm the screen lists model/tokenizer/config with byte sizes, "INT4 detected",
    the tokenizer description, and that a wrong file (a screenshot renamed to `.onnx`) is rejected.
-3. [ ] Run one label. Confirm the row shows the three lane texts plus residual text, the six fields, and a
-   layout line such as `span logits [1, spans, classes]` with the real tensor shape. If the graph shape is not
-   supported, the row must fail with the shape and expected span/class counts, not run silently.
-4. [ ] Run all 124 labels. Confirm progress advances one photo at a time, the aggregate shows
+3. [ ] Run one label. Confirm the notes start with both reads, e.g. `PP-OCRv6_medium_det + PP-OCRv6_medium_rec = 14 lines;
+   ML Kit Latin = 12 lines; fused = 16 lines`, followed by `readings: mlkit 12 lines · paddle-v6-medium 14 lines`. A photo
+   where ML Kit finds nothing must still complete on PP-OCRv6 alone (and vice versa) — one engine failing is not a failed
+   label. Confirm the row shows the three lane texts plus residual text, the six fields, and a layout line such as
+   `span logits [1, spans, classes]`. If the graph shape is not supported, the row must fail with the shape and expected
+   span/class counts, not run silently.
+4. [ ] Confirm a fragment both engines read produces two records: in the CSV, `engine` is `mlkit` and `paddle-v6-medium`
+   for the same lane text, with different scores. Confirm a fragment only one engine read produces one record, and that
+   no field is marked GREEN on a lane record whose score is below the engine threshold.
+5. [ ] Run all 124 labels. Confirm progress advances one photo at a time, the aggregate shows
    fully correct / one error / 2+ errors / failed, and per-field correct counts are sane. Compare against the
    Lab v7 baseline (81/121 at the promotion build); a large regression is a real result, not a UI bug.
-5. [ ] Confirm a product/label photo is never written to a wine form and no Lab v7 score, frozen baseline or
+6. [ ] Confirm a product/label photo is never written to a wine form and no Lab v7 score, frozen baseline or
    best-build log changes after this run.
-6. [ ] Stop mid-run; completed rows stay, remaining rows read `Waiting`. Rotate during a run; the model
+7. [ ] Stop mid-run; completed rows stay, remaining rows read `Waiting`. Rotate during a run; the model
    session and progress survive. Remove the imported files and confirm the next run refuses with a clear message.
-7. [ ] Save the scored CSV. Confirm one row per label with model/INT4/layout/words/spans/threshold/max_width,
+8. [ ] Save the scored CSV. Confirm one row per label with model/INT4/layout/words/spans/threshold/max_width,
    lane texts, residual text, OCR lines, per-field expected/observed/state/outcome and all four timings.
-8. [ ] Check `isInt4` caching: replace the ONNX with a non-INT4 export of the same size and confirm the
+9. [ ] Check `isInt4` caching: replace the ONNX with a non-INT4 export of the same size and confirm the
    "INT4 not confirmed" text appears after **Re-check**.
 
 ### Multi-photo Lab v7 wine label audit/test (renamed from "Device-photo sanity check", 2026-10-30)

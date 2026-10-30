@@ -84,6 +84,12 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn('const val ASSET_ROOT="wine-app-labels-v1"', corpus)
         self.assertEqual((APP / "assets/wine-app-labels-v1/images").is_dir(), True)
 
+    def test_screen_says_both_engines_read_the_label(self):
+        screen = self.read(APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
+        self.assertIn("ML Kit Latin + PP-OCRv6", screen)
+        profile = self.read(APP / "java/com/n8rtz/winetracker/ui/screens/ProfileScreen.kt")
+        self.assertIn("GLiNER lane lab — ML Kit + PP-OCRv6", profile)
+
     def test_lab_is_offline_and_reads_no_http(self):
         for path in GLINER.glob("*.kt"):
             source = self.read(path)
@@ -145,11 +151,53 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("gliner_small_int4.onnx", tool)
         self.assertIn("refusing to pin a non-INT4 bundle", tool)
 
-    def test_lane_records_are_single_engine_and_estimated(self):
+    def test_stage_one_runs_mlkit_and_paddle_over_the_same_label(self):
+        ocr = self.read(GLINER / "GlinerOcr.kt")
+        self.assertIn("MlKitOcrEngine(WineScannerServices.nativeGate)", ocr,
+                      "stage 1 must use the same bundled ML Kit client and gate as the production ensemble")
+        self.assertIn("const val MLKIT_ID=\"mlkit\"", ocr)
+        self.assertIn("const val PADDLE_ID=\"paddle-v6-medium\"", ocr)
+        self.assertIn("PaddleTextDetector.detect", ocr)
+        self.assertIn("PaddleTextRecognizer.recognize", ocr)
+        # Both reads are started together and awaited as a pair, on one decoded bitmap.
+        self.assertIn("coroutineScope {", ocr)
+        self.assertIn("async(Dispatchers.Default) { readMlKit(", ocr)
+        self.assertIn("async(Dispatchers.Default) { readPaddle(", ocr)
+        self.assertIn("mlkit.await() to paddle.await()", ocr)
+        self.assertIn("GlinerFusion.fuse(mlKitReadings+paddleReadings)", ocr)
+        self.assertIn("CaptureDecoder().decode", ocr)
+
+    def test_fusion_keeps_each_engine_score_and_does_not_pre_filter(self):
+        fusion = self.read(GLINER / "GlinerFusion.kt")
+        self.assertIn("data class Reading", fusion)
+        self.assertIn("val engines=members.groupBy { it.engineId }", fusion)
+        self.assertIn("mapValues { (_,reads) -> reads.maxOf { it.score }", fusion)
+        # No score floor here: Garbled fragments are the evidence GLiNER is asked to resolve.
+        for forbidden in ("score <=", "score>=", "threshold"):
+            self.assertNotIn(forbidden, fusion)
+        document = self.read(GLINER / "GlinerDocument.kt")
+        self.assertIn("val engines:Map<String,Float> = emptyMap()", document)
+
+    def test_engine_ids_match_the_production_engines(self):
+        ocr = self.read(GLINER / "GlinerOcr.kt")
+        self.assertIn('const val MLKIT_ID="mlkit"', ocr)
+        self.assertIn('const val PADDLE_ID="paddle-v6-medium"', ocr)
+        mlkit = self.read(APP / "java/com/yourapp/wine/ocr/MlKitOcrEngine.kt")
+        self.assertIn('override val id = "mlkit"', mlkit)
+        paddle = self.read(APP / "java/com/yourapp/wine/textlab/PaddleMediumOcrEngine.kt")
+        self.assertIn('override val id="paddle-v6-medium"', paddle)
+        # Existing rules branch on the "paddle" prefix and on engine equality; these ids must not drift.
+        self.assertIn('startsWith("paddle")', self.read(APP / "java/com/yourapp/wine/ocr/Tokens.kt"))
+
+    def test_lane_records_keep_both_engines_and_measured_scores(self):
         records = self.read(GLINER / "GlinerLaneRecords.kt")
-        self.assertIn('const val ENGINE="paddle-gliner-v1"', records)
-        self.assertIn("scoreIsEstimated=true", records)
-        self.assertIn('variantId=if(observation.lane=="residual") "residual" else "lane:${observation.lane}"', records)
+        self.assertIn('const val FALLBACK_ENGINE=GlinerOcr.PADDLE_ID', records)
+        self.assertIn("engines.map { (engine,score) ->", records)
+        self.assertIn("engineId=engine", records)
+        self.assertIn("scoreIsEstimated=false", records)
+        self.assertIn('val variant=if(observation.lane=="residual") "residual" else "lane:${observation.lane}"', records)
+        # A lane is never more certain than the weakest line either engine read.
+        self.assertIn("scores[engine]=if(current==null) score else minOf(current,score)", records)
 
     def test_reference_targets_never_reach_the_runner(self):
         runner = self.read(GLINER / "GlinerLabRunner.kt")

@@ -3,12 +3,18 @@ package com.yourapp.wine.gliner
 import android.graphics.RectF
 import java.util.Locale
 
-/** One PP-OCRv6 observation: recognized line text, its rectified-label box and CTC posterior. */
+/**
+ * One fused OCR line: the text both engines are pointing at, its rectified-label box and the
+ * combined posterior. [engines] keeps every engine that read this line with its own score, so the
+ * downstream records can still count two independent engines; [posterior] is only the display and
+ * threshold value (1 - product of the engine misses).
+ */
 internal data class GlinerOcrLine(
     val text:String,
     val box:RectF,
     val quad:List<android.graphics.PointF>,
     val posterior:Float,
+    val engines:Map<String,Float> = emptyMap(),
 )
 
 /** One word of the flattened label document, with the OCR line it came from and its own box. */
@@ -19,12 +25,14 @@ internal data class GlinerWord(
     val charStart:Int,
     val charEnd:Int,
     val box:RectF,
+    val engines:Map<String,Float> = emptyMap(),
 )
 
 /**
  * Reading-order view of a wine label.
  *
- * PP-OCRv6 returns lines in detector order, which is not reading order, and a wine label mixes
+ * The fused ML Kit + PP-OCRv6 lines arrive in detector order, which is not reading order, and a
+ * wine label mixes
  * architecture: an estate name above a cuvée, an appellation in a crest, a vintage in a corner.
  * This document re-sorts lines into horizontal bands (top to bottom, left to right inside a band)
  * and flattens them into one word sequence. GLiNER sees that sequence; every word still knows the
@@ -83,7 +91,7 @@ internal class GlinerDocument(
                     val normalized=normalize(piece.text)
                     if(normalized.isEmpty()) continue
                     words += GlinerWord(piece.text,normalized,lineIndex,offset+piece.start,offset+piece.end,
-                        wordBox(line.box,line.text.length,piece.start,piece.end))
+                        wordBox(line.box,line.text.length,piece.start,piece.end),line.engines)
                 }
                 offset+=line.text.length+1
             }

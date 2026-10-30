@@ -2,7 +2,7 @@
   "version": 1,
   "schema": "gliner-lab-bundle-v1",
   "asset_root": "gliner-lab-v1",
-  "pipeline": "PP-OCRv6 Medium det+rec -> GLiNER-Small INT4 -> existing Lab v7 post-processing",
+  "pipeline": "ML Kit Latin + PP-OCRv6 Medium det+rec (parallel, fused) -> GLiNER-Small INT4 -> existing Lab v7 post-processing",
   "model": {
     "upstream": "urchade/gliner_small-v2.1",
     "architecture": "uni-encoder span GLiNER (DeBERTa-v3-small backbone)",
@@ -45,6 +45,13 @@
       "span logits [1, classes, spans]",
       "token start/end/inside logits [1, words, classes, 3]"
     ]
+  },
+  "readings": {
+    "engines": ["paddle-v6-medium", "mlkit"],
+    "start": "both engines read the same decoded label, launched together; the app-wide NativeEngineGate serialises the native calls",
+    "fusion": "one line when the normalized texts match at (almost) the same place, or when boxes overlap strongly and the spellings are close; every other reading is kept for GLiNER",
+    "engine_scores": "each fused line keeps every engine that read it with that engine's own measured score; lane records emit one TokenRecord per engine",
+    "rejected": "nothing is dropped for low confidence in stage 1; low-confidence fragments are evidence for the contextual stage"
   },
   "lanes": [
     { "key": "producer", "prompt": "wine producer or winery name" },
