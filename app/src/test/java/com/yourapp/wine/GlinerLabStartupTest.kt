@@ -2,8 +2,11 @@ package com.yourapp.wine
 
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import com.yourapp.wine.gliner.GlinerLabActivity
 import org.junit.Rule
 import org.junit.Test
@@ -19,6 +22,7 @@ class GlinerLabStartupTest {
 
     @Test fun screenOpensAndShowsTheScoreboard() {
         compose.onNodeWithText("GLiNER lane lab").assertIsDisplayed()
-        compose.onNodeWithText("Scored results").assertExists()
+        compose.onNodeWithTag("gliner_lab_content").performScrollToNode(hasText("Scored results"))
+        compose.onNodeWithText("Scored results").assertIsDisplayed()
     }
 }

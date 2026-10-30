@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -103,7 +104,7 @@ internal fun GlinerLabScreen(
     val filtered=if(selectedFields.isEmpty()) incomplete else incomplete.filter { row -> failedKeys(row).any { it in selectedFields } }
     val elapsed=if(state.running) (now-state.runStartedMs).coerceAtLeast(0) else state.runElapsedMs
     LazyColumn(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp,vertical=12.dp),
+        Modifier.fillMaxSize().testTag("gliner_lab_content").statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp,vertical=12.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp),
     ) {
         item {
