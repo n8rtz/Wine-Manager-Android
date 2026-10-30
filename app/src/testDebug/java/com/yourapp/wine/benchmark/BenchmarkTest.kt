@@ -6,7 +6,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk=[26],manifest=Config.NONE)
+@Config(sdk=[35],manifest=Config.NONE)
 class BenchmarkTest {
     @Test fun csvTruthAndEscaping()=BenchmarkCsvChecks.csvCarriesPerImageTruthAndEscapesSpreadsheets()
     @Test fun durableHistory()=BenchmarkCsvChecks.historySurvivesNewInstancesAndExportsAllBatches()

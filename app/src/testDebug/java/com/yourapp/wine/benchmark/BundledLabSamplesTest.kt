@@ -14,7 +14,7 @@ import java.security.MessageDigest
 
 /** Android resources/FileProvider persistence checks; run with testDebugUnitTest, not the host harness. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk=[26])
+@Config(sdk=[35])
 class BundledLabSamplesTest {
     @Test fun originalsReviewAndEditsSurviveReload() = runBlocking {
         val context=RuntimeEnvironment.getApplication()
