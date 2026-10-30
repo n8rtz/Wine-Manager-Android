@@ -46,6 +46,8 @@ GLiNER2.5 is the better model in the abstract (74M, DeBERTa-v3-xsmall, no span-w
 a wine label the text is 20–40 words, so the boundary architecture buys nothing here while costing a
 stage-2 rewrite. Revisit it only if the lab ever needs long-context or multi-task extraction.
 
+Producing and hosting the bundle: see [GLINER_MODEL_UPLOAD.md](GLINER_MODEL_UPLOAD.md).
+
 To try the v2.5 span model instead of v2.1:
 
 ```bash

@@ -14,12 +14,23 @@ What it does
   5. copies tokenizer.json + gliner_config.json and (with --pin) writes bytes/sha256 into
      app/src/main/assets/gliner-lab-v1/model-manifest.json.
 
-Requirements (desktop, not CI):
-    pip install "gliner[onnx]" onnx onnxruntime transformers torch
+Requirements (desktop, not CI). The 4-bit quantizer API is the one that ships in onnxruntime
+1.20.x; newer runtimes moved it to matmul_nbits_quantizer (needs onnx_ir) and it will not import,
+so pin the versions:
+    python3 -m venv .venv-gliner && source .venv-gliner/bin/activate
+    pip install "gliner[onnx]" "onnxruntime==1.20.1" "onnx==1.17.0" transformers torch
 
-Example:
+Examples:
     python3 tools/fetch-gliner-small-int4.py --out app/src/main/assets/gliner-lab-v1 --pin
     python3 tools/fetch-gliner-small-int4.py --device-dir ~/Downloads/gliner-bundle
+    python3 tools/fetch-gliner-small-int4.py --out bundle --no-quantize-embeddings
+
+Size: the DeBERTa-v3-small embedding table is a plain Gather of 128100x768 floats, roughly 394 MB
+in float32. Quantizing the MatMuls alone leaves that table untouched, so the bundle stays around
+400 MB. --quantize-embeddings (on by default) also block-quantizes that Gather to
+GatherBlockQuantized, which is what brings the bundle into the ~60-110 MB range. It needs opset 21
+(the export bumps it automatically) and ONNX Runtime >= 1.16, both satisfied by the app's pinned
+com.microsoft.onnxruntime:onnxruntime-android:1.21.1.
 """
 from __future__ import annotations
 
@@ -60,18 +71,34 @@ def export_fp32(model_name: str, work: pathlib.Path, opset: int) -> pathlib.Path
     return exported
 
 
-def quantize_int4(fp32: pathlib.Path, int4: pathlib.Path, block_size: int) -> pathlib.Path:
+def quantize_int4(fp32: pathlib.Path, int4: pathlib.Path, block_size: int,
+                  quantize_embeddings: bool) -> pathlib.Path:
     import onnx
-    from onnxruntime.quantization.matmul_4bits_quantizer import MatMul4BitsQuantizer
-    from onnxruntime.quantization.onnx_quantizer import ONNXModel
 
-    print(f"[2/5] INT4 weight-only quantization (MatMulNBits, block {block_size})")
-    model = ONNXModel(onnx.load(str(fp32)))
-    quantizer = MatMul4BitsQuantizer(model, block_size=block_size, is_symmetric=True, accuracy_level=4)
+    try:
+        from onnxruntime.quantization.matmul_4bits_quantizer import MatMul4BitsQuantizer
+    except ModuleNotFoundError as error:  # newer runtimes renamed the module
+        raise SystemExit(
+            "the 4-bit quantizer moved out of onnxruntime; install the pinned versions:\n"
+            '    pip install "onnxruntime==1.20.1" "onnx==1.17.0"\n'
+            f"(import failed: {error})"
+        ) from error
+
+    op_types = ("MatMul", "Gather") if quantize_embeddings else ("MatMul",)
+    print(f"[2/5] INT4 weight-only quantization ({', '.join(op_types)}, block {block_size})")
+    # Pass the ModelProto, not an ONNXModel: the quantizer wraps it again and 1.20.1 then trips
+    # over its own wrapper ("'method' object is not iterable" in set_opset_import).
+    quantizer = MatMul4BitsQuantizer(onnx.load(str(fp32)), block_size=block_size,
+                                     is_symmetric=True, accuracy_level=4,
+                                     op_types_to_quantize=op_types)
     quantizer.process()
     quantizer.model.save_model_to_file(str(int4), use_external_data_format=False)
     onnx.checker.check_model(onnx.load(str(int4)))
-    print(f"[2/5] wrote {int4} ({int4.stat().st_size/1e6:.1f} MB)")
+    megabytes = int4.stat().st_size / 1e6
+    print(f"[2/5] wrote {int4} ({megabytes:.1f} MB)")
+    if megabytes > 90:
+        print(f"       over 90 MB: split it before uploading, e.g. split -b 90m {int4.name} "
+              f"{int4.name}.part-")
     return int4
 
 
@@ -80,7 +107,8 @@ def verify_int4(int4: pathlib.Path) -> int:
 
     graph = onnx.load(str(int4))
     count = sum(1 for node in graph.graph.node if node.op_type == "MatMulNBits")
-    print(f"[3/5] MatMulNBits nodes: {count}")
+    gathers = sum(1 for node in graph.graph.node if node.op_type == "GatherBlockQuantized")
+    print(f"[3/5] MatMulNBits nodes: {count}, GatherBlockQuantized (embeddings): {gathers}")
     if count == 0:
         raise SystemExit("INT4 export contains no MatMulNBits node; refusing to pin a non-INT4 bundle")
     return count
@@ -166,6 +194,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--fp32-onnx", default=None, help="reuse an existing fp32 ONNX export instead of exporting")
     parser.add_argument("--opset", type=int, default=19)
     parser.add_argument("--block-size", type=int, default=32)
+    parser.add_argument("--quantize-embeddings", dest="quantize_embeddings", action="store_true",
+                        default=True,
+                        help="also block-quantize the embedding Gather (default; ~400 MB -> ~90 MB)")
+    parser.add_argument("--no-quantize-embeddings", dest="quantize_embeddings", action="store_false",
+                        help="leave the float32 embedding table alone (bigger, slightly safer)")
     parser.add_argument("--pin", action="store_true", help="write bytes/sha256 into model-manifest.json")
     parser.add_argument("--url-model", default="", help="optional download URL recorded in the pinned manifest")
     parser.add_argument("--url-tokenizer", default="")
@@ -180,7 +213,7 @@ def main(argv: list[str]) -> int:
 
     fp32 = pathlib.Path(args.fp32_onnx).resolve() if args.fp32_onnx else export_fp32(args.model, work, args.opset)
     int4 = out / MODEL_FILE
-    quantize_int4(fp32, int4, args.block_size)
+    quantize_int4(fp32, int4, args.block_size, args.quantize_embeddings)
     verify_int4(int4)
     for name in (TOKENIZER_FILE, CONFIG_FILE):
         candidate = work / name

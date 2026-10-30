@@ -254,6 +254,13 @@ class GlinerBundleInspectTests(unittest.TestCase):
         self.assertIn("missing gliner_small_int4.onnx", result.stdout + result.stderr)
         self.assertIn("fetch-gliner-small-int4.py", result.stdout + result.stderr)
 
+    def test_fetch_tool_defaults_to_the_smaller_embedding_quantized_bundle(self):
+        result = subprocess.run([sys.executable, str(ROOT / "tools/fetch-gliner-small-int4.py"), "--help"],
+                                capture_output=True, text=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--no-quantize-embeddings", result.stdout)
+        self.assertIn("GatherBlockQuantized", result.stdout)
+
     @unittest.skipUnless(HAVE_ONNX, "onnx/onnxruntime/tokenizers are not installed")
     def test_synthetic_int4_bundle_is_accepted(self):
         with tempfile.TemporaryDirectory() as folder:
