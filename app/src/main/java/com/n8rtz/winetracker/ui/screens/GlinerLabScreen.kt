@@ -1,16 +1,21 @@
 package com.n8rtz.winetracker.ui.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -19,10 +24,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.viewmodels.GlinerLabRow
@@ -33,9 +45,10 @@ import com.yourapp.wine.gliner.GlinerLane
 /**
  * Settings > Scanner testing > GLiNER lane lab.
  *
- * One screen, three cards: the model, the run, the results. Every string is inside a
- * [SelectionContainer], and "Copy all results" puts the whole run on the clipboard so a problem can
- * be pasted into a chat without screenshots.
+ * Laid out like the 124-label benchmark page: a compact header, the run controls, then tables -
+ * one row per label with a column per field, and the same expandable `+` cell that opens the
+ * detail. Every cell is inside a [SelectionContainer] and "Copy all results" puts the whole run on
+ * the clipboard, so a bad run can be pasted into a chat instead of screenshotted.
  */
 @Composable
 internal fun GlinerLabScreen(
@@ -55,53 +68,62 @@ internal fun GlinerLabScreen(
     onClose:()->Unit,
 ) {
     val clipboard=LocalClipboardManager.current
+    var expandedDetail by remember { mutableStateOf(emptySet<String>()) }
     LazyColumn(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=14.dp,vertical=10.dp),
+        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=12.dp,vertical=10.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp),
     ) {
         item {
             SelectionContainer {
                 Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
                     Text("GLiNER lane lab",style=MaterialTheme.typography.headlineSmall)
-                    Text("ML Kit Latin + PP-OCRv6 ➔ GLiNER-Small INT4 ➔ Lab v7",style=MaterialTheme.typography.bodySmall)
-                    Text("build ${BuildConfig.BUILD_COMMIT} · ${state.laneConfig.signatureKey()}",style=MaterialTheme.typography.bodySmall)
+                    Text("build ${BuildConfig.BUILD_COMMIT} · ${state.laneConfig.signatureKey()}",
+                        style=MaterialTheme.typography.bodySmall)
                 }
             }
         }
         item {
             Card(Modifier.fillMaxWidth()) {
-                SelectionContainer {
-                    Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                        Text("Model",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.SemiBold)
-                        Text(if(state.bundle.ready) "ready · ${state.bundle.files.joinToString(", ") { it.name }}" else state.bundle.summary())
-                        if(state.modelMs>0) Text("load ${state.modelMs} ms · bundle ${state.bundleMs} ms · session ${state.modelMs} ms")
-                        Text(if(state.bundle.int4) "INT4 confirmed (MatMulNBits)" else "INT4 not confirmed",
-                            style=MaterialTheme.typography.bodySmall)
-                        if(state.tokenizer!="not loaded") Text("tokenizer: ${state.tokenizer}",style=MaterialTheme.typography.bodySmall)
-                        Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                            TextButton(onClick=onImport,enabled=!state.running) { Text("Import files") }
-                            TextButton(onClick=onClearBundle,enabled=!state.running) { Text("Remove") }
-                            TextButton(onClick=onRefresh,enabled=!state.running) { Text("Re-check") }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                        Text("Run",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.SemiBold)
-                        SelectionContainer {
-                            Text("threshold ${"%.2f".format(state.laneConfig.threshold)} · width ${state.laneConfig.maxWidth}",
+                Column(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                    SelectionContainer {
+                        Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                            Text(if(state.bundle.ready) "model ready · INT4 "+(if(state.bundle.int4) "✓" else "✗")
+                                else "model missing · ${state.bundle.summary()}",
+                                style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold)
+                            if(state.modelMs>0) Text("load ${state.modelMs} ms · bundle ${state.bundleMs} ms",
                                 style=MaterialTheme.typography.bodySmall)
+                            if(state.tokenizer!="not loaded") Text(state.tokenizer,style=MaterialTheme.typography.bodySmall)
                         }
                     }
                     Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-                        TextButton(onClick={ onThreshold(-0.05f) },enabled=!state.running) { Text("thr −") }
-                        TextButton(onClick={ onThreshold(0.05f) },enabled=!state.running) { Text("thr +") }
-                        TextButton(onClick={ onMaxWidth(-2) },enabled=!state.running) { Text("wid −") }
-                        TextButton(onClick={ onMaxWidth(2) },enabled=!state.running) { Text("wid +") }
+                        TextButton(onClick=onImport,enabled=!state.running) { Text("Import") }
+                        TextButton(onClick=onClearBundle,enabled=!state.running) { Text("Remove") }
+                        TextButton(onClick=onRefresh,enabled=!state.running) { Text("Re-check") }
+                    }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+                        horizontalArrangement=Arrangement.SpaceBetween) {
+                        Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
+                            TextButton(onClick={ onThreshold(-0.05f) },enabled=!state.running,
+                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("thr −") }
+                            TextButton(onClick={ onThreshold(0.05f) },enabled=!state.running,
+                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("thr +") }
+                            TextButton(onClick={ onMaxWidth(-2) },enabled=!state.running,
+                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("wid −") }
+                            TextButton(onClick={ onMaxWidth(2) },enabled=!state.running,
+                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("wid +") }
+                        }
+                        SelectionContainer {
+                            Text("${"%.2f".format(state.laneConfig.threshold)} · w${state.laneConfig.maxWidth}",
+                                style=MaterialTheme.typography.bodySmall)
+                        }
                     }
                     Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
                         TextButton(onClick=onRunAll,enabled=!state.running && state.bundle.ready) {
@@ -113,22 +135,14 @@ internal fun GlinerLabScreen(
                     if(state.running) {
                         LinearProgressIndicator(modifier=Modifier.fillMaxWidth())
                         SelectionContainer {
-                            Text("${state.done}/${state.total} · ${state.current}",style=MaterialTheme.typography.bodySmall)
+                            Text("${state.done}/${state.total} · ${state.current}",
+                                style=MaterialTheme.typography.bodySmall)
                         }
                     }
                     SelectionContainer {
                         Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
                             if(state.message.isNotBlank()) Text(state.message,style=MaterialTheme.typography.bodySmall)
-                            state.aggregate?.let { aggregate ->
-                                Text(aggregate.text(),style=MaterialTheme.typography.bodySmall)
-                                Text("per field: "+aggregate.fieldCorrect.entries.joinToString(" · ") { (field,value) ->
-                                    "$field $value/${aggregate.fieldTotal[field] ?: 0}"
-                                },style=MaterialTheme.typography.bodySmall)
-                            }
-                            if(state.ran) {
-                                Text("Country, region, subregion and vintage stay with the Lab v7 post-processing.",
-                                    style=MaterialTheme.typography.bodySmall)
-                            }
+                            state.aggregate?.let { Text(it.text(),style=MaterialTheme.typography.bodySmall) }
                         }
                     }
                 }
@@ -136,86 +150,184 @@ internal fun GlinerLabScreen(
         }
         if(state.ran) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                        Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-                            TextButton(onClick={ clipboard.setText(AnnotatedString(onReport())) }) {
-                                Text("Copy all results")
-                            }
-                            TextButton(onClick=onSaveJson,enabled=!state.running) { Text("Save JSON") }
-                            TextButton(onClick=onSaveCsv,enabled=!state.running) { Text("Save CSV") }
-                        }
-                        SelectionContainer {
-                            Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                                if(state.exports.isNotEmpty()) {
-                                    Text("saved: "+state.exports.joinToString(", ") { it.name },style=MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
+                    TextButton(onClick={ clipboard.setText(AnnotatedString(onReport())) }) { Text("Copy all") }
+                    TextButton(onClick=onSaveJson,enabled=!state.running) { Text("Save JSON") }
+                    TextButton(onClick=onSaveCsv,enabled=!state.running) { Text("Save CSV") }
+                }
+            }
+            state.aggregate?.let { aggregate ->
+                item {
+                    Text("Per field",style=MaterialTheme.typography.titleMedium)
+                    FieldScoreTable(aggregate.fieldCorrect,aggregate.fieldTotal)
+                }
+            }
+            item {
+                Text(if(state.finished) "Labels (${state.samples.count { it.result!=null }}/${state.samples.size})"
+                    else "Labels",style=MaterialTheme.typography.titleMedium)
+            }
+            items(state.samples,key={ it.sample.image }) { row ->
+                LabelRow(row,expanded=row.sample.image in state.expanded,
+                    detail=row.sample.image in expandedDetail,enabled=!state.running,
+                    onToggle={ onToggleRow(row.sample.image) },
+                    onDetail={ expandedDetail=if(row.sample.image in expandedDetail)
+                        expandedDetail-row.sample.image else expandedDetail+row.sample.image },
+                    onRun={ onRunImage(row.sample.image) })
+            }
+        }
+    }
+}
+
+/** Field | Correct | Scored, the same three-column shape as the benchmark page's score table. */
+@Composable
+private fun FieldScoreTable(correct:Map<String,Int>,total:Map<String,Int>) {
+    val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val fieldWidth=140.dp
+    val numberWidth=64.dp
+    val rows=total.keys.ifEmpty { correct.keys }.toList()
+    SelectionContainer {
+        Column(Modifier.horizontalScroll(rememberScrollState())) {
+            Row {
+                Text("Field",Modifier.width(fieldWidth).padding(4.dp),
+                    style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                Text("Correct",Modifier.width(numberWidth).padding(4.dp),
+                    style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                Text("Scored",Modifier.width(numberWidth).padding(4.dp),
+                    style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+            }
+            rows.forEach { key ->
+                HorizontalDivider(Modifier.width(fieldWidth+numberWidth*2))
+                val scored=total[key] ?: 0
+                val right=correct[key] ?: 0
+                val color=when { scored==0 -> MaterialTheme.colorScheme.onSurfaceVariant
+                    right==scored -> passColor else -> MaterialTheme.colorScheme.error }
+                Row {
+                    Text(key,Modifier.width(fieldWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                    Text("$right",Modifier.width(numberWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,color=color,maxLines=1,softWrap=false)
+                    Text("$scored",Modifier.width(numberWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One label: `# | status | one column per scored field`, cells green when they match the expected
+ * answer, red when they do not, and `—` when the pipeline left the field blank. The trailing `+`
+ * opens the lane and probe detail, exactly like the benchmark table's build rows.
+ */
+@Composable
+private fun LabelRow(
+    row:GlinerLabRow,
+    expanded:Boolean,
+    detail:Boolean,
+    enabled:Boolean,
+    onToggle:()->Unit,
+    onDetail:()->Unit,
+    onRun:()->Unit,
+) {
+    val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val numberWidth=34.dp
+    val statusWidth=84.dp
+    val fieldWidth=112.dp
+    val result=row.result
+    val fields=result?.fieldResults.orEmpty()
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=6.dp),
+            verticalArrangement=Arrangement.spacedBy(2.dp)) {
+            SelectionContainer {
+                Column(Modifier.horizontalScroll(rememberScrollState())) {
+                    Row(verticalAlignment=Alignment.CenterVertically) {
+                        Row(Modifier.width(numberWidth),verticalAlignment=Alignment.CenterVertically) {
+                            Text("${row.index+1}",Modifier.weight(1f).padding(4.dp),
+                                style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                            DisableSelection {
+                                TextButton(onClick=onDetail,contentPadding=PaddingValues(0.dp),
+                                    modifier=Modifier.width(20.dp)) {
+                                    Text(if(detail) "−" else "+",style=MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
+                        Text(result?.status ?: row.status,Modifier.width(statusWidth).padding(4.dp),
+                            style=MaterialTheme.typography.bodySmall,maxLines=1,
+                            overflow=TextOverflow.Ellipsis,softWrap=false)
+                        fields.forEach { field ->
+                            val color=when {
+                                field.observed.isBlank() -> MaterialTheme.colorScheme.onSurfaceVariant
+                                field.observed.trim().equals(field.expected.trim(),ignoreCase=true) -> passColor
+                                else -> MaterialTheme.colorScheme.error
+                            }
+                            Text(field.observed.ifBlank { "—" },
+                                Modifier.width(fieldWidth).padding(4.dp),
+                                style=MaterialTheme.typography.bodySmall,color=color,
+                                maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
+                        }
                     }
                 }
             }
-        }
-        items(state.samples,key={ it.sample.image }) { row ->
-            ResultRow(row,expanded=row.sample.image in state.expanded,enabled=!state.running,
-                onToggle={ onToggleRow(row.sample.image) },onRun={ onRunImage(row.sample.image) })
+            if(detail) {
+                if(result!=null) {
+                    SelectionContainer { ResultDetail(result) }
+                } else {
+                    Text("not run",style=MaterialTheme.typography.bodySmall)
+                    TextButton(onClick=onRun,enabled=enabled) { Text("Run this label") }
+                }
+            }
+            if(!expanded && result==null) {
+                TextButton(onClick=onToggle,enabled=enabled) { Text("select") }
+            }
         }
     }
 }
 
+/** Expected | observed | state | outcome for the six fields, then the lanes and the probes. */
 @Composable
-private fun ResultRow(row:GlinerLabRow,expanded:Boolean,enabled:Boolean,onToggle:()->Unit,onRun:()->Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick=onToggle)) {
-        Column(Modifier.fillMaxWidth().padding(10.dp),verticalArrangement=Arrangement.spacedBy(2.dp)) {
-            SelectionContainer {
-                Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                        Text("${row.index+1}. ${row.displayName}",style=MaterialTheme.typography.bodyMedium)
-                        Text(row.result?.let { "${it.status} · ${it.errorCount} err" } ?: row.status,
-                            style=MaterialTheme.typography.bodySmall)
-                    }
-                    val result=row.result
-                    if(result!=null) {
-                        result.fieldResults.forEach { field ->
-                            Text("${field.label}: ${field.observed.ifBlank { "—" }}",style=MaterialTheme.typography.bodySmall)
-                        }
-                        if(expanded) {
-                            HorizontalDivider(modifier=Modifier.padding(vertical=4.dp))
-                            Detail(result)
-                        }
-                    } else if(expanded) {
-                        Text("Not run yet.",style=MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-            if(expanded && row.result==null) TextButton(onClick=onRun,enabled=enabled) { Text("Run this label") }
-        }
-    }
-}
-
-@Composable
-private fun Detail(result:GlinerLabImageResult) {
+private fun ResultDetail(result:GlinerLabImageResult) {
+    val nameWidth=78.dp
+    val valueWidth=150.dp
     Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-        Text("probes (best span per lane, before threshold)",style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold)
-        if(result.probes.isEmpty()) Text("none",style=MaterialTheme.typography.bodySmall)
-        result.probes.forEach { Text(it,style=MaterialTheme.typography.bodySmall) }
+        Column(Modifier.horizontalScroll(rememberScrollState())) {
+            Row {
+                listOf("Field","Expected","Observed","State","Outcome").forEach { header ->
+                    Text(header,Modifier.width(if(header=="Field") nameWidth else valueWidth).padding(4.dp),
+                        style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                }
+            }
+            result.fieldResults.forEach { field ->
+                HorizontalDivider(Modifier.width(nameWidth+valueWidth*4))
+                Row {
+                    Text(field.label,Modifier.width(nameWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                    Text(field.expected.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
+                    Text(field.observed.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
+                    Text(field.state.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                    Text(field.outcome.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
+                        style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
+                }
+            }
+        }
         GlinerLane.ordered.forEach { lane ->
-            Text("${lane.shortName}: ${result.laneTexts[lane.key].orEmpty().ifBlank { "—" }}",style=MaterialTheme.typography.bodySmall)
-        }
-        if(result.residualTexts.isNotEmpty()) {
-            Text("residual: ${result.residualTexts.joinToString(" | ")}",style=MaterialTheme.typography.bodySmall)
-        }
-        result.fieldResults.forEach { field ->
-            Text("${field.label}: ${field.observed.ifBlank { "—" }} · ${field.state.ifBlank { "-" }} · ${field.outcome} · expected ${field.expected.ifBlank { "—" }}",
+            Text("${lane.shortName}: ${result.laneTexts[lane.key].orEmpty().ifBlank { "—" }}",
                 style=MaterialTheme.typography.bodySmall)
         }
-        Text("${result.layout} · ${result.wordCount} words · ${result.spanCount} spans",style=MaterialTheme.typography.bodySmall)
-        Text("ocr ${result.ocrMs} ms · gliner ${result.glinerMs} ms · post ${result.postMs} ms · total ${result.totalMs} ms",
+        result.probes.forEach { Text("probe: $it",style=MaterialTheme.typography.bodySmall) }
+        if(result.residualTexts.isNotEmpty()) {
+            Text("residual ${result.residualTexts.size}: ${result.residualTexts.joinToString(" | ")}",
+                style=MaterialTheme.typography.bodySmall)
+        }
+        Text("${result.layout} · ${result.wordCount} w · ${result.spanCount} spans · "+
+            "ocr ${result.ocrMs} · gliner ${result.glinerMs} · post ${result.postMs} ms",
             style=MaterialTheme.typography.bodySmall)
         if(result.message.isNotBlank()) Text(result.message,style=MaterialTheme.typography.bodySmall)
         if(result.ocrLines.isNotEmpty()) {
-            Text("OCR (${result.ocrLines.size})",style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold)
-            result.ocrLines.forEach { Text(it,style=MaterialTheme.typography.bodySmall) }
+            Text("OCR ${result.ocrLines.size}: ${result.ocrLines.joinToString(" | ")}",
+                style=MaterialTheme.typography.bodySmall)
         }
         if(result.notes.isNotBlank()) Text(result.notes.trim(),style=MaterialTheme.typography.bodySmall)
     }

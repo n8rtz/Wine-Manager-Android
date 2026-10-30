@@ -73,8 +73,6 @@ class GlinerLabStructureTests(unittest.TestCase):
             for match in re.findall(r'GlinerLane\.[A-Z_]+', lanes):
                 self.assertNotIn(forbidden, match.lower())
         runner = self.read(GLINER / "GlinerLabRunner.kt")
-        self.assertIn("Country, region, subregion and vintage", self.read(
-            APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt"))
         self.assertIn("PhoneCorpusMath.fields", runner)
 
     def test_dataset_is_the_lab_v7_sample_set(self):
@@ -85,8 +83,7 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertEqual((APP / "assets/wine-app-labels-v1/images").is_dir(), True)
 
     def test_screen_says_both_engines_read_the_label(self):
-        screen = self.read(APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
-        self.assertIn("ML Kit Latin + PP-OCRv6", screen)
+        # The page carries no architecture prose any more; the entry point still says both engines.
         profile = self.read(APP / "java/com/n8rtz/winetracker/ui/screens/ProfileScreen.kt")
         self.assertIn("GLiNER lane lab — ML Kit + PP-OCRv6", profile)
 
@@ -103,7 +100,7 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("MatMulNBits", bundle)
         self.assertIn("fun isInt4", bundle)
         screen = self.read(APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
-        self.assertIn("INT4 not confirmed", screen)
+        self.assertIn('INT4 "+(if(state.bundle.int4)', screen)
         model = self.read(GLINER / "GlinerOnnxModel.kt")
         self.assertIn("int4=status.int4", model)
 

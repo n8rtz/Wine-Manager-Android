@@ -36,9 +36,9 @@ internal class GlinerTokenizer private constructor(
         (metaspace?.let { " · metaspace '$it'" } ?: "")+(if(lowerCase) " · lowercased" else "")
 
     /**
-     * Token ids for one already-split prompt word. Prompt markers (`<<ENT>>`, `<<SEP>>`) are used as
-     * plain text by the model: the gliner library feeds their SentencePiece pieces, not the added
-     * token id, so this deliberately skips the added-token shortcut.
+     * Token ids for one already-split word, ignoring added tokens. Kept for the diagnostic dump of
+     * how a marker would tokenize as text; the prompt itself uses [tokenId] for `<<ENT>>`/`<<SEP>>`,
+     * because the exported graph counts its lane classes from those ids.
      */
     fun encodePromptWord(word:String):List<Int> = encodePieces(word,false)
 
@@ -67,8 +67,10 @@ internal class GlinerTokenizer private constructor(
         val pieceAt=arrayOfNulls<String>(chars+1)
         best[0]=0.0
         for(end in 1..chars) {
-            val shortest=maxOf(1,end-64)
-            for(start in shortest-1 downTo 0) {
+            // Try every piece that ends at `end`, longest first, capped at 64 characters. The old
+            // bound (`start in shortest-1 downTo 0`) only ever started at 0, so a word could match
+            // only when the whole word was one vocab piece - every label word collapsed to <unk>.
+            for(start in end-1 downTo maxOf(0,end-64)) {
                 if(best[start]==Double.NEGATIVE_INFINITY) continue
                 val piece=surface.substring(start,end)
                 val score=scores[piece] ?: continue
