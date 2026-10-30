@@ -11,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [26], manifest = Config.NONE)
+@Config(sdk = [35], manifest = Config.NONE)
 class GeometryTest {
     @Test fun projectiveWarpRoundtripAndNormalizedBoxes() {
         val matrix = Matrix3(listOf(1.1, .1, -10.0, -.05, 1.2, 12.0, .0001, .0002, 1.0))
