@@ -103,16 +103,17 @@ android {
         buildConfig = true
     }
 
-    // The workflow's app adapter can call existing app services without a circular Gradle
-    // dependency. Its standalone inference and decision engine are in :gliner-workflow.
-    sourceSets.getByName("main").java.srcDir("../gliner-workflow/src/appIntegration/java")
-    sourceSets.getByName("test").java.srcDir("../gliner-workflow/src/appIntegrationTest/java")
     // Reuse the full-resolution OCR fixtures in instrumented tests without duplicating them.
     sourceSets.getByName("androidTest").assets.srcDir("src/test/resources")
     sourceSets.getByName("androidTest").assets.srcDir("../testdata")
     sourceSets.getByName("test").resources.srcDir("../testdata")
     testOptions { unitTests.isIncludeAndroidResources = true }
 }
+
+// These are Kotlin files. AGP's Java source directory alone does not register them with
+// the built-in Kotlin compiler, leaving the manifest activity out of the installed app.
+kotlin.sourceSets.getByName("main").kotlin.srcDir("../gliner-workflow/src/appIntegration/java")
+kotlin.sourceSets.getByName("test").kotlin.srcDir("../gliner-workflow/src/appIntegrationTest/java")
 
 dependencies {
     implementation(project(":gliner-workflow"))
