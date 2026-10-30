@@ -1,8 +1,9 @@
 name: GLiNER INT4 bundle
 
-# Builds the GLiNER-Small INT4 bundle in the cloud (no model weights are committed).
-# The three files land as a workflow artifact, and can be downloaded from a phone browser
-# via the run page or `gh run download`.
+# Builds the GLiNER-Small INT4 bundle in the cloud, so neither a desktop nor the phone needs
+# torch or a 660 MB download. Only the quantized INT4 graph is published (~80-100 MB).
+# The build log is committed back to this branch because the log download endpoint is not
+# reachable from the agent sandbox.
 on:
   workflow_dispatch:
   push:
@@ -10,12 +11,15 @@ on:
       - .github/workflows/gliner-int4-bundle.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      REPORT: ${{ runner.temp }}/report.txt
     steps:
       - uses: actions/checkout@v4
 
@@ -23,24 +27,40 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install the pinned desktop toolchain
+      - name: Build
         run: |
+          exec > >(tee "$REPORT") 2>&1
+          set -o pipefail
+          echo "== runtime =="
+          python -V
+          echo "== pip =="
           python -m pip install -U pip wheel
-          # CPU-only torch keeps the runner download near 200 MB instead of 2 GB.
-          pip install --index-url https://download.pytorch.org/whl/cpu torch
-          pip install "gliner[onnx]" "onnxruntime==1.20.1" "onnx==1.17.0" transformers tokenizers numpy
+          echo "== torch (cpu wheel, fall back to pypi) =="
+          pip install torch --index-url https://download.pytorch.org/whl/cpu || pip install torch
+          echo "== toolchain =="
+          pip install "gliner==0.2.29" "onnxruntime==1.20.1" "onnx==1.17.0" "transformers<5.17" tokenizers sentencepiece numpy
+          python -c "import torch, transformers, onnx, onnxruntime, gliner; print('torch', torch.__version__, 'transformers', transformers.__version__, 'onnx', onnx.__version__, 'ort', onnxruntime.__version__, 'gliner', gliner.__version__)"
+          echo "== bundle =="
+          python tools/fetch-gliner-small-int4.py --out bundle --pin
+          echo "== inspect =="
+          python tools/inspect-gliner-bundle.py bundle
+          echo "== files =="
+          ls -l bundle
+          (cd bundle && sha256sum *)
 
-      - name: Build the INT4 bundle
-        run: python tools/fetch-gliner-small-int4.py --out bundle --pin
-
-      - name: Pre-flight the graph
-        run: python tools/inspect-gliner-bundle.py bundle
-
-      - name: Report sizes and hashes
+      - name: Publish build report to the branch
         if: always()
         run: |
-          ls -l bundle || true
-          (cd bundle && sha256sum *) || true
+          mkdir -p _refs
+          { echo "# GLiNER INT4 bundle build report"; echo;
+            echo '```'; tail -n 250 "$REPORT" 2>/dev/null || echo "no report captured"; echo '```'; } \
+            > _refs/gliner-bundle-report.txt
+          git config user.name "gliner-bundle-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add _refs/gliner-bundle-report.txt
+          git commit -m "GLiNER bundle build report [skip ci]" || echo "nothing to commit"
+          git pull --rebase --autostash origin "$GITHUB_REF_NAME" || true
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "report push failed"
 
       - uses: actions/upload-artifact@v4
         if: success()
