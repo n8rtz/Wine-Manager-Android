@@ -621,5 +621,8 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 3. [ ] Confirm **Prepare scored CSV export**, **Prepare recent builds CSV export**, and splitting an older CSV still produce their normal CSV outputs. Existing suite and device-photo JSON exports must be unaffected.
 
 ## Lab v6 gap batch (77/121 host floor) — phone spot checks
-- [ ] Integrated gap modules reproduce on device: #116 (Payrouliere), #171 (Triton), #190 (Rosso di Montalcino), #54 (Les Chemins d'Onairac), #104 (Baron de la Variere)
+
+**Phone-verified 2026-10-29 on build `75bfb53f0a93`: EXACT match with host.** Lab v6 = 77/121 fully correct, 38 one-error, 6 with 2+ errors; producer 102/21, wine_name 94/29, country/region 124, subregion 122/2, vintage 123. Prod v5.0 unchanged at 62/121 (frozen).
+
+- [x] Integrated gap modules reproduce on device: #116 (Payrouliere), #171 (Triton), #190 (Rosso di Montalcino), #54 (Les Chemins d'Onairac), #104 (Baron de la Variere). (Aggregate deltas match the host gain set exactly: producer +2, wine_name +3 vs the 72/121 build.)
 - [ ] #188 (Decoy): producer-headed wine guard is host-inert (fixture KB lacks Decoy); check whether phone wine still shows DECOY Pinot Noir before considering integration

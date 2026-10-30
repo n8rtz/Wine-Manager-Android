@@ -287,3 +287,9 @@ Remaining known residuals are unchanged from the gap analysis: #42/#61
 (garbled span winner), #43 (rotated reading, OCR-side), #60 (producer-
 headed pair competition), #174/#178 (upstream word-split / safe triple),
 Margaux-garbage producers (#56/#62/#69, no catalog-proximate string).
+
+Phone verification: **exact match on build `75bfb53f0a93` (2026-10-29)** --
+Lab v6 77/121 (38 one-error, 6 with 2+), producer 102/21, wine_name 94/29,
+country/region 124, subregion 122/2, vintage 123; Prod v5.0 frozen at
+62/121. The phone module signature lists exactly the 16 integrated modules
+(the three gap winners included, no selectable experiments enabled).
