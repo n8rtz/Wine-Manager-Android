@@ -473,3 +473,18 @@ by photo index and export buttons keyed by export index collided in the
 same column, crashing exactly when the exports composed at the bottom.
 Keys namespaced ("photo-"/"export-"). The crash-capture handler stays as a
 safety net.
+
+Addendum (same day): the owner supplied the audit diagnostic export
+(device-photo-lab, build c34c480). Full journal decode confirms the Conde
+mechanism end to end: the Paddle pass joined "CONDE DE BASALU"
+(spatial_phrase present; ML Kit pair fails only the 1.45 height-ratio
+gate), the extractor emitted {PRODUCER=Conde de Basalu} at rank 105
+("exact authored producer alias"), and the anchor hybrid then overwrote
+the producer with the saved baseline anchor "Conde" (primary LWIN entity,
+two-engine d=0 exact). producer_prefix_completion v2 (minor-connector
+extra required + unique-shortest-prefix selection) measured +0/-0 on the
+corpus and completes Conde -> Conde de Basalu on the traced data; it is
+now integrated alongside the prominence arbitration. Both case-study
+fixes await device confirmation on the next audit run (this export
+predates them). The Kirkland journal shows the same pattern class in
+reverse: solver-grade hypotheses exist, final selection is the battleground.

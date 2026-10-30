@@ -452,14 +452,24 @@ internal object TextLabSpatialPreview {
                                     .map { it.values.getValue(com.yourapp.wine.fill.FieldId.PRODUCER) })+
                                     proposals.filter { it.sources.size>1 }.map { TextNorm.scrub(it.phrase.mergedText) }
                                 val prefixBoilerplate=Regex("\\b(mis|bouteille\\w*|produit|vin de|coteaux|vignobles|cuvee)\\b")
+                                // v2 (Conde journal trace, 2026-10-30): extras must
+                                // include a minor name-connector (de/di/la/...),
+                                // which descriptive continuations lack (this
+                                // refuses A.Kolb -> A.Kolb Methode Traditionnelle),
+                                // and among surviving candidates the unique
+                                // shortest one that prefixes all others wins
+                                // (Conde de Basalu over Conde de Basalu manza,
+                                // the garble-extended three-line span).
+                                val minorConnectors=setOf("de","du","di","des","d","la","le","les","d'","l'")
                                 val completions=phraseCandidates.map { TextNorm.scrub(it) }
                                     .filter(String::isNotBlank).distinctBy { TextNorm.normalize(it) }
                                     .filter { candidate ->
                                         val candidateTokens=TextNorm.normalize(candidate)
                                             .split(Regex("\\s+")).filter(String::isNotBlank)
                                         candidateTokens.size in 2..4 && candidateTokens.first()==finalToken &&
+                                            candidateTokens.drop(1).any { it in minorConnectors || it.startsWith("d'") || it.startsWith("l'") } &&
                                             candidateTokens.drop(1).all { extra ->
-                                                extra in setOf("de","du","di","des","d","la","le","les") ||
+                                                extra in minorConnectors || extra.startsWith("d'") || extra.startsWith("l'") ||
                                                     (extra.length>=5 && extra!=finalToken)
                                             } &&
                                             !prefixBoilerplate.containsMatchIn(TextNorm.normalize(candidate)) &&
@@ -468,9 +478,17 @@ internal object TextLabSpatialPreview {
                                                 com.yourapp.wine.kb.SupplementedWineKnowledgeBase(engine.baseKb))
                                                 .matches(TextNorm.normalize(candidate)).isEmpty()
                                     }
-                                if(completions.size==1) {
+                                fun tokensOf(value:String)=TextNorm.normalize(value)
+                                    .split(Regex("\\s+")).filter(String::isNotBlank)
+                                val bySize=completions.sortedBy { tokensOf(it).size }
+                                val best=bySize.firstOrNull()
+                                val uniqueShortest=best!=null && bySize.drop(1).all { other ->
+                                    val b=tokensOf(best); val o=tokensOf(other)
+                                    o.size>b.size && o.subList(0,b.size)==b
+                                }
+                                if(best!=null && uniqueShortest) {
                                     row["producer_before_prefix_completion"]=row["producer"].orEmpty()
-                                    row["producer"]=completions.single()
+                                    row["producer"]=best
                                     row["producer_state"]="YELLOW"
                                     row["producer_reason"]="one-token producer completed from the unique observed span it prefixes; confirm manually"
                                     row["producer_prefix_completion_status"]="suggestion"

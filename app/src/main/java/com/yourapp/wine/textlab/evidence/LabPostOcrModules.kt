@@ -288,7 +288,7 @@ internal data class LabPostOcrModules(
         boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
         appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true,
         stackedAppellationWineBoost=true, geographyAppellationWine=true, caseStandardization=true,
-        appellationProminenceArbitration=true)
+        appellationProminenceArbitration=true, producerPrefixCompletion=true)
 
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
@@ -341,7 +341,12 @@ internal data class LabPostOcrModules(
             // Lab v7 prominence arbitration (Kirkland case study, 2026-10-30):
             // inert on the 121 corpus (+0/-0), fixes the audited real-world
             // label by its measured geometry (title at ~0.2x appellation).
-            ModuleId.APPELLATION_PROMINENCE_ARBITRATION)
+            ModuleId.APPELLATION_PROMINENCE_ARBITRATION,
+            // Lab v7 producer prefix completion (Conde case study, 2026-10-30):
+            // inert on the 121 corpus (+0/-0 with the connector guard; v1
+            // without it lost #66), trace-validated on the audited label's
+            // device journal (Conde -> Conde de Basalu).
+            ModuleId.PRODUCER_PREFIX_COMPLETION)
         val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**

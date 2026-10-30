@@ -654,3 +654,4 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 - [ ] Re-run the audit on the Kirkland Signature Saint-Julien photo: wine name should now be `Saint-Julien` (was `Demeure Bourgeoise`); producer/subregion/vintage unchanged
 - [ ] Dataset screen: Lab v7 still 81/121 (the module is inert on the corpus by measurement)
 - [ ] Bug-030 verify: scroll the audit results to the very bottom — no exit; Save buttons at the bottom compose fine
+- [ ] Re-run the audit on the Conde de Basalu photo: producer should now be `Conde de Basalu` (was `Conde`); wine `Rioja`, vintage 2021 unchanged
