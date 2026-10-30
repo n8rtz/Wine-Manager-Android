@@ -45,6 +45,8 @@ jobs:
           python tools/fetch-gliner-small-int4.py --out bundle --work /tmp/export --pin
           echo "== inspect =="
           python tools/inspect-gliner-bundle.py bundle
+          echo "== compare with the library feeds =="
+          python tools/compare-gliner-onnx.py --onnx /tmp/export/gliner_small_fp32.onnx --bundle bundle || true
           echo "== files =="
           ls -l bundle
           (cd bundle && sha256sum -- * 2>/dev/null || true)
