@@ -50,6 +50,7 @@ internal data class LabPostOcrModules(
     val appellationTitleArbitrationRelaxed: Boolean = false,
     val geographyAppellationWine: Boolean = false,
     val decisiveFieldSelection: Boolean = false,
+    val producerNearMatchUnprotected: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
     val producerRoleAndParticle: Boolean = false,
     val spatialSemanticGuards: Boolean = false,
@@ -96,6 +97,7 @@ internal data class LabPostOcrModules(
         APPELLATION_TITLE_ARBITRATION_RELAXED("appellation_title_arbitration_relaxed", "appellation-title-arbitration-relaxed", "Title arbitration (relaxed)", "Title-over-appellation boost without the engine-count / vertical-order conditions"),
         GEOGRAPHY_APPELLATION_WINE("geography_appellation_wine", "geography-appellation-wine", "Geography appellation as wine", "Fill a blank wine name from the resolved appellation subregion"),
         DECISIVE_FIELD_SELECTION("decisive_field_selection", "decisive-field-selection", "Decisive field selection", "On solver abstention, keep the best finalist value instead of blanking the field"),
+        PRODUCER_NEAR_MATCH_UNPROTECTED("producer_near_match_unprotected", "producer-near-match-unprotected", "Producer near-match without observation protection", "Retry the d<=1 catalog canonicalization when only exact-observation protection vetoed it"),
         STACKED_WINE_TITLES(
             key = "stacked_wine_titles",
             shortName = "stacked-wine-titles",
@@ -198,6 +200,7 @@ internal data class LabPostOcrModules(
         ModuleId.APPELLATION_TITLE_ARBITRATION_RELAXED -> appellationTitleArbitrationRelaxed
         ModuleId.GEOGRAPHY_APPELLATION_WINE -> geographyAppellationWine
         ModuleId.DECISIVE_FIELD_SELECTION -> decisiveFieldSelection
+        ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> producerNearMatchUnprotected
         ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
         ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
@@ -242,6 +245,7 @@ internal data class LabPostOcrModules(
         ModuleId.APPELLATION_TITLE_ARBITRATION_RELAXED -> copy(appellationTitleArbitrationRelaxed = enabled)
         ModuleId.GEOGRAPHY_APPELLATION_WINE -> copy(geographyAppellationWine = enabled)
         ModuleId.DECISIVE_FIELD_SELECTION -> copy(decisiveFieldSelection = enabled)
+        ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> copy(producerNearMatchUnprotected = enabled)
         ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
         ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)

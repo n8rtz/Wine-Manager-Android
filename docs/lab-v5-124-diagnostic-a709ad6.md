@@ -358,3 +358,14 @@ OCR-bound garble (#42/#61/#43, Margaux trio), producer near-misses
 decided by protected observed readings (#45/#12/#117/#140/#128), and
 appellation-vs-title cases whose correct title is not cleanly
 separable (#10/#63/#129/#30 garbled `LESGUILLOTTES`).
+
+Lab v7 batch 2 (same day): three more mechanisms implemented and measured,
+none integrated. `producer_near_match_unprotected` (-1: #146 Citran->Citra,
+the exact case observation protection exists for; and its targets are
+unverified X-Wines supplemental entities whose support policy requires
+independent resolver evidence, e.g. La Francette). `guarded_title_triples`
+stays inert for the reason above. The Volcanie labels (#10/#63) have only
+`Volcanic...` fragments in OCR. Conclusion: the remaining 40-label pool is
+OCR-bound, supplemental-support-bound, or decided by the baseline producer
+anchor; further post-OCR rules on this corpus have hit diminishing returns.
+Next accuracy frontier is new validation labels and/or OCR-side work.

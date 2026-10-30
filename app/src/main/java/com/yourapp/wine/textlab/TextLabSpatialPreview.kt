@@ -338,28 +338,49 @@ internal object TextLabSpatialPreview {
                             row["producer_final_near_match_ms"]=nearMs.toString()
                             row["producer_gazetteer_ms"]=((row["producer_gazetteer_ms"]?.toLongOrNull() ?: 0L)+nearMs).toString()
                             row["work_ms"]=((row["work_ms"]?.toLongOrNull() ?: 0L)+nearMs).toString()
-                            if(nearMatch==null) {
-                                row["producer_final_near_match_status"]=if(nearMatchError.isBlank()) "no_unique_near_match" else nearMatchError
+                            // Lab v7 (producer_near_match_unprotected): when only the
+                            // exact-observation protection vetoed canonicalization
+                            // (the OCR misreading is itself the observed text, e.g.
+                            // Trancette for La Francette), retry once without it.
+                            var effectiveNearMatch=nearMatch
+                            if(effectiveNearMatch==null && isLabMode && labModules.producerNearMatchUnprotected &&
+                                nearMatchError=="observed_producer_preserved") {
+                                effectiveNearMatch=try {
+                                    producerResolver.finalNearMatch(finalProducer,checkProducerBudget,
+                                        protectExact=false,
+                                        observedExact=emptyList(),
+                                        supportingMatches=decision.matches,
+                                        onRejected={ }) { term ->
+                                        if(labModules.producerRoleAndParticle) (engine?.producerCandidatePenalty(term) ?: 0) else 0
+                                    }
+                                } catch(cancel:CancellationException) { throw cancel }
+                                  catch(_:ProducerResolver.BudgetExceeded) { null }
+                                  catch(_:Exception) { null }
+                                if(effectiveNearMatch!=null) row["producer_final_near_match_status"]="suggestion_unprotected_retry"
+                            }
+                            if(effectiveNearMatch==null) {
+                                if(row["producer_final_near_match_status"]!="suggestion_unprotected_retry")
+                                    row["producer_final_near_match_status"]=if(nearMatchError.isBlank()) "no_unique_near_match" else nearMatchError
                             } else {
-                                val cleanName=TextNorm.scrub(nearMatch.entity.name)
-                                val sources=nearMatch.entity.support.sorted().joinToString(" | ")
-                                val reason="final answer canonicalized to database value at penalty-adjusted distance ${nearMatch.distance} (${sources.ifBlank { "primary producer index" }}); confirm manually"
+                                val cleanName=TextNorm.scrub(effectiveNearMatch.entity.name)
+                                val sources=effectiveNearMatch.entity.support.sorted().joinToString(" | ")
+                                val reason="final answer canonicalized to database value at penalty-adjusted distance ${effectiveNearMatch.distance} (${sources.ifBlank { "primary producer index" }}); confirm manually"
                                 row["producer_before_final_near_match"]=finalProducer
                                 row["producer"]=cleanName;row["producer_state"]="YELLOW";row["producer_reason"]=reason
                                 row["producer_alternatives"]=""
                                 row["producer_gazetteer_status"]="final_near_match"
                                 row["producer_gazetteer_reason"]=reason
-                                row["producer_gazetteer_entity_id"]=nearMatch.entity.id
+                                row["producer_gazetteer_entity_id"]=effectiveNearMatch.entity.id
                                 row["producer_final_near_match_status"]="suggestion"
-                                row["producer_final_near_match_entity_id"]=nearMatch.entity.id
-                                row["producer_final_near_match_distance"]=nearMatch.distance.toString()
+                                row["producer_final_near_match_entity_id"]=effectiveNearMatch.entity.id
+                                row["producer_final_near_match_distance"]=effectiveNearMatch.distance.toString()
                                 row["producer_final_near_match_sources"]=sources
                                 row["field_values_found"]=com.yourapp.wine.fill.FieldId.entries.count { row[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
                                 row["status"]="suggestions"
                                 journal.add(candidate,stagePrefix+"producer_final_near_match","suggestion",mapOf(
                                     "post_processing_version" to VERSION,"raw_text" to finalProducer,
-                                    "producer_entity_id" to nearMatch.entity.id,"producer_display_name" to cleanName,
-                                    "edit_distance" to nearMatch.distance.toString(),"lexical_support_sources" to sources,
+                                    "producer_entity_id" to effectiveNearMatch.entity.id,"producer_display_name" to cleanName,
+                                    "edit_distance" to effectiveNearMatch.distance.toString(),"lexical_support_sources" to sources,
                                     "producer_gazetteer_version" to producerIndex.version))
                             }
                         }
