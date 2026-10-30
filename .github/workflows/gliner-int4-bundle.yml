@@ -1,0 +1,51 @@
+name: GLiNER INT4 bundle
+
+# Builds the GLiNER-Small INT4 bundle in the cloud (no model weights are committed).
+# The three files land as a workflow artifact, and can be downloaded from a phone browser
+# via the run page or `gh run download`.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/gliner-int4-bundle.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the pinned desktop toolchain
+        run: |
+          python -m pip install -U pip wheel
+          # CPU-only torch keeps the runner download near 200 MB instead of 2 GB.
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install "gliner[onnx]" "onnxruntime==1.20.1" "onnx==1.17.0" transformers tokenizers numpy
+
+      - name: Build the INT4 bundle
+        run: python tools/fetch-gliner-small-int4.py --out bundle --pin
+
+      - name: Pre-flight the graph
+        run: python tools/inspect-gliner-bundle.py bundle
+
+      - name: Report sizes and hashes
+        if: always()
+        run: |
+          ls -l bundle || true
+          (cd bundle && sha256sum *) || true
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: gliner-bundle
+          path: bundle/
+          if-no-files-found: error
+          retention-days: 14
