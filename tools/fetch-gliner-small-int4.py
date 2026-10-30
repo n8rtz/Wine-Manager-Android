@@ -188,6 +188,7 @@ def pin_manifest(out: pathlib.Path, files: dict[str, pathlib.Path], urls: dict[s
             raise SystemExit(f"{manifest_path} is missing and no template at {template}")
         shutil.copyfile(template, manifest_path)
         print(f"[5/5] seeded {manifest_path.name} from the asset template")
+    manifest = json.loads(manifest_path.read_text())
     for entry in manifest["files"]:
         path = files.get(entry["name"])
         if path is None:

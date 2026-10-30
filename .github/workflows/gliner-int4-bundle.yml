@@ -63,6 +63,16 @@ jobs:
           git pull --rebase --autostash origin "$GITHUB_REF_NAME" || true
           git push origin "HEAD:$GITHUB_REF_NAME" || echo "report push failed"
 
+      - name: Publish the bundle as a release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete gliner-small-int4-v1 --yes 2>/dev/null || true
+          gh release create gliner-small-int4-v1 bundle/gliner_small_int4.onnx bundle/tokenizer.json bundle/gliner_config.json bundle/model-manifest.json \
+            --title "GLiNER small v2.1 INT4 bundle" \
+            --notes "INT4 weight-only (MatMulNBits + GatherBlockQuantized, block 32) export of urchade/gliner_small-v2.1 with the three lanes PRODUCER, WINE_NAME, APPELLATION. Import these four files with Settings > Scanner testing > GLiNER lane lab > Import model files, or bake them in with -PglinerLabAssets=true."
+
       - uses: actions/upload-artifact@v4
         if: success()
         with:
