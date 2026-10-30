@@ -628,12 +628,16 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 - [ ] #188 (Decoy): producer-headed wine guard is host-inert (fixture KB lacks Decoy); check whether phone wine still shows DECOY Pinot Noir before considering integration
 
 ## Prod v6.0 promotion — phone verification
-- [ ] First run after updating: Prod baselines show one version uncaptured (Prod v6.0) until its first pass completes 124/124; that is expected, not a failure
-- [ ] Prod v6.0 frozen row: 77/121 fully correct, producer 102, wine_name 94 (must equal Lab v6's verified result)
-- [ ] Lab v7 with all Post-OCR checkboxes off: also 77/121 (same 16-module signature incl. appellation_title_arbitration, style_appellation_wine, producer_completion_match)
-- [ ] Prod v5.0 unchanged at 62/121; Prod v4.0/v2.0/v1.0 rows unchanged
+**Phone-verified 2026-10-30 on build `bf63370aadaa`: EXACT match with host.** Prod v6.0 frozen at 77/121 (producer 102/21, wine_name 94/29); Prod v5.0 62/121, Prod v4.0/v2.0 43/121, Prod v1.0 16/121 — all historical rows unchanged.
+
+- [x] First run after updating: Prod baselines show one version uncaptured (Prod v6.0) until its first pass completes 124/124; that is expected, not a failure
+- [x] Prod v6.0 frozen row: 77/121 fully correct, producer 102, wine_name 94 (must equal Lab v6's verified result)
+- [x] Lab v7 with all Post-OCR checkboxes off: 77/121 at the promotion build (superseded by the Lab v7 batch-1 section below: now 81/121)
+- [x] Prod v5.0 unchanged at 62/121; Prod v4.0/v2.0/v1.0 rows unchanged
 - [ ] Older saved Lab runs still load (lab-v6 pipeline ID aliased to Lab v7)
 
 ## Lab v7 first batch (81/121 host floor) — phone checks
-- [ ] Lab v7 (all checkboxes off): 81/121 fully correct; new gains #92 wine `Pessac-Léognan`, #103 wine `Blaye Côtes de Bordeaux`, #163 wine `Castillon Côtes de Bordeaux`, #135 wine `Orange Muscat`
-- [ ] Prod v6.0 row still 77/121 (frozen; the Orange Muscat catalog addition must not move any frozen Prod row)
+**Phone-verified 2026-10-30 on build `bf63370aadaa`: EXACT match with host.** Lab v7 = 81/121 fully correct, 34 one-error, 6 with 2+ errors; producer 102/21, wine_name 98/25 (+4 vs Prod v6.0, exactly the batch-1 gain set), country/region 124, subregion 122/2, vintage 123. Prod v6.0 row unchanged at 77/121. Note: the header/run signature displays only the 16 checkpoint modules although the two new integrated modules were active — logged as Bug-029 (display only).
+
+- [x] Lab v7 (all checkboxes off): 81/121 fully correct; new gains #92 wine `Pessac-Léognan`, #103 wine `Blaye Côtes de Bordeaux`, #163 wine `Castillon Côtes de Bordeaux`, #135 wine `Orange Muscat`
+- [x] Prod v6.0 row still 77/121 (frozen; the Orange Muscat catalog addition must not move any frozen Prod row)

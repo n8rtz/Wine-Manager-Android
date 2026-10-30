@@ -369,3 +369,16 @@ stays inert for the reason above. The Volcanie labels (#10/#63) have only
 OCR-bound, supplemental-support-bound, or decided by the baseline producer
 anchor; further post-OCR rules on this corpus have hit diminishing returns.
 Next accuracy frontier is new validation labels and/or OCR-side work.
+
+## 18. Phone verification of Lab v7 batch 1 + Prod v6.0 (2026-10-30, build bf63370)
+
+Device results match the host harness exactly on every aggregate:
+Lab v7 81/121 fully correct (34 one-error, 6 with 2+ errors; 115/121 <=1),
+producer 102/21, wine_name 98/25 (Prod v6.0: 94/29 -- the +4 is precisely
+the batch-1 gain set #92/#103/#135/#163), country/region 124, subregion
+122/2, vintage 123. Prod v6.0 froze at 77/121 on its first capture as
+designed; Prod v5.0/v4.0/v2.0/v1.0 rows unchanged (62/43/43/16).
+One cosmetic defect found: the header and run-history signature display
+only the 16 checkpoint modules although all 18 integrated modules were
+active (UI state restores prefs without withIntegrated(); the pipeline
+boundary applies it). Logged as Bug-029; no effect on results.
