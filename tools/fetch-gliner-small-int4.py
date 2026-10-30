@@ -149,21 +149,26 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
         for sub, piece in enumerate(tokenizer.encode(word, is_pretokenized=False).ids):
             ids.append(piece)
             words_mask.append(index + 1 if sub == 0 else 0)
-    spans = [(start, start + width) for start in range(len(words))
-             for width in range(max_width) if start + width < len(words)]
+    # The exported graph reshapes the span grid to (words, max_width, 2), so the spans have to be
+    # rectangular: every start with every width, the end index clipped at the last word.
+    spans = [(start, min(start + width, len(words) - 1)) for start in range(len(words))
+             for width in range(max_width)]
     feeds = {
         "input_ids": np.array([ids], dtype=np.int64),
         "attention_mask": np.ones((1, len(ids)), dtype=np.int64),
         "words_mask": np.array([words_mask], dtype=np.int64),
         "text_lengths": np.array([[len(words)]], dtype=np.int64),
-        "span_idx": np.array([spans], dtype=np.int64),
-        "span_mask": np.ones((1, len(spans)), dtype=bool),
+        "span_idx": np.array(spans, dtype=np.int64).reshape(1, len(words), max_width, 2),
+        "span_mask": np.ones((1, len(words), max_width), dtype=bool),
     }
     session = ort.InferenceSession(str(int4), providers=["CPUExecutionProvider"])
     available = {item.name for item in session.get_inputs()}
     feeds = {key: value for key, value in feeds.items() if key in available}
     logits = session.run(None, feeds)[0]
+    shapes = {item.name: item.shape for item in session.get_inputs()}
     print(f"[4/5] smoke run ok: inputs={sorted(available)} output={logits.shape}")
+    print(f"       input shapes: {shapes}")
+    print(f"       words={len(words)} max_width={max_width} spans={len(spans)}")
     if logits.ndim == 3 and logits.shape[1] == len(spans):
         scores = 1.0 / (1.0 + np.exp(-logits[0]))
         for label_index, label in enumerate(PROMPTS):
