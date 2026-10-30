@@ -180,7 +180,14 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
 
 def pin_manifest(out: pathlib.Path, files: dict[str, pathlib.Path], urls: dict[str, str]) -> None:
     manifest_path = out / MANIFEST_NAME
-    manifest = json.loads(manifest_path.read_text())
+    if not manifest_path.is_file():
+        # --out usually points at a scratch folder for the upload; borrow the repo template so the
+        # pinned manifest travels with the bundle.
+        template = pathlib.Path(__file__).resolve().parent.parent / "app/src/main/assets/gliner-lab-v1" / MANIFEST_NAME
+        if not template.is_file():
+            raise SystemExit(f"{manifest_path} is missing and no template at {template}")
+        shutil.copyfile(template, manifest_path)
+        print(f"[5/5] seeded {manifest_path.name} from the asset template")
     for entry in manifest["files"]:
         path = files.get(entry["name"])
         if path is None:

@@ -115,12 +115,22 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("Unrecognized GLiNER output shape", model)
         self.assertIn("text_lengths", model)
 
-    def test_span_enumeration_matches_gliner(self):
+    def test_span_enumeration_is_the_rectangular_clipped_grid(self):
+        # gliner 0.2.29 reshapes the grid to (words, maxWidth, ...): every start with every width,
+        # the end clipped at the last word, so the list is exactly words*maxWidth long.
         model = self.read(GLINER / "GlinerOnnxModel.kt")
         block = model.split("private fun spanIndex", 1)[1].split("private data class Candidate", 1)[0]
         self.assertIn("for(start in 0 until words)", block)
         self.assertIn("for(width in 1..maxWidth)", block)
-        self.assertIn("if(end>=words) break", block)
+        self.assertIn("minOf(start+width-1,words-1)", block)
+        self.assertNotIn("if(end>=words) break", block)
+
+    def test_real_exported_layout_is_decoded(self):
+        # The exported graph answers with (1, words, maxWidth, lanes); the decoder must accept it
+        # and skip the clipped spans instead of dropping them from the grid.
+        model = self.read(GLINER / "GlinerOnnxModel.kt")
+        self.assertIn("span logits [1, words, max_width, classes]", model)
+        self.assertIn("if(end>=words) continue", model)
 
     def test_flat_lane_assignment_prevents_double_labelling(self):
         model = self.read(GLINER / "GlinerOnnxModel.kt")

@@ -98,14 +98,13 @@ def check_graph(model: pathlib.Path) -> tuple[list[str], list[str]]:
 
 
 def spans_for(words: int, max_width: int) -> list[tuple[int, int]]:
-    spans = []
-    for start in range(words):
-        for width in range(1, max_width + 1):
-            end = start + width - 1
-            if end >= words:
-                break
-            spans.append((start, end))
-    return spans
+    """Every start with every width, end clipped at the last word.
+
+    The graph reshapes the grid to (words, max_width, ...), so it has to be rectangular; the
+    clipped spans are masked out by the decoder, not dropped from the list.
+    """
+    return [(start, min(start + width - 1, words - 1))
+            for start in range(words) for width in range(1, max_width + 1)]
 
 
 def smoke(config: dict, tokenizer_file: pathlib.Path, inputs: list[str], bundle: pathlib.Path, text: str) -> bool:
@@ -163,6 +162,9 @@ def smoke(config: dict, tokenizer_file: pathlib.Path, inputs: list[str], bundle:
         layout, per_span = "span logits [1, spans, classes]", scores[0]
     elif scores.ndim == 3 and shape[0] == 1 and shape[1] == classes and shape[2] == len(spans):
         layout, per_span = "span logits [1, classes, spans]", scores[0].T
+    elif scores.ndim == 4 and shape[0] == 1 and shape[1] == len(words) and shape[2] == max_width and shape[3] == classes:
+        layout = "span logits [1, words, max_width, classes]"
+        per_span = scores[0].reshape(len(spans), classes)
     elif scores.ndim == 4 and shape[0] == 1 and shape[1] == len(spans) and shape[2] == classes and shape[3] == 1:
         layout, per_span = "span logits [1, spans, classes, 1]", scores[0, :, :, 0]
     elif scores.ndim == 4 and shape[0] == 1 and shape[1] == len(words) and shape[2] == classes and shape[3] == 3:

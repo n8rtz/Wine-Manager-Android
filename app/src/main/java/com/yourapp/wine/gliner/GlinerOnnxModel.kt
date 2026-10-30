@@ -174,17 +174,17 @@ internal class GlinerOnnxModel private constructor(
     }
 
     /**
-     * Span enumeration copied from GLiNER's `prepare_span_idx`: for every start position, spans of
-     * width 1..maxWidth, inclusive end index, shorter spans first.
+     * Span grid: every start position with every width 1..maxWidth, inclusive end index, the end
+     * clipped at the last word. The exported graph reshapes the grid to (words, maxWidth, ...), so
+     * the list has to be exactly `words * maxWidth` long; the spans that run past the last word are
+     * kept in the grid and skipped by [decode], which is what the model was exported against.
      */
     private fun spanIndex(words:Int,maxWidth:Int):IntArray {
-        val spans=mutableListOf<Int>()
+        val spans=ArrayList<Int>(words*maxWidth*2)
         for(start in 0 until words) {
             for(width in 1..maxWidth) {
-                val end=start+width-1
-                if(end>=words) break
                 spans += start
-                spans += end
+                spans += minOf(start+width-1,words-1)
             }
         }
         return spans.toIntArray()
@@ -208,6 +208,7 @@ internal class GlinerOnnxModel private constructor(
     ):Decoded {
         val dims=shape.map { it.toInt() }
         val values=buffer
+        val maxWidth=minOf(laneConfig.maxWidth,config.maxWidth)
         val candidates=mutableListOf<Candidate>()
         val layout:String
         when {
@@ -240,9 +241,23 @@ internal class GlinerOnnxModel private constructor(
                     if(probability>=laneConfig.threshold) candidates += Candidate(GlinerLane.ordered[label],spans[span*2],spans[span*2+1],probability)
                 }
             }
+            dims.size==4 && dims[0]==1 && dims[1]==words && dims[2]==maxWidth && dims[3]==classCount -> {
+                // What gliner 0.2.29 actually exports: one logit per (start, width, lane).
+                layout="span logits [1, words, max_width, classes]"
+                for(label in 0 until classCount) {
+                    val lane=GlinerLane.ordered[label]
+                    for(start in 0 until words) {
+                        for(width in 1..maxWidth) {
+                            val end=start+width-1
+                            if(end>=words) continue
+                            val probability=sigmoid(values[((start*maxWidth)+width-1)*classCount+label])
+                            if(probability>=laneConfig.threshold) candidates += Candidate(lane,start,end,probability)
+                        }
+                    }
+                }
+            }
             dims.size==4 && dims[0]==1 && dims[1]==words && dims[2]==classCount && dims[3]==3 -> {
                 layout="token start/end/inside logits [1, words, classes, 3]"
-                val maxWidth=minOf(laneConfig.maxWidth,config.maxWidth)
                 for(label in 0 until classCount) {
                     val lane=GlinerLane.ordered[label]
                     for(start in 0 until words) {
