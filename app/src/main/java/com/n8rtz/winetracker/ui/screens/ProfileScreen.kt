@@ -48,6 +48,7 @@ import com.n8rtz.winetracker.viewmodels.OfflineImageManagementState
 import com.n8rtz.winetracker.viewmodels.WineImageImportState
 import com.n8rtz.winetracker.viewmodels.WineImageImportViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import com.yourapp.wine.gliner.GlinerLabActivity
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
@@ -486,12 +487,7 @@ fun ProfileScreen(
                                 Text("New structure: both OCR engines read the label, GLiNER groups it into producer / wine name / appellation, then the existing Lab v7 post-processing")
                             },
                             modifier = Modifier.fillMaxWidth().clickable {
-                                context.startActivity(
-                                    android.content.Intent().setClassName(
-                                        context,
-                                        "com.yourapp.wine.gliner.GlinerLabActivity"
-                                    )
-                                )
+                                context.startActivity(android.content.Intent(context, GlinerLabActivity::class.java))
                             }
                         )
 
