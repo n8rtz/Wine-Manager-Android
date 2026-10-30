@@ -158,8 +158,8 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
         "attention_mask": np.ones((1, len(ids)), dtype=np.int64),
         "words_mask": np.array([words_mask], dtype=np.int64),
         "text_lengths": np.array([[len(words)]], dtype=np.int64),
-        "span_idx": np.array(spans, dtype=np.int64).reshape(1, len(words), max_width, 2),
-        "span_mask": np.ones((1, len(words) * max_width), dtype=bool),
+        "span_idx": np.array(spans, dtype=np.int64).reshape(1, -1, 2),
+        "span_mask": np.ones((1, len(spans)), dtype=bool),
     }
     session = ort.InferenceSession(str(int4), providers=["CPUExecutionProvider"])
     available = {item.name for item in session.get_inputs()}
