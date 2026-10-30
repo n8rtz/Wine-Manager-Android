@@ -26,6 +26,29 @@ Country, region, subregion and vintage are deliberately **not** asked from GLiNE
 their existing owners: the place hierarchy, the producer gazetteer and the year normalizer, which
 already perform better than a zero-shot span model on label geography.
 
+## Which GLiNER checkpoint fits this pipeline
+
+Stage 2 is a span/uni-encoder contract: six tensors in (`input_ids`, `attention_mask`,
+`words_mask`, `text_lengths`, `span_idx`, `span_mask`), one float span-logit tensor out, words
+masked 1-based, spans enumerated as `(start, end)` with `width <= max_width`.
+
+| Candidate | Fits this stage 2? | Notes |
+| --- | --- | --- |
+| `urchade/gliner_small-v2.1` | **yes**, shipped default | 166M uni-encoder span model, Apache-2.0, the contract above |
+| `gliner-community/gliner_small-v2.5` | **yes**, drop-in candidate | same span family (markerV0, `max_width` 12), newer and multilingual; run `tools/inspect-gliner-bundle.py` on the export before trusting it |
+| `fastino/gliner2.5-small-v1` | **no** | GLiNER2.5 is a *boundary* architecture: start/end + inside scores with sparse start/end pairing and a reranker, 4096-word context, exported as several graphs (encoder, classifier, boundary heads, scorers, records, relations). It needs a different decoder, a multi-graph bundle and a newer ONNX Runtime than the pinned 1.21.1 |
+
+GLiNER2.5 is the better model in the abstract (74M, DeBERTa-v3-xsmall, no span-width limit), but on
+a wine label the text is 20–40 words, so the boundary architecture buys nothing here while costing a
+stage-2 rewrite. Revisit it only if the lab ever needs long-context or multi-task extraction.
+
+To try the v2.5 span model instead of v2.1:
+
+```bash
+python3 tools/fetch-gliner-small-int4.py --model gliner-community/gliner_small-v2.5 --out bundle --pin
+python3 tools/inspect-gliner-bundle.py bundle      # must print the six inputs, INT4 and a span layout
+```
+
 ## Why three lanes and not six
 
 GLiNER is a zero-shot span labeller. Its useful contribution on a wine label is deciding which
