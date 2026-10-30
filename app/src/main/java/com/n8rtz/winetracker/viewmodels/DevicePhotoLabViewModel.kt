@@ -38,7 +38,7 @@ internal data class DevicePhotoLabPhoto(
 internal data class DevicePhotoLabState(
     val busy:Boolean=false,
     val finished:Boolean=false,
-    val message:String="Select multiple photos for a fresh-OCR Lab v5 sanity check.",
+    val message:String="Select multiple photos for a fresh-OCR Lab v7 wine label audit.",
     val photos:List<DevicePhotoLabPhoto> = emptyList(),
     val modules:LabPostOcrModules=LabPostOcrModules.none,
     val exports:List<File> = emptyList(),
@@ -76,8 +76,8 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
                     if(stopping) break
                     val folder=File(root,"photo-${index+1}").apply { check(mkdirs()) }
                     updatePhoto(index) { it.copy(status="Running fresh OCR") }
-                    mutable.update { it.copy(message="Running photo ${index+1}/${chosen.size} · Lab v5 · fresh OCR") }
-                    Log.d("WineTracker","Device-photo Lab v5: ${index+1}/${chosen.size}, modules=${modules.signatureKey()}")
+                    mutable.update { it.copy(message="Running photo ${index+1}/${chosen.size} · Lab v7 · fresh OCR") }
+                    Log.d("WineTracker","Device wine label audit: ${index+1}/${chosen.size}, modules=${modules.signatureKey()}")
                     try {
                         val name=displayName(uri,index)
                         updatePhoto(index) { it.copy(name=name) }
@@ -87,6 +87,7 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
                         finally { imported.file.delete() }
                         updatePhoto(index) { it.copy(localPhoto=local) }
                         currentCoroutineContext().ensureActive()
+                        var photoOcrLines:List<String> = emptyList()
                         val hash=PhoneCorpusRunner.sha(local)
                         // Reuse the normal knowledge sources, never standardized-test references or saved predictions.
                         if(warm==null) warm=PhoneCorpusRunner.WarmSession(getApplication())
@@ -95,13 +96,14 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
                             File(folder,"work"),listOf(folder),cachedOcr=null,warmSession=warm,labModules=modules,
                             sourceFile=local,
                             onFreshOcr={ metadata,rows ->
+                                photoOcrLines=DevicePhotoLabResult.ocrDisplayLines(rows)
                                 File(folder,"ocr.json").writeText(JSONObject().put("metadata",JSONObject(metadata))
                                     .put("rows",JSONArray(rows.map { JSONObject(it) })).toString())
                             },
                         ).getValue(PhoneCorpusRunner.Mode.LAB)
                         output.put("source_filename",name).put("photo_index",index+1)
                         File(folder,"result.json").writeText(output.toString())
-                        val result=DevicePhotoLabResult.fromOutput(output)
+                        val result=DevicePhotoLabResult.fromOutput(output).copy(ocrLines=photoOcrLines)
                         updatePhoto(index) { it.copy(status=if(result.error.isEmpty()) "Finished" else "Failed",result=result) }
                         if(output.optBoolean("abort_run")) { stopping=true;break }
                     } catch(cancel:CancellationException) { throw cancel }
@@ -111,7 +113,7 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
                             .put("photo_index",index+1).put("source_filename",mutable.value.photos[index].name).toString())
                         updatePhoto(index) { it.copy(status="Failed",result=DevicePhotoLabResult(
                             DevicePhotoLabResult.fieldLabels.keys.associateWith { "" },message)) }
-                        Log.d("WineTracker","Device-photo Lab v5 failed: ${index+1}, ${error.javaClass.simpleName}")
+                        Log.d("WineTracker","Device wine label audit failed: ${index+1}, ${error.javaClass.simpleName}")
                     }
                 }
                 mutable.update { state -> state.copy(photos=state.photos.map {
@@ -130,7 +132,7 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
             } finally {
                 runCatching { warm?.close() }
                 mutable.update { it.copy(busy=false,finished=true) }
-                Log.d("WineTracker","Device-photo Lab v5 session finished")
+                Log.d("WineTracker","Device wine label audit session finished")
             }
         }
     }

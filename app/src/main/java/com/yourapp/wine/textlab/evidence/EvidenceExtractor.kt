@@ -1190,6 +1190,35 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 trace.add("stacked_appellation_wine_boost","applied")
             }
         }
+        if(modules.smallPrintWineDemotion) {
+            // Lab v7 experiment (Kirkland case study): a wine name set in type
+            // much smaller than the label's typical line is a descriptor, not
+            // the title ("Demeure Bourgeoise" in small print above a large
+            // appellation). Prominence = the hypothesis source-box height
+            // relative to the median reading height on this label; the
+            // normalized boxes make this distance/resolution independent.
+            // Demotion only matters when a competitor exists; a lone
+            // small-print candidate still wins the wine slot.
+            // Measured forms (2026-10-30, 121-label corpus): conservative
+            // median-relative demotion below is inert (+0/-0); stronger
+            // median-relative (0.90x, -60) loses #62/#91 wine; competitor-
+            // relative (<0.55x largest wine source, -30) loses nine wine
+            // names -- on this corpus the correct wine is often NOT the
+            // largest text. Kept selectable-only at the inert setting; the
+            // Kirkland pattern likely needs designation-text x size, which
+            // needs holdout examples to validate.
+            val heights=records.map { it.bboxRect.height().toDouble() }.filter { it>0.0 }.sorted()
+            val medianHeight=if(heights.isEmpty()) 0.0 else heights[heights.size/2]
+            if(medianHeight>0.0) {
+                effectiveHypotheses=effectiveHypotheses.map { h ->
+                    if(h.values.keys==setOf(FieldId.WINE_NAME) &&
+                        h.phrase.box.height().toDouble()<0.70*medianHeight)
+                        h.copy(rank=h.rank-25.0,reason=h.reason+"; small-print wine demotion")
+                    else h
+                }
+                trace.add("small_print_wine_demotion","median=$medianHeight")
+            }
+        }
         if(modules.grapeTitlePreference) {
             // Lab v7: an exact grape-variety title line (ORANGE MUSCAT) outranks
             // other plain title lines when titles compete into abstention.

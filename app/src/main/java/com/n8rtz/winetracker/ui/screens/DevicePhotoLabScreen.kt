@@ -49,8 +49,8 @@ internal fun DevicePhotoLabScreen(
         item {
             SelectionContainer {
                 Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                    Text("Device-photo sanity check",style=MaterialTheme.typography.headlineSmall)
-                    Text("Lab v5 · fresh OCR · build ${BuildConfig.BUILD_COMMIT}")
+                    Text("Device wine label audit/test",style=MaterialTheme.typography.headlineSmall)
+                    Text("Lab v7 · fresh OCR · build ${BuildConfig.BUILD_COMMIT}")
                     Text("Configuration: ${state.modules.summaryLabel()}")
                     Text("lab_modules=${state.modules.signatureKey()}",style=MaterialTheme.typography.bodySmall)
                     Text("Unscored photos: no standardized dataset, cached OCR, or changes to benchmark scores.")
@@ -63,7 +63,7 @@ internal fun DevicePhotoLabScreen(
         item {
             Column {
                 Button(onClick=onSelectPhotos,enabled=!state.busy) {
-                    Text(if(state.photos.isEmpty()) "Select photos and run Lab v5" else "Select new photos and run again")
+                    Text(if(state.photos.isEmpty()) "Select photos and run Lab v7" else "Select new photos and run again")
                 }
                 if(state.busy && !state.finished) {
                     LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=8.dp))
@@ -78,7 +78,7 @@ internal fun DevicePhotoLabScreen(
                     style=MaterialTheme.typography.titleLarge)
                 TextButton(enabled=state.finished && !state.busy,onClick={
                     val text=buildString {
-                        appendLine("Lab v5 · ${BuildConfig.BUILD_COMMIT} · ${state.modules.signatureKey()} · device photos · unscored")
+                        appendLine("Lab v7 · ${BuildConfig.BUILD_COMMIT} · ${state.modules.signatureKey()} · device photos · unscored")
                         state.photos.forEach { photo ->
                             appendLine("\n${photo.index+1}. ${photo.name} — ${photo.status}")
                             DevicePhotoLabResult.fieldLabels.forEach { (key,label) ->
@@ -87,6 +87,10 @@ internal fun DevicePhotoLabScreen(
                             photo.result?.let { result ->
                                 if(result.error.isNotBlank()) appendLine("Error: ${result.error}")
                                 if(result.incompleteOcr) appendLine("Warning: incomplete OCR")
+                                if(result.ocrLines.isNotEmpty()) {
+                                    appendLine("Raw OCR (${result.ocrLines.size} lines):")
+                                    result.ocrLines.forEach { appendLine(it) }
+                                }
                             }
                         }
                     }
@@ -113,6 +117,12 @@ internal fun DevicePhotoLabScreen(
                             DevicePhotoLabResult.fieldLabels.forEach { (key,label) ->
                                 val value=photo.result?.fields?.get(key).orEmpty()
                                 Text("$label: ${value.ifBlank { "(not assigned)" }}")
+                            }
+                            photo.result?.takeIf { it.ocrLines.isNotEmpty() }?.let { result ->
+                                Text("Raw OCR (${result.ocrLines.size} lines)",style=MaterialTheme.typography.titleSmall)
+                                result.ocrLines.forEach { line ->
+                                    Text(line,style=MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
                     }

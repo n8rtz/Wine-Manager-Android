@@ -141,7 +141,7 @@ internal object PhoneCorpusRunner {
         var memoryStopped=false
         try {
             markAll("input.verified",false,"input copy / checksum did not complete")
-            // Only the source changes for out-of-corpus sanity checks; identical decoding/OCR/extraction follows.
+            // Only the source changes for out-of-corpus device-photo audits; identical decoding/OCR/extraction follows.
             val source=sourceFile?.inputStream() ?: context.assets.open("$assetRoot/images/$image")
             source.use { stream -> input.outputStream().use { stream.copyTo(it) } }
             check(sha(input)==hash) { "Photo checksum mismatch" }

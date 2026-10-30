@@ -52,6 +52,7 @@ internal data class LabPostOcrModules(
     val decisiveFieldSelection: Boolean = false,
     val producerNearMatchUnprotected: Boolean = false,
     val caseStandardization: Boolean = false,
+    val smallPrintWineDemotion: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
     val producerRoleAndParticle: Boolean = false,
     val spatialSemanticGuards: Boolean = false,
@@ -100,6 +101,7 @@ internal data class LabPostOcrModules(
         DECISIVE_FIELD_SELECTION("decisive_field_selection", "decisive-field-selection", "Decisive field selection", "On solver abstention, keep the best finalist value instead of blanking the field"),
         PRODUCER_NEAR_MATCH_UNPROTECTED("producer_near_match_unprotected", "producer-near-match-unprotected", "Producer near-match without observation protection", "Retry the d<=1 catalog canonicalization when only exact-observation protection vetoed it"),
         CASE_STANDARDIZATION("case_standardization", "case-standardization", "Final field case standardization", "Force final text fields to title case (minor words lowercase unless first)"),
+        SMALL_PRINT_WINE_DEMOTION("small_print_wine_demotion", "small-print-wine-demotion", "Small-print wine demotion", "A wine-name line much smaller than the label's typical line is demoted (descriptor, not title)"),
         STACKED_WINE_TITLES(
             key = "stacked_wine_titles",
             shortName = "stacked-wine-titles",
@@ -204,6 +206,7 @@ internal data class LabPostOcrModules(
         ModuleId.DECISIVE_FIELD_SELECTION -> decisiveFieldSelection
         ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> producerNearMatchUnprotected
         ModuleId.CASE_STANDARDIZATION -> caseStandardization
+        ModuleId.SMALL_PRINT_WINE_DEMOTION -> smallPrintWineDemotion
         ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
         ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
@@ -250,6 +253,7 @@ internal data class LabPostOcrModules(
         ModuleId.DECISIVE_FIELD_SELECTION -> copy(decisiveFieldSelection = enabled)
         ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> copy(producerNearMatchUnprotected = enabled)
         ModuleId.CASE_STANDARDIZATION -> copy(caseStandardization = enabled)
+        ModuleId.SMALL_PRINT_WINE_DEMOTION -> copy(smallPrintWineDemotion = enabled)
         ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
         ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)

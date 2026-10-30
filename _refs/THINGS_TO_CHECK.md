@@ -73,9 +73,9 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 *Last run: 55 targeted host checks passed. Full host discovery: 291 tests, 289 passed and two resolver-policy source-contract failures reproduced on unmodified pre-change HEAD. Android compilation, Robolectric and device checks pending (no JDK/Android SDK here).*
 
-### Multi-photo Lab v5 sanity checks
+### Multi-photo Lab v7 wine label audit/test (renamed from "Device-photo sanity check", 2026-10-30)
 
-1. [ ] Build/install on a disposable device. Select **Best build** on **Large image dataset test**, tap **Test Lab v5 on device photos**, and verify the displayed module keys match. Repeat with a custom configuration; entering the new screen must not silently replace it.
+1. [ ] Build/install on a disposable device. Select **Best build** on **Large image dataset test**, tap **Test Lab v7 on device photos**, and verify the displayed module keys match. Repeat with a custom configuration; entering the new screen must not silently replace it.
 2. [ ] Select several previously unseen label photos together, including JPEG and PNG and a rotated portrait. Confirm sequential fresh-OCR progress and that each photo has the correct six parameters beside it when finished. Check the actual values manually, including blanks; there is no guessed reference or accuracy score.
 3. [ ] Include a non-wine/blank image, corrupt/unreadable photo and image above 32 MiB. Confirm blanks/errors remain visible for their own photos and another valid photo still runs. Incomplete OCR should warn rather than claim a fully successful read.
 4. [ ] Rotate during OCR and after completion. Confirm no duplicate scan starts, the same photo-to-results association is preserved, and copy-all includes build/module keys, all six fields, errors and incomplete-OCR warnings.
@@ -83,6 +83,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 6. [ ] Stop mid-batch. The current image finishes; remaining images read **Not run — stopped**. Hardware Back ends the session; original photos remain unchanged, private copies are eventually removed, and re-entering starts a new empty session.
 7. [ ] Save the diagnostic manifest and every numbered JSON part. Confirm valid JSON, matching hashes and no photo bytes; retained rows include input identity/build/configuration, selected parameters, original OCR and extraction decision records. Do not expect benchmark accuracy analysis without reference answers.
 8. [ ] Compare the standard dataset's scores, checkpoints, frozen baselines and best-build log before and after this check: all must be unchanged. Its normal packaged-photo runs must still work. Run `:app:testDebugUnitTest --tests com.yourapp.wine.DevicePhotoLabTest` and existing benchmark tests.
+9. [ ] The screen and dataset card are titled **Device wine label audit/test**. Each finished photo card shows a **Raw OCR** list in reading order: `[engine] text · N.Nx median size · conf 0.NN`; Copy-all-results includes the raw OCR lines.
+10. [ ] Case-study follow-up: re-run the audit on the Kirkland Signature Saint-Julien photo (expect wine `Demeure Bourgeoise` still possible; check the SAINT-JULIEN line's size multiple in raw OCR) and the Conde de Basalu photo (check whether `DE BASALU` appears as its own line, merged, or not at all). Optionally save the diagnostic export for both so the readings can become host fixtures.
 
 ## Branch `arena/ab7b824f-wine-manager-android`
 

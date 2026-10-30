@@ -229,7 +229,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                 Card(Modifier.fillMaxWidth()) {
                     SelectionContainer {
                         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Device-photo sanity check", style = MaterialTheme.typography.titleSmall)
+                            Text("Device wine label audit/test", style = MaterialTheme.typography.titleSmall)
                             Text("Uses the selected Lab modifiers below, with fresh OCR and no dataset scoring.")
                             DisableSelection {
                                 TextButton(

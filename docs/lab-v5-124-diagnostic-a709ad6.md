@@ -405,3 +405,39 @@ the frozen Prod v6.0 definition 18 modules. The owner's phone was unaffected
 (Prod v6.0 had already frozen at the correct 16-module 77/121 before the
 batch-1 build ran), but a fresh install would have captured the wrong set.
 Checkpoint restored to exactly the frozen sixteen.
+
+## 20. Case studies from the device audit + size-signal experiments (2026-10-30)
+
+Two unscored real-world labels from the owner audit. (1) Kirkland Signature
+Saint-Julien: wine came out as "Demeure Bourgeoise", a small-print
+descriptor above the large appellation. (2) Conde de Basalu (Rioja):
+producer truncated to "Conde".
+
+Font size IS tracked: every OCR line carries a normalized rectified box, so
+relative height is camera-distance/resolution independent, and
+SpatialPhraseMerger already grades line joins (gap < 0.8x height, >50%
+overlap, height ratio <= 1.45) behind the role-aware join policy (which
+would allow CONDE + DE BASALU). What was missing is prominence in ranking.
+
+small_print_wine_demotion measured three ways on the 121 corpus:
+median-relative conservative (prominence < 0.70x median line height, -25):
+inert +0/-0. Stronger median-relative (0.90x, -60): -2 (#62, #91 wine).
+Competitor-relative (< 0.55x the largest wine candidate, -30): +1/-9.
+Conclusion: on this corpus the correct wine is often NOT the largest text
+(big producer type over a smaller title), so blanket size demotion is
+rejected; the module stays selectable-only at the inert setting. The
+Kirkland fix likely needs designation-text x size combined, validated on
+holdout examples rather than the tuning corpus.
+
+The Conde truncation pattern (expected = output + trailing tokens) occurs
+zero times in the 121 corpus, so no join change can be measured here; 6 of
+21 producer-wrong labels have the expected span formed somewhere in the
+journal (selection problem), 15 never form (OCR garble). Next step for both
+case studies: re-run the renamed audit on the same photos (it now shows raw
+OCR with relative sizes) and/or add the photos as holdout labels.
+
+The sanity check is renamed "Device wine label audit/test" (dataset screen
+card + audit screen; stale Lab v5 strings updated to Lab v7) and each photo
+card now lists its raw OCR lines in reading order with engine, confidence,
+and size as a multiple of the photo's median line height; raw OCR is also
+included in Copy-all-results.
