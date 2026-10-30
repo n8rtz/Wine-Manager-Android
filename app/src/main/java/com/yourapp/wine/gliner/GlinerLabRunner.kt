@@ -53,6 +53,8 @@ internal data class GlinerLabImageResult(
     val postMs:Long,
     val totalMs:Long,
     val notes:String,
+    /** Best span per lane before thresholding; empty when the model never scored a span. */
+    val probes:List<String> = emptyList(),
 ) {
     val complete:Boolean get() = status=="complete" && eligible && errorCount==0
 }
@@ -156,10 +158,12 @@ internal object GlinerLabRunner {
                 glinerMs=glinerMs,
                 postMs=postMs,
                 totalMs=SystemClock.elapsedRealtime()-started,
+                probes=labelled.probes,
                 notes=buildString {
                     appendLine(ocr.description)
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
                     appendLine("GLiNER ${labelled.layout} · ${labelled.wordCount} words · ${labelled.spanCount} spans · ${labelled.entities.size} lane fragments")
+                    labelled.probes.forEach { appendLine("probe: $it") }
                     appendLine(laneConfig.summaryLabel())
                     post.notes.forEach { appendLine(it) }
                 },

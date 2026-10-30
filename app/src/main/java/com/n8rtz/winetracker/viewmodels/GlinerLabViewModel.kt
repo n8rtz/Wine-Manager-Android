@@ -3,14 +3,15 @@ package com.n8rtz.winetracker.viewmodels
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.gliner.GlinerBundle
 import com.yourapp.wine.gliner.GlinerBundleStatus
 import com.yourapp.wine.gliner.GlinerLabCorpus
 import com.yourapp.wine.gliner.GlinerLabImageResult
+import com.yourapp.wine.gliner.GlinerLabRunService
 import com.yourapp.wine.gliner.GlinerLabRunner
 import com.yourapp.wine.gliner.GlinerLabSample
+import com.yourapp.wine.gliner.GlinerLane
 import com.yourapp.wine.gliner.GlinerLaneConfig
 import com.yourapp.wine.gliner.GlinerOnnxModel
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
@@ -18,17 +19,19 @@ import com.yourapp.wine.textlab.TextLabCsv
 import com.yourapp.wine.textlab.TextLabWineExtraction
 import com.yourapp.wine.textlab.evidence.LabPostOcrModules
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
-import java.util.UUID
 
 internal data class GlinerLabRow(
     val index:Int,
@@ -59,6 +62,7 @@ internal data class GlinerLabState(
     val bundle:GlinerBundleStatus,
     val samples:List<GlinerLabRow> = emptyList(),
     val running:Boolean=false,
+    val finished:Boolean=false,
     val stopped:Boolean=false,
     val done:Int=0,
     val total:Int=0,
@@ -71,7 +75,29 @@ internal data class GlinerLabState(
     val exports:List<File> = emptyList(),
     val expanded:Set<String> = emptySet(),
     val modelsReady:Boolean=false,
-)
+) {
+    val ran:Boolean get() = samples.any { it.result!=null }
+    fun row(image:String):GlinerLabRow? = samples.firstOrNull { it.sample.image==image }
+}
+
+/**
+ * Process-scoped holder so a GLiNER lab run survives leaving [com.yourapp.wine.gliner.GlinerLabActivity]:
+ * another screen in WineTracker, another app, or the screen switched off. The foreground service
+ * keeps the process alive and holds a wake lock; the work itself lives on [scope], never on the
+ * activity's ViewModel.
+ */
+private class GlinerLabSession {
+    val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
+    @Volatile var mutable:MutableStateFlow<GlinerLabState>?=null
+    @Volatile var job:Job?=null
+
+    companion object {
+        @Volatile private var instance:GlinerLabSession?=null
+        fun get():GlinerLabSession = instance ?: synchronized(this) {
+            instance ?: GlinerLabSession().also { instance=it }
+        }
+    }
+}
 
 /**
  * Owns one GLiNER lab session: bundle status, the packaged Lab v7 dataset, one model session, one
@@ -81,20 +107,24 @@ internal data class GlinerLabState(
 internal class GlinerLabViewModel(application:Application):AndroidViewModel(application) {
     // AndroidViewModel.app is generic over its bound, so keep the concrete reference.
     private val app:Application=application
-    private val mutable=MutableStateFlow(GlinerLabState(bundle=GlinerBundle.status(application)))
+    private val session=GlinerLabSession.get()
+    private val mutable:MutableStateFlow<GlinerLabState> = session.mutable
+        ?: MutableStateFlow(GlinerLabState(bundle=GlinerBundle.status(application))).also { session.mutable=it }
     val state=mutable.asStateFlow()
-    private val workFolder=File(application.cacheDir,"gliner-lab-${UUID.randomUUID()}")
-    private var job:Job?=null
+    private val workFolder=File(application.cacheDir,"gliner-lab-run")
+    private var job:Job?
+        get()=session.job
+        set(value) { session.job=value }
 
     init {
-        mutable.update { it.copy(modelsReady=com.yourapp.wine.gliner.GlinerOcr.modelsPresent(application)) }
+        mutable.update { it.copy(modelsReady=GlinerOcrModels.present(application)) }
         refresh()
     }
 
     fun refresh() {
         val bundle=GlinerBundle.status(app)
         mutable.update { it.copy(bundle=bundle) }
-        viewModelScope.launch(Dispatchers.IO) {
+        session.scope.launch {
             val samples=runCatching { GlinerLabCorpus.load(app) }
                 .getOrElse {
                     mutable.update { state -> state.copy(message="Cannot read the packaged Lab v7 dataset: ${it.message}") }
@@ -110,17 +140,15 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     fun importBundle(uris:List<Uri>) {
-        viewModelScope.launch(Dispatchers.IO) {
+        session.scope.launch {
             val outcome=GlinerBundle.import(app,uris)
-            val bundle=GlinerBundle.status(app)
-            mutable.update { it.copy(bundle=bundle,message=outcome.message) }
+            mutable.update { it.copy(bundle=GlinerBundle.status(app),message=outcome.message) }
         }
     }
 
     fun clearBundle() {
         GlinerBundle.clear(app)
-        val bundle=GlinerBundle.status(app)
-        mutable.update { it.copy(bundle=bundle,message="Imported GLiNER files removed") }
+        mutable.update { it.copy(bundle=GlinerBundle.status(app),message="Imported GLiNER files removed") }
     }
 
     fun setThreshold(delta:Float) {
@@ -144,7 +172,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
 
     fun stop() {
         job?.cancel(CancellationException("Stopped by user"))
-        mutable.update { it.copy(running=false,stopped=true,current="") }
+        GlinerLabRunService.stop(app)
     }
 
     fun runAll() = launchRun(only=null)
@@ -165,13 +193,15 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val laneConfig=mutable.value.laneConfig
         val modules=mutable.value.modules
         val targets=mutable.value.samples.filter { only==null || it.sample.image==only }
+        val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
-            state.copy(running=true,stopped=false,done=0,total=targets.size,current="",aggregate=null,message="",
+            state.copy(running=true,finished=false,stopped=false,done=0,total=targets.size,current="",aggregate=null,message="",
                 samples=state.samples.map { row ->
-                    if(row.sample.image in targets.map { it.sample.image }.toSet()) row.copy(status="Waiting",result=null) else row
+                    if(row.sample.image in targetImages) row.copy(status="Waiting",result=null) else row
                 })
         }
-        job=viewModelScope.launch(Dispatchers.Default) {
+        GlinerLabRunService.start(app,"Preparing ${targets.size} labels…")
+        job=session.scope.launch {
             var model:GlinerOnnxModel?=null
             var warm:TextLabWineExtraction.WarmSession?=null
             val results=mutableListOf<GlinerLabImageResult>()
@@ -187,6 +217,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 targets.forEachIndexed { index,row ->
                     currentCoroutineContext().ensureActive()
                     mutable.update { it.copy(current=row.displayName) }
+                    GlinerLabRunService.update(app,"${index}/${targets.size} · ${row.displayName}")
                     setStatus(row.sample.image,"Running")
                     val result=try {
                         GlinerLabRunner.run(app,row.sample,opened,laneConfig,warmSession,workFolder,modules)
@@ -205,17 +236,18 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                     }
                 }
                 val aggregate=aggregate(results,stopped=false)
-                mutable.update { it.copy(running=false,current="",aggregate=aggregate,message=aggregate.text()) }
+                mutable.update { it.copy(running=false,finished=true,current="",aggregate=aggregate,message=aggregate.text()) }
             } catch(cancel:CancellationException) {
                 val aggregate=aggregate(results,stopped=true)
-                mutable.update { it.copy(running=false,stopped=true,current="",aggregate=aggregate,
+                mutable.update { it.copy(running=false,finished=true,stopped=true,current="",aggregate=aggregate,
                     message="Stopped after ${results.size} photos. ${aggregate.text()}") }
             } catch(error:Exception) {
-                mutable.update { it.copy(running=false,current="",
+                mutable.update { it.copy(running=false,finished=true,current="",
                     message="GLiNER lab could not start: ${error.javaClass.simpleName}: ${error.message}") }
             } finally {
                 runCatching { warm?.close() }
                 runCatching { model?.close() }
+                GlinerLabRunService.stop(app)
             }
         }
     }
@@ -230,7 +262,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val correct=PhoneCorpusMath.fields.associateWith { field ->
             results.count { result -> result.fieldResults.firstOrNull { it.field==field }?.let { PhoneCorpusMath.correct(it.outcome) }==true }
         }
-        val total=PhoneCorpusMath.fields.associateWith { field -> results.size }
+        val total=PhoneCorpusMath.fields.associateWith { results.size }
         return GlinerAggregate(
             attempted=results.size,
             eligible=results.count { it.eligible },
@@ -244,9 +276,114 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         )
     }
 
+    /** Plain text of the whole run, for the "Copy all results" button. */
+    fun reportText():String {
+        val snapshot=mutable.value
+        return buildString {
+            appendLine("GLiNER lane lab · ${BuildConfig.BUILD_COMMIT} · ${snapshot.laneConfig.signatureKey()}")
+            appendLine("bundle: ${snapshot.bundle.summary()}")
+            val ran=snapshot.samples.mapNotNull { it.result }
+            appendLine("status: "+ran.groupingBy { it.status }.eachCount().entries.joinToString(" · ") { "${it.key} ${it.value}" })
+            snapshot.aggregate?.let { appendLine(it.text()) }
+            if(snapshot.message.isNotBlank()) appendLine("message: ${snapshot.message}")
+            snapshot.samples.filter { it.result!=null }.forEach { row ->
+                val result=row.result ?: return@forEach
+                appendLine()
+                appendLine("${row.index+1}. ${row.displayName} — ${result.status} · ${result.message}")
+                result.probes.forEach { appendLine("  probe: $it") }
+                GlinerLane.ordered.forEach { lane ->
+                    appendLine("  ${lane.shortName}: ${result.laneTexts[lane.key].orEmpty().ifBlank { "(none)" }}")
+                }
+                result.residualTexts.takeIf { it.isNotEmpty() }?.let { appendLine("  residual: ${it.joinToString(" | ")}") }
+                result.fieldResults.forEach { field ->
+                    appendLine("  ${field.label}: ${field.observed.ifBlank { "(blank)" }} · ${field.state.ifBlank { "-" }} · ${field.outcome} · expected ${field.expected.ifBlank { "-" }}")
+                }
+                appendLine("  ${result.layout} · ${result.wordCount} words · ${result.spanCount} spans · ocr ${result.ocrMs} ms · gliner ${result.glinerMs} ms")
+                if(result.ocrLines.isNotEmpty()) {
+                    appendLine("  OCR (${result.ocrLines.size}):")
+                    result.ocrLines.forEach { appendLine("    $it") }
+                }
+                if(result.notes.isNotBlank()) result.notes.trim().lines().forEach { appendLine("  note: $it") }
+            }
+        }
+    }
+
+    /** JSON export of the whole run, for the "Save JSON" button. */
+    fun saveJson(uri:Uri) {
+        val snapshot=mutable.value
+        session.scope.launch {
+            val results=snapshot.samples.mapNotNull { it.result }
+            if(results.isEmpty()) {
+                mutable.update { it.copy(message="Run the dataset before exporting") }
+                return@launch
+            }
+            val payload=JSONObject().apply {
+                put("pipeline","gliner-lane-v1")
+                put("build",BuildConfig.BUILD_COMMIT)
+                put("branch",BuildConfig.BUILD_BRANCH)
+                put("signature",snapshot.laneConfig.signatureKey())
+                put("threshold",snapshot.laneConfig.threshold.toDouble())
+                put("max_width",snapshot.laneConfig.maxWidth)
+                put("max_words",snapshot.laneConfig.maxWords)
+                put("bundle",snapshot.bundle.summary())
+                put("tokenizer",snapshot.tokenizer)
+                put("lab_modules",snapshot.modules.signatureKey())
+                snapshot.aggregate?.let { aggregate ->
+                    put("aggregate",JSONObject().apply {
+                        put("attempted",aggregate.attempted)
+                        put("eligible",aggregate.eligible)
+                        put("complete",aggregate.complete)
+                        put("one_error",aggregate.oneError)
+                        put("multi_error",aggregate.multiError)
+                        put("failed",aggregate.failed)
+                        put("field_correct",JSONObject(aggregate.fieldCorrect as Map<*, *>))
+                    })
+                }
+                put("images",JSONArray(results.map { result -> jsonOf(result) }))
+            }
+            val file=File(app.cacheDir,"gliner-lab-${System.currentTimeMillis()}.json")
+            runCatching {
+                file.writeText(payload.toString(2))
+                app.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(payload.toString(2)) }
+                    ?: error("Cannot open the selected document")
+                mutable.update { it.copy(exports=(it.exports+file).takeLast(4),message="Exported ${results.size} labels to JSON") }
+            }.onFailure { error ->
+                mutable.update { it.copy(message="JSON export failed: ${error.javaClass.simpleName}: ${error.message}") }
+            }
+        }
+    }
+
+    private fun jsonOf(result:GlinerLabImageResult):JSONObject=JSONObject().apply {
+        put("image",result.image)
+        put("review_number",result.reviewNumber)
+        put("status",result.status)
+        put("message",result.message)
+        put("eligible",result.eligible)
+        put("field_errors",result.errorCount)
+        put("layout",result.layout)
+        put("output_shape",result.outputShape)
+        put("model",result.modelSignature)
+        put("int4",result.int4)
+        put("words",result.wordCount)
+        put("spans",result.spanCount)
+        put("probes",JSONArray(result.probes))
+        put("ocr_ms",result.ocrMs)
+        put("gliner_ms",result.glinerMs)
+        put("post_ms",result.postMs)
+        put("total_ms",result.totalMs)
+        put("lanes",JSONObject(result.laneTexts as Map<*, *>))
+        put("residual",JSONArray(result.residualTexts))
+        put("fields",JSONObject(result.fields as Map<*, *>))
+        put("states",JSONObject(result.fieldStates as Map<*, *>))
+        put("expected",JSONObject(result.fieldResults.associate { it.field to it.expected } as Map<*, *>))
+        put("outcomes",JSONObject(result.fieldResults.associate { it.field to it.outcome } as Map<*, *>))
+        put("ocr_lines",JSONArray(result.ocrLines))
+        put("notes",result.notes)
+    }
+
     fun saveCsv(uri:Uri) {
         val snapshot=mutable.value
-        viewModelScope.launch(Dispatchers.IO) {
+        session.scope.launch {
             val rows=snapshot.samples.mapNotNull { it.result }.map { result -> csvRow(result,snapshot.laneConfig) }
             if(rows.isEmpty()) {
                 mutable.update { it.copy(message="Run the dataset before exporting") }
@@ -257,7 +394,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 app.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
                     TextLabCsv.write(writer,rows.asSequence())
                 } ?: error("Cannot open the selected document")
-                mutable.update { it.copy(exports=it.exports+file,message="Exported ${rows.size} rows") }
+                mutable.update { it.copy(exports=(it.exports+file).takeLast(4),message="Exported ${rows.size} rows to CSV") }
             }.onFailure { error ->
                 mutable.update { it.copy(message="Export failed: ${error.javaClass.simpleName}: ${error.message}") }
             }
@@ -283,6 +420,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             "threshold" to config.threshold.toString(),
             "max_width" to config.maxWidth.toString(),
             "lane_prompts" to config.prompts.joinToString(" | "),
+            "probes" to result.probes.joinToString(" | "),
             "ocr_ms" to result.ocrMs.toString(),
             "gliner_ms" to result.glinerMs.toString(),
             "post_ms" to result.postMs.toString(),
@@ -305,8 +443,14 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     override fun onCleared() {
-        job?.cancel()
-        workFolder.deleteRecursively()
+        // Deliberately does not cancel the run: GlinerLabSession + GlinerLabRunService keep it
+        // alive when the activity goes away, and the screen picks the state back up on return.
         super.onCleared()
     }
+}
+
+/** Keeps the GLiNER screen independent of the OCR helper's package layout. */
+private object GlinerOcrModels {
+    fun present(application:Application):Boolean =
+        runCatching { com.yourapp.wine.gliner.GlinerOcr.modelsPresent(application) }.getOrDefault(false)
 }

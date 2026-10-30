@@ -47,6 +47,15 @@
         <activity android:name="com.yourapp.wine.gliner.GlinerLabActivity" android:exported="false" />
 
         <service
+            android:name="com.yourapp.wine.gliner.GlinerLabRunService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Offline on-device wine-label GLiNER lane benchmark execution" />
+        </service>
+
+        <service
             android:name="com.yourapp.wine.phonecorpus.WineAppLabelsRunService"
             android:exported="false"
             android:foregroundServiceType="specialUse">

@@ -86,6 +86,8 @@ internal data class GlinerLabelResult(
     val spanCount:Int,
     val elapsedMs:Long,
     val config:GlinerLaneConfig,
+    /** Best span per lane before thresholding, so a run that labels nothing still shows its scores. */
+    val probes:List<String> = emptyList(),
 ) {
     fun lane(lane:GlinerLane):GlinerLaneGroup = lanes.first { it.lane==lane }
     val groupedText:String get() = document.text

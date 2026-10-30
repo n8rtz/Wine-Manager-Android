@@ -26,6 +26,23 @@ Country, region, subregion and vintage are deliberately **not** asked from GLiNE
 their existing owners: the place hierarchy, the producer gazetteer and the year normalizer, which
 already perform better than a zero-shot span model on label geography.
 
+## The device screen
+
+Settings > Scanner testing > GLiNER lane lab is a results page: a model card, a run card and one
+card per label. Every string sits in a `SelectionContainer`, and **Copy all results** puts the whole
+run (statuses, probes, lanes, fields, OCR, notes) on the clipboard so a problem can be pasted into a
+chat instead of screenshotted. **Save JSON** and **Save CSV** export the same data through the
+system document picker, like the Lab v7 device-photo page.
+
+A run continues when the screen is left, another app is opened or the screen is switched off: the
+work lives in a process-scoped `GlinerLabSession` and `GlinerLabRunService` keeps the process alive
+with a foreground notification and a partial wake lock, mirroring the Lab v7 dataset run.
+
+The per-label detail shows **probes**: the best span per lane *before* the threshold, in the form
+`producer 0.684 chateau margaux`. If a run leaves every field blank, the probes say whether the graph
+scored the right words below the threshold (lower the threshold) or scored nothing at all (the feed
+or the bundle is wrong).
+
 ## What the real graph actually expects
 
 Guessing the input convention cost most of the integration time, so it is recorded here. Captured

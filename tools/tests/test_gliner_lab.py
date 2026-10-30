@@ -246,6 +246,62 @@ except Exception:  # noqa: BLE001 - any import failure means "skip the model che
     HAVE_ONNX = False
 
 
+class GlinerLabScreenAndRunTests(unittest.TestCase):
+    """The lab screen is a results page, not a wall of prose, and a run survives leaving it."""
+
+    def read(self, path):
+        return pathlib.Path(path).read_text(encoding="utf-8")
+
+    SCREEN = APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt"
+    VM = APP / "java/com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt"
+    SERVICE = GLINER / "GlinerLabRunService.kt"
+
+    def test_every_result_is_selectable_and_copyable(self):
+        screen = self.read(self.SCREEN)
+        self.assertIn("SelectionContainer", screen)
+        self.assertIn("Copy all results", screen)
+        self.assertIn("onReport()", screen)
+        self.assertIn("ClipboardManager", screen)
+
+    def test_json_export_matches_the_lab_v7_export_buttons(self):
+        screen = self.read(self.SCREEN)
+        self.assertIn("Save JSON", screen)
+        self.assertIn("Save CSV", screen)
+        view_model = self.read(self.VM)
+        self.assertIn("fun saveJson(", view_model)
+        self.assertIn("JSONObject", view_model)
+        self.assertIn("CreateDocument(\"application/json\")",
+                      self.read(APP / "java/com/yourapp/wine/gliner/GlinerLabActivity.kt"))
+
+    def test_decoration_is_trimmed_from_the_screen(self):
+        screen = self.read(self.SCREEN)
+        for removed in ("ArchitectureCard", "Existing post-processing → evidence extractor",
+                        "private fun DatasetRow"):
+            self.assertNotIn(removed, screen)
+
+    def test_run_survives_leaving_the_screen(self):
+        view_model = self.read(self.VM)
+        self.assertIn("GlinerLabSession", view_model)
+        self.assertIn("session.scope.launch", view_model)
+        self.assertNotIn("viewModelScope.launch", view_model)
+        self.assertIn("does not cancel the run", view_model)
+        service = self.read(self.SERVICE)
+        self.assertIn("startForeground", service)
+        self.assertIn("PARTIAL_WAKE_LOCK", service)
+        manifest = self.read(APP / "AndroidManifest.xml")
+        self.assertIn('android:name="com.yourapp.wine.gliner.GlinerLabRunService"', manifest)
+        self.assertIn("RunService.start(app", view_model)
+
+    def test_threshold_rejections_are_visible(self):
+        model = self.read(GLINER / "GlinerOnnxModel.kt")
+        self.assertIn("val probes:List<String>", model)
+        self.assertIn("scored += candidate", model)
+        runner = self.read(GLINER / "GlinerLabRunner.kt")
+        self.assertIn("probes=labelled.probes", runner)
+        screen = self.read(self.SCREEN)
+        self.assertIn("probes", screen)
+
+
 class GlinerBundleInspectTests(unittest.TestCase):
     """End-to-end checks for tools/inspect-gliner-bundle.py using a synthetic graph.
 

@@ -32,6 +32,9 @@ class GlinerLabActivity:ComponentActivity() {
             val csvLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
                 uri?.let(vm::saveCsv)
             }
+            val jsonLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                uri?.let(vm::saveJson)
+            }
             WineTrackerTheme {
                 Surface {
                     GlinerLabScreen(
@@ -43,6 +46,8 @@ class GlinerLabActivity:ComponentActivity() {
                         onRunImage={ image -> vm.runSingle(image) },
                         onStop=vm::stop,
                         onSaveCsv={ csvLauncher.launch("gliner-lab-${System.currentTimeMillis()}.csv") },
+                        onSaveJson={ jsonLauncher.launch("gliner-lab-${System.currentTimeMillis()}.json") },
+                        onReport=vm::reportText,
                         onThreshold=vm::setThreshold,
                         onMaxWidth=vm::setMaxWidth,
                         onToggleRow=vm::toggleExpanded,

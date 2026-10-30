@@ -99,7 +99,7 @@ internal class GlinerOnnxModel private constructor(
                     ?: error("GLiNER output tensor holds ${tensor.info.type}, which is not float32 logits")
                 val flat=FloatArray(buffer.remaining())
                 buffer.get(flat)
-                val decoded=decode(flat,shape,classCount,words.size,spanCount,spans)
+                val decoded=decode(flat,shape,classCount,words.size,spanCount,spans,limited)
                 val entities=withGeometry(decoded.candidates,limited)
                 val elapsed=SystemClock.elapsedRealtime()-started
                 val lanes=GlinerLane.ordered.map { lane ->
@@ -119,6 +119,7 @@ internal class GlinerOnnxModel private constructor(
                     spanCount=spanCount,
                     elapsedMs=elapsed,
                     config=laneConfig,
+                    probes=decoded.probes,
                 )
             }
         } finally {
@@ -195,7 +196,12 @@ internal class GlinerOnnxModel private constructor(
 
     private data class Candidate(val lane:GlinerLane,val start:Int,val end:Int,val score:Float)
 
-    private data class Decoded(val candidates:List<GlinerEntity>,val rejected:Int,val layout:String)
+    private data class Decoded(
+        val candidates:List<GlinerEntity>,
+        val rejected:Int,
+        val layout:String,
+        val probes:List<String> = emptyList(),
+    )
 
     /**
      * Turns raw logits into accepted, non-overlapping entities. `flat` prevents one word from
@@ -208,11 +214,13 @@ internal class GlinerOnnxModel private constructor(
         words:Int,
         spanCount:Int,
         spans:IntArray,
+        document:GlinerDocument?=null,
     ):Decoded {
         val dims=shape.map { it.toInt() }
         val values=buffer
         val maxWidth=minOf(laneConfig.maxWidth,config.maxWidth)
         val candidates=mutableListOf<Candidate>()
+        val scored=mutableListOf<Candidate>()
         val layout:String
         when {
             dims.size==2 && dims[0]==spanCount && dims[1]==classCount -> {
@@ -254,7 +262,9 @@ internal class GlinerOnnxModel private constructor(
                             val end=start+width-1
                             if(end>=words) continue
                             val probability=sigmoid(values[((start*maxWidth)+width-1)*classCount+label])
-                            if(probability>=laneConfig.threshold) candidates += Candidate(lane,start,end,probability)
+                            val candidate=Candidate(lane,start,end,probability)
+                            scored += candidate
+                            if(probability>=laneConfig.threshold) candidates += candidate
                         }
                     }
                 }
@@ -282,6 +292,13 @@ internal class GlinerOnnxModel private constructor(
             else -> error("Unrecognized GLiNER output shape ${shape.contentToString()}; expected "+
                 "$spanCount spans and $classCount lane classes over $words words")
         }
+        val probes=GlinerLane.ordered.mapNotNull { lane ->
+            scored.filter { it.lane==lane }.maxByOrNull { it.score }?.let { best ->
+                val text=document?.words?.drop(best.start)?.take(best.end-best.start+1)
+                    ?.joinToString(" ") { it.normalized }
+                "%s %.3f %s".format(java.util.Locale.ROOT,lane.shortName,best.score,text.orEmpty())
+            }
+        }
         val accepted=mutableListOf<GlinerEntity>()
         val used=BooleanArray(words)
         var rejected=0
@@ -295,7 +312,7 @@ internal class GlinerOnnxModel private constructor(
                 accepted += GlinerEntity(candidate.lane,candidate.start,candidate.end,"",candidate.score,
                     RectF(),emptyList(),laneConfig.promptFor(candidate.lane))
             }
-        return Decoded(accepted,rejected,layout)
+        return Decoded(accepted,rejected,layout,probes)
     }
 
     private fun sigmoid(value:Float):Float {
