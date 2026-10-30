@@ -61,6 +61,9 @@ import com.yourapp.wine.gliner.GlinerLane
 import com.yourapp.wine.phonecorpus.FailedParametersTable
 import com.yourapp.wine.phonecorpus.LabelThumbnail
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
+import com.yourapp.wine.phonecorpus.WineAppLabelsState
+import com.yourapp.wine.phonecorpus.WineAppLabelsBuildLog
+import com.yourapp.wine.phonecorpus.glinerLabBaselines
 import com.yourapp.wine.phonecorpus.ZoomableLabelDialog
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -73,6 +76,7 @@ private val fieldLabels = listOf("producer" to "Producer", "wine_name" to "Wine 
 @Composable
 internal fun GlinerLabScreen(
     state:GlinerLabState,
+    labState:WineAppLabelsState,
     onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
     onRunAll:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
     onSaveCsv:()->Unit, onSaveJson:()->Unit, onReport:()->String,
@@ -144,7 +148,7 @@ internal fun GlinerLabScreen(
         }
         item {
             SelectionContainer {
-                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped))
+                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState)
             }
         }
         if(state.ran) {
@@ -225,36 +229,59 @@ private fun RunTimers(elapsed:Long,done:Int,total:Int) {
 }
 
 @Composable
-private fun ScoredResults(a:GlinerAggregate) {
+private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState) {
     val pass=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val fail=MaterialTheme.colorScheme.error
+    val baselines=glinerLabBaselines(labState)
+    val glinerValues=listOf("GLiNER",a.attempted.toString(),a.eligible.toString(),"${a.complete}/${a.eligible}",a.oneError.toString(),a.multiError.toString(),a.failed.toString())
+    val glinerFields=fieldLabels.associate { (key,_) ->
+        val correct=a.fieldCorrect[key] ?: 0
+        key to WineAppLabelsBuildLog.FieldScore(correct,(a.fieldTotal[key] ?: 0)-correct)
+    }
     Column {
         Text("Scored results",style=MaterialTheme.typography.titleMedium)
         Column(Modifier.horizontalScroll(rememberScrollState())) {
             val headers=listOf("Pipeline","Attempted","Eligible","Fully correct","One error","2+ errors","Failed")
-            val values=listOf("GLiNER",a.attempted.toString(),a.eligible.toString(),"${a.complete}/${a.eligible}",a.oneError.toString(),a.multiError.toString(),a.failed.toString())
+            val rows=listOf(glinerValues)+baselines.map { it.summary ?: listOf(it.title,"—","—","—","—","—","—") }
             Row { headers.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis) } }
-            HorizontalDivider(Modifier.width((88*headers.size).dp))
-            Row { values.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall) } }
+            rows.forEach { values ->
+                HorizontalDivider(Modifier.width((88*headers.size).dp))
+                Row { values.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall) } }
+            }
         }
         Spacer(Modifier.height(8.dp))
         Column(Modifier.horizontalScroll(rememberScrollState())) {
             val columns=fieldLabels+("total_correct" to "Total correct")
+            val rows=listOf("GLiNER" to glinerFields)+baselines.map { it.title to it.fields }
             Row {
                 Text("Build",Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
                 columns.forEach { (_,label) -> Text(label,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false) }
             }
-            HorizontalDivider(Modifier.width((128+88*columns.size).dp))
-            Row {
-                Text("Current build",Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
-                columns.forEach { (key,_) ->
-                    val correct=if(key=="total_correct") a.fieldCorrect.values.sum() else a.fieldCorrect[key] ?: 0
-                    val total=if(key=="total_correct") a.fieldTotal.values.sum() else a.fieldTotal[key] ?: 0
-                    val cell=buildAnnotatedString { withStyle(SpanStyle(color=pass)) { append("$correct") }; append("/"); withStyle(SpanStyle(color=fail)) { append("${total-correct}") } }
-                    Text(cell,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+            rows.forEach { (title,scores) ->
+                HorizontalDivider(Modifier.width((128+88*columns.size).dp))
+                Row {
+                    Text(title,Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
+                    columns.forEach { (key,_) ->
+                        val score=if(key=="total_correct") {
+                            if(fieldLabels.all { it.first in scores }) WineAppLabelsBuildLog.FieldScore(
+                                scores.values.sumOf { it.correct },scores.values.sumOf { it.incorrect }) else null
+                        } else scores[key]
+                        val cell=buildAnnotatedString {
+                            if(score==null) append("—") else {
+                                withStyle(SpanStyle(color=pass)) { append("${score.correct}") }
+                                append("/")
+                                withStyle(SpanStyle(color=fail)) { append("${score.incorrect}") }
+                            }
+                        }
+                        Text(cell,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                    }
                 }
             }
         }
+        Text("Lab and Prod use the saved Lab cohort; runs may cover different photos.",style=MaterialTheme.typography.bodySmall)
+        if(baselines.any { it.summary==null }) Text(
+            if(labState.busy) "Loading saved baselines…" else "— = no saved baseline on this device.",
+            style=MaterialTheme.typography.bodySmall)
     }
 }
 

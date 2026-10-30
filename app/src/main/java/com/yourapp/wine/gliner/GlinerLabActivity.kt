@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import com.n8rtz.winetracker.ui.screens.GlinerLabScreen
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
 import com.n8rtz.winetracker.viewmodels.GlinerLabViewModel
+import com.yourapp.wine.phonecorpus.WineAppLabelsViewModel
 
 /**
  * Settings → Scanner testing → GLiNER lane lab.
@@ -21,11 +22,14 @@ import com.n8rtz.winetracker.viewmodels.GlinerLabViewModel
  */
 class GlinerLabActivity:ComponentActivity() {
     private val vm:GlinerLabViewModel by viewModels()
+    // The Lab view model owns the saved, corpus-validated Lab and frozen Prod scores.
+    private val labVm:WineAppLabelsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState:Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val state by vm.state.collectAsState()
+            val labState by labVm.state.collectAsState()
             val importLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
                 if(uris.isNotEmpty()) vm.importBundle(uris)
             }
@@ -39,6 +43,7 @@ class GlinerLabActivity:ComponentActivity() {
                 Surface {
                     GlinerLabScreen(
                         state=state,
+                        labState=labState,
                         onImport={ importLauncher.launch(arrayOf("*/*")) },
                         onClearBundle=vm::clearBundle,
                         onRefresh=vm::refresh,

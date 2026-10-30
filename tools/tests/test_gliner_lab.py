@@ -290,8 +290,19 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
 
     def test_score_tables_are_always_visible(self):
         screen = self.read(self.SCREEN)
-        self.assertIn("ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped))", screen)
+        self.assertIn("ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState)", screen)
         self.assertNotIn("state.aggregate?.let", screen)
+
+    def test_lab_and_prod_baselines_come_from_saved_lab_scoreboard(self):
+        screen = self.read(self.SCREEN)
+        baseline = self.read(APP / "java/com/yourapp/wine/phonecorpus/GlinerLabBaselines.kt")
+        activity = self.read(APP / "java/com/yourapp/wine/gliner/GlinerLabActivity.kt")
+        self.assertIn("glinerLabBaselines(labState)", screen)
+        self.assertIn("WineAppLabelsViewModel by viewModels()", activity)
+        self.assertIn("Mode.LAB,state.currentBuildFieldScores", baseline)
+        self.assertIn("Mode.PRODUCTION_V6,state.prodV6FieldScores", baseline)
+        self.assertIn("it.firstOrNull()==mode.title", baseline)
+        self.assertIn("summary==null", baseline)
 
     def test_run_survives_leaving_the_screen(self):
         view_model = self.read(self.VM)
