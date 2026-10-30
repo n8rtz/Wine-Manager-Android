@@ -80,10 +80,34 @@ internal data class GlinerLabState(
     val bundleMs:Long=0,
     /** Time to parse the tokenizer and create the ONNX session, in milliseconds. */
     val modelMs:Long=0,
+    val runStartedMs:Long=0,
+    val runElapsedMs:Long=0,
 ) {
     val ran:Boolean get() = samples.any { it.result!=null }
     fun row(image:String):GlinerLabRow? = samples.firstOrNull { it.sample.image==image }
 }
+
+internal fun aggregateGlinerRows(rows:List<GlinerLabRow>,stopped:Boolean):GlinerAggregate {
+    val scored=rows.filter { it.result!=null }
+    val results=scored.mapNotNull { it.result }
+    val correct=PhoneCorpusMath.fields.associateWith { field ->
+        scored.count { row -> row.sample.target(field).status!="unresolved" &&
+            row.result?.fieldResults?.firstOrNull { it.field==field }?.let { PhoneCorpusMath.correct(it.outcome) }==true }
+    }
+    val total=PhoneCorpusMath.fields.associateWith { field -> scored.count { it.sample.target(field).status!="unresolved" } }
+    return GlinerAggregate(
+        attempted=results.size,
+        eligible=results.count { it.eligible },
+        complete=results.count { it.complete },
+        oneError=results.count { it.eligible && it.errorCount==1 },
+        multiError=results.count { it.eligible && it.errorCount>1 },
+        failed=results.count { it.status!="complete" },
+        fieldCorrect=correct,
+        fieldTotal=total,
+        stopped=stopped,
+    )
+}
+
 
 /**
  * Process-scoped holder so a GLiNER lab run survives leaving [com.yourapp.wine.gliner.GlinerLabActivity]:
@@ -201,6 +225,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
             state.copy(running=true,finished=false,stopped=false,done=0,total=targets.size,current="",aggregate=null,message="",
+                runStartedMs=SystemClock.elapsedRealtime(),runElapsedMs=0,
                 samples=state.samples.map { row ->
                     if(row.sample.image in targetImages) row.copy(status="Waiting",result=null) else row
                 })
@@ -241,20 +266,21 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                     }
                     results += result
                     mutable.update { state ->
-                        state.copy(done=index+1,
-                            samples=state.samples.map { existing ->
-                                if(existing.sample.image==row.sample.image) existing.copy(status=result.status,result=result) else existing
-                            })
+                        val samples=state.samples.map { existing ->
+                            if(existing.sample.image==row.sample.image) existing.copy(status=result.status,result=result) else existing
+                        }
+                        state.copy(done=index+1,samples=samples,aggregate=aggregateGlinerRows(samples,stopped=false))
                     }
                 }
-                val aggregate=aggregate(results,stopped=false)
-                mutable.update { it.copy(running=false,finished=true,current="",aggregate=aggregate,message=aggregate.text()) }
+                val aggregate=aggregateGlinerRows(mutable.value.samples,stopped=false)
+                mutable.update { it.copy(running=false,finished=true,current="",aggregate=aggregate,runElapsedMs=SystemClock.elapsedRealtime()-it.runStartedMs,message="") }
             } catch(cancel:CancellationException) {
-                val aggregate=aggregate(results,stopped=true)
-                mutable.update { it.copy(running=false,finished=true,stopped=true,current="",aggregate=aggregate,
+                val aggregate=aggregateGlinerRows(mutable.value.samples,stopped=true)
+                mutable.update { it.copy(running=false,finished=true,stopped=true,current="",aggregate=aggregate,runElapsedMs=SystemClock.elapsedRealtime()-it.runStartedMs,
                     message="Stopped after ${results.size} photos. ${aggregate.text()}") }
             } catch(error:Exception) {
-                mutable.update { it.copy(running=false,finished=true,current="",
+                mutable.update { it.copy(running=false,finished=true,current="",runElapsedMs=SystemClock.elapsedRealtime()-it.runStartedMs,
+                    aggregate=aggregateGlinerRows(it.samples,stopped=false),
                     message="GLiNER lab could not start: ${error.javaClass.simpleName}: ${error.message}") }
             } finally {
                 runCatching { warm?.close() }
@@ -268,24 +294,6 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         mutable.update { state ->
             state.copy(samples=state.samples.map { if(it.sample.image==image) it.copy(status=status) else it })
         }
-    }
-
-    private fun aggregate(results:List<GlinerLabImageResult>,stopped:Boolean):GlinerAggregate {
-        val correct=PhoneCorpusMath.fields.associateWith { field ->
-            results.count { result -> result.fieldResults.firstOrNull { it.field==field }?.let { PhoneCorpusMath.correct(it.outcome) }==true }
-        }
-        val total=PhoneCorpusMath.fields.associateWith { results.size }
-        return GlinerAggregate(
-            attempted=results.size,
-            eligible=results.count { it.eligible },
-            complete=results.count { it.complete },
-            oneError=results.count { it.status=="complete" && it.eligible && it.errorCount==1 },
-            multiError=results.count { it.status=="complete" && it.eligible && it.errorCount>1 },
-            failed=results.count { it.status!="complete" },
-            fieldCorrect=correct,
-            fieldTotal=total,
-            stopped=stopped,
-        )
     }
 
     /** Plain text of the whole run, for the "Copy all results" button. */

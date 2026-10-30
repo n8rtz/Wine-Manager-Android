@@ -808,7 +808,7 @@ class WineAppLabelsActivity : ComponentActivity() {
 }
 
 @Composable
-private fun FailedParametersTable(failedResults: List<Pair<String, Map<String, String>>>) {
+internal fun FailedParametersTable(failedResults: List<Pair<String, Map<String, String>>>) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val failColor = MaterialTheme.colorScheme.error
@@ -878,7 +878,7 @@ private fun FailedParametersTable(failedResults: List<Pair<String, Map<String, S
 }
 
 @Composable
-private fun LabelThumbnail(image: String, onClick: () -> Unit) {
+internal fun LabelThumbnail(image: String, onClick: () -> Unit) {
     val context = LocalContext.current
     val bitmap by produceState<android.graphics.Bitmap?>(null, image) {
         value = withContext(Dispatchers.IO) {
@@ -901,7 +901,7 @@ private fun LabelThumbnail(image: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ZoomableLabelDialog(image: String, onDismiss: () -> Unit) {
+internal fun ZoomableLabelDialog(image: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val currentOnDismiss by rememberUpdatedState(onDismiss)
     val bitmap by produceState<android.graphics.Bitmap?>(null, image) {

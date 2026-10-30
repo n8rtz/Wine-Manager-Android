@@ -1,13 +1,22 @@
 package com.n8rtz.winetracker.ui.screens
 
+import android.os.SystemClock
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -16,14 +25,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,262 +45,246 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
+import com.n8rtz.winetracker.viewmodels.GlinerAggregate
 import com.n8rtz.winetracker.viewmodels.GlinerLabRow
 import com.n8rtz.winetracker.viewmodels.GlinerLabState
 import com.yourapp.wine.gliner.GlinerLabImageResult
 import com.yourapp.wine.gliner.GlinerLane
+import com.yourapp.wine.phonecorpus.FailedParametersTable
+import com.yourapp.wine.phonecorpus.LabelThumbnail
+import com.yourapp.wine.phonecorpus.PhoneCorpusMath
+import com.yourapp.wine.phonecorpus.ZoomableLabelDialog
+import kotlinx.coroutines.delay
+import java.util.Locale
 
-/**
- * Settings > Scanner testing > GLiNER lane lab.
- *
- * Laid out like the 124-label benchmark page: a compact header, the run controls, then tables -
- * one row per label with a column per field, and the same expandable `+` cell that opens the
- * detail. Every cell is inside a [SelectionContainer] and "Copy all results" puts the whole run on
- * the clipboard, so a bad run can be pasted into a chat instead of screenshotted.
- */
+private val fieldLabels = listOf("producer" to "Producer", "wine_name" to "Wine name", "country" to "Country",
+    "region" to "Region", "subregion" to "Subregion", "vintage" to "Vintage")
+
+/** GLiNER results use the same layout, field scoring and failed-label cards as the Lab v7 page. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun GlinerLabScreen(
     state:GlinerLabState,
-    onImport:()->Unit,
-    onClearBundle:()->Unit,
-    onRefresh:()->Unit,
-    onRunAll:()->Unit,
-    onRunImage:(String)->Unit,
-    onStop:()->Unit,
-    onSaveCsv:()->Unit,
-    onSaveJson:()->Unit,
-    onReport:()->String,
-    onThreshold:(Float)->Unit,
-    onMaxWidth:(Int)->Unit,
-    onToggleRow:(String)->Unit,
-    onClose:()->Unit,
+    onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
+    onRunAll:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
+    onSaveCsv:()->Unit, onSaveJson:()->Unit, onReport:()->String,
+    onThreshold:(Float)->Unit, onMaxWidth:(Int)->Unit, onToggleRow:(String)->Unit, onClose:()->Unit,
 ) {
     val clipboard=LocalClipboardManager.current
+    var showIncomplete by remember { mutableStateOf(false) }
+    var showAll by remember { mutableStateOf(false) }
+    var selectedFields by remember { mutableStateOf(emptySet<String>()) }
+    var expandedRaw by remember { mutableStateOf(emptySet<String>()) }
+    var expandedImage by remember { mutableStateOf<String?>(null) }
+    var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    LaunchedEffect(state.running) {
+        while(state.running) { now=SystemClock.elapsedRealtime(); delay(250) }
+    }
+    val incomplete=state.samples.filter { row ->
+        row.result?.let { result -> result.status!="complete" || result.fieldResults.any {
+            row.sample.target(it.field).status!="unresolved" && !PhoneCorpusMath.correct(it.outcome)
+        } } == true
+    }
+    fun failedKeys(row:GlinerLabRow):Set<String> = row.result?.fieldResults.orEmpty().filter {
+        row.sample.target(it.field).status!="unresolved" && !PhoneCorpusMath.correct(it.outcome)
+    }.map { it.field }.toSet()
+    val filtered=if(selectedFields.isEmpty()) incomplete else incomplete.filter { row -> failedKeys(row).any { it in selectedFields } }
+    val elapsed=if(state.running) (now-state.runStartedMs).coerceAtLeast(0) else state.runElapsedMs
     LazyColumn(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=12.dp,vertical=10.dp),
-        verticalArrangement=Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp,vertical=12.dp),
+        verticalArrangement=Arrangement.spacedBy(12.dp),
     ) {
         item {
             SelectionContainer {
-                Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                Column {
                     Text("GLiNER lane lab",style=MaterialTheme.typography.headlineSmall)
-                    Text("build ${BuildConfig.BUILD_COMMIT} · ${state.laneConfig.signatureKey()}",
-                        style=MaterialTheme.typography.bodySmall)
+                    Text("build ${BuildConfig.BUILD_COMMIT} · ${state.laneConfig.signatureKey()}",style=MaterialTheme.typography.bodySmall)
+                    Text(if(state.bundle.ready) "model ready · INT4 "+(if(state.bundle.int4) "✓" else "✗") else "model missing · ${state.bundle.summary()}")
+                    if(state.modelMs>0) Text("model load ${state.modelMs} ms · bundle ${state.bundleMs} ms",style=MaterialTheme.typography.bodySmall)
                 }
+            }
+            Row {
+                TextButton(onClick=onImport,enabled=!state.running) { Text("Import") }
+                TextButton(onClick=onClearBundle,enabled=!state.running) { Text("Remove") }
+                TextButton(onClick=onRefresh,enabled=!state.running) { Text("Re-check") }
+            }
+            Row(Modifier.horizontalScroll(rememberScrollState()),verticalAlignment=Alignment.CenterVertically) {
+                TextButton(onClick={ onThreshold(-0.05f) },enabled=!state.running,contentPadding=PaddingValues(horizontal=8.dp)) { Text("thr −") }
+                TextButton(onClick={ onThreshold(0.05f) },enabled=!state.running,contentPadding=PaddingValues(horizontal=8.dp)) { Text("thr +") }
+                TextButton(onClick={ onMaxWidth(-2) },enabled=!state.running,contentPadding=PaddingValues(horizontal=8.dp)) { Text("wid −") }
+                TextButton(onClick={ onMaxWidth(2) },enabled=!state.running,contentPadding=PaddingValues(horizontal=8.dp)) { Text("wid +") }
+                SelectionContainer { Text("${"%.2f".format(state.laneConfig.threshold)} · w${state.laneConfig.maxWidth}",style=MaterialTheme.typography.bodySmall) }
             }
         }
         item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
-                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                    SelectionContainer {
-                        Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                            Text(if(state.bundle.ready) "model ready · INT4 "+(if(state.bundle.int4) "✓" else "✗")
-                                else "model missing · ${state.bundle.summary()}",
-                                style=MaterialTheme.typography.bodySmall,fontWeight=FontWeight.SemiBold)
-                            if(state.modelMs>0) Text("load ${state.modelMs} ms · bundle ${state.bundleMs} ms",
-                                style=MaterialTheme.typography.bodySmall)
-                            if(state.tokenizer!="not loaded") Text(state.tokenizer,style=MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-                        TextButton(onClick=onImport,enabled=!state.running) { Text("Import") }
-                        TextButton(onClick=onClearBundle,enabled=!state.running) { Text("Remove") }
-                        TextButton(onClick=onRefresh,enabled=!state.running) { Text("Re-check") }
-                    }
+            SelectionContainer {
+                Column {
+                    if(state.message.isNotBlank()) Text(state.message)
+                    Text("GLiNER completed: ${state.samples.count { it.result!=null }}/${state.samples.size}")
+                    if(state.running) Text("${state.done}/${state.total} · ${state.current}",style=MaterialTheme.typography.bodySmall)
                 }
+            }
+            if(state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
+            Button(onClick=onRunAll,enabled=!state.running && state.bundle.ready && state.samples.isNotEmpty()) {
+                Text(if(state.ran) "New GLiNER run" else "Start GLiNER run")
+            }
+            SelectionContainer { RunTimers(elapsed,state.done,state.total) }
+            Row {
+                TextButton(onClick=onStop,enabled=state.running) { Text("Stop") }
+                TextButton(onClick=onClose) { Text("Close") }
             }
         }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
-                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
-                        horizontalArrangement=Arrangement.SpaceBetween) {
-                        Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-                            TextButton(onClick={ onThreshold(-0.05f) },enabled=!state.running,
-                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("thr −") }
-                            TextButton(onClick={ onThreshold(0.05f) },enabled=!state.running,
-                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("thr +") }
-                            TextButton(onClick={ onMaxWidth(-2) },enabled=!state.running,
-                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("wid −") }
-                            TextButton(onClick={ onMaxWidth(2) },enabled=!state.running,
-                                contentPadding=PaddingValues(horizontal=8.dp)) { Text("wid +") }
-                        }
-                        SelectionContainer {
-                            Text("${"%.2f".format(state.laneConfig.threshold)} · w${state.laneConfig.maxWidth}",
-                                style=MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-                        TextButton(onClick=onRunAll,enabled=!state.running && state.bundle.ready) {
-                            Text(if(state.finished) "Run all again" else "Run all ${state.total}")
-                        }
-                        TextButton(onClick=onStop,enabled=state.running) { Text("Stop") }
-                        TextButton(onClick=onClose) { Text("Close") }
-                    }
-                    if(state.running) {
-                        LinearProgressIndicator(modifier=Modifier.fillMaxWidth())
-                        SelectionContainer {
-                            Text("${state.done}/${state.total} · ${state.current}",
-                                style=MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    SelectionContainer {
-                        Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-                            if(state.message.isNotBlank()) Text(state.message,style=MaterialTheme.typography.bodySmall)
-                            state.aggregate?.let { Text(it.text(),style=MaterialTheme.typography.bodySmall) }
-                        }
-                    }
-                }
-            }
+        state.aggregate?.let { aggregate ->
+            item { SelectionContainer { ScoredResults(aggregate) } }
         }
         if(state.ran) {
             item {
-                Row(horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-                    TextButton(onClick={ clipboard.setText(AnnotatedString(onReport())) }) { Text("Copy all") }
+                Text("Export",style=MaterialTheme.typography.titleMedium)
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    TextButton(onClick={ clipboard.setText(AnnotatedString(onReport())) }) { Text("Copy all results") }
                     TextButton(onClick=onSaveJson,enabled=!state.running) { Text("Save JSON") }
                     TextButton(onClick=onSaveCsv,enabled=!state.running) { Text("Save CSV") }
                 }
             }
-            state.aggregate?.let { aggregate ->
-                item {
-                    Text("Per field",style=MaterialTheme.typography.titleMedium)
-                    FieldScoreTable(aggregate.fieldCorrect,aggregate.fieldTotal)
+        }
+        item {
+            TextButton(onClick={ showIncomplete=!showIncomplete },modifier=Modifier.fillMaxWidth()) {
+                Row(verticalAlignment=Alignment.CenterVertically) {
+                    Text("Incomplete labels (${incomplete.size})",style=MaterialTheme.typography.titleMedium,modifier=Modifier.weight(1f))
+                    Text(if(showIncomplete) "▲" else "▼",style=MaterialTheme.typography.bodySmall)
                 }
             }
+        }
+        if(showIncomplete) {
             item {
-                Text(if(state.finished) "Labels (${state.samples.count { it.result!=null }}/${state.samples.size})"
-                    else "Labels",style=MaterialTheme.typography.titleMedium)
-            }
-            items(state.samples,key={ it.sample.image }) { row ->
-                LabelRow(row,expanded=row.sample.image in state.expanded,enabled=!state.running,
-                    onToggle={ onToggleRow(row.sample.image) },
-                    onRun={ onRunImage(row.sample.image) })
-            }
-        }
-    }
-}
-
-/** Field | Correct | Scored, the same three-column shape as the benchmark page's score table. */
-@Composable
-private fun FieldScoreTable(correct:Map<String,Int>,total:Map<String,Int>) {
-    val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
-    val fieldWidth=140.dp
-    val numberWidth=64.dp
-    val rows=total.keys.ifEmpty { correct.keys }.toList()
-    SelectionContainer {
-        Column(Modifier.horizontalScroll(rememberScrollState())) {
-            Row {
-                Text("Field",Modifier.width(fieldWidth).padding(4.dp),
-                    style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                Text("Correct",Modifier.width(numberWidth).padding(4.dp),
-                    style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                Text("Scored",Modifier.width(numberWidth).padding(4.dp),
-                    style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-            }
-            rows.forEach { key ->
-                HorizontalDivider(Modifier.width(fieldWidth+numberWidth*2))
-                val scored=total[key] ?: 0
-                val right=correct[key] ?: 0
-                val color=when { scored==0 -> MaterialTheme.colorScheme.onSurfaceVariant
-                    right==scored -> passColor else -> MaterialTheme.colorScheme.error }
-                Row {
-                    Text(key,Modifier.width(fieldWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                    Text("$right",Modifier.width(numberWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,color=color,maxLines=1,softWrap=false)
-                    Text("$scored",Modifier.width(numberWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                }
-            }
-        }
-    }
-}
-
-/**
- * One label, collapsed: a `Parameter | Expected | Actual` table for the six fields, with the actual
- * value green when it matches, red when it does not, and grey when the pipeline left it blank.
- * Everything else - lanes, probes, timings, raw OCR - hides behind one "Raw OCR" toggle that starts
- * closed, which is how the device photo lab keeps its rows readable.
- */
-@Composable
-private fun LabelRow(
-    row:GlinerLabRow,
-    expanded:Boolean,
-    enabled:Boolean,
-    onToggle:()->Unit,
-    onRun:()->Unit,
-) {
-    var open by remember(row.sample.image) { mutableStateOf(false) }
-    val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
-    val nameWidth=96.dp
-    val valueWidth=150.dp
-    val result=row.result
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=8.dp),
-            verticalArrangement=Arrangement.spacedBy(4.dp)) {
-            SelectionContainer {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                    Text("${row.index+1}. ${row.displayName}",style=MaterialTheme.typography.bodyMedium)
-                    Text(result?.let { "${it.status} · ${it.errorCount} err" } ?: row.status,
-                        style=MaterialTheme.typography.bodySmall)
-                }
-            }
-            if(result!=null) {
-                SelectionContainer {
-                    Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        Row {
-                            Text("Parameter",Modifier.width(nameWidth).padding(4.dp),
-                                style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                            Text("Expected",Modifier.width(valueWidth).padding(4.dp),
-                                style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                            Text("Actual",Modifier.width(valueWidth).padding(4.dp),
-                                style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                        }
-                        result.fieldResults.forEach { field ->
-                            HorizontalDivider(Modifier.width(nameWidth+valueWidth*2))
-                            val color=when {
-                                field.observed.isBlank() -> MaterialTheme.colorScheme.onSurfaceVariant
-                                field.observed.trim().equals(field.expected.trim(),ignoreCase=true) -> passColor
-                                else -> MaterialTheme.colorScheme.error
-                            }
-                            Row {
-                                Text(field.label,Modifier.width(nameWidth).padding(4.dp),
-                                    style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                                Text(field.expected.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
-                                    style=MaterialTheme.typography.bodySmall,maxLines=1,
-                                    overflow=TextOverflow.Ellipsis,softWrap=false)
-                                Text(field.observed.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
-                                    style=MaterialTheme.typography.bodySmall,color=color,maxLines=1,
-                                    overflow=TextOverflow.Ellipsis,softWrap=false)
-                            }
+                Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                    FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                        fieldLabels.forEach { (key,label) ->
+                            val selected=key in selectedFields
+                            FilterChip(selected=selected,onClick={ selectedFields=if(selected) selectedFields-key else selectedFields+key },
+                                label={ Text("$label (${incomplete.count { key in failedKeys(it) }})") })
                         }
                     }
+                    if(selectedFields.isNotEmpty()) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
+                        Text("Showing ${filtered.size}/${incomplete.size}",style=MaterialTheme.typography.bodySmall)
+                        TextButton(onClick={ selectedFields=emptySet() }) { Text("Clear filters") }
+                    }
+                    if(!state.ran) Text("No scored labels yet.",style=MaterialTheme.typography.bodySmall)
+                    else if(incomplete.isEmpty()) Text("All scored labels are completely correct.",style=MaterialTheme.typography.bodySmall)
+                    else if(filtered.isEmpty()) Text("No labels failed the selected filter(s).",style=MaterialTheme.typography.bodySmall)
                 }
-                if(!result.message.isBlank()) {
-                    SelectionContainer { Text(result.message,style=MaterialTheme.typography.bodySmall) }
+            }
+            items(filtered,key={ "incomplete:${it.sample.image}" }) { row ->
+                val open=row.sample.image in expandedRaw
+                IncompleteLabel(row,open,{ expandedRaw=if(open) expandedRaw-row.sample.image else expandedRaw+row.sample.image },
+                    { expandedImage=row.sample.image })
+            }
+        }
+        item {
+            TextButton(onClick={ showAll=!showAll },modifier=Modifier.fillMaxWidth()) {
+                Row(verticalAlignment=Alignment.CenterVertically) {
+                    Text("All labels (${state.samples.size})",style=MaterialTheme.typography.titleMedium,modifier=Modifier.weight(1f))
+                    Text(if(showAll) "▲" else "▼",style=MaterialTheme.typography.bodySmall)
                 }
-                val lines=result.ocrLines.size
-                TextButton(onClick={ open=!open },contentPadding=PaddingValues(0.dp)) {
-                    Text(if(open) "− Raw OCR ($lines lines)" else "+ Raw OCR ($lines lines)",
-                        style=MaterialTheme.typography.bodySmall)
+            }
+        }
+        if(showAll) items(state.samples,key={ "all:${it.sample.image}" }) { row ->
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                SelectionContainer(Modifier.weight(1f)) { Text("${row.displayName} · ${row.result?.status ?: row.status}",style=MaterialTheme.typography.bodySmall) }
+                TextButton(onClick={ onRunImage(row.sample.image) },enabled=!state.running && state.bundle.ready) { Text("Run") }
+            }
+        }
+    }
+    expandedImage?.let { image -> ZoomableLabelDialog(image=image,onDismiss={ expandedImage=null }) }
+}
+
+@Composable
+private fun RunTimers(elapsed:Long,done:Int,total:Int) {
+    fun time(ms:Long):String = String.format(Locale.ROOT,"%02dm %02ds",ms/60000,(ms/1000)%60)
+    val avg=if(done>0) elapsed/done else 0L
+    val remaining=if(done>0) avg*(total-done).coerceAtLeast(0) else 0L
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+        listOf("Run time" to time(elapsed),"Avg / image" to if(done>0) String.format(Locale.ROOT,"%.1fs",avg/1000f) else "—",
+            "Est. remaining" to if(done>0) time(remaining) else "—").forEach { (title,value) ->
+            Column(Modifier.weight(1f).border(0.5.dp,MaterialTheme.colorScheme.outlineVariant).padding(6.dp)) {
+                Text(title,style=MaterialTheme.typography.labelSmall,maxLines=1,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value,style=MaterialTheme.typography.bodyMedium,maxLines=1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScoredResults(a:GlinerAggregate) {
+    val pass=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val fail=MaterialTheme.colorScheme.error
+    Column {
+        Text("Scored results",style=MaterialTheme.typography.titleMedium)
+        Column(Modifier.horizontalScroll(rememberScrollState())) {
+            val headers=listOf("Pipeline","Attempted","Eligible","Fully correct","One error","2+ errors","Failed")
+            val values=listOf("GLiNER",a.attempted.toString(),a.eligible.toString(),"${a.complete}/${a.eligible}",a.oneError.toString(),a.multiError.toString(),a.failed.toString())
+            Row { headers.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis) } }
+            HorizontalDivider(Modifier.width((88*headers.size).dp))
+            Row { values.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall) } }
+        }
+        Spacer(Modifier.height(8.dp))
+        Column(Modifier.horizontalScroll(rememberScrollState())) {
+            val columns=fieldLabels+("total_correct" to "Total correct")
+            Row {
+                Text("Build",Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                columns.forEach { (_,label) -> Text(label,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false) }
+            }
+            HorizontalDivider(Modifier.width((128+88*columns.size).dp))
+            Row {
+                Text("Current build",Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
+                columns.forEach { (key,_) ->
+                    val correct=if(key=="total_correct") a.fieldCorrect.values.sum() else a.fieldCorrect[key] ?: 0
+                    val total=if(key=="total_correct") a.fieldTotal.values.sum() else a.fieldTotal[key] ?: 0
+                    val cell=buildAnnotatedString { withStyle(SpanStyle(color=pass)) { append("$correct") }; append("/"); withStyle(SpanStyle(color=fail)) { append("${total-correct}") } }
+                    Text(cell,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
                 }
-                if(open) {
-                    SelectionContainer { Diagnostics(result) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IncompleteLabel(row:GlinerLabRow,open:Boolean,onToggle:()->Unit,onImage:()->Unit) {
+    val result=row.result ?: return
+    val sample=row.sample
+    val failed=result.fieldResults.filter { sample.target(it.field).status!="unresolved" && !PhoneCorpusMath.correct(it.outcome) }
+        .map { field -> field.field to mapOf("expected" to field.expected,"recognized" to field.observed,
+            "reference_status" to sample.target(field.field).status,"outcome" to field.outcome) }
+    fun target(key:String):String = sample.target(key).let { if(it.status=="expected_value") it.display else "(blank)" }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                LabelThumbnail(sample.image,onClick=onImage)
+                SelectionContainer(Modifier.weight(1f)) {
+                    Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
+                        Text("#${sample.reviewNumber} · ${target("producer")}",style=MaterialTheme.typography.titleSmall)
+                        Text(target("wine_name"),style=MaterialTheme.typography.bodyMedium)
+                        val location=listOf("country","region","subregion","vintage").map(::target).filter { it!="(blank)" }.joinToString(" · ")
+                        if(location.isNotEmpty()) Text(location,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(sample.sourceFilename,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
+                    }
                 }
-            } else {
-                Text(if(expanded) "not run" else row.status,style=MaterialTheme.typography.bodySmall)
-                if(!expanded) {
-                    TextButton(onClick=onToggle,enabled=enabled) { Text("Select") }
-                }
-                if(expanded) {
-                    TextButton(onClick=onRun,enabled=enabled) { Text("Run this label") }
-                }
+            }
+            if(failed.isNotEmpty()) SelectionContainer { FailedParametersTable(failed) }
+            else if(result.status!="complete") SelectionContainer { Text("Execution failed before field scoring: ${result.message}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error) }
+            Row(Modifier.fillMaxWidth().clickable(onClick=onToggle).padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically) {
+                Text("Raw OCR",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f))
+                Text(if(open) "▲" else "▼",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
+            }
+            if(open) SelectionContainer {
+                Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).border(0.5.dp,MaterialTheme.colorScheme.outlineVariant).padding(8.dp)) { Diagnostics(result) }
             }
         }
     }

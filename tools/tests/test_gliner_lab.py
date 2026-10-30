@@ -277,6 +277,17 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
                         "private fun DatasetRow"):
             self.assertNotIn(removed, screen)
 
+    def test_layout_reuses_lab_v7_failed_cards_and_scoring(self):
+        screen = self.read(self.SCREEN)
+        for item in ("Scored results", "Incomplete labels", "FilterChip", "FailedParametersTable(failed)",
+                     "LabelThumbnail(", "ZoomableLabelDialog(", "Raw OCR", "PhoneCorpusMath.correct"):
+            self.assertIn(item, screen)
+        self.assertIn("mutableStateOf(false)", screen)
+        self.assertIn('target(it.field).status!="unresolved"', screen)
+        view_model = self.read(self.VM)
+        self.assertIn('aggregateGlinerRows(samples,stopped=false)', view_model)
+        self.assertIn('row.sample.target(field).status!="unresolved"', view_model)
+
     def test_run_survives_leaving_the_screen(self):
         view_model = self.read(self.VM)
         self.assertIn("GlinerLabSession", view_model)
