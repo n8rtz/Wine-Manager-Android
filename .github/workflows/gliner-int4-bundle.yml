@@ -9,6 +9,8 @@ on:
   push:
     paths:
       - .github/workflows/gliner-int4-bundle.yml
+      - tools/fetch-gliner-small-int4.py
+      - tools/inspect-gliner-bundle.py
 
 permissions:
   contents: write
