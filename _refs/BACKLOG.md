@@ -51,6 +51,7 @@
     1. Run the audit on ~20 photos.
     2. Scroll toward the bottom to reach Save — screen closes.
 * **Known Workaround / Notes:** Fix applied 2026-10-30 (awaiting device check): rendered raw OCR per card capped at 40 lines (full text remains in Copy-all and the diagnostic export), and a "Save results" block (Copy all + export Save buttons) now sits at the top of the results, reachable without scrolling. If it still closes, note whether it returns to the dataset screen or the launcher (distinguishes finish() vs process death) and report.
+* **Update 2026-10-30 (later):** owner confirms the exit persists after the cap/top-save fix. Code inspection: the only `finish()` is the top Back button, so the exit is a crash or process death, not navigation. Shipped crash capture (uncaught-exception handler in `DevicePhotoLabActivity` writes `device-wine-label-audit-crash.txt`; the next session shows "Previous session ended unexpectedly" and appends the report to Copy-all) plus lighter cards (OCR text moved out of SelectionContainer, image decode 1000->800px). Awaiting the captured report or the owner's landing-spot observation.
 
 
 ### **[Bug-027]**: Duplicate merged Gradle build-commit declaration

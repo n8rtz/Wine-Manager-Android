@@ -42,6 +42,7 @@ internal data class DevicePhotoLabState(
     val photos:List<DevicePhotoLabPhoto> = emptyList(),
     val modules:LabPostOcrModules=LabPostOcrModules.none,
     val exports:List<File> = emptyList(),
+    val crashReport:String="",
 )
 
 /** Isolated, unscored session: no corpus references, baseline stores, OCR caches or best-build logs. */
@@ -50,6 +51,19 @@ internal class DevicePhotoLabViewModel(application:Application):AndroidViewModel
     val state=mutable.asStateFlow()
     private val lifetime=viewModelScope.coroutineContext[Job]!!
     private val root=File(application.cacheDir,"device-photo-lab-${UUID.randomUUID()}")
+
+    init {
+        // Bug-030: show the previous session's crash, if one was captured.
+        val crashFile=File(application.cacheDir,
+            com.yourapp.wine.phonecorpus.DevicePhotoLabActivity.CRASH_FILE_NAME)
+        if(crashFile.isFile) {
+            val report=runCatching { crashFile.readText().take(4000) }.getOrDefault("")
+            if(report.isNotBlank()) {
+                mutable.update { it.copy(crashReport=report) }
+                runCatching { crashFile.delete() }
+            }
+        }
+    }
     private var configured=false
     @Volatile private var stopping=false
 

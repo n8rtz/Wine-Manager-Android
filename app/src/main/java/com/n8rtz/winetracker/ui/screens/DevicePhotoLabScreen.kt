@@ -58,6 +58,10 @@ internal fun DevicePhotoLabScreen(
                 }
             }
         }
+        if(state.crashReport.isNotBlank()) {
+            appendLine("\nPrevious session crash report:")
+            appendLine(state.crashReport)
+        }
     }
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),
@@ -74,6 +78,18 @@ internal fun DevicePhotoLabScreen(
                     Text("Keep this screen open while running. Save or copy results before leaving this session.")
                     Text("Photo import uses the normal app limit of 32 MiB per image; larger files report an error.")
                     Text(state.message)
+                }
+            }
+        }
+        if(state.crashReport.isNotBlank()) {
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                        Text("Previous session ended unexpectedly",style=MaterialTheme.typography.titleSmall,
+                            color=MaterialTheme.colorScheme.error)
+                        Text("Crash report (also at the end of Copy all results):",style=MaterialTheme.typography.bodySmall)
+                        Text(state.crashReport.take(1200),style=MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }
@@ -117,7 +133,7 @@ internal fun DevicePhotoLabScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                     AsyncImage(
-                        model=ImageRequest.Builder(context).data(photo.localPhoto ?: photo.uri).size(1000).build(),
+                        model=ImageRequest.Builder(context).data(photo.localPhoto ?: photo.uri).size(800).build(),
                         contentDescription="Selected photo ${photo.index+1}: ${photo.name}",
                         modifier=Modifier.fillMaxWidth().height(280.dp),contentScale=ContentScale.Fit,
                     )
@@ -133,14 +149,14 @@ internal fun DevicePhotoLabScreen(
                                 val value=photo.result?.fields?.get(key).orEmpty()
                                 Text("$label: ${value.ifBlank { "(not assigned)" }}")
                             }
-                            photo.result?.takeIf { it.ocrLines.isNotEmpty() }?.let { result ->
-                                Text("Raw OCR (${result.ocrLines.size} lines, first 40 shown)",style=MaterialTheme.typography.titleSmall)
-                                result.ocrLines.take(40).forEach { line ->
-                                    Text(line,style=MaterialTheme.typography.bodySmall)
-                                }
-                                if(result.ocrLines.size>40) Text("… ${result.ocrLines.size-40} more lines — Copy all results includes the full raw OCR.",style=MaterialTheme.typography.bodySmall)
-                            }
                         }
+                    }
+                    photo.result?.takeIf { it.ocrLines.isNotEmpty() }?.let { result ->
+                        Text("Raw OCR (${result.ocrLines.size} lines, first 40 shown)",style=MaterialTheme.typography.titleSmall)
+                        result.ocrLines.take(40).forEach { line ->
+                            Text(line,style=MaterialTheme.typography.bodySmall)
+                        }
+                        if(result.ocrLines.size>40) Text("… ${result.ocrLines.size-40} more lines — Copy all results includes the full raw OCR.",style=MaterialTheme.typography.bodySmall)
                     }
                 }
             }

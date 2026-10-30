@@ -22,6 +22,17 @@ class DevicePhotoLabActivity:ComponentActivity() {
 
     override fun onCreate(savedInstanceState:Bundle?) {
         super.onCreate(savedInstanceState)
+        // Bug-030 diagnostics: if the audit screen dies unexpectedly, keep the
+        // stack trace for the next session instead of guessing at the cause.
+        val crashFile=java.io.File(cacheDir,CRASH_FILE_NAME)
+        val previousHandler=Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread,error ->
+            runCatching {
+                crashFile.writeText("${java.util.Date()} · ${error.javaClass.name}: ${error.message}\n"+
+                    error.stackTraceToString().take(6000))
+            }
+            previousHandler?.uncaughtException(thread,error)
+        }
         vm.configure(intent.getStringArrayListExtra(EXTRA_MODULE_KEYS).orEmpty())
         setContent {
             val state by vm.state.collectAsState()
@@ -47,5 +58,8 @@ class DevicePhotoLabActivity:ComponentActivity() {
         }
     }
 
-    companion object { const val EXTRA_MODULE_KEYS="lab_module_keys" }
+    companion object {
+        const val EXTRA_MODULE_KEYS="lab_module_keys"
+        const val CRASH_FILE_NAME="device-wine-label-audit-crash.txt"
+    }
 }
