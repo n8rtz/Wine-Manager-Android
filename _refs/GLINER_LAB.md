@@ -32,10 +32,14 @@ Stage 2 is a span/uni-encoder contract: six tensors in (`input_ids`, `attention_
 `words_mask`, `text_lengths`, `span_idx`, `span_mask`), one float span-logit tensor out, words
 masked 1-based, spans enumerated as `(start, end)` with `width <= max_width`.
 
+Default is `urchade/gliner_small-v2.1`: it is the smallest checkpoint that speaks the contract
+above, and the host run showed the model is not the current bottleneck. Anything bigger has to earn
+its bytes with a measured label gain, not with a newer version number.
+
 | Candidate | Fits this stage 2? | Notes |
 | --- | --- | --- |
-| `urchade/gliner_small-v2.1` | **yes**, shipped default | 166M uni-encoder span model, Apache-2.0, the contract above |
-| `gliner-community/gliner_small-v2.5` | **yes**, drop-in candidate | same span family (markerV0, `max_width` 12), newer and multilingual; run `tools/inspect-gliner-bundle.py` on the export before trusting it |
+| `urchade/gliner_small-v2.1` | **yes**, shipped default | uni-encoder span model, Apache-2.0, the contract above, smallest INT4 bundle |
+| `gliner-community/gliner_small-v2.5` | **yes**, A/B only | same span family (markerV0, `max_width` 12), newer and multilingual, so its embedding table and tokenizer are larger; run `tools/inspect-gliner-bundle.py` on the export and score it against v2.1 before switching |
 | `fastino/gliner2.5-small-v1` | **no** | GLiNER2.5 is a *boundary* architecture: start/end + inside scores with sparse start/end pairing and a reranker, 4096-word context, exported as several graphs (encoder, classifier, boundary heads, scorers, records, relations). It needs a different decoder, a multi-graph bundle and a newer ONNX Runtime than the pinned 1.21.1 |
 
 GLiNER2.5 is the better model in the abstract (74M, DeBERTa-v3-xsmall, no span-width limit), but on
