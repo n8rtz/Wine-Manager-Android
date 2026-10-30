@@ -9,5 +9,5 @@ import org.robolectric.annotation.Config
 @Config(sdk=[26],manifest=Config.NONE)
 class PostProcessingTest {
     @Test fun rolesAndNegativeControls()=PostProcessingChecks.rolesRankingAndSafety()
-    @Test fun boundedAssignment()=PostProcessingChecks.boundedAssignmentKeepsAlternativesAndAbstains()
+    @Test fun boundedAssignment()=PostProcessingChecks.boundedAssignmentPrefersTopRankedMatchAndKeepsAlternatives()
 }

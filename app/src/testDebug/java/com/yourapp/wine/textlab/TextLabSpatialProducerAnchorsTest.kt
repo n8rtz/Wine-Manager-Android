@@ -41,7 +41,7 @@ class TextLabSpatialProducerAnchorsTest {
         assertEquals(1,anchors.size)
         assertEquals("paddle-v6-medium",anchors.single().engine)
         assertEquals(setOf(0,1),anchors.single().observationIds)
-        assertTrue(!anchors.single().scoreIsEstimated)
+        assertTrue(!anchors.single().estimated)
     }
 
     @Test
