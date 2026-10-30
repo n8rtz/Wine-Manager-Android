@@ -19,7 +19,6 @@ jobs:
     timeout-minutes: 120
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
-      REPORT: ${{ runner.temp }}/report.txt
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +28,7 @@ jobs:
 
       - name: Build
         run: |
-          exec > >(tee "$REPORT") 2>&1
+          exec > >(tee "$RUNNER_TEMP/report.txt") 2>&1
           set -o pipefail
           echo "== runtime =="
           python -V
@@ -53,7 +52,7 @@ jobs:
         run: |
           mkdir -p _refs
           { echo "# GLiNER INT4 bundle build report"; echo;
-            echo '```'; tail -n 250 "$REPORT" 2>/dev/null || echo "no report captured"; echo '```'; } \
+            echo '```'; tail -n 250 "$RUNNER_TEMP/report.txt" 2>/dev/null || echo "no report captured"; echo '```'; } \
             > _refs/gliner-bundle-report.txt
           git config user.name "gliner-bundle-bot"
           git config user.email "actions@users.noreply.github.com"
