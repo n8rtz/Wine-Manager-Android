@@ -32,6 +32,7 @@ object SpatialPhraseMerger {
         maxVerticalHeightRatio:Double=1.45,
         allowHorizontalJoin:(leftText:String,rightText:String)->Boolean={ _,_ -> true },
         allowVerticalJoin:(upperText:String,lowerText:String)->Boolean={ _,_ -> true },
+        bypassVerticalHeightRatio:(upperText:String,lowerText:String)->Boolean={ _,_ -> false },
     ):List<Phrase> {
         require(detections.size<=MAX_DETECTIONS) { "At most $MAX_DETECTIONS detections per engine/pass" }
         require(maxVerticalLines>=1) { "At least one vertical line must be allowed" }
@@ -81,7 +82,8 @@ object SpatialPhraseMerger {
             val gap=lower.y1-upper.y2
             val heightRatio=maxOf(upper.height,lower.height)/minOf(upper.height,lower.height)
             if(overlap>0.5*minOf(upper.width,lower.width) && gap<0.8*upper.height &&
-                heightRatio<=maxVerticalHeightRatio && allowVerticalJoin(lines[a].text,lines[b].text)) {
+                (heightRatio<=maxVerticalHeightRatio || bypassVerticalHeightRatio(lines[a].text,lines[b].text)) &&
+                allowVerticalJoin(lines[a].text,lines[b].text)) {
                 links+=Link(a,b,gap/upper.height,kotlin.math.abs((upper.x1+upper.width/2)-(lower.x1+lower.width/2)))
             }
         }

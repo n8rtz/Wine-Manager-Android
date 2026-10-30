@@ -485,6 +485,22 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         spatialVintageFraming.containsMatchIn(TextNorm.normalize(text)) || MetadataRules.isBoilerplate(text) ||
         MetadataRules.isPackaging(text) || WineDesignations.framedAppellation(text)!=null
 
+    /**
+     * Hierarchy experiment (exact_producer_join_override): an exact producer
+     * identity for the combined two-line span outranks the geometric
+     * height-ratio gate. Adjacency gates (horizontal overlap, vertical gap),
+     * the semantic join policy and the two-line cap still apply, and only
+     * exact identities count -- never a fuzzy or supplemental near-match.
+     */
+    internal fun allowsExactProducerVerticalJoin(upperText:String,lowerText:String):Boolean {
+        if(!modules.exactProducerJoinOverride) return false
+        val upper=TextNorm.scrub(upperText).trim();val lower=TextNorm.scrub(lowerText).trim()
+        if(upper.isBlank() || lower.isBlank()) return false
+        val combined="$upper $lower"
+        return BundledProducerNames.exactName(combined)!=null ||
+            kb.findProducer(combined).any { it.editDistance==0 }
+    }
+
     /** Spatial supplemental spans are producer lookups only, never rewritten readings. */
     internal fun allowsSpatialProducerJoin(upperText:String,lowerText:String):Boolean {
         val upper=TextNorm.scrub(upperText).trim();val lower=TextNorm.scrub(lowerText).trim()

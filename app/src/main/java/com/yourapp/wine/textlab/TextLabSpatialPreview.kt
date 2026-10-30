@@ -115,6 +115,7 @@ internal object TextLabSpatialPreview {
                     original,
                     allowHorizontalJoin={ left,right -> engine?.allowsSpatialProducerJoin(left,right)==true },
                     allowVerticalJoin={ upper,lower -> engine?.allowsSpatialProducerJoin(upper,lower)==true },
+                    bypassVerticalHeightRatio={ upper,lower -> engine?.allowsExactProducerVerticalJoin(upper,lower)==true },
                 )
             } else {
                 TextLabSpatialPhrases.proposeUnconstrained(original)

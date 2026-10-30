@@ -31,6 +31,7 @@ internal object TextLabSpatialPhrases {
         records:List<TokenRecord>,
         allowHorizontalJoin:(leftText:String,rightText:String)->Boolean={ _,_ -> false },
         allowVerticalJoin:(upperText:String,lowerText:String)->Boolean={ _,_ -> false },
+        bypassVerticalHeightRatio:(upperText:String,lowerText:String)->Boolean={ _,_ -> false },
     ):List<Proposal> = records.groupBy { it.engineId to it.variantId }
         .flatMap { (key,group) ->
             val horizontalDecisions=mutableMapOf<Pair<String,String>,Boolean>()
@@ -47,6 +48,7 @@ internal object TextLabSpatialPhrases {
                 maxVerticalHeightRatio=1.45,
                 allowHorizontalJoin={ left,right -> horizontalAllowed(left,right) },
                 allowVerticalJoin={ upper,lower -> verticalAllowed(upper,lower) },
+                bypassVerticalHeightRatio=bypassVerticalHeightRatio,
             ).map { phrase -> Proposal(key.first,key.second,phrase,phrase.sourceIndices.map { group[it] }) }
         }
 

@@ -55,6 +55,7 @@ internal data class LabPostOcrModules(
     val smallPrintWineDemotion: Boolean = false,
     val appellationProminenceArbitration: Boolean = false,
     val producerPrefixCompletion: Boolean = false,
+    val exactProducerJoinOverride: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
     val producerRoleAndParticle: Boolean = false,
     val spatialSemanticGuards: Boolean = false,
@@ -106,6 +107,7 @@ internal data class LabPostOcrModules(
         SMALL_PRINT_WINE_DEMOTION("small_print_wine_demotion", "small-print-wine-demotion", "Small-print wine demotion", "A wine-name line much smaller than the label's typical line is demoted (descriptor, not title)"),
         APPELLATION_PROMINENCE_ARBITRATION("appellation_prominence_arbitration", "appellation-prominence-arbitration", "Appellation prominence arbitration", "A plain title printed much smaller than the appellation line yields the wine slot to the appellation"),
         PRODUCER_PREFIX_COMPLETION("producer_prefix_completion", "producer-prefix-completion", "Producer prefix completion", "Complete a one-token producer from the unique observed span/joined phrase it prefixes (Conde -> Conde de Basalu)"),
+        EXACT_PRODUCER_JOIN_OVERRIDE("exact_producer_join_override", "exact-producer-join-override", "Exact producer join override", "An exact producer match for two stacked lines overrules the vertical height-ratio join gate"),
         STACKED_WINE_TITLES(
             key = "stacked_wine_titles",
             shortName = "stacked-wine-titles",
@@ -213,6 +215,7 @@ internal data class LabPostOcrModules(
         ModuleId.SMALL_PRINT_WINE_DEMOTION -> smallPrintWineDemotion
         ModuleId.APPELLATION_PROMINENCE_ARBITRATION -> appellationProminenceArbitration
         ModuleId.PRODUCER_PREFIX_COMPLETION -> producerPrefixCompletion
+        ModuleId.EXACT_PRODUCER_JOIN_OVERRIDE -> exactProducerJoinOverride
         ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
         ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
@@ -262,6 +265,7 @@ internal data class LabPostOcrModules(
         ModuleId.SMALL_PRINT_WINE_DEMOTION -> copy(smallPrintWineDemotion = enabled)
         ModuleId.APPELLATION_PROMINENCE_ARBITRATION -> copy(appellationProminenceArbitration = enabled)
         ModuleId.PRODUCER_PREFIX_COMPLETION -> copy(producerPrefixCompletion = enabled)
+        ModuleId.EXACT_PRODUCER_JOIN_OVERRIDE -> copy(exactProducerJoinOverride = enabled)
         ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
         ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)

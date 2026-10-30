@@ -488,3 +488,35 @@ now integrated alongside the prominence arbitration. Both case-study
 fixes await device confirmation on the next audit run (this export
 predates them). The Kirkland journal shows the same pattern class in
 reverse: solver-grade hypotheses exist, final selection is the battleground.
+
+## 22. Rule hierarchy: what exists, and the exact-match-over-geometry test (2026-10-30)
+
+Owner question: should exact producer identity overrule geometric gates
+(the 1.45 height-ratio join gate that blocked the ML Kit CONDE+DE BASALU
+join)? Precedence in the current system is real but emergent, not declared:
+
+1. Hard gates run first (spatial merging: overlap > 50% of the narrower
+   line, gap < 0.8x upper height, height ratio <= 1.45, <= 2 lines; role
+   policy on top). Identity is unknown at this stage by construction.
+2. Hypothesis ranks encode an identity hierarchy: exact local producer 110,
+   exact authored alias 105, named cuvee 100, designation-linked 90,
+   title 43, appellation-as-wine 62-65, and the module boosts on top.
+3. The solver maximizes total rank and abstains on near-ties.
+4. The anchor hybrid then applies its own precedence: a primary LWIN
+   two-engine exact anchor beats the solver value (this truncated Conde).
+5. Post passes run in fixed order (near-match canonicalization, Gap D /
+   prefix completion, geography fill, case standardization), and the
+   guarded later passes may override stage 4.
+
+Tested the proposed rule as `exact_producer_join_override`: an exact
+producer identity for the combined two lines (authored alias or KB exact,
+never fuzzy/supplemental) bypasses ONLY the height-ratio gate; overlap,
+gap, role policy and the two-line cap still apply. Corpus result: inert
++0/-0 fields; the override fired once (Marchesi + ANTINORI joined, no
+final change). On the Conde journal it would not have fired for ML Kit
+("DE B/SALU" garbles the exact text) and Paddle already joined, so Conde
+itself is carried by prefix completion. Verdict: keep selectable-only --
+the principle is implemented and harmless, but present evidence does not
+justify making identity a general override of geometry; one benign firing
+in 121 labels is not a benefit measurement. A declared precedence table
+remains a documentation/maintainability idea, not a behavior change.
