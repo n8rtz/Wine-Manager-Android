@@ -17,20 +17,13 @@ internal data class GlinerLaneObservation(
 )
 
 /**
- * Bridge between the GLiNER stage and the existing post-processing.
+ * Adapter for OCR evidence and diagnostic lane observations.
  *
- * A label is not re-OCR'd: each accepted lane fragment becomes one observation whose text is the
- * grouped fragment and whose box is the union of the OCR lines it came from. Words that no lane
- * claimed stay as one observation per OCR line, so the vintage normalizer and the geography
- * hierarchy still see the raw residual evidence (the three lanes intentionally do not cover
- * vintage, country, region or subregion).
- *
- * Both OCR engines keep their own identity. An observation emits one record per engine that
- * actually read the underlying lines (`mlkit`, `paddle-v6-medium`), each with that engine's own
- * measured score, so the existing independent-engine rules see the same two-engine ensemble the
- * production scanner produces. The scores are measured posteriors, not estimates: the value used
- * is the weakest contributing line for that engine, which is why a lane record can support a
- * suggestion but its grouped text is still marked with the lane variant for audit.
+ * Production of this experimental workflow uses [originalRecords]: it retains each independent
+ * engine reading as-is for the base extraction. [observations] and the old [records] bridge are
+ * retained only for diagnostics and historical host replays; the old bridge re-emits fused text
+ * under several engine IDs and can remove lane words from the residual. It must not be used as
+ * the post-processing input or interpreted as independent corroboration.
  */
 internal object GlinerLaneRecords {
     /** Used only if a line somehow carries no engine attribution at all. */
@@ -66,6 +59,17 @@ internal object GlinerLaneRecords {
         return scores.toList().sortedBy { it.first }.toMap(LinkedHashMap())
     }
 
+    /** Preserve each real OCR reading and its provenance; do not duplicate a fused winner per engine. */
+    fun originalRecords(readings:List<GlinerFusion.Reading>):List<TokenRecord> = readings.mapNotNull { reading ->
+        val text=TextNorm.scrub(reading.text).trim()
+        if(text.isBlank() || !reading.score.isFinite() || reading.score !in 0f..1f ||
+            reading.box.width()<=0f || reading.box.height()<=0f) return@mapNotNull null
+        TokenRecord(textRaw=text,textNorm=TextNorm.normalize(text),score=reading.score,
+            bboxOrig=RectF(reading.box),bboxRect=RectF(reading.box),polyOrig=reading.quad,
+            engineId=reading.engineId,variantId=reading.variantId,scoreIsEstimated=reading.scoreIsEstimated)
+    }
+
+    /** Historical destructive bridge for reproducing pre-refactor host experiments only. */
     fun records(result:GlinerLabelResult):List<TokenRecord> = observations(result).flatMap { observation ->
         val text=TextNorm.scrub(observation.text).trim()
         if(text.isBlank()) return@flatMap emptyList()

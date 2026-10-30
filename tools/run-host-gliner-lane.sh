@@ -40,7 +40,8 @@ export HOST_BRIDGE_PORT=$(cat "$tmp/bridge.port")
 
 root=app/src/main/java/com/yourapp/wine
 lab=app/src/main/java/com/yourapp/wine/textlab
-gliner=app/src/main/java/com/yourapp/wine/gliner
+gliner=gliner-workflow/src/main/java/com/yourapp/wine/gliner
+glinerAdapter=gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner
 sources=("$root"/merge/*.kt "$root"/extract/*.kt "$root"/fill/*.kt "$lab"/evidence/*.kt)
 for name in WineKnowledgeBase FixtureKnowledgeBase PlaceGazetteer PlaceHierarchy WineTerms BundledGrapes BundledWineStyles BundledProducerNames BundledOrigins ReferenceWineCatalog GeneratedWineKnowledge SupplementedWineKnowledgeBase; do
     sources+=("$root/kb/$name.kt")
@@ -50,7 +51,8 @@ bash "$KOTLIN_HOME/bin/kotlinc" "${sources[@]}" \
     "$lab"/{TextLabSpatialPhrases,TextLabSpatialPreview,TextLabEvidencePreview,TextLabFormPreview,TextLabJournal,TextLabWineTable,TextLabChoices,TextCropGeometry,TextLabBottleFilter}.kt \
     app/src/main/java/com/yourapp/wine/gazetteer/{ProducerResolver,LinkedWineResolver}.kt \
     app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt \
-    "$gliner"/{GlinerEngines,GlinerLanes,GlinerDocument,GlinerFusion,GlinerLaneRecords}.kt \
+    "$gliner"/{GlinerEngines,GlinerLanes,GlinerDocument}.kt \
+    "$glinerAdapter"/{GlinerFusion,GlinerLaneRecords}.kt \
     tools/logic-checks/{AndroidGeometry,AndroidLog,AndroidClock}.kt \
     tools/host-lab/HostGlinerLaneReplay.kt \
     -cp "$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar" -include-runtime -d "$tmp/lane.jar"

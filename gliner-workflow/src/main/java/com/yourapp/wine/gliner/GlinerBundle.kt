@@ -11,7 +11,7 @@ import java.security.MessageDigest
 import java.util.UUID
 
 /** One expected file of the GLiNER-Small INT4 bundle. `sha256`/`bytes` are null until pinned. */
-internal data class GlinerBundleFile(
+data class GlinerBundleFile(
     val name:String,
     val role:String,
     val bytes:Long?,
@@ -19,7 +19,7 @@ internal data class GlinerBundleFile(
     val url:String?,
 )
 
-internal data class GlinerFileState(
+data class GlinerFileState(
     val name:String,
     val role:String,
     val present:Boolean,
@@ -37,7 +37,7 @@ internal data class GlinerFileState(
  * the network at run time. Files are either shipped in `assets/gliner-lab-v1` by the opt-in
  * Gradle task, or imported by the user from storage into app-private storage.
  */
-internal data class GlinerBundleStatus(
+data class GlinerBundleStatus(
     val files:List<GlinerFileState>,
     val model:File?,
     val tokenizer:File?,
@@ -67,7 +67,7 @@ internal data class GlinerBundleStatus(
  * The manifest is the single source of truth for names, roles, sizes and SHA-256 pins, so a
  * replaced or truncated model is reported instead of being loaded.
  */
-internal object GlinerBundle {
+object GlinerBundle {
     const val ASSET_ROOT="gliner-lab-v1"
     const val PRIVATE_FOLDER="gliner-lab-v1"
     const val MANIFEST="model-manifest.json"

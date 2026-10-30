@@ -85,7 +85,7 @@ jobs:
       - name: Compile instrumented scanner tests (device execution is separate)
         run: bash tools/run-ci-check.sh 'Android instrumentation test compilation' ./gradlew --no-daemon --console=plain :app:assembleDebugAndroidTest
       - name: Scanner Robolectric and deadline tests
-        run: bash tools/run-ci-check.sh 'Scanner Robolectric tests' ./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
+        run: bash tools/run-ci-check.sh 'Scanner Robolectric tests' ./gradlew --no-daemon --console=plain :gliner-workflow:testDebugUnitTest :app:testDebugUnitTest --tests 'com.yourapp.wine.*'
       - name: Measure arm64 release APK budget
         run: bash tools/run-ci-check.sh 'Arm64 release APK budget' ./gradlew --no-daemon --console=plain :app:checkArm64ApkBudget
       - name: Enforce the policy test results

@@ -310,6 +310,12 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             val ran=snapshot.samples.mapNotNull { it.result }
             appendLine("status: "+ran.groupingBy { it.status }.eachCount().entries.joinToString(" · ") { "${it.key} ${it.value}" })
             snapshot.aggregate?.let { appendLine(it.text()) }
+            val paired=ran.filter { it.eligible && it.baseOutcomes.size==PhoneCorpusMath.fields.size }
+            if(paired.isNotEmpty()) {
+                val baseComplete=paired.count { result -> PhoneCorpusMath.fields.all { PhoneCorpusMath.correct(result.baseOutcomes[it].orEmpty()) } }
+                val finalComplete=paired.count { it.complete }
+                appendLine("same-OCR base $baseComplete/${paired.size} · GLiNER decisions $finalComplete/${paired.size} · overrides ${paired.count { it.fieldDecisions.isNotEmpty() }}")
+            }
             if(snapshot.message.isNotBlank()) appendLine("message: ${snapshot.message}")
             snapshot.samples.filter { it.result!=null }.forEach { row ->
                 val result=row.result ?: return@forEach
@@ -368,6 +374,18 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                         put("field_correct",JSONObject(aggregate.fieldCorrect as Map<*, *>))
                     })
                 }
+                val paired=results.filter { it.eligible && it.baseOutcomes.size==PhoneCorpusMath.fields.size }
+                if(paired.isNotEmpty()) {
+                    fun baseComplete(result:GlinerLabImageResult) = PhoneCorpusMath.fields.all { PhoneCorpusMath.correct(result.baseOutcomes[it].orEmpty()) }
+                    put("same_ocr_comparison",JSONObject().apply {
+                        put("eligible",paired.size)
+                        put("base_complete",paired.count { baseComplete(it) })
+                        put("final_complete",paired.count { it.complete })
+                        put("override_labels",paired.count { it.fieldDecisions.isNotEmpty() })
+                        put("gains",paired.count { !baseComplete(it) && it.complete })
+                        put("losses",paired.count { baseComplete(it) && !it.complete })
+                    })
+                }
                 put("images",JSONArray(results.map { result -> jsonOf(result) }))
             }
             val file=File(app.cacheDir,"gliner-lab-${System.currentTimeMillis()}.json")
@@ -403,6 +421,17 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         put("lanes",JSONObject(result.laneTexts as Map<*, *>))
         put("residual",JSONArray(result.residualTexts))
         put("fields",JSONObject(result.fields as Map<*, *>))
+        put("base_fields",JSONObject(result.baseFields as Map<*, *>))
+        put("base_outcomes",JSONObject(result.baseOutcomes as Map<*, *>))
+        put("gliner_decisions",JSONArray(result.fieldDecisions))
+        put("raw_readings",JSONArray(result.rawReadings.map { reading -> JSONObject().apply {
+            put("text",reading.textRaw)
+            put("engine",reading.engineId)
+            put("variant",reading.variantId)
+            put("score",reading.score.toDouble())
+            put("score_estimated",reading.scoreIsEstimated)
+            put("box",JSONArray(listOf(reading.bboxRect.left,reading.bboxRect.top,reading.bboxRect.right,reading.bboxRect.bottom)))
+        } }))
         put("states",JSONObject(result.fieldStates as Map<*, *>))
         put("expected",JSONObject(result.fieldResults.associate { it.field to it.expected } as Map<*, *>))
         put("outcomes",JSONObject(result.fieldResults.associate { it.field to it.outcome } as Map<*, *>))

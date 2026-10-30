@@ -103,6 +103,10 @@ android {
         buildConfig = true
     }
 
+    // The workflow's app adapter can call existing app services without a circular Gradle
+    // dependency. Its standalone inference and decision engine are in :gliner-workflow.
+    sourceSets.getByName("main").java.srcDir("../gliner-workflow/src/appIntegration/java")
+    sourceSets.getByName("test").java.srcDir("../gliner-workflow/src/appIntegrationTest/java")
     // Reuse the full-resolution OCR fixtures in instrumented tests without duplicating them.
     sourceSets.getByName("androidTest").assets.srcDir("src/test/resources")
     sourceSets.getByName("androidTest").assets.srcDir("../testdata")
@@ -111,6 +115,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":gliner-workflow"))
     // Production v6 Medium OCR plus the debug comparison lab share the genuine runtime.
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.21.1")
     implementation(libs.androidx.core.ktx)

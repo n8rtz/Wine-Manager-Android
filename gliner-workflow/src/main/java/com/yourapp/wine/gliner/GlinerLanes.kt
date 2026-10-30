@@ -8,7 +8,7 @@ package com.yourapp.wine.gliner
  * subregion or vintage. Those four parameters stay with the existing Lab v7 post-processing,
  * which already owns the gazetteer hierarchy, the year normalizer and the producer catalog.
  */
-internal enum class GlinerLane(val key:String,val title:String,val prompt:String,val shortName:String) {
+enum class GlinerLane(val key:String,val title:String,val prompt:String,val shortName:String) {
     PRODUCER("producer","Producer lane","wine producer or winery name","producer"),
     WINE_NAME("wine_name","Wine name lane","wine name or cuvee","wine name"),
     APPELLATION("appellation","Appellation lane","wine appellation, region or country","appellation");
@@ -23,7 +23,7 @@ internal enum class GlinerLane(val key:String,val title:String,val prompt:String
  * Prompt set and decoding defaults for one run. Immutable so a screen toggle can never mutate a
  * run in flight; the exact strings and numbers are written into every exported row.
  */
-internal data class GlinerLaneConfig(
+data class GlinerLaneConfig(
     val prompts:List<String> = GlinerLane.ordered.map { it.prompt },
     val threshold:Float = 0.5f,
     val maxWidth:Int = 12,
@@ -43,7 +43,7 @@ internal data class GlinerLaneConfig(
 }
 
 /** One labelled fragment produced by GLiNER, resolved back to document words and OCR geometry. */
-internal data class GlinerEntity(
+data class GlinerEntity(
     val lane:GlinerLane,
     val wordStart:Int,
     val wordEnd:Int,
@@ -61,7 +61,7 @@ internal data class GlinerEntity(
  * separate (not pasted into one string) because each one becomes exactly one post-processing
  * observation with its own geometry.
  */
-internal data class GlinerLaneGroup(
+data class GlinerLaneGroup(
     val lane:GlinerLane,
     val prompt:String,
     val entities:List<GlinerEntity>,
@@ -72,7 +72,7 @@ internal data class GlinerLaneGroup(
 }
 
 /** Everything stage 2 knows after one label. */
-internal data class GlinerLabelResult(
+data class GlinerLabelResult(
     val document:GlinerDocument,
     val lanes:List<GlinerLaneGroup>,
     val residualLines:List<GlinerResidualLine>,
@@ -98,7 +98,7 @@ internal data class GlinerLabelResult(
 }
 
 /** Words that no lane claimed. They still flow into the existing post-processing as observations. */
-internal data class GlinerResidualLine(
+data class GlinerResidualLine(
     val lineIndex:Int,
     val text:String,
     val box:android.graphics.RectF,

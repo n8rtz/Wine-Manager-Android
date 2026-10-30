@@ -29,7 +29,7 @@ import kotlin.math.exp
  *  - `[1, classes, spans]`        transposed span logits
  * Anything else fails closed with the shape and the expected span/class counts in the message.
  */
-internal class GlinerOnnxModel private constructor(
+class GlinerOnnxModel private constructor(
     private val session:OrtSession,
     private val tokenizer:GlinerTokenizer,
     private val config:GlinerConfig,

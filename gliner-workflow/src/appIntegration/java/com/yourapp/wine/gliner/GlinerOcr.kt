@@ -43,6 +43,8 @@ internal object GlinerOcr {
 
     data class Outcome(
         val lines:List<GlinerOcrLine>,
+        /** Original independent engine readings; fusion is only for model input. */
+        val readings:List<GlinerFusion.Reading>,
         val elapsedMs:Long,
         val description:String,
         val engineReadings:Map<String,Int>,
@@ -69,7 +71,7 @@ internal object GlinerOcr {
                     val fused=GlinerFusion.fuse(mlKitReadings+paddleReadings)
                     val engineReadings=linkedMapOf(MLKIT_ID to mlKitReadings.size,PADDLE_ID to paddleReadings.size)
                     val elapsed=SystemClock.elapsedRealtime()-started
-                    Outcome(fused,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
+                    Outcome(fused,mlKitReadings+paddleReadings,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
                         "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines"+
                         (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings)
                 }
@@ -81,8 +83,10 @@ internal object GlinerOcr {
         try {
             mlKit.recognize(bitmap,"V0",deadline).mapNotNull { token ->
                 val box=normalizedBox(token.polygon,bitmap.width,bitmap.height)
-                if(token.text.isBlank() || box.width()<=0f || box.height()<=0f) null
-                else GlinerFusion.Reading(MLKIT_ID,token.text,box,token.polygon,token.score.coerceIn(0.01f,0.99f))
+                if(token.text.isBlank() || box.width()<=0f || box.height()<=0f ||
+                    !token.score.isFinite() || token.score !in 0f..1f) null
+                else GlinerFusion.Reading(MLKIT_ID,token.text,box,token.polygon,token.score,
+                    variantId="V0",scoreIsEstimated=token.scoreIsEstimated)
             }
         } catch(cancel:CancellationException) { throw cancel }
         catch(_:Exception) { emptyList() }
@@ -121,7 +125,8 @@ internal object GlinerOcr {
                 catch(expired:CandidateBudgetExpired) { break }
                 catch(_:Exception) { text="" }
                 if(text.isNotBlank()) lines += GlinerFusion.Reading(PADDLE_ID,text,box,region.quadBase,
-                    posterior.takeIf { it>0f }?.coerceIn(0.01f,0.99f) ?: 0.5f)
+                    posterior.takeIf { it>0f }?.coerceIn(0.01f,0.99f) ?: 0.5f,
+                    variantId="V0",scoreIsEstimated=true)
             }
         } finally {
             withContext(NonCancellable) {

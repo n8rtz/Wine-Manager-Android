@@ -1,9 +1,14 @@
+> Historical experiment: this document measured the **old** destructive lane/residual bridge.
+> The current workflow preserves original OCR readings and has a separate guarded field-decision
+> layer. These host numbers are not a measurement of the current implementation. Reference-matched
+> oracle spans are a useful diagnostic, not a mathematical upper bound.
+
 ## Corpus composition (why "multilingual" is a weak argument here)
 
 The 121 eligible labels are almost entirely French already: France 101, Spain 5, California 5,
 Italy 5, Oregon 3, Argentina 2, Texas 1, Portugal 1, Chile 1. So the English-only
-`urchade/gliner_small-v2.1` is being measured on a ~96% non-English-language corpus and still
-reaches 81/121 complete.
+`urchade/gliner_small-v2.1` is being measured on a ~96% non-English-language corpus and the Lab v7 baseline
+reaches 81/121 complete; this was not a measurement of the real GLiNER model.
 
 Wine labels carry proper nouns (`Château Latour`, `Barolo`, `Rioja`); the lane names in the prompt
 are ours, in English, and stage 2 only has to group and classify spans, not understand the

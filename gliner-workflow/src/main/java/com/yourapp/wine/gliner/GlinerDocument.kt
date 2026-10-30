@@ -9,7 +9,7 @@ import java.util.Locale
  * downstream records can still count two independent engines; [posterior] is only the display and
  * threshold value (1 - product of the engine misses).
  */
-internal data class GlinerOcrLine(
+data class GlinerOcrLine(
     val text:String,
     val box:RectF,
     val quad:List<android.graphics.PointF>,
@@ -18,7 +18,7 @@ internal data class GlinerOcrLine(
 )
 
 /** One word of the flattened label document, with the OCR line it came from and its own box. */
-internal data class GlinerWord(
+data class GlinerWord(
     val text:String,
     val normalized:String,
     val lineIndex:Int,
@@ -41,7 +41,7 @@ internal data class GlinerWord(
  * The model text is lowercase-normalized word by word (DeBERTa-v3 is an uncased vocabulary); the
  * original casing is retained for display and for the post-processing text.
  */
-internal class GlinerDocument(
+class GlinerDocument(
     val lines:List<GlinerOcrLine>,
     val bandOrder:List<Int>,
     val words:List<GlinerWord>,

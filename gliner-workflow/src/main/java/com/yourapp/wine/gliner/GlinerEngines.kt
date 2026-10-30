@@ -9,7 +9,7 @@ package com.yourapp.wine.gliner
  * Kept in their own file (no Android imports) so the host replay harness can compile the real lane
  * record bridge without dragging in the OCR clients.
  */
-internal object GlinerEngines {
+object GlinerEngines {
     const val MLKIT="mlkit"
     const val PADDLE="paddle-v6-medium"
 }

@@ -13,7 +13,7 @@ import org.json.JSONObject
  * gliner_small-v2.1), `BPE` (byte-level GPT-2 style) and `WordPiece`. Unknown JSON shapes fail
  * closed with the offending field name instead of silently producing wrong token ids.
  */
-internal class GlinerTokenizer private constructor(
+class GlinerTokenizer private constructor(
     val modelType:String,
     private val vocabulary:Map<String,Int>,
     private val scores:Map<String,Double>,
@@ -257,7 +257,7 @@ internal class GlinerTokenizer private constructor(
 }
 
 /** Parsed `gliner_config.json`: the prompt markers and span settings the export was trained with. */
-internal data class GlinerConfig(
+data class GlinerConfig(
     val entToken:String,
     val sepToken:String,
     val maxWidth:Int,

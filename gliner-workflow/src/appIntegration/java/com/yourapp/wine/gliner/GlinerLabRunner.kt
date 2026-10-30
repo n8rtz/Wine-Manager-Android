@@ -55,6 +55,12 @@ internal data class GlinerLabImageResult(
     val notes:String,
     /** Best span per lane before thresholding; empty when the model never scored a span. */
     val probes:List<String> = emptyList(),
+    /** Actual per-engine evidence, before fusion or model labelling. */
+    val rawReadings:List<com.yourapp.wine.ocr.TokenRecord> = emptyList(),
+    /** Unmodified base extraction and GLiNER-only changes, for side-by-side evaluation. */
+    val baseFields:Map<String,String> = emptyMap(),
+    val baseOutcomes:Map<String,String> = emptyMap(),
+    val fieldDecisions:List<String> = emptyList(),
 ) {
     val complete:Boolean get() = status=="complete" && eligible && errorCount==0
 }
@@ -117,7 +123,9 @@ internal object GlinerLabRunner {
                     ocr.lines.map { it.text },ocrMs,0,0,SystemClock.elapsedRealtime()-started,model)
             }
             glinerMs=labelled.elapsedMs
-            val records=GlinerLaneRecords.records(labelled)
+            // Fusion is for the model only: retain each original engine's actual reading for the
+            // downstream evidence graph, so lane claims cannot delete words or manufacture votes.
+            val records=GlinerLaneRecords.originalRecords(ocr.readings)
             if(records.isEmpty()) {
                 return@withContext failed(sample,"no_observations","GLiNER produced no lane or residual observations",
                     ocr.lines.map { it.text },ocrMs,glinerMs,0,SystemClock.elapsedRealtime()-started,model)
@@ -125,15 +133,24 @@ internal object GlinerLabRunner {
             val postStarted=SystemClock.elapsedRealtime()
             val post=postProcess(context,records,warm,modules,labelled)
             postMs=SystemClock.elapsedRealtime()-postStarted
-            val fields=post.fields
+            val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.apply(
+                post.fields,labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) },
+                ocr.readings.map { it.text }) else GlinerFieldDecision(post.fields,emptyList())
+            val fields=decision.fields
+            val fieldStates=post.states.toMutableMap().apply {
+                if(decision.changes.isNotEmpty()) put("wine_name","YELLOW")
+            }
             val outcomes=PhoneCorpusMath.fields.associateWith { field ->
                 PhoneCorpusMath.outcome(sample.target(field),fields[field].orEmpty(),post.status=="failed")
+            }
+            val baseOutcomes=PhoneCorpusMath.fields.associateWith { field ->
+                PhoneCorpusMath.outcome(sample.target(field),post.fields[field].orEmpty(),post.status=="failed")
             }
             val eligible=PhoneCorpusMath.eligible(PhoneCorpusMath.fields.associateWith { sample.target(it) })
             val errors=outcomes.values.count { !PhoneCorpusMath.correct(it) }
             val results=PhoneCorpusMath.fields.map { field ->
                 GlinerFieldResult(field,fieldLabels.getValue(field),sample.target(field).display,
-                    fields[field].orEmpty(),post.states[field].orEmpty(),outcomes.getValue(field))
+                    fields[field].orEmpty(),fieldStates[field].orEmpty(),outcomes.getValue(field))
             }
             GlinerLabImageResult(
                 image=sample.image,
@@ -145,7 +162,7 @@ internal object GlinerLabRunner {
                 laneTexts=GlinerLane.ordered.associate { it.key to labelled.lane(it).text },
                 residualTexts=labelled.residualLines.map { it.text },
                 fields=fields,
-                fieldStates=post.states,
+                fieldStates=fieldStates,
                 fieldResults=results,
                 eligible=eligible,
                 errorCount=errors,
@@ -160,6 +177,10 @@ internal object GlinerLabRunner {
                 postMs=postMs,
                 totalMs=SystemClock.elapsedRealtime()-started,
                 probes=labelled.probes,
+                rawReadings=records,
+                baseFields=post.fields,
+                baseOutcomes=baseOutcomes,
+                fieldDecisions=decision.changes,
                 notes=buildString {
                     appendLine(ocr.description)
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
@@ -168,6 +189,9 @@ internal object GlinerLabRunner {
                     appendLine("prompt ids: "+labelled.promptIds.take(24).joinToString(","))
                     appendLine("unknown tokens: ${labelled.unknownTokens}")
                     appendLine(laneConfig.summaryLabel())
+                    appendLine("post input: original independent OCR readings (${records.size})")
+                    if(decision.changes.isEmpty()) appendLine("GLiNER field decision: no override")
+                    else decision.changes.forEach { appendLine("GLiNER field decision: $it") }
                     post.notes.forEach { appendLine(it) }
                 },
             )
@@ -258,7 +282,7 @@ internal object GlinerLabRunner {
         if(summary!=null && summary["status"]=="failed") notes += "post-processing detail: ${summary["details"].orEmpty()}"
         val valuesFound=PhoneCorpusMath.fields.count { fields[it].orEmpty().isNotBlank() }
         return PostOutcome(fields,states,if(failed) "failed" else "complete",
-            if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested by the existing Lab v7 pipeline",
+            if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested before GLiNER field decisions",
             notes)
     }
 

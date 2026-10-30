@@ -26,6 +26,8 @@ internal object GlinerFusion {
         val box:RectF,
         val quad:List<PointF>,
         val score:Float,
+        val variantId:String = "V0",
+        val scoreIsEstimated:Boolean = true,
     )
 
     private const val SAME_TEXT_IOU=0.20f

@@ -47,7 +47,10 @@ def body(code, name):
 def violations():
     errors = []
     debug_root = ROOT / "app/src/debug/java/com/yourapp/wine"
-    sources = sorted(LOCAL_ROOT.rglob("*.kt")) + sorted(debug_root.rglob("*.kt")) + [FACADE]
+    gliner_root = ROOT / "gliner-workflow/src"
+    sources = (sorted(LOCAL_ROOT.rglob("*.kt")) + sorted(debug_root.rglob("*.kt")) +
+               sorted((gliner_root / "main").rglob("*.kt")) +
+               sorted((gliner_root / "appIntegration").rglob("*.kt")) + [FACADE])
     if len(sources) < 10:
         raise AssertionError("Missing recognition source tree")
     for path in sources:

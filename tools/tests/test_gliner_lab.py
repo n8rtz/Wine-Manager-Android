@@ -15,7 +15,15 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 APP = ROOT / "app/src/main"
-GLINER = APP / "java/com/yourapp/wine/gliner"
+CORE = ROOT / "gliner-workflow/src/main/java/com/yourapp/wine/gliner"
+ADAPTER = ROOT / "gliner-workflow/src/appIntegration/java"
+class GlinerSourceDirectory:
+    def __truediv__(self, name):
+        core = CORE / name
+        return core if core.exists() else ADAPTER / "com/yourapp/wine/gliner" / name
+    def glob(self, pattern):
+        return list(CORE.glob(pattern)) + list((ADAPTER / "com/yourapp/wine/gliner").glob(pattern))
+GLINER = GlinerSourceDirectory()
 ASSETS = APP / "assets/gliner-lab-v1"
 
 
@@ -99,7 +107,7 @@ class GlinerLabStructureTests(unittest.TestCase):
         bundle = self.read(GLINER / "GlinerBundle.kt")
         self.assertIn("MatMulNBits", bundle)
         self.assertIn("fun isInt4", bundle)
-        screen = self.read(APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
+        screen = self.read(ADAPTER / "com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
         self.assertIn('INT4 "+(if(state.bundle.int4)', screen)
         model = self.read(GLINER / "GlinerOnnxModel.kt")
         self.assertIn("int4=status.int4", model)
@@ -207,18 +215,26 @@ class GlinerLabStructureTests(unittest.TestCase):
         # Existing rules branch on the "paddle" prefix and on engine equality; these ids must not drift.
         self.assertIn('startsWith("paddle")', self.read(APP / "java/com/yourapp/wine/ocr/Tokens.kt"))
 
-    def test_lane_records_keep_both_engines_and_measured_scores(self):
+    def test_original_engine_readings_are_preserved_without_fabricated_votes(self):
         records = self.read(GLINER / "GlinerLaneRecords.kt")
-        self.assertIn("const val FALLBACK_ENGINE=GlinerEngines.PADDLE", records)
-        engines_source = self.read(GLINER / "GlinerEngines.kt")
-        self.assertIn('const val MLKIT="mlkit"', engines_source)
-        self.assertIn('const val PADDLE="paddle-v6-medium"', engines_source)
-        self.assertIn("engines.map { (engine,score) ->", records)
-        self.assertIn("engineId=engine", records)
-        self.assertIn("scoreIsEstimated=false", records)
-        self.assertIn('val variant=if(observation.lane=="residual") "residual" else "lane:${observation.lane}"', records)
-        # A lane is never more certain than the weakest line either engine read.
-        self.assertIn("scores[engine]=if(current==null) score else minOf(current,score)", records)
+        runner = self.read(GLINER / "GlinerLabRunner.kt")
+        block = records.split("fun originalRecords", 1)[1].split("fun records(", 1)[0]
+        for item in ("reading.text", "reading.engineId", "reading.variantId", "reading.scoreIsEstimated"):
+            self.assertIn(item, block)
+        self.assertIn("GlinerLaneRecords.originalRecords(ocr.readings)", runner)
+        self.assertNotIn("GlinerLaneRecords.records(labelled)", runner)
+        self.assertIn("GlinerFieldDecisionPolicy.apply", runner)
+
+    def test_workflow_is_a_separate_gradle_module(self):
+        settings = self.read(ROOT / "settings.gradle.kts")
+        gradle = self.read(ROOT / "app/build.gradle.kts")
+        self.assertIn('":gliner-workflow"', settings)
+        self.assertIn('implementation(project(":gliner-workflow"))', gradle)
+        self.assertIn('gliner-workflow/src/appIntegration/java', gradle)
+        for name in ("GlinerOnnxModel.kt", "GlinerTokenizer.kt", "GlinerFieldDecision.kt"):
+            self.assertTrue((CORE / name).exists())
+        for source in CORE.glob("*.kt"):
+            self.assertNotIn("import com.yourapp.wine.textlab", self.read(source))
 
     def test_reference_targets_never_reach_the_runner(self):
         runner = self.read(GLINER / "GlinerLabRunner.kt")
@@ -250,8 +266,8 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
     def read(self, path):
         return pathlib.Path(path).read_text(encoding="utf-8")
 
-    SCREEN = APP / "java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt"
-    VM = APP / "java/com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt"
+    SCREEN = ADAPTER / "com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt"
+    VM = ADAPTER / "com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt"
     SERVICE = GLINER / "GlinerLabRunService.kt"
 
     def test_every_result_is_selectable_and_copyable(self):
@@ -269,7 +285,7 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
         self.assertIn("fun saveJson(", view_model)
         self.assertIn("JSONObject", view_model)
         self.assertIn("CreateDocument(\"application/json\")",
-                      self.read(APP / "java/com/yourapp/wine/gliner/GlinerLabActivity.kt"))
+                      self.read(ADAPTER / "com/yourapp/wine/gliner/GlinerLabActivity.kt"))
 
     def test_decoration_is_trimmed_from_the_screen(self):
         screen = self.read(self.SCREEN)
@@ -295,8 +311,8 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
 
     def test_lab_and_prod_baselines_come_from_saved_lab_scoreboard(self):
         screen = self.read(self.SCREEN)
-        baseline = self.read(APP / "java/com/yourapp/wine/phonecorpus/GlinerLabBaselines.kt")
-        activity = self.read(APP / "java/com/yourapp/wine/gliner/GlinerLabActivity.kt")
+        baseline = self.read(ADAPTER / "com/yourapp/wine/phonecorpus/GlinerLabBaselines.kt")
+        activity = self.read(ADAPTER / "com/yourapp/wine/gliner/GlinerLabActivity.kt")
         self.assertIn("glinerLabBaselines(labState,completedImages)", screen)
         self.assertIn("WineAppLabelsViewModel by viewModels()", activity)
         self.assertIn("Mode.LAB,completedImages", baseline)
