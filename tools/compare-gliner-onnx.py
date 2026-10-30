@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Compare our GLiNER ONNX feeds against the ones the gliner library builds itself.
+"""Find the input convention the exported GLiNER graph actually needs.
 
-Desktop/CI only (needs the gliner package and network access to fetch the checkpoint). The point is
-to stop guessing the input convention: this prints, for the same label text,
+Desktop/CI only (needs the gliner package and network access to fetch the checkpoint).
 
-  * the predictions of the PyTorch model,
-  * the predictions of the exported ONNX graph,
-  * the exact feed tensors the library hands to the ONNX session,
-  * the feed tensors this repository's builder produces for the same text.
+The PyTorch model is the authority: it is what the export was traced from. This script captures the
+exact tensors its forward pass receives, runs the exported ONNX graph on those same tensors and
+compares the answers. If the ONNX graph reproduces the PyTorch scores, the export is sound and only
+the feed convention matters; the captured tensors then show what that convention is.
 
-If the two feeds differ, the repository is wrong and the diff shows where.
+It prints, for one label text:
+
+  * PyTorch predictions,
+  * ONNX predictions from the captured PyTorch feed,
+  * ONNX predictions from this repository's own builder (tools/gliner_feeds.py),
+  * the captured feed tensors, so the Kotlin side can be written against them.
 
 Usage:
     python3 tools/compare-gliner-onnx.py --onnx /tmp/export/gliner_small_fp32.onnx
@@ -28,78 +32,92 @@ LABELS = ["wine producer or winery name", "wine name or cuvee",
 MODEL = "urchade/gliner_small-v2.1"
 
 
-def show(title: str, feed: dict) -> None:
+def describe(feed: dict) -> None:
     import numpy as np
 
-    print(f"\n== {title} ==")
     for key in sorted(feed):
         value = np.asarray(feed[key])
         flat = value.reshape(-1)
         head = ", ".join(str(int(item)) if np.issubdtype(flat.dtype, np.integer) else f"{float(item):.4g}"
-                         for item in flat[:24])
+                         for item in flat[:20])
         print(f"  {key}: shape={value.shape} dtype={flat.dtype} first={head}")
 
 
-def library_feed(model) -> dict:
+def capture_torch_feed(model, text: str, labels: list[str]) -> dict:
+    """Record the kwargs the core GLiNER module receives during a normal PyTorch prediction."""
+    import numpy as np
+    import torch
+
+    captured: dict = {}
+    core = model.model
+    original = core.forward
+
+    def spy(*args, **kwargs):  # noqa: ANN002, ANN003
+        for source in (kwargs, {"positional": args}):
+            for key, value in source.items():
+                if isinstance(value, torch.Tensor) and key not in captured:
+                    captured[key] = value.detach().clone()
+        return original(*args, **kwargs)
+
+    core.forward = spy
+    try:
+        entities = model.predict_entities(text, labels, threshold=0.2)
+    finally:
+        core.forward = original
+    print("== PyTorch predictions ==")
+    for entity in entities:
+        print(f"  {entity['label']!r}: {entity['text']!r} ({entity['score']:.3f})")
+    wanted = {"input_ids", "attention_mask", "words_mask", "text_lengths", "span_idx", "span_mask"}
+    return {key: np.array(value.cpu()) for key, value in captured.items() if key in wanted}
+
+
+def run_onnx(path: pathlib.Path, feed: dict):
     import numpy as np
     import onnxruntime as ort
 
-    captured: dict = {}
-    original = ort.InferenceSession.run
-
-    def spy(self, output_names, input_feed, *args, **kwargs):  # noqa: ANN001
-        captured.setdefault("feed", {key: np.array(value) for key, value in input_feed.items()})
-        return original(self, output_names, input_feed, *args, **kwargs)
-
-    ort.InferenceSession.run = spy
-    try:
-        entities = model.predict_entities(TEXT, LABELS, threshold=0.2)
-    finally:
-        ort.InferenceSession.run = original
-    print("\n== library ONNX predictions ==")
-    for entity in entities:
-        print(f"  {entity['label']!r}: {entity['text']!r} ({entity['score']:.3f})")
-    return captured.get("feed", {})
-
-
-def our_feed(bundle: pathlib.Path) -> dict:
-    """The feed this repository builds, via the shared builder."""
-    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-    from gliner_feeds import build_feed, decode_prompt, load_bundle  # noqa: PLC0415
-
-    tokenizer, config = load_bundle(bundle)
-    feed = build_feed(tokenizer, config, LABELS, TEXT)
-    print(f"\n== repository prompt ==\n  {decode_prompt(tokenizer, feed)[:200]}")
-    return feed
+    session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
+    available = {item.name for item in session.get_inputs()}
+    missing = available - set(feed)
+    feeds = {key: value for key, value in feed.items() if key in available}
+    logits = session.run(None, feeds)[0]
+    scores = 1.0 / (1.0 + np.exp(-logits.astype("float64")))
+    per_span = scores.reshape(-1, scores.shape[-1])
+    print(f"  output {logits.shape} · fed {sorted(feeds)}"
+          + (f" · MISSING {sorted(missing)}" if missing else ""))
+    for index, label in enumerate(LABELS):
+        best = int(per_span[:, index].argmax())
+        print(f"    {label}: span #{best} ({per_span[best, index]:.3f})")
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--onnx", required=True, help="exported ONNX graph to load")
+    parser.add_argument("--onnx", required=True)
     parser.add_argument("--bundle", default=None, help="folder with tokenizer.json + gliner_config.json")
     parser.add_argument("--model", default=MODEL)
     args = parser.parse_args(argv)
 
     from gliner import GLiNER
 
-    torch_model = GLiNER.from_pretrained(args.model)
-    print("== PyTorch predictions ==")
-    for entity in torch_model.predict_entities(TEXT, LABELS, threshold=0.2):
-        print(f"  {entity['label']!r}: {entity['text']!r} ({entity['score']:.3f})")
+    model = GLiNER.from_pretrained(args.model)
+    feed = capture_torch_feed(model, TEXT, LABELS)
+    print("\n== captured PyTorch feed ==")
+    describe(feed)
 
-    onnx_model = GLiNER.from_pretrained(args.model, load_onnx_model=True, onnx_model_file=args.onnx)
-    feed = library_feed(onnx_model)
-    show("library ONNX feed", feed)
-    from transformers import AutoTokenizer
-
-    library_tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
-    print(f"\n== library prompt ==\n  {library_tokenizer.decode(feed['input_ids'][0].tolist())[:200]}")
-    print(f"  <<ENT>> pieces: {library_tokenizer.tokenize('<<ENT>>')} "
-          f"ids={library_tokenizer.encode('<<ENT>>', add_special_tokens=False)}")
+    print("\n== ONNX on the captured PyTorch feed ==")
+    run_onnx(pathlib.Path(args.onnx), feed)
 
     if args.bundle:
-        show("repository feed", our_feed(pathlib.Path(args.bundle)))
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        from gliner_feeds import build_feed, decode_prompt, load_bundle  # noqa: PLC0415
+
+        tokenizer, config = load_bundle(pathlib.Path(args.bundle))
+        ours = build_feed(tokenizer, config, LABELS, TEXT)
+        print("\n== this repository's feed ==")
+        describe(ours)
+        print(f"  decoded: {decode_prompt(tokenizer, ours)[:180]}")
+        print("\n== ONNX on this repository's feed ==")
+        run_onnx(pathlib.Path(args.onnx), ours)
     return 0
 
 
