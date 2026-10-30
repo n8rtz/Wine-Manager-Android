@@ -2,6 +2,7 @@ package com.n8rtz.winetracker.viewmodels
 
 import android.app.Application
 import android.net.Uri
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.gliner.GlinerBundle
@@ -75,6 +76,10 @@ internal data class GlinerLabState(
     val exports:List<File> = emptyList(),
     val expanded:Set<String> = emptySet(),
     val modelsReady:Boolean=false,
+    /** Time to make the bundle files readable (asset copy or import check), in milliseconds. */
+    val bundleMs:Long=0,
+    /** Time to parse the tokenizer and create the ONNX session, in milliseconds. */
+    val modelMs:Long=0,
 ) {
     val ran:Boolean get() = samples.any { it.result!=null }
     fun row(image:String):GlinerLabRow? = samples.firstOrNull { it.sample.image==image }
@@ -208,10 +213,17 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             try {
                 workFolder.mkdirs()
                 mutable.update { it.copy(message="Loading the GLiNER-Small INT4 graph…") }
-                val opened=GlinerOnnxModel.open(app,GlinerBundle.status(app),laneConfig)
+                // A single snap pays both of these before the first label, so record them apart:
+                // the asset copy is storage, the session is 131 MB of weights plus ORT setup.
+                val bundleStarted=SystemClock.elapsedRealtime()
+                val status=GlinerBundle.status(app)
+                val bundleMs=SystemClock.elapsedRealtime()-bundleStarted
+                val modelStarted=SystemClock.elapsedRealtime()
+                val opened=GlinerOnnxModel.open(app,status,laneConfig)
+                val modelMs=SystemClock.elapsedRealtime()-modelStarted
                 model=opened
                 if(!opened.int4) mutable.update { it.copy(message="Warning: this model does not declare MatMulNBits, so it is not the INT4 build") }
-                mutable.update { it.copy(tokenizer=opened.tokenizerDescription) }
+                mutable.update { it.copy(tokenizer=opened.tokenizerDescription,modelMs=modelMs,bundleMs=bundleMs) }
                 val warmSession=TextLabWineExtraction.WarmSession(app)
                 warm=warmSession
                 targets.forEachIndexed { index,row ->
@@ -282,6 +294,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         return buildString {
             appendLine("GLiNER lane lab · ${BuildConfig.BUILD_COMMIT} · ${snapshot.laneConfig.signatureKey()}")
             appendLine("bundle: ${snapshot.bundle.summary()}")
+            if(snapshot.modelMs>0) appendLine("model load: ${snapshot.modelMs} ms (bundle ${snapshot.bundleMs} ms + tokenizer/session ${snapshot.modelMs} ms)")
             val ran=snapshot.samples.mapNotNull { it.result }
             appendLine("status: "+ran.groupingBy { it.status }.eachCount().entries.joinToString(" · ") { "${it.key} ${it.value}" })
             snapshot.aggregate?.let { appendLine(it.text()) }
@@ -327,6 +340,10 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 put("max_words",snapshot.laneConfig.maxWords)
                 put("bundle",snapshot.bundle.summary())
                 put("tokenizer",snapshot.tokenizer)
+                put("model_load_ms",JSONObject().apply {
+                    put("bundle",snapshot.bundleMs)
+                    put("session",snapshot.modelMs)
+                })
                 put("lab_modules",snapshot.modules.signatureKey())
                 snapshot.aggregate?.let { aggregate ->
                     put("aggregate",JSONObject().apply {

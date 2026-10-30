@@ -74,6 +74,7 @@ internal fun GlinerLabScreen(
                     Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
                         Text("Model",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.SemiBold)
                         Text(if(state.bundle.ready) "ready · ${state.bundle.files.joinToString(", ") { it.name }}" else state.bundle.summary())
+                        if(state.modelMs>0) Text("load ${state.modelMs} ms · bundle ${state.bundleMs} ms · session ${state.modelMs} ms")
                         Text(if(state.bundle.int4) "INT4 confirmed (MatMulNBits)" else "INT4 not confirmed",
                             style=MaterialTheme.typography.bodySmall)
                         if(state.tokenizer!="not loaded") Text("tokenizer: ${state.tokenizer}",style=MaterialTheme.typography.bodySmall)
