@@ -148,7 +148,8 @@ internal fun GlinerLabScreen(
         }
         item {
             SelectionContainer {
-                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState)
+                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,
+                    state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet())
             }
         }
         if(state.ran) {
@@ -229,10 +230,10 @@ private fun RunTimers(elapsed:Long,done:Int,total:Int) {
 }
 
 @Composable
-private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState) {
+private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,completedImages:Set<String>) {
     val pass=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val fail=MaterialTheme.colorScheme.error
-    val baselines=glinerLabBaselines(labState)
+    val baselines=glinerLabBaselines(labState,completedImages)
     val glinerValues=listOf("GLiNER",a.attempted.toString(),a.eligible.toString(),"${a.complete}/${a.eligible}",a.oneError.toString(),a.multiError.toString(),a.failed.toString())
     val glinerFields=fieldLabels.associate { (key,_) ->
         val correct=a.fieldCorrect[key] ?: 0
@@ -278,10 +279,13 @@ private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState) {
                 }
             }
         }
-        Text("Lab and Prod use the saved Lab cohort; runs may cover different photos.",style=MaterialTheme.typography.bodySmall)
         if(baselines.any { it.summary==null }) Text(
             if(labState.busy) "Loading saved baselines…" else "— = no saved baseline on this device.",
             style=MaterialTheme.typography.bodySmall)
+        if(completedImages.isNotEmpty()) baselines.filter { it.missing>0 }.forEach { baseline ->
+            Text("${baseline.title}: ${completedImages.size-baseline.missing}/${completedImages.size} completed photos have saved baseline results.",
+                style=MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

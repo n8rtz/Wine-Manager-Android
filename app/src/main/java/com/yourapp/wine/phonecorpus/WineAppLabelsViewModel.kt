@@ -87,6 +87,8 @@ internal data class WineAppLabelsState(
     val prodV4FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     val prodV5FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     val prodV6FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
+    /** Per-photo rows for matched-cohort comparisons, including the full frozen Prod capture. */
+    val comparisonFieldRows: Map<PhoneCorpusRunner.Mode, Map<String, List<Map<String, String>>>> = emptyMap(),
     val recentLabRuns: List<WineAppLabelsBuildLog.Entry> = emptyList(),
 )
 
@@ -516,16 +518,27 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             WineAppLabelsBuildLog.summarizeFieldRows(prodV5Csv)
         }
         val prodV6Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V6)
-        val prodV6FieldScores = if (prodV6Preds.isEmpty()) {
-            emptyMap()
+        val prodV6Csv = if (prodV6Preds.isEmpty()) emptyList() else if (mode == PhoneCorpusRunner.Mode.PRODUCTION_V6) {
+            currentBoard.csv
         } else {
-            val prodV6Csv = if (mode == PhoneCorpusRunner.Mode.PRODUCTION_V6) {
-                currentBoard.csv
-            } else {
-                scoreboard.build(prodV6Preds, PhoneCorpusRunner.Mode.PRODUCTION_V6).csv
-            }
-            WineAppLabelsBuildLog.summarizeFieldRows(prodV6Csv)
+            scoreboard.build(prodV6Preds, PhoneCorpusRunner.Mode.PRODUCTION_V6).csv
         }
+        val prodV6FieldScores = WineAppLabelsBuildLog.summarizeFieldRows(prodV6Csv)
+        // The Lab page scopes its Prod totals to Lab's attempted photos. GLiNER needs the full
+        // frozen capture so it can select its own completed-photo cohort, including photos not
+        // yet attempted in a partial Lab pass.
+        val included = includedIds()
+        val allProdV6 = baselines?.all(PhoneCorpusRunner.Mode.PRODUCTION_V6).orEmpty()
+            .filterKeys { it in included }.values.toList()
+        val comparisonProdCsv = if (allProdV6.map { it.optString("image") }.toSet() ==
+            prodV6Preds.map { it.optString("image") }.toSet()) prodV6Csv else
+            scoreboard.build(allProdV6, PhoneCorpusRunner.Mode.PRODUCTION_V6).csv
+        fun fieldRows(csv:List<Map<String,String>>):Map<String,List<Map<String,String>>> =
+            csv.filter { it["row_type"] == "field" && !it["image"].isNullOrBlank() }.groupBy { it.getValue("image") }
+        val comparisonFieldRows = mapOf(
+            PhoneCorpusRunner.Mode.LAB to fieldRows(labCsv),
+            PhoneCorpusRunner.Mode.PRODUCTION_V6 to fieldRows(comparisonProdCsv),
+        )
         val activeLabDir = labFolder
         if (activeLabDir != null && labCount > 0) {
             val runMeta = runCatching { JSONObject(File(activeLabDir, "run.json").readText()) }.getOrNull()
@@ -595,6 +608,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
                     prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores, prodV6FieldScores = prodV6FieldScores,
+                    comparisonFieldRows = comparisonFieldRows,
                     recentLabRuns = recentLabRuns,
                     savedSuites = savedSuiteIds(),
                 )
@@ -612,6 +626,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
                     prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores, prodV6FieldScores = prodV6FieldScores,
+                    comparisonFieldRows = comparisonFieldRows,
                     recentLabRuns = recentLabRuns,
                     savedSuites = savedSuiteIds(),
                 )
@@ -978,6 +993,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 remainingImages = WINE_APP_LABEL_COUNT,
                 currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(), recentLabRuns = emptyList(),
                 prodV4FieldScores = emptyMap(), prodV5FieldScores = emptyMap(), prodV6FieldScores = emptyMap(),
+                comparisonFieldRows = emptyMap(),
                 message = "Loading saved 124-label results…",
             )
         }

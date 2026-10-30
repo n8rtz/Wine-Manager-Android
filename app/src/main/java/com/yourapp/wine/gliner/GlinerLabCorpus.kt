@@ -38,6 +38,7 @@ internal object GlinerLabCorpus {
         val included=(0 until evaluation.getJSONArray("included_images").length())
             .map { evaluation.getJSONArray("included_images").getJSONObject(it).getString("image") }
             .toSet()
+        check(included.size==evaluation.getInt("included_count")) { "Invalid Lab v7 evaluation selection" }
         val targets=linkedMapOf<String,JSONObject>()
         val scored=scoring.getJSONArray("images")
         for(index in 0 until scored.length()) {
@@ -45,8 +46,12 @@ internal object GlinerLabCorpus {
             targets[entry.getString("image")]=entry
         }
         val images=inputs.getJSONArray("images")
-        return (0 until images.length()).map { index ->
-            val entry=images.getJSONObject(index)
+        val selected=(0 until images.length()).map { images.getJSONObject(it) }
+            .filter { it.getString("image") in included }
+        check(selected.size==included.size && selected.map { it.getString("image") }.toSet()==included && included.all { it in targets }) {
+            "Lab v7 inputs or references do not match the curated evaluation selection"
+        }
+        return selected.mapIndexed { index,entry ->
             val image=entry.getString("image")
             val fields=targets[image]?.optJSONObject("fields") ?: JSONObject()
             val parsed=linkedMapOf<String,PhoneCorpusMath.Target>()
@@ -66,6 +71,7 @@ internal object GlinerLabCorpus {
     }
 
     fun copyTo(context:Context,sample:GlinerLabSample,target:File) {
+        require(sample.included) { "Photo is not in the Lab v7 evaluation selection" }
         target.parentFile?.mkdirs()
         context.assets.open("$ASSET_ROOT/images/${sample.image}").use { input ->
             target.outputStream().use { output -> input.copyTo(output,65536) }

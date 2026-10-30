@@ -294,7 +294,7 @@ internal object GlinerLabRunner {
         fieldResults=PhoneCorpusMath.fields.map { field ->
             GlinerFieldResult(field,fieldLabels.getValue(field),sample.target(field).display,"","","execution_failed")
         },
-        eligible=false,
+        eligible=PhoneCorpusMath.eligible(PhoneCorpusMath.fields.associateWith { sample.target(it) }),
         errorCount=PhoneCorpusMath.fields.size,
         wordCount=0,
         spanCount=0,

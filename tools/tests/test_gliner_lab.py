@@ -290,19 +290,33 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
 
     def test_score_tables_are_always_visible(self):
         screen = self.read(self.SCREEN)
-        self.assertIn("ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState)", screen)
+        self.assertIn("ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,", screen)
         self.assertNotIn("state.aggregate?.let", screen)
 
     def test_lab_and_prod_baselines_come_from_saved_lab_scoreboard(self):
         screen = self.read(self.SCREEN)
         baseline = self.read(APP / "java/com/yourapp/wine/phonecorpus/GlinerLabBaselines.kt")
         activity = self.read(APP / "java/com/yourapp/wine/gliner/GlinerLabActivity.kt")
-        self.assertIn("glinerLabBaselines(labState)", screen)
+        self.assertIn("glinerLabBaselines(labState,completedImages)", screen)
         self.assertIn("WineAppLabelsViewModel by viewModels()", activity)
-        self.assertIn("Mode.LAB,state.currentBuildFieldScores", baseline)
-        self.assertIn("Mode.PRODUCTION_V6,state.prodV6FieldScores", baseline)
-        self.assertIn("it.firstOrNull()==mode.title", baseline)
-        self.assertIn("summary==null", baseline)
+        self.assertIn("Mode.LAB,completedImages", baseline)
+        self.assertIn("Mode.PRODUCTION_V6,completedImages", baseline)
+        self.assertIn("completedImages.mapNotNull", baseline)
+        self.assertIn("comparisonFieldRows", baseline)
+        self.assertIn("baseline.missing", screen)
+        view_model = self.read(APP / "java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt")
+        self.assertIn("baselines?.all(PhoneCorpusRunner.Mode.PRODUCTION_V6)", view_model)
+        self.assertIn("fieldRows(labCsv)", view_model)
+
+    def test_lab_evaluation_selection_is_enforced(self):
+        corpus = self.read(GLINER / "GlinerLabCorpus.kt")
+        self.assertIn('it.getString("image") in included', corpus)
+        self.assertIn('require(sample.included)', corpus)
+        view_model = self.read(self.VM)
+        self.assertIn("it.sample.included && (only==null", view_model)
+        self.assertIn("it.sample.included && it.result!=null", view_model)
+        runner = self.read(GLINER / "GlinerLabRunner.kt")
+        self.assertIn("eligible=PhoneCorpusMath.eligible", runner)
 
     def test_run_survives_leaving_the_screen(self):
         view_model = self.read(self.VM)

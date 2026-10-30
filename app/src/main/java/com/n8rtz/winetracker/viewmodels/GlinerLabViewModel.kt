@@ -88,7 +88,7 @@ internal data class GlinerLabState(
 }
 
 internal fun aggregateGlinerRows(rows:List<GlinerLabRow>,stopped:Boolean):GlinerAggregate {
-    val scored=rows.filter { it.result!=null }
+    val scored=rows.filter { it.sample.included && it.result!=null }
     val results=scored.mapNotNull { it.result }
     val correct=PhoneCorpusMath.fields.associateWith { field ->
         scored.count { row -> row.sample.target(field).status!="unresolved" &&
@@ -221,7 +221,11 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         }
         val laneConfig=mutable.value.laneConfig
         val modules=mutable.value.modules
-        val targets=mutable.value.samples.filter { only==null || it.sample.image==only }
+        val targets=mutable.value.samples.filter { it.sample.included && (only==null || it.sample.image==only) }
+        if(targets.isEmpty()) {
+            mutable.update { it.copy(message="No selected Lab v7 evaluation photos to run") }
+            return
+        }
         val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
             state.copy(running=true,finished=false,stopped=false,done=0,total=targets.size,current="",aggregate=null,message="",

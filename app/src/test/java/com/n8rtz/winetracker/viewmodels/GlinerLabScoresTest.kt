@@ -41,6 +41,16 @@ class GlinerLabScoresTest {
         assertEquals(2,aggregate.fieldTotal["wine_name"])
     }
 
+    @Test fun excludedPhotosNeverEnterAggregate() {
+        val retained=row("retained")
+        val removed=row("removed").let { it.copy(sample=it.sample.copy(included=false)) }
+        val aggregate=aggregateGlinerRows(listOf(retained,removed),false)
+        assertEquals(1,aggregate.attempted)
+        assertEquals(1,aggregate.eligible)
+        assertEquals(1,aggregate.complete)
+        assertEquals(1,aggregate.fieldTotal["producer"])
+    }
+
     @Test fun failedLabelsCountInMultiErrorAndSingleRetestKeepsOtherRows() {
         val existing=listOf(row("one"),row("two",failure=true))
         val before=aggregateGlinerRows(existing,false)
