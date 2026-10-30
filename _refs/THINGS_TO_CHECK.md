@@ -648,3 +648,4 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 - [ ] Lab v7 (all checkboxes off): still 81/121; final fields now title-cased, e.g. wine `Margaux` (not `MARGAUX`), producer `Cave de Roquebrun` on #129, `Les Chemins d'Onairac` on #54
 - [ ] Prod v6.0 row still 77/121 on the existing device (frozen); on a fresh install its first capture must also freeze at 77/121 (checkpoint integrity restored)
 - [ ] Spot-check a few off-corpus labels: producer/wine values read as standard title case instead of label-print ALL CAPS
+11. [ ] Bug-030: after a multi-photo run, scroll through all results to the bottom — the screen must stay open; the top **Save results** block (Copy all + Save exports) works without scrolling.

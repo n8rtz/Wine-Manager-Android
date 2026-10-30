@@ -7,7 +7,7 @@
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
 2. **Wishes:** `W-nnn`, next free number **W-060**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
-3. **Bugs:** `Bug-nnn`, next free number **Bug-030**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
+3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
 6. **Status words:** `Open` · `Partial` · `Needs decision` · `Planned (brief only)` · `Fixed – awaiting device check`.
@@ -41,6 +41,17 @@
 ---
 
 ## 1. Active bugs
+
+### **[Bug-030]**: Device wine label audit/test closes when scrolling to the bottom (cannot save results)
+* **Date Logged:** 2026-10-30
+* **Component/File:** `ui/screens/DevicePhotoLabScreen.kt`
+* **Severity:** Minor UI (blocks saving audit results)
+* **Description:** Owner report: the audit screen auto-closes when scrolling to the bottom, where the Save buttons live. Probable root cause: each photo card is a single LazyColumn item, so scrolling it into view composes the photo plus every raw-OCR Text line at once (hundreds of nodes per card, added with the raw-OCR feature); composing several heavy cards while scrolling can kill the screen/process before the bottom Save controls are reachable. Only onClose/system-back can finish the activity in code, so this presents as a crash/process death, not a navigation.
+* **Steps to Reproduce:**
+    1. Run the audit on ~20 photos.
+    2. Scroll toward the bottom to reach Save — screen closes.
+* **Known Workaround / Notes:** Fix applied 2026-10-30 (awaiting device check): rendered raw OCR per card capped at 40 lines (full text remains in Copy-all and the diagnostic export), and a "Save results" block (Copy all + export Save buttons) now sits at the top of the results, reachable without scrolling. If it still closes, note whether it returns to the dataset screen or the launcher (distinguishes finish() vs process death) and report.
+
 
 ### **[Bug-027]**: Duplicate merged Gradle build-commit declaration
 * **Date Logged:** 2026-10-24

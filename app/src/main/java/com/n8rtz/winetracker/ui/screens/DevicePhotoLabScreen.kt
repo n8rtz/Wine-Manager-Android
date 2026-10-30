@@ -42,6 +42,23 @@ internal fun DevicePhotoLabScreen(
 ) {
     val clipboard=LocalClipboardManager.current
     val context=LocalContext.current
+    fun copyAllText():String = buildString {
+        appendLine("Lab v7 · ${BuildConfig.BUILD_COMMIT} · ${state.modules.signatureKey()} · device photos · unscored")
+        state.photos.forEach { photo ->
+            appendLine("\n${photo.index+1}. ${photo.name} — ${photo.status}")
+            DevicePhotoLabResult.fieldLabels.forEach { (key,label) ->
+                appendLine("$label: ${photo.result?.fields?.get(key).orEmpty().ifBlank { "(not assigned)" }}")
+            }
+            photo.result?.let { result ->
+                if(result.error.isNotBlank()) appendLine("Error: ${result.error}")
+                if(result.incompleteOcr) appendLine("Warning: incomplete OCR")
+                if(result.ocrLines.isNotEmpty()) {
+                    appendLine("Raw OCR (${result.ocrLines.size} lines):")
+                    result.ocrLines.forEach { appendLine(it) }
+                }
+            }
+        }
+    }
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),
         verticalArrangement=Arrangement.spacedBy(12.dp),
@@ -72,29 +89,27 @@ internal fun DevicePhotoLabScreen(
                 TextButton(onClick=onClose,enabled=!state.busy) { Text("Back to dataset tests") }
             }
         }
+        if(state.photos.isNotEmpty() && state.finished) {
+            item {
+                Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                    Text("Save results",style=MaterialTheme.typography.titleMedium)
+                    TextButton(enabled=!state.busy,onClick={ clipboard.setText(AnnotatedString(copyAllText())) }) {
+                        Text("Copy all results")
+                    }
+                    state.exports.forEachIndexed { index,file ->
+                        TextButton(enabled=!state.busy,onClick={ onSave(index,file) }) {
+                            Text("Save ${file.name} · ${"%.2f".format(file.length()/1_000_000.0)} MB")
+                        }
+                    }
+                }
+            }
+        }
         if(state.photos.isNotEmpty()) {
             item {
                 Text(if(state.finished) "Results (${state.photos.size} photos)" else "Photo results",
                     style=MaterialTheme.typography.titleLarge)
                 TextButton(enabled=state.finished && !state.busy,onClick={
-                    val text=buildString {
-                        appendLine("Lab v7 · ${BuildConfig.BUILD_COMMIT} · ${state.modules.signatureKey()} · device photos · unscored")
-                        state.photos.forEach { photo ->
-                            appendLine("\n${photo.index+1}. ${photo.name} — ${photo.status}")
-                            DevicePhotoLabResult.fieldLabels.forEach { (key,label) ->
-                                appendLine("$label: ${photo.result?.fields?.get(key).orEmpty().ifBlank { "(not assigned)" }}")
-                            }
-                            photo.result?.let { result ->
-                                if(result.error.isNotBlank()) appendLine("Error: ${result.error}")
-                                if(result.incompleteOcr) appendLine("Warning: incomplete OCR")
-                                if(result.ocrLines.isNotEmpty()) {
-                                    appendLine("Raw OCR (${result.ocrLines.size} lines):")
-                                    result.ocrLines.forEach { appendLine(it) }
-                                }
-                            }
-                        }
-                    }
-                    clipboard.setText(AnnotatedString(text))
+                    clipboard.setText(AnnotatedString(copyAllText()))
                 }) { Text("Copy all results") }
             }
         }
@@ -119,10 +134,11 @@ internal fun DevicePhotoLabScreen(
                                 Text("$label: ${value.ifBlank { "(not assigned)" }}")
                             }
                             photo.result?.takeIf { it.ocrLines.isNotEmpty() }?.let { result ->
-                                Text("Raw OCR (${result.ocrLines.size} lines)",style=MaterialTheme.typography.titleSmall)
-                                result.ocrLines.forEach { line ->
+                                Text("Raw OCR (${result.ocrLines.size} lines, first 40 shown)",style=MaterialTheme.typography.titleSmall)
+                                result.ocrLines.take(40).forEach { line ->
                                     Text(line,style=MaterialTheme.typography.bodySmall)
                                 }
+                                if(result.ocrLines.size>40) Text("… ${result.ocrLines.size-40} more lines — Copy all results includes the full raw OCR.",style=MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
