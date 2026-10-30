@@ -132,7 +132,7 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("encodePieces(word,false)", tokenizer)
         model = self.read(GLINER / "GlinerOnnxModel.kt")
         self.assertIn("private fun promptWords", model)
-        self.assertIn("tokenizer.encodePromptWord(word)", model)
+        self.assertIn("tokenizer.encodePromptWord(it)", model)
         self.assertNotIn("promptTokens", model)
 
     def test_real_exported_layout_is_decoded(self):

@@ -88,6 +88,10 @@ internal data class GlinerLabelResult(
     val config:GlinerLaneConfig,
     /** Best span per lane before thresholding, so a run that labels nothing still shows its scores. */
     val probes:List<String> = emptyList(),
+    /** Ids of the encoded prompt words: `1, 2569, 4052, 20773, 1504, 1504, 2084, …` for this bundle. */
+    val promptIds:List<Int> = emptyList(),
+    /** Tokens the tokenizer could not resolve; anything above zero means the ids are wrong. */
+    val unknownTokens:Int = 0,
 ) {
     fun lane(lane:GlinerLane):GlinerLaneGroup = lanes.first { it.lane==lane }
     val groupedText:String get() = document.text

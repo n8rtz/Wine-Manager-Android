@@ -164,6 +164,8 @@ internal object GlinerLabRunner {
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
                     appendLine("GLiNER ${labelled.layout} · ${labelled.wordCount} words · ${labelled.spanCount} spans · ${labelled.entities.size} lane fragments")
                     labelled.probes.forEach { appendLine("probe: $it") }
+                    appendLine("prompt ids: "+labelled.promptIds.take(24).joinToString(","))
+                    appendLine("unknown tokens: ${labelled.unknownTokens}")
                     appendLine(laneConfig.summaryLabel())
                     post.notes.forEach { appendLine(it) }
                 },

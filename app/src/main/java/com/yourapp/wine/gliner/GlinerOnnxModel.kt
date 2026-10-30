@@ -53,6 +53,7 @@ internal class GlinerOnnxModel private constructor(
         if(SystemClock.elapsedRealtime()>=deadlineAtMs) error("GLiNER deadline reached before inference")
 
         val prompt=promptWords(config,laneConfig.prompts)
+        val promptIds=prompt.flatMap { tokenizer.encodePromptWord(it) }
         val textIds=words.map { tokenizer.encodeWord(it.normalized) }
         val maxWidth=minOf(laneConfig.maxWidth,config.maxWidth)
         val spans=spanIndex(words.size,maxWidth)
@@ -63,7 +64,7 @@ internal class GlinerOnnxModel private constructor(
         val clsId=tokenizer.tokenId("[CLS]") ?: tokenizer.tokenId("<s>")
         val sepId=tokenizer.tokenId("[SEP]") ?: tokenizer.tokenId("</s>")
         if(clsId!=null) { ids += clsId;wordsMask += 0 }
-        prompt.forEach { word -> tokenizer.encodePromptWord(word).forEach { ids += it;wordsMask += 0 } }
+        promptIds.forEach { ids += it;wordsMask += 0 }
         textIds.forEachIndexed { index,pieces ->
             pieces.forEachIndexed { sub,token ->
                 ids += token
@@ -120,6 +121,8 @@ internal class GlinerOnnxModel private constructor(
                     elapsedMs=elapsed,
                     config=laneConfig,
                     probes=decoded.probes,
+                    promptIds=promptIds,
+                    unknownTokens=ids.count { it==tokenizer.unknownId },
                 )
             }
         } finally {
@@ -157,11 +160,6 @@ internal class GlinerOnnxModel private constructor(
         }
     }
 
-    /**
-     * GLiNER's prompt: `ent_token, label, ent_token, label, …, sep_token` in front of the text.
-     * Markers come from the export's `gliner_config.json`, so a model whose config says `<<`/`>>`
-     * is tokenized with exactly those ids.
-     */
     /**
      * The prompt as words, which is how gliner builds it: `<<ENT>> label words <<ENT>> ... <<SEP>>`.
      * The markers are tokenized as text (a marker is several SentencePiece pieces), so the prompt is
