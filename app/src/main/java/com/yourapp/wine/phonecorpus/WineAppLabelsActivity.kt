@@ -239,7 +239,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                                             .putStringArrayListExtra(DevicePhotoLabActivity.EXTRA_MODULE_KEYS,
                                                 ArrayList(state.labModules.enabledKeys())))
                                     },
-                                ) { Text("Test Lab v6 on device photos") }
+                                ) { Text("Test Lab v7 on device photos") }
                             }
                             Text("Post-OCR test modules", style = MaterialTheme.typography.titleSmall)
                             DisableSelection {
@@ -326,7 +326,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                 SelectionContainer {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (state.message.isNotBlank()) Text(state.message)
-                        Text("Lab v6 checkpointed: ${state.labCompleted}/${state.total}")
+                        Text("Lab v7 checkpointed: ${state.labCompleted}/${state.total}")
                         val frozen = state.captures.values.map { it.count }.minOrNull() ?: 0
                         if (state.captures.size != 3 || frozen < state.total) {
                             Text("Prod baselines captured: $frozen/${state.total} photos · ${state.captureRemaining} still to capture")
@@ -338,7 +338,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                     onClick = { vm.start() },
                     enabled = !state.busy && !state.suiteRunning && (state.labCompleted < state.total || state.captureRemaining > 0),
                 ) {
-                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v6 only")
+                    Text(if (state.captureRemaining > 0) "Start / resume (first pass also captures Prod)" else "Start / resume Lab v7 only")
                 }
                 SelectionContainer {
                     BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)
@@ -378,6 +378,7 @@ class WineAppLabelsActivity : ComponentActivity() {
                                 bestBuildScores = state.bestBuildFieldScores,
                                 prodV4Scores = state.prodV4FieldScores,
                                 prodV5Scores = state.prodV5FieldScores,
+                                prodV6Scores = state.prodV6FieldScores,
                                 recentRuns = state.recentLabRuns,
                             )
                         }
@@ -1057,6 +1058,7 @@ private fun BuildFieldComparisonTable(
     bestBuildScores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     prodV4Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     prodV5Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
+    prodV6Scores: Map<String, WineAppLabelsBuildLog.FieldScore>,
     recentRuns: List<WineAppLabelsBuildLog.Entry>,
 ) {
     val passColor = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
@@ -1071,6 +1073,7 @@ private fun BuildFieldComparisonTable(
         "Best build" to bestBuildScores,
         PhoneCorpusRunner.Mode.PRODUCTION_V4.title to prodV4Scores,
         PhoneCorpusRunner.Mode.PRODUCTION_V5.title to prodV5Scores,
+        PhoneCorpusRunner.Mode.PRODUCTION_V6.title to prodV6Scores,
     ) + recentRuns.mapIndexed { index, run ->
         "Recent ${index + 1} · ${run.date} ${run.time}\n${run.buildNumber} · ${run.labModules.ifBlank { "legacy configuration" }}" to run.fieldScores
     }

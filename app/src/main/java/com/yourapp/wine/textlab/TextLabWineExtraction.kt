@@ -164,6 +164,12 @@ internal object TextLabWineExtraction {
                             ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces,com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint)
                     }
                 } else null
+                val prodV6Experimental=if(batch.benchmarkAllPipelines && batch.benchmarkProdV6Spatial) {
+                    kb?.let {
+                        warmSession?.evidenceExtractor(it,batch.anchorHybrid,batch.repairPlaces,com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV6Checkpoint)
+                            ?: TextLabEvidencePreview.engine(it,batch.anchorHybrid,batch.repairPlaces,com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV6Checkpoint)
+                    }
+                } else null
                 val prodExperimental=if(batch.benchmarkAllPipelines && (batch.benchmarkEvidence || batch.benchmarkLwinSpatial)) {
                     kb?.let {
                         warmSession?.evidenceExtractor(it,batch.anchorHybrid,false,com.yourapp.wine.textlab.evidence.LabPostOcrModules.none)
@@ -238,6 +244,13 @@ internal object TextLabWineExtraction {
                     batch.journals.forEach { appendSpatialContender(context,it,prodV5Experimental,hybrid,repair,skip,expanded=true,
                         singleReading=batch.resolverSingleReading,contenderCandidate="spatial_prod_v5",
                         contenderStagePrefix="spatial_prod_v5_",modulesOverride=com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint) }
+                }
+                // Prod v6.0 checkpoint contender: same arrangement as v5.0 with the
+                // phone-verified Lab v6 integrated set, frozen at promotion.
+                if(batch.benchmarkProdV6Spatial) {
+                    batch.journals.forEach { appendSpatialContender(context,it,prodV6Experimental,hybrid,repair,skip,expanded=true,
+                        singleReading=batch.resolverSingleReading,contenderCandidate="spatial_prod_v6",
+                        contenderStagePrefix="spatial_prod_v6_",modulesOverride=com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV6Checkpoint) }
                 }
             }
             if(batch.compareGazetteer || batch.residualCandidates) {

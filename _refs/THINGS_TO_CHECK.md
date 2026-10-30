@@ -626,3 +626,10 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 
 - [x] Integrated gap modules reproduce on device: #116 (Payrouliere), #171 (Triton), #190 (Rosso di Montalcino), #54 (Les Chemins d'Onairac), #104 (Baron de la Variere). (Aggregate deltas match the host gain set exactly: producer +2, wine_name +3 vs the 72/121 build.)
 - [ ] #188 (Decoy): producer-headed wine guard is host-inert (fixture KB lacks Decoy); check whether phone wine still shows DECOY Pinot Noir before considering integration
+
+## Prod v6.0 promotion — phone verification
+- [ ] First run after updating: Prod baselines show one version uncaptured (Prod v6.0) until its first pass completes 124/124; that is expected, not a failure
+- [ ] Prod v6.0 frozen row: 77/121 fully correct, producer 102, wine_name 94 (must equal Lab v6's verified result)
+- [ ] Lab v7 with all Post-OCR checkboxes off: also 77/121 (same 16-module signature incl. appellation_title_arbitration, style_appellation_wine, producer_completion_match)
+- [ ] Prod v5.0 unchanged at 62/121; Prod v4.0/v2.0/v1.0 rows unchanged
+- [ ] Older saved Lab runs still load (lab-v6 pipeline ID aliased to Lab v7)

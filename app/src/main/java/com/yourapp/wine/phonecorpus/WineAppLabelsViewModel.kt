@@ -30,7 +30,7 @@ private const val WINE_APP_LABEL_COUNT = 124
 
 /**
  * The retired comparators. Each photo runs through these once, the outcome is frozen on this
- * device, and later passes score the frozen record instead of re-running them. Only Lab v6
+ * device, and later passes score the frozen record instead of re-running them. Only Lab v7
  * consumes OCR on a later pass, so a captured corpus never reruns a Prod version.
  */
 private val BASELINE_MODES = listOf(
@@ -38,6 +38,7 @@ private val BASELINE_MODES = listOf(
     PhoneCorpusRunner.Mode.PRODUCTION_V2,
     PhoneCorpusRunner.Mode.PRODUCTION_V4,
     PhoneCorpusRunner.Mode.PRODUCTION_V5,
+    PhoneCorpusRunner.Mode.PRODUCTION_V6,
 )
 
 internal data class WineAppLabelsState(
@@ -57,9 +58,9 @@ internal data class WineAppLabelsState(
     /** When checked next to Lab v5, reuses verified cached OCR outputs instead of re-running both OCR models. */
     val useCachedOcr: Boolean = true,
     /** Mix-and-match post-OCR modules added after Best V5; all false reproduces Best V5 exactly. */
-    // Lab v6 starts from the Prod v5.0 known-improvement checkpoint; experiments
+    // Lab v7 starts from the Prod v6.0 known-improvement checkpoint; experiments
     // toggle modules away from (and back to) that measured configuration.
-    val labModules: LabPostOcrModules = LabPostOcrModules.prodV5Checkpoint,
+    val labModules: LabPostOcrModules = LabPostOcrModules.prodV6Checkpoint,
     /** Photos with verified ML Kit + Paddle Medium OCR outputs cached on this device. */
     val ocrCached: Int = 0,
     /** Frozen Prod capture per version; absent until its first capture pass. */
@@ -85,6 +86,7 @@ internal data class WineAppLabelsState(
     /** Per-field correct/incorrect counts for frozen Prod v4.0 (scoped to Lab v5's attempted subset). */
     val prodV4FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     val prodV5FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
+    val prodV6FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     val recentLabRuns: List<WineAppLabelsBuildLog.Entry> = emptyList(),
 )
 
@@ -513,6 +515,17 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             }
             WineAppLabelsBuildLog.summarizeFieldRows(prodV5Csv)
         }
+        val prodV6Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V6)
+        val prodV6FieldScores = if (prodV6Preds.isEmpty()) {
+            emptyMap()
+        } else {
+            val prodV6Csv = if (mode == PhoneCorpusRunner.Mode.PRODUCTION_V6) {
+                currentBoard.csv
+            } else {
+                scoreboard.build(prodV6Preds, PhoneCorpusRunner.Mode.PRODUCTION_V6).csv
+            }
+            WineAppLabelsBuildLog.summarizeFieldRows(prodV6Csv)
+        }
         val activeLabDir = labFolder
         if (activeLabDir != null && labCount > 0) {
             val runMeta = runCatching { JSONObject(File(activeLabDir, "run.json").readText()) }.getOrNull()
@@ -547,13 +560,13 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             .take(10)
         val activeModules = mutable.value.labModules
         val comparisonText = buildString {
-            appendLine("WINE APP LABELS · Lab v6 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
-            appendLine("Lab v6 post-OCR modules: ${activeModules.summaryLabel()} (${activeModules.signatureKey()})")
+            appendLine("WINE APP LABELS · Lab v7 $labCount/$WINE_APP_LABEL_COUNT checkpointed · Prod baselines $captured/$WINE_APP_LABEL_COUNT photos frozen · OCR cache $ocrReady/$WINE_APP_LABEL_COUNT ready")
+            appendLine("Lab v7 post-OCR modules: ${activeModules.summaryLabel()} (${activeModules.signatureKey()})")
             if (bestBuild != null) {
                 appendLine(bestBuild.provenanceLine())
             }
-            appendLine("Prod v1.0, Prod v2.0, Prod v4.0 and Prod v5.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v6 has attempted so far, so all five rows compare side by side without re-running Prod. Lab v6 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored CSV and raw diagnostic JSON exports.")
-            appendLine("Prod v2.0, Prod v4.0, Prod v5.0 and Lab v6 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v4.0: the spatial pipeline with LWIN-only producer data; Prod v5.0: the same spatial pipeline with the expanded producer index and the frozen Prod v5.0 checkpoint module set (the known-improvement release); Lab v6: the same pipeline and index with the experimental module toggles, starting from the Prod v5.0 checkpoint — while Prod v1.0 runs the Add Wine scanner separately.")
+            appendLine("Prod v1.0, Prod v2.0, Prod v4.0, Prod v5.0 and Prod v6.0 are retired comparators. Each photo runs through them once; the outcome is frozen on this device and replayed for the $labCount/$WINE_APP_LABEL_COUNT photos Lab v7 has attempted so far, so all six rows compare side by side without re-running Prod. Lab v7 runs fresh OCR by default or reuses verified cached OCR outputs when selected. The diagnostics matrix on screen is the selected (Lab) version; the frozen Prod funnel rows are kept with their records and written to the scored CSV and raw diagnostic JSON exports.")
+            appendLine("Prod v2.0, Prod v4.0, Prod v5.0, Prod v6.0 and Lab v7 share one fresh OCR pass and differ in post-processing — Prod v2.0: guarded evidence only; Prod v4.0: the spatial pipeline with LWIN-only producer data; Prod v5.0: the same spatial pipeline with the expanded producer index and the frozen Prod v5.0 checkpoint module set; Prod v6.0: the same pipeline with the frozen Prod v6.0 checkpoint module set (the known-improvement release); Lab v7: the same pipeline and index with the experimental module toggles, starting from the Prod v6.0 checkpoint — while Prod v1.0 runs the Add Wine scanner separately.")
             appendLine("Attempted is the saved-photo tally. Fully correct counts photos where all six scorable fields match; it is an accuracy score, not run progress.")
             appendLine(displayHeaders.joinToString(" | "))
             comparisonRows.forEach { appendLine(it.joinToString(" | ")) }
@@ -564,6 +577,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             appendLine(formatFieldRow("Best build", bestBuildFieldScores))
             appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V4.title, prodV4FieldScores))
             appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V5.title, prodV5FieldScores))
+            appendLine(formatFieldRow(PhoneCorpusRunner.Mode.PRODUCTION_V6.title, prodV6FieldScores))
             recentLabRuns.forEach { run ->
                 appendLine(formatFieldRow("${run.date} ${run.time} · ${run.buildNumber} · ${run.labModules}", run.fieldScores))
             }
@@ -580,7 +594,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     captures = captures, captureRemaining = captureRemaining,
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
-                    prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores,
+                    prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores, prodV6FieldScores = prodV6FieldScores,
                     recentLabRuns = recentLabRuns,
                     savedSuites = savedSuiteIds(),
                 )
@@ -597,7 +611,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     remainingImages = idleRemaining,
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
-                    prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores,
+                    prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores, prodV6FieldScores = prodV6FieldScores,
                     recentLabRuns = recentLabRuns,
                     savedSuites = savedSuiteIds(),
                 )
@@ -963,7 +977,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 etaPerImageMs = null, currentImageStartedRealtimeMs = null,
                 remainingImages = WINE_APP_LABEL_COUNT,
                 currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(), recentLabRuns = emptyList(),
-                prodV4FieldScores = emptyMap(), prodV5FieldScores = emptyMap(),
+                prodV4FieldScores = emptyMap(), prodV5FieldScores = emptyMap(), prodV6FieldScores = emptyMap(),
                 message = "Loading saved 124-label results…",
             )
         }

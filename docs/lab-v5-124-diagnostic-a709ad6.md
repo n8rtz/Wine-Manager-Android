@@ -293,3 +293,26 @@ Lab v6 77/121 (38 one-error, 6 with 2+), producer 102/21, wine_name 94/29,
 country/region 124, subregion 122/2, vintage 123; Prod v5.0 frozen at
 62/121. The phone module signature lists exactly the 16 integrated modules
 (the three gap winners included, no selectable experiments enabled).
+
+## 16. Prod v6.0 promotion (2026-10-29)
+
+The phone-verified Lab v6 integrated set (77/121) is promoted to a frozen
+Prod version, following the Prod v5.0 pattern exactly:
+
+- `LabPostOcrModules.prodV6Checkpoint`: the sixteen integrated modules,
+  listed explicitly (never derived from `withIntegrated()`), frozen.
+- New benchmark contender `Prod v6.0` (`production-v6.0-expanded-producers`,
+  stage prefix `spatial_prod_v6_`): same spatial pipeline and expanded
+  producer index as Lab, `modulesOverride = prodV6Checkpoint`, captured
+  once per photo into the frozen baselines like every past Prod version
+  (new `BASELINE_MODES` entry; first pass on a device re-captures 124/124).
+- The experimental line is renamed **Lab v7** (`lab-v7-expanded-producers`),
+  starts from `prodV6Checkpoint`, and keeps `lab-v6-expanded-producers`
+  (and all older IDs) as legacy aliases so saved runs remain readable.
+- Prod v1.0/v2.0/v4.0/v5.0 contenders and checkpoints are untouched.
+
+Host verification: the Lab floor is unchanged at **77/121, parity PASS**
+(the promotion changes no Lab behavior). Phone verification pending: Prod
+v6.0's frozen row must read **77/121** (producer 102, wine_name 94) after
+its first capture pass, Lab v7 must match it with all toggles off, and
+Prod v5.0 must stay 62/121.

@@ -10,7 +10,7 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
 /**
- * Frozen Prod v1.0 / v2.0 / v4.0 / v5.0 outcomes for the 124-label benchmark.
+ * Frozen Prod v1.0 / v2.0 / v4.0 / v5.0 / v6.0 outcomes for the 124-label benchmark.
  *
  * The Prod versions are retired comparators: each photo runs through them once, the outcome is
  * written here under the current corpus signature, and every later pass reads that record instead

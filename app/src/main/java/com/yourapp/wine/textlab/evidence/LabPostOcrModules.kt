@@ -228,7 +228,7 @@ internal data class LabPostOcrModules(
     fun withoutRetiredModules(): LabPostOcrModules = copy(wineNameSpans=false, verticalWineTitlePairs=false)
 
     /**
-     * The Prod v5.0 checkpoint set is integrated into Lab v6: always on, no longer
+     * The Prod v5.0 checkpoint set is integrated into the Lab line (Lab v7): always on, no longer
      * user-toggleable. Applied at every Lab run boundary so a stored or restored
      * module selection can never switch these off.
      */
@@ -262,7 +262,7 @@ internal data class LabPostOcrModules(
 
     companion object {
         val retiredModuleIds = setOf(ModuleId.WINE_NAME_SPANS, ModuleId.VERTICAL_WINE_TITLE_PAIRS)
-        /** Module ids integrated into Lab v6 (the Prod v5.0 checkpoint set): always on, no checkbox. */
+        /** Module ids integrated into the Lab line (always on, no checkbox); the Prod v6.0 checkpoint is this set frozen. */
         val integratedModuleIds = setOf(
             ModuleId.EXACT_PRODUCER_PROTECTION, ModuleId.ROLE_AWARE_JOINS,
             ModuleId.BLANK_SUBREGION_FUZZY, ModuleId.APPELLATION_WINE_FALLBACK,
@@ -306,16 +306,30 @@ internal data class LabPostOcrModules(
          * measured net-positive on the 124-label corpus against the prior configuration
          * and verified on device (62/122 complete, 113/122 at most one error, zero
          * losses vs the Lab v5 phone baseline). Prod v5.0 runs exactly this set; it is
-         * frozen and is not user-configurable. Lab v6 starts from this checkpoint.
+         * frozen and is not user-configurable. Lab v6 started from this checkpoint (historical).
          */
         // Frozen: exactly the ten checkpoint modules. Do NOT derive this from
-        // withIntegrated() -- Lab v6 integration grows over time (Item 1a added
+        // withIntegrated() -- Lab integration grows over time (Item 1a added
         // BOUNDED_WINE_TITLE_PAIRS) and Prod v5.0 must never change.
         val prodV5Checkpoint = none.copy(
             exactProducerProtection=true, roleAwareJoins=true, blankSubregionFuzzy=true,
             appellationWineFallback=true, appellationClassificationPrecedence=true,
             vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
             producerRoleAndParticle=true, spatialSemanticGuards=true)
+        /**
+         * Prod v6.0 known-improvement checkpoint (2026-10-29): the Lab v6 integrated
+         * set, host-measured at 77/121 and phone-verified exactly on build
+         * `75bfb53f0a93`. Frozen: exactly these sixteen modules; never derive this
+         * from withIntegrated() -- Lab integration grows over time and Prod v6.0
+         * must never change, like every past Prod version.
+         */
+        val prodV6Checkpoint = none.copy(
+            exactProducerProtection=true, roleAwareJoins=true, blankSubregionFuzzy=true,
+            appellationWineFallback=true, appellationClassificationPrecedence=true,
+            vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
+            producerRoleAndParticle=true, spatialSemanticGuards=true,
+            boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
+            appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true)
         val bestBuild = prodV5Checkpoint
         val all = LabPostOcrModules(
             candidateIsolation = true,

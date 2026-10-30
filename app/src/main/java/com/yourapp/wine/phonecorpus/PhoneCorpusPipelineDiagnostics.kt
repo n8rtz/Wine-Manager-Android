@@ -74,6 +74,7 @@ internal object PhoneCorpusPipelineDiagnostics {
                 "LAB" -> "spatial_evidence_"
                 "PRODUCTION_V4" -> "spatial_lwin_evidence_"
                 "PRODUCTION_V5" -> "spatial_prod_v5_evidence_"
+                "PRODUCTION_V6" -> "spatial_prod_v6_evidence_"
                 else -> "evidence_"
             }
             val summary = stage(prefix + "summary").lastOrNull()
