@@ -649,3 +649,8 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 - [ ] Prod v6.0 row still 77/121 on the existing device (frozen); on a fresh install its first capture must also freeze at 77/121 (checkpoint integrity restored)
 - [ ] Spot-check a few off-corpus labels: producer/wine values read as standard title case instead of label-print ALL CAPS
 11. [ ] Bug-030: after a multi-photo run, scroll through all results to the bottom — the screen must stay open; the top **Save results** block (Copy all + Save exports) works without scrolling.
+
+## Lab v7 prominence arbitration — phone checks
+- [ ] Re-run the audit on the Kirkland Signature Saint-Julien photo: wine name should now be `Saint-Julien` (was `Demeure Bourgeoise`); producer/subregion/vintage unchanged
+- [ ] Dataset screen: Lab v7 still 81/121 (the module is inert on the corpus by measurement)
+- [ ] Bug-030 verify: scroll the audit results to the very bottom — no exit; Save buttons at the bottom compose fine

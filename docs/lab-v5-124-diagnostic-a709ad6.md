@@ -441,3 +441,35 @@ card + audit screen; stale Lab v5 strings updated to Lab v7) and each photo
 card now lists its raw OCR lines in reading order with engine, confidence,
 and size as a multiple of the photo's median line height; raw OCR is also
 included in Copy-all-results.
+
+## 21. Case studies resolved with real OCR; Bug-030 root cause (2026-10-30)
+
+The owner re-ran the audit on both case-study photos; the new raw-OCR
+display supplied the missing evidence (sizes are multiples of each photo's
+median line height).
+
+Kirkland (IMG20261013221556): "DEMEURE BOURGEOISE" read at 0.7x/0.5x by both
+engines; "SAINT-JULIEN" at 3.6x/2.9x. New module
+`appellation_prominence_arbitration`: a non-appellation wine candidate set
+in type below 0.45x the largest appellation-as-wine candidate's height is
+demoted 30 (descriptor, not title). Corpus: inert +0/-0 (no corpus label
+has that size contrast), so the 81/121 floor is untouched; it INTEGRATED on
+the strength of the audited real-world geometry (ratio ~0.2), with this
+section as the record. Expected on next audit: wine becomes Saint-Julien.
+
+Conde (IMG20260609104335): "DE BASALU" WAS read by both engines as its own
+line (1.9x/2.9x) under "CONDE" (1.7x/1.5x), so the text existed; the full
+span never became the producer. New module `producer_prefix_completion`
+(one-token producer + unique observed span/joined phrase it prefixes,
+Gap-D protection family) measured -1 on the corpus: #66 "A.Kolb" was
+extended to "A.Kolb Methode Traditionnelle" (method-phrase extras pass the
+length test). NOT integrated; selectable-only. Conde remains open pending
+the photo's diagnostic export (box geometry) to determine whether the
+joined phrase forms at all.
+
+Bug-030 root cause (from the shipped crash capture, not the earlier
+composition-weight theory): LazyColumn duplicate key -- photo cards keyed
+by photo index and export buttons keyed by export index collided in the
+same column, crashing exactly when the exports composed at the bottom.
+Keys namespaced ("photo-"/"export-"). The crash-capture handler stays as a
+safety net.

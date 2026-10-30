@@ -53,6 +53,8 @@ internal data class LabPostOcrModules(
     val producerNearMatchUnprotected: Boolean = false,
     val caseStandardization: Boolean = false,
     val smallPrintWineDemotion: Boolean = false,
+    val appellationProminenceArbitration: Boolean = false,
+    val producerPrefixCompletion: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
     val producerRoleAndParticle: Boolean = false,
     val spatialSemanticGuards: Boolean = false,
@@ -102,6 +104,8 @@ internal data class LabPostOcrModules(
         PRODUCER_NEAR_MATCH_UNPROTECTED("producer_near_match_unprotected", "producer-near-match-unprotected", "Producer near-match without observation protection", "Retry the d<=1 catalog canonicalization when only exact-observation protection vetoed it"),
         CASE_STANDARDIZATION("case_standardization", "case-standardization", "Final field case standardization", "Force final text fields to title case (minor words lowercase unless first)"),
         SMALL_PRINT_WINE_DEMOTION("small_print_wine_demotion", "small-print-wine-demotion", "Small-print wine demotion", "A wine-name line much smaller than the label's typical line is demoted (descriptor, not title)"),
+        APPELLATION_PROMINENCE_ARBITRATION("appellation_prominence_arbitration", "appellation-prominence-arbitration", "Appellation prominence arbitration", "A plain title printed much smaller than the appellation line yields the wine slot to the appellation"),
+        PRODUCER_PREFIX_COMPLETION("producer_prefix_completion", "producer-prefix-completion", "Producer prefix completion", "Complete a one-token producer from the unique observed span/joined phrase it prefixes (Conde -> Conde de Basalu)"),
         STACKED_WINE_TITLES(
             key = "stacked_wine_titles",
             shortName = "stacked-wine-titles",
@@ -207,6 +211,8 @@ internal data class LabPostOcrModules(
         ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> producerNearMatchUnprotected
         ModuleId.CASE_STANDARDIZATION -> caseStandardization
         ModuleId.SMALL_PRINT_WINE_DEMOTION -> smallPrintWineDemotion
+        ModuleId.APPELLATION_PROMINENCE_ARBITRATION -> appellationProminenceArbitration
+        ModuleId.PRODUCER_PREFIX_COMPLETION -> producerPrefixCompletion
         ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
         ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
@@ -254,6 +260,8 @@ internal data class LabPostOcrModules(
         ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> copy(producerNearMatchUnprotected = enabled)
         ModuleId.CASE_STANDARDIZATION -> copy(caseStandardization = enabled)
         ModuleId.SMALL_PRINT_WINE_DEMOTION -> copy(smallPrintWineDemotion = enabled)
+        ModuleId.APPELLATION_PROMINENCE_ARBITRATION -> copy(appellationProminenceArbitration = enabled)
+        ModuleId.PRODUCER_PREFIX_COMPLETION -> copy(producerPrefixCompletion = enabled)
         ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
         ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
@@ -279,7 +287,8 @@ internal data class LabPostOcrModules(
         producerRoleAndParticle=true, spatialSemanticGuards=true,
         boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
         appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true,
-        stackedAppellationWineBoost=true, geographyAppellationWine=true, caseStandardization=true)
+        stackedAppellationWineBoost=true, geographyAppellationWine=true, caseStandardization=true,
+        appellationProminenceArbitration=true)
 
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
@@ -328,7 +337,11 @@ internal data class LabPostOcrModules(
             // Lab v7 display standardization (owner rule, 2026-10-30): final
             // text fields forced to title case; formatting only, scorer
             // case-folds so the 81/121 floor is unaffected by construction.
-            ModuleId.CASE_STANDARDIZATION)
+            ModuleId.CASE_STANDARDIZATION,
+            // Lab v7 prominence arbitration (Kirkland case study, 2026-10-30):
+            // inert on the 121 corpus (+0/-0), fixes the audited real-world
+            // label by its measured geometry (title at ~0.2x appellation).
+            ModuleId.APPELLATION_PROMINENCE_ARBITRATION)
         val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**

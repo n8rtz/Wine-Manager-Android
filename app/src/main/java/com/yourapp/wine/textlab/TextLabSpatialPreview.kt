@@ -437,6 +437,48 @@ internal object TextLabSpatialPreview {
                                 }
                             }
                         }
+                        // Lab v7 experiment (Conde case study): Gap D completion
+                        // refuses one-token producers unless the token ends an
+                        // estate-headed span. Here the final token is the FIRST
+                        // token of the unique observed span/joined phrase
+                        // (Conde -> Conde de Basalu). Same protection family as
+                        // Gap D: unique candidate, name-like extras only, no
+                        // boilerplate/appellation/geography candidates.
+                        if(isLabMode && labModules.producerPrefixCompletion && engine!=null && row["producer"].orEmpty().isNotBlank()) {
+                            val finalToken=TextNorm.normalize(row["producer"].orEmpty())
+                            if(!finalToken.contains(' ') && finalToken.length>=5) {
+                                val phraseCandidates=(evidenceResult?.hypotheses.orEmpty()
+                                    .filter { it.values.keys==setOf(com.yourapp.wine.fill.FieldId.PRODUCER) }
+                                    .map { it.values.getValue(com.yourapp.wine.fill.FieldId.PRODUCER) })+
+                                    proposals.filter { it.sources.size>1 }.map { TextNorm.scrub(it.phrase.mergedText) }
+                                val prefixBoilerplate=Regex("\\b(mis|bouteille\\w*|produit|vin de|coteaux|vignobles|cuvee)\\b")
+                                val completions=phraseCandidates.map { TextNorm.scrub(it) }
+                                    .filter(String::isNotBlank).distinctBy { TextNorm.normalize(it) }
+                                    .filter { candidate ->
+                                        val candidateTokens=TextNorm.normalize(candidate)
+                                            .split(Regex("\\s+")).filter(String::isNotBlank)
+                                        candidateTokens.size in 2..4 && candidateTokens.first()==finalToken &&
+                                            candidateTokens.drop(1).all { extra ->
+                                                extra in setOf("de","du","di","des","d","la","le","les") ||
+                                                    (extra.length>=5 && extra!=finalToken)
+                                            } &&
+                                            !prefixBoilerplate.containsMatchIn(TextNorm.normalize(candidate)) &&
+                                            !com.yourapp.wine.extract.WineDesignations.isAppellationName(candidate) &&
+                                            com.yourapp.wine.kb.PlaceGazetteer(
+                                                com.yourapp.wine.kb.SupplementedWineKnowledgeBase(engine.baseKb))
+                                                .matches(TextNorm.normalize(candidate)).isEmpty()
+                                    }
+                                if(completions.size==1) {
+                                    row["producer_before_prefix_completion"]=row["producer"].orEmpty()
+                                    row["producer"]=completions.single()
+                                    row["producer_state"]="YELLOW"
+                                    row["producer_reason"]="one-token producer completed from the unique observed span it prefixes; confirm manually"
+                                    row["producer_prefix_completion_status"]="suggestion"
+                                } else {
+                                    row["producer_prefix_completion_status"]="no_unique_completion"
+                                }
+                            }
+                        }
                         if(isLabMode && engine!=null && row["subregion"].orEmpty().isBlank()) {
                             if(labModules.blankSubregionFuzzy) {
                                 val prodMatchLines=decision.matches.filter { it.distance <= 1 }.map { it.observed }.toSet()

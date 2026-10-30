@@ -1190,6 +1190,29 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 trace.add("stacked_appellation_wine_boost","applied")
             }
         }
+        if(modules.appellationProminenceArbitration) {
+            // Lab v7 experiment (Kirkland case study): when a plain title and
+            // an appellation-as-wine candidate compete and the title is set in
+            // type much smaller than the appellation line, the title is a
+            // descriptor, not the wine name ("Demeure Bourgeoise" at ~0.2x the
+            // height of "SAINT-JULIEN"). Size is used only relative to the
+            // appellation competitor, never against the label median (blanket
+            // size demotion measured net-negative on the corpus).
+            val wineOnly=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.WINE_NAME) }
+            val largestAppellationHeight=wineOnly
+                .filter { WineDesignations.isAppellationName(it.values.getValue(FieldId.WINE_NAME)) }
+                .maxOfOrNull { it.phrase.box.height().toDouble() } ?: 0.0
+            if(largestAppellationHeight>0.0) {
+                effectiveHypotheses=effectiveHypotheses.map { h ->
+                    if(h.values.keys==setOf(FieldId.WINE_NAME) &&
+                        !WineDesignations.isAppellationName(h.values.getValue(FieldId.WINE_NAME)) &&
+                        h.phrase.box.height().toDouble()<0.45*largestAppellationHeight)
+                        h.copy(rank=h.rank-30.0,reason=h.reason+"; appellation prominence arbitration")
+                    else h
+                }
+                trace.add("appellation_prominence_arbitration","largest=$largestAppellationHeight")
+            }
+        }
         if(modules.smallPrintWineDemotion) {
             // Lab v7 experiment (Kirkland case study): a wine name set in type
             // much smaller than the label's typical line is a descriptor, not

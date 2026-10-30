@@ -129,7 +129,7 @@ internal fun DevicePhotoLabScreen(
                 }) { Text("Copy all results") }
             }
         }
-        items(state.photos,key={ it.index }) { photo ->
+        items(state.photos,key={ "photo-${it.index}" }) { photo ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                     AsyncImage(
@@ -171,7 +171,7 @@ internal fun DevicePhotoLabScreen(
                     }
                 }
             }
-            items(state.exports.withIndex().toList(),key={ it.index }) { (index,file) ->
+            items(state.exports.withIndex().toList(),key={ "export-${it.index}" }) { (index,file) ->
                 TextButton(enabled=!state.busy,onClick={ onSave(index,file) }) {
                     Text("Save ${file.name} · ${"%.2f".format(file.length()/1_000_000.0)} MB")
                 }
