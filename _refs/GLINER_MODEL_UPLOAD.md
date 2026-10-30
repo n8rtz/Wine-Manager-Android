@@ -1,4 +1,29 @@
-# Getting the GLiNER-Small INT4 bundle into a public GitHub repo
+# Getting the GLiNER-Small INT4 bundle
+
+## If you are on a phone: nothing to build, nothing to upload
+
+`.github/workflows/gliner-int4-bundle.yml` builds the bundle on a GitHub runner, pre-flights it and
+publishes it as a release:
+
+- **Release:** https://github.com/n8rtz/Wine-Manager-Android/releases/tag/gliner-small-int4-v1
+  (`gliner_small_int4.onnx`, `tokenizer.json`, `gliner_config.json`, `model-manifest.json`)
+- **Run page:** Actions > GLiNER INT4 bundle, artifact `gliner-bundle`
+
+The 611 MB float32 export exists only inside the runner for the duration of the job. The published
+graph is the INT4 one: **131.3 MB**, of which ~49 MB is the 4-bit 128100x768 embedding table, ~25 MB
+the 4-bit encoder matmuls, 8.3 MB the tokenizer, and the rest small float32 pieces (layer norms,
+biases, span head). That is the size floor for this checkpoint; going smaller needs a smaller
+backbone, not a different quantizer.
+
+To re-run it, push a change to the workflow or start it from the Actions tab ("Run workflow"). The
+build log is committed to `_refs/gliner-bundle-report.txt`, because the runner log endpoint is not
+reachable from the agent sandbox.
+
+Everything below is the manual route.
+
+---
+
+# Manual route
 
 The lab refuses to run an unpinned or non-INT4 graph, and the phone never downloads a model: the
 three files are either baked into assets at build time or imported from the sd card / Downloads

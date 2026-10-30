@@ -121,9 +121,19 @@ class GlinerLabStructureTests(unittest.TestCase):
         model = self.read(GLINER / "GlinerOnnxModel.kt")
         block = model.split("private fun spanIndex", 1)[1].split("private data class Candidate", 1)[0]
         self.assertIn("for(start in 0 until words)", block)
-        self.assertIn("for(width in 1..maxWidth)", block)
-        self.assertIn("minOf(start+width-1,words-1)", block)
-        self.assertNotIn("if(end>=words) break", block)
+        self.assertIn("for(offset in 0 until maxWidth)", block)
+        self.assertIn("spans += start+offset", block)
+        self.assertNotIn("minOf(start+width-1,words-1)", block)
+
+    def test_prompt_markers_are_tokenized_as_text(self):
+        # gliner feeds the SentencePiece pieces of <<ENT>>, not the added-token id in tokenizer.json
+        tokenizer = self.read(GLINER / "GlinerTokenizer.kt")
+        self.assertIn("fun encodePromptWord", tokenizer)
+        self.assertIn("encodePieces(word,false)", tokenizer)
+        model = self.read(GLINER / "GlinerOnnxModel.kt")
+        self.assertIn("private fun promptWords", model)
+        self.assertIn("tokenizer.encodePromptWord(word)", model)
+        self.assertNotIn("promptTokens", model)
 
     def test_real_exported_layout_is_decoded(self):
         # The exported graph answers with (1, words, maxWidth, lanes); the decoder must accept it

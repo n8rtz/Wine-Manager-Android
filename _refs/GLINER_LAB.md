@@ -26,6 +26,27 @@ Country, region, subregion and vintage are deliberately **not** asked from GLiNE
 their existing owners: the place hierarchy, the producer gazetteer and the year normalizer, which
 already perform better than a zero-shot span model on label geography.
 
+## What the real graph actually expects
+
+Guessing the input convention cost most of the integration time, so it is recorded here. Captured
+from the reference implementation running on our own export:
+
+| Input | Convention |
+| --- | --- |
+| prompt | a list of **words**: `<<ENT>> label words <<ENT>> ... <<SEP>>`, then the label words |
+| `<<ENT>>` / `<<SEP>>` | tokenized as **text** (5 SentencePiece pieces), *not* the added-token ids 128002/128003 that appear in `tokenizer.json`; feeding the added ids gives random embeddings and every lane collapses to ~0.04 |
+| `input_ids` | the whole word sequence wrapped once in `[CLS]` / `[SEP]`; never per label |
+| `words_mask` | 1-based over the text words only, set on the first subtoken of each word, 0 on prompt, specials and continuation subtokens |
+| `text_lengths` | the number of text words |
+| `span_idx` | `(words * max_width, 2)`, every start with offsets `0..max_width-1`, `end = start + offset`, unclipped; invalid spans are masked |
+| `span_mask` | `end < words` |
+| `logits` | `(1, words, max_width, lanes)` |
+
+With that feed the INT4 graph returns `Chateau Margaux` for PRODUCER at 0.684 on the smoke label,
+against 0.615 from the reference PyTorch model, so the quantization is sound. `tools/gliner_feeds.py`
+is the shared implementation and `tools/compare-gliner-onnx.py` re-derives the truth from PyTorch if
+a future export changes it.
+
 ## Which GLiNER checkpoint fits this pipeline
 
 Stage 2 is a span/uni-encoder contract: six tensors in (`input_ids`, `attention_mask`,

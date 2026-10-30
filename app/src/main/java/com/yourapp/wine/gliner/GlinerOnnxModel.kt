@@ -52,7 +52,7 @@ internal class GlinerOnnxModel private constructor(
         require(words.isNotEmpty()) { "No usable words in the OCR document" }
         if(SystemClock.elapsedRealtime()>=deadlineAtMs) error("GLiNER deadline reached before inference")
 
-        val prompt=promptTokens(tokenizer,config,laneConfig.prompts)
+        val prompt=promptWords(config,laneConfig.prompts)
         val textIds=words.map { tokenizer.encodeWord(it.normalized) }
         val maxWidth=minOf(laneConfig.maxWidth,config.maxWidth)
         val spans=spanIndex(words.size,maxWidth)
@@ -63,7 +63,7 @@ internal class GlinerOnnxModel private constructor(
         val clsId=tokenizer.tokenId("[CLS]") ?: tokenizer.tokenId("<s>")
         val sepId=tokenizer.tokenId("[SEP]") ?: tokenizer.tokenId("</s>")
         if(clsId!=null) { ids += clsId;wordsMask += 0 }
-        prompt.forEach { ids += it;wordsMask += 0 }
+        prompt.forEach { word -> tokenizer.encodePromptWord(word).forEach { ids += it;wordsMask += 0 } }
         textIds.forEachIndexed { index,pieces ->
             pieces.forEachIndexed { sub,token ->
                 ids += token
@@ -83,7 +83,9 @@ internal class GlinerOnnxModel private constructor(
                     "words_mask" -> inputs[name]=longTensor(name,type,wordsMask.map(Int::toLong).toLongArray(),longArrayOf(1,length.toLong()))
                     "text_lengths" -> inputs[name]=longTensor(name,type,longArrayOf(words.size.toLong()),longArrayOf(1,1))
                     "span_idx" -> inputs[name]=longTensor(name,type,spans.map(Int::toLong).toLongArray(),longArrayOf(1,spanCount.toLong(),2))
-                    "span_mask" -> inputs[name]=longTensor(name,type,LongArray(spanCount) { 1L },longArrayOf(1,spanCount.toLong()))
+                    "span_mask" -> inputs[name]=longTensor(name,type,
+                        LongArray(spanCount) { if(spans[it*2+1]<words.size) 1L else 0L },
+                        longArrayOf(1,spanCount.toLong()))
                     else -> error("Unsupported GLiNER graph input '$name'. Expected input_ids, attention_mask, words_mask, text_lengths, span_idx, span_mask")
                 }
             }
@@ -159,18 +161,19 @@ internal class GlinerOnnxModel private constructor(
      * Markers come from the export's `gliner_config.json`, so a model whose config says `<<`/`>>`
      * is tokenized with exactly those ids.
      */
-    private fun promptTokens(tokenizer:GlinerTokenizer,config:GlinerConfig,prompts:List<String>):List<Int> {
-        val entId=tokenizer.tokenId(config.entToken)
-            ?: error("Prompt marker '${config.entToken}' from gliner_config.json is not in tokenizer.json")
-        val sepId=tokenizer.tokenId(config.sepToken)
-            ?: error("Prompt marker '${config.sepToken}' from gliner_config.json is not in tokenizer.json")
-        val ids=mutableListOf<Int>()
+    /**
+     * The prompt as words, which is how gliner builds it: `<<ENT>> label words <<ENT>> ... <<SEP>>`.
+     * The markers are tokenized as text (a marker is several SentencePiece pieces), so the prompt is
+     * a word list, not three long ids.
+     */
+    private fun promptWords(config:GlinerConfig,prompts:List<String>):List<String> {
+        val words=mutableListOf<String>()
         prompts.forEach { prompt ->
-            ids += entId
-            ids += tokenizer.encodeWord(prompt)
+            words += config.entToken
+            words += prompt.split(" ").filter { it.isNotBlank() }
         }
-        ids += sepId
-        return ids
+        words += config.sepToken
+        return words
     }
 
     /**
@@ -182,9 +185,9 @@ internal class GlinerOnnxModel private constructor(
     private fun spanIndex(words:Int,maxWidth:Int):IntArray {
         val spans=ArrayList<Int>(words*maxWidth*2)
         for(start in 0 until words) {
-            for(width in 1..maxWidth) {
+            for(offset in 0 until maxWidth) {
                 spans += start
-                spans += minOf(start+width-1,words-1)
+                spans += start+offset
             }
         }
         return spans.toIntArray()
@@ -284,6 +287,9 @@ internal class GlinerOnnxModel private constructor(
         var rejected=0
         candidates.sortedWith(compareByDescending<Candidate> { it.score }.thenBy { it.start }.thenBy { it.end })
             .forEach { candidate ->
+                // The span grid is unclipped, so a candidate can end past the last word; the model
+                // masks those spans out, and any that still score are dropped here.
+                if(candidate.end>=words || candidate.start<0) { rejected++;return@forEach }
                 if((candidate.start..candidate.end).any { used[it] }) { rejected++;return@forEach }
                 for(index in candidate.start..candidate.end) used[index]=true
                 accepted += GlinerEntity(candidate.lane,candidate.start,candidate.end,"",candidate.score,

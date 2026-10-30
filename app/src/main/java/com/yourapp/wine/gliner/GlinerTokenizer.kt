@@ -35,10 +35,19 @@ internal class GlinerTokenizer private constructor(
     fun describe():String = "$modelType · ${vocabulary.size} pieces · unk $unknownId · pad $paddingId"+
         (metaspace?.let { " · metaspace '$it'" } ?: "")+(if(lowerCase) " · lowercased" else "")
 
+    /**
+     * Token ids for one already-split prompt word. Prompt markers (`<<ENT>>`, `<<SEP>>`) are used as
+     * plain text by the model: the gliner library feeds their SentencePiece pieces, not the added
+     * token id, so this deliberately skips the added-token shortcut.
+     */
+    fun encodePromptWord(word:String):List<Int> = encodePieces(word,false)
+
     /** Token ids for one already-split word. Never returns an empty array. */
-    fun encodeWord(word:String):List<Int> {
+    fun encodeWord(word:String):List<Int> = encodePieces(word,true)
+
+    private fun encodePieces(word:String,allowAddedTokens:Boolean):List<Int> {
         if(word.isEmpty()) return listOf(unknownId)
-        addedTokens[word]?.let { return listOf(it) }
+        if(allowAddedTokens) addedTokens[word]?.let { return listOf(it) }
         val prepared=if(lowerCase) word.lowercase(java.util.Locale.ROOT) else word
         val ids=when(modelType) {
             "Unigram" -> unigram(prepared)
