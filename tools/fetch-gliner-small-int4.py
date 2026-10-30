@@ -159,15 +159,15 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
         "words_mask": np.array([words_mask], dtype=np.int64),
         "text_lengths": np.array([[len(words)]], dtype=np.int64),
         "span_idx": np.array(spans, dtype=np.int64).reshape(1, len(words), max_width, 2),
-        "span_mask": np.ones((1, len(words), max_width), dtype=bool),
+        "span_mask": np.ones((1, len(words) * max_width), dtype=bool),
     }
     session = ort.InferenceSession(str(int4), providers=["CPUExecutionProvider"])
     available = {item.name for item in session.get_inputs()}
+    shapes = {item.name: item.shape for item in session.get_inputs()}
+    print(f"[4/5] graph inputs: {shapes}")
     feeds = {key: value for key, value in feeds.items() if key in available}
     logits = session.run(None, feeds)[0]
-    shapes = {item.name: item.shape for item in session.get_inputs()}
     print(f"[4/5] smoke run ok: inputs={sorted(available)} output={logits.shape}")
-    print(f"       input shapes: {shapes}")
     print(f"       words={len(words)} max_width={max_width} spans={len(spans)}")
     if logits.ndim == 3 and logits.shape[1] == len(spans):
         scores = 1.0 / (1.0 + np.exp(-logits[0]))
