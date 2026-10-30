@@ -480,6 +480,23 @@ fun ProfileScreen(
 
                         ListItem(
                             headlineContent = {
+                                Text("GLiNER lane lab — PP-OCRv6 ➔ GLiNER-Small INT4")
+                            },
+                            supportingContent = {
+                                Text("New structure: OCR, then GLiNER groups the label into producer / wine name / appellation before the existing Lab v7 post-processing")
+                            },
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                context.startActivity(
+                                    android.content.Intent().setClassName(
+                                        context,
+                                        "com.yourapp.wine.gliner.GlinerLabActivity"
+                                    )
+                                )
+                            }
+                        )
+
+                        ListItem(
+                            headlineContent = {
                                 Text("OCR Lab — multi-image tests")
                             },
                             supportingContent = {

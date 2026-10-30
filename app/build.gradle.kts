@@ -231,6 +231,81 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
     }
 }
 
+/**
+ * Opt-in provisioning of the GLiNER-Small INT4 bundle (Settings > Scanner testing > GLiNER lane lab).
+ *
+ * This task does not ship placeholder weights and does not run unless the manifest is fully pinned
+ * (name + url + bytes + sha256 for every file), which tools/fetch-gliner-small-int4.py --pin writes.
+ * Without the property the assets stay absent and the lab screen reports the bundle as missing.
+ */
+abstract class PrepareGlinerLabBundle : DefaultTask() {
+    @get:InputFile
+    abstract val manifest: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun prepare() {
+        fun hash(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(32768)
+                while (true) { val n = input.read(buffer); if (n < 0) break; digest.update(buffer, 0, n) }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
+        val root = groovy.json.JsonSlurper().parse(manifest.get().asFile) as? Map<*, *>
+            ?: throw GradleException("GLiNER manifest is not a JSON object")
+        val files = root["files"] as? List<*> ?: throw GradleException("GLiNER manifest has no files list")
+        val folder = outputDirectory.dir("gliner-lab-v1").get().asFile.apply { mkdirs() }
+        for (raw in files) {
+            val entry = raw as? Map<*, *> ?: continue
+            val name = entry["name"]?.toString().orEmpty()
+            val url = entry["url"]?.toString().orEmpty()
+            val sha = entry["sha256"]?.toString().orEmpty()
+            val bytes = (entry["bytes"] as? Number)?.toLong() ?: 0L
+            if (name.isEmpty()) throw GradleException("GLiNER manifest entry without a name")
+            if (url.isEmpty() || sha.length != 64 || bytes <= 0L) {
+                throw GradleException("GLiNER bundle is not pinned ($name). Run tools/fetch-gliner-small-int4.py --pin on a machine with the GLiNER export and retry. No placeholder model is allowed.")
+            }
+            val target = File(folder, name)
+            if (target.isFile && target.length() == bytes && hash(target) == sha) continue
+            val temporary = File(folder, "$name.download")
+            try {
+                val connection = URI(url).toURL().openConnection().apply { connectTimeout = 30000; readTimeout = 60000 }
+                connection.getInputStream().use { input ->
+                    temporary.outputStream().use { output ->
+                        val buffer = ByteArray(65536); var total = 0L
+                        while (true) {
+                            val n = input.read(buffer); if (n < 0) break
+                            total += n
+                            check(total <= bytes) { "GLiNER asset exceeds pinned size: $name" }
+                            output.write(buffer, 0, n)
+                        }
+                    }
+                }
+                check(temporary.length() == bytes && hash(temporary) == sha) { "GLiNER asset checksum mismatch: $name" }
+                Files.move(temporary.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } catch (error: Exception) {
+                throw GradleException("Cannot prepare GLiNER bundle file $name. Check access to $url and retry.", error)
+            } finally { temporary.delete() }
+        }
+    }
+}
+
+val prepareGlinerLab = tasks.register<PrepareGlinerLabBundle>("prepareGlinerLabBundle") {
+    manifest.set(layout.projectDirectory.file("src/main/assets/gliner-lab-v1/model-manifest.json"))
+    outputDirectory.set(layout.buildDirectory.dir("generated/glinerLabAssets"))
+}
+if (providers.gradleProperty("glinerLabAssets").getOrElse("false").toBooleanStrict()) {
+    androidComponents {
+        onVariants { variant ->
+            variant.sources.assets?.addGeneratedSourceDirectory(prepareGlinerLab, PrepareGlinerLabBundle::outputDirectory)
+        }
+    }
+}
+
 val preparePaddleMedium = tasks.register<PrepareTextLabPaddle>("preparePaddleMedium") {
     outputDirectory.set(layout.buildDirectory.dir("generated/paddleMediumAssets"))
 }

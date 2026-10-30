@@ -1,0 +1,19 @@
+GLiNER-Small model notice
+=========================
+
+Model: urchade/gliner_small-v2.1 (GLiNER, "Generalist and Lightweight Model for Named Entity
+Recognition"), https://github.com/urchade/GLiNER
+License: Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+
+This repository does not ship the model weights. The bundle is produced locally by
+tools/fetch-gliner-small-int4.py from the upstream checkpoint and is quantized to INT4 for
+on-device use. When you redistribute a bundle you produce, keep this notice and the Apache-2.0
+license text with it.
+
+Unless required by applicable law or agreed to in writing, software distributed under the
+License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied. See the License for the specific language governing permissions and
+limitations under the License.
+
+The ONNX Runtime Android runtime used to execute the graph is MIT-licensed
+(com.microsoft.onnxruntime:onnxruntime-android).

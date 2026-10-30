@@ -73,6 +73,34 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 *Last run: 55 targeted host checks passed. Full host discovery: 291 tests, 289 passed and two resolver-policy source-contract failures reproduced on unmodified pre-change HEAD. Android compilation, Robolectric and device checks pending (no JDK/Android SDK here).*
 
+### GLiNER lane lab (new structure on top of Lab v7) — phone checks
+
+Screen: **Settings → Scanner testing → GLiNER lane lab — PP-OCRv6 ➔ GLiNER-Small INT4**.
+Structure and contracts: `_refs/GLINER_LAB.md`. Weights are not in Git, so this list starts with
+provisioning.
+
+1. [ ] Build the bundle on a desktop: `python3 tools/fetch-gliner-small-int4.py --out app/src/main/assets/gliner-lab-v1 --pin`
+   then `python3 tools/inspect-gliner-bundle.py app/src/main/assets/gliner-lab-v1`. Confirm the graph
+   has `MatMulNBits` nodes, exposes only `input_ids`/`attention_mask`/`words_mask`/`text_lengths`/`span_idx`/`span_mask`
+   and that the smoke run prints a lane span. A layout the script rejects is also a layout the screen would reject.
+2. [ ] Install with `-PglinerLabAssets=true` (baked bundle) or copy the three files to the phone and use
+   **Import model files**. Confirm the screen lists model/tokenizer/config with byte sizes, "INT4 detected",
+   the tokenizer description, and that a wrong file (a screenshot renamed to `.onnx`) is rejected.
+3. [ ] Run one label. Confirm the row shows the three lane texts plus residual text, the six fields, and a
+   layout line such as `span logits [1, spans, classes]` with the real tensor shape. If the graph shape is not
+   supported, the row must fail with the shape and expected span/class counts, not run silently.
+4. [ ] Run all 124 labels. Confirm progress advances one photo at a time, the aggregate shows
+   fully correct / one error / 2+ errors / failed, and per-field correct counts are sane. Compare against the
+   Lab v7 baseline (81/121 at the promotion build); a large regression is a real result, not a UI bug.
+5. [ ] Confirm a product/label photo is never written to a wine form and no Lab v7 score, frozen baseline or
+   best-build log changes after this run.
+6. [ ] Stop mid-run; completed rows stay, remaining rows read `Waiting`. Rotate during a run; the model
+   session and progress survive. Remove the imported files and confirm the next run refuses with a clear message.
+7. [ ] Save the scored CSV. Confirm one row per label with model/INT4/layout/words/spans/threshold/max_width,
+   lane texts, residual text, OCR lines, per-field expected/observed/state/outcome and all four timings.
+8. [ ] Check `isInt4` caching: replace the ONNX with a non-INT4 export of the same size and confirm the
+   "INT4 not confirmed" text appears after **Re-check**.
+
 ### Multi-photo Lab v7 wine label audit/test (renamed from "Device-photo sanity check", 2026-10-30)
 
 1. [ ] Build/install on a disposable device. Select **Best build** on **Large image dataset test**, tap **Test Lab v7 on device photos**, and verify the displayed module keys match. Repeat with a custom configuration; entering the new screen must not silently replace it.

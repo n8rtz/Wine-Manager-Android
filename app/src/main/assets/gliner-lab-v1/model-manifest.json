@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "schema": "gliner-lab-bundle-v1",
+  "asset_root": "gliner-lab-v1",
+  "pipeline": "PP-OCRv6 Medium det+rec -> GLiNER-Small INT4 -> existing Lab v7 post-processing",
+  "model": {
+    "upstream": "urchade/gliner_small-v2.1",
+    "architecture": "uni-encoder span GLiNER (DeBERTa-v3-small backbone)",
+    "license": "Apache-2.0",
+    "quantization": "int4-weight-only (onnxruntime MatMul4BitsQuantizer, MatMulNBits, block 32, symmetric)",
+    "notes": "INT4 weight-only quantization keeps float32 activations. The graph must contain MatMulNBits nodes; the app reports whether it does before a run."
+  },
+  "files": [
+    {
+      "name": "gliner_small_int4.onnx",
+      "role": "model",
+      "bytes": null,
+      "sha256": null,
+      "url": null
+    },
+    {
+      "name": "tokenizer.json",
+      "role": "tokenizer",
+      "bytes": null,
+      "sha256": null,
+      "url": null
+    },
+    {
+      "name": "gliner_config.json",
+      "role": "config",
+      "bytes": null,
+      "sha256": null,
+      "url": null
+    }
+  ],
+  "io_contract": {
+    "inputs": ["input_ids", "attention_mask", "words_mask", "text_lengths", "span_idx", "span_mask"],
+    "outputs": ["logits"],
+    "prompt": "ent_token, label, ent_token, label, ent_token, label, sep_token + label words",
+    "words_mask": "1-based word index on the first subtoken of each text word, 0 on prompt and continuation subtokens",
+    "spans": "every (start, end) word span with end-start+1 <= max_width, shorter spans first",
+    "accepted_output_layouts": [
+      "span logits [spans, classes]",
+      "span logits [1, spans, classes]",
+      "span logits [1, classes, spans]",
+      "token start/end/inside logits [1, words, classes, 3]"
+    ]
+  },
+  "lanes": [
+    { "key": "producer", "prompt": "wine producer or winery name" },
+    { "key": "wine_name", "prompt": "wine name or cuvee" },
+    { "key": "appellation", "prompt": "wine appellation, region or country" }
+  ],
+  "provisioning": {
+    "build_time": "./gradlew :app:assembleDebug -PglinerLabAssets=true (requires pinned bytes/sha256/url in this file)",
+    "device_time": "Settings > Scanner testing > GLiNER lane lab > Import model files (ONNX + tokenizer.json + gliner_config.json)",
+    "producer": "tools/fetch-gliner-small-int4.py --pin"
+  },
+  "runtime": "com.microsoft.onnxruntime:onnxruntime-android:1.21.1",
+  "validation": "Models are not shipped in this repository. The lab refuses to run an unpinned, missing or non-INT4 graph and reports exactly which file failed."
+}

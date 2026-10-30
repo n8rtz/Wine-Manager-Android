@@ -95,11 +95,14 @@ internal object TextLabSpatialPreview {
         candidate:String="spatial_lab",stagePrefix:String="spatial_",
         policy:ProducerResolver.Policy=ProducerResolver.Policy.prod,
         fillEngine:com.yourapp.wine.fill.FillEngine?=null,
-        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault) {
+        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault,
+        // GLiNER lane lab: grouped lane observations replace the raw per-line readings as this
+        // contender's input. Null keeps every existing caller byte-identical.
+        recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
-            val rawOriginal=TextLabFormPreview.records(journal)
+            val rawOriginal=recordsOverride ?: TextLabFormPreview.records(journal)
             val filterOutcome=if(policy.minimumIndependentEngines<2) TextLabBottleFilter.filterTokens(rawOriginal) else null
             val isLabSpatial=policy.minimumIndependentEngines<2
             val original=filterOutcome?.kept ?: rawOriginal
