@@ -63,45 +63,14 @@ def library_feed(model) -> dict:
 
 
 def our_feed(bundle: pathlib.Path) -> dict:
-    """The feed this repository builds, copied out of tools/fetch-gliner-small-int4.py."""
-    import json
+    """The feed this repository builds, via the shared builder."""
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from gliner_feeds import build_feed, decode_prompt, load_bundle  # noqa: PLC0415
 
-    import numpy as np
-    from tokenizers import Tokenizer
-
-    config = json.loads((bundle / "gliner_config.json").read_text())
-    tokenizer = Tokenizer.from_file(str(bundle / "tokenizer.json"))
-    ent_token = config.get("ent_token", "<<")
-    sep_token = config.get("sep_token", ">>")
-    max_width = int(config.get("max_width", 12))
-    ent_id = tokenizer.token_to_id(ent_token)
-    sep_id = tokenizer.token_to_id(sep_token)
-
-    words = TEXT.split()
-    ids: list[int] = []
-    words_mask: list[int] = []
-    for label in LABELS:
-        ids.append(ent_id)
-        words_mask.append(0)
-        for piece in tokenizer.encode(label, is_pretokenized=False).ids:
-            ids.append(piece)
-            words_mask.append(0)
-    ids.append(sep_id)
-    words_mask.append(0)
-    for index, word in enumerate(words):
-        for sub, piece in enumerate(tokenizer.encode(word, is_pretokenized=False).ids):
-            ids.append(piece)
-            words_mask.append(index + 1 if sub == 0 else 0)
-    spans = [(start, min(start + width - 1, len(words) - 1))
-             for start in range(len(words)) for width in range(1, max_width + 1)]
-    return {
-        "input_ids": np.array([ids], dtype=np.int64),
-        "attention_mask": np.ones((1, len(ids)), dtype=np.int64),
-        "words_mask": np.array([words_mask], dtype=np.int64),
-        "text_lengths": np.array([[len(words)]], dtype=np.int64),
-        "span_idx": np.array(spans, dtype=np.int64).reshape(1, -1, 2),
-        "span_mask": np.ones((1, len(spans)), dtype=bool),
-    }
+    tokenizer, config = load_bundle(bundle)
+    feed = build_feed(tokenizer, config, LABELS, TEXT)
+    print(f"\n== repository prompt ==\n  {decode_prompt(tokenizer, feed)[:200]}")
+    return feed
 
 
 def main(argv: list[str]) -> int:
@@ -122,6 +91,12 @@ def main(argv: list[str]) -> int:
     onnx_model = GLiNER.from_pretrained(args.model, load_onnx_model=True, onnx_model_file=args.onnx)
     feed = library_feed(onnx_model)
     show("library ONNX feed", feed)
+    from transformers import AutoTokenizer
+
+    library_tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
+    print(f"\n== library prompt ==\n  {library_tokenizer.decode(feed['input_ids'][0].tolist())[:200]}")
+    print(f"  <<ENT>> pieces: {library_tokenizer.tokenize('<<ENT>>')} "
+          f"ids={library_tokenizer.encode('<<ENT>>', add_special_tokens=False)}")
 
     if args.bundle:
         show("repository feed", our_feed(pathlib.Path(args.bundle)))

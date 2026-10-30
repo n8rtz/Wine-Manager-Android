@@ -126,64 +126,36 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
     import onnxruntime as ort
     from tokenizers import Tokenizer
 
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from gliner_feeds import build_feed, decode_prompt, prompt_words  # noqa: PLC0415
+
     config = json.loads(config_file.read_text())
-    ent_token = config.get("ent_token", "<<")
-    sep_token = config.get("sep_token", ">>")
     max_width = int(config.get("max_width", 12))
     tokenizer = Tokenizer.from_file(str(tokenizer_file))
-    ent_id = tokenizer.token_to_id(ent_token)
-    sep_id = tokenizer.token_to_id(sep_token)
-    if ent_id is None or sep_id is None:
-        raise SystemExit(f"tokenizer.json has no {ent_token!r}/{sep_token!r} token for this config")
-
     words = SMOKE_TEXT.split()
-    ids, words_mask = [], []
-    for label in PROMPTS:
-        ids.append(ent_id)
-        words_mask.append(0)
-        for piece in tokenizer.encode(label, is_pretokenized=False).ids:
-            ids.append(piece)
-            words_mask.append(0)
-    ids.append(sep_id)
-    words_mask.append(0)
-    for index, word in enumerate(words):
-        for sub, piece in enumerate(tokenizer.encode(word, is_pretokenized=False).ids):
-            ids.append(piece)
-            words_mask.append(index + 1 if sub == 0 else 0)
-    # The exported graph reshapes the span grid to (words, max_width, 2), so the spans have to be
-    # rectangular: every start with every width, the end index clipped at the last word.
-    spans = [(start, min(start + width, len(words) - 1)) for start in range(len(words))
-             for width in range(max_width)]
-    feeds = {
-        "input_ids": np.array([ids], dtype=np.int64),
-        "attention_mask": np.ones((1, len(ids)), dtype=np.int64),
-        "words_mask": np.array([words_mask], dtype=np.int64),
-        "text_lengths": np.array([[len(words)]], dtype=np.int64),
-        "span_idx": np.array(spans, dtype=np.int64).reshape(1, -1, 2),
-        "span_mask": np.ones((1, len(spans)), dtype=bool),
-    }
-    session = ort.InferenceSession(str(int4), providers=["CPUExecutionProvider"])
-    available = {item.name for item in session.get_inputs()}
-    shapes = {item.name: item.shape for item in session.get_inputs()}
-    print(f"[4/5] graph inputs: {shapes}")
-    feeds = {key: value for key, value in feeds.items() if key in available}
-    logits = session.run(None, feeds)[0]
-    print(f"[4/5] smoke run ok: inputs={sorted(available)} output={logits.shape}")
+    feed = build_feed(tokenizer, config, PROMPTS, SMOKE_TEXT)
+    print(f"[4/5] prompt words: {' '.join(prompt_words(PROMPTS, config))}")
+    print(f"[4/5] decoded prompt+text: {decode_prompt(tokenizer, feed)[:160]}")
+
+    def run(path: pathlib.Path):
+        session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
+        available = {item.name for item in session.get_inputs()}
+        feeds = {key: value for key, value in feed.items() if key in available}
+        return session.run(None, feeds)[0]
+
+    logits = run(int4)
+    print(f"[4/5] smoke run ok: output={logits.shape} words={len(words)} max_width={max_width}")
     if reference is not None and reference.is_file():
-        reference_session = ort.InferenceSession(str(reference), providers=["CPUExecutionProvider"])
-        reference_logits = reference_session.run(None, feeds)[0]
-        print(f"[4/5] un-quantized reference: output={reference_logits.shape}")
-        print(f"       max |int4 - fp32| = {float(np.abs(reference_logits - logits).max()):.4f}")
-        logits = reference_logits
-        print("[4/5] lane spans below are from the un-quantized export")
-    print(f"       words={len(words)} max_width={max_width} spans={len(spans)}")
-    if logits.ndim == 3 and logits.shape[1] == len(spans):
-        scores = 1.0 / (1.0 + np.exp(-logits[0]))
-        for label_index, label in enumerate(PROMPTS):
-            best = scores[:, label_index].argmax()
-            if scores[best, label_index] >= 0.5:
-                start, end = spans[best]
-                print(f"       {label}: {' '.join(words[start:end+1])} ({scores[best, label_index]:.2f})")
+        reference_logits = run(reference)
+        print(f"[4/5] un-quantized reference: output={reference_logits.shape} "
+              f"max |int4 - fp32| = {float(np.abs(reference_logits - logits).max()):.4f}")
+    scores = 1.0 / (1.0 + np.exp(-logits.astype("float64")))
+    per_span = scores.reshape(-1, scores.shape[-1])
+    for label_index, label in enumerate(PROMPTS):
+        best = int(per_span[:, label_index].argmax())
+        start, end = best // max_width, min(best // max_width + best % max_width, len(words) - 1)
+        print(f"       {label}: {' '.join(words[start:end+1])} "
+              f"({per_span[best, label_index]:.3f})")
 
 
 def pin_manifest(out: pathlib.Path, files: dict[str, pathlib.Path], urls: dict[str, str]) -> None:

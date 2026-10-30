@@ -97,90 +97,53 @@ def check_graph(model: pathlib.Path) -> tuple[list[str], list[str]]:
     return inputs, outputs
 
 
-def spans_for(words: int, max_width: int) -> list[tuple[int, int]]:
-    """Every start with every width, end clipped at the last word.
-
-    The graph reshapes the grid to (words, max_width, ...), so it has to be rectangular; the
-    clipped spans are masked out by the decoder, not dropped from the list.
-    """
-    return [(start, min(start + width - 1, words - 1))
-            for start in range(words) for width in range(1, max_width + 1)]
-
-
 def smoke(config: dict, tokenizer_file: pathlib.Path, inputs: list[str], bundle: pathlib.Path, text: str) -> bool:
     import numpy as np
     import onnxruntime as ort
     from tokenizers import Tokenizer
 
-    ent_token = config.get("ent_token", "<<")
-    sep_token = config.get("sep_token", ">>")
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from gliner_feeds import build_feed  # noqa: PLC0415
+
     max_width = int(config.get("max_width", 12))
     tokenizer = Tokenizer.from_file(str(tokenizer_file))
-    ent_id = tokenizer.token_to_id(ent_token)
-    sep_id = tokenizer.token_to_id(sep_token)
-    print(f"ent_token {ent_token!r} -> {ent_id}; sep_token {sep_token!r} -> {sep_id}")
-    if ent_id is None or sep_id is None:
-        raise SystemExit("tokenizer.json has no prompt marker from gliner_config.json")
     words = text.split()
-    ids: list[int] = []
-    words_mask: list[int] = []
-    for prompt in PROMPTS:
-        ids.append(ent_id)
-        words_mask.append(0)
-        pieces = tokenizer.encode(prompt, is_pretokenized=False).ids
-        ids.extend(pieces)
-        words_mask.extend([0] * len(pieces))
-    ids.append(sep_id)
-    words_mask.append(0)
-    for index, word in enumerate(words):
-        pieces = tokenizer.encode(word, is_pretokenized=False).ids
-        for sub, piece in enumerate(pieces):
-            ids.append(piece)
-            words_mask.append(index + 1 if sub == 0 else 0)
-    spans = spans_for(len(words), max_width)
-    feeds = {
-        "input_ids": np.array([ids], dtype=np.int64),
-        "attention_mask": np.ones((1, len(ids)), dtype=np.int64),
-        "words_mask": np.array([words_mask], dtype=np.int64),
-        "text_lengths": np.array([[len(words)]], dtype=np.int64),
-        "span_idx": np.array([[[start, end] for start, end in spans]], dtype=np.int64),
-        "span_mask": np.ones((1, len(spans)), dtype=bool),
-    }
-    feeds = {key: value for key, value in feeds.items() if key in inputs}
+    feed = build_feed(tokenizer, config, PROMPTS, text)
+    span_count = feed["span_idx"].shape[1]
+    feeds = {key: value for key, value in feed.items() if key in inputs}
     session = ort.InferenceSession(str(bundle / MODEL_FILE), providers=["CPUExecutionProvider"])
     logits = session.run(None, feeds)[0]
-    print(f"prompt tokens: {len(ids) - sum(1 for mask in words_mask if mask) - len(words)} · words: {len(words)} · spans: {len(spans)}")
+    print(f"words: {len(words)} · spans: {span_count} · max_width: {max_width}")
     print(f"logits shape: {logits.shape}")
     scores = 1.0 / (1.0 + np.exp(-logits.astype("float64")))
     classes = len(PROMPTS)
     shape = scores.shape
-    # The same branch order and the same guards as GlinerOnnxModel.decode; a shape accepted here
-    # must also be accepted there, and vice versa.
-    if scores.ndim == 2 and shape[0] == len(spans) and shape[1] == classes:
+    if shape == (1, len(words), max_width, classes):
+        layout, per_span = "span logits [1, words, max_width, classes]", scores[0].reshape(span_count, classes)
+    elif scores.ndim == 2 and shape[0] == span_count and shape[1] == classes:
         layout, per_span = "span logits [spans, classes]", scores
-    elif scores.ndim == 3 and shape[0] == 1 and shape[1] == len(spans) and shape[2] == classes:
+    elif scores.ndim == 3 and shape[0] == 1 and shape[1] == span_count and shape[2] == classes:
         layout, per_span = "span logits [1, spans, classes]", scores[0]
-    elif scores.ndim == 3 and shape[0] == 1 and shape[1] == classes and shape[2] == len(spans):
+    elif scores.ndim == 3 and shape[0] == 1 and shape[1] == classes and shape[2] == span_count:
         layout, per_span = "span logits [1, classes, spans]", scores[0].T
-    elif scores.ndim == 4 and shape[0] == 1 and shape[1] == len(words) and shape[2] == max_width and shape[3] == classes:
-        layout = "span logits [1, words, max_width, classes]"
-        per_span = scores[0].reshape(len(spans), classes)
-    elif scores.ndim == 4 and shape[0] == 1 and shape[1] == len(spans) and shape[2] == classes and shape[3] == 1:
+    elif scores.ndim == 4 and shape[0] == 1 and shape[1] == span_count and shape[2] == classes and shape[3] == 1:
         layout, per_span = "span logits [1, spans, classes, 1]", scores[0, :, :, 0]
-    elif scores.ndim == 4 and shape[0] == 1 and shape[1] == len(words) and shape[2] == classes and shape[3] == 3:
-        print(f"output shape {shape} is the token start/end/inside layout; the app decodes it, this script does not")
-        return False
     else:
-        print(f"output shape {shape} is not one of the app's accepted layouts for {len(spans)} spans and "
+        print(f"output shape {shape} is not one of the app's accepted layouts for {span_count} spans and "
               f"{classes} classes; the screen would report it and stop")
         return False
     print(f"layout: {layout}")
-    for label_index, prompt in enumerate(PROMPTS):
+    ok = False
+    for label_index, label in enumerate(PROMPTS):
         column = per_span[:, label_index]
         best = int(column.argmax())
-        start, end = spans[best]
-        verdict = "accepted" if column[best] >= 0.5 else "below threshold"
-        print(f"{prompt}: {' '.join(words[start:end+1])!r} ({column[best]:.3f}, {verdict})")
+        start, offset = divmod(best, max_width)
+        end = min(start + offset, len(words) - 1)
+        print(f"{label}: {' '.join(words[start:end+1])} ({column[best]:.3f})")
+        ok = ok or float(column[best]) >= 0.5
+    if not ok:
+        print("no lane reaches 0.5 on the sample text: the bundle runs, but check the prompt "
+              "convention against tools/compare-gliner-onnx.py before trusting the labels")
     return True
 
 
