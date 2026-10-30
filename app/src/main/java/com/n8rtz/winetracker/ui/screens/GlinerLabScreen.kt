@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -68,7 +67,6 @@ internal fun GlinerLabScreen(
     onClose:()->Unit,
 ) {
     val clipboard=LocalClipboardManager.current
-    var expandedDetail by remember { mutableStateOf(emptySet<String>()) }
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=12.dp,vertical=10.dp),
         verticalArrangement=Arrangement.spacedBy(10.dp),
@@ -167,11 +165,8 @@ internal fun GlinerLabScreen(
                     else "Labels",style=MaterialTheme.typography.titleMedium)
             }
             items(state.samples,key={ it.sample.image }) { row ->
-                LabelRow(row,expanded=row.sample.image in state.expanded,
-                    detail=row.sample.image in expandedDetail,enabled=!state.running,
+                LabelRow(row,expanded=row.sample.image in state.expanded,enabled=!state.running,
                     onToggle={ onToggleRow(row.sample.image) },
-                    onDetail={ expandedDetail=if(row.sample.image in expandedDetail)
-                        expandedDetail-row.sample.image else expandedDetail+row.sample.image },
                     onRun={ onRunImage(row.sample.image) })
             }
         }
@@ -215,103 +210,93 @@ private fun FieldScoreTable(correct:Map<String,Int>,total:Map<String,Int>) {
 }
 
 /**
- * One label: `# | status | one column per scored field`, cells green when they match the expected
- * answer, red when they do not, and `—` when the pipeline left the field blank. The trailing `+`
- * opens the lane and probe detail, exactly like the benchmark table's build rows.
+ * One label, collapsed: a `Parameter | Expected | Actual` table for the six fields, with the actual
+ * value green when it matches, red when it does not, and grey when the pipeline left it blank.
+ * Everything else - lanes, probes, timings, raw OCR - hides behind one "Raw OCR" toggle that starts
+ * closed, which is how the device photo lab keeps its rows readable.
  */
 @Composable
 private fun LabelRow(
     row:GlinerLabRow,
     expanded:Boolean,
-    detail:Boolean,
     enabled:Boolean,
     onToggle:()->Unit,
-    onDetail:()->Unit,
     onRun:()->Unit,
 ) {
+    var open by remember(row.sample.image) { mutableStateOf(false) }
     val passColor=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
-    val numberWidth=34.dp
-    val statusWidth=84.dp
-    val fieldWidth=112.dp
+    val nameWidth=96.dp
+    val valueWidth=150.dp
     val result=row.result
-    val fields=result?.fieldResults.orEmpty()
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=6.dp),
-            verticalArrangement=Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=8.dp),
+            verticalArrangement=Arrangement.spacedBy(4.dp)) {
             SelectionContainer {
-                Column(Modifier.horizontalScroll(rememberScrollState())) {
-                    Row(verticalAlignment=Alignment.CenterVertically) {
-                        Row(Modifier.width(numberWidth),verticalAlignment=Alignment.CenterVertically) {
-                            Text("${row.index+1}",Modifier.weight(1f).padding(4.dp),
-                                style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                            DisableSelection {
-                                TextButton(onClick=onDetail,contentPadding=PaddingValues(0.dp),
-                                    modifier=Modifier.width(20.dp)) {
-                                    Text(if(detail) "−" else "+",style=MaterialTheme.typography.bodySmall)
-                                }
-                            }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text("${row.index+1}. ${row.displayName}",style=MaterialTheme.typography.bodyMedium)
+                    Text(result?.let { "${it.status} · ${it.errorCount} err" } ?: row.status,
+                        style=MaterialTheme.typography.bodySmall)
+                }
+            }
+            if(result!=null) {
+                SelectionContainer {
+                    Column(Modifier.horizontalScroll(rememberScrollState())) {
+                        Row {
+                            Text("Parameter",Modifier.width(nameWidth).padding(4.dp),
+                                style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                            Text("Expected",Modifier.width(valueWidth).padding(4.dp),
+                                style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                            Text("Actual",Modifier.width(valueWidth).padding(4.dp),
+                                style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
                         }
-                        Text(result?.status ?: row.status,Modifier.width(statusWidth).padding(4.dp),
-                            style=MaterialTheme.typography.bodySmall,maxLines=1,
-                            overflow=TextOverflow.Ellipsis,softWrap=false)
-                        fields.forEach { field ->
+                        result.fieldResults.forEach { field ->
+                            HorizontalDivider(Modifier.width(nameWidth+valueWidth*2))
                             val color=when {
                                 field.observed.isBlank() -> MaterialTheme.colorScheme.onSurfaceVariant
                                 field.observed.trim().equals(field.expected.trim(),ignoreCase=true) -> passColor
                                 else -> MaterialTheme.colorScheme.error
                             }
-                            Text(field.observed.ifBlank { "—" },
-                                Modifier.width(fieldWidth).padding(4.dp),
-                                style=MaterialTheme.typography.bodySmall,color=color,
-                                maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
+                            Row {
+                                Text(field.label,Modifier.width(nameWidth).padding(4.dp),
+                                    style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                                Text(field.expected.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
+                                    style=MaterialTheme.typography.bodySmall,maxLines=1,
+                                    overflow=TextOverflow.Ellipsis,softWrap=false)
+                                Text(field.observed.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
+                                    style=MaterialTheme.typography.bodySmall,color=color,maxLines=1,
+                                    overflow=TextOverflow.Ellipsis,softWrap=false)
+                            }
                         }
                     }
                 }
-            }
-            if(detail) {
-                if(result!=null) {
-                    SelectionContainer { ResultDetail(result) }
-                } else {
-                    Text("not run",style=MaterialTheme.typography.bodySmall)
+                if(!result.message.isBlank()) {
+                    SelectionContainer { Text(result.message,style=MaterialTheme.typography.bodySmall) }
+                }
+                val lines=result.ocrLines.size
+                TextButton(onClick={ open=!open },contentPadding=PaddingValues(0.dp)) {
+                    Text(if(open) "− Raw OCR ($lines lines)" else "+ Raw OCR ($lines lines)",
+                        style=MaterialTheme.typography.bodySmall)
+                }
+                if(open) {
+                    SelectionContainer { Diagnostics(result) }
+                }
+            } else {
+                Text(if(expanded) "not run" else row.status,style=MaterialTheme.typography.bodySmall)
+                if(!expanded) {
+                    TextButton(onClick=onToggle,enabled=enabled) { Text("Select") }
+                }
+                if(expanded) {
                     TextButton(onClick=onRun,enabled=enabled) { Text("Run this label") }
                 }
-            }
-            if(!expanded && result==null) {
-                TextButton(onClick=onToggle,enabled=enabled) { Text("select") }
             }
         }
     }
 }
 
-/** Expected | observed | state | outcome for the six fields, then the lanes and the probes. */
+/** Everything the collapsed row hides: lanes, probes, residual, timings, per-field state, raw OCR. */
 @Composable
-private fun ResultDetail(result:GlinerLabImageResult) {
-    val nameWidth=78.dp
-    val valueWidth=150.dp
+private fun Diagnostics(result:GlinerLabImageResult) {
     Column(verticalArrangement=Arrangement.spacedBy(2.dp)) {
-        Column(Modifier.horizontalScroll(rememberScrollState())) {
-            Row {
-                listOf("Field","Expected","Observed","State","Outcome").forEach { header ->
-                    Text(header,Modifier.width(if(header=="Field") nameWidth else valueWidth).padding(4.dp),
-                        style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                }
-            }
-            result.fieldResults.forEach { field ->
-                HorizontalDivider(Modifier.width(nameWidth+valueWidth*4))
-                Row {
-                    Text(field.label,Modifier.width(nameWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                    Text(field.expected.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
-                    Text(field.observed.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
-                    Text(field.state.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                    Text(field.outcome.ifBlank { "—" },Modifier.width(valueWidth).padding(4.dp),
-                        style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,softWrap=false)
-                }
-            }
-        }
         GlinerLane.ordered.forEach { lane ->
             Text("${lane.shortName}: ${result.laneTexts[lane.key].orEmpty().ifBlank { "—" }}",
                 style=MaterialTheme.typography.bodySmall)
@@ -321,13 +306,17 @@ private fun ResultDetail(result:GlinerLabImageResult) {
             Text("residual ${result.residualTexts.size}: ${result.residualTexts.joinToString(" | ")}",
                 style=MaterialTheme.typography.bodySmall)
         }
+        result.fieldResults.forEach { field ->
+            Text("${field.label} · ${field.state.ifBlank { "-" }} · ${field.outcome}",
+                style=MaterialTheme.typography.bodySmall)
+        }
         Text("${result.layout} · ${result.wordCount} w · ${result.spanCount} spans · "+
             "ocr ${result.ocrMs} · gliner ${result.glinerMs} · post ${result.postMs} ms",
             style=MaterialTheme.typography.bodySmall)
-        if(result.message.isNotBlank()) Text(result.message,style=MaterialTheme.typography.bodySmall)
         if(result.ocrLines.isNotEmpty()) {
-            Text("OCR ${result.ocrLines.size}: ${result.ocrLines.joinToString(" | ")}",
-                style=MaterialTheme.typography.bodySmall)
+            Text("OCR ${result.ocrLines.size}",style=MaterialTheme.typography.bodySmall,
+                fontWeight=FontWeight.SemiBold)
+            result.ocrLines.forEach { Text(it,style=MaterialTheme.typography.bodySmall) }
         }
         if(result.notes.isNotBlank()) Text(result.notes.trim(),style=MaterialTheme.typography.bodySmall)
     }
