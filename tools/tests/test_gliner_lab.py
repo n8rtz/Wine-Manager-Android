@@ -288,6 +288,11 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
         self.assertIn('aggregateGlinerRows(samples,stopped=false)', view_model)
         self.assertIn('row.sample.target(field).status!="unresolved"', view_model)
 
+    def test_score_tables_are_always_visible(self):
+        screen = self.read(self.SCREEN)
+        self.assertIn("ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped))", screen)
+        self.assertNotIn("state.aggregate?.let", screen)
+
     def test_run_survives_leaving_the_screen(self):
         view_model = self.read(self.VM)
         self.assertIn("GlinerLabSession", view_model)

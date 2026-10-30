@@ -55,6 +55,7 @@ import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.viewmodels.GlinerAggregate
 import com.n8rtz.winetracker.viewmodels.GlinerLabRow
 import com.n8rtz.winetracker.viewmodels.GlinerLabState
+import com.n8rtz.winetracker.viewmodels.aggregateGlinerRows
 import com.yourapp.wine.gliner.GlinerLabImageResult
 import com.yourapp.wine.gliner.GlinerLane
 import com.yourapp.wine.phonecorpus.FailedParametersTable
@@ -141,8 +142,10 @@ internal fun GlinerLabScreen(
                 TextButton(onClick=onClose) { Text("Close") }
             }
         }
-        state.aggregate?.let { aggregate ->
-            item { SelectionContainer { ScoredResults(aggregate) } }
+        item {
+            SelectionContainer {
+                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped))
+            }
         }
         if(state.ran) {
             item {
