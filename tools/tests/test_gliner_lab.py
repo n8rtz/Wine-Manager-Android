@@ -125,15 +125,16 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("spans += start+offset", block)
         self.assertNotIn("minOf(start+width-1,words-1)", block)
 
-    def test_prompt_markers_are_tokenized_as_text(self):
-        # gliner feeds the SentencePiece pieces of <<ENT>>, not the added-token id in tokenizer.json
+    def test_prompt_markers_use_the_ent_and_sep_ids(self):
+        # The exported graph counts the lane classes from the <<ENT>> marker ids; tokenizing the
+        # marker as text makes it answer with [1, words, width, 0] (seen on device, 2026-10-30).
+        model = self.read(GLINER / "GlinerOnnxModel.kt")
+        self.assertIn("private fun promptTokens", model)
+        self.assertIn("tokenizer.tokenId(config.entToken)", model)
+        self.assertIn("zero lane classes", model)
+        self.assertNotIn("encodePromptWord", model.split("private fun promptTokens", 1)[1].split("fun promptPreview", 1)[0])
         tokenizer = self.read(GLINER / "GlinerTokenizer.kt")
         self.assertIn("fun encodePromptWord", tokenizer)
-        self.assertIn("encodePieces(word,false)", tokenizer)
-        model = self.read(GLINER / "GlinerOnnxModel.kt")
-        self.assertIn("private fun promptWords", model)
-        self.assertIn("tokenizer.encodePromptWord(it)", model)
-        self.assertNotIn("promptTokens", model)
 
     def test_real_exported_layout_is_decoded(self):
         # The exported graph answers with (1, words, maxWidth, lanes); the decoder must accept it

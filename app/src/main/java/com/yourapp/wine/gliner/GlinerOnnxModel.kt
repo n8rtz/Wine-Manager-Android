@@ -52,8 +52,7 @@ internal class GlinerOnnxModel private constructor(
         require(words.isNotEmpty()) { "No usable words in the OCR document" }
         if(SystemClock.elapsedRealtime()>=deadlineAtMs) error("GLiNER deadline reached before inference")
 
-        val prompt=promptWords(config,laneConfig.prompts)
-        val promptIds=prompt.flatMap { tokenizer.encodePromptWord(it) }
+        val promptIds=promptTokens(tokenizer,config,laneConfig.prompts)
         val textIds=words.map { tokenizer.encodeWord(it.normalized) }
         val maxWidth=minOf(laneConfig.maxWidth,config.maxWidth)
         val spans=spanIndex(words.size,maxWidth)
@@ -100,7 +99,7 @@ internal class GlinerOnnxModel private constructor(
                     ?: error("GLiNER output tensor holds ${tensor.info.type}, which is not float32 logits")
                 val flat=FloatArray(buffer.remaining())
                 buffer.get(flat)
-                val decoded=decode(flat,shape,classCount,words.size,spanCount,spans,limited)
+                val decoded=decode(flat,shape,classCount,words.size,spanCount,spans,limited,promptIds.take(12))
                 val entities=withGeometry(decoded.candidates,limited)
                 val elapsed=SystemClock.elapsedRealtime()-started
                 val lanes=GlinerLane.ordered.map { lane ->
@@ -161,19 +160,29 @@ internal class GlinerOnnxModel private constructor(
     }
 
     /**
-     * The prompt as words, which is how gliner builds it: `<<ENT>> label words <<ENT>> ... <<SEP>>`.
-     * The markers are tokenized as text (a marker is several SentencePiece pieces), so the prompt is
-     * a word list, not three long ids.
+     * The prompt: `ent_token, label words, ent_token, label words, …, sep_token`.
+     *
+     * The markers must be the ids `tokenizer.json` gives them (`<<ENT>>` -> 128002), not their
+     * SentencePiece pieces: the exported graph counts the lane classes from those marker ids, and a
+     * text-tokenized marker makes it emit a `[1, words, max_width, 0]` tensor with no classes at
+     * all. Labels are tokenized as whole phrases; the sequence is wrapped in CLS/SEP once.
      */
-    private fun promptWords(config:GlinerConfig,prompts:List<String>):List<String> {
-        val words=mutableListOf<String>()
+    private fun promptTokens(tokenizer:GlinerTokenizer,config:GlinerConfig,prompts:List<String>):List<Int> {
+        val entId=tokenizer.tokenId(config.entToken)
+            ?: error("Prompt marker '${config.entToken}' from gliner_config.json is not in tokenizer.json")
+        val sepId=tokenizer.tokenId(config.sepToken)
+            ?: error("Prompt marker '${config.sepToken}' from gliner_config.json is not in tokenizer.json")
+        val ids=mutableListOf<Int>()
         prompts.forEach { prompt ->
-            words += config.entToken
-            words += prompt.split(" ").filter { it.isNotBlank() }
+            ids += entId
+            ids += tokenizer.encodeWord(prompt)
         }
-        words += config.sepToken
-        return words
+        ids += sepId
+        return ids
     }
+
+    /** First ids of the encoded prompt, for the failure report when a graph rejects the feed. */
+    fun promptPreview():List<Int> = promptTokens(tokenizer,config,laneConfig.prompts).take(24)
 
     /**
      * Span grid: every start position with every width 1..maxWidth, inclusive end index, the end
@@ -213,6 +222,7 @@ internal class GlinerOnnxModel private constructor(
         spanCount:Int,
         spans:IntArray,
         document:GlinerDocument?=null,
+        promptIdsPreview:List<Int> = emptyList(),
     ):Decoded {
         val dims=shape.map { it.toInt() }
         val values=buffer
@@ -287,6 +297,10 @@ internal class GlinerOnnxModel private constructor(
                     }
                 }
             }
+            dims.lastOrNull()==0 -> error(
+                "GLiNER produced zero lane classes ${shape.contentToString()}: the prompt markers were not "+
+                    "tokenized with the ent/sep ids from gliner_config.json. Prompt ids were "+
+                    "${promptIdsPreview()}.")
             else -> error("Unrecognized GLiNER output shape ${shape.contentToString()}; expected "+
                 "$spanCount spans and $classCount lane classes over $words words")
         }

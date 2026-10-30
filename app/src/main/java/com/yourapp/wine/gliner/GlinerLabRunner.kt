@@ -112,7 +112,8 @@ internal object GlinerLabRunner {
                 model.label(document,SystemClock.elapsedRealtime()+GLINER_BUDGET_MS)
             } catch(cancel:CancellationException) { throw cancel }
             catch(error:Exception) {
-                return@withContext failed(sample,"gliner_failed","GLiNER stage failed: ${error.message}",
+                val promptHint=runCatching { "prompt ids ${model.promptPreview()}" }.getOrDefault("")
+                return@withContext failed(sample,"gliner_failed","GLiNER stage failed: ${error.message} · $promptHint",
                     ocr.lines.map { it.text },ocrMs,0,0,SystemClock.elapsedRealtime()-started,model)
             }
             glinerMs=labelled.elapsedMs

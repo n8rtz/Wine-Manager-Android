@@ -143,8 +143,15 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
         feeds = {key: value for key, value in feed.items() if key in available}
         return session.run(None, feeds)[0]
 
+    marker_ids = [feed["input_ids"][0][0], feed["input_ids"][0][1]]
+    print(f"[4/5] prompt starts {list(feed['input_ids'][0][:12])} (markers must be the <<ENT>>/<<SEP>> ids)")
     logits = run(int4)
     print(f"[4/5] smoke run ok: output={logits.shape} words={len(words)} max_width={max_width}")
+    if logits.shape[-1] != len(PROMPTS):
+        raise SystemExit(
+            f"the graph answered with {logits.shape[-1]} lane classes instead of {len(PROMPTS)}: "
+            "the prompt markers were not tokenized with the ent/sep ids (see prompt starts above, "
+            f"marker ids were {marker_ids})")
     if reference is not None and reference.is_file():
         reference_logits = run(reference)
         print(f"[4/5] un-quantized reference: output={reference_logits.shape} "
