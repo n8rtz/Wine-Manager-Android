@@ -300,7 +300,7 @@ internal class GlinerOnnxModel private constructor(
             dims.lastOrNull()==0 -> error(
                 "GLiNER produced zero lane classes ${shape.contentToString()}: the prompt markers were not "+
                     "tokenized with the ent/sep ids from gliner_config.json. Prompt ids were "+
-                    "${promptIdsPreview()}.")
+                    "$promptIdsPreview.")
             else -> error("Unrecognized GLiNER output shape ${shape.contentToString()}; expected "+
                 "$spanCount spans and $classCount lane classes over $words words")
         }
