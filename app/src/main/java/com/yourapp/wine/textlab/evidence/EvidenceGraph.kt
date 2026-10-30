@@ -28,6 +28,7 @@ internal object EvidenceGraphBuilder {
         isBroadGeographyLine:(String)->Boolean={ false },
         isKnownProducerLine:(String)->Boolean={ false },
         allowWineTitlePairs:Boolean=false,
+        allowHorizontalPhrasePairs:Boolean=false,
         wineTitlePairMaxHeightRatio:Float=1.45f,
         allowProducerSpans:Boolean=false,
         allowStackedWineTitles:Boolean=false,
@@ -298,6 +299,53 @@ internal object EvidenceGraphBuilder {
                     else -> "connector-linked phrase"
                 }
                 add(combinedText,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),construction)
+            }
+        }
+        // Gap F (Lab horizontal_phrase_pairs): a bounded title pair may be headed
+        // or footed by an aligned horizontal phrase (word-split lines such as
+        // SIGNATURE / SERIES over CABERNET SAUVIGNON). The singles-only pair
+        // loop above can never compose those, so pair them here under the same
+        // bounded-pair role test and vertical geometry.
+        if(allowHorizontalPhrasePairs && allowWineTitlePairs) {
+            val horizontalPhrases=phrases.toList().filter { it.construction=="aligned horizontal phrase" }
+            fun pairGeometry(upper:Phrase,lower:Phrase):Boolean =
+                upper.box.centerY()<lower.box.centerY() &&
+                    kotlin.math.abs(upper.box.centerX()-lower.box.centerX())<=maxOf(upper.box.width(),lower.box.width())*.25f &&
+                    (lower.box.top-upper.box.bottom<=maxOf(upper.box.height(),lower.box.height())*.65f ||
+                        lower.box.top-upper.box.bottom<=.08f) &&
+                    lower.box.centerY()-upper.box.centerY()<=maxOf(upper.box.height(),lower.box.height())*1.8f
+            for(a in horizontalPhrases) for(b in singles) {
+                checkBudget()
+                if(a.observations.intersect(b.observations).isNotEmpty() || !sameEnginePass(a,b)) continue
+                if(pairGeometry(a,b) && isBoundedWineTitlePair(a.text,b.text))
+                    add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),"bounded vertical wine-title pair")
+            }
+            for(a in singles) for(b in horizontalPhrases) {
+                checkBudget()
+                if(a.observations.intersect(b.observations).isNotEmpty() || !sameEnginePass(a,b)) continue
+                if(pairGeometry(a,b) && isBoundedWineTitlePair(a.text,b.text))
+                    add(a.text+" "+b.text,a.observations+b.observations,BoxMath.union(listOf(a.box,b.box)),"bounded vertical wine-title pair")
+            }
+            // Word-split varietal lowers (CABERNET / SAUVIGNON as separate
+            // records with a letter-spaced gap the strict horizontal join
+            // rejects): compose the lower from two adjacent singles when the
+            // combined text passes the bounded-pair role test.
+            for(a in singles) for(b1 in singles) for(b2 in singles) {
+                checkBudget()
+                if(b1.observations.intersect(b2.observations).isNotEmpty() ||
+                    a.observations.intersect(b1.observations+b2.observations).isNotEmpty()) continue
+                if(!sameEnginePass(a,b1) || !sameEnginePass(b1,b2)) continue
+                val horizontalAdjacent=b1.box.centerX()<b2.box.centerX() &&
+                    BoxMath.verticalOverlap(b1.box,b2.box) >= .5f &&
+                    b2.box.left-b1.box.right<=.12f &&
+                    kotlin.math.abs(b1.box.centerY()-b2.box.centerY())<=minOf(b1.box.height(),b2.box.height())*.5f
+                if(!horizontalAdjacent) continue
+                val lowerText=b1.text+" "+b2.text
+                val lowerBox=BoxMath.union(listOf(b1.box,b2.box))
+                val syntheticLower=Phrase(-1,lowerText,b1.observations+b2.observations,lowerBox,"aligned horizontal phrase")
+                if(pairGeometry(a,syntheticLower) && isBoundedWineTitlePair(a.text,lowerText))
+                    add(a.text+" "+lowerText,a.observations+b1.observations+b2.observations,
+                        BoxMath.union(listOf(a.box,lowerBox)),"bounded vertical wine-title pair")
             }
         }
         // Horizontal heading fragments (e.g. article + title) can precede an isolated connector.

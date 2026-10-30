@@ -27,7 +27,8 @@ internal class LinkedWineResolver(private val index:Index,
             a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() } }
     }
     fun resolve(existingProducer:String,existingWine:String,producer:ProducerResolver.Decision,
-        spans:List<ProducerResolver.Span>,checkBudget:()->Unit={},policy:ProducerResolver.Policy=ProducerResolver.Policy.prod):Decision {
+        spans:List<ProducerResolver.Span>,checkBudget:()->Unit={},policy:ProducerResolver.Policy=ProducerResolver.Policy.prod,
+        includeSubEstates:Boolean=false):Decision {
         val trace=PipelineFunnel.Recorder("wine.")
         trace.visit("invoked",true)
         fun unchanged(reason:String,matches:List<Match> = emptyList(),completed:Boolean=true):Decision {
@@ -65,11 +66,26 @@ internal class LinkedWineResolver(private val index:Index,
             val candidates=producers.filterValues { rows ->
                 old.isBlank() || rows.first().entity.key==old ||
                     (ProducerResolver.distance(old,rows.first().entity.key)<=1 && rows.any { ProducerResolver.normalize(it.observed)==old })
-            }
+            }.toMutableMap()
             trace.visit("producer_compatible",candidates.isNotEmpty(),if(producers.isEmpty()) "no independently observed producer" else "different existing producer protected")
             if(candidates.isEmpty()) return unchanged("no independently observed producer for wine link")
             trace.visit("producer_bound",candidates.size<=8,"too many producer identities")
             if(candidates.size>8) return unchanged("too many producer identities; wine link abstained")
+            // Item 3c (Lab sub_estate_wine_linking): iconic wines may be held
+            // under a parenthetical sub-estate entity (Baron Philippe de
+            // Rothschild (Mouton Cadet)). Admit those entities for wine
+            // lookup only; the resolved producer display stays the parent.
+            val parentBySubId=mutableMapOf<String,ProducerResolver.Entity>()
+            if(includeSubEstates) {
+                for(entity in candidates.values.map { it.first().entity }.distinctBy { it.id }) {
+                    val subs=index.lookup(entity.key,33,checkBudget)
+                        .filter { it.id!=entity.id && it.key.startsWith(entity.key+" ") }
+                    for(sub in subs) if(sub.id !in candidates) {
+                        candidates[sub.id]=candidates.getValue(entity.id)
+                        parentBySubId[sub.id]=entity
+                    }
+                }
+            }
             for(span in spans) {
                 checkBudget()
                 val engine=if(span.engine=="mlkit") "mlkit" else if(span.engine.startsWith("paddle")) "paddle" else "other"
@@ -106,7 +122,7 @@ internal class LinkedWineResolver(private val index:Index,
                     val (_,rows)=exactGroups.entries.single()
                     val bestMatch=rows.minWith(compareBy<Match> { it.distance }.thenBy { it.wine.name })
                     val wine=bestMatch.wine
-                    val p=candidates.getValue(wine.producerId).first().entity
+                    val p=parentBySubId[wine.producerId] ?: candidates.getValue(wine.producerId).first().entity
                     val consistent=producer.acceptedId==null || producer.acceptedId==p.id || p.key==resolvedProducerKey
                     if(consistent) {
                         val previous=ProducerResolver.normalize(existingWine)
@@ -148,7 +164,7 @@ internal class LinkedWineResolver(private val index:Index,
             val separated=groups.none { (other,rivals) -> other!=pair && rivals.minOf { it.distance }<=best+1 }
             trace.visit("separated",separated,"linked wine rival too close")
             if(!separated) return unchanged("linked wine rival too close; unchanged",matches)
-            val p=candidates.getValue(pair.first).first().entity
+            val p=parentBySubId[pair.first] ?: candidates.getValue(pair.first).first().entity
             val wine=rows.minWith(compareBy<Match> { it.distance }.thenBy { it.wine.name }).wine
             val consistent=producer.acceptedId==null || producer.acceptedId==p.id ||
                 (policy.exactMatchFastPath && p.key==resolvedProducerKey)

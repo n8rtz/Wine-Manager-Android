@@ -169,3 +169,17 @@ kind of adjudication that silently caps two fields at once.
 6. Gap F, Gap G, Gap H (small, bounded).
 7. Gap K (validation labels) before any further rule batch; Gap J if
    catalog-gated rules multiply.
+
+## 6. Implementation outcomes (2026-10-29)
+
+Every gap above was implemented as a selectable Lab module and host-measured
+on the integrated floor. Integrated (Lab v6 floor **77/121**, parity gate
+77/115/121): Gap A (+2/-0, #116/#171), Gap E style appellations (+1/-0,
+#190), Gap D producer completion (+2/-0, #54/#104; the 4c-residual item).
+Measured but NOT integrated: Gap B (unrestricted -3; catalog-exact form
+host-inert -- fixture KB lacks Decoy; phone spot-check #188 required),
+Gap C (-1), Gap E deepest fallback (inert), Gap F (inert; #174 decided by
+the linked-wine stage), Gap G (inert), Gap H (inert). Item 3b retested on
+top of 4c: still zero effect, closed. Item 3c implemented, host-inert.
+Roadmap closures: 2a covered; 5e and 6a-6d moot (saturated fields).
+Details: `docs/lab-v5-124-diagnostic-a709ad6.md` Section 15.

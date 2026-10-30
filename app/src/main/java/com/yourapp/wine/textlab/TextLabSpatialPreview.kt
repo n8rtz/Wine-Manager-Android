@@ -152,14 +152,16 @@ internal object TextLabSpatialPreview {
                     TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                         useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                         exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage,
-                        appellationFallbackEngines=if(labModules.appellationWineFallback) 1 else 0)
+                        appellationFallbackEngines=if(labModules.appellationWineFallback) 1 else 0,
+                        deepestAppellationFallback=labModules.deepestAppellationFallback,styleAppellationWine=labModules.styleAppellationWine,producerAnchorFallback=labModules.producerAnchorFallback)
                 }
             } else {
                 TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
                     useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                     exactGeographyFastPath=policy.minimumIndependentEngines<2,
                     allowHybridVintageFallback=allowHybridVintage,
-                    appellationFallbackEngines=if(isLabSpatial && labModules.appellationWineFallback) 1 else 0)
+                    appellationFallbackEngines=if(isLabSpatial && labModules.appellationWineFallback) 1 else 0,
+                    deepestAppellationFallback=isLabSpatial && labModules.deepestAppellationFallback,styleAppellationWine=isLabSpatial && labModules.styleAppellationWine,producerAnchorFallback=isLabSpatial && labModules.producerAnchorFallback)
             }
             val evidenceSpans=if(engine!=null && evidenceResult!=null && (!isLabSpatial || labModules.spatialSemanticGuards)) {
                 producerEvidenceSpans(evidenceResult,engine)
@@ -232,7 +234,7 @@ internal object TextLabSpatialPreview {
                             val wineBefore=row["wine_name"].orEmpty()
                             var wineFailureTelemetry=emptyMap<String,String>()
                             fun runLinkedWineLookup(policy:ProducerResolver.Policy)=
-                                LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget,policy)
+                                LinkedWineResolver(linkedIndex,onFailureTelemetry={ wineFailureTelemetry=it }).resolve(before,wineBefore,decision,spans,checkProducerBudget,policy,includeSubEstates=isLabMode && labModules.subEstateWineLinking)
                             val linked=try { runLinkedWineLookup(activePolicy) }
                                 catch(cancel:CancellationException) { throw cancel }
                                 catch(error:Exception) { LinkedWineResolver.Decision(decision.value,wineBefore,"linked lookup failed; unchanged: ${error.javaClass.simpleName}",telemetry=
@@ -361,6 +363,59 @@ internal object TextLabSpatialPreview {
                                     "producer_gazetteer_version" to producerIndex.version))
                             }
                         }
+                        // Gap D (Lab producer_completion_match): a truncated final
+                        // producer completed by the unique longer observed producer
+                        // span that contains its tokens in order (Les Chemins ->
+                        // Les Chemins d'Onairac). Observed spans only; no catalog
+                        // invention, and competing completions abstain.
+                        if(isLabMode && labModules.producerCompletionMatch && row["producer"].orEmpty().isNotBlank()) {
+                            val finalTokens=TextNorm.normalize(row["producer"].orEmpty())
+                                .split(Regex("\\s+")).filter(String::isNotBlank)
+                            if(finalTokens.size>=2 || (finalTokens.size==1 && finalTokens.single().length>=5)) {
+                                val spanCandidates=(evidenceResult?.hypotheses.orEmpty()
+                                    .filter { it.values.keys==setOf(com.yourapp.wine.fill.FieldId.PRODUCER) }
+                                    .map { it.values.getValue(com.yourapp.wine.fill.FieldId.PRODUCER) })
+                                    .map { TextNorm.scrub(it) }.filter(String::isNotBlank).distinct()
+                                val completionBoilerplate=Regex("\\b(mis|bouteille\\w*|produit|vin de|coteaux|vignobles|cuvee)\\b")
+                                val completions=spanCandidates.filter { candidate ->
+                                    val candidateTokens=TextNorm.normalize(candidate)
+                                        .split(Regex("\\s+")).filter(String::isNotBlank)
+                                    candidateTokens.size>finalTokens.size &&
+                                        candidateTokens.size<=finalTokens.size+3 &&
+                                        (finalTokens.size>=2 || (candidateTokens.size>=3 &&
+                                            candidateTokens.last()==finalTokens.single() &&
+                                            candidateTokens.first() in setOf("baron","chateau","domaine","maison","villa","tenuta","chateaux"))) &&
+                                        run {
+                                            // Tokens of the candidate not consumed by the
+                                            // in-order match must look like name words.
+                                            var i=0
+                                            val extras=mutableListOf<String>()
+                                            for(token in candidateTokens) {
+                                                if(i<finalTokens.size && token==finalTokens[i]) i++ else extras+=token
+                                            }
+                                            i==finalTokens.size && extras.all { extra ->
+                                                extra in setOf("de","du","di","des","d","la","le","les") ||
+                                                    (extra.length>=5 && extra !in finalTokens)
+                                            }
+                                        } &&
+                                        !completionBoilerplate.containsMatchIn(TextNorm.normalize(candidate)) &&
+                                        !com.yourapp.wine.extract.WineDesignations.isAppellationName(candidate) &&
+                                        engine?.let { e -> com.yourapp.wine.kb.PlaceGazetteer(
+                                            com.yourapp.wine.kb.SupplementedWineKnowledgeBase(e.baseKb))
+                                            .matches(TextNorm.normalize(candidate)).isEmpty() }==true &&
+                                        true
+                                }.distinctBy { TextNorm.normalize(it) }
+                                if(completions.size==1) {
+                                    row["producer_before_completion"]=row["producer"].orEmpty()
+                                    row["producer"]=completions.single()
+                                    row["producer_state"]="YELLOW"
+                                    row["producer_reason"]="truncated producer completed from the unique longer observed producer span; confirm manually"
+                                    row["producer_completion_status"]="suggestion"
+                                } else {
+                                    row["producer_completion_status"]="no_unique_completion"
+                                }
+                            }
+                        }
                         if(isLabMode && engine!=null && row["subregion"].orEmpty().isBlank()) {
                             if(labModules.blankSubregionFuzzy) {
                                 val prodMatchLines=decision.matches.filter { it.distance <= 1 }.map { it.observed }.toSet()
@@ -370,6 +425,7 @@ internal object TextLabSpatialPreview {
                                         existingCountry=row["country"].orEmpty(),
                                         existingRegion=row["region"].orEmpty(),
                                         existingProducer=row["producer"].orEmpty(),
+                                        existingWine=row["wine_name"].orEmpty(),
                                         knownProducerLineObservations=prodMatchLines,
                                         checkBudget=checkProducerBudget,
                                     )

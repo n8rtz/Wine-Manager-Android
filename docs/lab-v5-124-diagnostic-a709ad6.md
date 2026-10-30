@@ -238,3 +238,52 @@ Two new Lab modules, each measured alone and combined on the 66/122 floor, then 
 Phone verification: checklist item 2g. **Phone-verified 2026-10-29 (build `f5cfe0e383d0`): exact match** — Lab v6 72/121 (43 one-error, 6 with 2+), producer 100, wine_name 91, Prod v5.0 frozen at 62/121 with wine_name 82.
 
 Dataset change 2026-10-29: #169 producer (`La Rioja Alta`) is blown out by lighting and is now marked `unresolved` in `scoring.json` (same treatment as #125 wine_name and #176 vintage). #169 leaves complete-score eligibility: Lab v6 floor is now **72/121 complete, 115/121 at most one error** (was 72/122; #169 had two errors, so complete and <=1 counts are unchanged; producer is 100/123). The host parity gate's eligible count is 121. Historical phone results quoted elsewhere were measured on the 122-eligible dataset.
+
+## 15. Gap-analysis implementation batch (2026-10-29): Lab v6 floor 77/121
+
+All gaps from `docs/lab-v6-remaining-failure-analysis.md` were implemented as
+selectable Lab modules and host-measured alone on the integrated floor; only
+net-positive no-loss modules were integrated into Lab v6.
+
+**Integrated (+5 complete, 72 -> 77/121, parity gate raised to 77/115/121):**
+- Gap A `appellation_title_arbitration` (+2/-0: #116, #171 wine). A clean
+  single-line title above the appellation and below another identity line is
+  boosted to rank 74 over appellation-as-wine; guards reject classification
+  tokens, single style words, fragments of other identity values, tokens of
+  different-phrase producer hypotheses (<=2 edits), and the top-ranked
+  producer hypothesis itself (that last guard cured the #113 BAUDARA loss).
+- Gap E `style_appellation_wine` (+1/-0: #190 wine `Rosso di Montalcino`).
+  Two-line style appellations composed from vertically adjacent records in
+  `AppellationFallback`; such names are not `Place` entries.
+- Gap D `producer_completion_match` (+2/-0: #54, #104 producer). The final
+  producer is completed by the unique longer producer *hypothesis* whose
+  tokens contain the final tokens in order; extras must be connectors or
+  >=5-letter name words, no boilerplate/appellation candidates, and a
+  one-token final may complete only to a >=3-token titled candidate ending
+  in that token (Baron de la Variere). The raw-span variant measured +1/-10
+  and the hypothesis-only variant +1/-3 before the extra-token guards.
+
+**Implemented, measured, NOT integrated (selectable for future tests):**
+- Gap B `producer_headed_wine_guard`: unrestricted form -3 (legitimate
+  cuvee heads all carry producer hypotheses); catalog-exact form is
+  host-inert because the fixture KB lacks names such as Decoy (#188) --
+  phone spot-check required before any integration (Gap J divergence).
+- Gap C `identity_text_quality_gate`: -1 (#105 wine ownership side effect);
+  its targets (#182/#68/#119) are decided at later stages.
+- Gap E `deepest_appellation_fallback`: inert (#92 fallback never sees two
+  resolvable appellation places).
+- Gap F `horizontal_phrase_pairs`: inert; #174's pair lower is decided by
+  the linked-wine stage, not the graph (see analysis doc).
+- Gap G `classification_wine_name`: inert; no exact `Premier Grand Cru
+  Classe` phrase survives OCR on #90.
+- Gap H `appellation_subregion_demotion`: inert; #154's Porto subregion is
+  not produced by the gated fallback path.
+- Item 3b retest `producer_anchor_fallback`: still zero effect on top of
+  4c spans (extractor abstains on #43/#58/#62/#71). Closed as tested.
+- Item 3c `sub_estate_wine_linking`: inert on host; the sub-estate entity
+  is not reached through the bridge lookup for #106. Not integrated.
+
+Remaining known residuals are unchanged from the gap analysis: #42/#61
+(garbled span winner), #43 (rotated reading, OCR-side), #60 (producer-
+headed pair competition), #174/#178 (upstream word-split / safe triple),
+Margaux-garbage producers (#56/#62/#69, no catalog-proximate string).

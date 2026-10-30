@@ -70,7 +70,7 @@ internal class AppellationFallback(private val kb:WineKnowledgeBase) {
         return edits==1
     }
 
-    fun combine(baseline:Map<FieldId,String>,records:List<TokenRecord>,config:Config):Map<FieldId,String> {
+    fun combine(baseline:Map<FieldId,String>,records:List<TokenRecord>,config:Config,deepestAppellation:Boolean=false,styleAppellationWine:Boolean=false):Map<FieldId,String> {
         val wine=baseline[FieldId.WINE_NAME].orEmpty()
         if(wine.isNotBlank() && !(config.replaceMetadata && MetadataRules.isBoilerplate(wine))) return baseline
         // A printed named cuvée blocks this fallback, including one not successfully selected earlier.
@@ -105,7 +105,58 @@ internal class AppellationFallback(private val kb:WineKnowledgeBase) {
             val value=choices.values.single().maxBy { (o,_) -> o.record.score }.second.trim()
             return baseline+ (FieldId.WINE_NAME to value)
         }
+        // Gap E (Lab deepest_appellation_fallback): competing printed
+        // appellations resolve to the deepest mutually compatible one
+        // (Pessac-Leognan printed under Bordeaux outranks the wider name).
+        if(deepestAppellation && choices.size>1) {
+            val resolved=choices.entries.mapNotNull { (key,entries) ->
+                val text=entries.first().second
+                val place=gazetteer.matches(TextNorm.normalize(text))
+                    .firstOrNull { it.type=="appellation" } ?: return@mapNotNull null
+                key to place
+            }
+            if(resolved.size==choices.size) {
+                val deepest=resolved.filter { (key,place) ->
+                    resolved.all { (otherKey,other) ->
+                        otherKey==key || (view.compatible(place,other) &&
+                            view.ancestors(place).size>view.ancestors(other).size)
+                    }
+                }
+                if(deepest.size==1) {
+                    val value=choices.getValue(deepest.single().first)
+                        .maxBy { (o,_) -> o.record.score }.second.trim()
+                    return baseline+ (FieldId.WINE_NAME to value)
+                }
+            }
+        }
         if(choices.isNotEmpty()) return baseline // Competing visible appellations remain unresolved.
+        // Gap E (Lab style_appellation_wine): a style appellation split over
+        // two lines (ROSSO / DI MONTALCINO) is not a Place and no single-line
+        // path can produce it; compose vertically adjacent record pairs.
+        if(styleAppellationWine) {
+            val styleChoices=records.groupBy { it.engineId to it.variantId }.values.flatMap { pass ->
+                val sorted=pass.filter { it.bboxRect.width()>0 && it.bboxRect.height()>0 }
+                    .sortedBy { it.bboxRect.centerY() }
+                sorted.zipWithNext().mapNotNull { (upper,lower) ->
+                    val maxH=maxOf(upper.bboxRect.height(),lower.bboxRect.height())
+                    if(lower.bboxRect.top-upper.bboxRect.bottom>maxH*.8f ||
+                        kotlin.math.abs(upper.bboxRect.centerX()-lower.bboxRect.centerX())>
+                            maxOf(upper.bboxRect.width(),lower.bboxRect.width())*.35f) return@mapNotNull null
+                    val combined=(TextNorm.scrub(upper.textRaw)+" "+TextNorm.scrub(lower.textRaw)).trim()
+                    if(!WineDesignations.isAppellationName(combined)) return@mapNotNull null
+                    val places=(gazetteer.matches(TextNorm.normalize(combined))+
+                        gazetteer.matches(TextNorm.normalize(lower.textRaw))+
+                        gazetteer.matches(TextNorm.normalize(upper.textRaw))).distinct()
+                    if(places.isEmpty() || !places.any { place ->
+                            selected.all { alternatives -> alternatives.any { view.compatible(place,it) } }
+                        }) return@mapNotNull null
+                    EvidenceRanking.nameKey(combined) to combined
+                }
+            }.groupBy { it.first }
+            if(styleChoices.size==1) {
+                return baseline+ (FieldId.WINE_NAME to styleChoices.values.single().first().second)
+            }
+        }
         // No exact printed appellation: try the bounded one-edit repair over
         // the same passing observations, canonical spelling as the value.
         val fuzzyChoices=graph.observations.filter { o ->

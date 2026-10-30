@@ -8,7 +8,7 @@ import java.util.Calendar
 
 /** Experimental architecture, not fieldwise reference selection. Named components are fixed for every image. */
 internal class EvidenceAnchorHybrid(kb:WineKnowledgeBase) {
-    data class Config(val roleGuard:Boolean,val appellationEngines:Int=0) {
+    data class Config(val roleGuard:Boolean,val appellationEngines:Int=0,val deepestAppellation:Boolean=false,val styleAppellationWine:Boolean=false,val producerFallback:Boolean=false) {
         val id get()=if(!roleGuard) "anchors-only" else if(appellationEngines==0) "anchors-role-guard" else "anchors-role-guard-appellation-$appellationEngines"
     }
     companion object { const val VERSION="anchor-hybrid-v2"; val experiments=listOf(Config(false),Config(true),Config(true,1),Config(true,2)) }
@@ -20,6 +20,10 @@ internal class EvidenceAnchorHybrid(kb:WineKnowledgeBase) {
         // Keep the evidence-selected origin bundle together; never splice individual geography fields.
         val out=revised.toMutableMap()
         out[FieldId.PRODUCER]=baseline.getValue(FieldId.PRODUCER)
+        // Item 3b (Lab producer_anchor_fallback): a blank anchor must not
+        // discard a producer the evidence solver actually selected.
+        if(config.producerFallback && out.getValue(FieldId.PRODUCER).isBlank())
+            out[FieldId.PRODUCER]=revised.getValue(FieldId.PRODUCER)
         val savedVintage=baseline.getValue(FieldId.VINTAGE)
         // A populated saved anchor always wins. Only a canonical, plausible year produced by the
         // experimental evidence extractor may fill a genuinely blank saved value.
@@ -30,6 +34,6 @@ internal class EvidenceAnchorHybrid(kb:WineKnowledgeBase) {
         }
         if(config.roleGuard && EvidenceIdentityRoles.headingOnly(out.getValue(FieldId.PRODUCER))) out[FieldId.PRODUCER]=""
         // No country/region inference or producer substitution is introduced by these repairs.
-        return if(config.appellationEngines>0) fallback.combine(out,records,AppellationFallback.Config(config.appellationEngines,false)) else out
+        return if(config.appellationEngines>0) fallback.combine(out,records,AppellationFallback.Config(config.appellationEngines,false),config.deepestAppellation,config.styleAppellationWine) else out
     }
 }

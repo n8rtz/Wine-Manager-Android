@@ -122,6 +122,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         existingCountry:String="",
         existingRegion:String="",
         existingProducer:String="",
+        existingWine:String="",
         knownProducerLineObservations:Set<String> = emptySet(),
         checkBudget:()->Unit={},
     ):RawOcrSubregionMatch? {
@@ -153,6 +154,9 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         fun consider(form:RawOcrAppellationForm,dist:Int,observedSpan:String,engineId:String) {
             if(existingCountry.isNotBlank() && !form.country.equals(existingCountry,ignoreCase=true)) return
             if(existingRegion.isNotBlank() && !form.region.equals(existingRegion,ignoreCase=true)) return
+            // Gap H: the appellation already used as the wine name is not also a subregion.
+            if(modules.appellationSubregionDemotion && existingWine.isNotBlank() &&
+                EvidenceRanking.nameKey(form.subregion)==EvidenceRanking.nameKey(existingWine)) return
             if(existingCountry.isBlank() && existingRegion.isBlank() && (form.compactKey.length<10 || form.contextRequired)) return
             if(form.contextRequired && existingRegion.isBlank()) return
             val key=Triple(form.country.lowercase(java.util.Locale.ROOT),form.region.lowercase(java.util.Locale.ROOT),form.subregion.lowercase(java.util.Locale.ROOT))
@@ -615,6 +619,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 isBroadGeographyLine={ text -> isBroadGeographyLine(text) },
                 isKnownProducerLine={ text -> isKnownProducerLine(text) },
                 allowWineTitlePairs=allowWineTitlePairs || modules.verticalWineTitlePairs || modules.boundedWineTitlePairs,
+                allowHorizontalPhrasePairs=modules.horizontalPhrasePairs,
                 wineTitlePairMaxHeightRatio=if(modules.boundedWineTitlePairs) 5.5f else 1.45f,
                 allowProducerSpans=modules.splitProducerSpans,
                 allowStackedWineTitles=modules.stackedWineTitles,
@@ -1056,7 +1061,119 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         hypotheses.filter { it !in filteredHypotheses }.forEach {
             trace.add("candidate_filtered","phrase=${it.phrase.id}; values=${it.values}; reason=exact_geography_lock; rank=${it.rank}")
         }
-        val ranked=filteredHypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
+        // ---- Lab gap modules: hypothesis arbitration transforms (default off) ----
+        var effectiveHypotheses=filteredHypotheses
+        fun identityTokens(value:String):List<String> =
+            TextNorm.normalize(value).split(Regex("\\s+")).filter(String::isNotBlank)
+        if(modules.producerHeadedWineGuard) {
+            // Gap B: a wine stack headed by a line that is itself a producer
+            // candidate (DECOY over Pinot Noir) loses to the bare lower line.
+            val producerHyps=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) }
+            effectiveHypotheses=effectiveHypotheses.filterNot { h ->
+                if(h.values.keys!=setOf(FieldId.WINE_NAME)) false else {
+                    val wineTokens=identityTokens(h.values.getValue(FieldId.WINE_NAME))
+                    producerHyps.any { p ->
+                        isKnownProducerLine(p.values.getValue(FieldId.PRODUCER)) &&
+                        p.phrase.observations.size<h.phrase.observations.size &&
+                            p.phrase.observations.all { it in h.phrase.observations } &&
+                            identityTokens(p.values.getValue(FieldId.PRODUCER)).let { pt ->
+                                pt.size<wineTokens.size && wineTokens.subList(0,pt.size)==pt
+                            }
+                    }.also { if(it) trace.add("producer_headed_wine_guard","phrase=${h.phrase.id}; values=${h.values}") }
+                }
+            }
+        }
+        if(modules.identityTextQualityGate) {
+            // Gap C: long legal/back-label text must not win an identity field.
+            val boilerplate=Regex("\\b(mis|bouteille\\w*|proprietaire|bottled|embouteille\\w*|contains|sulfites|sulphites|warning|imported|government)\\b")
+            effectiveHypotheses=effectiveHypotheses.filterNot { h ->
+                val field=h.values.keys.singleOrNull()
+                if(field!=FieldId.PRODUCER && field!=FieldId.WINE_NAME) false else {
+                    val value=h.values.getValue(field)
+                    val tokens=identityTokens(value)
+                    val anchored=(field==FieldId.PRODUCER && isKnownProducerLine(value)) ||
+                        WineDesignations.isAppellationName(value) ||
+                        gazetteer.matches(TextNorm.normalize(value)).isNotEmpty()
+                    (!anchored && (tokens.size>=8 ||
+                        (tokens.size>=6 && boilerplate.containsMatchIn(TextNorm.normalize(value)))))
+                        .also { if(it) trace.add("identity_text_quality_gate","phrase=${h.phrase.id}; values=${h.values}") }
+                }
+            }
+        }
+        if(modules.appellationTitleArbitration) {
+            // Gap A: when an appellation-as-wine hypothesis competes with a clean
+            // title line printed above it (and below another identity line), the
+            // title outranks the appellation for the wine slot.
+            val wineHyps=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.WINE_NAME) }
+            val appellationHyps=wineHyps.filter {
+                WineDesignations.isAppellationName(it.values.getValue(FieldId.WINE_NAME))
+            }
+            if(appellationHyps.isNotEmpty()) {
+                val identityTopY=(wineHyps+effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) })
+                    .minOfOrNull { it.phrase.box.centerY() } ?: 0f
+                val classificationTokens=(WineDesignations.classificationCodes+WineDesignations.names)
+                    .flatMap { TextNorm.normalize(it).split(Regex("\\s+")) }.filter(String::isNotBlank).toSet()
+                val producerHypsByPhrase=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) }
+                    .map { it.phrase.id to identityTokens(it.values.getValue(FieldId.PRODUCER)) }
+                val otherIdentityKeys=effectiveHypotheses
+                    .filter { it.values.keys==setOf(FieldId.PRODUCER) || it.values.keys==setOf(FieldId.WINE_NAME) }
+                    .map { EvidenceRanking.nameKey(it.values.values.single()) }
+                val topProducerKey=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) }
+                    .maxByOrNull { it.rank }?.values?.getValue(FieldId.PRODUCER)
+                    ?.let { EvidenceRanking.nameKey(it) }
+                val boostedIds=wineHyps.filter { h ->
+                    val value=h.values.getValue(FieldId.WINE_NAME)
+                    val tokens=identityTokens(value)
+                    val key=EvidenceRanking.nameKey(value)
+                    h.phrase.observations.size==1 &&
+                        EvidenceRanking.nameKey(value)!=topProducerKey &&
+                        EvidenceRanking.independentEngines(h.phrase,graph).size>=2 &&
+                        !WineDesignations.isAppellationName(value) &&
+                        WineDesignations.classificationBase(value)==null &&
+                        !WineDesignations.isDesignation(value) &&
+                        tokens.none { it in classificationTokens } &&
+                        !(tokens.size==1 && tokens.single() in setOf("moelleux","brut","sec","doux","dry","sweet","riserva","reserva","crianza","premier","cru","classe")) &&
+                        producerHypsByPhrase.none { (phraseId,pt) -> phraseId!=h.phrase.id && pt!=tokens &&
+                            tokens.any { t -> pt.any { p -> p==t || (t.length>=5 && p.length>=5 && TextNorm.editDistance(t,p,2)!=null) } } } &&
+                        gazetteer.matches(TextNorm.normalize(value)).isEmpty() &&
+                        !isKnownProducerLine(value) &&
+                        !(typedIdentity && EvidenceIdentityRoles.namedEstate(value)) &&
+                        value.count(Char::isLetter)>=4 &&
+                        // Not a fragment of the appellation or of another title.
+                        appellationHyps.none { a ->
+                            val appKey=EvidenceRanking.nameKey(a.values.getValue(FieldId.WINE_NAME))
+                            key.length>=4 && (appKey.contains(key) || key.contains(appKey))
+                        } &&
+                        otherIdentityKeys.none { other -> other!=key && other.length>key.length && other.contains(key) } &&
+                        h.phrase.box.centerY()>identityTopY+0.01f &&
+                        appellationHyps.any { a -> h.phrase.box.centerY()<a.phrase.box.centerY() }
+                }.map { it.phrase.id to it.values }.toSet()
+                if(boostedIds.isNotEmpty()) {
+                    effectiveHypotheses=effectiveHypotheses.map { h ->
+                        if((h.phrase.id to h.values) in boostedIds)
+                            h.copy(rank=maxOf(h.rank,74.0),reason=h.reason+"; appellation-title arbitration")
+                        else h
+                    }
+                    trace.add("appellation_title_arbitration","boosted=${boostedIds.size}")
+                }
+            }
+        }
+        if(modules.classificationWineName) {
+            // Gap G: a standalone Premier Grand Cru Classe phrase can itself be
+            // the expected wine name (suppressed today as a bare classification).
+            val premierPhrase=graph.phrases.firstOrNull {
+                EvidenceRanking.nameKey(it.text)=="premiergrandcruclasse"
+            }
+            if(premierPhrase!=null && effectiveHypotheses.none {
+                    it.values[FieldId.WINE_NAME]?.let { v -> EvidenceRanking.nameKey(v) }=="premiergrandcruclasse"
+                }) {
+                effectiveHypotheses=effectiveHypotheses+ Hypothesis(
+                    mapOf(FieldId.WINE_NAME to "Premier Grand Cru Classé"),
+                    premierPhrase,72.0,"standalone Premier Grand Cru Classe as wine name")
+                trace.add("classification_wine_name","phrase=${premierPhrase.id}")
+            }
+        }
+        val ranked=effectiveHypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
         trace.add("extraction_limits","graph_truncated=${graph.truncated}; hypothesis_limit=${hypotheses.size>=MAX_HYPOTHESES}; hypotheses=${hypotheses.size}")
         val solution=EvidenceSolver.solve(ranked,view,graph,::checkBudget,trace,search)
         val exactLockedGeo:Pair<Hypothesis,Place>?=if(bestExactGeo!=null) {
@@ -1114,6 +1231,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 existingCountry=fill.fields[FieldId.COUNTRY]?.value.orEmpty(),
                 existingRegion=fill.fields[FieldId.REGION]?.value.orEmpty(),
                 existingProducer=fill.fields[FieldId.PRODUCER]?.value.orEmpty(),
+                existingWine=fill.fields[FieldId.WINE_NAME]?.value.orEmpty(),
                 checkBudget=::checkBudget,
             )
             if(fallback!=null) {

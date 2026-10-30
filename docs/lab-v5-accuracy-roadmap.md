@@ -60,7 +60,7 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
 
 ## Item 2 — Appellation `WINE_NAME` Normalization, Ranking & Fallback
 
-- [ ] **2a. Punctuation/hyphen-insensitive `nameKey` matching for appellation-as-`WINE_NAME` hypotheses**
+- [x] **2a. Punctuation/hyphen-insensitive `nameKey` matching for appellation-as-`WINE_NAME` hypotheses** — closed 2026-10-29 as covered: all 2a target labels already score correct via another route (see gap analysis).
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceRanking.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Hyphenated/apostrophe French appellation spellings (`Montagne-Saint-Emilion` vs `Montagne Saint Emilion`, `Cotes-du-Rhone` vs `Cotes du Rhone`, `Pessac-Leognan`) diverge between OCR spacing and catalog spelling during `WINE_NAME` hypothesis deduplication/selection.
   - **Target bottles:** `#46, #94, #122, #167`.
@@ -89,13 +89,13 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
   - **Suggested fix (Lab v4 only):** When no `d = 0` match exists and `existing` is blank, all-caps classification noise, or `d = 1` from the candidate, permit unambiguous well-separated (`rival >= d + 2`) primary LWIN `d = 1` matches to replace clearly non-producer `existing` noise.
   - **Target bottles:** `#56, #69, #96, #119, #126, #169`.
 
-- [ ] **3b. `EvidenceAnchorHybrid` fallback to `revised[PRODUCER]` when anchor producer is blank or dropped**
+- [ ] **3b. `EvidenceAnchorHybrid` fallback to `revised[PRODUCER]` when anchor producer is blank or dropped** — retested 2026-10-29 on top of integrated 4c spans (`producer_anchor_fallback`): still zero effect; extractor abstains on the targets. Closed as tested, module stays selectable.
   - **Host-tested 2026-10-29:** implemented behind a Lab gate (`producer_anchor_fallback`); measured **zero effect** on the 124-label corpus (the evidence extractor itself abstains on #43/#58/#62/#71, so there is no revised producer to fall back to) and reverted to keep the shipped tree evidence-only. Revisit together with Item 4c span generation.
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceAnchorHybrid.kt`
   - **Root cause:** When `form_summary` (`anchor`) leaves `PRODUCER` blank or its noisy token was removed, `EvidenceAnchorHybrid` can still reject a valid multi-word estate/producer found by `EvidenceExtractor` (`revised[PRODUCER]`).
   - **Target bottles:** `#43, #58, #62, #71`.
 
-- [ ] **3c. Parenthetical LWIN sub-estate producer linking in `LinkedWineResolver`**
+- [ ] **3c. Parenthetical LWIN sub-estate producer linking in `LinkedWineResolver`** — implemented 2026-10-29 (`sub_estate_wine_linking`, parent display preserved) and host-measured inert: the sub-estate entity is not reached through the host bridge lookup for #106. Not integrated; needs phone/bridge lookup investigation.
   - **Files:** `app/src/main/java/com/yourapp/wine/gazetteer/LinkedWineResolver.kt`
   - **Root cause:** In `producers.sqlite` / `wines.sqlite`, several iconic wines are linked under parenthetical sub-estate rows such as `Baron Philippe de Rothschild (Mouton Cadet)` (`#106`) or `Antinori (Guado al Tasso)` rather than the bare parent house key `baron philippe de rothschild`.
   - **Suggested fix (Lab v4 only):** When looking up linked wines for a confirmed parent producer `P`, also query primary LWIN sub-estate entities whose normalized key starts with `"$parentKey "` from a parenthetical `P (...)` display name, while keeping the resolved producer display name consistent.
@@ -138,7 +138,7 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
   - **Root cause:** Heavily stylized/curved script appellations (`Cote-Rotie` `#58`, `Chateauneuf-du-Pape` `#78`) or vertically split two-line appellations (`Montagne` / `Saint-Emilion` `#103`) fall outside `d = 0` and 1-edit bounds when unanchored or split across lines.
   - **Target bottles:** `#58, #78, #103`.
 
-- [ ] **5e. Optional single-region LWIN producer geography backfill when no place is printed on the front label**
+- [x] **5e. Optional single-region LWIN producer geography backfill when no place is printed on the front label** — closed 2026-10-29 as moot: geography is saturated on the current corpus (country/region 124/124, subregion 122/124); reopen with new labels.
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt`, `app/src/main/java/com/yourapp/wine/kb/WineKnowledgeBase.kt`
   - **Root cause:** Minimalist estate/cuvée front labels (`Domaine Rene Rostaing` `#67`, `Chateau La Fleur-Petrus` `#133`, `Vietti` `#171`) print no geographic appellation on the visible face or curved neck, leaving `Region`/`Subregion` blank unless linked-wine or single-appellation estate metadata is consulted.
   - **Target bottles:** `#67, #133, #171`.
@@ -147,22 +147,24 @@ Grounded in the earlier 125-label benchmark run (`0c88bda41164`, `cached_ocr`, 1
 
 ## Item 6 — Remaining 4 Vintage Recoveries (`120/4` -> `124/0`)
 
-- [ ] **6a. Repair OCR `I`/`l` -> `1` in 20th-century 4-character vintage tokens (`[Il]9[5-9]\d`)**
+Closed 2026-10-29 as moot on the current corpus: vintage scores 123/123 eligible (the one remaining label is dataset-unresolved), so none of 6a-6d has headroom. Reopen with new labels.
+
+- [x] **6a. Repair OCR `I`/`l` -> `1` in 20th-century 4-character vintage tokens (`[Il]9[5-9]\d`)**
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Serif `1` in `1989` / `1996` is read by OCR as `I989` or `l996` and skipped by `\b(?:19|20)\d{2}\b` (and rejected by `any(Char::isDigit)` rules). Guard against lot codes (`L9...` with >4 alphanumerics).
   - **Target bottles:** `#56, #96`.
 
-- [ ] **6b. Normalize spaced 4-digit vintage tokens (`(?:1\s*9|2\s*0)\s*\d\s*\d`)**
+- [x] **6b. Normalize spaced 4-digit vintage tokens (`(?:1\s*9|2\s*0)\s*\d\s*\d`)**
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Wide-tracked vintage typography (`2 0 1 9` or `20 20`) splits into spaced digits on a standalone centered line and misses contiguous 4-digit regexes.
   - **Target bottles:** `#160`.
 
-- [ ] **6c. Rejoin horizontally aligned split crest years (`20` + `16`)**
+- [x] **6c. Rejoin horizontally aligned split crest years (`20` + `16`)**
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceGraph.kt`, `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt`
   - **Root cause:** Labels flanking a central crest with `20` on the left and `16` on the right (`TextLabBottleFilter` already preserves split crest halves!) need a bounded horizontal pair combiner (`left = "19"|"20"`, `right = "\d\d"`, matching vertical center & height, symmetric around label midline) to emit `2016` when no contiguous 4-digit year exists.
   - **Target bottles:** `#26`.
 
-- [ ] **6d. `EvidenceAnchorHybrid` fallback to `revised[VINTAGE]` when `anchor[VINTAGE]` is blank**
+- [x] **6d. `EvidenceAnchorHybrid` fallback to `revised[VINTAGE]` when `anchor[VINTAGE]` is blank**
   - **Files:** `app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceAnchorHybrid.kt`
   - **Root cause:** Ensures any vintage recovered by 6a–6c in `EvidenceExtractor` flows into the final summary whenever `form_summary` (`anchor`) missed the vintage.
   - **Target bottles:** `#26, #56, #96, #160`.

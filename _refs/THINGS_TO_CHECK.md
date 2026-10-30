@@ -619,3 +619,7 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 1. [ ] With retained Lab attempts, tap **Prepare raw diagnostics JSON export**. Save the manifest and every numbered JSON part via the JSON document picker; each part must parse as JSON and be no larger than 20 MB. Do not send these through the CSV splitter.
 2. [ ] Verify per-attempt image identity/order, tokens, timings, traces, pipelines, nested fields and funnel records survive reconstruction. Confirm frozen Prod pipeline-step aggregates remain, without claiming raw traces absent from the frozen store. No photo bytes should be exported.
 3. [ ] Confirm **Prepare scored CSV export**, **Prepare recent builds CSV export**, and splitting an older CSV still produce their normal CSV outputs. Existing suite and device-photo JSON exports must be unaffected.
+
+## Lab v6 gap batch (77/121 host floor) — phone spot checks
+- [ ] Integrated gap modules reproduce on device: #116 (Payrouliere), #171 (Triton), #190 (Rosso di Montalcino), #54 (Les Chemins d'Onairac), #104 (Baron de la Variere)
+- [ ] #188 (Decoy): producer-headed wine guard is host-inert (fixture KB lacks Decoy); check whether phone wine still shows DECOY Pinot Noir before considering integration
