@@ -51,6 +51,7 @@ internal data class LabPostOcrModules(
     val geographyAppellationWine: Boolean = false,
     val decisiveFieldSelection: Boolean = false,
     val producerNearMatchUnprotected: Boolean = false,
+    val caseStandardization: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
     val producerRoleAndParticle: Boolean = false,
     val spatialSemanticGuards: Boolean = false,
@@ -98,6 +99,7 @@ internal data class LabPostOcrModules(
         GEOGRAPHY_APPELLATION_WINE("geography_appellation_wine", "geography-appellation-wine", "Geography appellation as wine", "Fill a blank wine name from the resolved appellation subregion"),
         DECISIVE_FIELD_SELECTION("decisive_field_selection", "decisive-field-selection", "Decisive field selection", "On solver abstention, keep the best finalist value instead of blanking the field"),
         PRODUCER_NEAR_MATCH_UNPROTECTED("producer_near_match_unprotected", "producer-near-match-unprotected", "Producer near-match without observation protection", "Retry the d<=1 catalog canonicalization when only exact-observation protection vetoed it"),
+        CASE_STANDARDIZATION("case_standardization", "case-standardization", "Final field case standardization", "Force final text fields to title case (minor words lowercase unless first)"),
         STACKED_WINE_TITLES(
             key = "stacked_wine_titles",
             shortName = "stacked-wine-titles",
@@ -201,6 +203,7 @@ internal data class LabPostOcrModules(
         ModuleId.GEOGRAPHY_APPELLATION_WINE -> geographyAppellationWine
         ModuleId.DECISIVE_FIELD_SELECTION -> decisiveFieldSelection
         ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> producerNearMatchUnprotected
+        ModuleId.CASE_STANDARDIZATION -> caseStandardization
         ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
         ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
@@ -246,6 +249,7 @@ internal data class LabPostOcrModules(
         ModuleId.GEOGRAPHY_APPELLATION_WINE -> copy(geographyAppellationWine = enabled)
         ModuleId.DECISIVE_FIELD_SELECTION -> copy(decisiveFieldSelection = enabled)
         ModuleId.PRODUCER_NEAR_MATCH_UNPROTECTED -> copy(producerNearMatchUnprotected = enabled)
+        ModuleId.CASE_STANDARDIZATION -> copy(caseStandardization = enabled)
         ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
         ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
@@ -271,7 +275,7 @@ internal data class LabPostOcrModules(
         producerRoleAndParticle=true, spatialSemanticGuards=true,
         boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
         appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true,
-        stackedAppellationWineBoost=true, geographyAppellationWine=true)
+        stackedAppellationWineBoost=true, geographyAppellationWine=true, caseStandardization=true)
 
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
@@ -316,7 +320,11 @@ internal data class LabPostOcrModules(
             // Lab v7 (host-verified +2/-0 each on the 77/121 floor):
             // stacked appellation wine boost (#103, #163) and geography
             // appellation as wine (#92, #163).
-            ModuleId.STACKED_APPELLATION_WINE_BOOST, ModuleId.GEOGRAPHY_APPELLATION_WINE)
+            ModuleId.STACKED_APPELLATION_WINE_BOOST, ModuleId.GEOGRAPHY_APPELLATION_WINE,
+            // Lab v7 display standardization (owner rule, 2026-10-30): final
+            // text fields forced to title case; formatting only, scorer
+            // case-folds so the 81/121 floor is unaffected by construction.
+            ModuleId.CASE_STANDARDIZATION)
         val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**
@@ -366,8 +374,7 @@ internal data class LabPostOcrModules(
             vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
             producerRoleAndParticle=true, spatialSemanticGuards=true,
             boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
-            appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true,
-        stackedAppellationWineBoost=true, geographyAppellationWine=true)
+            appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true)
         val bestBuild = prodV5Checkpoint
         val all = LabPostOcrModules(
             candidateIsolation = true,

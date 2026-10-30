@@ -641,3 +641,8 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 
 - [x] Lab v7 (all checkboxes off): 81/121 fully correct; new gains #92 wine `Pessac-Léognan`, #103 wine `Blaye Côtes de Bordeaux`, #163 wine `Castillon Côtes de Bordeaux`, #135 wine `Orange Muscat`
 - [x] Prod v6.0 row still 77/121 (frozen; the Orange Muscat catalog addition must not move any frozen Prod row)
+
+## Lab v7 case standardization (81/121 host floor) — phone checks
+- [ ] Lab v7 (all checkboxes off): still 81/121; final fields now title-cased, e.g. wine `Margaux` (not `MARGAUX`), producer `Cave de Roquebrun` on #129, `Les Chemins d'Onairac` on #54
+- [ ] Prod v6.0 row still 77/121 on the existing device (frozen); on a fresh install its first capture must also freeze at 77/121 (checkpoint integrity restored)
+- [ ] Spot-check a few off-corpus labels: producer/wine values read as standard title case instead of label-print ALL CAPS

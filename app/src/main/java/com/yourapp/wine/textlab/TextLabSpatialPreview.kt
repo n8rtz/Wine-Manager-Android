@@ -488,6 +488,17 @@ internal object TextLabSpatialPreview {
                         }
                     }
                 }
+                // Lab v7 case standardization (owner rule): after every other
+                // final-field mutation (near-match canonicalization, producer
+                // completion, geography fallbacks), force the final text
+                // fields to title case. Formatting only; scoring case-folds.
+                if(isLabSpatial && labModules.caseStandardization) {
+                    for(field in listOf("producer","wine_name","country","region","subregion")) {
+                        val value=row[field].orEmpty()
+                        if(value.isNotBlank()) row[field]=TextNorm.displayCase(value)
+                    }
+                    row["case_standardization"]="display_case_v1"
+                }
                 journal.add(candidate,stagePrefix+row.getValue("stage"),row.getValue("status"),
                     row.filterKeys { it !in setOf("candidate","stage","status","sequence","details") }+
                         mapOf("post_processing_version" to "$VERSION+${ProducerRepair.VERSION}+${ProducerResolver.VERSION}+${LinkedWineResolver.VERSION}",

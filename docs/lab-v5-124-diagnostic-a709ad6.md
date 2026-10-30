@@ -382,3 +382,26 @@ One cosmetic defect found: the header and run-history signature display
 only the 16 checkpoint modules although all 18 integrated modules were
 active (UI state restores prefs without withIntegrated(); the pipeline
 boundary applies it). Logged as Bug-029; no effect on results.
+
+## 19. Case standardization + Prod v6.0 checkpoint integrity fix (2026-10-30)
+
+Owner rule after testing 20 off-corpus labels: final text fields must be
+forced to title case (first letter of each word capitalized, all other
+letters lowercase; minor words lowercase unless first). Implemented as
+`TextNorm.displayCase` (wine-multilingual minor set: de/du/des, di/del/della,
+le/la/les, y, et, au/aux, von/zu, ...; hyphenated parts follow the same rule;
+French elision prefixes stay lowercase mid-value, d'Onairac; possessive
+tails stay lowercase, Hawk's). Applied in `TextLabSpatialPreview` after all
+other final-field mutations, Lab-only via the integrated module
+`case_standardization` (frozen Prod checkpoints do not contain the flag).
+Host result: score unchanged by construction (scorer case-folds): 81/121,
+115/121 <=1 error, zero scored gains/losses; 158 of 726 fields re-cased
+(e.g. MARGAUX -> Margaux, Cave De Roquebrun -> Cave de Roquebrun). 16/16
+standalone edge cases pass (L'Ermitage, O'Brien, 1er Cru, S.N.C., ...).
+
+Also found and fixed a freeze-integrity defect from batch 1: its
+withIntegrated() edit had also landed in `prodV6Checkpoint`, silently making
+the frozen Prod v6.0 definition 18 modules. The owner's phone was unaffected
+(Prod v6.0 had already frozen at the correct 16-module 77/121 before the
+batch-1 build ran), but a fresh install would have captured the wrong set.
+Checkpoint restored to exactly the frozen sixteen.

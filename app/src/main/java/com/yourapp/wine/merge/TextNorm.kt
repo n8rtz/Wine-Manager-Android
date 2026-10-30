@@ -60,6 +60,66 @@ object TextNorm {
         .replace(combiningMarks, "")
         .replace(multiSpace, " ").trim().lowercase(Locale.ROOT)
 
+    /**
+     * Minor words kept lowercase by [displayCase] unless they open the value:
+     * French/Italian/Spanish/Portuguese/German articles, prepositions and
+     * conjunctions common in wine names, plus English the/of/and/a/an.
+     */
+    private val displayCaseMinorWords = setOf(
+        "de", "du", "des", "di", "da", "del", "dello", "della", "delle", "dei", "degli",
+        "le", "la", "les", "il", "el", "los", "las", "y", "e", "et", "au", "aux", "en",
+        "sur", "von", "zu", "zum", "zur", "dos", "das", "do", "the", "of", "and", "a", "an")
+
+    /**
+     * Display standardization for final extracted fields: the first letter of
+     * each word is capitalized and every other letter is lowercased, except
+     * minor words (see [displayCaseMinorWords]) which stay lowercase unless
+     * they open the value. Hyphenated parts follow the same rule, a French
+     * elision prefix (d'Agassac, l'Ermitage) keeps its lowercase letter
+     * mid-value, and a possessive tail (Hawk's) is not treated as a new word.
+     * Whitespace runs collapse to single spaces. Digits and punctuation are
+     * preserved.
+     */
+    fun displayCase(text: String): String {
+        if (text.isBlank()) return text
+        return text.trim().split(multiSpace)
+            .mapIndexed { index, word -> displayCaseWord(word, first = index == 0) }
+            .joinToString(" ")
+    }
+
+    private fun displayCaseWord(word: String, first: Boolean): String {
+        val lowered = word.lowercase(Locale.ROOT)
+        if (!first && lowered.filter(Char::isLetter) in displayCaseMinorWords) return lowered
+        return lowered.split('-').mapIndexed { partIndex, part ->
+            if (partIndex > 0 && part.filter(Char::isLetter) in displayCaseMinorWords) part
+            else displayCaseSegment(part, elidedPrefix = !first && partIndex == 0 &&
+                part.length > 2 && part[1] == '\'' && (part[0] == 'd' || part[0] == 'l'))
+        }.joinToString("-")
+    }
+
+    private fun displayCaseSegment(segment: String, elidedPrefix: Boolean): String {
+        val out = StringBuilder(segment.length)
+        var segmentStart = true
+        for ((index, ch) in segment.withIndex()) {
+            when {
+                ch.isLetter() -> {
+                    out.append(if (segmentStart && !(elidedPrefix && index == 0)) ch.uppercaseChar() else ch)
+                    segmentStart = false
+                }
+                ch == '.' -> { out.append(ch); segmentStart = true }
+                ch == '\'' -> {
+                    out.append(ch)
+                    // A possessive/contraction tail ('s, 't) stays lowercase; a
+                    // real following segment (d'Agassac, O'Brien) is capitalized.
+                    segmentStart = segment.substring(index + 1).takeWhile(Char::isLetter).length > 1
+                }
+                ch.isDigit() -> { out.append(ch); segmentStart = false }
+                else -> out.append(ch)
+            }
+        }
+        return out.toString()
+    }
+
     /** No coordinates: compare normalized strings using Jaro-Winkler, without external models. */
     fun jaroWinkler(a: String, b: String): Double {
         if (a == b) return 1.0
