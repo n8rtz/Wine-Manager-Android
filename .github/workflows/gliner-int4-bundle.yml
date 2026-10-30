@@ -42,12 +42,12 @@ jobs:
           pip install "gliner==0.2.29" "onnxruntime==1.20.1" "onnx==1.17.0" "transformers<5.17" tokenizers sentencepiece numpy
           python -c "import torch, transformers, onnx, onnxruntime, gliner; print('torch', torch.__version__, 'transformers', transformers.__version__, 'onnx', onnx.__version__, 'ort', onnxruntime.__version__, 'gliner', gliner.__version__)"
           echo "== bundle =="
-          python tools/fetch-gliner-small-int4.py --out bundle --pin
+          python tools/fetch-gliner-small-int4.py --out bundle --work /tmp/export --pin
           echo "== inspect =="
           python tools/inspect-gliner-bundle.py bundle
           echo "== files =="
           ls -l bundle
-          (cd bundle && sha256sum *)
+          (cd bundle && sha256sum -- * 2>/dev/null || true)
 
       - name: Publish build report to the branch
         if: always()

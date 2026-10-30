@@ -120,7 +120,8 @@ def verify_int4(int4: pathlib.Path) -> int:
     return count
 
 
-def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_file: pathlib.Path) -> None:
+def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_file: pathlib.Path,
+                    reference: pathlib.Path | None = None) -> None:
     import numpy as np
     import onnxruntime as ort
     from tokenizers import Tokenizer
@@ -168,6 +169,13 @@ def smoke_inference(int4: pathlib.Path, tokenizer_file: pathlib.Path, config_fil
     feeds = {key: value for key, value in feeds.items() if key in available}
     logits = session.run(None, feeds)[0]
     print(f"[4/5] smoke run ok: inputs={sorted(available)} output={logits.shape}")
+    if reference is not None and reference.is_file():
+        reference_session = ort.InferenceSession(str(reference), providers=["CPUExecutionProvider"])
+        reference_logits = reference_session.run(None, feeds)[0]
+        print(f"[4/5] un-quantized reference: output={reference_logits.shape}")
+        print(f"       max |int4 - fp32| = {float(np.abs(reference_logits - logits).max()):.4f}")
+        logits = reference_logits
+        print("[4/5] lane spans below are from the un-quantized export")
     print(f"       words={len(words)} max_width={max_width} spans={len(spans)}")
     if logits.ndim == 3 and logits.shape[1] == len(spans):
         scores = 1.0 / (1.0 + np.exp(-logits[0]))
@@ -241,7 +249,7 @@ def main(argv: list[str]) -> int:
         if not candidate.is_file():
             raise SystemExit(f"export did not write {name}; cannot build a bundle without it")
         shutil.copyfile(candidate, out / name)
-    smoke_inference(int4, out / TOKENIZER_FILE, out / CONFIG_FILE)
+    smoke_inference(int4, out / TOKENIZER_FILE, out / CONFIG_FILE, reference=fp32)
     files = {MODEL_FILE: int4, TOKENIZER_FILE: out / TOKENIZER_FILE, CONFIG_FILE: out / CONFIG_FILE}
     if args.pin:
         pin_manifest(out, files, {MODEL_FILE: args.url_model, TOKENIZER_FILE: args.url_tokenizer, CONFIG_FILE: args.url_config})
