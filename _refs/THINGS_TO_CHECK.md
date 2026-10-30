@@ -83,6 +83,9 @@ Screen: **Settings → Scanner testing → GLiNER lane lab — ML Kit + PP-OCRv6
 Structure and contracts: `_refs/GLINER_LAB.md`. Weights are not in Git, so this list starts with
 provisioning.
 
+0. [ ] Host check first: `bash tools/run-host-lab.sh` (parity) then `bash tools/run-host-gliner-lane.sh none`
+   and `… oracle-additive`. The 2026-10-30 numbers are in `_refs/GLINER_LAB_HOST_RUN.md`; a perfect labeller
+   currently scores below Lab v7, so fix the stage-3 record shape before pinning a bundle into the APK.
 1. [ ] Build the bundle on a desktop: `python3 tools/fetch-gliner-small-int4.py --out app/src/main/assets/gliner-lab-v1 --pin`
    then `python3 tools/inspect-gliner-bundle.py app/src/main/assets/gliner-lab-v1`. Confirm the graph
    has `MatMulNBits` nodes, exposes only `input_ids`/`attention_mask`/`words_mask`/`text_lengths`/`span_idx`/`span_mask`

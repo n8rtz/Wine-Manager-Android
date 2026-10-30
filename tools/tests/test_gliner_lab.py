@@ -155,8 +155,8 @@ class GlinerLabStructureTests(unittest.TestCase):
         ocr = self.read(GLINER / "GlinerOcr.kt")
         self.assertIn("MlKitOcrEngine(WineScannerServices.nativeGate)", ocr,
                       "stage 1 must use the same bundled ML Kit client and gate as the production ensemble")
-        self.assertIn("const val MLKIT_ID=\"mlkit\"", ocr)
-        self.assertIn("const val PADDLE_ID=\"paddle-v6-medium\"", ocr)
+        self.assertIn("const val MLKIT_ID=GlinerEngines.MLKIT", ocr)
+        self.assertIn("const val PADDLE_ID=GlinerEngines.PADDLE", ocr)
         self.assertIn("PaddleTextDetector.detect", ocr)
         self.assertIn("PaddleTextRecognizer.recognize", ocr)
         # Both reads are started together and awaited as a pair, on one decoded bitmap.
@@ -180,8 +180,8 @@ class GlinerLabStructureTests(unittest.TestCase):
 
     def test_engine_ids_match_the_production_engines(self):
         ocr = self.read(GLINER / "GlinerOcr.kt")
-        self.assertIn('const val MLKIT_ID="mlkit"', ocr)
-        self.assertIn('const val PADDLE_ID="paddle-v6-medium"', ocr)
+        self.assertIn("const val MLKIT_ID=GlinerEngines.MLKIT", ocr)
+        self.assertIn("const val PADDLE_ID=GlinerEngines.PADDLE", ocr)
         mlkit = self.read(APP / "java/com/yourapp/wine/ocr/MlKitOcrEngine.kt")
         self.assertIn('override val id = "mlkit"', mlkit)
         paddle = self.read(APP / "java/com/yourapp/wine/textlab/PaddleMediumOcrEngine.kt")
@@ -191,7 +191,10 @@ class GlinerLabStructureTests(unittest.TestCase):
 
     def test_lane_records_keep_both_engines_and_measured_scores(self):
         records = self.read(GLINER / "GlinerLaneRecords.kt")
-        self.assertIn('const val FALLBACK_ENGINE=GlinerOcr.PADDLE_ID', records)
+        self.assertIn("const val FALLBACK_ENGINE=GlinerEngines.PADDLE", records)
+        engines_source = self.read(GLINER / "GlinerEngines.kt")
+        self.assertIn('const val MLKIT="mlkit"', engines_source)
+        self.assertIn('const val PADDLE="paddle-v6-medium"', engines_source)
         self.assertIn("engines.map { (engine,score) ->", records)
         self.assertIn("engineId=engine", records)
         self.assertIn("scoreIsEstimated=false", records)

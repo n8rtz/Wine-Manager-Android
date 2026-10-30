@@ -46,6 +46,7 @@ See:
 - [Production PP-OCRv6 Medium integration](docs/production-v6-medium.md)
 - [OCR Text Lab](docs/text-lab-candidates.md)
 - [GLiNER lane lab (ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4 ➔ Lab v7 post-processing)](_refs/GLINER_LAB.md)
+- [GLiNER lane lab: first host measurement against Lab v7](_refs/GLINER_LAB_HOST_RUN.md)
 - [Phone-hosted prebuilt OpenCV](docs/opencv-prebuilt.md)
 - [OCR post-processing investigation](docs/ocr-postprocessing-review.md)
 

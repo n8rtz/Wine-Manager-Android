@@ -192,6 +192,23 @@ knowledge base and the producer gazetteer stay warm for the length of one run.
 * Timings differ: OCR is now two engines per photo (the ensemble the scanner already pays for) plus
   one GLiNER encoder pass, so a label costs more than a single Paddle pass.
 
+## Host measurement (2026-10-30)
+
+`bash tools/run-host-gliner-lane.sh` replays the real stage 1b and stage 3 over the packaged cached
+OCR and compares against the Lab v7 host baseline on the same 121 eligible labels. First results,
+with stage 2 standing in for the unavailable weights:
+
+| Run | Complete |
+| --- | ---: |
+| Lab v7 baseline | 81/121 |
+| fusion, no lanes | 79/121 |
+| perfect lanes (replace residual) | 73/121 |
+| perfect lanes (additive) | 76/121 |
+
+Read `_refs/GLINER_LAB_HOST_RUN.md` before drawing conclusions: a perfect labeller currently does
+not beat Lab v7 through the existing post-processing, because grouped wine-name records decide
+differently from the per-line readings those rules were built on.
+
 ## Validation status
 
 The models cannot be fetched in the hosted sandbox (Hugging Face is unreachable and the bundle is

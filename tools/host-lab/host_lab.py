@@ -46,6 +46,27 @@ def prepare(cache_path: Path, out_path: Path):
     print(f"prepared {count} images -> {out_path}")
 
 
+def refs(scoring_path: Path, out_path: Path):
+    """Oracle inputs for the GLiNER-lane host replay: one line per accepted reference value.
+
+    The lane replay matches these strings to word spans, so it is told only what a perfect span
+    labeller would have been asked for: accepted producer, wine name and place values.
+    """
+    scoring = json.loads(scoring_path.read_text(encoding="utf-8"))
+    count = 0
+    with out_path.open("w", encoding="utf-8") as out:
+        for image in scoring["images"]:
+            for field, target in image["fields"].items():
+                if target["status"] != "expected_value":
+                    continue
+                for value in target["accepted"]:
+                    if not value.strip():
+                        continue
+                    out.write("\t".join(b64(part) for part in (image["image"], field, "expected", value)) + "\n")
+                    count += 1
+    print(f"prepared {count} oracle reference values -> {out_path}")
+
+
 def normalize(value: str) -> str:
     text = unicodedata.normalize("NFKD", str(value).casefold().replace("&", " et "))
     return "".join(c for c in text if c.isalnum() and not unicodedata.combining(c))
@@ -140,6 +161,10 @@ if __name__ == "__main__":
     prep.add_argument("--cache", type=Path,
                       default=ROOT / "app/src/main/assets/wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz")
     prep.add_argument("--output", type=Path, required=True)
+    ref = sub.add_parser("refs")
+    ref.add_argument("--scoring", type=Path,
+                     default=ROOT / "app/src/main/assets/wine-app-labels-v1/scoring.json")
+    ref.add_argument("--output", type=Path, required=True)
     sco = sub.add_parser("score")
     sco.add_argument("output", type=Path)
     sco.add_argument("--report", type=Path, required=True)
@@ -147,5 +172,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.cmd == "prepare":
         prepare(args.cache, args.output)
+    elif args.cmd == "refs":
+        refs(args.scoring, args.output)
     else:
         score(args.output, args.report, args.baseline_output)

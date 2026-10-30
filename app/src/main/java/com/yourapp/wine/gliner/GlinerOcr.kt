@@ -36,10 +36,10 @@ import java.io.File
  */
 internal object GlinerOcr {
     /** Bundled Latin recognizer id, identical to [MlKitOcrEngine.id]. */
-    const val MLKIT_ID="mlkit"
+    const val MLKIT_ID=GlinerEngines.MLKIT
 
     /** Pinned PP-OCRv6 Medium det+rec id, identical to the production Paddle engine id. */
-    const val PADDLE_ID="paddle-v6-medium"
+    const val PADDLE_ID=GlinerEngines.PADDLE
 
     data class Outcome(
         val lines:List<GlinerOcrLine>,

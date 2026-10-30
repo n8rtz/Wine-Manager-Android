@@ -34,7 +34,7 @@ internal data class GlinerLaneObservation(
  */
 internal object GlinerLaneRecords {
     /** Used only if a line somehow carries no engine attribution at all. */
-    const val FALLBACK_ENGINE=GlinerOcr.PADDLE_ID
+    const val FALLBACK_ENGINE=GlinerEngines.PADDLE
 
     fun observations(result:GlinerLabelResult):List<GlinerLaneObservation> {
         val byLine=result.document.lines.withIndex().associate { (index,line) -> index to line }
