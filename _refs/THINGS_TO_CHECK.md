@@ -75,6 +75,10 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 ### GLiNER lane lab (new structure on top of Lab v7) — phone checks
 
+*Last run: 21 GLiNER unit tests pass (`python3 -m unittest tools.tests.test_gliner_lab`), including the
+synthetic INT4 bundle / refusal cases. Full discovery has the same 15 pre-existing failures as
+unmodified HEAD. Kotlin type-checked with kotlinc against API stubs; Android build and device run pending.*
+
 Screen: **Settings → Scanner testing → GLiNER lane lab — PP-OCRv6 ➔ GLiNER-Small INT4**.
 Structure and contracts: `_refs/GLINER_LAB.md`. Weights are not in Git, so this list starts with
 provisioning.

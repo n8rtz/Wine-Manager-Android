@@ -170,6 +170,20 @@ knowledge base and the producer gazetteer stay warm for the length of one run.
 
 The models cannot be fetched in the hosted sandbox (Hugging Face is unreachable and the bundle is
 not in Git), so this branch ships the pipeline, the screen, the provisioning tools and structural
-guards only. `python3 -m unittest tools/tests/test_gliner_lab.py` passes. Phone validation is
-required and is listed in `_refs/THINGS_TO_CHECK.md`: bundle import, INT4 confirmation, output
-layout line, lane preview, per-field scores and the CSV export.
+guards only. What was checked here:
+
+* `python3 -m unittest tools/tests/test_gliner_lab` — 21 tests. Three of them build a synthetic
+  ONNX graph with the six documented inputs, one `MatMulNBits` node and a `[1, spans, classes]`
+  output, then run `tools/inspect-gliner-bundle.py` end to end: the compatible bundle is accepted,
+  a graph without `MatMulNBits` is refused, and a class count that is not the three lanes is
+  refused. They skip when `onnx`/`onnxruntime`/`tokenizers` are not installed.
+* The twelve new Kotlin files were type-checked with `kotlinc` against stubs of the Android,
+  Compose, ONNX Runtime and repository APIs. That caught three real errors before any device build:
+  `List<Int>.toLongArray()` does not exist, `OnnxTensor.getFloatBuffer()` must be called explicitly
+  and can return null, and `AndroidViewModel.getApplication()` is generic, so its result cannot be
+  used as an `Application`.
+* Full `tools/tests` discovery: 317 tests, the same 15 pre-existing failures as unmodified HEAD.
+
+Still unverified, and therefore listed in `_refs/THINGS_TO_CHECK.md`: the real bundle's output
+layout, prompt token ids from the real `tokenizer.json`, INT4 confirmation on the phone, lane
+preview text, per-field scores against the Lab v7 baseline, and the CSV export.
