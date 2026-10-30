@@ -43,6 +43,13 @@ internal data class LabPostOcrModules(
     val producerCompletionMatch: Boolean = false,
     val producerAnchorFallback: Boolean = false,
     val subEstateWineLinking: Boolean = false,
+    val stackedAppellationWineBoost: Boolean = false,
+    val grapeTitlePreference: Boolean = false,
+    val designationPairPreference: Boolean = false,
+    val guardedTitleTriples: Boolean = false,
+    val appellationTitleArbitrationRelaxed: Boolean = false,
+    val geographyAppellationWine: Boolean = false,
+    val decisiveFieldSelection: Boolean = false,
     val finalProducerNearMatch: Boolean = false,
     val producerRoleAndParticle: Boolean = false,
     val spatialSemanticGuards: Boolean = false,
@@ -82,6 +89,13 @@ internal data class LabPostOcrModules(
         PRODUCER_COMPLETION_MATCH("producer_completion_match", "producer-completion-match", "Producer completion match", "Complete a truncated producer from a unique longer observed producer span"),
         PRODUCER_ANCHOR_FALLBACK("producer_anchor_fallback", "producer-anchor-fallback", "Producer anchor fallback (3b)", "When the baseline anchor producer is blank, fall back to the evidence-selected producer"),
         SUB_ESTATE_WINE_LINKING("sub_estate_wine_linking", "sub-estate-wine-linking", "Sub-estate wine linking (3c)", "Link wines held under parenthetical LWIN sub-estate producers (Mouton Cadet)"),
+        STACKED_APPELLATION_WINE_BOOST("stacked_appellation_wine_boost", "stacked-appellation-wine-boost", "Stacked appellation wine boost", "The composed two-line appellation outranks its single-line parts as wine name"),
+        GRAPE_TITLE_PREFERENCE("grape_title_preference", "grape-title-preference", "Grape title preference", "An exact grape-variety title line outranks other plain title lines for the wine slot"),
+        DESIGNATION_PAIR_PREFERENCE("designation_pair_preference", "designation-pair-preference", "Designation pair preference", "A pair forming a known designation (Blanc de Blancs Brut) outranks producer-headed pairs"),
+        GUARDED_TITLE_TRIPLES("guarded_title_triples", "guarded-title-triples", "Guarded title triples", "A non-producer line above a bounded title pair completes a three-line wine name"),
+        APPELLATION_TITLE_ARBITRATION_RELAXED("appellation_title_arbitration_relaxed", "appellation-title-arbitration-relaxed", "Title arbitration (relaxed)", "Title-over-appellation boost without the engine-count / vertical-order conditions"),
+        GEOGRAPHY_APPELLATION_WINE("geography_appellation_wine", "geography-appellation-wine", "Geography appellation as wine", "Fill a blank wine name from the resolved appellation subregion"),
+        DECISIVE_FIELD_SELECTION("decisive_field_selection", "decisive-field-selection", "Decisive field selection", "On solver abstention, keep the best finalist value instead of blanking the field"),
         STACKED_WINE_TITLES(
             key = "stacked_wine_titles",
             shortName = "stacked-wine-titles",
@@ -177,6 +191,13 @@ internal data class LabPostOcrModules(
         ModuleId.PRODUCER_COMPLETION_MATCH -> producerCompletionMatch
         ModuleId.PRODUCER_ANCHOR_FALLBACK -> producerAnchorFallback
         ModuleId.SUB_ESTATE_WINE_LINKING -> subEstateWineLinking
+        ModuleId.STACKED_APPELLATION_WINE_BOOST -> stackedAppellationWineBoost
+        ModuleId.GRAPE_TITLE_PREFERENCE -> grapeTitlePreference
+        ModuleId.DESIGNATION_PAIR_PREFERENCE -> designationPairPreference
+        ModuleId.GUARDED_TITLE_TRIPLES -> guardedTitleTriples
+        ModuleId.APPELLATION_TITLE_ARBITRATION_RELAXED -> appellationTitleArbitrationRelaxed
+        ModuleId.GEOGRAPHY_APPELLATION_WINE -> geographyAppellationWine
+        ModuleId.DECISIVE_FIELD_SELECTION -> decisiveFieldSelection
         ModuleId.SPLIT_PRODUCER_SPANS -> splitProducerSpans
         ModuleId.STACKED_WINE_TITLES -> stackedWineTitles
         ModuleId.VINTAGE_RECOVERY -> vintageRecovery
@@ -214,6 +235,13 @@ internal data class LabPostOcrModules(
         ModuleId.PRODUCER_COMPLETION_MATCH -> copy(producerCompletionMatch = enabled)
         ModuleId.PRODUCER_ANCHOR_FALLBACK -> copy(producerAnchorFallback = enabled)
         ModuleId.SUB_ESTATE_WINE_LINKING -> copy(subEstateWineLinking = enabled)
+        ModuleId.STACKED_APPELLATION_WINE_BOOST -> copy(stackedAppellationWineBoost = enabled)
+        ModuleId.GRAPE_TITLE_PREFERENCE -> copy(grapeTitlePreference = enabled)
+        ModuleId.DESIGNATION_PAIR_PREFERENCE -> copy(designationPairPreference = enabled)
+        ModuleId.GUARDED_TITLE_TRIPLES -> copy(guardedTitleTriples = enabled)
+        ModuleId.APPELLATION_TITLE_ARBITRATION_RELAXED -> copy(appellationTitleArbitrationRelaxed = enabled)
+        ModuleId.GEOGRAPHY_APPELLATION_WINE -> copy(geographyAppellationWine = enabled)
+        ModuleId.DECISIVE_FIELD_SELECTION -> copy(decisiveFieldSelection = enabled)
         ModuleId.SPLIT_PRODUCER_SPANS -> copy(splitProducerSpans = enabled)
         ModuleId.STACKED_WINE_TITLES -> copy(stackedWineTitles = enabled)
         ModuleId.VINTAGE_RECOVERY -> copy(vintageRecovery = enabled)
@@ -238,7 +266,8 @@ internal data class LabPostOcrModules(
         vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
         producerRoleAndParticle=true, spatialSemanticGuards=true,
         boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
-        appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true)
+        appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true,
+        stackedAppellationWineBoost=true, geographyAppellationWine=true)
 
     fun enabledModules(): List<ModuleId> = ModuleId.entries.filter(::isEnabled)
 
@@ -279,7 +308,11 @@ internal data class LabPostOcrModules(
             // Gap E style appellations (host-verified +1/-0: #190 wine).
             ModuleId.STYLE_APPELLATION_WINE,
             // Gap D producer completion (host-verified +1/-0: #54 producer).
-            ModuleId.PRODUCER_COMPLETION_MATCH)
+            ModuleId.PRODUCER_COMPLETION_MATCH,
+            // Lab v7 (host-verified +2/-0 each on the 77/121 floor):
+            // stacked appellation wine boost (#103, #163) and geography
+            // appellation as wine (#92, #163).
+            ModuleId.STACKED_APPELLATION_WINE_BOOST, ModuleId.GEOGRAPHY_APPELLATION_WINE)
         val selectableModuleIds = ModuleId.entries.filterNot { it in retiredModuleIds || it in integratedModuleIds }
         val none = LabPostOcrModules()
         /**
@@ -329,7 +362,8 @@ internal data class LabPostOcrModules(
             vintageRecovery=true, stackedAppellations=true, finalProducerNearMatch=true,
             producerRoleAndParticle=true, spatialSemanticGuards=true,
             boundedWineTitlePairs=true, stackedWineTitles=true, splitProducerSpans=true,
-            appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true)
+            appellationTitleArbitration=true, styleAppellationWine=true, producerCompletionMatch=true,
+        stackedAppellationWineBoost=true, geographyAppellationWine=true)
         val bestBuild = prodV5Checkpoint
         val all = LabPostOcrModules(
             candidateIsolation = true,

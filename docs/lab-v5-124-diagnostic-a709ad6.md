@@ -316,3 +316,45 @@ Host verification: the Lab floor is unchanged at **77/121, parity PASS**
 v6.0's frozen row must read **77/121** (producer 102, wine_name 94) after
 its first capture pass, Lab v7 must match it with all toggles off, and
 Prod v5.0 must stay 62/121.
+
+## 17. Lab v7 first batch (2026-10-29): floor 81/121
+
+Implemented and host-measured on the 77/121 Lab v7 floor (Prod v6.0
+checkpoint modules; Prod v6.0 itself is frozen and untouched):
+
+**Integrated (+4 complete, parity gate raised to 81/115/121):**
+- `stacked_appellation_wine_boost` (+2/-0: #103, #163 wine). Composed
+  two-line appellation wine hypotheses (rank 65) are boosted to 72 over
+  their single-line parts, curing solver abstention between BLAYE /
+  COTES DE BORDEAUX / BLAYE COTES DE BORDEAUX.
+- `geography_appellation_wine` (+2/-0: #92, #163 wine). When the solver
+  leaves wine blank and the resolved subregion is an appellation place,
+  the fallback fills wine from it (Pessac-Leognan). #163 overlaps with
+  the stacked boost (either path produces the full name).
+- Catalog data fix: `Orange Muscat` added to `BundledGrapes` (a genuine
+  variety missing from the catalog; +1/-0: #135 wine, no other label
+  changed). Shared catalogs are not frozen-version state: frozen Prod
+  records on device are never recalculated, so past Prod rows are
+  unaffected.
+
+**Implemented, measured, NOT integrated (selectable):**
+- `guarded_title_triples`: inert. On #178 the extractor itself selects
+  BRAMITO as producer, so the producer-overlap guard correctly refuses
+  the triple; the same guard cures the #183/#103 producer prepends.
+  The label is decided by the baseline producer anchor, upstream of
+  this mechanism.
+- `appellation_title_arbitration_relaxed`: +2/-6 (script/garbled titles
+  such as Mis enBoukeille win without the engine/order conditions).
+- `designation_pair_preference`: -3 (designation pairs steal
+  appellation wines, #26/#157/#183).
+- `decisive_field_selection` (Gap I): global form +2/-6; rank>=88 form
+  +1/-1 (#60 gained, #105 lost to a garbage stack). Abstention is
+  protective on this corpus; rejected both forms.
+- `grape_title_preference`: unnecessary; the catalog fix above subsumes
+  it (inert beyond it).
+
+Remaining incomplete: 40 labels (34 one-error, 6 with 2+ errors). The residual pool is dominated by
+OCR-bound garble (#42/#61/#43, Margaux trio), producer near-misses
+decided by protected observed readings (#45/#12/#117/#140/#128), and
+appellation-vs-title cases whose correct title is not cleanly
+separable (#10/#63/#129/#30 garbled `LESGUILLOTTES`).

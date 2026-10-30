@@ -8,7 +8,7 @@ import java.util.Calendar
 
 /** Experimental architecture, not fieldwise reference selection. Named components are fixed for every image. */
 internal class EvidenceAnchorHybrid(kb:WineKnowledgeBase) {
-    data class Config(val roleGuard:Boolean,val appellationEngines:Int=0,val deepestAppellation:Boolean=false,val styleAppellationWine:Boolean=false,val producerFallback:Boolean=false) {
+    data class Config(val roleGuard:Boolean,val appellationEngines:Int=0,val deepestAppellation:Boolean=false,val styleAppellationWine:Boolean=false,val producerFallback:Boolean=false,val geographyAppellationWine:Boolean=false) {
         val id get()=if(!roleGuard) "anchors-only" else if(appellationEngines==0) "anchors-role-guard" else "anchors-role-guard-appellation-$appellationEngines"
     }
     companion object { const val VERSION="anchor-hybrid-v2"; val experiments=listOf(Config(false),Config(true),Config(true,1),Config(true,2)) }
@@ -34,6 +34,6 @@ internal class EvidenceAnchorHybrid(kb:WineKnowledgeBase) {
         }
         if(config.roleGuard && EvidenceIdentityRoles.headingOnly(out.getValue(FieldId.PRODUCER))) out[FieldId.PRODUCER]=""
         // No country/region inference or producer substitution is introduced by these repairs.
-        return if(config.appellationEngines>0) fallback.combine(out,records,AppellationFallback.Config(config.appellationEngines,false),config.deepestAppellation,config.styleAppellationWine) else out
+        return if(config.appellationEngines>0) fallback.combine(out,records,AppellationFallback.Config(config.appellationEngines,false),config.deepestAppellation,config.styleAppellationWine,config.geographyAppellationWine) else out
     }
 }

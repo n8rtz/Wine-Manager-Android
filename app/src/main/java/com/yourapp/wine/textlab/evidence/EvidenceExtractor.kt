@@ -1173,6 +1173,146 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                 trace.add("classification_wine_name","phrase=${premierPhrase.id}")
             }
         }
+        if(modules.stackedAppellationWineBoost) {
+            // Lab v7: the composed two-line appellation (CASTILLON COTES DE
+            // BORDEAUX) outranks its single-line parts for the wine slot.
+            val appellationHyps=effectiveHypotheses.filter {
+                it.values.keys==setOf(FieldId.WINE_NAME) &&
+                    WineDesignations.isAppellationName(it.values.getValue(FieldId.WINE_NAME))
+            }
+            if(appellationHyps.any { it.phrase.observations.size>=2 } &&
+                appellationHyps.any { it.phrase.observations.size==1 }) {
+                effectiveHypotheses=effectiveHypotheses.map { h ->
+                    if(h in appellationHyps && h.phrase.observations.size>=2)
+                        h.copy(rank=maxOf(h.rank,72.0),reason=h.reason+"; stacked appellation wine boost")
+                    else h
+                }
+                trace.add("stacked_appellation_wine_boost","applied")
+            }
+        }
+        if(modules.grapeTitlePreference) {
+            // Lab v7: an exact grape-variety title line (ORANGE MUSCAT) outranks
+            // other plain title lines when titles compete into abstention.
+            val grapeKeys=com.yourapp.wine.kb.BundledGrapes.terms
+                .flatMap { listOf(it.name)+it.aliases }
+                .map { EvidenceRanking.nameKey(it) }.filter(String::isNotEmpty).toSet()
+            effectiveHypotheses=effectiveHypotheses.map { h ->
+                if(h.values.keys==setOf(FieldId.WINE_NAME) && h.rank<75.0 &&
+                    EvidenceRanking.nameKey(h.values.getValue(FieldId.WINE_NAME)) in grapeKeys)
+                    h.copy(rank=maxOf(h.rank,60.0),reason=h.reason+"; grape title preference")
+                else h
+            }
+        }
+        if(modules.designationPairPreference) {
+            // Lab v7: a pair whose combined text is a known designation
+            // (BLANC DE BLANCS BRUT) outranks producer-headed pairs.
+            effectiveHypotheses=effectiveHypotheses.map { h ->
+                val value=h.values[FieldId.WINE_NAME]
+                if(h.values.keys==setOf(FieldId.WINE_NAME) && h.phrase.observations.size>=2 && value!=null &&
+                    (WineDesignations.isDesignation(value) || WineDesignations.hasNameAndDesignation(value)))
+                    h.copy(rank=maxOf(h.rank,95.0),reason=h.reason+"; designation pair preference")
+                else h
+            }
+        }
+        if(modules.guardedTitleTriples) {
+            // Lab v7: a non-producer single line directly above a bounded title
+            // pair completes a three-line wine name (BRAMITO / DELLA SALA /
+            // CHARDONNAY). The producer-overlap guard (top producer candidate)
+            // is what the removed 4b triple extension lacked (#183 TRIVENTO).
+            val topProducerValue=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) }
+                .maxByOrNull { it.rank }?.values?.getValue(FieldId.PRODUCER)
+            val topProducerKey=topProducerValue?.let { EvidenceRanking.nameKey(it) }
+            val topProducerTokens=topProducerValue?.let { identityTokens(it) }?.toSet().orEmpty()
+            val geographyKeys=effectiveHypotheses.filter { it.place!=null }
+                .flatMap { it.values.values }.map { EvidenceRanking.nameKey(it) }.toSet()
+            val pairHyps=effectiveHypotheses.filter {
+                it.values.keys==setOf(FieldId.WINE_NAME) && it.rank>=70.0 && it.phrase.observations.size>=2
+            }
+            val singles=effectiveHypotheses.filter {
+                it.values.keys==setOf(FieldId.WINE_NAME) && it.phrase.observations.size==1
+            }
+            val additions=mutableListOf<Hypothesis>()
+            for(pair in pairHyps) {
+                val pairValue=pair.values.getValue(FieldId.WINE_NAME)
+                for(single in singles) {
+                    val singleValue=single.values.getValue(FieldId.WINE_NAME)
+                    if(single.phrase.observations.any { it in pair.phrase.observations }) continue
+                    if(single.phrase.box.bottom>pair.phrase.box.top+0.02f) continue
+                    if(kotlin.math.abs(single.phrase.box.centerX()-pair.phrase.box.centerX())>
+                        pair.phrase.box.width()*0.25f) continue
+                    if(EvidenceRanking.nameKey(singleValue)==topProducerKey) continue
+                    if(identityTokens(singleValue).all { it in topProducerTokens }) continue
+                    if(EvidenceRanking.nameKey(singleValue) in geographyKeys) continue
+                    if(WineDesignations.isAppellationName(singleValue) ||
+                        WineDesignations.classificationBase(singleValue)!=null ||
+                        WineDesignations.isDesignation(singleValue)) continue
+                    if(isKnownProducerLine(singleValue)) continue
+                    if(singleValue.count(Char::isLetter)<4) continue
+                    additions+=Hypothesis(mapOf(FieldId.WINE_NAME to "$singleValue $pairValue"),
+                        pair.phrase,94.0,"guarded three-line wine title; ${pair.reason}")
+                    break
+                }
+            }
+            if(additions.isNotEmpty()) {
+                effectiveHypotheses=effectiveHypotheses+additions
+                trace.add("guarded_title_triples","added=${additions.size}")
+            }
+        }
+        if(modules.appellationTitleArbitrationRelaxed) {
+            // Lab v7: Gap A boost without the independent-engine and
+            // title-above-appellation conditions (single-engine script titles
+            // such as MOUTONCADET, titles printed below the appellation).
+            val wineHyps=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.WINE_NAME) }
+            val appellationHyps=wineHyps.filter {
+                WineDesignations.isAppellationName(it.values.getValue(FieldId.WINE_NAME))
+            }
+            if(appellationHyps.isNotEmpty()) {
+                val identityTopY=(wineHyps+effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) })
+                    .minOfOrNull { it.phrase.box.centerY() } ?: 0f
+                val classificationTokens=(WineDesignations.classificationCodes+WineDesignations.names)
+                    .flatMap { TextNorm.normalize(it).split(Regex("\\s+")) }.filter(String::isNotBlank).toSet()
+                val producerHypsByPhrase=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) }
+                    .map { it.phrase.id to identityTokens(it.values.getValue(FieldId.PRODUCER)) }
+                val otherIdentityKeys=effectiveHypotheses
+                    .filter { it.values.keys==setOf(FieldId.PRODUCER) || it.values.keys==setOf(FieldId.WINE_NAME) }
+                    .map { EvidenceRanking.nameKey(it.values.values.single()) }
+                val topProducerKey=effectiveHypotheses.filter { it.values.keys==setOf(FieldId.PRODUCER) }
+                    .maxByOrNull { it.rank }?.values?.getValue(FieldId.PRODUCER)
+                    ?.let { EvidenceRanking.nameKey(it) }
+                val boostedIds=wineHyps.filter { h ->
+                    val value=h.values.getValue(FieldId.WINE_NAME)
+                    val tokens=identityTokens(value)
+                    val key=EvidenceRanking.nameKey(value)
+                    h.phrase.observations.size==1 &&
+                        key!=topProducerKey &&
+                        !WineDesignations.isAppellationName(value) &&
+                        WineDesignations.classificationBase(value)==null &&
+                        !WineDesignations.isDesignation(value) &&
+                        tokens.none { it in classificationTokens } &&
+                        !(tokens.size==1 && tokens.single() in setOf("moelleux","brut","sec","doux","dry","sweet","riserva","reserva","crianza","premier","cru","classe")) &&
+                        producerHypsByPhrase.none { (phraseId,pt) -> phraseId!=h.phrase.id && pt!=tokens &&
+                            tokens.any { t -> pt.any { p -> p==t || (t.length>=5 && p.length>=5 && TextNorm.editDistance(t,p,2)!=null) } } } &&
+                        gazetteer.matches(TextNorm.normalize(value)).isEmpty() &&
+                        !isKnownProducerLine(value) &&
+                        !(typedIdentity && EvidenceIdentityRoles.namedEstate(value)) &&
+                        value.count(Char::isLetter)>=4 &&
+                        appellationHyps.none { a ->
+                            val appKey=EvidenceRanking.nameKey(a.values.getValue(FieldId.WINE_NAME))
+                            key.length>=4 && (appKey.contains(key) || key.contains(appKey))
+                        } &&
+                        otherIdentityKeys.none { other -> other!=key && other.length>key.length && other.contains(key) } &&
+                        h.phrase.box.centerY()>identityTopY+0.01f
+                }.map { it.phrase.id to it.values }.toSet()
+                if(boostedIds.isNotEmpty()) {
+                    effectiveHypotheses=effectiveHypotheses.map { h ->
+                        if((h.phrase.id to h.values) in boostedIds)
+                            h.copy(rank=maxOf(h.rank,74.0),reason=h.reason+"; appellation-title arbitration (relaxed)")
+                        else h
+                    }
+                    trace.add("appellation_title_arbitration_relaxed","boosted=${boostedIds.size}")
+                }
+            }
+        }
         val ranked=effectiveHypotheses.map { EvidenceRanking.adjust(it,graph,ranking) }
         trace.add("extraction_limits","graph_truncated=${graph.truncated}; hypothesis_limit=${hypotheses.size>=MAX_HYPOTHESES}; hypotheses=${hypotheses.size}")
         val solution=EvidenceSolver.solve(ranked,view,graph,::checkBudget,trace,search)
@@ -1206,7 +1346,7 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
                     if(ranking.equivalentNames && field in setOf(FieldId.PRODUCER,FieldId.WINE_NAME)) EvidenceRanking.nameKey(value) else TextNorm.normalize(value)
                 }
                 val winner=solution.firstOrNull()?.firstOrNull { field in it.values }
-                val value=values.singleOrNull().orEmpty()
+                val value=values.singleOrNull() ?: if(modules.decisiveFieldSelection && (winner?.rank ?: 0.0)>=88.0) winner?.values?.get(field).orEmpty() else ""
                 FieldCandidate(field,value,if(value.isBlank()) UiState.RED else UiState.YELLOW,
                     if(value.isBlank()) "Experimental abstention: missing or competing assignments" else "${winner?.reason}; phrase=${winner?.phrase?.id}; observations=${winner?.phrase?.observations}; experimental rank, not probability; confirm",
                     emptyList())

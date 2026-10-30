@@ -633,3 +633,7 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 - [ ] Lab v7 with all Post-OCR checkboxes off: also 77/121 (same 16-module signature incl. appellation_title_arbitration, style_appellation_wine, producer_completion_match)
 - [ ] Prod v5.0 unchanged at 62/121; Prod v4.0/v2.0/v1.0 rows unchanged
 - [ ] Older saved Lab runs still load (lab-v6 pipeline ID aliased to Lab v7)
+
+## Lab v7 first batch (81/121 host floor) — phone checks
+- [ ] Lab v7 (all checkboxes off): 81/121 fully correct; new gains #92 wine `Pessac-Léognan`, #103 wine `Blaye Côtes de Bordeaux`, #163 wine `Castillon Côtes de Bordeaux`, #135 wine `Orange Muscat`
+- [ ] Prod v6.0 row still 77/121 (frozen; the Orange Muscat catalog addition must not move any frozen Prod row)

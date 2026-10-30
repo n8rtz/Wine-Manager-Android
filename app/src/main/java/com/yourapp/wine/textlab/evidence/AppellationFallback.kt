@@ -70,9 +70,20 @@ internal class AppellationFallback(private val kb:WineKnowledgeBase) {
         return edits==1
     }
 
-    fun combine(baseline:Map<FieldId,String>,records:List<TokenRecord>,config:Config,deepestAppellation:Boolean=false,styleAppellationWine:Boolean=false):Map<FieldId,String> {
+    fun combine(baseline:Map<FieldId,String>,records:List<TokenRecord>,config:Config,deepestAppellation:Boolean=false,styleAppellationWine:Boolean=false,geographyAppellationWine:Boolean=false):Map<FieldId,String> {
         val wine=baseline[FieldId.WINE_NAME].orEmpty()
         if(wine.isNotBlank() && !(config.replaceMetadata && MetadataRules.isBoilerplate(wine))) return baseline
+        // Lab v7 (geography_appellation_wine): the resolved appellation
+        // subregion names the wine when no wine was selected (Pessac-Leognan).
+        if(geographyAppellationWine && wine.isBlank() &&
+            !records.any { cuvee.containsMatchIn(TextNorm.normalize(it.textRaw)) }) {
+            val subregion=baseline[FieldId.SUBREGION].orEmpty()
+            if(subregion.isNotBlank() && baseline[FieldId.COUNTRY].orEmpty().isNotBlank() &&
+                baseline[FieldId.REGION].orEmpty().isNotBlank() &&
+                gazetteer.matches(TextNorm.normalize(subregion)).any { it.type=="appellation" }) {
+                return baseline+ (FieldId.WINE_NAME to subregion)
+            }
+        }
         // A printed named cuvée blocks this fallback, including one not successfully selected earlier.
         if(records.any { cuvee.containsMatchIn(TextNorm.normalize(it.textRaw)) }) return baseline
         val view=hierarchy.snapshot()

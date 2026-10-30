@@ -153,7 +153,7 @@ internal object TextLabSpatialPreview {
                         useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                         exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage,
                         appellationFallbackEngines=if(labModules.appellationWineFallback) 1 else 0,
-                        deepestAppellationFallback=labModules.deepestAppellationFallback,styleAppellationWine=labModules.styleAppellationWine,producerAnchorFallback=labModules.producerAnchorFallback)
+                        deepestAppellationFallback=labModules.deepestAppellationFallback,styleAppellationWine=labModules.styleAppellationWine,producerAnchorFallback=labModules.producerAnchorFallback,geographyAppellationWine=labModules.geographyAppellationWine)
                 }
             } else {
                 TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
@@ -161,7 +161,7 @@ internal object TextLabSpatialPreview {
                     exactGeographyFastPath=policy.minimumIndependentEngines<2,
                     allowHybridVintageFallback=allowHybridVintage,
                     appellationFallbackEngines=if(isLabSpatial && labModules.appellationWineFallback) 1 else 0,
-                    deepestAppellationFallback=isLabSpatial && labModules.deepestAppellationFallback,styleAppellationWine=isLabSpatial && labModules.styleAppellationWine,producerAnchorFallback=isLabSpatial && labModules.producerAnchorFallback)
+                    deepestAppellationFallback=isLabSpatial && labModules.deepestAppellationFallback,styleAppellationWine=isLabSpatial && labModules.styleAppellationWine,producerAnchorFallback=isLabSpatial && labModules.producerAnchorFallback,geographyAppellationWine=isLabSpatial && labModules.geographyAppellationWine)
             }
             val evidenceSpans=if(engine!=null && evidenceResult!=null && (!isLabSpatial || labModules.spatialSemanticGuards)) {
                 producerEvidenceSpans(evidenceResult,engine)
