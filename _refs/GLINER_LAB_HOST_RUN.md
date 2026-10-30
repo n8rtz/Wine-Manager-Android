@@ -1,3 +1,23 @@
+## Corpus composition (why "multilingual" is a weak argument here)
+
+The 121 eligible labels are almost entirely French already: France 101, Spain 5, California 5,
+Italy 5, Oregon 3, Argentina 2, Texas 1, Portugal 1, Chile 1. So the English-only
+`urchade/gliner_small-v2.1` is being measured on a ~96% non-English-language corpus and still
+reaches 81/121 complete.
+
+Wine labels carry proper nouns (`Château Latour`, `Barolo`, `Rioja`); the lane names in the prompt
+are ours, in English, and stage 2 only has to group and classify spans, not understand the
+language. Where language actually costs us:
+
+1. **Tokenisation of accents/diacritics** — a multilingual subword vocab splits accented producer
+   names into fewer tokens, so word-span boundaries are cleaner. Plausible, unmeasured.
+2. **Stage 1** — PP-OCRv6 / ML Kit Latin script already cover accented text; nothing to change.
+3. **Stage 3/4** — producer and appellation coverage is a gazetteer question, not a language-model
+   question; a multilingual checkpoint adds no producer names.
+
+Conclusion: treat v2.5 as an A/B hypothesis to test on the French slice *after* the stage-3 record
+fix, not as a reason to ship a bigger bundle now.
+
 # GLiNER lane lab — host replay over the 121 eligible labels
 
 First measured comparison of the new architecture against Lab v7, run entirely on the host over the
