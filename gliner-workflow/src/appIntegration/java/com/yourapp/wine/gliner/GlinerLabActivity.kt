@@ -36,6 +36,12 @@ class GlinerLabActivity:ComponentActivity() {
             val imageLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
                 if(uris.isNotEmpty()) vm.importImages(uris)
             }
+            val auditImportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+                uris.firstOrNull()?.let(vm::importAudit)
+            }
+            val auditExportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                uri?.let(vm::saveAuditHistory)
+            }
             val csvLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
                 uri?.let(vm::saveCsv)
             }
@@ -55,6 +61,11 @@ class GlinerLabActivity:ComponentActivity() {
                         onChooseImages={ imageLauncher.launch(arrayOf("image/*")) },
                         onRunCustom=vm::runCustomAll,
                         onRunCustomImage=vm::runCustomSingle,
+                        onImportAudit={ auditImportLauncher.launch(arrayOf("*/*")) },
+                        onRunAudit=vm::runAudit,
+                        onSaveReviewedAudit=vm::saveReviewedAsAudit,
+                        onSaveAudit={ auditExportLauncher.launch("gliner-audit-${System.currentTimeMillis()}.json") },
+                        onSaveAuditField=vm::saveAuditField,
                         onRemoveCustom={ id -> vm.removeCustomImages(setOf(id)) },
                         onClearCustom={ vm.removeCustomImages(state.customSamples.map { it.sample.image }.toSet()) },
                         onConfirmField=vm::confirmField,

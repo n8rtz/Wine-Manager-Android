@@ -65,6 +65,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.viewmodels.GlinerAggregate
+import com.yourapp.wine.gliner.GlinerAuditReference
+import com.yourapp.wine.gliner.GlinerAuditRow
+import com.yourapp.wine.gliner.GlinerLabRunner
 import com.yourapp.wine.gliner.GlinerFieldReview
 import com.yourapp.wine.gliner.GlinerReviewCase
 import com.yourapp.wine.gliner.summarizeGlinerReviews
@@ -97,6 +100,8 @@ internal fun GlinerLabScreen(
     onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
     onRunAll:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
     onChooseImages:()->Unit, onRunCustom:()->Unit, onRunCustomImage:(String)->Unit,
+    onImportAudit:()->Unit, onRunAudit:()->Unit, onSaveAudit:()->Unit, onSaveReviewedAudit:()->Unit,
+    onSaveAuditField:(String,String,String,Boolean)->Unit,
     onRemoveCustom:(String)->Unit, onClearCustom:()->Unit,
     onConfirmField:(String,String,Boolean)->Unit, onCorrectField:(String,String,String)->Unit,
     onExpectedBlank:(String,String,Boolean)->Unit, onConfirmAll:(String)->Unit, onDismissReviewPrompt:()->Unit,
@@ -107,6 +112,10 @@ internal fun GlinerLabScreen(
     val listState=rememberLazyListState()
     val scope=rememberCoroutineScope()
     var showCustom by remember { mutableStateOf(true) }
+    var showAuditReferences by remember { mutableStateOf(false) }
+    var showAuditResults by remember { mutableStateOf(true) }
+    var confirmAuditImport by remember { mutableStateOf(false) }
+    var confirmAuditReviews by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var confirmRemoveImage by remember { mutableStateOf<String?>(null) }
     var confirmRerunAll by remember { mutableStateOf(false) }
@@ -200,6 +209,47 @@ internal fun GlinerLabScreen(
                 if(state.customSamples.any { it.sample.matchesCorpus }) Text("Exact bundled-image matches are excluded from these totals. Different photos of the same label are not detected.",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
             }
         }
+        item(key="audit_heading") {
+            Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                Text("Personal audit",style=MaterialTheme.typography.titleMedium)
+                val available=state.auditReferences.count { ref -> state.customSamples.any { it.sample.image==ref.image } }
+                val warnings=state.auditReferences.sumOf { it.warnings.size }
+                Text("${state.auditReferences.size} saved references · $available photos available · $warnings review warnings",style=MaterialTheme.typography.bodySmall)
+                Text("Import reviewed JSON once. References and run checkpoints stay private; curated scores are unchanged.",style=MaterialTheme.typography.bodySmall)
+                if(available<state.auditReferences.size) Text("Re-select the original photos with Choose images before running the full audit.",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+                if(state.auditLoadError.isNotBlank()) Text(state.auditLoadError,color=MaterialTheme.colorScheme.error)
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    Button(onClick=onRunAudit,enabled=!state.running && !state.importingImages && state.bundle.ready && state.auditReferences.isNotEmpty() && state.customLoaded) { Text("Run audit test") }
+                    TextButton(onClick={ if(state.auditReferences.isNotEmpty()) confirmAuditImport=true else onImportAudit() },
+                        enabled=!state.running && !state.importingImages && state.auditLoaded) { Text("Import reviewed JSON") }
+                    TextButton(onClick=onSaveAudit,enabled=!state.running && state.auditRunState.isNotBlank()) { Text("Save audit JSON") }
+                    TextButton(onClick={ confirmAuditReviews=true },enabled=!state.running && !state.importingImages && state.auditLoaded &&
+                        state.customSamples.any { row -> row.result?.status=="complete" && row.reviews.values.any { it.reviewed } }) { Text("Save reviewed fields") }
+                }
+                if(state.auditReferences.isNotEmpty()) TextButton(onClick={ showAuditReferences=!showAuditReferences }) {
+                    Text(if(showAuditReferences) "Hide saved references" else "Review saved references")
+                }
+                if(state.auditRunState.isNotBlank()) {
+                    val completed=state.auditRows.filter { it.status=="complete" && !it.exactCorpusMatch }
+                    val eligible=completed.filter { row -> PhoneCorpusMath.fields.all { row.reference.targets.getValue(it).status!="unresolved" } }
+                    val full=eligible.count { row -> PhoneCorpusMath.fields.all { PhoneCorpusMath.correct(row.outcomes[it].orEmpty()) } }
+                    val known=completed.sumOf { row -> PhoneCorpusMath.fields.count { row.reference.targets.getValue(it).status!="unresolved" } }
+                    val correct=completed.sumOf { row -> PhoneCorpusMath.fields.count { PhoneCorpusMath.correct(row.outcomes[it].orEmpty()) } }
+                    Text("Latest audit: ${when { state.auditRunState=="running" && !state.runningAudit -> "interrupted"; state.auditRunState=="imported_baseline" -> "imported baseline (not a new run)"; else -> state.auditRunState }} · ${state.auditRows.size} results · ${state.auditRows.count { it.status!="complete" }} failed",style=MaterialTheme.typography.bodySmall)
+                    Text("$full/${eligible.size} fully correct · $correct/$known reference fields match",style=MaterialTheme.typography.bodySmall)
+                    if(state.auditRows.any { it.exactCorpusMatch }) Text("Exact bundled-image matches excluded from totals.",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+                    Text("Matches use normalized comparison with saved aliases; unresolved fields are excluded. This is not independent accuracy.",style=MaterialTheme.typography.bodySmall)
+                    TextButton(onClick={ showAuditResults=!showAuditResults }) { Text(if(showAuditResults) "Hide audit results" else "Show audit results") }
+                }
+            }
+        }
+        if(showAuditReferences) items(state.auditReferences,key={ "auditref:${it.image}" }) { ref ->
+            AuditReferenceCard(ref,enabled=!state.running && !state.importingImages,
+                onSave={ field,value,blank -> onSaveAuditField(ref.image,field,value,blank) })
+        }
+        if(showAuditResults) items(state.auditRows,key={ "auditresult:${it.reference.image}" }) { row ->
+            AuditResultCard(row)
+        }
         if(showCustom) items(state.customSamples,key={ "custom:${it.sample.image}" }) { row ->
             CustomImageReview(row,enabled=!state.running && !state.importingImages,modelReady=state.bundle.ready,
                 onRun={ if(row.reviews.values.any { it.reviewed }) confirmRerunImage=row.sample.image else onRunCustomImage(row.sample.image) },onRemove={ confirmRemoveImage=row.sample.image },
@@ -285,6 +335,16 @@ internal fun GlinerLabScreen(
         text={ Text("Check each correct parameter. For an incorrect parameter, enter the correct value or mark it blank.") },
         confirmButton={ TextButton(onClick={ onDismissReviewPrompt(); showCustom=true; scope.launch { listState.animateScrollToItem(2) } }) { Text("Review now") } },
         dismissButton={ TextButton(onClick=onDismissReviewPrompt) { Text("Later") } })
+    if(confirmAuditReviews) AlertDialog(onDismissRequest={ confirmAuditReviews=false },
+        title={ Text("Save reviewed fields?") },
+        text={ Text("Current reviewed fields replace saved references for the same photos. Unreviewed fields remain unchanged; past audit runs are kept.") },
+        confirmButton={ TextButton(onClick={ confirmAuditReviews=false; onSaveReviewedAudit() }) { Text("Save") } },
+        dismissButton={ TextButton(onClick={ confirmAuditReviews=false }) { Text("Cancel") } })
+    if(confirmAuditImport) AlertDialog(onDismissRequest={ confirmAuditImport=false },
+        title={ Text("Replace audit references?") },
+        text={ Text("The selected JSON replaces the saved reference set. Previous audit runs remain saved.") },
+        confirmButton={ TextButton(onClick={ confirmAuditImport=false; onImportAudit() }) { Text("Choose JSON") } },
+        dismissButton={ TextButton(onClick={ confirmAuditImport=false }) { Text("Cancel") } })
     if(confirmRerunAll || confirmRerunImage!=null) AlertDialog(
         onDismissRequest={ confirmRerunAll=false; confirmRerunImage=null },
         title={ Text("Rerun images?") },
@@ -306,6 +366,59 @@ internal fun GlinerLabScreen(
             if(all) onClearCustom() else if(image!=null) onRemoveCustom(image)
         }) { Text("Remove") } },
         dismissButton={ TextButton(onClick={ confirmClear=false; confirmRemoveImage=null }) { Text("Cancel") } })
+}
+
+@Composable
+private fun AuditReferenceCard(ref:GlinerAuditReference,enabled:Boolean,onSave:(String,String,Boolean)->Unit) {
+    var open by remember(ref.image) { mutableStateOf(false) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(10.dp)) {
+            TextButton(onClick={ open=!open }) { Text(ref.name + if(open) " ▲" else " ▼") }
+            ref.warnings.forEach { Text(it,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall) }
+            if(open) PhoneCorpusMath.fields.forEach { field ->
+                AuditReferenceField(ref,field,enabled) { value,blank -> onSave(field,value,blank) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuditReferenceField(ref:GlinerAuditReference,field:String,enabled:Boolean,onSave:(String,Boolean)->Unit) {
+    val target=ref.targets.getValue(field)
+    var value by remember(ref.image,field,target.display,target.status) { mutableStateOf(target.display) }
+    var blank by remember(ref.image,field,target.display,target.status) { mutableStateOf(target.status=="expected_blank") }
+    Column(Modifier.fillMaxWidth().padding(vertical=4.dp)) {
+        OutlinedTextField(value=value,onValueChange={ value=it },singleLine=true,
+            enabled=enabled && !blank,label={ Text(GlinerLabRunner.fieldLabels[field] ?: field) },modifier=Modifier.fillMaxWidth())
+        Row(verticalAlignment=Alignment.CenterVertically) {
+            Checkbox(checked=blank,onCheckedChange={ blank=it },enabled=enabled)
+            Text("Expected blank",style=MaterialTheme.typography.bodySmall)
+            TextButton(onClick={ onSave(value,blank) },enabled=enabled) { Text("Save") }
+        }
+        if(!blank && value.isBlank()) Text("Empty text without the checkbox means unreviewed.",style=MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun AuditResultCard(row:GlinerAuditRow) {
+    var open by remember(row.reference.image,row.diagnostics) { mutableStateOf(false) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(10.dp)) {
+            TextButton(onClick={ open=!open }) { Text("${row.reference.name} · ${row.status}" + if(open) " ▲" else " ▼") }
+            if(row.status!="complete") Text(row.message,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+            if(row.exactCorpusMatch) Text("Exact bundled-image match · excluded from totals",style=MaterialTheme.typography.bodySmall)
+            if(open && row.status=="complete") SelectionContainer {
+                Column {
+                    PhoneCorpusMath.fields.forEach { field ->
+                        val target=row.reference.targets.getValue(field)
+                        val expected=when(target.status) { "expected_blank" -> "(blank)"; "unresolved" -> "(unreviewed)"; else -> target.display }
+                        val actual=row.fields[field].orEmpty().ifBlank { "(blank)" }
+                        Text("${GlinerLabRunner.fieldLabels[field] ?: field}: $actual · expected $expected · ${row.outcomes[field].orEmpty()}",style=MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
