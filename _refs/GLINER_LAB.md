@@ -28,10 +28,15 @@ also considers: two-engine quoted/prominent cuvées over a geographic fallback; 
 anchored to the selected estate; a corroborated wine style and descriptor for a blank name;
 classification-contaminated estate names supported by both OCR engines and a place read on the
 label; and removal of an unsupported subregion that appears to be a fuzzy producer-word leak. These
-rules use the app's existing grape and style vocabularies and observed text, never reference answers.
-Ambiguous or unsupported candidates are rejected. Nonblank altered fields are YELLOW and a cleared
-field is RED; each decision is logged. These are experimental heuristics tuned on the available
-corpus, and need a phone run and held-out labels to assess real improvements and regressions.
+Policy v4 adds repairs for address or grape/place leakage into the producer, nested OCR particles,
+qualified appellations, estate/appellation line concatenation, and title/producer collisions with a
+nearby producer role. It also has narrower single-engine repairs using an observed harvest/year/title
+line or a separately printed winery/company name matching the selected producer. Such single-engine
+repairs are not independent OCR consensus and carry additional risk. All rules use generic terms,
+geometry, model hints, and observed text, never reference answers. Ambiguous or unsupported
+candidates are rejected. Nonblank altered fields are YELLOW and a cleared field is RED; each
+decision is logged. These are experimental heuristics tuned on the available corpus, and need a
+phone run and held-out labels to assess real improvements and regressions.
 
 JSON exports preserve final fields, `base_fields`, `base_outcomes`, `gliner_decisions`, exact
 `decision_readings`, `raw_readings` (with source engine, estimated flag, confidence and box), and
@@ -45,16 +50,16 @@ lack full hint scores and exact decision input text, so their replay is explicit
 
 ### Latest same-OCR experiment
 
-The v2 phone export from build `1d81827` scored 86/121 eligible complete labels (124 attempted).
-Replay of the same v2 decision inputs reproduced 86/121 and every exported final field. Replaying
-the v3 policy on those exact inputs gives 95/121: nine additional complete labels, no complete-label
-losses, and four producer, four wine and one subregion field gains with no field losses. Four of the
-producer gains are repeat photos of the same estate; they are not four independent producer examples.
-Excluded resolved fields also had no gains or losses. V3 has **not yet been verified on Android**:
-the replay doesn't rerun OCR or inference. This dataset was used to develop these rules; these
-numbers are in-sample results, not a holdout accuracy claim. More than 90% would require 109/121.
-The remaining replay errors comprise 15 producer, 14 wine and one subregion field. The partial
-module boundary described above remains unfinished.
+The v3 phone export from build `6685981` scored 95/121 eligible complete labels (124 attempted),
+matching its prior replay. Its OCR lines, lane hints and base fields are identical to the preceding
+v2 export; replaying v3 reproduced every final field. Replaying v4 on these same inputs gives
+105/121: ten additional complete labels, no complete-label losses, and seven producer and six wine
+field gains with no field losses. Excluded resolved fields had no gains or losses. The producer and
+wine of one two-error label both improve; some other gains occur on repeated photos. V4 has **not
+yet been verified on Android**: replay doesn't rerun OCR or inference. This dataset was used to
+develop these rules; these are in-sample results, not a holdout accuracy claim. More than 90% would
+require 109/121. The remaining replay errors comprise eight producer, eight wine and one subregion
+field on 16 labels. The partial module boundary described above remains unfinished.
 The screen supports copying results, JSON/CSV export, and foreground-service execution while
 navigating away or locking the phone.
 

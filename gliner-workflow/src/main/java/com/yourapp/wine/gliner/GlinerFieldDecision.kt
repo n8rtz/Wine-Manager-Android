@@ -15,7 +15,7 @@ data class GlinerEvidenceLine(
  * The base result wins unless an explicit, auditable rule finds independent OCR evidence.
  */
 object GlinerFieldDecisionPolicy {
-    const val VERSION="gliner-field-policy-v3"
+    const val VERSION="gliner-field-policy-v4"
 
     fun apply(fields:Map<String,String>,hints:List<GlinerFieldHint>,rawLines:List<String>):GlinerFieldDecision {
         val producer=fields["producer"].orEmpty()
@@ -94,6 +94,120 @@ object GlinerFieldDecisionPolicy {
             unique(candidates)?.let { replace("producer",it,"two-engine estate evidence") }
         }
 
+        // A legal or vineyard-role fragment can be selected instead of a prominent two-line
+        // estate title. One complete title word must be corroborated by both engines in place;
+        // the preceding article/word is retained exactly as read, not inferred.
+        val currentProducer=key(updated["producer"].orEmpty())
+        val locations=listOf("region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+        val legalProducer=currentProducer.startsWith("vinde") && locations.any { it in currentProducer }
+        val roleProducer=currentProducer.length>=4 && readings.any { role ->
+            valid(role) && role.engine==GlinerEngines.MLKIT && key(role.text).startsWith("vignobl") &&
+                key(role.text).endsWith(currentProducer) && readings.any { part ->
+                    valid(part) && part.engine==GlinerEngines.PADDLE && key(part.text).endsWith(currentProducer) && iou(role,part)>=0.15f
+                } && readings.any { part ->
+                    valid(part) && part.engine==GlinerEngines.PADDLE && key(part.text).startsWith("vignobl") && iou(role,part)>=0.15f
+                }
+        }
+        if(legalProducer || roleProducer) {
+            val candidates=mutableListOf<String>()
+            val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+            primary.forEach { first ->
+                if(!Regex("(?i)^(la|le|les)\\s+[\\p{L}]{4,}$").matches(first.text.trim())) return@forEach
+                primary.forEach secondLoop@ { second ->
+                    val secondKey=key(second.text)
+                    if(secondKey.length<6 || secondKey.any(Char::isDigit) || legal(second.text) || secondKey in locations) return@secondLoop
+                    val horizontal=(minOf(first.right,second.right)-maxOf(first.left,second.left)).coerceAtLeast(0f)
+                    val width=minOf(first.right-first.left,second.right-second.left)
+                    if(width<=0f || horizontal/width<0.4f || first.top>=second.top || first.bottom>second.bottom ||
+                        second.top-first.bottom !in -0.05f..0.05f) return@secondLoop
+                    if(readings.none { other -> valid(other) && other.engine!=first.engine && iou(second,other)>=0.30f &&
+                            editDistanceAtMostTwo(secondKey,key(other.text)) }) return@secondLoop
+                    candidates += "${first.text.trim()} ${second.text.trim()}"
+                }
+            }
+            unique(candidates)?.let { replace("producer",it,"corroborated estate title over legal or vineyard role") }
+        }
+
+        // Address/number leakage can displace an estate printed as two adjacent lines. Require
+        // both complete lines independently, with the second explicitly linking to the first.
+        if(key(updated["producer"].orEmpty()).any(Char::isDigit)) {
+            val candidates=mutableListOf<String>()
+            lines.zipWithNext().forEach { (first,second) ->
+                val firstText=first.text.trim()
+                val secondText=second.text.trim()
+                if(Regex("(?i)^[ld]['’][\\p{L}]+$").matches(firstText) &&
+                    Regex("(?i)^de\\s+[\\p{L}][\\p{L}'’ -]+$").matches(secondText) &&
+                    !legal(firstText) && !legal(secondText) && adjacent(first,second,allowOverlap=false))
+                    candidates += "$firstText $secondText"
+            }
+            unique(candidates)?.let { replace("producer",it,"two-engine linked estate over address text") }
+        }
+
+        // A grape-and-place string is not an estate. Recover a three-part producer only when
+        // both engines independently read every part, including the spatial linking particle.
+        val erroneousProducer=key(updated["producer"].orEmpty())
+        val grapeWine=key(updated["wine_name"].orEmpty())
+        if(grapeWine in grapes && erroneousProducer.startsWith(grapeWine) && erroneousProducer!=grapeWine) {
+            val excluded=listOf("country","region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+            val candidates=mutableListOf<String>()
+            val names=lines.filter { key(it.text).length>=4 && key(it.text).none(Char::isDigit) &&
+                key(it.text) !in excluded && key(it.text) !in grapes && !legal(it.text) }
+            val particles=lines.filter { key(it.text)=="de" }
+            names.forEach { first -> names.forEach lastLoop@ { last ->
+                if(first==last || key(first.text)==key(last.text)) return@lastLoop
+                particles.forEach { particle ->
+                    val centerFirst=first.top+first.bottom
+                    val centerParticle=particle.top+particle.bottom
+                    val centerLast=last.top+last.bottom
+                    if(centerFirst<centerParticle && centerParticle<centerLast &&
+                        coveredBy(particle,first)>=0.8f && coveredBy(particle,last)>=0.8f)
+                        candidates += "${first.text.trim()} ${particle.text.trim()} ${last.text.trim()}"
+                }
+            } }
+            unique(candidates)?.let { replace("producer",it,"two-engine linked title over grape and location") }
+        }
+
+        // Overlapping OCR boxes can sort a small linking particle after the estate instead of
+        // between its two words. Reorder only the three already-present, independently read words.
+        val producerWords=updated["producer"].orEmpty().trim().split(Regex("\\s+"))
+        if(producerWords.size==3 && key(producerWords[2])=="de" && producerWords.take(2).all { key(it).length>=4 }) {
+            val candidates=mutableListOf<String>()
+            lines.filter { key(it.text)==key(producerWords[0]) }.forEach { first ->
+                lines.filter { key(it.text)==key(producerWords[1]) }.forEach { last ->
+                    lines.filter { key(it.text)=="de" }.forEach { particle ->
+                        val overlap=(minOf(particle.right,last.right)-maxOf(particle.left,last.left)).coerceAtLeast(0f)*
+                            (minOf(particle.bottom,last.bottom)-maxOf(particle.top,last.top)).coerceAtLeast(0f)
+                        val area=(particle.right-particle.left)*(particle.bottom-particle.top)
+                        if(area>0f && overlap/area>=0.8f && first.top<particle.top &&
+                            (particle.top+particle.bottom)<(last.top+last.bottom) && adjacent(first,last))
+                            candidates += "${first.text.trim()} ${particle.text.trim()} ${last.text.trim()}"
+                    }
+                }
+            }
+            unique(candidates)?.let { replace("producer",it,"two-engine spatial particle ordering") }
+        }
+
+        // A separately printed winery/company line can correct a slightly damaged producer
+        // already selected from the main label. This is same-engine, multi-location evidence,
+        // not an independent OCR vote; require a winery role and a legal company suffix.
+        val selectedEstate=key(updated["producer"].orEmpty())
+        if(selectedEstate.length>=6) {
+            val candidates=mutableListOf<String>()
+            val titleLines=readings.filter { valid(it) && key(it.text)==selectedEstate }
+            readings.filter(::valid).forEach { company ->
+                val match=Regex("(?i)^([\\p{L}]+)\\s+([^,;]{6,})[,;]\\s*(.+)$").matchEntire(company.text.trim()) ?: return@forEach
+                if(!editDistanceAtMostOne(key(match.groupValues[1]),"bodegas")) return@forEach
+                val legalSuffix=key(match.groupValues[3])
+                if(legalSuffix !in setOf("a","sa","sl","sarl","sas") ||
+                    (legalSuffix=="a" && !Regex("(?i)^&[.\\s]*a$").matches(match.groupValues[3].trim()))) return@forEach
+                val estate=match.groupValues[2].trim()
+                if(!editDistanceAtMostTwo(key(estate),selectedEstate)) return@forEach
+                if(titleLines.none { it.engine==company.engine && it.top+it.bottom<company.top+company.bottom }) return@forEach
+                candidates += estate
+            }
+            unique(candidates)?.let { replace("producer",it,"printed winery company name near selected producer") }
+        }
+
         // Classification words are not estate identities. If both OCR engines independently
         // read an estate prefix and the same place together, recover that observed estate name
         // instead of a classification-only producer. The place must also occur exactly in OCR.
@@ -129,6 +243,44 @@ object GlinerFieldDecisionPolicy {
                 }
             }
             unique(candidates)?.let { replace("producer",it,"two-engine estate and location evidence") }
+        }
+
+        // A model-confirmed title can be conflated with a grape list and a shorter producer.
+        // Separate the fields only when the title is actually printed, both engines read the
+        // grape list and producer suffix, and an adjacent "par la maison" role cue supports the
+        // suffix as the producer. Do not infer a producer merely from a shared word.
+        val collisionProducer=key(updated["producer"].orEmpty())
+        val collisionWine=key(updated["wine_name"].orEmpty())
+        val titleConfirmed=hints.any { it.lane==GlinerLane.PRODUCER && it.confidence.isFinite() &&
+            it.confidence>=0.5f && key(it.text)==collisionProducer }
+        if(titleConfirmed && collisionProducer.length>=6) {
+            val candidates=mutableListOf<Pair<String,String>>()
+            val titleLines=readings.filter { valid(it) && key(it.text)==collisionProducer }
+            val grapeLists=lines.filter { grapeLine ->
+                val parts=grapeLine.text.split(Regex("[-–—/]")).map { key(it) }
+                parts.size>=2 && parts.all { it in grapes } && collisionWine==collisionProducer+key(grapeLine.text)
+            }
+            val makers=lines.filter { maker ->
+                val makerKey=key(maker.text)
+                makerKey.length>=5 && makerKey!=collisionProducer && collisionProducer.endsWith(makerKey) &&
+                    maker.text.trim().split(Regex("\\s+")).size>=2
+            }
+            titleLines.forEach { title -> grapeLists.forEach { grape -> makers.forEach { maker ->
+                val role=readings.any { r ->
+                    val k=key(r.text)
+                    valid(r) && k.contains("parla") && k.contains("mais") &&
+                        r.top+r.bottom>grape.top+grape.bottom && r.top+r.bottom<maker.top+maker.bottom &&
+                        horizontalOverlap(r,maker)>=0.5f && adjacent(r,maker)
+                }
+                if(title.top+title.bottom<grape.top+grape.bottom && grape.top+grape.bottom<maker.top+maker.bottom && role)
+                    candidates += maker.text.trim() to title.text.trim()
+            } } }
+            val distinct=candidates.distinctBy { key(it.first) to key(it.second) }
+            if(distinct.size==1) {
+                val (maker,title)=distinct.single()
+                replace("producer",maker,"two-engine producer with adjacent maison role")
+                replace("wine_name",title,"model-confirmed title separated from grape list")
+            }
         }
 
         val hinted=apply(updated,hints,readings.map { it.text })
@@ -169,6 +321,46 @@ object GlinerFieldDecisionPolicy {
                 unique(prefixes)?.let { replace("wine_name",it,"two-engine adjacent title completion") }
             }
         }
+        // OCR sometimes concatenates an estate-name line with the following appellation line.
+        // Strip that prefix only if both engines corroborate the selected estate and the suffix
+        // is a near match to the independently selected subregion plus an observed designation.
+        val contaminatedWine=key(updated["wine_name"].orEmpty())
+        val estateStem=key(updated["producer"].orEmpty()).removePrefix("chateau")
+        val appellationKey=key(updated["subregion"].orEmpty())
+        if(estateStem.length>=6 && appellationKey.length>=6 && contaminatedWine.isNotBlank()) {
+            val candidates=mutableListOf<String>()
+            readings.filter(::valid).forEach { appellation ->
+                val match=Regex("(?i)^(.+?)\\s+(grand\\s+cru)$").matchEntire(appellation.text.trim()) ?: return@forEach
+                val seenPlace=key(match.groupValues[1])
+                val appellationReading=key(appellation.text)
+                if(!contaminatedWine.endsWith(appellationReading) || !editDistanceAtMostTwo(seenPlace,appellationKey)) return@forEach
+                val prefix=contaminatedWine.dropLast(appellationReading.length)
+                if(!editDistanceAtMostTwo(prefix,estateStem)) return@forEach
+                val supported=readings.any { first -> valid(first) && first.engine==appellation.engine && key(first.text)==prefix &&
+                    first.top+first.bottom<appellation.top+appellation.bottom && horizontalOverlap(first,appellation)>=0.5f &&
+                    readings.any { second -> valid(second) && second.engine!=first.engine && key(second.text)==estateStem &&
+                        iou(first,second)>=0.3f }
+                }
+                if(supported) candidates += "${updated["subregion"].orEmpty().trim()} ${match.groupValues[2]}"
+            }
+            unique(candidates)?.let { replace("wine_name",it,"estate line separated from qualified appellation") }
+        }
+
+        // Correct a corrupted *existing* standalone classification, never promote a
+        // classification over an unrelated wine title. Both engines must read GRAND CRU
+        // exactly and independently support the rank and class on the same line.
+        val currentClassification=key(updated["wine_name"].orEmpty())
+        fun premierClassification(text:String):Boolean {
+            val words=text.trim().split(Regex("\\s+")).map(::key)
+            return words.size==4 && words[1]=="grand" && words[2]=="cru" &&
+                editDistanceAtMost(words[0],"premier",3,5) && editDistanceAtMost(words[3],"classe",1,5)
+        }
+        val classificationLines=readings.filter { valid(it) && key(it.text)==currentClassification && premierClassification(it.text) }
+        val classificationSupported=classificationLines.any { first -> readings.any { second ->
+            valid(second) && second.engine!=first.engine && iou(first,second)>=0.3f && premierClassification(second.text)
+        } }
+        if(classificationSupported) replace("wine_name","Premier Grand Cru Classé","two-engine standalone classification spelling")
+
         // A blank wine may be an adjacent wine-style term and sweetness descriptor. The complete
         // style must be in the shared vocabulary, and independently supported even if the other
         // OCR engine split it into multiple overlapping text fragments.
@@ -186,6 +378,74 @@ object GlinerFieldDecisionPolicy {
                 }
             }
             unique(candidates)?.let { replace("wine_name",it,"two-engine wine style and descriptor") }
+        }
+
+        // A harvest/year line may contain a printed title after the year. Require a harvest
+        // marker within one character, an exact selected year, and a geographic wine fallback;
+        // this is single-engine observed text, so ambiguity leads to abstention.
+        val harvestFallback=key(updated["wine_name"].orEmpty())
+        val harvestPlaces=listOf("region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+        val year=updated["vintage"].orEmpty().trim()
+        if(harvestFallback.isNotBlank() && harvestFallback in harvestPlaces && year.matches(Regex("\\d{4}"))) {
+            val candidates=mutableListOf<String>()
+            readings.filter(::valid).forEach { line ->
+                val match=Regex("(?i)^([\\p{L}]+)\\s+(\\d{4})\\s+([\\p{L}][\\p{L}'’ -]{2,})[\"”]?$")
+                    .matchEntire(line.text.trim()) ?: return@forEach
+                if(!editDistanceAtMostOne(key(match.groupValues[1]),"cosecha") || match.groupValues[2]!=year) return@forEach
+                val title=match.groupValues[3].trim()
+                if(key(title) in harvestPlaces || legal(title) || key(title)==key(updated["producer"].orEmpty())) return@forEach
+                candidates += title
+            }
+            unique(candidates)?.let { replace("wine_name",it,"printed title on harvest and year line") }
+        }
+
+        // Preserve an explicitly printed qualified appellation when the base wine is only the
+        // broader region. The second engine must corroborate the qualifier and the end of the
+        // selected subregion at the same location; it need not read the entire first word.
+        val broader=key(updated["wine_name"].orEmpty())
+        val regionKey=key(updated["region"].orEmpty())
+        val subregionKey=key(updated["subregion"].orEmpty())
+        if(broader.isNotBlank() && broader==regionKey && subregionKey.length>=4 && subregionKey!=broader) {
+            val candidates=mutableListOf<String>()
+            val qualifiers=setOf("superieur","superieure","grandcru","premiercru")
+            readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }.forEach { title ->
+                val titleKey=key(title.text)
+                val qualifier=qualifiers.singleOrNull { titleKey==subregionKey+it } ?: return@forEach
+                val supported=readings.any { other ->
+                    val otherKey=key(other.text)
+                    val partial=otherKey.dropLast(qualifier.length)
+                    valid(other) && other.engine!=title.engine && iou(title,other)>=0.3f &&
+                        partial.length>=2 && subregionKey.endsWith(partial) &&
+                        editDistanceAtMostOne(otherKey.takeLast(qualifier.length),qualifier)
+                }
+                if(supported) candidates += title.text.trim()
+            }
+            unique(candidates)?.let { replace("wine_name",it,"corroborated qualified subregion") }
+        }
+
+        // Common cuvée descriptors may be read imperfectly by one engine. Only accept a word
+        // printed exactly by the other engine, positioned between a corroborated selected estate
+        // and the printed geographic fallback. The vocabulary is generic, not label references.
+        val fallback=key(updated["wine_name"].orEmpty())
+        val placeKeys=listOf("region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+        if(fallback.isNotBlank() && fallback in placeKeys) {
+            val estateKey=key(updated["producer"].orEmpty())
+            val estateLines=lines.filter { key(it.text).length>=6 && key(it.text) in estateKey }
+            val placeLines=readings.filter { valid(it) && key(it.text)==fallback }
+            val candidates=mutableListOf<String>()
+            val descriptors=setOf("tradition","reserve","selection","prestige","classic","classique")
+            readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && key(it.text) in descriptors }.forEach { title ->
+                val titleKey=key(title.text)
+                val supported=readings.any { other -> valid(other) && other.engine!=title.engine &&
+                    iou(title,other)>=0.3f && editDistanceAtMost(titleKey,key(other.text),3) }
+                val between=estateLines.any { estate -> placeLines.any { place ->
+                    val center=title.top+title.bottom
+                    center>estate.top+estate.bottom && center<place.top+place.bottom &&
+                        horizontalOverlap(title,estate)>=0.4f && horizontalOverlap(title,place)>=0.4f
+                } }
+                if(supported && between) candidates += title.text.trim()
+            }
+            unique(candidates)?.let { replace("wine_name",it,"corroborated descriptor between estate and place") }
         }
 
         // A geographically named fallback can mask a cuvee made from a distinctive first line
@@ -294,8 +554,8 @@ object GlinerFieldDecisionPolicy {
 
     private fun editDistanceAtMostTwo(a:String,b:String):Boolean = editDistanceAtMost(a,b,2)
 
-    private fun editDistanceAtMost(a:String,b:String,limit:Int):Boolean {
-        if(a.length<6 || b.length<6 || a.length>100 || b.length>100 || kotlin.math.abs(a.length-b.length)>limit) return false
+    private fun editDistanceAtMost(a:String,b:String,limit:Int,minLength:Int=6):Boolean {
+        if(a.length<minLength || b.length<minLength || a.length>100 || b.length>100 || kotlin.math.abs(a.length-b.length)>limit) return false
         var previous=IntArray(b.length+1) { it }
         for(i in a.indices) {
             val current=IntArray(b.length+1)
@@ -346,6 +606,19 @@ object GlinerFieldDecisionPolicy {
             if(result.none { (other,otherKey) -> otherKey==k && iou(other,line)>=0.25f }) result += line to k
         }
         return result.map { it.first }.sortedWith(compareBy<GlinerEvidenceLine>({ (it.top+it.bottom)/2f },{ it.left }))
+    }
+
+    private fun coveredBy(inner:GlinerEvidenceLine,outer:GlinerEvidenceLine):Float {
+        val overlap=(minOf(inner.right,outer.right)-maxOf(inner.left,outer.left)).coerceAtLeast(0f)*
+            (minOf(inner.bottom,outer.bottom)-maxOf(inner.top,outer.top)).coerceAtLeast(0f)
+        val area=(inner.right-inner.left)*(inner.bottom-inner.top)
+        return if(area>0f) overlap/area else 0f
+    }
+
+    private fun horizontalOverlap(a:GlinerEvidenceLine,b:GlinerEvidenceLine):Float {
+        val overlap=(minOf(a.right,b.right)-maxOf(a.left,b.left)).coerceAtLeast(0f)
+        val width=minOf(a.right-a.left,b.right-b.left)
+        return if(width>0f) overlap/width else 0f
     }
 
     private fun adjacent(a:GlinerEvidenceLine,b:GlinerEvidenceLine,allowOverlap:Boolean=true):Boolean {
