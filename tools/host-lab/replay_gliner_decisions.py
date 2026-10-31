@@ -4,6 +4,8 @@
 Compile the runner with Kotlin/JRE and the Android geometry stand-ins, for example:
   kotlinc tools/logic-checks/AndroidGeometry.kt \
     gliner-workflow/src/main/java/com/yourapp/wine/gliner/{GlinerDocument,GlinerLanes,GlinerEngines,GlinerFieldDecision}.kt \
+    app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
+    app/src/main/java/com/yourapp/wine/kb/{WineTerms,BundledGrapes,BundledWineStyles}.kt \
     tools/host-lab/GlinerDecisionReplay.kt -include-runtime -d /tmp/gliner-replay.jar
   python3 tools/host-lab/replay_gliner_decisions.py export.json --runner-jar /tmp/gliner-replay.jar
 
@@ -35,12 +37,6 @@ def dec(s):
 def norm(s):
     s = unicodedata.normalize('NFKD', s.lower().replace('ς', 'σ').replace('&', ' et '))
     return ''.join(c for c in s if c.isalnum())
-
-
-def grapes():
-    source = (ROOT / 'app/src/main/java/com/yourapp/wine/kb/BundledGrapes.kt').read_text()
-    return sorted({term.strip() for block in re.findall(r'"""(.*?)"""', source, re.S)
-                   for line in block.splitlines() for term in re.split(r'[|;]', line) if term.strip()})
 
 
 def hints(row):
@@ -81,7 +77,7 @@ def main():
     if not rows:
         raise ValueError('No complete rows with base fields and OCR readings to replay')
     print(f"Replaying {len(rows)}/{len(data['images'])} exported rows with usable base/OCR evidence.")
-    protocol = [','.join(map(enc, grapes()))]
+    protocol = []
     for row in rows:
         fields = ','.join(enc(row['base_fields'].get(f, '')) for f in FIELDS)
         lane_hints = ';'.join(f'{lane},{score},{enc(text)}' for lane, score, text in hints(row))
@@ -99,8 +95,13 @@ def main():
           if any('lane_hints' not in r or 'decision_readings' not in r for r in rows)
           else 'Exported decision readings and lane scores used with the current vocabulary; OCR and inference are not rerun.')
     gain = loss = before = after = 0
+    current_complete = new_complete = current_gain = current_loss = 0
     field_gains = {f: 0 for f in FIELDS}
     field_losses = {f: 0 for f in FIELDS}
+    current_field_gains = {f: 0 for f in FIELDS}
+    current_field_losses = {f: 0 for f in FIELDS}
+    excluded_field_gains = {f: 0 for f in FIELDS}
+    excluded_field_losses = {f: 0 for f in FIELDS}
     for row in rows:
         final, changes = results[row['review_number']]
         targets = refs[row['image']]
@@ -109,7 +110,11 @@ def main():
             actual = outcome(targets[f], row['base_fields'].get(f, ''))
             recorded = row['base_outcomes'].get(f)
             if recorded and not recorded.startswith('unscored') and actual != recorded:
-                raise ValueError(f"Scoring mismatch for #{row['review_number']} {f}: {actual} vs {recorded}")
+                raise ValueError(f"Base scoring mismatch for #{row['review_number']} {f}: {actual} vs {recorded}")
+            final_actual = outcome(targets[f], row['fields'].get(f, ''))
+            final_recorded = row.get('outcomes', {}).get(f)
+            if final_recorded and not final_recorded.startswith('unscored') and final_actual != final_recorded:
+                raise ValueError(f"Final scoring mismatch for #{row['review_number']} {f}: {final_actual} vs {final_recorded}")
         eligible = row['eligible'] and row['status'] == 'complete'
         base_ok = eligible and all(outcome(targets[f], row['base_fields'].get(f, '')).startswith('correct_') for f in FIELDS)
         new_ok = eligible and all(outcome(targets[f], final.get(f, '')).startswith('correct_') for f in FIELDS)
@@ -117,17 +122,37 @@ def main():
         after += new_ok
         gain += eligible and not base_ok and new_ok
         loss += eligible and base_ok and not new_ok
+        current_ok = eligible and all(outcome(targets[f], row['fields'].get(f, '')).startswith('correct_') for f in FIELDS)
+        current_complete += current_ok
+        new_complete += new_ok
+        current_gain += eligible and not current_ok and new_ok
+        current_loss += eligible and current_ok and not new_ok
         for f in FIELDS:
             if not eligible:
+                # Excluded images don't enter the headline score, but check resolved fields for
+                # regressions rather than letting the exclusion hide harmful policy changes.
+                if targets[f]['status'] != 'unresolved':
+                    current = outcome(targets[f], row['fields'].get(f, '')).startswith('correct_')
+                    now = outcome(targets[f], final.get(f, '')).startswith('correct_')
+                    excluded_field_gains[f] += not current and now
+                    excluded_field_losses[f] += current and not now
                 continue
             was = outcome(targets[f], row['base_fields'].get(f, '')).startswith('correct_')
             now = outcome(targets[f], final.get(f, '')).startswith('correct_')
             field_gains[f] += not was and now
             field_losses[f] += was and not now
+            current = outcome(targets[f], row['fields'].get(f, '')).startswith('correct_')
+            current_field_gains[f] += not current and now
+            current_field_losses[f] += current and not now
+            if current != now:
+                print(f"  #{row['review_number']} {f}: {'improved' if now else 'regressed'} relative to exported final")
         if changes:
             print(f"#{row['review_number']} {'GAIN' if new_ok and not base_ok else 'LOSS' if base_ok and not new_ok else 'partial/noneligible'}: " + ' | '.join(changes))
     print(f'eligible base complete {before}; replay complete {after}; gains {gain}; losses {loss}')
     print('field gains:', field_gains, 'field losses:', field_losses)
+    print(f'exported final complete {current_complete}; replay complete {new_complete}; new gains {current_gain}; new losses {current_loss}')
+    print('field gains vs exported final:', current_field_gains, 'field losses:', current_field_losses)
+    print('excluded resolved-field gains vs exported final:', excluded_field_gains, 'field losses:', excluded_field_losses)
 
 
 if __name__ == '__main__':

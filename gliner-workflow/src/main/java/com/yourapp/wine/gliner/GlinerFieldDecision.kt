@@ -15,7 +15,7 @@ data class GlinerEvidenceLine(
  * The base result wins unless an explicit, auditable rule finds independent OCR evidence.
  */
 object GlinerFieldDecisionPolicy {
-    const val VERSION="gliner-field-policy-v2"
+    const val VERSION="gliner-field-policy-v3"
 
     fun apply(fields:Map<String,String>,hints:List<GlinerFieldHint>,rawLines:List<String>):GlinerFieldDecision {
         val producer=fields["producer"].orEmpty()
@@ -60,9 +60,11 @@ object GlinerFieldDecisionPolicy {
      */
     fun applyWithEvidence(
         fields:Map<String,String>,hints:List<GlinerFieldHint>,readings:List<GlinerEvidenceLine>,grapeTerms:Set<String>,
+        styleTerms:Set<String> = emptySet(),
     ):GlinerFieldDecision {
         val lines=consensus(readings)
         val grapes=grapeTerms.map(::key).filter { it.length>=4 }.toSet()
+        val styles=styleTerms.map(::key).filter { it.length>=8 }.toSet()
         val updated=fields.toMutableMap()
         val changes=mutableListOf<String>()
         fun replace(field:String,value:String,reason:String) {
@@ -90,6 +92,43 @@ object GlinerFieldDecisionPolicy {
                 candidates += "${line.text.trim()} ${next.text.trim()}"
             }
             unique(candidates)?.let { replace("producer",it,"two-engine estate evidence") }
+        }
+
+        // Classification words are not estate identities. If both OCR engines independently
+        // read an estate prefix and the same place together, recover that observed estate name
+        // instead of a classification-only producer. The place must also occur exactly in OCR.
+        val producerBeforeEstate=key(updated["producer"].orEmpty())
+        val placeText=updated["subregion"].orEmpty().trim()
+        val placeKey=key(placeText)
+        val classificationOnly=producerBeforeEstate=="premier" || producerBeforeEstate.contains("cruclass") ||
+            producerBeforeEstate.contains("grandcrucclass") ||
+            (placeKey.isNotBlank() && producerBeforeEstate=="chateaugrand"+placeKey)
+        if(classificationOnly && placeKey.length>=6 && readings.any { valid(it) && key(it.text).contains(placeKey) } &&
+            readings.any { valid(it) && key(it.text).contains("chateau") }) {
+            val candidates=mutableListOf<String>()
+            val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+            primary.forEach { prefix ->
+                if(!editDistanceAtMostTwo(key(prefix.text),"chateau")) return@forEach
+                primary.forEach placeLoop@ { place ->
+                    if(!editDistanceAtMostTwo(key(place.text),placeKey)) return@placeLoop
+                    val vertical=(minOf(prefix.bottom,place.bottom)-maxOf(prefix.top,place.top)).coerceAtLeast(0f)
+                    val horizontal=(minOf(prefix.right,place.right)-maxOf(prefix.left,place.left)).coerceAtLeast(0f)
+                    val height=minOf(prefix.bottom-prefix.top,place.bottom-place.top)
+                    val width=minOf(prefix.right-prefix.left,place.right-place.left)
+                    val sameLine=height>0f && vertical/height>=0.6f && place.left>=prefix.left &&
+                        place.right>prefix.right && place.left-prefix.right<=0.12f
+                    val stacked=width>0f && horizontal/width>=0.5f && place.top>=prefix.top &&
+                        place.top-prefix.bottom in 0f..0.02f
+                    if(!sameLine && !stacked) return@placeLoop
+                    val joined=GlinerEvidenceLine(prefix.engine,"",minOf(prefix.left,place.left),minOf(prefix.top,place.top),
+                        maxOf(prefix.right,place.right),maxOf(prefix.bottom,place.bottom))
+                    val expected="chateau"+placeKey
+                    val corroborated=readings.any { other -> valid(other) && other.engine!=prefix.engine &&
+                        iou(joined,other)>=0.30f && editDistanceAtMost(expected,key(other.text),3) }
+                    if(corroborated) candidates += "CHATEAU $placeText"
+                }
+            }
+            unique(candidates)?.let { replace("producer",it,"two-engine estate and location evidence") }
         }
 
         val hinted=apply(updated,hints,readings.map { it.text })
@@ -130,6 +169,102 @@ object GlinerFieldDecisionPolicy {
                 unique(prefixes)?.let { replace("wine_name",it,"two-engine adjacent title completion") }
             }
         }
+        // A blank wine may be an adjacent wine-style term and sweetness descriptor. The complete
+        // style must be in the shared vocabulary, and independently supported even if the other
+        // OCR engine split it into multiple overlapping text fragments.
+        if(updated["wine_name"].isNullOrBlank() && styles.isNotEmpty()) {
+            val descriptors=setOf("brut","extrabrut","brutnature","demisec","extradry")
+            val candidates=mutableListOf<String>()
+            readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && key(it.text) in styles }.forEach { style ->
+                if(!fragmentConsensus(style,readings)) return@forEach
+                lines.filter { key(it.text) in descriptors }.forEach { descriptor ->
+                    val ordered=if((descriptor.top+descriptor.bottom)<(style.top+style.bottom)) descriptor to style else style to descriptor
+                    val overlap=(minOf(style.bottom,descriptor.bottom)-maxOf(style.top,descriptor.top)).coerceAtLeast(0f)
+                    val shorter=minOf(style.bottom-style.top,descriptor.bottom-descriptor.top)
+                    if(shorter>0f && overlap<=0.40f*shorter && adjacent(ordered.first,ordered.second))
+                        candidates += "${ordered.first.text.trim()} ${ordered.second.text.trim()}"
+                }
+            }
+            unique(candidates)?.let { replace("wine_name",it,"two-engine wine style and descriptor") }
+        }
+
+        // A geographically named fallback can mask a cuvee made from a distinctive first line
+        // followed by "de <estate>". Both lines must be read at the same places by both engines,
+        // and the second must be anchored in the independently selected producer.
+        val wineKey=key(updated["wine_name"].orEmpty())
+        val producerKey=key(updated["producer"].orEmpty())
+        val geographicFallback=wineKey.isNotBlank() && listOf("region","subregion").any {
+            key(updated[it].orEmpty()).let { place -> place.isNotBlank() && place==wineKey }
+        }
+        if(geographicFallback && producerKey.isNotBlank()) {
+            val candidates=mutableListOf<String>()
+            lines.zipWithNext().forEach { (first,second) ->
+                val firstKey=key(first.text)
+                val rawSecond=second.text.trim()
+                val match=Regex("(?i)^de\\s+(.+)$").matchEntire(rawSecond) ?: return@forEach
+                val estate=key(match.groupValues[1])
+                if(firstKey.length<4 || firstKey.any(Char::isDigit) || legal(first.text) ||
+                    firstKey in producerKey || firstKey in wineKey || estate.length<6 ||
+                    estate !in producerKey || !adjacent(first,second,allowOverlap=false)) return@forEach
+                candidates += "${first.text.trim()} ${second.text.trim()}"
+            }
+            unique(candidates)?.let { replace("wine_name",it,"two-engine title linked to selected producer") }
+        }
+
+        // A quoted title, or a large title directly above a model-confirmed producer, may be more
+        // informative than a geographic fallback. Both engines must read essentially the same
+        // text at the same place; never create support from duplicated readings of one engine.
+        val currentWineKey=key(updated["wine_name"].orEmpty())
+        val places=listOf("country","region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+        val isGeoFallback=currentWineKey.length>=4 && places.any { it==currentWineKey || it.startsWith(currentWineKey) }
+        if(isGeoFallback) {
+            val currentProducerKey=key(updated["producer"].orEmpty())
+            val producerConfirmed=hints.any { it.lane==GlinerLane.PRODUCER && it.confidence.isFinite() &&
+                it.confidence>=0.5f && key(it.text)==currentProducerKey && currentProducerKey.isNotBlank() }
+            val anchors=if(producerConfirmed) lines.filter { key(it.text)==currentProducerKey } else emptyList()
+            val candidates=mutableListOf<String>()
+            readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }.forEach { reading ->
+                val text=reading.text.trim()
+                val title=text.trim('《','》','«','»','“','”','"').trim()
+                val titleKey=key(title)
+                if(titleKey.length<6 || titleKey.any(Char::isDigit) || legal(title) || titleKey in places ||
+                    titleKey==currentWineKey || (currentProducerKey.isNotBlank() &&
+                        (titleKey in currentProducerKey || currentProducerKey in titleKey))) return@forEach
+                val corroborated=readings.any { other -> valid(other) && other.engine!=reading.engine &&
+                    iou(reading,other)>=0.30f && editDistanceAtMostTwo(titleKey,key(other.text)) }
+                if(!corroborated) return@forEach
+                val quoted=(text.startsWith('《') && text.endsWith('》')) ||
+                    (text.startsWith('«') && text.endsWith('»')) ||
+                    (text.startsWith('“') && text.endsWith('”')) ||
+                    (text.length>=2 && text.startsWith('"') && text.endsWith('"'))
+                val aboveProducer=anchors.any { anchor ->
+                    val overlap=(minOf(reading.right,anchor.right)-maxOf(reading.left,anchor.left)).coerceAtLeast(0f)
+                    val width=minOf(reading.right-reading.left,anchor.right-anchor.left)
+                    val distance=anchor.top-reading.bottom
+                    width>0f && overlap/width>=0.5f && (reading.top+reading.bottom)<(anchor.top+anchor.bottom) &&
+                        distance>=-0.5f*minOf(reading.bottom-reading.top,anchor.bottom-anchor.top) &&
+                        distance<=0.20f && (reading.bottom-reading.top)>=1.5f*(anchor.bottom-anchor.top)
+                }
+                if(quoted || aboveProducer) candidates += title
+            }
+            unique(candidates)?.let { replace("wine_name",it,"two-engine title evidence over geographic fallback") }
+        }
+
+        // If a single-word subregion is not read anywhere, but is one edit away from a producer
+        // word independently observed by both engines at the same location, it may be a fuzzy
+        // leakage from the producer name. Do not clear geography that is actually present in OCR.
+        val subregion=updated["subregion"].orEmpty()
+        val subKey=key(subregion)
+        if(subregion.trim().split(Regex("\\s+")).size==1 && subKey.length>=5 &&
+            readings.none { key(it.text).contains(subKey) }) {
+            val producerWords=Regex("[\\p{L}]+(?:['’][\\p{L}]+)?").findAll(updated["producer"].orEmpty())
+                .map { key(it.value) }.filter { it.length>=5 && it!=subKey && editDistanceAtMostOne(it,subKey) }.toSet()
+            val corroborated=producerWords.any { word ->
+                val candidates=readings.filter { valid(it) && key(it.text).contains(word) }
+                candidates.any { a -> candidates.any { b -> a.engine!=b.engine && iou(a,b)>=0.25f } }
+            }
+            if(corroborated) replace("subregion","","unsupported fuzzy producer-word match")
+        }
         return GlinerFieldDecision(updated,changes)
     }
 
@@ -157,6 +292,22 @@ object GlinerFieldDecisionPolicy {
         return differences+(a.length-i)+(b.length-j)<=1
     }
 
+    private fun editDistanceAtMostTwo(a:String,b:String):Boolean = editDistanceAtMost(a,b,2)
+
+    private fun editDistanceAtMost(a:String,b:String,limit:Int):Boolean {
+        if(a.length<6 || b.length<6 || a.length>100 || b.length>100 || kotlin.math.abs(a.length-b.length)>limit) return false
+        var previous=IntArray(b.length+1) { it }
+        for(i in a.indices) {
+            val current=IntArray(b.length+1)
+            current[0]=i+1
+            for(j in b.indices) {
+                current[j+1]=minOf(previous[j+1]+1,current[j]+1,previous[j]+if(a[i]==b[j]) 0 else 1)
+            }
+            previous=current
+        }
+        return previous[b.length]<=limit
+    }
+
     private fun valid(line:GlinerEvidenceLine):Boolean =
         line.engine.isNotBlank() && line.text.isNotBlank() &&
             listOf(line.left,line.top,line.right,line.bottom).all { it.isFinite() && it in 0f..1f } &&
@@ -167,6 +318,22 @@ object GlinerFieldDecisionPolicy {
             (minOf(a.bottom,b.bottom)-maxOf(a.top,b.top)).coerceAtLeast(0f)
         val union=(a.right-a.left)*(a.bottom-a.top)+(b.right-b.left)*(b.bottom-b.top)-intersection
         return if(union>0f) intersection/union else 0f
+    }
+
+    private fun fragmentConsensus(primary:GlinerEvidenceLine,readings:List<GlinerEvidenceLine>):Boolean {
+        val target=key(primary.text)
+        return readings.asSequence().filter { valid(it) && it.engine!=primary.engine }.groupBy { it.engine }.values.any { group ->
+            val pieces=group.filter { other ->
+                val intersection=(minOf(primary.right,other.right)-maxOf(primary.left,other.left)).coerceAtLeast(0f)*
+                    (minOf(primary.bottom,other.bottom)-maxOf(primary.top,other.top)).coerceAtLeast(0f)
+                val area=(other.right-other.left)*(other.bottom-other.top)
+                area>0f && intersection/area>=0.5f
+            }.sortedBy { it.left }
+            if(pieces.isEmpty() || pieces.size>8) false else {
+                val combined=pieces.joinToString("") { key(it.text) }
+                combined==target || editDistanceAtMostTwo(combined,target)
+            }
+        }
     }
 
     private fun consensus(readings:List<GlinerEvidenceLine>):List<GlinerEvidenceLine> {

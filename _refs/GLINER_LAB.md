@@ -23,20 +23,38 @@ After the base extraction, `GlinerFieldDecisionPolicy` considers typed lane hint
 candidates. It may repair an identity collision or geographic fallback with a unique exact-line
 wine hint; recover a blank or producer-prefixed grape line only when two independent engines read
 the same overlapping line; complete a grape title from an adjacent two-engine-consensus prefix; or
-recover a blank/legal-text-contaminated producer from corroborated estate-name evidence. It uses
-the app's existing bundled grape vocabulary, not reference answers. Ambiguous or unsupported
-candidates are rejected. Every altered field is YELLOW and logged. These heuristics are experimental
-and were tuned on the available corpus; the phone test and a held-out corpus are needed to assess
-real improvements and regressions.
+recover a blank/legal-text-contaminated producer from corroborated estate-name evidence. Policy v3
+also considers: two-engine quoted/prominent cuvées over a geographic fallback; an adjacent title
+anchored to the selected estate; a corroborated wine style and descriptor for a blank name;
+classification-contaminated estate names supported by both OCR engines and a place read on the
+label; and removal of an unsupported subregion that appears to be a fuzzy producer-word leak. These
+rules use the app's existing grape and style vocabularies and observed text, never reference answers.
+Ambiguous or unsupported candidates are rejected. Nonblank altered fields are YELLOW and a cleared
+field is RED; each decision is logged. These are experimental heuristics tuned on the available
+corpus, and need a phone run and held-out labels to assess real improvements and regressions.
 
 JSON exports preserve final fields, `base_fields`, `base_outcomes`, `gliner_decisions`, exact
 `decision_readings`, `raw_readings` (with source engine, estimated flag, confidence and box), and
 `lane_hints` with full scores. `same_ocr_comparison` reports paired eligible-label and per-field
 gains/losses versus the base on exactly the same readings; it is not a Lab v7 baseline. The first
 result wall time includes model loading and cold setup; batch per-photo averages exclude that work.
-The host tool `tools/host-lab/replay_gliner_decisions.py` evaluates the actual Kotlin policy from a
-phone export using reference targets only for scoring. Older exports lack full hint scores and exact
-decision input text, so their replay is explicitly approximate.
+The host tool `tools/host-lab/replay_gliner_decisions.py` evaluates the actual Kotlin policy and
+bundled vocabularies from a phone export, using reference targets only for scoring. It reports paired
+eligible and excluded-field changes against both the base and exported final fields. Older exports
+lack full hint scores and exact decision input text, so their replay is explicitly approximate.
+
+### Latest same-OCR experiment
+
+The v2 phone export from build `1d81827` scored 86/121 eligible complete labels (124 attempted).
+Replay of the same v2 decision inputs reproduced 86/121 and every exported final field. Replaying
+the v3 policy on those exact inputs gives 95/121: nine additional complete labels, no complete-label
+losses, and four producer, four wine and one subregion field gains with no field losses. Four of the
+producer gains are repeat photos of the same estate; they are not four independent producer examples.
+Excluded resolved fields also had no gains or losses. V3 has **not yet been verified on Android**:
+the replay doesn't rerun OCR or inference. This dataset was used to develop these rules; these
+numbers are in-sample results, not a holdout accuracy claim. More than 90% would require 109/121.
+The remaining replay errors comprise 15 producer, 14 wine and one subregion field. The partial
+module boundary described above remains unfinished.
 The screen supports copying results, JSON/CSV export, and foreground-service execution while
 navigating away or locking the phone.
 
