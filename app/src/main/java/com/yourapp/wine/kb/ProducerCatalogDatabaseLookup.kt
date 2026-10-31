@@ -148,6 +148,7 @@ class ProducerCatalogDatabaseLookup private constructor(
             "xwines" -> "X-Wines candidate"
             "ttb" -> "TTB permit candidate"
             "osm" -> "OpenStreetMap candidate"
+            "approved_brand" -> "Owner-approved wine brand"
             else -> source
         }
 

@@ -36,11 +36,11 @@ class ProducerCatalogLookupTests(unittest.TestCase):
         manifest = json.loads((expanded / "manifest.json").read_text())
         self.assertEqual(manifest["kind"], "lab-expanded-producer-index")
         self.assertTrue(manifest["lab_only"])
-        self.assertEqual(manifest["records"], 78615)
+        self.assertEqual(manifest["records"], 78632)
         database = expanded / "producers-expanded.sqlite"
         self.assertEqual(hashlib.sha256(database.read_bytes()).hexdigest(), manifest["database_sha256"])
         with sqlite3.connect(database) as connection:
-            self.assertEqual(connection.execute("SELECT COUNT(*) FROM producers").fetchone()[0], 78615)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM producers").fetchone()[0], 78632)
             self.assertEqual(
                 connection.execute("SELECT COUNT(*) FROM producer_sources").fetchone()[0],
                 manifest["supplemental_records"],
@@ -49,7 +49,7 @@ class ProducerCatalogLookupTests(unittest.TestCase):
                 "SELECT COALESCE(s.source,'lwin'),COUNT(*) FROM producers p "
                 "LEFT JOIN producer_sources s ON s.id=p.id GROUP BY COALESCE(s.source,'lwin')"
             ).fetchall())
-            self.assertEqual(per_source, {"lwin": 33160, "xwines": 18945, "ttb": 14849, "osm": 11661})
+            self.assertEqual(per_source, {"lwin": 33160, "xwines": 18945, "ttb": 14849, "osm": 11661, "approved_brand": 17})
         source = (ROOT / "app/src/main/java/com/yourapp/wine/kb/ProducerCatalogDatabaseLookup.kt").read_text()
         screen = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/DatabaseLookupScreen.kt").read_text()
         categories = (ROOT / "app/src/main/java/com/yourapp/wine/kb/DatabaseNameLookup.kt").read_text()
@@ -69,6 +69,49 @@ class ProducerCatalogLookupTests(unittest.TestCase):
         self.assertIn("fun wineNameCount()", kb)
         self.assertNotIn("appellationCount", kb)
         self.assertNotIn("EXPANDED_PRODUCER", kb)
+
+    def test_approved_brands_are_source_tagged_and_searchable(self):
+        import sys
+        sys.path.insert(0, str(ROOT / "tools/producer-sources"))
+        from prepare_primary import normalize
+
+        source_file = ROOT / "tools/producer-sources/approved-wine-brands.json"
+        source = json.loads(source_file.read_text(encoding="utf-8"))
+        expected = {
+            "Altos de Valdoso", "Amore di Amanti", "Vegania", "Lady Lola", "Lion and the Lily",
+            "Living Coral", "Sicalia", "Vite Mia", "Pop-it Now", "She’s Always Rosé",
+            "Terra Venetica", "Dal Vulcano", "Giorgio & Gianni", "Lupi Reali", "Cole Cellars",
+            "Les Carrières de Mézy", "When Life Gives You Oranges",
+        }
+        self.assertEqual({row["name"] for row in source["brands"]}, expected)
+        self.assertEqual(len(source["brands"]), 17)
+        for row in source["brands"]:
+            self.assertGreaterEqual(len(row["evidence_urls"]), 2)
+            self.assertTrue(all(url.startswith("https://") for url in row["evidence_urls"]))
+        expanded = ROOT / "app/src/main/assets/producer-gazetteer-expanded-v1"
+        manifest = json.loads((expanded / "manifest.json").read_text())
+        entry = next(item for item in manifest["sources"] if item["id"] == "approved_brand")
+        self.assertEqual(entry["source_sha256"], hashlib.sha256(source_file.read_bytes()).hexdigest())
+        with sqlite3.connect(expanded / "producers-expanded.sqlite") as database:
+            actual = database.execute(
+                "SELECT p.id,p.name,p.key,p.country_group,p.lwin7 FROM producers p "
+                "JOIN producer_sources s ON s.id=p.id WHERE s.source='approved_brand'"
+            ).fetchall()
+            self.assertEqual({row[1] for row in actual}, expected)
+            self.assertEqual(len(actual), 17)
+            for entity_id, name, key, country, lwin in actual:
+                self.assertEqual(key, normalize(name))
+                self.assertEqual((country, lwin), ("", "[]"))
+                self.assertEqual(database.execute("SELECT COUNT(*) FROM producers WHERE key=?", (key,)).fetchone()[0], 1)
+                self.assertIn((entity_id,), database.execute(
+                    "SELECT id FROM names WHERE names MATCH ?", ('"' + key + '"',)
+                ).fetchall())
+        kotlin = (ROOT / "app/src/main/java/com/yourapp/wine/kb/ProducerCatalogDatabaseLookup.kt").read_text()
+        self.assertIn('"approved_brand" -> "Owner-approved wine brand"', kotlin)
+        gliner = (ROOT / "gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt").read_text()
+        self.assertIn("ProducerGazetteer.openExpanded(context.applicationContext)", gliner)
+        coverage = json.loads((ROOT / "app/src/main/assets/wine-app-labels-v1/gazetteer-coverage.json").read_text())
+        self.assertIn("approved_brands", {row["id"] for row in coverage["databases"]})
 
     def test_wine_and_appellation_lookup_reach_the_real_databases(self):
         # Wine name must search the packaged LWIN wine index (101,326 names), not

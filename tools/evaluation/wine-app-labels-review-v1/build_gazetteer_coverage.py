@@ -232,6 +232,7 @@ def main() -> None:
     producer_indexes = {
         "lwin_producers": query_keys(producer_db, "SELECT name,key FROM producers"),
         "expanded_producers": query_keys(expanded_db, "SELECT name,key FROM producers"),
+        "approved_brands": query_keys(expanded_db, "SELECT p.name,p.key FROM producers p JOIN producer_sources s ON s.id=p.id WHERE s.source='approved_brand'"),
         "kb_producers": scanner_kb["producers"],
     }
     wine_indexes = {
@@ -263,6 +264,7 @@ def main() -> None:
     definitions = [
         ("lwin_producers", "LWIN producers", "producer"),
         ("expanded_producers", "Expanded producers (Lab)", "producer"),
+        ("approved_brands", "Owner-approved wine brands (Lab subset)", "producer"),
         ("lwin_wines", "LWIN wine names", "wine_name"),
         ("appellations", "Appellations", "appellation"),
         ("wine_geography", "Regions/subregions", "place"),

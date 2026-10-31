@@ -47,24 +47,25 @@ class XWinesCandidateDataTests(unittest.TestCase):
         self.assertEqual(expanded_manifest["kind"], "lab-expanded-producer-index")
         self.assertTrue(expanded_manifest["lab_only"])
         self.assertEqual(expanded_manifest["primary_records"], 33160)
-        self.assertEqual(expanded_manifest["records"], 78615)
-        self.assertEqual(expanded_manifest["supplemental_records"], 45455)
+        self.assertEqual(expanded_manifest["records"], 78632)
+        self.assertEqual(expanded_manifest["supplemental_records"], 45472)
         self.assertEqual(expanded_manifest["primary_database_sha256"], manifest["database_sha256"])
         self.assertEqual(expanded_manifest["wine_database_sha256"], manifest["wine_database_sha256"])
         by_id = {entry["id"]: entry for entry in expanded_manifest["sources"]}
         self.assertEqual(by_id["xwines"]["records"], 18945)
         self.assertEqual(by_id["ttb"]["records"], 14849)
         self.assertEqual(by_id["osm"]["records"], 11661)
+        self.assertEqual(by_id["approved_brand"]["records"], 17)
         expanded_db = EXPANDED / "producers-expanded.sqlite"
         self.assertEqual(expanded_manifest["database_sha256"], refresh.db_hash(expanded_db))
         import sqlite3
         with sqlite3.connect(expanded_db) as expanded, sqlite3.connect(MAIN / "producers.sqlite") as primary:
-            self.assertEqual(expanded.execute("SELECT COUNT(*) FROM producers").fetchone()[0], 78615)
+            self.assertEqual(expanded.execute("SELECT COUNT(*) FROM producers").fetchone()[0], 78632)
             primary_ids = {row[0] for row in primary.execute("SELECT id FROM producers")}
             expanded_ids = {row[0] for row in expanded.execute("SELECT id FROM producers")}
             self.assertTrue(primary_ids <= expanded_ids)
             tagged = expanded.execute("SELECT source,COUNT(*) FROM producer_sources GROUP BY source").fetchall()
-            self.assertEqual(dict(tagged), {"xwines": 18945, "ttb": 14849, "osm": 11661})
+            self.assertEqual(dict(tagged), {"xwines": 18945, "ttb": 14849, "osm": 11661, "approved_brand": 17})
             untagged = expanded.execute(
                 "SELECT COUNT(*) FROM producers p LEFT JOIN producer_sources s ON s.id=p.id WHERE s.id IS NULL"
             ).fetchone()[0]

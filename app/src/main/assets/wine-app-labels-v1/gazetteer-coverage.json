@@ -25,7 +25,7 @@
       "expected_blank_labels": 0,
       "unresolved_labels": 1,
       "unique_known_values_matched": 58,
-      "database_records_matched": 98,
+      "database_records_matched": 99,
       "wine_index_matched_labels": 42,
       "appellation_or_varietal_matched_labels": 64
     },
@@ -54,13 +54,13 @@
     {
       "id": "subregion",
       "label": "Subregion",
-      "matched_labels": 81,
-      "total_labels": 81,
+      "matched_labels": 82,
+      "total_labels": 82,
       "dataset_labels": 124,
-      "expected_blank_labels": 43,
+      "expected_blank_labels": 42,
       "unresolved_labels": 0,
-      "unique_known_values_matched": 48,
-      "database_records_matched": 89
+      "unique_known_values_matched": 49,
+      "database_records_matched": 91
     }
   ],
   "databases": [
@@ -79,6 +79,14 @@
       "total_labels": 124,
       "unique_known_values_matched": 72,
       "database_records_matched": 72
+    },
+    {
+      "id": "approved_brands",
+      "label": "Owner-approved wine brands (Lab subset)",
+      "matched_labels": 0,
+      "total_labels": 124,
+      "unique_known_values_matched": 0,
+      "database_records_matched": 0
     },
     {
       "id": "lwin_wines",

@@ -135,8 +135,9 @@ app/src/androidTest/java/...           # Instrumented: WineImageImportRepository
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
 app/src/main/assets/producer-gazetteer-v1/ # Verified primary LWIN producer/wine indexes (producers.sqlite 33,160, wines.sqlite) + manifest/NOTICE; primary_verified gate
-app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OSM, 78,615); opened only by Lab v5 benchmark + Database Lookup
-tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report
+app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OSM and 17 owner-approved brands, 78,632); used by Lab and GLiNER post-processing + Database Lookup
+tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report and approved brands
+tools/producer-sources/approved-wine-brands.json # Owner-approved marketed names with source URLs and example wine evidence; not legal-producer assertions
 app/src/main/java/com/yourapp/wine/kb/WineIndexDatabaseLookup.kt # Read-only Database Lookup access to the packaged LWIN wine index (wines.sqlite); cache shared with ProducerGazetteer
 app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt # Debug-only per-label pipeline gates, definitions and latest-attempt aggregation
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt # The only benchmark screen: 124-label run, frozen Prod rows, Cached OCR checkbox next to Lab v5, matrix, CSV save
