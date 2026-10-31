@@ -19,17 +19,24 @@ the app adapter sends the actual original per-engine OCR lines (with their engin
 flag and box) into the base evidence extractor. GLiNER never removes words from that input or
 pretends a synthesized span was independently read by both engines.
 
-After the base extraction, `GlinerFieldDecisionPolicy` evaluates lane suggestions independently.
-The first guarded policy can repair a producer/wine-name collision only when there is one
-unambiguous wine-name lane that matches a whole real OCR line. It can also fill a blank at a higher
-confidence threshold. It does not access scoring targets, force GREEN, or override a different
-nonblank wine name. This is an experiment, not a measured accuracy improvement; review the device
-results and per-photo wins/losses before expanding the policy.
+After the base extraction, `GlinerFieldDecisionPolicy` considers typed lane hints and bounded OCR
+candidates. It may repair an identity collision or geographic fallback with a unique exact-line
+wine hint; recover a blank or producer-prefixed grape line only when two independent engines read
+the same overlapping line; complete a grape title from an adjacent two-engine-consensus prefix; or
+recover a blank/legal-text-contaminated producer from corroborated estate-name evidence. It uses
+the app's existing bundled grape vocabulary, not reference answers. Ambiguous or unsupported
+candidates are rejected. Every altered field is YELLOW and logged. These heuristics are experimental
+and were tuned on the available corpus; the phone test and a held-out corpus are needed to assess
+real improvements and regressions.
 
-JSON exports preserve final fields, `base_fields`, `base_outcomes`, `gliner_decisions`, each original `raw_readings`
-entry (including source engine, estimated flag, confidence and box), the model lanes and probes.
-`same_ocr_comparison` reports paired eligible-label wins and losses between the base result and the
-GLiNER decision layer on exactly the same readings; it is not a substitute for Lab v7's baseline.
+JSON exports preserve final fields, `base_fields`, `base_outcomes`, `gliner_decisions`, exact
+`decision_readings`, `raw_readings` (with source engine, estimated flag, confidence and box), and
+`lane_hints` with full scores. `same_ocr_comparison` reports paired eligible-label and per-field
+gains/losses versus the base on exactly the same readings; it is not a Lab v7 baseline. The first
+result wall time includes model loading and cold setup; batch per-photo averages exclude that work.
+The host tool `tools/host-lab/replay_gliner_decisions.py` evaluates the actual Kotlin policy from a
+phone export using reference targets only for scoring. Older exports lack full hint scores and exact
+decision input text, so their replay is explicitly approximate.
 The screen supports copying results, JSON/CSV export, and foreground-service execution while
 navigating away or locking the phone.
 

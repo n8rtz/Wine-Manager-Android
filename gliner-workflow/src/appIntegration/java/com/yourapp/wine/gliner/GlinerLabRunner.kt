@@ -5,6 +5,7 @@ import android.os.SystemClock
 import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.gazetteer.ProducerGazetteer
 import com.yourapp.wine.gazetteer.ProducerResolver
+import com.yourapp.wine.kb.BundledGrapes
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
 import com.yourapp.wine.textlab.TextLabBudgets
 import com.yourapp.wine.textlab.TextLabFormPreview
@@ -55,7 +56,11 @@ internal data class GlinerLabImageResult(
     val notes:String,
     /** Best span per lane before thresholding; empty when the model never scored a span. */
     val probes:List<String> = emptyList(),
-    /** Actual per-engine evidence, before fusion or model labelling. */
+    /** Every accepted lane hint and its model score, retained for reproducible replay. */
+    val laneHints:List<GlinerFieldHint> = emptyList(),
+    /** Exact lines and geometry received by the decision policy, before fusion or scrubbing. */
+    val decisionReadings:List<GlinerEvidenceLine> = emptyList(),
+    /** Per-engine base-extractor records, including scores and estimated-score flags. */
     val rawReadings:List<com.yourapp.wine.ocr.TokenRecord> = emptyList(),
     /** Unmodified base extraction and GLiNER-only changes, for side-by-side evaluation. */
     val baseFields:Map<String,String> = emptyMap(),
@@ -66,22 +71,18 @@ internal data class GlinerLabImageResult(
 }
 
 /**
- * The whole new structure, in order:
- *
- * ```
- * [PP-OCRv6 Medium det+rec] → [GLiNER-Small INT4] → [existing Lab v7 post-processing]
- * ```
- *
- * Stage 3 is not a re-implementation: the lane observations are handed to the same
- * `TextLabSpatialPreview` contender that produces Lab v7's `spatial_evidence_summary`, with the
- * integrated Lab v7 module set, the same producer/linked-wine gazetteers and the same single-reading
- * resolver policy. Only the input readings differ, which is the experiment: grouped lane fragments
- * instead of raw OCR lines.
+ * ML Kit and PP-OCRv6 run in parallel; fusion is used only for GLiNER-Small INT4 inference.
+ * The base `TextLabSpatialPreview` contender receives the original independent readings, not
+ * grouped lane fragments. The GLiNER-specific policy then evaluates typed hints and corroborated
+ * OCR candidates without seeing scoring targets. Lab v7 and production do not call this policy.
  */
 internal object GlinerLabRunner {
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L
+    private val grapeTerms:Set<String> by lazy {
+        BundledGrapes.terms.flatMap { listOf(it.name)+it.aliases }.toSet()
+    }
     val fieldLabels=linkedMapOf(
         "producer" to "Producer",
         "wine_name" to "Wine name",
@@ -133,12 +134,17 @@ internal object GlinerLabRunner {
             val postStarted=SystemClock.elapsedRealtime()
             val post=postProcess(context,records,warm,modules,labelled)
             postMs=SystemClock.elapsedRealtime()-postStarted
-            val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.apply(
-                post.fields,labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) },
-                ocr.readings.map { it.text }) else GlinerFieldDecision(post.fields,emptyList())
+            val laneHints=labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) }
+            val decisionReadings=ocr.readings.map { reading ->
+                GlinerEvidenceLine(reading.engineId,reading.text,reading.box.left,reading.box.top,
+                    reading.box.right,reading.box.bottom)
+            }
+            val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
+                post.fields,laneHints,decisionReadings,grapeTerms) else GlinerFieldDecision(post.fields,emptyList())
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
-                if(decision.changes.isNotEmpty()) put("wine_name","YELLOW")
+                PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }
+                    .forEach { put(it,"YELLOW") }
             }
             val outcomes=PhoneCorpusMath.fields.associateWith { field ->
                 PhoneCorpusMath.outcome(sample.target(field),fields[field].orEmpty(),post.status=="failed")
@@ -177,6 +183,8 @@ internal object GlinerLabRunner {
                 postMs=postMs,
                 totalMs=SystemClock.elapsedRealtime()-started,
                 probes=labelled.probes,
+                laneHints=laneHints,
+                decisionReadings=decisionReadings,
                 rawReadings=records,
                 baseFields=post.fields,
                 baseOutcomes=baseOutcomes,
@@ -215,8 +223,8 @@ internal object GlinerLabRunner {
     /**
      * Stage 3. Everything below this line is the existing Lab v7 post-processing: the production
      * fill engine produces the anchor summary, then the spatial contender runs the evidence
-     * extractor, producer repair, producer gazetteer and linked-wine resolver over the lane
-     * observations.
+     * extractor, producer repair, producer gazetteer and linked-wine resolver over the original
+     * independent OCR observations.
      */
     private fun postProcess(
         context:Context,

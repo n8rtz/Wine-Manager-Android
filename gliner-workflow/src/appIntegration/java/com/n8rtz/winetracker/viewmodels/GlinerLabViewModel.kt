@@ -11,6 +11,7 @@ import com.yourapp.wine.gliner.GlinerLabCorpus
 import com.yourapp.wine.gliner.GlinerLabImageResult
 import com.yourapp.wine.gliner.GlinerLabRunService
 import com.yourapp.wine.gliner.GlinerLabRunner
+import com.yourapp.wine.gliner.GlinerFieldDecisionPolicy
 import com.yourapp.wine.gliner.GlinerLabSample
 import com.yourapp.wine.gliner.GlinerLane
 import com.yourapp.wine.gliner.GlinerLaneConfig
@@ -81,6 +82,8 @@ internal data class GlinerLabState(
     /** Time to parse the tokenizer and create the ONNX session, in milliseconds. */
     val modelMs:Long=0,
     val runStartedMs:Long=0,
+    /** Run-button to first result, including model and all cold initialization. */
+    val firstResultMs:Long=0,
     val runElapsedMs:Long=0,
 ) {
     val ran:Boolean get() = samples.any { it.result!=null }
@@ -229,7 +232,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
             state.copy(running=true,finished=false,stopped=false,done=0,total=targets.size,current="",aggregate=null,message="",
-                runStartedMs=SystemClock.elapsedRealtime(),runElapsedMs=0,
+                runStartedMs=SystemClock.elapsedRealtime(),firstResultMs=0,runElapsedMs=0,
                 samples=state.samples.map { row ->
                     if(row.sample.image in targetImages) row.copy(status="Waiting",result=null) else row
                 })
@@ -273,7 +276,8 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                         val samples=state.samples.map { existing ->
                             if(existing.sample.image==row.sample.image) existing.copy(status=result.status,result=result) else existing
                         }
-                        state.copy(done=index+1,samples=samples,aggregate=aggregateGlinerRows(samples,stopped=false))
+                        state.copy(done=index+1,samples=samples,aggregate=aggregateGlinerRows(samples,stopped=false),
+                            firstResultMs=if(index==0) (SystemClock.elapsedRealtime()-state.runStartedMs).coerceAtLeast(0) else state.firstResultMs)
                     }
                 }
                 val aggregate=aggregateGlinerRows(mutable.value.samples,stopped=false)
@@ -306,7 +310,8 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         return buildString {
             appendLine("GLiNER lane lab · ${BuildConfig.BUILD_COMMIT} · ${snapshot.laneConfig.signatureKey()}")
             appendLine("bundle: ${snapshot.bundle.summary()}")
-            if(snapshot.modelMs>0) appendLine("model load: ${snapshot.modelMs} ms (bundle ${snapshot.bundleMs} ms + tokenizer/session ${snapshot.modelMs} ms)")
+            if(snapshot.modelMs>0) appendLine("model load: bundle ${snapshot.bundleMs} ms + tokenizer/session ${snapshot.modelMs} ms")
+            if(snapshot.firstResultMs>0) appendLine("first result wall time: ${snapshot.firstResultMs} ms (includes initialization)")
             val ran=snapshot.samples.mapNotNull { it.result }
             appendLine("status: "+ran.groupingBy { it.status }.eachCount().entries.joinToString(" · ") { "${it.key} ${it.value}" })
             snapshot.aggregate?.let { appendLine(it.text()) }
@@ -350,6 +355,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             }
             val payload=JSONObject().apply {
                 put("pipeline","gliner-lane-v1")
+                put("decision_policy",GlinerFieldDecisionPolicy.VERSION)
                 put("build",BuildConfig.BUILD_COMMIT)
                 put("branch",BuildConfig.BUILD_BRANCH)
                 put("signature",snapshot.laneConfig.signatureKey())
@@ -361,6 +367,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 put("model_load_ms",JSONObject().apply {
                     put("bundle",snapshot.bundleMs)
                     put("session",snapshot.modelMs)
+                    put("first_result_wall",snapshot.firstResultMs)
                 })
                 put("lab_modules",snapshot.modules.signatureKey())
                 snapshot.aggregate?.let { aggregate ->
@@ -384,6 +391,19 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                         put("override_labels",paired.count { it.fieldDecisions.isNotEmpty() })
                         put("gains",paired.count { !baseComplete(it) && it.complete })
                         put("losses",paired.count { baseComplete(it) && !it.complete })
+                        put("fields",JSONObject().apply {
+                            PhoneCorpusMath.fields.forEach { field ->
+                                fun baseCorrect(result:GlinerLabImageResult) = PhoneCorpusMath.correct(result.baseOutcomes[field].orEmpty())
+                                fun finalCorrect(result:GlinerLabImageResult) = result.fieldResults.firstOrNull { it.field==field }
+                                    ?.let { PhoneCorpusMath.correct(it.outcome) } ?: false
+                                put(field,JSONObject().apply {
+                                    put("base_correct",paired.count(::baseCorrect))
+                                    put("final_correct",paired.count(::finalCorrect))
+                                    put("gains",paired.count { !baseCorrect(it) && finalCorrect(it) })
+                                    put("losses",paired.count { baseCorrect(it) && !finalCorrect(it) })
+                                })
+                            }
+                        })
                     })
                 }
                 put("images",JSONArray(results.map { result -> jsonOf(result) }))
@@ -414,6 +434,11 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         put("words",result.wordCount)
         put("spans",result.spanCount)
         put("probes",JSONArray(result.probes))
+        put("lane_hints",JSONArray(result.laneHints.map { hint -> JSONObject().apply {
+            put("lane",hint.lane.key)
+            put("text",hint.text)
+            put("score",hint.confidence.toDouble())
+        } }))
         put("ocr_ms",result.ocrMs)
         put("gliner_ms",result.glinerMs)
         put("post_ms",result.postMs)
@@ -424,6 +449,11 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         put("base_fields",JSONObject(result.baseFields as Map<*, *>))
         put("base_outcomes",JSONObject(result.baseOutcomes as Map<*, *>))
         put("gliner_decisions",JSONArray(result.fieldDecisions))
+        put("decision_readings",JSONArray(result.decisionReadings.map { reading -> JSONObject().apply {
+            put("text",reading.text)
+            put("engine",reading.engine)
+            put("box",JSONArray(listOf(reading.left,reading.top,reading.right,reading.bottom)))
+        } }))
         put("raw_readings",JSONArray(result.rawReadings.map { reading -> JSONObject().apply {
             put("text",reading.textRaw)
             put("engine",reading.engineId)
