@@ -107,11 +107,11 @@ internal object GlinerLabRunner {
     ):GlinerLabImageResult = withContext(Dispatchers.Default) {
         val started=SystemClock.elapsedRealtime()
         val photo=File(workFolder,"${sample.image}")
-        GlinerLabCorpus.copyTo(context,sample,photo)
         var ocrMs=0L
         var glinerMs=0L
         var postMs=0L
         try {
+            GlinerLabCorpus.copyTo(context,sample,photo)
             val ocr=GlinerOcr.recognize(context,photo,SystemClock.elapsedRealtime()+OCR_BUDGET_MS)
             ocrMs=ocr.elapsedMs
             val document=GlinerDocument.build(ocr.lines)

@@ -33,6 +33,9 @@ class GlinerLabActivity:ComponentActivity() {
             val importLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
                 if(uris.isNotEmpty()) vm.importBundle(uris)
             }
+            val imageLauncher=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+                if(uris.isNotEmpty()) vm.importImages(uris)
+            }
             val csvLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
                 uri?.let(vm::saveCsv)
             }
@@ -49,6 +52,16 @@ class GlinerLabActivity:ComponentActivity() {
                         onRefresh=vm::refresh,
                         onRunAll=vm::runAll,
                         onRunImage={ image -> vm.runSingle(image) },
+                        onChooseImages={ imageLauncher.launch(arrayOf("image/*")) },
+                        onRunCustom=vm::runCustomAll,
+                        onRunCustomImage=vm::runCustomSingle,
+                        onRemoveCustom={ id -> vm.removeCustomImages(setOf(id)) },
+                        onClearCustom={ vm.removeCustomImages(state.customSamples.map { it.sample.image }.toSet()) },
+                        onConfirmField=vm::confirmField,
+                        onCorrectField=vm::correctField,
+                        onExpectedBlank=vm::expectBlank,
+                        onConfirmAll=vm::confirmAllFields,
+                        onDismissReviewPrompt=vm::dismissReviewPrompt,
                         onStop=vm::stop,
                         onSaveCsv={ csvLauncher.launch("gliner-lab-${System.currentTimeMillis()}.csv") },
                         onSaveJson={ jsonLauncher.launch("gliner-lab-${System.currentTimeMillis()}.json") },

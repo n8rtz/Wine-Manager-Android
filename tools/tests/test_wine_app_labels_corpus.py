@@ -10,6 +10,13 @@ ASSETS = ROOT / "app/src/main/assets/wine-app-labels-v1"
 
 
 class WineAppLabelsCorpusTests(unittest.TestCase):
+    def test_owner_corrected_154_subregion_is_porto(self):
+        scoring = json.loads((ASSETS / "scoring.json").read_text())
+        photo = next(row for row in scoring["images"] if row["review_number"] == 154)
+        self.assertEqual(photo["fields"]["subregion"], {
+            "status": "expected_value", "accepted": ["porto"], "target": "Porto",
+        })
+
     def test_packaged_photos_and_target_metadata_are_complete_and_frozen(self):
         labels = json.loads((REVIEW / "candidate-labels.json").read_text())
         manifest = json.loads((ASSETS / "manifest.json").read_text())

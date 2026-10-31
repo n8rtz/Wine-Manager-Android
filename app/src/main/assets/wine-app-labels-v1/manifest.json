@@ -13,6 +13,6 @@
   "rights": "No license is declared for the two source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
   "inputs_sha256": "9a0d78f0a79c0a75ac8f552029a9f717bef28edcfd8274b9ee863ab2885e9d59",
   "evaluation_set_sha256": "584ce0990caa817beb64374c0416afbe235f2d0b56b620c9738b01bc45aa2c24",
-  "scoring_sha256": "bb68f501f93ead896ef9182aae33c1929b0cc5a9b9e7dcff9cf512301ad06520",
+  "scoring_sha256": "884b058f14390b83f0b7ea6198721441d6168e112b82eae6cf188f9ff870bb24",
   "gazetteer_coverage_sha256": "ba843f745fadb86c8b5fcdc793dcf44b0f0e92e4c47e0bcdd0848be95fb5eb76"
 }

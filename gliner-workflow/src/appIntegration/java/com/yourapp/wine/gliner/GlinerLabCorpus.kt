@@ -13,8 +13,11 @@ internal data class GlinerLabSample(
     val sha256:String,
     val included:Boolean,
     val targets:Map<String,PhoneCorpusMath.Target>,
+    val isCustom:Boolean=false,
+    /** Exact byte match only; different photos of the same label cannot be detected this way. */
+    val matchesCorpus:Boolean=false,
 ) {
-    val displayName:String get() = "#$reviewNumber · $sourceFilename"
+    val displayName:String get() = if(isCustom) sourceFilename else "#$reviewNumber · $sourceFilename"
     fun target(field:String):PhoneCorpusMath.Target =
         targets[field] ?: PhoneCorpusMath.Target("unresolved", emptySet(), "")
 }
@@ -73,9 +76,9 @@ internal object GlinerLabCorpus {
     fun copyTo(context:Context,sample:GlinerLabSample,target:File) {
         require(sample.included) { "Photo is not in the Lab v7 evaluation selection" }
         target.parentFile?.mkdirs()
-        context.assets.open("$ASSET_ROOT/images/${sample.image}").use { input ->
-            target.outputStream().use { output -> input.copyTo(output,65536) }
-        }
+        val input=if(sample.isCustom) GlinerCustomImages.file(context,sample.image).inputStream()
+            else context.assets.open("$ASSET_ROOT/images/${sample.image}")
+        input.use { source -> target.outputStream().use { output -> source.copyTo(output,65536) } }
     }
 
     fun byteCount(context:Context,sample:GlinerLabSample):Long = runCatching {

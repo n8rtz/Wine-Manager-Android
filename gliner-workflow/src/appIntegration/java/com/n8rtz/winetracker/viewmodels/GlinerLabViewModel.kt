@@ -8,10 +8,14 @@ import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.gliner.GlinerBundle
 import com.yourapp.wine.gliner.GlinerBundleStatus
 import com.yourapp.wine.gliner.GlinerLabCorpus
+import com.yourapp.wine.gliner.GlinerCustomImages
 import com.yourapp.wine.gliner.GlinerLabImageResult
 import com.yourapp.wine.gliner.GlinerLabRunService
 import com.yourapp.wine.gliner.GlinerLabRunner
 import com.yourapp.wine.gliner.GlinerFieldDecisionPolicy
+import com.yourapp.wine.gliner.GlinerFieldReview
+import com.yourapp.wine.gliner.GlinerReviewCase
+import com.yourapp.wine.gliner.summarizeGlinerReviews
 import com.yourapp.wine.gliner.GlinerLabSample
 import com.yourapp.wine.gliner.GlinerLane
 import com.yourapp.wine.gliner.GlinerLaneConfig
@@ -40,6 +44,8 @@ internal data class GlinerLabRow(
     val sample:GlinerLabSample,
     val status:String="Waiting",
     val result:GlinerLabImageResult?=null,
+    /** Human review is never passed to OCR, inference or field decisions. */
+    val reviews:Map<String,GlinerFieldReview> = emptyMap(),
 ) {
     val displayName:String get() = sample.displayName
 }
@@ -63,6 +69,12 @@ internal data class GlinerAggregate(
 internal data class GlinerLabState(
     val bundle:GlinerBundleStatus,
     val samples:List<GlinerLabRow> = emptyList(),
+    val customSamples:List<GlinerLabRow> = emptyList(),
+    val customLoaded:Boolean=false,
+    val customLoadError:String="",
+    val importingImages:Boolean=false,
+    val reviewPrompt:Boolean=false,
+    val runningCustom:Boolean=false,
     val running:Boolean=false,
     val finished:Boolean=false,
     val stopped:Boolean=false,
@@ -87,7 +99,8 @@ internal data class GlinerLabState(
     val runElapsedMs:Long=0,
 ) {
     val ran:Boolean get() = samples.any { it.result!=null }
-    fun row(image:String):GlinerLabRow? = samples.firstOrNull { it.sample.image==image }
+    val customRan:Boolean get() = customSamples.any { it.result!=null }
+    fun row(image:String):GlinerLabRow? = (samples+customSamples).firstOrNull { it.sample.image==image }
 }
 
 internal fun aggregateGlinerRows(rows:List<GlinerLabRow>,stopped:Boolean):GlinerAggregate {
@@ -151,6 +164,14 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     init {
         mutable.update { it.copy(modelsReady=GlinerOcrModels.present(application)) }
         refresh()
+        if(!mutable.value.customLoaded) session.scope.launch {
+            val loaded=runCatching { GlinerCustomImages.load(app) }
+            mutable.update { state ->
+                if(state.customLoaded) state else state.copy(customLoaded=true,
+                    customSamples=loaded.getOrDefault(emptyList()).mapIndexed { index,sample -> GlinerLabRow(index,sample) },
+                    customLoadError=loaded.exceptionOrNull()?.let { "Cannot load imported images: ${it.message}" }.orEmpty())
+            }
+        }
     }
 
     fun refresh() {
@@ -166,7 +187,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 val known=state.samples.associateBy { it.sample.image }
                 state.copy(samples=samples.mapIndexed { index,sample ->
                     known[sample.image]?.copy(index=index) ?: GlinerLabRow(index,sample)
-                },total=samples.size)
+                },total=if(state.running) state.total else samples.size)
             }
         }
     }
@@ -177,6 +198,66 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             mutable.update { it.copy(bundle=GlinerBundle.status(app),message=outcome.message) }
         }
     }
+
+    fun importImages(uris:List<Uri>) {
+        if(uris.isEmpty() || mutable.value.running || mutable.value.importingImages || !mutable.value.customLoaded || mutable.value.customLoadError.isNotBlank()) return
+        mutable.update { it.copy(importingImages=true,message="Copying selected images privately…") }
+        session.scope.launch {
+            val existing=mutable.value.customSamples.map { it.sample }
+            val result=runCatching { GlinerCustomImages.import(app,uris,existing) }
+            mutable.update { state ->
+                result.fold(onSuccess={ imported ->
+                    val known=state.customSamples.associateBy { it.sample.image }
+                    val warning=if(imported.errors.isEmpty()) "" else " · ${imported.errors.size} failed: ${imported.errors.take(3).joinToString("; ")}"
+                    state.copy(importingImages=false,customSamples=imported.samples.mapIndexed { index,sample ->
+                        known[sample.image]?.copy(index=index,sample=sample) ?: GlinerLabRow(index,sample)
+                    },message="Added ${imported.added} images · ${imported.duplicates} duplicates skipped$warning")
+                },onFailure={ error -> state.copy(importingImages=false,message="Image import failed: ${error.message}") })
+            }
+        }
+    }
+
+    fun removeCustomImages(ids:Set<String>) {
+        val reset=mutable.value.customLoadError.isNotBlank()
+        if((ids.isEmpty() && !reset) || mutable.value.running || mutable.value.importingImages) return
+        mutable.update { it.copy(importingImages=true) }
+        session.scope.launch {
+            val samples=mutable.value.customSamples.map { it.sample }
+            val result=runCatching { if(reset) GlinerCustomImages.reset(app) else GlinerCustomImages.remove(app,samples,ids) }
+            mutable.update { state ->
+                result.fold(onSuccess={ state.copy(importingImages=false,customLoadError="",
+                    customSamples=state.customSamples.filterNot { reset || it.sample.image in ids }.mapIndexed { index,row -> row.copy(index=index) },
+                    message="Removed private copies; originals were not changed") },
+                    onFailure={ error -> state.copy(importingImages=false,message="Could not remove images: ${error.message}") })
+            }
+        }
+    }
+
+    private fun updateReview(image:String,field:String,transform:(GlinerFieldReview)->GlinerFieldReview) {
+        if(mutable.value.running || field !in PhoneCorpusMath.fields) return
+        mutable.update { state -> state.copy(customSamples=state.customSamples.map { row ->
+            if(row.sample.image!=image || row.result?.status!="complete") row else
+                row.copy(reviews=row.reviews+(field to transform(row.reviews[field] ?: GlinerFieldReview())))
+        }) }
+    }
+
+    fun confirmField(image:String,field:String,checked:Boolean) = updateReview(image,field) {
+        GlinerFieldReview(confirmed=checked)
+    }
+    fun correctField(image:String,field:String,value:String) = updateReview(image,field) {
+        GlinerFieldReview(corrected=value)
+    }
+    fun expectBlank(image:String,field:String,checked:Boolean) = updateReview(image,field) {
+        GlinerFieldReview(expectedBlank=checked)
+    }
+    fun confirmAllFields(image:String) {
+        if(mutable.value.running) return
+        mutable.update { state -> state.copy(customSamples=state.customSamples.map { row ->
+            if(row.sample.image!=image || row.result?.status!="complete") row else
+                row.copy(reviews=PhoneCorpusMath.fields.associateWith { GlinerFieldReview(confirmed=true) })
+        }) }
+    }
+    fun dismissReviewPrompt() { mutable.update { it.copy(reviewPrompt=false) } }
 
     fun clearBundle() {
         GlinerBundle.clear(app)
@@ -207,34 +288,40 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         GlinerLabRunService.stop(app)
     }
 
-    fun runAll() = launchRun(only=null)
+    fun runAll() = launchRun(only=null,custom=false)
+    fun runSingle(image:String) = launchRun(only=image,custom=false)
+    fun runCustomAll() = launchRun(only=null,custom=true)
+    fun runCustomSingle(image:String) = launchRun(only=image,custom=true)
 
-    fun runSingle(image:String) = launchRun(only=image)
-
-    private fun launchRun(only:String?) {
-        if(job?.isActive==true) return
+    private fun launchRun(only:String?,custom:Boolean) {
+        if(job?.isActive==true || mutable.value.importingImages) return
         val bundle=mutable.value.bundle
         if(!bundle.ready) {
             mutable.update { it.copy(message="Install the GLiNER-Small INT4 bundle first: ${bundle.summary()}") }
             return
         }
-        if(mutable.value.samples.isEmpty()) {
-            mutable.update { it.copy(message="The packaged dataset is still loading") }
+        val source=if(custom) mutable.value.customSamples else mutable.value.samples
+        if(source.isEmpty()) {
+            mutable.update { it.copy(message=if(custom) "Choose images first" else "The packaged dataset is still loading") }
             return
         }
         val laneConfig=mutable.value.laneConfig
         val modules=mutable.value.modules
-        val targets=mutable.value.samples.filter { it.sample.included && (only==null || it.sample.image==only) }
+        val targets=source.filter { it.sample.included && (only==null || it.sample.image==only) }
         if(targets.isEmpty()) {
-            mutable.update { it.copy(message="No selected Lab v7 evaluation photos to run") }
+            mutable.update { it.copy(message="No selected images to run") }
             return
         }
         val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
-            state.copy(running=true,finished=false,stopped=false,done=0,total=targets.size,current="",aggregate=null,message="",
+            state.copy(running=true,runningCustom=custom,reviewPrompt=false,finished=false,stopped=false,done=0,total=targets.size,current="",
+                aggregate=if(custom) state.aggregate else null,message="",
                 runStartedMs=SystemClock.elapsedRealtime(),firstResultMs=0,runElapsedMs=0,
-                samples=state.samples.map { row ->
+                samples=if(custom) state.samples else state.samples.map { row ->
                     if(row.sample.image in targetImages) row.copy(status="Waiting",result=null) else row
+                },
+                customSamples=if(!custom) state.customSamples else state.customSamples.map { row ->
+                    if(row.sample.image in targetImages) row.copy(status="Waiting",result=null,reviews=emptyMap()) else row
                 })
         }
         GlinerLabRunService.start(app,"Preparing ${targets.size} labels…")
@@ -273,22 +360,30 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                     }
                     results += result
                     mutable.update { state ->
-                        val samples=state.samples.map { existing ->
+                        val samples=if(custom) state.samples else state.samples.map { existing ->
                             if(existing.sample.image==row.sample.image) existing.copy(status=result.status,result=result) else existing
                         }
-                        state.copy(done=index+1,samples=samples,aggregate=aggregateGlinerRows(samples,stopped=false),
+                        val customSamples=if(!custom) state.customSamples else state.customSamples.map { existing ->
+                            if(existing.sample.image==row.sample.image) existing.copy(status=result.status,result=result) else existing
+                        }
+                        state.copy(done=index+1,samples=samples,customSamples=customSamples,
+                            aggregate=if(custom) state.aggregate else aggregateGlinerRows(samples,stopped=false),
                             firstResultMs=if(index==0) (SystemClock.elapsedRealtime()-state.runStartedMs).coerceAtLeast(0) else state.firstResultMs)
                     }
                 }
                 val aggregate=aggregateGlinerRows(mutable.value.samples,stopped=false)
-                mutable.update { it.copy(running=false,finished=true,current="",aggregate=aggregate,runElapsedMs=SystemClock.elapsedRealtime()-it.runStartedMs,message="") }
+                mutable.update { state -> state.copy(running=false,finished=true,current="",
+                    aggregate=if(custom) state.aggregate else aggregate,
+                    reviewPrompt=custom && results.any { it.status=="complete" },
+                    runElapsedMs=SystemClock.elapsedRealtime()-state.runStartedMs,message="") }
             } catch(cancel:CancellationException) {
                 val aggregate=aggregateGlinerRows(mutable.value.samples,stopped=true)
-                mutable.update { it.copy(running=false,finished=true,stopped=true,current="",aggregate=aggregate,runElapsedMs=SystemClock.elapsedRealtime()-it.runStartedMs,
-                    message="Stopped after ${results.size} photos. ${aggregate.text()}") }
+                mutable.update { state -> state.copy(running=false,finished=true,stopped=true,current="",
+                    aggregate=if(custom) state.aggregate else aggregate,runElapsedMs=SystemClock.elapsedRealtime()-state.runStartedMs,
+                    message=if(custom) "Stopped after ${results.size} imported photos." else "Stopped after ${results.size} photos. ${aggregate.text()}") }
             } catch(error:Exception) {
                 mutable.update { it.copy(running=false,finished=true,current="",runElapsedMs=SystemClock.elapsedRealtime()-it.runStartedMs,
-                    aggregate=aggregateGlinerRows(it.samples,stopped=false),
+                    aggregate=if(custom) it.aggregate else aggregateGlinerRows(it.samples,stopped=false),
                     message="GLiNER lab could not start: ${error.javaClass.simpleName}: ${error.message}") }
             } finally {
                 runCatching { warm?.close() }
@@ -300,7 +395,8 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
 
     private fun setStatus(image:String,status:String) {
         mutable.update { state ->
-            state.copy(samples=state.samples.map { if(it.sample.image==image) it.copy(status=status) else it })
+            state.copy(samples=state.samples.map { if(it.sample.image==image) it.copy(status=status) else it },
+                customSamples=state.customSamples.map { if(it.sample.image==image) it.copy(status=status) else it })
         }
     }
 
@@ -341,6 +437,20 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 }
                 if(result.notes.isNotBlank()) result.notes.trim().lines().forEach { appendLine("  note: $it") }
             }
+            if(snapshot.customRan) {
+                appendLine("\nImported images · manual review (not part of curated scores)")
+                snapshot.customSamples.filter { it.result!=null }.forEach { row ->
+                    val result=row.result ?: return@forEach
+                    appendLine("${row.displayName} · ${result.status}${if(row.sample.matchesCorpus) " · exact corpus match" else ""}")
+                    result.fieldResults.forEach { field ->
+                        val review=row.reviews[field.field] ?: GlinerFieldReview()
+                        val expected=if(review.confirmed) field.observed else if(review.expectedBlank) "(blank)" else review.corrected
+                        appendLine("  ${field.label}: ${field.observed.ifBlank { "(blank)" }} · ${review.verdict}"+
+                            if(review.reviewed) " · expected ${expected.ifBlank { "(blank)" }}" else "")
+                    }
+                    result.ocrLines.forEach { appendLine("  OCR: $it") }
+                }
+            }
         }
     }
 
@@ -349,8 +459,9 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val snapshot=mutable.value
         session.scope.launch {
             val results=snapshot.samples.mapNotNull { it.result }
-            if(results.isEmpty()) {
-                mutable.update { it.copy(message="Run the dataset before exporting") }
+            val customRows=snapshot.customSamples.filter { it.result!=null }
+            if(results.isEmpty() && customRows.isEmpty()) {
+                mutable.update { it.copy(message="Run images before exporting") }
                 return@launch
             }
             val payload=JSONObject().apply {
@@ -407,13 +518,25 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                     })
                 }
                 put("images",JSONArray(results.map { result -> jsonOf(result) }))
+                put("custom_images",JSONArray(customRows.map { row -> customJson(row) }))
+                val reviewSummary=summarizeGlinerReviews(customRows.map { row ->
+                    GlinerReviewCase(row.result?.status=="complete",row.sample.matchesCorpus,row.reviews)
+                },PhoneCorpusMath.fields)
+                put("custom_review_summary",JSONObject().apply {
+                    put("processed",reviewSummary.processed)
+                    put("fully_reviewed",reviewSummary.fullyReviewed)
+                    put("all_fields_confirmed",reviewSummary.allConfirmed)
+                    put("reviewed_fields",reviewSummary.reviewedFields)
+                    put("confirmed_fields",reviewSummary.confirmedFields)
+                    put("exact_corpus_matches",reviewSummary.corpusMatches)
+                })
             }
             val file=File(app.cacheDir,"gliner-lab-${System.currentTimeMillis()}.json")
             runCatching {
                 file.writeText(payload.toString(2))
                 app.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(payload.toString(2)) }
                     ?: error("Cannot open the selected document")
-                mutable.update { it.copy(exports=(it.exports+file).takeLast(4),message="Exported ${results.size} labels to JSON") }
+                mutable.update { it.copy(exports=(it.exports+file).takeLast(4),message="Exported ${results.size} curated and ${customRows.size} imported labels to JSON") }
             }.onFailure { error ->
                 mutable.update { it.copy(message="JSON export failed: ${error.javaClass.simpleName}: ${error.message}") }
             }
@@ -469,12 +592,47 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         put("notes",result.notes)
     }
 
+    private fun customJson(row:GlinerLabRow):JSONObject {
+        val result=requireNotNull(row.result)
+        return jsonOf(result).apply {
+            put("source","user_import")
+            put("source_filename",row.sample.sourceFilename)
+            put("sha256",row.sample.sha256)
+            put("exact_corpus_match",row.sample.matchesCorpus)
+            put("field_errors",JSONObject.NULL) // No curated reference is available.
+            put("manual_review",JSONObject().apply {
+                PhoneCorpusMath.fields.forEach { field ->
+                    val review=row.reviews[field] ?: GlinerFieldReview()
+                    val observed=result.fields[field].orEmpty()
+                    val expected=if(review.confirmed) observed else if(review.expectedBlank) "" else review.corrected
+                    put(field,JSONObject().apply {
+                        put("verdict",review.verdict)
+                        put("expected_status",if(!review.reviewed) "unresolved" else if(expected.isBlank()) "expected_blank" else "expected_value")
+                        if(review.reviewed) put("expected",expected)
+                    })
+                }
+            })
+        }
+    }
+
     fun saveCsv(uri:Uri) {
         val snapshot=mutable.value
         session.scope.launch {
-            val rows=snapshot.samples.mapNotNull { it.result }.map { result -> csvRow(result,snapshot.laneConfig) }
+            val rows=snapshot.samples.mapNotNull { it.result }.map { result -> csvRow(result,snapshot.laneConfig)+("source" to "curated") } +
+                snapshot.customSamples.filter { it.result!=null }.map { row ->
+                    val result=requireNotNull(row.result)
+                    val review=linkedMapOf("source" to "user_import", "field_errors" to "", "source_filename" to row.sample.sourceFilename,
+                        "sha256" to row.sample.sha256,"exact_corpus_match" to row.sample.matchesCorpus.toString())
+                    PhoneCorpusMath.fields.forEach { field ->
+                        val item=row.reviews[field] ?: GlinerFieldReview()
+                        review["${field}_manual_verdict"]=item.verdict
+                        review["${field}_manual_expected"]=if(item.confirmed) result.fields[field].orEmpty() else item.corrected
+                        review["${field}_manual_expected_blank"]=if(item.reviewed) (if(item.confirmed) result.fields[field].isNullOrBlank() else item.expectedBlank).toString() else ""
+                    }
+                    csvRow(result,snapshot.laneConfig)+review
+                }
             if(rows.isEmpty()) {
-                mutable.update { it.copy(message="Run the dataset before exporting") }
+                mutable.update { it.copy(message="Run images before exporting") }
                 return@launch
             }
             val file=File(app.cacheDir,"gliner-lab-${System.currentTimeMillis()}.csv")

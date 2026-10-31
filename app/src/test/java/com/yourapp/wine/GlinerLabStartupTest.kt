@@ -22,6 +22,8 @@ class GlinerLabStartupTest {
 
     @Test fun screenOpensAndShowsTheScoreboard() {
         compose.onNodeWithText("GLiNER lane lab").assertIsDisplayed()
+        compose.onNodeWithTag("gliner_lab_content").performScrollToNode(hasText("Choose images"))
+        compose.onNodeWithText("Choose images").assertIsDisplayed()
         compose.onNodeWithTag("gliner_lab_content").performScrollToNode(hasText("Scored results"))
         compose.onNodeWithText("Scored results").assertIsDisplayed()
     }

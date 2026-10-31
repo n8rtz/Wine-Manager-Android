@@ -19,13 +19,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -39,12 +44,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -54,10 +65,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.viewmodels.GlinerAggregate
+import com.yourapp.wine.gliner.GlinerFieldReview
+import com.yourapp.wine.gliner.GlinerReviewCase
+import com.yourapp.wine.gliner.summarizeGlinerReviews
 import com.n8rtz.winetracker.viewmodels.GlinerLabRow
 import com.n8rtz.winetracker.viewmodels.GlinerLabState
 import com.n8rtz.winetracker.viewmodels.aggregateGlinerRows
 import com.yourapp.wine.gliner.GlinerLabImageResult
+import com.yourapp.wine.gliner.GlinerCustomImages
 import com.yourapp.wine.gliner.GlinerLane
 import com.yourapp.wine.phonecorpus.FailedParametersTable
 import com.yourapp.wine.phonecorpus.LabelThumbnail
@@ -67,6 +82,7 @@ import com.yourapp.wine.phonecorpus.WineAppLabelsBuildLog
 import com.yourapp.wine.phonecorpus.glinerLabBaselines
 import com.yourapp.wine.phonecorpus.ZoomableLabelDialog
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 private val fieldLabels = listOf("producer" to "Producer", "wine_name" to "Wine name", "country" to "Country",
@@ -80,10 +96,22 @@ internal fun GlinerLabScreen(
     labState:WineAppLabelsState,
     onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
     onRunAll:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
+    onChooseImages:()->Unit, onRunCustom:()->Unit, onRunCustomImage:(String)->Unit,
+    onRemoveCustom:(String)->Unit, onClearCustom:()->Unit,
+    onConfirmField:(String,String,Boolean)->Unit, onCorrectField:(String,String,String)->Unit,
+    onExpectedBlank:(String,String,Boolean)->Unit, onConfirmAll:(String)->Unit, onDismissReviewPrompt:()->Unit,
     onSaveCsv:()->Unit, onSaveJson:()->Unit, onReport:()->String,
     onThreshold:(Float)->Unit, onMaxWidth:(Int)->Unit, onToggleRow:(String)->Unit, onClose:()->Unit,
 ) {
     val clipboard=LocalClipboardManager.current
+    val listState=rememberLazyListState()
+    val scope=rememberCoroutineScope()
+    var showCustom by remember { mutableStateOf(true) }
+    var confirmClear by remember { mutableStateOf(false) }
+    var confirmRemoveImage by remember { mutableStateOf<String?>(null) }
+    var confirmRerunAll by remember { mutableStateOf(false) }
+    var confirmRerunImage by remember { mutableStateOf<String?>(null) }
+    var customZoom by remember { mutableStateOf<String?>(null) }
     var showIncomplete by remember { mutableStateOf(false) }
     var showAll by remember { mutableStateOf(false) }
     var selectedFields by remember { mutableStateOf(emptySet<String>()) }
@@ -105,6 +133,7 @@ internal fun GlinerLabScreen(
     val elapsed=if(state.running) (now-state.runStartedMs).coerceAtLeast(0) else state.runElapsedMs
     LazyColumn(
         Modifier.fillMaxSize().testTag("gliner_lab_content").statusBarsPadding().navigationBarsPadding().padding(horizontal=16.dp,vertical=12.dp),
+        state=listState,
         verticalArrangement=Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -147,13 +176,45 @@ internal fun GlinerLabScreen(
                 TextButton(onClick=onClose) { Text("Close") }
             }
         }
+        item(key="custom_heading") {
+            Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                Text("Your images (${state.customSamples.size})",style=MaterialTheme.typography.titleMedium)
+                Text("Select multiple photos. Predictions stay separate from the curated scores; check each field after the run.",style=MaterialTheme.typography.bodySmall)
+                if(state.customLoadError.isNotBlank()) Text(state.customLoadError,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    TextButton(onClick=onChooseImages,enabled=!state.running && !state.importingImages && state.customLoaded && state.customLoadError.isBlank(),
+                        modifier=Modifier.testTag("gliner_choose_images")) { Text("Choose images") }
+                    TextButton(onClick={ if(state.customSamples.any { row -> row.reviews.values.any { it.reviewed } }) confirmRerunAll=true else onRunCustom() },
+                        enabled=!state.running && !state.importingImages && state.bundle.ready && state.customSamples.isNotEmpty()) { Text("Run your images") }
+                    TextButton(onClick={ confirmClear=true },enabled=!state.running && !state.importingImages && (state.customSamples.isNotEmpty() || state.customLoadError.isNotBlank())) { Text(if(state.customLoadError.isNotBlank()) "Reset imports" else "Remove all") }
+                    TextButton(onClick={ showCustom=!showCustom }) { Text(if(showCustom) "Hide" else "Show") }
+                    if(state.customRan) TextButton(onClick=onSaveJson,enabled=!state.running) { Text("Save JSON") }
+                }
+                val summary=summarizeGlinerReviews(state.customSamples.filter { it.result!=null }.map { row ->
+                    GlinerReviewCase(row.result?.status=="complete",row.sample.matchesCorpus,row.reviews)
+                },PhoneCorpusMath.fields)
+                if(state.customRan) {
+                    Text("${summary.processed} processed · ${summary.fullyReviewed} fully reviewed · ${summary.allConfirmed}/${summary.fullyReviewed} labels correct · ${summary.confirmedFields}/${summary.reviewedFields} reviewed fields correct",style=MaterialTheme.typography.bodySmall)
+                    Text("Save JSON to keep results and reviews; they can be lost if the app process ends.",style=MaterialTheme.typography.bodySmall)
+                }
+                if(state.customSamples.any { it.sample.matchesCorpus }) Text("Exact bundled-image matches are excluded from these totals. Different photos of the same label are not detected.",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+            }
+        }
+        if(showCustom) items(state.customSamples,key={ "custom:${it.sample.image}" }) { row ->
+            CustomImageReview(row,enabled=!state.running && !state.importingImages,modelReady=state.bundle.ready,
+                onRun={ if(row.reviews.values.any { it.reviewed }) confirmRerunImage=row.sample.image else onRunCustomImage(row.sample.image) },onRemove={ confirmRemoveImage=row.sample.image },
+                onZoom={ customZoom=row.sample.image },onConfirm={ field,checked -> onConfirmField(row.sample.image,field,checked) },
+                onCorrect={ field,value -> onCorrectField(row.sample.image,field,value) },
+                onBlank={ field,checked -> onExpectedBlank(row.sample.image,field,checked) },
+                onConfirmAll={ onConfirmAll(row.sample.image) })
+        }
         item {
             SelectionContainer {
                 ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,
                     state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet())
             }
         }
-        if(state.ran) {
+        if(state.ran || state.customRan) {
             item {
                 Text("Export",style=MaterialTheme.typography.titleMedium)
                 Row(Modifier.horizontalScroll(rememberScrollState())) {
@@ -212,6 +273,97 @@ internal fun GlinerLabScreen(
         }
     }
     expandedImage?.let { image -> ZoomableLabelDialog(image=image,onDismiss={ expandedImage=null }) }
+    customZoom?.let { image ->
+        val context=LocalContext.current
+        Dialog(onDismissRequest={ customZoom=null }) {
+            AsyncImage(model=ImageRequest.Builder(context).data(GlinerCustomImages.file(context,image)).size(1600).build(),
+                contentDescription="Imported image",contentScale=ContentScale.Fit,modifier=Modifier.fillMaxWidth().height(600.dp).clickable { customZoom=null })
+        }
+    }
+    if(state.reviewPrompt) AlertDialog(onDismissRequest=onDismissReviewPrompt,
+        title={ Text("Review your images") },
+        text={ Text("Check each correct parameter. For an incorrect parameter, enter the correct value or mark it blank.") },
+        confirmButton={ TextButton(onClick={ onDismissReviewPrompt(); showCustom=true; scope.launch { listState.animateScrollToItem(2) } }) { Text("Review now") } },
+        dismissButton={ TextButton(onClick=onDismissReviewPrompt) { Text("Later") } })
+    if(confirmRerunAll || confirmRerunImage!=null) AlertDialog(
+        onDismissRequest={ confirmRerunAll=false; confirmRerunImage=null },
+        title={ Text("Rerun images?") },
+        text={ Text("Rerunning clears the previous predictions and review for the selected images. Export first if you want to keep them.") },
+        confirmButton={ TextButton(onClick={
+            val image=confirmRerunImage
+            val all=confirmRerunAll
+            confirmRerunImage=null; confirmRerunAll=false
+            if(all) onRunCustom() else if(image!=null) onRunCustomImage(image)
+        }) { Text("Rerun") } },
+        dismissButton={ TextButton(onClick={ confirmRerunAll=false; confirmRerunImage=null }) { Text("Cancel") } })
+    if(confirmClear || confirmRemoveImage!=null) AlertDialog(onDismissRequest={ confirmClear=false; confirmRemoveImage=null },
+        title={ Text("Remove imported images?") },
+        text={ Text("Private copies and their current results will be removed. Your original photos are not changed.") },
+        confirmButton={ TextButton(onClick={
+            val image=confirmRemoveImage
+            val all=confirmClear
+            confirmClear=false; confirmRemoveImage=null
+            if(all) onClearCustom() else if(image!=null) onRemoveCustom(image)
+        }) { Text("Remove") } },
+        dismissButton={ TextButton(onClick={ confirmClear=false; confirmRemoveImage=null }) { Text("Cancel") } })
+}
+
+@Composable
+private fun CustomImageReview(
+    row:GlinerLabRow,enabled:Boolean,modelReady:Boolean,onRun:()->Unit,onRemove:()->Unit,onZoom:()->Unit,
+    onConfirm:(String,Boolean)->Unit,onCorrect:(String,String)->Unit,onBlank:(String,Boolean)->Unit,onConfirmAll:()->Unit,
+) {
+    val context=LocalContext.current
+    var open by remember(row.sample.image) { mutableStateOf(true) }
+    var raw by remember(row.sample.image) { mutableStateOf(false) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(10.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment=Alignment.CenterVertically) {
+                AsyncImage(model=ImageRequest.Builder(context).data(GlinerCustomImages.file(context,row.sample.image)).size(250).build(),
+                    contentDescription="View ${row.displayName}",contentScale=ContentScale.Fit,
+                    modifier=Modifier.size(72.dp).clickable(onClick=onZoom))
+                Column(Modifier.weight(1f).padding(start=8.dp)) {
+                    Text(row.displayName,style=MaterialTheme.typography.titleSmall)
+                    Text(row.result?.status ?: row.status,style=MaterialTheme.typography.bodySmall)
+                    if(row.sample.matchesCorpus) Text("Exact bundled-image match",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+                }
+                TextButton(onClick=onRemove,enabled=enabled) { Text("Remove") }
+            }
+            Row {
+                TextButton(onClick=onRun,enabled=enabled && modelReady) { Text(if(row.result==null) "Run" else "Rerun") }
+                if(row.result!=null) TextButton(onClick={ open=!open }) { Text(if(open) "Hide fields" else "Review fields") }
+                if(row.result?.status=="complete") TextButton(onClick=onConfirmAll,enabled=enabled) { Text("All correct") }
+            }
+            val result=row.result
+            if(result!=null && result.status!="complete") Text(result.message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error)
+            if(open && result?.status=="complete") {
+                Text("Check if correct; otherwise enter the correct value or mark it blank.",style=MaterialTheme.typography.bodySmall)
+                result.fieldResults.forEach { field ->
+                    val review=row.reviews[field.field] ?: GlinerFieldReview()
+                    HorizontalDivider()
+                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                        Checkbox(checked=review.confirmed,onCheckedChange={ onConfirm(field.field,it) },enabled=enabled)
+                        Column(Modifier.weight(1f)) {
+                            Text(field.label,style=MaterialTheme.typography.labelMedium)
+                            SelectionContainer { Text(field.observed.ifBlank { "(blank)" },style=MaterialTheme.typography.bodyMedium) }
+                            Text(when(review.verdict) { "correct" -> "Confirmed"; "incorrect" -> "Correction entered"; else -> "Not reviewed" },style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    if(!review.confirmed) {
+                        OutlinedTextField(value=review.corrected,onValueChange={ onCorrect(field.field,it) },
+                            label={ Text("Correct ${field.label.lowercase(Locale.ROOT)}") },singleLine=true,
+                            enabled=enabled && !review.expectedBlank,modifier=Modifier.fillMaxWidth())
+                        Row(verticalAlignment=Alignment.CenterVertically) {
+                            Checkbox(checked=review.expectedBlank,onCheckedChange={ onBlank(field.field,it) },enabled=enabled)
+                            Text("Correct value is blank",style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                TextButton(onClick={ raw=!raw }) { Text(if(raw) "Hide raw OCR" else "Raw OCR") }
+                if(raw) SelectionContainer { Text(result.ocrLines.joinToString("\n"),style=MaterialTheme.typography.bodySmall) }
+            }
+        }
+    }
 }
 
 @Composable

@@ -69,6 +69,7 @@ def main():
     parser.add_argument('export', type=pathlib.Path)
     parser.add_argument('--runner-jar', required=True, type=pathlib.Path)
     parser.add_argument('--java', default='java')
+    parser.add_argument('--rescore', action='store_true', help='Score against current references even if the exported reference outcomes differ')
     args = parser.parse_args()
     data = json.loads(args.export.read_text())
     refs = {r['image']: r['fields'] for r in json.loads(
@@ -110,11 +111,17 @@ def main():
             actual = outcome(targets[f], row['base_fields'].get(f, ''))
             recorded = row['base_outcomes'].get(f)
             if recorded and not recorded.startswith('unscored') and actual != recorded:
-                raise ValueError(f"Base scoring mismatch for #{row['review_number']} {f}: {actual} vs {recorded}")
+                message = f"Base scoring mismatch for #{row['review_number']} {f}: {actual} vs {recorded}"
+                if not args.rescore:
+                    raise ValueError(message + '; use --rescore only for intentional reference changes')
+                print('RESCORED:', message)
             final_actual = outcome(targets[f], row['fields'].get(f, ''))
             final_recorded = row.get('outcomes', {}).get(f)
             if final_recorded and not final_recorded.startswith('unscored') and final_actual != final_recorded:
-                raise ValueError(f"Final scoring mismatch for #{row['review_number']} {f}: {final_actual} vs {final_recorded}")
+                message = f"Final scoring mismatch for #{row['review_number']} {f}: {final_actual} vs {final_recorded}"
+                if not args.rescore:
+                    raise ValueError(message + '; use --rescore only for intentional reference changes')
+                print('RESCORED:', message)
         eligible = row['eligible'] and row['status'] == 'complete'
         base_ok = eligible and all(outcome(targets[f], row['base_fields'].get(f, '')).startswith('correct_') for f in FIELDS)
         new_ok = eligible and all(outcome(targets[f], final.get(f, '')).startswith('correct_') for f in FIELDS)

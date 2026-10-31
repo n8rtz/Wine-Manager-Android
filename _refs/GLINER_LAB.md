@@ -60,8 +60,36 @@ yet been verified on Android**: replay doesn't rerun OCR or inference. This data
 develop these rules; these are in-sample results, not a holdout accuracy claim. More than 90% would
 require 109/121. The remaining replay errors comprise eight producer, eight wine and one subregion
 field on 16 labels. The partial module boundary described above remains unfinished.
-The screen supports copying results, JSON/CSV export, and foreground-service execution while
-navigating away or locking the phone.
+### Your own images and review
+
+Choose **Your images → Choose images** to select multiple files, then **Run your images**. The picker
+copies supported images (up to 64 MB and 100 million pixels each) into app-private, non-backup storage;
+originals are never modified. Files survive app restarts until removed or app data is cleared. The
+run uses the same two OCR engines, INT4 model and post-processing as the bundled run. After a run,
+a review prompt opens the imported results: check each correct field; for an incorrect field enter
+the correct value or explicitly mark it blank. An unchecked field with no correction remains
+unreviewed. **All correct** is a per-photo shortcut. Rerunning an image clears its old judgements.
+
+Imported results never change curated scores or receive reference values during inference. The
+separate manual summary counts only completed, fully reviewed labels, and reports reviewed field
+counts separately. Exact byte-for-byte matches to bundled photos are flagged and excluded from
+manual summary totals; this cannot detect another photo, crop or re-encoding of the same label, or
+tell whether a photo appeared in model training. Once the images or their corrections are used to
+tune rules, they are no longer an independent holdout; reserve additional unseen labels for final
+accuracy checks. JSON exports include `custom_images`, raw decision
+inputs, predictions and a separate `manual_review` with each user verdict/corrected value, but not
+image bytes. CSV includes corresponding manual-review columns. Imported files persist, but results
+and reviews are held in the current app process; save/export before leaving if you need to preserve
+them after process death. The foreground service keeps a run alive when navigating away or locking
+the phone.
+
+### Reference correction
+
+The owner's later correction makes image #154's subregion **Porto**, rather than expected blank.
+The scoring manifest hash was updated. Historical exports contain the older field outcome and are
+not directly comparable; use `replay_gliner_decisions.py --rescore` to explicitly score old predictions
+against the new reference. Under that changed reference, the earlier v3 phone export rescores from
+95 to 96 complete labels and the v4 same-OCR replay from 105 to 106; neither is a new phone run.
 
 ## Model contract
 

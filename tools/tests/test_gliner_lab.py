@@ -31,6 +31,27 @@ class GlinerLabStructureTests(unittest.TestCase):
     def read(self, path):
         return pathlib.Path(path).read_text(encoding="utf-8")
 
+    def test_user_image_picker_review_and_reference_isolation(self):
+        activity = self.read(GLINER / "GlinerLabActivity.kt")
+        screen = self.read(ADAPTER / "com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
+        view_model = self.read(ADAPTER / "com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt")
+        custom = self.read(GLINER / "GlinerCustomImages.kt")
+        runner = self.read(GLINER / "GlinerLabRunner.kt")
+        self.assertIn('ActivityResultContracts.OpenMultipleDocuments()', activity)
+        self.assertIn('imageLauncher.launch(arrayOf("image/*"))', activity)
+        self.assertIn('fun importImages(uris:List<Uri>)', view_model)
+        self.assertIn('runCustomAll()', view_model)
+        self.assertIn('Review your images', screen)
+        self.assertIn('Correct value is blank', screen)
+        self.assertIn('onConfirmField', screen)
+        self.assertIn('"manual_review"', view_model)
+        self.assertIn('"custom_images"', view_model)
+        self.assertIn('"custom_review_summary"', view_model)
+        self.assertIn('targets=emptyMap()', custom)
+        self.assertIn('MAX_BYTES', custom)
+        self.assertIn('matchesCorpus=hash in corpus', custom)
+        self.assertNotIn('reviews', runner)
+
     def test_bundle_manifest_pins_the_int4_contract(self):
         manifest = json.loads(self.read(ASSETS / "model-manifest.json"))
         names = [entry["name"] for entry in manifest["files"]]
