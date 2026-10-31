@@ -11,6 +11,7 @@ import com.yourapp.wine.gliner.GlinerLabCorpus
 import com.yourapp.wine.gliner.GlinerCustomImages
 import com.yourapp.wine.gliner.GlinerAuditReference
 import com.yourapp.wine.gliner.GlinerAuditRow
+import com.yourapp.wine.gliner.scoreGlinerAudit
 import com.yourapp.wine.gliner.GlinerAuditStore
 import com.yourapp.wine.gliner.GlinerLabImageResult
 import com.yourapp.wine.gliner.GlinerLabRunService
@@ -238,14 +239,11 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     private fun auditSummary(rows:List<GlinerAuditRow>):JSONObject {
-        val complete=rows.filter { it.status=="complete" && !it.exactCorpusMatch }
-        val eligible=complete.filter { row -> PhoneCorpusMath.fields.all { row.reference.targets.getValue(it).status!="unresolved" } }
-        val correct=PhoneCorpusMath.fields.associateWith { field -> complete.count { PhoneCorpusMath.correct(it.outcomes[field].orEmpty()) } }
-        val total=PhoneCorpusMath.fields.associateWith { field -> complete.count { it.reference.targets.getValue(field).status!="unresolved" } }
-        return JSONObject().put("attempted",rows.size).put("failed",rows.count { it.status!="complete" })
-            .put("exact_corpus_matches",rows.count { it.exactCorpusMatch }).put("eligible",eligible.size)
-            .put("fully_correct",eligible.count { row -> PhoneCorpusMath.fields.all { PhoneCorpusMath.correct(row.outcomes[it].orEmpty()) } })
-            .put("field_correct",JSONObject(correct as Map<*, *>)).put("field_total",JSONObject(total as Map<*, *>))
+        val score=scoreGlinerAudit(rows)
+        return JSONObject().put("attempted",score.attempted).put("failed",score.failed)
+            .put("exact_corpus_matches",score.excluded).put("eligible",score.eligible)
+            .put("fully_correct",score.complete).put("one_error",score.oneError).put("multi_error",score.multiError)
+            .put("field_correct",JSONObject(score.fieldCorrect as Map<*, *>)).put("field_total",JSONObject(score.fieldTotal as Map<*, *>))
     }
 
     /** Re-score an exported prior run without calling OCR or the model again. */

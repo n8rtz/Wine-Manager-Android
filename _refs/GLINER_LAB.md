@@ -106,7 +106,12 @@ before inference. JSON contains references and diagnostics, not image bytes.
 review or changing the curated scoreboard. References are frozen for that run and are compared only
 *after* inference, using normalized exact (including saved aliases) and expected-blank matching. Failed
 runs and exact bundled-image matches are reported separately and excluded from accuracy totals;
-unreviewed fields are excluded. A run is checkpointed after every photo and prior runs are retained.
+unreviewed fields are excluded. The audit displays the same summary and per-field tables as the
+curated GLiNER view, and uses the same expected/output grid for failed parameters. Its table is
+personal-audit-only: Lab v7 and Prod scores for different photos are not comparable. The attempted
+count includes exact matches even though they are excluded from the scored totals. Raw OCR is
+collapsed; the bundled historical baseline intentionally has no raw OCR. A run is checkpointed
+after every photo and prior runs are retained.
 **Save audit JSON** exports the history, including each run's reference snapshot and per-field
 outcomes. App data clearing/uninstall removes the private photos, references and history, so export
 important results. Exact hashes cannot detect re-encodings or different photos of the same label;

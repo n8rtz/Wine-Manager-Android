@@ -67,6 +67,8 @@ import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.viewmodels.GlinerAggregate
 import com.yourapp.wine.gliner.GlinerAuditReference
 import com.yourapp.wine.gliner.GlinerAuditRow
+import com.yourapp.wine.gliner.scoreGlinerAudit
+import com.yourapp.wine.gliner.auditFailedFields
 import com.yourapp.wine.gliner.GlinerLabRunner
 import com.yourapp.wine.gliner.GlinerFieldReview
 import com.yourapp.wine.gliner.GlinerReviewCase
@@ -113,7 +115,7 @@ internal fun GlinerLabScreen(
     val scope=rememberCoroutineScope()
     var showCustom by remember { mutableStateOf(true) }
     var showAuditReferences by remember { mutableStateOf(false) }
-    var showAuditResults by remember { mutableStateOf(true) }
+    var showAuditResults by remember { mutableStateOf(false) }
     var confirmAuditImport by remember { mutableStateOf(false) }
     var confirmBuiltInAudit by remember { mutableStateOf(false) }
     var confirmAuditReviews by remember { mutableStateOf(false) }
@@ -233,15 +235,10 @@ internal fun GlinerLabScreen(
                     Text(if(showAuditReferences) "Hide saved references" else "Review saved references")
                 }
                 if(state.auditRunState.isNotBlank()) {
-                    val completed=state.auditRows.filter { it.status=="complete" && !it.exactCorpusMatch }
-                    val eligible=completed.filter { row -> PhoneCorpusMath.fields.all { row.reference.targets.getValue(it).status!="unresolved" } }
-                    val full=eligible.count { row -> PhoneCorpusMath.fields.all { PhoneCorpusMath.correct(row.outcomes[it].orEmpty()) } }
-                    val known=completed.sumOf { row -> PhoneCorpusMath.fields.count { row.reference.targets.getValue(it).status!="unresolved" } }
-                    val correct=completed.sumOf { row -> PhoneCorpusMath.fields.count { PhoneCorpusMath.correct(row.outcomes[it].orEmpty()) } }
                     Text("Latest audit: ${when { state.auditRunState=="running" && !state.runningAudit -> "interrupted"; state.auditRunState=="imported_baseline" -> "imported baseline (not a new run)"; else -> state.auditRunState }} · ${state.auditRows.size} results · ${state.auditRows.count { it.status!="complete" }} failed",style=MaterialTheme.typography.bodySmall)
-                    Text("$full/${eligible.size} fully correct · $correct/$known reference fields match",style=MaterialTheme.typography.bodySmall)
+                    SelectionContainer { AuditScoredResults(state.auditRows) }
                     if(state.auditRows.any { it.exactCorpusMatch }) Text("Exact bundled-image matches excluded from totals.",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
-                    Text("Matches use normalized comparison with saved aliases; unresolved fields are excluded. This is not independent accuracy.",style=MaterialTheme.typography.bodySmall)
+                    Text("Audit scores are separate from the curated Lab v7/Prod datasets. Attempted includes excluded exact matches; failed executions, exact matches and unresolved fields are excluded from scored totals. This is not independent accuracy.",style=MaterialTheme.typography.bodySmall)
                     TextButton(onClick={ showAuditResults=!showAuditResults }) { Text(if(showAuditResults) "Hide audit results" else "Show audit results") }
                 }
             }
@@ -251,7 +248,7 @@ internal fun GlinerLabScreen(
                 onSave={ field,value,blank -> onSaveAuditField(ref.image,field,value,blank) })
         }
         if(showAuditResults) items(state.auditRows,key={ "auditresult:${it.reference.image}" }) { row ->
-            AuditResultCard(row)
+            AuditResultCard(row,hasPhoto=state.customSamples.any { it.sample.image==row.reference.image },onZoom={ customZoom=row.reference.image })
         }
         if(showCustom) items(state.customSamples,key={ "custom:${it.sample.image}" }) { row ->
             CustomImageReview(row,enabled=!state.running && !state.importingImages,modelReady=state.bundle.ready,
@@ -408,21 +405,57 @@ private fun AuditReferenceField(ref:GlinerAuditReference,field:String,enabled:Bo
 }
 
 @Composable
-private fun AuditResultCard(row:GlinerAuditRow) {
-    var open by remember(row.reference.image,row.diagnostics) { mutableStateOf(false) }
+private fun AuditResultCard(row:GlinerAuditRow,hasPhoto:Boolean,onZoom:()->Unit) {
+    var rawOpen by remember(row.reference.image,row.diagnostics) { mutableStateOf(false) }
+    var allFieldsOpen by remember(row.reference.image,row.diagnostics) { mutableStateOf(false) }
+    val failed=auditFailedFields(row)
+    val context=LocalContext.current
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(10.dp)) {
-            TextButton(onClick={ open=!open }) { Text("${row.reference.name} · ${row.status}" + if(open) " ▲" else " ▼") }
-            if(row.status!="complete") Text(row.message,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
-            if(row.exactCorpusMatch) Text("Exact bundled-image match · excluded from totals",style=MaterialTheme.typography.bodySmall)
-            if(open && row.status=="complete") SelectionContainer {
-                Column {
-                    PhoneCorpusMath.fields.forEach { field ->
-                        val target=row.reference.targets.getValue(field)
-                        val expected=when(target.status) { "expected_blank" -> "(blank)"; "unresolved" -> "(unreviewed)"; else -> target.display }
-                        val actual=row.fields[field].orEmpty().ifBlank { "(blank)" }
-                        Text("${GlinerLabRunner.fieldLabels[field] ?: field}: $actual · expected $expected · ${row.outcomes[field].orEmpty()}",style=MaterialTheme.typography.bodySmall)
+        Column(Modifier.fillMaxWidth().padding(10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement=Arrangement.spacedBy(12.dp),verticalAlignment=Alignment.CenterVertically) {
+                if(hasPhoto) AsyncImage(model=ImageRequest.Builder(context).data(GlinerCustomImages.file(context,row.reference.image)).size(250).build(),
+                    contentDescription="View ${row.reference.name}",contentScale=ContentScale.Fit,
+                    modifier=Modifier.size(72.dp).clickable(onClick=onZoom))
+                SelectionContainer(Modifier.weight(1f)) {
+                    Column {
+                        Text(row.reference.name,style=MaterialTheme.typography.titleSmall)
+                        Text(row.status,style=MaterialTheme.typography.bodySmall)
+                        if(row.exactCorpusMatch) Text("Exact bundled-image match · excluded from totals",style=MaterialTheme.typography.bodySmall)
                     }
+                }
+            }
+            if(row.status!="complete") SelectionContainer {
+                Text("Execution failed before field scoring: ${row.message}",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+            } else {
+                val unresolved=PhoneCorpusMath.fields.count { row.reference.targets.getValue(it).status=="unresolved" }
+                if(failed.isNotEmpty()) SelectionContainer { FailedParametersTable(failed) }
+                else Text(if(unresolved==PhoneCorpusMath.fields.size) "No reviewed fields." else "All reviewed fields match.",style=MaterialTheme.typography.bodySmall)
+                if(unresolved>0) Text("$unresolved unreviewed field(s) excluded.",style=MaterialTheme.typography.bodySmall)
+                TextButton(onClick={ allFieldsOpen=!allFieldsOpen }) { Text(if(allFieldsOpen) "Hide all fields" else "Show all fields") }
+                if(allFieldsOpen) SelectionContainer {
+                    Column {
+                        PhoneCorpusMath.fields.forEach { field ->
+                            val target=row.reference.targets.getValue(field)
+                            val expected=when(target.status) { "expected_blank" -> "(blank)"; "unresolved" -> "(unreviewed)"; else -> target.display }
+                            val actual=row.fields[field].orEmpty().ifBlank { "(blank)" }
+                            Text("${GlinerLabRunner.fieldLabels[field] ?: field}: $actual · expected $expected · ${row.outcomes[field].orEmpty()}",style=MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth().clickable { rawOpen=!rawOpen }.padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically) {
+                Text("Raw OCR",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary,modifier=Modifier.weight(1f))
+                Text(if(rawOpen) "▲" else "▼",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
+            }
+            if(rawOpen) SelectionContainer {
+                val readings=row.diagnostics.optJSONArray("raw_readings")
+                val text=if(readings==null || readings.length()==0) "Raw OCR was not saved for this result."
+                    else (0 until readings.length()).joinToString("\n") { index ->
+                        val reading=readings.optJSONObject(index)
+                        if(reading==null) readings.optString(index) else "${reading.optString("engine")}: ${reading.optString("text")}"
+                    }
+                Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).border(0.5.dp,MaterialTheme.colorScheme.outlineVariant).padding(8.dp)) {
+                    Text(text,style=MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -505,8 +538,6 @@ private fun RunTimers(elapsed:Long,done:Int,total:Int) {
 
 @Composable
 private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,completedImages:Set<String>) {
-    val pass=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
-    val fail=MaterialTheme.colorScheme.error
     val baselines=glinerLabBaselines(labState,completedImages)
     val glinerValues=listOf("GLiNER",a.attempted.toString(),a.eligible.toString(),"${a.complete}/${a.eligible}",a.oneError.toString(),a.multiError.toString(),a.failed.toString())
     val glinerFields=fieldLabels.associate { (key,_) ->
@@ -515,44 +546,9 @@ private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,complete
     }
     Column {
         Text("Scored results",style=MaterialTheme.typography.titleMedium)
-        Column(Modifier.horizontalScroll(rememberScrollState())) {
-            val headers=listOf("Pipeline","Attempted","Eligible","Fully correct","One error","2+ errors","Failed")
-            val rows=listOf(glinerValues)+baselines.map { it.summary ?: listOf(it.title,"—","—","—","—","—","—") }
-            Row { headers.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis) } }
-            rows.forEach { values ->
-                HorizontalDivider(Modifier.width((88*headers.size).dp))
-                Row { values.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall) } }
-            }
-        }
+        ScoreSummaryTable(listOf(glinerValues)+baselines.map { it.summary ?: listOf(it.title,"—","—","—","—","—","—") })
         Spacer(Modifier.height(8.dp))
-        Column(Modifier.horizontalScroll(rememberScrollState())) {
-            val columns=fieldLabels+("total_correct" to "Total correct")
-            val rows=listOf("GLiNER" to glinerFields)+baselines.map { it.title to it.fields }
-            Row {
-                Text("Build",Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
-                columns.forEach { (_,label) -> Text(label,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false) }
-            }
-            rows.forEach { (title,scores) ->
-                HorizontalDivider(Modifier.width((128+88*columns.size).dp))
-                Row {
-                    Text(title,Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
-                    columns.forEach { (key,_) ->
-                        val score=if(key=="total_correct") {
-                            if(fieldLabels.all { it.first in scores }) WineAppLabelsBuildLog.FieldScore(
-                                scores.values.sumOf { it.correct },scores.values.sumOf { it.incorrect }) else null
-                        } else scores[key]
-                        val cell=buildAnnotatedString {
-                            if(score==null) append("—") else {
-                                withStyle(SpanStyle(color=pass)) { append("${score.correct}") }
-                                append("/")
-                                withStyle(SpanStyle(color=fail)) { append("${score.incorrect}") }
-                            }
-                        }
-                        Text(cell,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
-                    }
-                }
-            }
-        }
+        ScoreFieldTable(listOf("GLiNER" to glinerFields)+baselines.map { it.title to it.fields })
         if(baselines.any { it.summary==null }) Text(
             if(labState.busy) "Loading saved baselines…" else "— = no saved baseline on this device.",
             style=MaterialTheme.typography.bodySmall)
@@ -560,6 +556,66 @@ private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,complete
             Text("${baseline.title}: ${completedImages.size-baseline.missing}/${completedImages.size} completed photos have saved baseline results.",
                 style=MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+/** Shared by curated and personal-audit results so their columns, widths and colors stay aligned. */
+@Composable
+private fun ScoreSummaryTable(rows:List<List<String>>) {
+    Column(Modifier.horizontalScroll(rememberScrollState())) {
+        val headers=listOf("Pipeline","Attempted","Eligible","Fully correct","One error","2+ errors","Failed")
+        Row { headers.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis) } }
+        rows.forEach { values ->
+            HorizontalDivider(Modifier.width((88*headers.size).dp))
+            Row { values.forEach { Text(it,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall) } }
+        }
+    }
+}
+
+@Composable
+private fun ScoreFieldTable(rows:List<Pair<String,Map<String,WineAppLabelsBuildLog.FieldScore>>>) {
+    val pass=if(isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val fail=MaterialTheme.colorScheme.error
+    Column(Modifier.horizontalScroll(rememberScrollState())) {
+        val columns=fieldLabels+("total_correct" to "Total correct")
+        Row {
+            Text("Build",Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+            columns.forEach { (_,label) -> Text(label,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false) }
+        }
+        rows.forEach { (title,scores) ->
+            HorizontalDivider(Modifier.width((128+88*columns.size).dp))
+            Row {
+                Text(title,Modifier.width(128.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)
+                columns.forEach { (key,_) ->
+                    val score=if(key=="total_correct") {
+                        if(fieldLabels.all { it.first in scores }) WineAppLabelsBuildLog.FieldScore(
+                            scores.values.sumOf { it.correct },scores.values.sumOf { it.incorrect }) else null
+                    } else scores[key]
+                    val cell=buildAnnotatedString {
+                        if(score==null) append("—") else {
+                            withStyle(SpanStyle(color=pass)) { append("${score.correct}") }
+                            append("/")
+                            withStyle(SpanStyle(color=fail)) { append("${score.incorrect}") }
+                        }
+                    }
+                    Text(cell,Modifier.width(88.dp).padding(4.dp),style=MaterialTheme.typography.bodySmall,maxLines=1,softWrap=false)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuditScoredResults(rows:List<GlinerAuditRow>) {
+    val score=scoreGlinerAudit(rows)
+    val fields=fieldLabels.associate { (key,_) -> key to WineAppLabelsBuildLog.FieldScore(
+        score.fieldCorrect.getValue(key),score.fieldTotal.getValue(key)-score.fieldCorrect.getValue(key)) }
+    Column {
+        Text("Audit scored results",style=MaterialTheme.typography.titleMedium)
+        ScoreSummaryTable(listOf(listOf("Personal audit",score.attempted.toString(),score.eligible.toString(),
+            "${score.complete}/${score.eligible}",score.oneError.toString(),score.multiError.toString(),score.failed.toString())))
+        Spacer(Modifier.height(8.dp))
+        ScoreFieldTable(listOf("Personal audit" to fields))
     }
 }
 

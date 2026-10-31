@@ -55,6 +55,18 @@ class BundledGlinerAuditTests(unittest.TestCase):
             full += all(matches)
         self.assertEqual((full, correct), (12, 130))
 
+    def test_audit_reuses_curated_score_and_failure_tables(self):
+        screen = (ROOT / 'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt').read_text()
+        audit = screen.split('private fun AuditScoredResults(', 1)[1].split('@Composable', 1)[0]
+        curated = screen.split('private fun ScoredResults(', 1)[1].split('@Composable', 1)[0]
+        card = screen.split('private fun AuditResultCard(', 1)[1].split('@Composable', 1)[0]
+        for function in ('ScoreSummaryTable(', 'ScoreFieldTable('):
+            self.assertIn(function, audit)
+            self.assertIn(function, curated)
+        self.assertIn('FailedParametersTable(failed)', card)
+        self.assertIn('mutableStateOf(false)', card)  # Raw OCR starts collapsed.
+        self.assertNotIn('glinerLabBaselines', audit)  # Different datasets cannot be compared.
+
     def test_initialization_does_not_replace_saved_references(self):
         vm = (ROOT / 'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt').read_text()
         activity = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabActivity.kt').read_text()

@@ -2,6 +2,8 @@ package com.yourapp.wine
 
 import android.app.Application
 import com.yourapp.wine.gliner.GlinerAuditStore
+import com.yourapp.wine.gliner.GlinerAuditRow
+import com.yourapp.wine.gliner.scoreGlinerAudit
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
 import org.json.JSONArray
 import org.json.JSONObject
@@ -81,12 +83,14 @@ class GlinerAuditStoreTest {
         assertEquals("correct_value",GlinerAuditStore.compare(refs[16],mapOf("subregion" to "Uco Valley"),false)["subregion"])
         var fullyCorrect=0
         var correctFields=0
+        val auditRows=mutableListOf<GlinerAuditRow>()
         for(i in refs.indices) {
             val row=predictions.getJSONObject(i)
             assertEquals(refs[i].image,row.getString("image"))
             val predicted=row.getJSONObject("fields")
             val values=PhoneCorpusMath.fields.associateWith { predicted.optString(it) }
             val outcomes=GlinerAuditStore.compare(refs[i],values,false)
+            auditRows+=GlinerAuditRow(refs[i],"complete","",values,outcomes,false,row)
             correctFields+=outcomes.values.count(PhoneCorpusMath::correct)
             if(outcomes.values.all(PhoneCorpusMath::correct)) fullyCorrect++
             assertFalse(row.has("raw_readings"))
@@ -94,6 +98,12 @@ class GlinerAuditStoreTest {
         }
         assertEquals(12,fullyCorrect)
         assertEquals(130,correctFields)
+        val score=scoreGlinerAudit(auditRows)
+        assertEquals(26,score.eligible)
+        assertEquals(12,score.complete)
+        assertEquals(130,score.fieldCorrect.values.sum())
+        assertEquals(156,score.fieldTotal.values.sum())
+        assertEquals(26,score.complete+score.oneError+score.multiError)
     }
 
     @Test fun rejectsMismatchedIdentityAndMalformedReferences() {
