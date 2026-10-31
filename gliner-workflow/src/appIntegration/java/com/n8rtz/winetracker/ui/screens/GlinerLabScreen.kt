@@ -100,7 +100,7 @@ internal fun GlinerLabScreen(
     onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
     onRunAll:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
     onChooseImages:()->Unit, onRunCustom:()->Unit, onRunCustomImage:(String)->Unit,
-    onImportAudit:()->Unit, onRunAudit:()->Unit, onSaveAudit:()->Unit, onSaveReviewedAudit:()->Unit,
+    onImportAudit:()->Unit, onUseBundledAudit:()->Unit, onRunAudit:()->Unit, onSaveAudit:()->Unit, onSaveReviewedAudit:()->Unit,
     onSaveAuditField:(String,String,String,Boolean)->Unit,
     onRemoveCustom:(String)->Unit, onClearCustom:()->Unit,
     onConfirmField:(String,String,Boolean)->Unit, onCorrectField:(String,String,String)->Unit,
@@ -115,6 +115,7 @@ internal fun GlinerLabScreen(
     var showAuditReferences by remember { mutableStateOf(false) }
     var showAuditResults by remember { mutableStateOf(true) }
     var confirmAuditImport by remember { mutableStateOf(false) }
+    var confirmBuiltInAudit by remember { mutableStateOf(false) }
     var confirmAuditReviews by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var confirmRemoveImage by remember { mutableStateOf<String?>(null) }
@@ -215,11 +216,13 @@ internal fun GlinerLabScreen(
                 val available=state.auditReferences.count { ref -> state.customSamples.any { it.sample.image==ref.image } }
                 val warnings=state.auditReferences.sumOf { it.warnings.size }
                 Text("${state.auditReferences.size} saved references · $available photos available · $warnings review warnings",style=MaterialTheme.typography.bodySmall)
-                Text("Import reviewed JSON once. References and run checkpoints stay private; curated scores are unchanged.",style=MaterialTheme.typography.bodySmall)
+                Text("The 26-photo reference set is built in; photos must still be on this phone. Curated scores are unchanged.",style=MaterialTheme.typography.bodySmall)
                 if(available<state.auditReferences.size) Text("Re-select the original photos with Choose images before running the full audit.",color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
                 if(state.auditLoadError.isNotBlank()) Text(state.auditLoadError,color=MaterialTheme.colorScheme.error)
                 Row(Modifier.horizontalScroll(rememberScrollState())) {
                     Button(onClick=onRunAudit,enabled=!state.running && !state.importingImages && state.bundle.ready && state.auditReferences.isNotEmpty() && state.customLoaded) { Text("Run audit test") }
+                    TextButton(onClick={ if(state.auditReferences.isNotEmpty()) confirmBuiltInAudit=true else onUseBundledAudit() },
+                        enabled=!state.running && !state.importingImages && state.auditLoaded) { Text("Load built-in audit") }
                     TextButton(onClick={ if(state.auditReferences.isNotEmpty()) confirmAuditImport=true else onImportAudit() },
                         enabled=!state.running && !state.importingImages && state.auditLoaded) { Text("Import reviewed JSON") }
                     TextButton(onClick=onSaveAudit,enabled=!state.running && state.auditRunState.isNotBlank()) { Text("Save audit JSON") }
@@ -340,6 +343,11 @@ internal fun GlinerLabScreen(
         text={ Text("Current reviewed fields replace saved references for the same photos. Unreviewed fields remain unchanged; past audit runs are kept.") },
         confirmButton={ TextButton(onClick={ confirmAuditReviews=false; onSaveReviewedAudit() }) { Text("Save") } },
         dismissButton={ TextButton(onClick={ confirmAuditReviews=false }) { Text("Cancel") } })
+    if(confirmBuiltInAudit) AlertDialog(onDismissRequest={ confirmBuiltInAudit=false },
+        title={ Text("Load built-in audit?") },
+        text={ Text("This replaces your current audit references with the built-in 26-photo set. Previous audit runs remain saved.") },
+        confirmButton={ TextButton(onClick={ confirmBuiltInAudit=false; onUseBundledAudit() }) { Text("Load") } },
+        dismissButton={ TextButton(onClick={ confirmBuiltInAudit=false }) { Text("Cancel") } })
     if(confirmAuditImport) AlertDialog(onDismissRequest={ confirmAuditImport=false },
         title={ Text("Replace audit references?") },
         text={ Text("The selected JSON replaces the saved reference set. Previous audit runs remain saved.") },

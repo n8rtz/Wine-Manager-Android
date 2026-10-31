@@ -62,6 +62,7 @@ class GlinerLabActivity:ComponentActivity() {
                         onRunCustom=vm::runCustomAll,
                         onRunCustomImage=vm::runCustomSingle,
                         onImportAudit={ auditImportLauncher.launch(arrayOf("*/*")) },
+                        onUseBundledAudit=vm::useBundledAudit,
                         onRunAudit=vm::runAudit,
                         onSaveReviewedAudit=vm::saveReviewedAsAudit,
                         onSaveAudit={ auditExportLauncher.launch("gliner-audit-${System.currentTimeMillis()}.json") },

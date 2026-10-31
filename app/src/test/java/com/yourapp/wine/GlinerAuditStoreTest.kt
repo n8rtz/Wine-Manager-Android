@@ -68,6 +68,34 @@ class GlinerAuditStoreTest {
         assertEquals("stopped",GlinerAuditStore.loadLatest(app)?.getString("status"))
     }
 
+    @Test fun bundledAuditHasCorrectedReferencesAndRescorableBaseline() {
+        val document=GlinerAuditStore.readBundledDocument(app)
+        val refs=GlinerAuditStore.parse(document)
+        val predictions=document.getJSONArray("custom_images")
+        assertEquals(26,refs.size)
+        assertEquals(26,predictions.length())
+        assertEquals("Sonoma County",refs[3].targets.getValue("region").display)
+        assertEquals("Alexander Valley",refs[3].targets.getValue("subregion").display)
+        assertEquals("expected_blank",refs[17].targets.getValue("subregion").status)
+        assertEquals("Lodi",refs[22].targets.getValue("region").display)
+        assertEquals("correct_value",GlinerAuditStore.compare(refs[16],mapOf("subregion" to "Uco Valley"),false)["subregion"])
+        var fullyCorrect=0
+        var correctFields=0
+        for(i in refs.indices) {
+            val row=predictions.getJSONObject(i)
+            assertEquals(refs[i].image,row.getString("image"))
+            val predicted=row.getJSONObject("fields")
+            val values=PhoneCorpusMath.fields.associateWith { predicted.optString(it) }
+            val outcomes=GlinerAuditStore.compare(refs[i],values,false)
+            correctFields+=outcomes.values.count(PhoneCorpusMath::correct)
+            if(outcomes.values.all(PhoneCorpusMath::correct)) fullyCorrect++
+            assertFalse(row.has("raw_readings"))
+            assertFalse(row.has("ocr_lines"))
+        }
+        assertEquals(12,fullyCorrect)
+        assertEquals(130,correctFields)
+    }
+
     @Test fun rejectsMismatchedIdentityAndMalformedReferences() {
         val input=exported()
         input.getJSONArray("custom_images").getJSONObject(0).put("image","../../other")

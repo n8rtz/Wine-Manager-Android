@@ -25,6 +25,7 @@ internal data class GlinerAuditRow(
 )
 
 internal object GlinerAuditStore {
+    const val BUNDLED_ASSET="gliner-personal-audit-v1/references.json"
     private val hashPattern=Regex("[0-9a-f]{64}")
     private const val MAX_IMPORT_BYTES=5_000_000
     private fun folder(context:Context)=File(context.noBackupFilesDir,"gliner-audit")
@@ -70,6 +71,11 @@ internal object GlinerAuditStore {
             GlinerAuditReference(image,hash,row.optString("source_filename",image).take(120),targets,warnings)
         }
     }
+
+    /** Small built-in reference set; photos and personal OCR are not bundled. */
+    fun readBundledDocument(context:Context):JSONObject = JSONObject(
+        context.assets.open(BUNDLED_ASSET).bufferedReader(Charsets.UTF_8).use { it.readText() }
+    )
 
     fun readDocument(context:Context,uri:android.net.Uri):JSONObject {
         val bytes=context.contentResolver.openInputStream(uri)?.use { input ->

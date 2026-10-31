@@ -85,12 +85,19 @@ the phone.
 
 ### Repeatable personal audit
 
-Under **Personal audit**, import a reviewed GLiNER JSON export once, or use **Save reviewed fields**
-after reviewing photos on this screen. When imported JSON contains prior predictions, they are
-rescored against the saved references as an imported baseline, not a new inference run. Audit
-references and all run checkpoints live in app-private,
-non-backup storage. References can be inspected and edited per field; blank and unreviewed remain
-separate. Saving current reviews updates only reviewed fields. Removing a photo does not delete its
+The 26-photo corrected reference set is bundled with the GLiNER module and automatically copied to
+app-private storage the first time the audit is opened. No JSON download is needed. Existing saved
+references are never overwritten automatically; **Load built-in audit** explicitly restores the
+bundled set after confirmation, retaining previous runs. The bundle contains image hashes, reviewed
+values and prior predictions, but not photos, original filenames or raw OCR. As packaged app assets,
+those reference values and hashes are also visible in the source repository and the installed app.
+
+Under **Personal audit**, you can alternatively import a reviewed GLiNER JSON export or use
+**Save reviewed fields** after reviewing photos on this screen. Bundled or imported prior predictions
+are rescored against the saved references as a baseline, not a new inference run. Private reference
+copies and run checkpoints live in app-private, non-backup storage. References can be inspected and
+edited per field; blank and unreviewed remain separate. Saving current reviews updates only reviewed
+fields. Removing a photo does not delete its
 reference: re-select the same original bytes to restore it. If any referenced image is missing, the
 full audit will not start. Imports match private images by SHA-256, and each file is checked again
 before inference. JSON contains references and diagnostics, not image bytes.

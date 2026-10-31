@@ -1,0 +1,1402 @@
+{
+  "schema": 1,
+  "type": "gliner_audit_references",
+  "description": "Owner-reviewed 26-photo audit; image hashes and reviewed values, not image files.",
+  "build": "3ee104f3fd70",
+  "branch": "arena/1bab4a14-wine-manager-android",
+  "decision_policy": "gliner-field-policy-v4",
+  "signature": "gliner-v1;t=0.50;w=12;n=320",
+  "model_load_ms": {
+    "bundle": 1,
+    "session": 965,
+    "first_result_wall": 19934
+  },
+  "audit_references": [
+    {
+      "image": "custom-e34ef7b464e4c7d7e34631663152e4469d73459b294ac6a84fa53b43610e50f2.img",
+      "sha256": "e34ef7b464e4c7d7e34631663152e4469d73459b294ac6a84fa53b43610e50f2",
+      "source_filename": "01 · Kirkland Signature · CABERNET SAUVIGNON",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "CABERNET SAUVIGNON"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "California"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Napa Valley"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Stags Leap District"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2024"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-02ba0c62c756e90f426ad711b1deded82cc6eceae28dce4508a200a9bcb5f603.img",
+      "sha256": "02ba0c62c756e90f426ad711b1deded82cc6eceae28dce4508a200a9bcb5f603",
+      "source_filename": "02 · Kirkland Signature · Brunello di Montalcino",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Brunello di Montalcino"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Italy"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Tuscany"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Montalcino"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2021"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-dffaf552eff570894e9a8f32d083d2588558c512cd2c40615d96f977ac983dcd.img",
+      "sha256": "dffaf552eff570894e9a8f32d083d2588558c512cd2c40615d96f977ac983dcd",
+      "source_filename": "03 · Marques de Riscal · Verdejo",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Marques de Riscal"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Verdejo"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Castilla y Leon"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Rueda"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2023"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-04e824da6f786a37ede644ec99ce1c51c30ce81ba3409eb1483b2060bb36bac8.img",
+      "sha256": "04e824da6f786a37ede644ec99ce1c51c30ce81ba3409eb1483b2060bb36bac8",
+      "source_filename": "04 · Kirkland Signature · Cabernet Sauvignon",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Cabernet Sauvignon"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "California"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Sonoma County"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Alexander Valley"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2022"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-269d8f99651193c434a33294f8d3c2513c4ee9d74e01dfab3fc512ae0b5b2591.img",
+      "sha256": "269d8f99651193c434a33294f8d3c2513c4ee9d74e01dfab3fc512ae0b5b2591",
+      "source_filename": "05 · Kirkland Signature · Chianti Classico",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Chianti Classico"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Italy"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Tuscany"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Chianti Classico"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2023"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-5783012d0a1a3dd0d74552507bd9eb9477ed8f688c5c30abbc69f3a0e7d8725b.img",
+      "sha256": "5783012d0a1a3dd0d74552507bd9eb9477ed8f688c5c30abbc69f3a0e7d8725b",
+      "source_filename": "06 · Reserve des Auleines · SAUVIGNON BLANC",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Reserve des Auleines"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "SAUVIGNON BLANC"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "France"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Cevennes"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        }
+      },
+      "warnings": [
+        "producer: Reserve des Auleines may be the wine designation rather than the winery; verify the specific bottle."
+      ]
+    },
+    {
+      "image": "custom-97e1daf8b83fe00353253320852d1db9fb52a18d443901d65d4d78f14a393c61.img",
+      "sha256": "97e1daf8b83fe00353253320852d1db9fb52a18d443901d65d4d78f14a393c61",
+      "source_filename": "07 · Altos De Valdoso · Crianza",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Altos De Valdoso"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Crianza"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Ribera del Duero"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2019"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-6cb4a6c410ed3f3dde5fe082e8c66ec04bd551a8eb25b6b9d4590a6c252395de.img",
+      "sha256": "6cb4a6c410ed3f3dde5fe082e8c66ec04bd551a8eb25b6b9d4590a6c252395de",
+      "source_filename": "08 · Kirkland Signature · Cotes du Rhone Villages",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Cotes du Rhone Villages"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "France"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Rhone"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Cotes du Rhone Villages"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2024"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-ecc1856aea0896fa0a6b4ed1f7f2a497b2756e209d430389d6d5cf61dcb7cfd8.img",
+      "sha256": "ecc1856aea0896fa0a6b4ed1f7f2a497b2756e209d430389d6d5cf61dcb7cfd8",
+      "source_filename": "09 · Kirkland Signature · Saint-Julien",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Saint-Julien"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "France"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Bordeaux"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Saint-Julien"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2023"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-abdf1bd33597ec2a024b81baf500a8c5fed27d53f8e620da86025da00d80a89b.img",
+      "sha256": "abdf1bd33597ec2a024b81baf500a8c5fed27d53f8e620da86025da00d80a89b",
+      "source_filename": "10 · Kirkland Signature · Malbec",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Malbec"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Argentina"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Mendoza"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2022"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-72c0a831d827aa312894af5250f283be79cdadfb02845dd32c2ebaeb769fbe86.img",
+      "sha256": "72c0a831d827aa312894af5250f283be79cdadfb02845dd32c2ebaeb769fbe86",
+      "source_filename": "11 · Covalli · Barolo",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Covalli"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Barolo"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Italy"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Piedmont"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Barolo"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2019"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-478df22b6645529231961340cd8b22471d63c3ff74aa85d5ae938d281031d081.img",
+      "sha256": "478df22b6645529231961340cd8b22471d63c3ff74aa85d5ae938d281031d081",
+      "source_filename": "12 · Bodegas los Pinos · Monastrell Cabernet Sauvignon",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Bodegas los Pinos"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Monastrell Cabernet Sauvignon"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2021"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-bafb5b0aa5b2aca710522da5d7d3e5ccae0e3558db93968beb035718749a7f1c.img",
+      "sha256": "bafb5b0aa5b2aca710522da5d7d3e5ccae0e3558db93968beb035718749a7f1c",
+      "source_filename": "13 · Penfolds · Koonunga Hill Chardonnay",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Penfolds"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Koonunga Hill Chardonnay"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Australia"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "South Australia"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2023"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-a6c6173fd94d23d61b3a2c6ea2f5173768c924d81da32d3bd739cdbbb890cd7b.img",
+      "sha256": "a6c6173fd94d23d61b3a2c6ea2f5173768c924d81da32d3bd739cdbbb890cd7b",
+      "source_filename": "14 · Casaprimicia · Rioja Crianza",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Casaprimicia"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Rioja Crianza"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Rioja"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2019"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-89e50006f934f7d936fa45f1758397c43796a85218690bb7579ce0c649b549c5.img",
+      "sha256": "89e50006f934f7d936fa45f1758397c43796a85218690bb7579ce0c649b549c5",
+      "source_filename": "15 · Kirkland Signature · Rioja Reserva",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Rioja Reserva"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Rioja"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2020"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-48295d40e79f4fe510d9b0862d07a6b57fddadf58d5c70bebf31b9e49f1448ee.img",
+      "sha256": "48295d40e79f4fe510d9b0862d07a6b57fddadf58d5c70bebf31b9e49f1448ee",
+      "source_filename": "16 · Juan Gil · monastrell",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Juan Gil"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "monastrell"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "jumilla"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2020"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-bd8757aed4888674784183da588b8d40a3d91a4258ad93950fcdf5e5ee1d8e0c.img",
+      "sha256": "bd8757aed4888674784183da588b8d40a3d91a4258ad93950fcdf5e5ee1d8e0c",
+      "source_filename": "17 · Los Haroldos · Malbec",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Los Haroldos"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Malbec"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Argentina"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Mendoza"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Valle de Uco",
+          "accepted": [
+            "Valle de Uco",
+            "Uco Valley"
+          ]
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2020"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-e5249ea2a17750bd787a39022ae11448426a7b3bc919b7e678d269692cacae11.img",
+      "sha256": "e5249ea2a17750bd787a39022ae11448426a7b3bc919b7e678d269692cacae11",
+      "source_filename": "18 · Kirkland Signature · Sauvignon Blanc",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Sauvignon Blanc"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "New Zealand"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Marlborough"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2024"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-309cf3f0d9fe162c7459269081cab7e2b95cf44e1b6614d2f7b9dbb8847b4c71.img",
+      "sha256": "309cf3f0d9fe162c7459269081cab7e2b95cf44e1b6614d2f7b9dbb8847b4c71",
+      "source_filename": "19 · Los Riscos · Chardonnay",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Los Riscos"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Chardonnay"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Chile"
+        },
+        "region": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-e769e3dfb71b2e05cb31e368e6a62d369995b96639b09c0c07fbb7f0f65d8a99.img",
+      "sha256": "e769e3dfb71b2e05cb31e368e6a62d369995b96639b09c0c07fbb7f0f65d8a99",
+      "source_filename": "20 · Kirkland Signature · Pinot Noir",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Kirkland Signature"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Pinot Noir"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "California"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Sonoma County"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Russian River Valley"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2024"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-52376653a1c3e97f5146d4e0936e87b10babf0c9c985e41ec9f78d3950d88da1.img",
+      "sha256": "52376653a1c3e97f5146d4e0936e87b10babf0c9c985e41ec9f78d3950d88da1",
+      "source_filename": "21 · Vignerons de L'Enclave  · cotes du Rhone Villages",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Vignerons de L'Enclave "
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "cotes du Rhone Villages"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "France"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Rhone"
+        },
+        "subregion": {
+          "expected_status": "expected_value",
+          "expected": "Cotes du Rhone Villages"
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2022"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-1d578b2722916505a2f962a522f00c3807f60a149019d960f7723ac2957ba68a.img",
+      "sha256": "1d578b2722916505a2f962a522f00c3807f60a149019d960f7723ac2957ba68a",
+      "source_filename": "22 · Conde de Basalu · Rioja",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Conde de Basalu"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Rioja"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Rioja"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2021"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-07ceb27341f61838777aabdf42db2b5a49e5af928e0a9474d2873ebe1f706c8c.img",
+      "sha256": "07ceb27341f61838777aabdf42db2b5a49e5af928e0a9474d2873ebe1f706c8c",
+      "source_filename": "23 · OZV · old vine zinfandel",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "OZV"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "old vine zinfandel"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "California"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Lodi"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2022"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-c763e25933d26cd5a50681b300ce2cd9e81202d471116e4742501a994cdb9153.img",
+      "sha256": "c763e25933d26cd5a50681b300ce2cd9e81202d471116e4742501a994cdb9153",
+      "source_filename": "24 · Blackstone · Merlot",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Blackstone"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Merlot"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "California"
+        },
+        "region": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-76802265beab0d23311b324590f49b83dd285046431d847b11e55c4a494b06b8.img",
+      "sha256": "76802265beab0d23311b324590f49b83dd285046431d847b11e55c4a494b06b8",
+      "source_filename": "25 · Penfolds · Koonunga Hill Shiraz Cabernet ",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Penfolds"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Koonunga Hill Shiraz Cabernet "
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Australia"
+        },
+        "region": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2019"
+        }
+      },
+      "warnings": []
+    },
+    {
+      "image": "custom-aefac3ad798d5c34e5a9961b387808df4104e0191787465918a0522bf506a871.img",
+      "sha256": "aefac3ad798d5c34e5a9961b387808df4104e0191787465918a0522bf506a871",
+      "source_filename": "26 · Bodegas Olarra · Reciente",
+      "references": {
+        "producer": {
+          "expected_status": "expected_value",
+          "expected": "Bodegas Olarra"
+        },
+        "wine_name": {
+          "expected_status": "expected_value",
+          "expected": "Reciente"
+        },
+        "country": {
+          "expected_status": "expected_value",
+          "expected": "Spain"
+        },
+        "region": {
+          "expected_status": "expected_value",
+          "expected": "Rioja"
+        },
+        "subregion": {
+          "expected_status": "expected_blank",
+          "expected": ""
+        },
+        "vintage": {
+          "expected_status": "expected_value",
+          "expected": "2019"
+        }
+      },
+      "warnings": []
+    }
+  ],
+  "custom_images": [
+    {
+      "image": "custom-e34ef7b464e4c7d7e34631663152e4469d73459b294ac6a84fa53b43610e50f2.img",
+      "sha256": "e34ef7b464e4c7d7e34631663152e4469d73459b294ac6a84fa53b43610e50f2",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "CABERNET SAUVIGNON",
+        "country": "California",
+        "region": "Napa Valley",
+        "subregion": "Stags Leap District",
+        "vintage": "2024"
+      },
+      "ocr_ms": 4610,
+      "gliner_ms": 49,
+      "post_ms": 14261,
+      "total_ms": 18956,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "01 · Kirkland Signature · CABERNET SAUVIGNON",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-02ba0c62c756e90f426ad711b1deded82cc6eceae28dce4508a200a9bcb5f603.img",
+      "sha256": "02ba0c62c756e90f426ad711b1deded82cc6eceae28dce4508a200a9bcb5f603",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Brunello di Montalcino",
+        "country": "Italy",
+        "region": "Tuscany",
+        "subregion": "Montalcino",
+        "vintage": "2021"
+      },
+      "ocr_ms": 4418,
+      "gliner_ms": 70,
+      "post_ms": 1527,
+      "total_ms": 6060,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "02 · Kirkland Signature · Brunello di Montalcino",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-dffaf552eff570894e9a8f32d083d2588558c512cd2c40615d96f977ac983dcd.img",
+      "sha256": "dffaf552eff570894e9a8f32d083d2588558c512cd2c40615d96f977ac983dcd",
+      "status": "complete",
+      "fields": {
+        "producer": "Marques de Riscal",
+        "wine_name": "Verdejo",
+        "country": "Spain",
+        "region": "Castilla y Leon",
+        "subregion": "Rueda",
+        "vintage": "2023"
+      },
+      "ocr_ms": 5355,
+      "gliner_ms": 95,
+      "post_ms": 1994,
+      "total_ms": 7493,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "03 · Marques de Riscal · Verdejo",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-04e824da6f786a37ede644ec99ce1c51c30ce81ba3409eb1483b2060bb36bac8.img",
+      "sha256": "04e824da6f786a37ede644ec99ce1c51c30ce81ba3409eb1483b2060bb36bac8",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Cabernet Sauvignon",
+        "country": "California",
+        "region": "Alexander Valley",
+        "subregion": "",
+        "vintage": "2022"
+      },
+      "ocr_ms": 3997,
+      "gliner_ms": 45,
+      "post_ms": 1088,
+      "total_ms": 5168,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "04 · Kirkland Signature · Cabernet Sauvignon",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-269d8f99651193c434a33294f8d3c2513c4ee9d74e01dfab3fc512ae0b5b2591.img",
+      "sha256": "269d8f99651193c434a33294f8d3c2513c4ee9d74e01dfab3fc512ae0b5b2591",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Chianti Classico",
+        "country": "Italy",
+        "region": "Tuscany",
+        "subregion": "Chianti Classico",
+        "vintage": "2023"
+      },
+      "ocr_ms": 4359,
+      "gliner_ms": 50,
+      "post_ms": 522,
+      "total_ms": 4975,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "05 · Kirkland Signature · Chianti Classico",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-5783012d0a1a3dd0d74552507bd9eb9477ed8f688c5c30abbc69f3a0e7d8725b.img",
+      "sha256": "5783012d0a1a3dd0d74552507bd9eb9477ed8f688c5c30abbc69f3a0e7d8725b",
+      "status": "complete",
+      "fields": {
+        "producer": "Cevennes",
+        "wine_name": "SAUVIGNON BLANC",
+        "country": "",
+        "region": "",
+        "subregion": "",
+        "vintage": ""
+      },
+      "ocr_ms": 3685,
+      "gliner_ms": 60,
+      "post_ms": 785,
+      "total_ms": 4572,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "06 · Reserve des Auleines · SAUVIGNON BLANC",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-97e1daf8b83fe00353253320852d1db9fb52a18d443901d65d4d78f14a393c61.img",
+      "sha256": "97e1daf8b83fe00353253320852d1db9fb52a18d443901d65d4d78f14a393c61",
+      "status": "complete",
+      "fields": {
+        "producer": "Altos de",
+        "wine_name": "Ribera del Duero",
+        "country": "Spain",
+        "region": "Ribera del Duero",
+        "subregion": "",
+        "vintage": "2019"
+      },
+      "ocr_ms": 4982,
+      "gliner_ms": 115,
+      "post_ms": 6442,
+      "total_ms": 11596,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "07 · Altos De Valdoso · Crianza",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-6cb4a6c410ed3f3dde5fe082e8c66ec04bd551a8eb25b6b9d4590a6c252395de.img",
+      "sha256": "6cb4a6c410ed3f3dde5fe082e8c66ec04bd551a8eb25b6b9d4590a6c252395de",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Cotes du Rhone Villages",
+        "country": "France",
+        "region": "Rhone",
+        "subregion": "Cotes du Rhone Villages",
+        "vintage": "2024"
+      },
+      "ocr_ms": 3857,
+      "gliner_ms": 82,
+      "post_ms": 808,
+      "total_ms": 4803,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "08 · Kirkland Signature · Cotes du Rhone Villages",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-ecc1856aea0896fa0a6b4ed1f7f2a497b2756e209d430389d6d5cf61dcb7cfd8.img",
+      "sha256": "ecc1856aea0896fa0a6b4ed1f7f2a497b2756e209d430389d6d5cf61dcb7cfd8",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Saint-Julien",
+        "country": "France",
+        "region": "Bordeaux",
+        "subregion": "Saint-Julien",
+        "vintage": "2023"
+      },
+      "ocr_ms": 4898,
+      "gliner_ms": 65,
+      "post_ms": 815,
+      "total_ms": 5828,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "09 · Kirkland Signature · Saint-Julien",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-abdf1bd33597ec2a024b81baf500a8c5fed27d53f8e620da86025da00d80a89b.img",
+      "sha256": "abdf1bd33597ec2a024b81baf500a8c5fed27d53f8e620da86025da00d80a89b",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Malbec",
+        "country": "Argentina",
+        "region": "Mendoza",
+        "subregion": "",
+        "vintage": "2022"
+      },
+      "ocr_ms": 3854,
+      "gliner_ms": 65,
+      "post_ms": 598,
+      "total_ms": 4555,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "10 · Kirkland Signature · Malbec",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-72c0a831d827aa312894af5250f283be79cdadfb02845dd32c2ebaeb769fbe86.img",
+      "sha256": "72c0a831d827aa312894af5250f283be79cdadfb02845dd32c2ebaeb769fbe86",
+      "status": "complete",
+      "fields": {
+        "producer": "Covalli",
+        "wine_name": "Barolo",
+        "country": "Italy",
+        "region": "Piedmont",
+        "subregion": "Barolo",
+        "vintage": "2019"
+      },
+      "ocr_ms": 4772,
+      "gliner_ms": 63,
+      "post_ms": 1037,
+      "total_ms": 5927,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "11 · Covalli · Barolo",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-478df22b6645529231961340cd8b22471d63c3ff74aa85d5ae938d281031d081.img",
+      "sha256": "478df22b6645529231961340cd8b22471d63c3ff74aa85d5ae938d281031d081",
+      "status": "complete",
+      "fields": {
+        "producer": "Bodegas los Pinos",
+        "wine_name": "",
+        "country": "Spain",
+        "region": "",
+        "subregion": "",
+        "vintage": "2021"
+      },
+      "ocr_ms": 5188,
+      "gliner_ms": 68,
+      "post_ms": 1764,
+      "total_ms": 7067,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "12 · Bodegas los Pinos · Monastrell Cabernet Sauvignon",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-bafb5b0aa5b2aca710522da5d7d3e5ccae0e3558db93968beb035718749a7f1c.img",
+      "sha256": "bafb5b0aa5b2aca710522da5d7d3e5ccae0e3558db93968beb035718749a7f1c",
+      "status": "complete",
+      "fields": {
+        "producer": "Penfolds",
+        "wine_name": "Chardonnay",
+        "country": "Australia",
+        "region": "South Australia",
+        "subregion": "",
+        "vintage": "2023"
+      },
+      "ocr_ms": 4291,
+      "gliner_ms": 61,
+      "post_ms": 1042,
+      "total_ms": 5437,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "13 · Penfolds · Koonunga Hill Chardonnay",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-a6c6173fd94d23d61b3a2c6ea2f5173768c924d81da32d3bd739cdbbb890cd7b.img",
+      "sha256": "a6c6173fd94d23d61b3a2c6ea2f5173768c924d81da32d3bd739cdbbb890cd7b",
+      "status": "complete",
+      "fields": {
+        "producer": "Casaprimicia",
+        "wine_name": "Rioja",
+        "country": "Spain",
+        "region": "Rioja",
+        "subregion": "",
+        "vintage": "2019"
+      },
+      "ocr_ms": 4812,
+      "gliner_ms": 78,
+      "post_ms": 1157,
+      "total_ms": 6095,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "14 · Casaprimicia · Rioja Crianza",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-89e50006f934f7d936fa45f1758397c43796a85218690bb7579ce0c649b549c5.img",
+      "sha256": "89e50006f934f7d936fa45f1758397c43796a85218690bb7579ce0c649b549c5",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Red Wine",
+        "country": "Spain",
+        "region": "Rioja",
+        "subregion": "",
+        "vintage": "2020"
+      },
+      "ocr_ms": 5446,
+      "gliner_ms": 96,
+      "post_ms": 1520,
+      "total_ms": 7106,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "15 · Kirkland Signature · Rioja Reserva",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-48295d40e79f4fe510d9b0862d07a6b57fddadf58d5c70bebf31b9e49f1448ee.img",
+      "sha256": "48295d40e79f4fe510d9b0862d07a6b57fddadf58d5c70bebf31b9e49f1448ee",
+      "status": "complete",
+      "fields": {
+        "producer": "Juan Gil",
+        "wine_name": "",
+        "country": "",
+        "region": "",
+        "subregion": "",
+        "vintage": "2020"
+      },
+      "ocr_ms": 4445,
+      "gliner_ms": 62,
+      "post_ms": 338,
+      "total_ms": 4890,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "16 · Juan Gil · monastrell",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-bd8757aed4888674784183da588b8d40a3d91a4258ad93950fcdf5e5ee1d8e0c.img",
+      "sha256": "bd8757aed4888674784183da588b8d40a3d91a4258ad93950fcdf5e5ee1d8e0c",
+      "status": "complete",
+      "fields": {
+        "producer": "Los Haroldos",
+        "wine_name": "Malbec",
+        "country": "Argentina",
+        "region": "Mendoza",
+        "subregion": "",
+        "vintage": "2020"
+      },
+      "ocr_ms": 4641,
+      "gliner_ms": 101,
+      "post_ms": 1075,
+      "total_ms": 5868,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "17 · Los Haroldos · Malbec",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-e5249ea2a17750bd787a39022ae11448426a7b3bc919b7e678d269692cacae11.img",
+      "sha256": "e5249ea2a17750bd787a39022ae11448426a7b3bc919b7e678d269692cacae11",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Sauvignon Blanc",
+        "country": "New Zealand",
+        "region": "Marlborough",
+        "subregion": "",
+        "vintage": "2024"
+      },
+      "ocr_ms": 3780,
+      "gliner_ms": 47,
+      "post_ms": 817,
+      "total_ms": 4684,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "18 · Kirkland Signature · Sauvignon Blanc",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-309cf3f0d9fe162c7459269081cab7e2b95cf44e1b6614d2f7b9dbb8847b4c71.img",
+      "sha256": "309cf3f0d9fe162c7459269081cab7e2b95cf44e1b6614d2f7b9dbb8847b4c71",
+      "status": "complete",
+      "fields": {
+        "producer": "Los Riscos",
+        "wine_name": "Chardonnay",
+        "country": "Chile",
+        "region": "",
+        "subregion": "",
+        "vintage": ""
+      },
+      "ocr_ms": 3877,
+      "gliner_ms": 57,
+      "post_ms": 830,
+      "total_ms": 4805,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "19 · Los Riscos · Chardonnay",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-e769e3dfb71b2e05cb31e368e6a62d369995b96639b09c0c07fbb7f0f65d8a99.img",
+      "sha256": "e769e3dfb71b2e05cb31e368e6a62d369995b96639b09c0c07fbb7f0f65d8a99",
+      "status": "complete",
+      "fields": {
+        "producer": "Kirkland Signature",
+        "wine_name": "Pinot Noir",
+        "country": "California",
+        "region": "Sonoma County",
+        "subregion": "",
+        "vintage": "2024"
+      },
+      "ocr_ms": 4317,
+      "gliner_ms": 54,
+      "post_ms": 851,
+      "total_ms": 5266,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "20 · Kirkland Signature · Pinot Noir",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-52376653a1c3e97f5146d4e0936e87b10babf0c9c985e41ec9f78d3950d88da1.img",
+      "sha256": "52376653a1c3e97f5146d4e0936e87b10babf0c9c985e41ec9f78d3950d88da1",
+      "status": "complete",
+      "fields": {
+        "producer": "Vignerons de l'Ncllave",
+        "wine_name": "Cotes du Rhone",
+        "country": "France",
+        "region": "Rhone",
+        "subregion": "Cotes du Rhone",
+        "vintage": "2022"
+      },
+      "ocr_ms": 6009,
+      "gliner_ms": 191,
+      "post_ms": 2856,
+      "total_ms": 9128,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "21 · Vignerons de L'Enclave  · cotes du Rhone Villages",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-1d578b2722916505a2f962a522f00c3807f60a149019d960f7723ac2957ba68a.img",
+      "sha256": "1d578b2722916505a2f962a522f00c3807f60a149019d960f7723ac2957ba68a",
+      "status": "complete",
+      "fields": {
+        "producer": "Conde de Basalu",
+        "wine_name": "Rioja",
+        "country": "Spain",
+        "region": "Rioja",
+        "subregion": "",
+        "vintage": "2021"
+      },
+      "ocr_ms": 4237,
+      "gliner_ms": 65,
+      "post_ms": 5786,
+      "total_ms": 10134,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "22 · Conde de Basalu · Rioja",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-07ceb27341f61838777aabdf42db2b5a49e5af928e0a9474d2873ebe1f706c8c.img",
+      "sha256": "07ceb27341f61838777aabdf42db2b5a49e5af928e0a9474d2873ebe1f706c8c",
+      "status": "complete",
+      "fields": {
+        "producer": "Estate Grown",
+        "wine_name": "Zinfandel",
+        "country": "",
+        "region": "",
+        "subregion": "",
+        "vintage": "2022"
+      },
+      "ocr_ms": 4165,
+      "gliner_ms": 52,
+      "post_ms": 1227,
+      "total_ms": 5491,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "23 · OZV · old vine zinfandel",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-c763e25933d26cd5a50681b300ce2cd9e81202d471116e4742501a994cdb9153.img",
+      "sha256": "c763e25933d26cd5a50681b300ce2cd9e81202d471116e4742501a994cdb9153",
+      "status": "complete",
+      "fields": {
+        "producer": "Blackstone",
+        "wine_name": "Merlot",
+        "country": "California",
+        "region": "",
+        "subregion": "",
+        "vintage": ""
+      },
+      "ocr_ms": 3695,
+      "gliner_ms": 40,
+      "post_ms": 215,
+      "total_ms": 3985,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "24 · Blackstone · Merlot",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-76802265beab0d23311b324590f49b83dd285046431d847b11e55c4a494b06b8.img",
+      "sha256": "76802265beab0d23311b324590f49b83dd285046431d847b11e55c4a494b06b8",
+      "status": "complete",
+      "fields": {
+        "producer": "Penfolds",
+        "wine_name": "Shiraz Cabernet",
+        "country": "",
+        "region": "",
+        "subregion": "",
+        "vintage": "2019"
+      },
+      "ocr_ms": 3655,
+      "gliner_ms": 61,
+      "post_ms": 949,
+      "total_ms": 4705,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "25 · Penfolds · Koonunga Hill Shiraz Cabernet ",
+      "message": "Previously exported prediction; no new inference"
+    },
+    {
+      "image": "custom-aefac3ad798d5c34e5a9961b387808df4104e0191787465918a0522bf506a871.img",
+      "sha256": "aefac3ad798d5c34e5a9961b387808df4104e0191787465918a0522bf506a871",
+      "status": "complete",
+      "fields": {
+        "producer": "Bodegas Olarra",
+        "wine_name": "Rioja",
+        "country": "Spain",
+        "region": "Rioja",
+        "subregion": "",
+        "vintage": "2019"
+      },
+      "ocr_ms": 5195,
+      "gliner_ms": 84,
+      "post_ms": 1079,
+      "total_ms": 6428,
+      "model": "gliner_small_int4.onnx:a4d97745ba14",
+      "int4": true,
+      "source_filename": "26 · Bodegas Olarra · Reciente",
+      "message": "Previously exported prediction; no new inference"
+    }
+  ]
+}

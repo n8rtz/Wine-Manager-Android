@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -143,6 +145,7 @@ internal fun aggregateGlinerRows(rows:List<GlinerLabRow>,stopped:Boolean):Gliner
  */
 private class GlinerLabSession {
     val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
+    val auditInitMutex=Mutex()
     @Volatile var mutable:MutableStateFlow<GlinerLabState>?=null
     @Volatile var job:Job?=null
 
@@ -175,13 +178,21 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         mutable.update { it.copy(modelsReady=GlinerOcrModels.present(application)) }
         refresh()
         if(!mutable.value.auditLoaded) session.scope.launch {
-            val refs=runCatching { GlinerAuditStore.loadReferences(app) }
-            val latest=runCatching { GlinerAuditStore.loadLatest(app) }
-            val latestRows=runCatching { latest.getOrThrow()?.let(::auditRowsFromJson).orEmpty() }
-            mutable.update { state -> if(state.auditLoaded) state else state.copy(
-                auditLoaded=true,auditReferences=refs.getOrDefault(emptyList()),auditRows=latestRows.getOrDefault(emptyList()),
-                auditRunState=latest.getOrNull()?.optString("status").orEmpty(),
-                auditLoadError=(refs.exceptionOrNull() ?: latestRows.exceptionOrNull())?.let { "Cannot load audit: ${it.message}" }.orEmpty()) }
+            session.auditInitMutex.withLock {
+                if(mutable.value.auditLoaded) return@withLock
+                val refs=runCatching {
+                    GlinerAuditStore.loadReferences(app).ifEmpty {
+                        // First use only. Never overwrite references previously saved on the device.
+                        installBundledAudit(saveBaseline=GlinerAuditStore.loadLatest(app)==null)
+                    }
+                }
+                val latest=runCatching { GlinerAuditStore.loadLatest(app) }
+                val latestRows=runCatching { latest.getOrThrow()?.let(::auditRowsFromJson).orEmpty() }
+                mutable.update { state -> state.copy(
+                    auditLoaded=true,auditReferences=refs.getOrDefault(emptyList()),auditRows=latestRows.getOrDefault(emptyList()),
+                    auditRunState=latest.getOrNull()?.optString("status").orEmpty(),
+                    auditLoadError=(refs.exceptionOrNull() ?: latestRows.exceptionOrNull())?.let { "Cannot load audit: ${it.message}" }.orEmpty()) }
+            }
         }
         if(!mutable.value.customLoaded) session.scope.launch {
             val loaded=runCatching { GlinerCustomImages.load(app) }
@@ -276,6 +287,34 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             .put("model_load_ms",document.optJSONObject("model_load_ms") ?: JSONObject())
             .put("audit_references",JSONArray(refs.map(GlinerAuditStore::referenceJson))).put("audit_results",records)
             .put("audit_summary",auditSummary(scored))
+    }
+
+    /** Seed the bundled references without replacing any prior run history. */
+    private fun installBundledAudit(saveBaseline:Boolean):List<GlinerAuditReference> {
+        val document=GlinerAuditStore.readBundledDocument(app)
+        val refs=GlinerAuditStore.parse(document)
+        if(saveBaseline) importedAuditBaseline(document,refs)?.let { (id,payload) ->
+            GlinerAuditStore.saveRun(app,id,payload)
+        }
+        GlinerAuditStore.saveReferences(app,refs)
+        return refs
+    }
+
+    /** An explicit reset is available if the owner wants to return to the built-in 26-photo set. */
+    fun useBundledAudit() {
+        if(mutable.value.running || mutable.value.importingImages || !mutable.value.auditLoaded) return
+        mutable.update { it.copy(importingImages=true,message="Loading built-in audit references…") }
+        session.scope.launch {
+            val result=runCatching {
+                val refs=installBundledAudit(saveBaseline=GlinerAuditStore.loadLatest(app)==null)
+                val latest=GlinerAuditStore.loadLatest(app)
+                Triple(refs,latest?.let(::auditRowsFromJson).orEmpty(),latest?.optString("status").orEmpty())
+            }
+            mutable.update { state -> result.fold(onSuccess={ (refs,rows,status) ->
+                state.copy(auditReferences=refs,auditRows=rows,auditRunState=status,importingImages=false,
+                    auditLoadError="",message="Built-in audit loaded: ${refs.size} references. Original photos are still required.")
+            },onFailure={ error -> state.copy(importingImages=false,message="Cannot load built-in audit: ${error.message}") }) }
+        }
     }
 
     fun importAudit(uri:Uri) {
