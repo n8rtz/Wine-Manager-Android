@@ -7,6 +7,7 @@ import com.yourapp.wine.gazetteer.ProducerGazetteer
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.kb.BundledGrapes
 import com.yourapp.wine.kb.BundledOrigins
+import com.yourapp.wine.kb.ReferenceWineCatalog
 import com.yourapp.wine.kb.BundledWineStyles
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
 import com.yourapp.wine.textlab.TextLabBudgets
@@ -93,6 +94,13 @@ internal object GlinerLabRunner {
         BundledOrigins.terms.flatMap { listOf(it.name,it.country,it.region)+it.aliases }
             .filter(String::isNotBlank).map(GlinerDocument::normalize).toSet()
     }
+    // The ordinary bundled geography catalog, not benchmark targets. Ambiguous names remain
+    // separate, and only exact Italian appellations with one parent region are indexed.
+    private val appellationIndex:Map<String,List<GlinerOrigin>> by lazy {
+        GlinerGeography.indexOrigins(ReferenceWineCatalog.origins.filter {
+            it.country=="Italy" && it.nameRole=="appellation" && !it.contextRequired && it.regions.size==1
+        }.map { GlinerOrigin(it.country,it.regions.single(),it.name,it.aliases) })
+    }
     val fieldLabels=linkedMapOf(
         "producer" to "Producer",
         "wine_name" to "Wine name",
@@ -150,7 +158,7 @@ internal object GlinerLabRunner {
                     reading.box.right,reading.box.bottom)
             }
             val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
-                post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys,GlinerGeography.origins) else GlinerFieldDecision(post.fields,emptyList())
+                post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys,GlinerGeography.origins,appellationIndex) else GlinerFieldDecision(post.fields,emptyList())
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
                 PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }

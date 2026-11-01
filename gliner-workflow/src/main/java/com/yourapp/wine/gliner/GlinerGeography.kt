@@ -5,6 +5,14 @@ data class GlinerOrigin(val country:String,val region:String,val subregion:Strin
 data class GlinerAdminRegion(val country:String,val region:String,val forms:List<String>)
 
 object GlinerGeography {
+    /** Exact aliases only; ambiguous same-spelling places remain separate and must abstain. */
+    fun indexOrigins(origins:List<GlinerOrigin>):Map<String,List<GlinerOrigin>> = origins.flatMap { origin ->
+        (origin.forms+origin.subregion).map { GlinerDocument.normalize(it) to origin }
+    }.filter { it.first.length>=5 }.groupBy({ it.first }, { it.second }).mapValues { (_,values) ->
+        values.distinctBy { Triple(GlinerDocument.normalize(it.country),GlinerDocument.normalize(it.region),
+            GlinerDocument.normalize(it.subregion)) }
+    }
+
     // Italian regional geographical indications: administrative regions and native/English
     // spellings. Used only with an independently corroborated geographical-indication cue.
     // https://italianwinecentral.com/italian-wine-regions/

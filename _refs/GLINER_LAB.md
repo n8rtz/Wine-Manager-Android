@@ -1,9 +1,9 @@
 # GLiNER lane lab
 
-The current v7 policy, phone-run analysis, staged saved-OCR replay and device/holdout
-limitations are documented in `docs/gliner-run-1793542448049-analysis.md`. The earlier v6
-reference audit and ablation remain in `docs/gliner-v6-implementation-evaluation.md`.
-V7 changes only this experimental workflow; its fresh phone performance is not yet verified.
+The current v8 policy and local saved-evidence evaluation are documented in
+`docs/gliner-policy-v8-evaluation.md`; the v7 phone-run analysis and prior replay remain in
+`docs/gliner-run-1793542448049-analysis.md`. These changes affect only the experimental workflow.
+Fresh phone performance and unseen-holdout accuracy are not yet verified.
 
 Settings → Scanner testing → GLiNER lane lab is an experimental workflow, separate from the
 production scanner and Lab v7. Its INT4 model is optional and is not committed to the repository.
@@ -56,9 +56,14 @@ standalone style between such a completed producer and its geographic fallback; 
 consensus grape lines for a blank blend; and completes an exact grape/style name with an adjacent,
 corroborated title prefix. Prefixes may differ slightly between OCR engines or be split into
 fragments. Completion requires a unique candidate and excludes known geography, legal terms and
-other conflicting fields. The shared bundled origin names and aliases are a conservative veto, not
-an inference source; a genuine title that is also a place may therefore be left incomplete.
-All rules use generic terms, geometry, model hints, and observed text, never reference answers. Ambiguous or unsupported
+other conflicting fields. The shared bundled origin names and aliases also act as a conservative
+veto, so a genuine title that is also a place may be left incomplete. V8 additionally indexes
+ordinary catalogued Italian appellations with a single parent region: a unique exact printed place
+must be directly attached to independently read DOC wording, without intervening text or visible
+conflicting origin. A conflicting subregion is replaced only for a separately printed recognized
+style collision. V8 also adds guarded classification, compound title and maker-role recovery; see
+the evaluation report for the precise limitations. All rules use generic terms, geometry, model hints,
+and observed text, never benchmark reference answers. Ambiguous or unsupported
 candidates are rejected. Nonblank altered fields are YELLOW and a cleared field is RED; each
 decision is logged. These are experimental heuristics tuned on the available corpus, and need a
 phone run and held-out labels to assess real improvements and regressions.
@@ -73,7 +78,7 @@ bundled vocabularies from a phone export, using reference targets only for scori
 eligible and excluded-field changes against both the base and exported final fields. Older exports
 lack full hint scores and exact decision input text, so their replay is explicitly approximate.
 
-### Latest same-OCR experiment
+### Earlier same-OCR experiment (v3 to v4)
 
 The v3 phone export from build `6685981` scored 95/121 eligible complete labels (124 attempted),
 matching its prior replay. Its OCR lines, lane hints and base fields are identical to the preceding

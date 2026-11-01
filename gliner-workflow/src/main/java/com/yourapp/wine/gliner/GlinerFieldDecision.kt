@@ -15,7 +15,7 @@ data class GlinerEvidenceLine(
  * The base result wins unless an explicit, auditable rule finds independent OCR evidence.
  */
 object GlinerFieldDecisionPolicy {
-    const val VERSION="gliner-field-policy-v7"
+    const val VERSION="gliner-field-policy-v8"
 
     fun apply(fields:Map<String,String>,hints:List<GlinerFieldHint>,rawLines:List<String>):GlinerFieldDecision {
         val producer=fields["producer"].orEmpty()
@@ -63,6 +63,7 @@ object GlinerFieldDecisionPolicy {
         styleTerms:Set<String> = emptySet(),
         knownPlaceKeys:Set<String> = emptySet(),
         origins:List<GlinerOrigin> = emptyList(),
+        appellationIndex:Map<String,List<GlinerOrigin>> = emptyMap(),
     ):GlinerFieldDecision {
         val lines=consensus(readings)
         val grapes=grapeTerms.map(::key).filter { it.length>=4 }.toSet()
@@ -383,6 +384,54 @@ object GlinerFieldDecisionPolicy {
             }
         }
 
+        // A prominent product name can be mistaken for the producer. Recover a different
+        // maker only with a high-confidence model hint, independently corroborated printed
+        // maker words, and the same full maker name in a separately printed bottling role.
+        // If the mistaken producer is itself printed between that maker and a recognised
+        // wine-style appellation, keep those actually printed words as the wine name.
+        run {
+            val oldMaker=key(updated["producer"].orEmpty())
+            val wine=key(updated["wine_name"].orEmpty())
+            val place=key(updated["subregion"].orEmpty())
+            if(oldMaker.length>=5 && wine.isNotBlank() && wine==place && wine in allStyles) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+                val markerWords=listOf("imbottigliato","imboigliato","bottledby","misenbouteille")
+                val candidates=mutableListOf<Pair<String,String>>()
+                hints.filter { it.lane==GlinerLane.PRODUCER && it.confidence.isFinite() && it.confidence>=0.70f }
+                    .forEach { hint ->
+                        val words=hint.text.trim().split(Regex("\\s+"))
+                        if(words.size!=2 || words.any { key(it).length<5 }) return@forEach
+                        val maker=key(hint.text)
+                        if(maker==oldMaker || maker in oldMaker || oldMaker in maker) return@forEach
+                        val firsts=primary.filter { key(it.text)==key(words[0]) && nearLineConsensus(it,readings) }
+                        val seconds=primary.filter { key(it.text)==key(words[1]) && nearLineConsensus(it,readings) }
+                        val titles=primary.filter { key(it.text)==oldMaker && nearLineConsensus(it,readings) }
+                        val places=primary.filter { key(it.text)==wine && nearLineConsensus(it,readings) }
+                        firsts.forEach { first -> seconds.forEach secondLoop@ { second ->
+                            if(first.top>=second.top || second.top-first.bottom !in -0.02f..0.08f ||
+                                horizontalOverlap(first,second)<0.5f) return@secondLoop
+                            val roleConfirmed=primary.any { role ->
+                                key(role.text).contains(maker) && role.top>second.bottom && primary.any { cue ->
+                                    markerWords.any { it in key(cue.text) } && cue.top<role.top &&
+                                        role.top-cue.bottom in -0.03f..0.08f && horizontalOverlap(cue,role)>=0.5f
+                                }
+                            }
+                            if(roleConfirmed) titles.forEach { title -> places.forEach { location ->
+                                if(second.top<title.top && title.top<location.top &&
+                                    horizontalOverlap(title,location)>=0.5f && horizontalOverlap(second,title)>=0.5f)
+                                    candidates += "${first.text.trim()} ${second.text.trim()}" to "${title.text.trim()} ${location.text.trim()}"
+                            } }
+                        } }
+                    }
+                val distinct=candidates.distinctBy { key(it.first) to key(it.second) }
+                if(distinct.size==1) {
+                    val (maker,title)=distinct.single()
+                    replace("producer",maker,"model and corroborated maker with printed bottling role")
+                    replace("wine_name",title,"printed product title and style separated from maker")
+                }
+            }
+        }
+
         val hinted=apply(updated,hints,readings.map { it.text })
         if(hinted.changes.isNotEmpty()) {
             updated.putAll(hinted.fields)
@@ -679,6 +728,74 @@ object GlinerFieldDecisionPolicy {
         // each be corroborated, spatially connected, and unique. Never override a conflict,
         // infer from a winery address, or choose one among multiple candidate regions.
         val primaryGeo=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && nearLineConsensus(it,readings) }
+        // Resolve an explicitly printed Italian appellation against the ordinary bundled
+        // catalog, not against benchmark labels. The place must sit immediately before a
+        // corroborated DOC cue, with no intervening line, and map to exactly one hierarchy.
+        // A conflicting country/region that is visibly supported blocks correction. An
+        // existing subregion may be replaced only when it is actually a separately printed
+        // wine style immediately before the appellation (e.g. a style/place collision).
+        if(appellationIndex.isNotEmpty()) {
+            val cueStarts=primaryGeo.filter { line ->
+                val k=key(line.text)
+                k=="denominazione" || (k.startsWith("denominazione") && "diorigine" in k && "controll" in k)
+            }.filter { cue ->
+                val k=key(cue.text)
+                k!="denominazione" || primaryGeo.any { next ->
+                    val n=key(next.text)
+                    n.startsWith("diorigine") && "controll" in n && next.top>cue.top &&
+                        next.top-cue.bottom in -0.02f..0.05f && horizontalOverlap(cue,next)>=0.5f
+                }
+            }
+            val found=mutableListOf<Pair<GlinerOrigin,GlinerEvidenceLine>>()
+            primaryGeo.forEach { printed ->
+                val raw=printed.text.trim()
+                val stripped=Regex("(?iu)^(?:del|della|di|de)\\s+(.+)$").matchEntire(raw)?.groupValues?.get(1) ?: raw
+                val k=key(stripped)
+                if(legal(raw) || k.length<5) return@forEach
+                val attached=cueStarts.any { cue ->
+                    val center=(printed.top+printed.bottom)/2f
+                    val cueCenter=(cue.top+cue.bottom)/2f
+                    cueCenter>center && cue.top-printed.bottom in -0.02f..0.05f && horizontalOverlap(printed,cue)>=0.5f &&
+                        primaryGeo.none { between ->
+                            val c=(between.top+between.bottom)/2f
+                            between!==printed && between!==cue && c>center+0.005f && c<cueCenter-0.005f &&
+                                horizontalOverlap(printed,between)>=0.5f && horizontalOverlap(between,cue)>=0.5f
+                        }
+                }
+                if(attached) appellationIndex[k].orEmpty().filter { key(it.country)=="italy" && it.region.isNotBlank() }
+                    .forEach { found += it to printed }
+            }
+            val matches=found.distinctBy { Triple(key(it.first.country),key(it.first.region),key(it.first.subregion)) }
+            if(matches.size==1) {
+                val (origin,printed)=matches.single()
+                val country=key(updated["country"].orEmpty())
+                val region=key(updated["region"].orEmpty())
+                val sub=key(updated["subregion"].orEmpty())
+                val countryAliases=when(country) {
+                    "greece" -> setOf("greece","grecia","hellas","ellada")
+                    "spain" -> setOf("spain","espana","espagne")
+                    "france" -> setOf("france","francia")
+                    "germany" -> setOf("germany","deutschland","allemagne")
+                    else -> setOf(country).filter { it.isNotBlank() }.toSet()
+                }
+                fun observed(forms:Set<String>):Boolean = readings.any { reading -> valid(reading) &&
+                    forms.any { form -> form.length>=5 && key(reading.text).contains(form) } }
+                val countryConflict=country.isNotBlank() && country!=key(origin.country) && observed(countryAliases)
+                val regionForms=(setOf(region)+updated["region"].orEmpty().split(Regex("\\s+"))
+                    .map(::key).filter { it.length>=6 }).filter { it.isNotBlank() }.toSet()
+                val regionConflict=region.isNotBlank() && region!=key(origin.region) && observed(regionForms)
+                val styleCollision=sub in allStyles && primaryGeo.any { style ->
+                    key(style.text)==sub && style.top<printed.top && printed.top-style.bottom in -0.02f..0.06f &&
+                        horizontalOverlap(style,printed)>=0.5f
+                }
+                val subConflict=sub.isNotBlank() && sub!=key(origin.subregion) && !styleCollision
+                if(!countryConflict && !regionConflict && !subConflict) {
+                    replace("country",origin.country,"corroborated catalogued DOC appellation")
+                    replace("region",origin.region,"corroborated catalogued DOC appellation")
+                    replace("subregion",origin.subregion,"corroborated catalogued DOC appellation")
+                }
+            }
+        }
         val giCues=primaryGeo.filter { line ->
             val k=key(line.text)
             k.contains("indicazionegeografica") || k.contains("denominazionediorigine") || k=="igt" || k=="igp"
@@ -740,11 +857,23 @@ object GlinerFieldDecisionPolicy {
                     }
                     fun originLabel(text:String):Boolean = !legal(text) &&
                         !Regex("(?i)\\b(bottled|produced|imported|distributed|address|bottling|embouteill[eé])\\b").containsMatchIn(text)
-                    readings.any { a -> valid(a) && a.engine==GlinerEngines.PADDLE && originLabel(a.text) &&
+                    val exact=readings.any { a -> valid(a) && a.engine==GlinerEngines.PADDLE && originLabel(a.text) &&
                         hasPlace(a.text) && readings.any { b ->
                             valid(b) && b.engine!=a.engine && originLabel(b.text) && hasPlace(b.text) && iou(a,b)>=0.25f
                         }
                     }
+                    // If the base already selected this exact subregion in the region slot,
+                    // OCR may be missing a character. Do not fuzzy-search the whole catalog:
+                    // both engines must independently resemble that same anchored name at
+                    // the same location, in the already-selected country, with no subregion.
+                    val anchored=geoRegion==child && geoSubregion.isBlank() && readings.any { a ->
+                        valid(a) && a.engine==GlinerEngines.PADDLE && originLabel(a.text) &&
+                            editDistanceAtMostTwo(key(a.text),key(form)) && readings.any { b ->
+                                valid(b) && b.engine!=a.engine && originLabel(b.text) && iou(a,b)>=0.25f &&
+                                    editDistanceAtMostTwo(key(b.text),key(form))
+                            }
+                    }
+                    exact || anchored
                 }
         }.distinctBy { key(it.country) to key(it.subregion) }
         if(supportedOrigins.size==1) {
@@ -961,6 +1090,185 @@ object GlinerFieldDecisionPolicy {
             unique(candidates)?.let { replace("wine_name",it,"two-engine title evidence over geographic fallback") }
         }
 
+        // A wine name can lose a separately printed style between two already-selected
+        // fragments. Restore only an independently corroborated, known style between two
+        // independently corroborated fragments that exactly account for the old title.
+        run {
+            val wine=key(updated["wine_name"].orEmpty())
+            val producer=key(updated["producer"].orEmpty())
+            if(wine.length>=10) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && nearLineConsensus(it,readings) }
+                val fragments=primary.map { it to key(it.text) }.filter { (line,k) -> k.length>=4 && !legal(line.text) }
+                val candidates=mutableListOf<String>()
+                fragments.forEach { (first,fk) ->
+                    if(producer.isNotBlank() && (fk in producer || producer in fk)) return@forEach
+                    fragments.forEach lastLoop@ { (last,lk) ->
+                        if(fk==lk || fk+lk!=wine || first.top>=last.top) return@lastLoop
+                        primary.filter { key(it.text) in allStyles }.forEach { style ->
+                            if(first.top<style.top && style.top<last.top && style.top-first.bottom in -0.02f..0.05f &&
+                                last.top-style.bottom in -0.02f..0.05f && horizontalOverlap(first,style)>=0.5f &&
+                                horizontalOverlap(style,last)>=0.5f)
+                                candidates += "${first.text.trim()} ${style.text.trim()} ${last.text.trim()}"
+                        }
+                    }
+                }
+                unique(candidates)?.let { replace("wine_name",it,"corroborated internal wine-style line") }
+            }
+        }
+
+        // An appellation may be printed as three distinct lines: place, recognised wine
+        // style, and a quality term with a legal designation. When the existing subregion
+        // is exactly the same compound phrase, recover it as a blank wine name too. Keep
+        // the full appellation in the geography field; do not shorten a legal denomination.
+        run {
+            val place=key(updated["subregion"].orEmpty())
+            if(updated["wine_name"].orEmpty().isBlank() && place.length>=10) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && nearLineConsensus(it,readings) }
+                val quality=Regex("(?i)^(superiore|superieur|riserva|reserva)\\s+D\\.?\\s*O\\.?\\s*C\\.?\\s*G?\\.?$")
+                val candidates=mutableListOf<String>()
+                primary.filter { key(it.text) in allStyles }.forEach { style ->
+                    primary.forEach nameLoop@ { name ->
+                        val nameKey=key(name.text)
+                        if(nameKey.length<4 || nameKey.any(Char::isDigit) || legal(name.text) ||
+                            name.top>=style.top || style.top-name.bottom !in -0.02f..0.06f || horizontalOverlap(name,style)<0.5f) return@nameLoop
+                        primary.forEach qualityLoop@ { classification ->
+                            val match=quality.matchEntire(classification.text.trim()) ?: return@qualityLoop
+                            val qualityWord=match.groupValues[1]
+                            if(key(name.text)+key(style.text)+key(qualityWord)==place && classification.top>style.top &&
+                                classification.top-style.bottom in -0.02f..0.06f && horizontalOverlap(style,classification)>=0.5f)
+                                candidates += "${name.text.trim()} ${style.text.trim()} $qualityWord"
+                        }
+                    }
+                }
+                unique(candidates)?.let { replace("wine_name",it,"corroborated compound appellation and classification") }
+            }
+        }
+
+        // A classified wine can print an appellation, its regulatory designation, a named
+        // vineyard/cuvee, and the classification as separate lines. Reconstruct only this
+        // fully corroborated structure; do not attach an address or an estate to a title.
+        run {
+            val wine=key(updated["wine_name"].orEmpty())
+            val place=key(updated["subregion"].orEmpty())
+            val producer=key(updated["producer"].orEmpty())
+            if(place.length>=6 && wine==place) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+                val candidates=mutableListOf<String>()
+                val placeLines=primary.filter { key(it.text)==place && nearLineConsensus(it,readings) }
+                val cues=primary.filter { cue ->
+                    val k=key(cue.text)
+                    "appellation" in k && place in k && "premiercru" in k && nearLineConsensus(cue,readings)
+                }
+                val classifications=primary.filter { key(it.text)=="premiercru" && nearLineConsensus(it,readings) }
+                placeLines.forEach { location -> cues.forEach { cue -> classifications.forEach classLoop@ { classification ->
+                    if(cue.top+cue.bottom<=location.top+location.bottom || classification.top<=cue.top ||
+                        horizontalOverlap(location,cue)<0.5f || horizontalOverlap(cue,classification)<0.5f) return@classLoop
+                    primary.forEach { title ->
+                        val k=key(title.text)
+                        val corroborated=readings.any { other -> valid(other) && other.engine!=title.engine &&
+                            iou(title,other)>=0.3f && editDistanceAtMost(k,key(other.text),3) }
+                        if(k.length>=10 && k.none(Char::isDigit) && !legal(title.text) && k !in knownPlaceKeys &&
+                            !(producer.isNotBlank() && (k in producer || producer in k)) &&
+                            title.top+title.bottom>cue.top+cue.bottom && title.top+title.bottom<classification.top+classification.bottom &&
+                            title.top-cue.bottom in -0.03f..0.10f && classification.top-title.bottom in -0.03f..0.10f &&
+                            horizontalOverlap(title,cue)>=0.5f && horizontalOverlap(title,classification)>=0.5f && corroborated)
+                            candidates += "${location.text.trim()} ${title.text.trim()} ${classification.text.trim()}"
+                    }
+                } } }
+                unique(candidates)?.let { replace("wine_name",it,"corroborated appellation cuvee and classification") }
+            }
+        }
+
+        // Some front labels print a distinct title, then an origin, then an explicit blend
+        // type, and finally the producer. A geographic fallback loses the title and type.
+        // Require all four independently corroborated lines, strict ordering, a prominent
+        // non-legal title, a recognised blend term and a single unambiguous assembly.
+        run {
+            val wine=key(updated["wine_name"].orEmpty())
+            val producer=key(updated["producer"].orEmpty())
+            val places=listOf("region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+            if(wine.isNotBlank() && wine in places && producer.length>=6) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && nearLineConsensus(it,readings) }
+                val types=setOf("fieldblend","redblend","whiteblend")
+                val marketing=setOf("naturalwine","organicwine","sustainablewine","premiumwine","dryredwine","drywhitewine")
+                val candidates=mutableListOf<String>()
+                val makers=primary.filter { key(it.text)==producer }
+                val origins=primary.filter { key(it.text)==wine }
+                val styles=primary.filter { key(it.text) in types }
+                makers.forEach { maker -> origins.forEach { origin -> styles.forEach styleLoop@ { style ->
+                    if(origin.top>=style.top || style.top>=maker.top || horizontalOverlap(origin,style)<0.5f ||
+                        horizontalOverlap(style,maker)<0.5f) return@styleLoop
+                    primary.forEach { title ->
+                        val k=key(title.text)
+                        if(k.length>=6 && k.none(Char::isDigit) && k !in places && k !in knownPlaceKeys &&
+                            k !in grapes && k !in allStyles && k !in types && k !in marketing && !legal(title.text) &&
+                            !(k in producer || producer in k) && title.top<origin.top &&
+                            title.bottom-title.top>=1.5f*(maker.bottom-maker.top) && horizontalOverlap(title,origin)>=0.5f)
+                            candidates += "${title.text.trim()} ${style.text.trim()}"
+                    }
+                } } }
+                unique(candidates)?.let { replace("wine_name",it,"corroborated title and blend type around origin") }
+            }
+        }
+
+        // An abbreviated Premier Cru classification can precede a quoted cuvee. Assemble
+        // it with the selected appellation only if the model explicitly confirms that place,
+        // the quoted line is independently read, and the other engine prints a matching
+        // appellation/classification legal cue. "1er cru" and "Premier Cru" are equivalent.
+        run {
+            val wine=key(updated["wine_name"].orEmpty())
+            val place=key(updated["subregion"].orEmpty())
+            val modelPlace=hints.any { it.lane==GlinerLane.APPELLATION && it.confidence.isFinite() &&
+                it.confidence>=0.70f && key(it.text)==place && place.length>=6 }
+            if(modelPlace && wine.isNotBlank()) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+                val names=primary.filter { key(it.text)==wine && nearLineConsensus(it,readings) }
+                val locations=primary.filter { key(it.text)==place }
+                val quoted=Regex("(?iu)^(?:1er|1ère|premier)\\s+cru\\s*[\"«“](.+?)[\"»”]$")
+                val candidates=mutableListOf<String>()
+                names.forEach { name ->
+                    val match=quoted.matchEntire(name.text.trim()) ?: return@forEach
+                    val cuvee=match.groupValues[1].trim()
+                    if(key(cuvee).length<4 || legal(cuvee)) return@forEach
+                    locations.forEach { location ->
+                        val role=readings.any { cue ->
+                            val k=key(cue.text)
+                            valid(cue) && cue.engine!=name.engine && "appellation" in k && place in k &&
+                                ("ercru" in k || "premiercru" in k) && cue.top>location.top &&
+                                cue.top-name.bottom in -0.04f..0.08f && horizontalOverlap(name,cue)>=0.5f
+                        }
+                        if(role && location.top<name.top && name.top-location.bottom in -0.02f..0.08f &&
+                            horizontalOverlap(location,name)>=0.5f)
+                            candidates += "${location.text.trim()} $cuvee Premier Cru"
+                    }
+                }
+                unique(candidates)?.let { replace("wine_name",it,"model-confirmed appellation and quoted premier cru") }
+            }
+        }
+
+        // A fortified wine's printed colour/type descriptor can be part of the product name.
+        // Use an explicit small style vocabulary and a corroborated adjacent port designation;
+        // serving instructions and arbitrary text must not become wine names.
+        run {
+            val wine=key(updated["wine_name"].orEmpty())
+            val location=key(updated["subregion"].orEmpty())
+            if(wine in setOf("porto","port") && location==wine) {
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && nearLineConsensus(it,readings) }
+                val typeWords=setOf("ruby","tawny","white","rose")
+                val qualityWords=setOf("fine","reserve","special","aged")
+                val candidates=mutableListOf<String>()
+                primary.filter { key(it.text)==wine }.forEach { port ->
+                    primary.forEach { descriptor ->
+                        val words=descriptor.text.trim().split(Regex("\\s+")).map(::key)
+                        if(words.size==2 && words.first() in qualityWords && words.last() in typeWords &&
+                            descriptor.top<port.top && port.top-descriptor.bottom in -0.02f..0.04f &&
+                            horizontalOverlap(descriptor,port)>=0.5f)
+                            candidates += "${descriptor.text.trim()} ${port.text.trim()}"
+                    }
+                }
+                unique(candidates)?.let { replace("wine_name",it,"corroborated fortified-wine type and designation") }
+            }
+        }
         // If a single-word subregion is not read anywhere, but is one edit away from a producer
         // word independently observed by both engines at the same location, it may be a fuzzy
         // leakage from the producer name. Do not clear geography that is actually present in OCR.
