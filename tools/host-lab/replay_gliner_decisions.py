@@ -3,7 +3,7 @@
 
 Compile the runner with Kotlin/JRE and the Android geometry stand-ins, for example:
   kotlinc tools/logic-checks/AndroidGeometry.kt \
-    gliner-workflow/src/main/java/com/yourapp/wine/gliner/{GlinerDocument,GlinerLanes,GlinerEngines,GlinerGeography,GlinerFieldDecision}.kt \
+    gliner-workflow/src/main/java/com/yourapp/wine/gliner/{GlinerDocument,GlinerLanes,GlinerEngines,GlinerGeography,GlinerNamedSites,GlinerFieldDecision}.kt \
     app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
     app/src/main/java/com/yourapp/wine/kb/{WineTerms,BundledGrapes,BundledWineStyles,BundledOrigins,ReferenceWineCatalog,GeneratedWineKnowledge,WineKnowledgeBase}.kt \
     gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerCatalogIndexes.kt \

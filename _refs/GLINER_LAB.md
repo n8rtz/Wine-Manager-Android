@@ -1,8 +1,9 @@
 # GLiNER lane lab
 
-The current v9 policy and local saved-evidence evaluation are documented in
-`docs/gliner-policy-v9-evaluation.md`; the v8 evaluation and original phone-run analysis remain
-in `docs/gliner-policy-v8-evaluation.md` and `docs/gliner-run-1793542448049-analysis.md`.
+The current v10 policy and local saved-evidence evaluation are documented in
+`docs/gliner-policy-v10-evaluation.md`; earlier evaluations and the phone-run analysis remain
+in `docs/gliner-policy-v9-evaluation.md`, `docs/gliner-policy-v8-evaluation.md` and
+`docs/gliner-run-1793542448049-analysis.md`.
 These changes affect only the experimental workflow. Fresh phone performance and unseen-holdout
 accuracy are not yet verified.
 

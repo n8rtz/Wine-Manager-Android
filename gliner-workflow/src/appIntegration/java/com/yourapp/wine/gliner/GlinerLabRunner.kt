@@ -151,7 +151,8 @@ internal object GlinerLabRunner {
             }
             val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
                 post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys,GlinerGeography.origins,
-                GlinerCatalogIndexes.italianAppellations,GlinerCatalogIndexes.usAvas) else GlinerFieldDecision(post.fields,emptyList())
+                GlinerCatalogIndexes.italianAppellations,GlinerCatalogIndexes.usAvas,
+                GlinerCatalogIndexes.frenchAppellations) else GlinerFieldDecision(post.fields,emptyList())
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
                 PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }
