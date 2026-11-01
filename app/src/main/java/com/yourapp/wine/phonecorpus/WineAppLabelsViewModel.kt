@@ -88,6 +88,8 @@ internal data class WineAppLabelsState(
     val prodV6FieldScores: Map<String, WineAppLabelsBuildLog.FieldScore> = emptyMap(),
     /** Per-photo rows for matched-cohort comparisons, including the full frozen Prod capture. */
     val comparisonFieldRows: Map<PhoneCorpusRunner.Mode, Map<String, List<Map<String, String>>>> = emptyMap(),
+    /** Source of the read-only Lab comparison; historical runs remain on disk unmodified. */
+    val comparisonLabSource: String = "",
     val recentLabRuns: List<WineAppLabelsBuildLog.Entry> = emptyList(),
 )
 
@@ -538,8 +540,22 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
             scoreboard.build(allProdV6, PhoneCorpusRunner.Mode.PRODUCTION_V6).csv
         fun fieldRows(csv:List<Map<String,String>>):Map<String,List<Map<String,String>>> =
             csv.filter { it["row_type"] == "field" && !it["image"].isNullOrBlank() }.groupBy { it.getValue("image") }
+        // Corpus expansion starts a new Lab run folder. Keep the most recent real Lab v7 run
+        // available for comparison without changing its checkpoints or mixing configurations.
+        // Only byte-verified retained photos can be rescored against the current references.
+        val priorLab = if (labPreds.isEmpty()) WineAppLabelsSavedLabComparison.latest(
+            root, inputHashes(), corpusSignature(assetJson("manifest.json")),
+        ) else null
+        val comparisonLabCsv = if (priorLab == null) labCsv
+            else scoreboard.build(priorLab.predictions, PhoneCorpusRunner.Mode.LAB).csv
+        val comparisonLabSource = when {
+            priorLab != null -> "Saved Lab v7 · build ${priorLab.build} · ${priorLab.modules}" +
+                if (priorLab.rescored) " · retained photos rescored against current references" else ""
+            labPreds.isNotEmpty() -> "Current saved Lab v7 run"
+            else -> ""
+        }
         val comparisonFieldRows = mapOf(
-            PhoneCorpusRunner.Mode.LAB to fieldRows(labCsv),
+            PhoneCorpusRunner.Mode.LAB to fieldRows(comparisonLabCsv),
             PhoneCorpusRunner.Mode.PRODUCTION_V6 to fieldRows(comparisonProdCsv),
         )
         val activeLabDir = labFolder
@@ -611,7 +627,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
                     prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores, prodV6FieldScores = prodV6FieldScores,
-                    comparisonFieldRows = comparisonFieldRows,
+                    comparisonFieldRows = comparisonFieldRows, comparisonLabSource = comparisonLabSource,
                     recentLabRuns = recentLabRuns,
                     savedSuites = savedSuiteIds(),
                 )
@@ -629,7 +645,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                     currentBuildFieldScores = currentFieldScores,
                     bestBuildFieldScores = bestBuildFieldScores,
                     prodV4FieldScores = prodV4FieldScores, prodV5FieldScores = prodV5FieldScores, prodV6FieldScores = prodV6FieldScores,
-                    comparisonFieldRows = comparisonFieldRows,
+                    comparisonFieldRows = comparisonFieldRows, comparisonLabSource = comparisonLabSource,
                     recentLabRuns = recentLabRuns,
                     savedSuites = savedSuiteIds(),
                 )
@@ -996,7 +1012,7 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
                 remainingImages = 0,
                 currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(), recentLabRuns = emptyList(),
                 prodV4FieldScores = emptyMap(), prodV5FieldScores = emptyMap(), prodV6FieldScores = emptyMap(),
-                comparisonFieldRows = emptyMap(),
+                comparisonFieldRows = emptyMap(), comparisonLabSource = "",
                 message = "Loading saved curated-label results…",
             )
         }

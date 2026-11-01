@@ -552,15 +552,22 @@ private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,complete
         Spacer(Modifier.height(8.dp))
         ScoreFieldTable(listOf("GLiNER" to glinerFields)+baselines.map { it.title to it.fields })
         if(baselines.any { it.summary==null }) Text(
-            if(labState.busy) "Loading saved baselines…" else "— = no saved baseline on this device.",
+            if(labState.busy) "Loading saved baselines…" else "— = no saved results for this cohort.",
             style=MaterialTheme.typography.bodySmall)
         if(labState.message.startsWith("Cannot load the curated-label test:")) {
             Text(labState.message,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
         }
-        if(completedImages.isNotEmpty()) baselines.filter { it.missing>0 }.forEach { baseline ->
-            Text("${baseline.title}: ${completedImages.size-baseline.missing}/${completedImages.size} completed photos have saved baseline results.",
+        if(completedImages.isEmpty()) {
+            Text("Saved baselines: ${baselines.joinToString(" · ") { "${it.title} ${it.available}/${labState.total}" }} photos. Not yet paired with GLiNER.",
                 style=MaterialTheme.typography.bodySmall)
+        } else {
+            baselines.forEach { baseline ->
+                Text("${baseline.title}: ${completedImages.size-baseline.missing}/${completedImages.size} GLiNER photos matched (${baseline.available} saved)." +
+                    if(baseline.missing>0) " Totals cover different photos." else "",
+                    style=MaterialTheme.typography.bodySmall)
+            }
         }
+        if(labState.comparisonLabSource.isNotBlank()) Text(labState.comparisonLabSource,style=MaterialTheme.typography.bodySmall)
     }
 }
 

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Lab v7 in GLiNER score tables:** show actual saved Lab/Prod cohorts before GLiNER runs and matched-photo results afterwards. For an expanded corpus, read the most recent saved Lab v7 run as a read-only comparison, rescore only retained hash-matching photos, and identify its source; do not manufacture new-photo results or modify historical runs. Device verification pending.
 - **GLiNER score tables placement:** moved the always-visible curated summary and field score tables above the personal audit and imported photo cards, so large personal batches cannot bury them. Android/device verification remains pending; this does not restore process-only GLiNER run results.
 - **GLiNER and dataset page startup:** initialize the dynamic corpus-selection delegate before starting the shared Lab ViewModel, and validate the selected count on the background loading path so a bad corpus asset is reported instead of crashing the page. GLiNER also displays the shared baseline-loading error. Android/device verification remains pending.
 

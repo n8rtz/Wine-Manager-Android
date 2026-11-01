@@ -2,6 +2,15 @@
 
 > **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
 
+## GLiNER Lab v7 baseline restoration
+
+*Last run: host-only selector/scorer tests and source checks; Android and device verification pending.*
+
+- [ ] Upgrade over the existing install with its saved Lab v7 results; do not clear app storage. Before running GLiNER, confirm Lab v7 and Prod v6 rows show available saved results and coverage, explicitly not paired. An earlier 124-photo Lab v7 run should appear as retained-photo results, not as a full 193-photo run; if missing, confirm there is a saved Lab v7 run on this device.
+- [ ] Run a few GLiNER photos and verify the comparator rows update for precisely the matching photos; unavailable or unmatched baselines show `—`, and partial comparisons state their coverage. New photos must not receive fabricated old baseline results.
+- [ ] Confirm the reported Lab build/configuration and the rescored-against-current-references note for an older corpus. Opening this page must not overwrite the original Lab run, its checkpoints, or historical build scores. Check the Lab screen separately before and after.
+- [ ] Run `:app:testDebugUnitTest --tests com.yourapp.wine.WineAppLabelsSavedLabComparisonTest --tests com.yourapp.wine.phonecorpus.GlinerLabBaselinesTest` in an Android-capable environment.
+
 ## GLiNER curated score tables placement
 
 *Last run: host source checks only; phone and Android UI verification pending.*

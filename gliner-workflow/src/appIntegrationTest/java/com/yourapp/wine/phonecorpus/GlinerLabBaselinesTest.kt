@@ -24,7 +24,9 @@ class GlinerLabBaselinesTest {
         val prod=mapOf("a" to rows("a",wrong="wine_name"), "b" to rows("b"), "c" to rows("c"))
         val state=WineAppLabelsState(comparisonFieldRows=mapOf(PhoneCorpusRunner.Mode.LAB to lab,PhoneCorpusRunner.Mode.PRODUCTION_V6 to prod))
         val initial=glinerLabBaselines(state,emptySet())
-        assertEquals(listOf("Lab v7","0","0","0/0","0","0","0"),initial[0].summary)
+        assertEquals(listOf("Lab v7","3","3","1/3","1","1","1"),initial[0].summary)
+        assertEquals(listOf("Prod v6.0","3","3","2/3","1","0","0"),initial[1].summary)
+        assertEquals(3,initial[0].available)
         val first=glinerLabBaselines(state,setOf("b"))
         assertEquals(listOf("Lab v7","1","1","0/1","1","0","0"),first[0].summary)
         assertEquals(listOf("Prod v6.0","1","1","1/1","0","0","0"),first[1].summary)
@@ -33,6 +35,11 @@ class GlinerLabBaselinesTest {
         assertEquals(listOf("Lab v7","2","2","0/2","1","1","1"),later[0].summary)
         assertEquals(listOf("Prod v6.0","2","2","2/2","0","0","0"),later[1].summary)
         assertEquals(0,later[0].missing)
+        val noOverlap=glinerLabBaselines(state,setOf("not-saved"))
+        assertNull(noOverlap[0].summary)
+        assertTrue(noOverlap[0].fields.isEmpty())
+        assertEquals(1,noOverlap[0].missing)
+        assertEquals(3,noOverlap[0].available)
     }
 
     @Test fun incompleteReferencesAndMissingBaselinesAreNotMisrepresented() {
