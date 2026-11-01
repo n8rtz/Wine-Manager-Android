@@ -552,6 +552,9 @@ private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,complete
         if(baselines.any { it.summary==null }) Text(
             if(labState.busy) "Loading saved baselines…" else "— = no saved baseline on this device.",
             style=MaterialTheme.typography.bodySmall)
+        if(labState.message.startsWith("Cannot load the curated-label test:")) {
+            Text(labState.message,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
+        }
         if(completedImages.isNotEmpty()) baselines.filter { it.missing>0 }.forEach { baseline ->
             Text("${baseline.title}: ${completedImages.size-baseline.missing}/${completedImages.size} completed photos have saved baseline results.",
                 style=MaterialTheme.typography.bodySmall)

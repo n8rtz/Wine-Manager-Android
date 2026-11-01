@@ -10,6 +10,18 @@ ASSETS = ROOT / "app/src/main/assets/wine-app-labels-v1"
 
 
 class WineAppLabelsCorpusTests(unittest.TestCase):
+    def test_shared_lab_startup_initializes_selection_before_loading_and_reports_asset_errors(self):
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        screen = (ROOT / "gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt").read_text()
+        self.assertLess(viewmodel.index("private val includedSelection: Set<String> by lazy"),
+                        viewmodel.index("init { load(PhoneCorpusRunner.Mode.LAB) }"))
+        load = viewmodel.split("fun load(mode: PhoneCorpusRunner.Mode, fresh: Boolean = false)", 1)[1]
+        before_background, background = load.split("bgScope.launch {", 1)
+        self.assertNotIn("expectedCount", before_background)
+        self.assertLess(background.index("try {"), background.index("val count = expectedCount"))
+        self.assertIn('message = "Cannot load the curated-label test: ${e.message}"', background)
+        self.assertIn('labState.message.startsWith("Cannot load the curated-label test:")', screen)
+
     def test_owner_corrected_154_subregion_is_porto(self):
         scoring = json.loads((ASSETS / "scoring.json").read_text())
         photo = next(row for row in scoring["images"] if row["review_number"] == 154)

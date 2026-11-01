@@ -2,6 +2,14 @@
 
 > **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
 
+## Shared Lab startup crash after corpus expansion
+
+*Last run: host source checks only; Android unit test and phone confirmation pending.*
+
+- [ ] Install the fix over the existing app without clearing storage. From Settings open **GLiNER lane lab**, and separately open **Large image dataset test**, including after a force-stop and on a fresh install. Both should open instead of crashing; the combined count should be 193 and old saved results must remain intact.
+- [ ] Wait for saved Lab/Prod baseline loading; any corpus-loading failure should appear in the GLiNER score section instead of crashing. No new model or OCR run is required for this check.
+- [ ] Run `:app:testDebugUnitTest --tests com.yourapp.wine.WineAppLabelsStartupTest --tests com.yourapp.wine.GlinerLabStartupTest` on an Android-capable build environment. These tests are not a substitute for the phone launch check.
+
 ## Branch `arena/1bab4a14-wine-manager-android` — GLiNER policy v5
 
 *Last run: host-only saved-OCR replay and Kotlin policy tests; Android compilation and device checks pending.*

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **GLiNER and dataset page startup:** initialize the dynamic corpus-selection delegate before starting the shared Lab ViewModel, and validate the selected count on the background loading path so a bad corpus asset is reported instead of crashing the page. GLiNER also displays the shared baseline-loading error. Android/device verification remains pending.
+
 ### Added
 - **Temporary internet front-label benchmark photos:** 69 single-wine-bottle, full-front internet photos (six from Costco Wine Blog, 63 from X-Wines) join the original 124 in the Lab v7 and GLiNER test; origins, image hashes and scorer-only candidate references are recorded. X-Wines underlying photo rights remain unverified; 58 of its 63 pictured vintages are unresolved, so only five X-Wines cases are currently eligible for all-field scoring. Baselines and OCR for the additions require first capture; the photos are included in normal test builds at the owner's request and should be removed before the final package.
 - **17 owner-approved wine brands in the Lab producer index:** source-tagged researched marketed names, including Altos de Valdoso, are searchable in Database Lookup and available to the Lab and GLiNER post-processing producer resolver; their product examples and source links are recorded in `tools/producer-sources/approved-wine-brands.json`. The verified LWIN export and wine links remain unchanged, and no origin or legal producer is inferred. Coverage audit includes the new source subset. A database entry alone does not guarantee recognition of split or incomplete OCR.

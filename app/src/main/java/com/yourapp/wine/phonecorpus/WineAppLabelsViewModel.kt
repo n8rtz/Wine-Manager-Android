@@ -157,8 +157,6 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         get() = session.buildLog
         set(value) { session.buildLog = value }
 
-    init { load(PhoneCorpusRunner.Mode.LAB) }
-
     private fun assetJson(name: String) = JSONObject(app.assets.open("wine-app-labels-v1/$name").bufferedReader().use { it.readText() })
 
     private val includedSelection: Set<String> by lazy {
@@ -172,6 +170,9 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
 
     private fun includedIds(): Set<String> = includedSelection
     private val expectedCount: Int get() = includedIds().size
+
+    // This must follow the lazy delegate: load() can access expectedCount during initialization.
+    init { load(PhoneCorpusRunner.Mode.LAB) }
 
     private fun inputHashes(): Map<String, String> {
         session.expectedHashes?.let { return it }
@@ -989,10 +990,10 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         mutable.update {
             it.copy(
                 busy = true, mode = mode, useCachedOcr = preferredCachedOcr, labModules = preferredModules, completed = 0,
-                total = expectedCount, board = null, exportParts = emptyList(), labCompleted = 0,
+                total = 0, board = null, exportParts = emptyList(), labCompleted = 0,
                 elapsedRunMs = 0L, runSegmentStartedRealtimeMs = null, avgImageMs = null,
                 etaPerImageMs = null, currentImageStartedRealtimeMs = null,
-                remainingImages = expectedCount,
+                remainingImages = 0,
                 currentBuildFieldScores = emptyMap(), bestBuildFieldScores = emptyMap(), recentLabRuns = emptyList(),
                 prodV4FieldScores = emptyMap(), prodV5FieldScores = emptyMap(), prodV6FieldScores = emptyMap(),
                 comparisonFieldRows = emptyMap(),
@@ -1001,6 +1002,10 @@ internal class WineAppLabelsViewModel(app: Application) : AndroidViewModel(app) 
         }
         bgScope.launch {
             try {
+                // Read and validate the selection off the UI thread and inside the error handler.
+                // A missing or corrupt asset should be reported, not crash either lab on opening.
+                val count = expectedCount
+                mutable.update { it.copy(total = count, remainingImages = count) }
                 val signature = corpusSignature(assetJson("manifest.json"))
                 val store = WineAppLabelsBaselines(app, signature)
                 // One-time upgrade from the retired all-four-versions screen: the Prod checkpoints
