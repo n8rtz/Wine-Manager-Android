@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "reference_sha256": "eb30c13801a025b5ad94bb8ed5085bfeffc89ef7597b3518f2891822ff3971a0",
+  "reference_sha256": "76f66e56950dc7b66dc4d8f8749f37189a51d7b9a0b09d29d1272be1fca44703",
   "note": "Owner-corrected workbook references and internet front-label candidate references; unresolved fields are unscored. Targets are scorer-only and never provided to OCR.",
   "images": [
     {
@@ -6415,17 +6415,19 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "riograndedosul"
+          ],
+          "target": "Rio Grande do Sul"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "valedosvinhedos"
           ],
           "target": "Vale dos Vinhedos"
         },
-        "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
-        },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6461,17 +6463,19 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "riograndedosul"
+          ],
+          "target": "Rio Grande do Sul"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "serragaucha"
           ],
           "target": "Serra Gaúcha"
         },
-        "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
-        },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6609,12 +6613,12 @@
           "target": "Vinho Verde"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6655,12 +6659,12 @@
           "target": "Lisboa"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6700,12 +6704,12 @@
           "target": "Bairrada"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6746,12 +6750,12 @@
           "target": "Douro"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6792,12 +6796,12 @@
           "target": "Douro"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6845,7 +6849,7 @@
           "target": "Saar"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6886,12 +6890,12 @@
           "target": "Württemberg"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6932,12 +6936,12 @@
           "target": "Württemberg"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -6984,7 +6988,7 @@
           "target": "Sauternes"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7032,7 +7036,7 @@
           "target": "Gevrey-Chambertin"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7080,7 +7084,7 @@
           "target": "Pommard"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7128,7 +7132,7 @@
           "target": "Coteaux d'Aix-en-Provence"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7176,7 +7180,7 @@
           "target": "Sancerre"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7223,7 +7227,7 @@
           "target": "Moulis-en-Médoc"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7270,7 +7274,7 @@
           "target": "Santenay"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7318,7 +7322,7 @@
           "target": "Fleurie"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7366,7 +7370,7 @@
           "target": "Nuits-Saint-Georges"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7413,7 +7417,7 @@
           "target": "Gigondas"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7461,7 +7465,7 @@
           "target": "Chambolle-Musigny"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7508,7 +7512,7 @@
           "target": "Cabardès"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7556,7 +7560,7 @@
           "target": "Chablis"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7597,12 +7601,12 @@
           "target": "Piedmont"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7650,7 +7654,7 @@
           "target": "Barbera d'Alba"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7697,7 +7701,7 @@
           "target": "Langhe"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7738,12 +7742,12 @@
           "target": "Tuscany"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7782,12 +7786,14 @@
           "target": ""
         },
         "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
+          "status": "expected_value",
+          "accepted": [
+            "dellevenezie"
+          ],
+          "target": "Delle Venezie"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7827,12 +7833,12 @@
           "target": "Puglia"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7872,12 +7878,12 @@
           "target": "Alto Adige"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7924,7 +7930,7 @@
           "target": "Brachetto d'Acqui"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -7964,12 +7970,12 @@
           "target": "Tuscany"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8017,7 +8023,7 @@
           "target": "Moscato d'Asti"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8065,7 +8071,7 @@
           "target": "Barbaresco"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8113,7 +8119,7 @@
           "target": "Moscato d'Asti"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8161,7 +8167,7 @@
           "target": "Chianti Classico"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8208,7 +8214,7 @@
           "target": "Langhe"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8255,7 +8261,7 @@
           "target": "Barolo"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8303,7 +8309,7 @@
           "target": "Barolo"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8481,17 +8487,20 @@
         "region": {
           "status": "expected_value",
           "accepted": [
-            "colchaguavalley"
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "colchaguavalley",
+            "valledecolchagua"
           ],
           "target": "Colchagua Valley"
         },
-        "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
-        },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8532,12 +8541,12 @@
           "target": "Central Valley"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8573,17 +8582,21 @@
         "region": {
           "status": "expected_value",
           "accepted": [
-            "cachapoalvalley"
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cachapoal",
+            "cachapoalvalley",
+            "valledecachapoal"
           ],
           "target": "Cachapoal Valley"
         },
-        "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
-        },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8618,17 +8631,20 @@
         "region": {
           "status": "expected_value",
           "accepted": [
-            "maulevalley"
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "maulevalley",
+            "valledelmaule"
           ],
           "target": "Maule Valley"
         },
-        "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
-        },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8669,12 +8685,12 @@
           "target": "Maldonado"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8715,12 +8731,12 @@
           "target": "Mendoza"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8767,7 +8783,7 @@
           "target": "Luján de Cuyo"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8807,12 +8823,12 @@
           "target": "South Australia"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8848,17 +8864,19 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "southaustralia"
+          ],
+          "target": "South Australia"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "clarevalley"
           ],
           "target": "Clare Valley"
         },
-        "subregion": {
-          "status": "unresolved",
-          "accepted": [],
-          "target": ""
-        },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8906,7 +8924,7 @@
           "target": "Frankland River"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8954,7 +8972,7 @@
           "target": "Mornington Peninsula"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -8995,12 +9013,12 @@
           "target": "Willamette Valley"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -9040,12 +9058,12 @@
           "target": "Lodi"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -9092,7 +9110,7 @@
           "target": "Dry Creek Valley"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -9140,7 +9158,7 @@
           "target": "Horse Heaven Hills"
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -9180,12 +9198,12 @@
           "target": "Marlborough"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -9225,12 +9243,12 @@
           "target": "Niederösterreich"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }
@@ -9271,12 +9289,12 @@
           "target": "Marlborough"
         },
         "subregion": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         },
         "vintage": {
-          "status": "unresolved",
+          "status": "expected_blank",
           "accepted": [],
           "target": ""
         }

@@ -88,10 +88,31 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         xwines = [row for row in additions if row["source_repo"] == "rogerioxavier/X-Wines"]
         self.assertEqual(len(xwines), 63)
         self.assertEqual(len({row["catalog_wine_id"] for row in xwines}), 63)
-        self.assertEqual(sum(row["vintage_status"] == "unresolved" for row in xwines), 58)
+        self.assertEqual(sum(row["vintage_status"] == "unresolved" for row in xwines), 1)
+        self.assertEqual(sum(row["vintage_status"] == "expected_blank" for row in xwines), 61)
         self.assertEqual(sum(all(row[f + "_status"] != "unresolved" for f in
                                  ("producer", "wine_name", "country", "region", "subregion", "vintage"))
-                             for row in xwines), 5)
+                             for row in xwines), 61)
+        self.assertEqual(sum(all(field["status"] != "unresolved" for field in row["fields"].values())
+                             for row in targets.values()), 188)
+        # Blank is about the photographed front, not proof the wine is non-vintage.
+        for number in (198, 209, 226, 247):
+            self.assertEqual(targets[number]["fields"]["vintage"]["status"], "expected_blank")
+        self.assertEqual(targets[238]["fields"]["vintage"]["status"], "unresolved")
+        self.assertEqual(targets[259]["fields"]["vintage"]["target"], "2019")
+        for number, region, subregion in (
+            (197, "Rio Grande do Sul", "Vale dos Vinhedos"),
+            (198, "Rio Grande do Sul", "Serra Gaúcha"),
+            (241, "Central Valley", "Colchagua Valley"),
+            (243, "Central Valley", "Cachapoal Valley"),
+            (244, "Central Valley", "Maule Valley"),
+            (249, "South Australia", "Clare Valley"),
+        ):
+            self.assertEqual(targets[number]["fields"]["region"]["target"], region)
+            self.assertEqual(targets[number]["fields"]["subregion"]["target"], subregion)
+        self.assertEqual(targets[226]["fields"]["subregion"]["target"], "Delle Venezie")
+        self.assertEqual(targets[226]["fields"]["region"]["status"], "unresolved")
+        self.assertEqual(targets[225]["fields"]["subregion"]["status"], "expected_blank")
         self.assertEqual(targets[196]["fields"]["region"]["status"], "unresolved")
         self.assertEqual(targets[196]["fields"]["subregion"]["status"], "unresolved")
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
@@ -139,7 +160,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 68)
         self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (193, 193))
         self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (185, 187))
-        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (119, 119))
+        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (126, 126))
         self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 193 for row in params))
         # Source-level databases remain in the asset for provenance auditing.
         rows = {row["id"]: row for row in coverage["databases"]}
@@ -151,7 +172,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(rows["expanded_producers"]["matched_labels"], 167)
         self.assertGreater(rows["expanded_producers"]["matched_labels"], rows["lwin_producers"]["matched_labels"])
         self.assertEqual(rows["lwin_wines"]["matched_labels"], 85)
-        self.assertEqual(rows["appellations"]["matched_labels"], 140)
+        self.assertEqual(rows["appellations"]["matched_labels"], 141)
         # Scanner KB rows include the bundled wine-knowledge origins catalog
         # (editorial + UC Davis AVA) folded into the knowledge-base place list.
         # The nested catalog adds the Bordeaux, Portuguese, Georgian and Italian names the

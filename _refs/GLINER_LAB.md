@@ -125,12 +125,21 @@ when model testing is finalized, then regenerate the corpus, coverage and manife
 Credit and citation: R. X. de Azambuja, A. J. Morais, V. Filipe, “X-Wines: A Wine Dataset for
 Recommender Systems and Machine Learning,” 2023, https://doi.org/10.3390/bdcc7010020.
 
-These are candidate references, not owner adjudications. For 58 of the 63 X-Wines images the
-pictured vintage cannot be established, so it remains unresolved: only five currently qualify for
-whole-label accuracy; the others contribute only their individually resolved field scores. Some
-subregions and one region also remain unresolved. No catalog list of available vintages is treated
-as the vintage of a particular photo. Review those fields before using the new images for an
-all-six-fields comparison. #196 geography below California also awaits review.
+These are candidate references, not owner adjudications. At the owner's direction, a vintage or
+subregion absent from the photographed front can be **expected blank** and eligible for whole-label
+scoring. A correct blank is scored; an unsupported fill is an error. This is a photo-level target,
+not a claim that the wine itself is non-vintage or has no geographic origin. Printed and supported
+geographic designations are populated; establishment years are not vintage years. No catalog list
+of available vintages is treated as the vintage of a particular photo. #259 shows 2019. #238 remains
+vintage-unresolved because faint marks beneath “Vendemmia” cannot be reliably distinguished from a
+year. #226 has Delle Venezie DOC as its subregion, but its region remains unresolved because the
+DOC spans multiple regions. #196 geography below California also awaits review. Of 63 X-Wines
+photos, 61 are now eligible for all-six scoring; 188 of the combined 193 are eligible.
+
+These reference changes alter the scoring signature and denominators. Retained photo matches can be
+rescored using the current references; do not silently combine old aggregates with the new corpus.
+Saved Lab/Prod coverage still reports only photos actually run, and these new eligibility counts are
+not model accuracy results.
 
 The 69 internet photos have no packaged OCR seed or frozen comparison records. On a new Lab v7
 run, retained matching frozen per-photo Prod records migrate across the changed corpus signature;

@@ -48,19 +48,19 @@
       "dataset_labels": 193,
       "expected_blank_labels": 4,
       "unresolved_labels": 2,
-      "unique_known_values_matched": 51,
-      "database_records_matched": 96
+      "unique_known_values_matched": 46,
+      "database_records_matched": 86
     },
     {
       "id": "subregion",
       "label": "Subregion",
-      "matched_labels": 119,
-      "total_labels": 119,
+      "matched_labels": 126,
+      "total_labels": 126,
       "dataset_labels": 193,
-      "expected_blank_labels": 45,
-      "unresolved_labels": 29,
-      "unique_known_values_matched": 74,
-      "database_records_matched": 140
+      "expected_blank_labels": 66,
+      "unresolved_labels": 1,
+      "unique_known_values_matched": 84,
+      "database_records_matched": 155
     }
   ],
   "databases": [
@@ -99,18 +99,18 @@
     {
       "id": "appellations",
       "label": "Appellations",
-      "matched_labels": 140,
+      "matched_labels": 141,
       "total_labels": 193,
-      "unique_known_values_matched": 96,
-      "database_records_matched": 92
+      "unique_known_values_matched": 99,
+      "database_records_matched": 95
     },
     {
       "id": "wine_geography",
       "label": "Regions/subregions",
-      "matched_labels": 173,
+      "matched_labels": 178,
       "total_labels": 193,
-      "unique_known_values_matched": 36,
-      "database_records_matched": 35
+      "unique_known_values_matched": 38,
+      "database_records_matched": 36
     },
     {
       "id": "kb_producers",
@@ -141,8 +141,8 @@
       "label": "Scanner KB regions",
       "matched_labels": 193,
       "total_labels": 193,
-      "unique_known_values_matched": 75,
-      "database_records_matched": 75
+      "unique_known_values_matched": 76,
+      "database_records_matched": 76
     }
   ]
 }

@@ -173,13 +173,16 @@
       ],
       "country": "Brazil",
       "country_status": "expected_value",
-      "region": "Vale dos Vinhedos",
+      "region": "Rio Grande do Sul",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Vale dos Vinhedos",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "Printed geographic designation, mapped beneath its broader region; see geography source.",
+      "geography_source": "https://www.espacoprime.com.br/produto/vinho-origem-merlot-casa-valduga-750ml-70572"
     },
     {
       "image": "d4d98a63dd5a26ed33e7e3d39c893b31873ac764.jpg",
@@ -201,13 +204,16 @@
       ],
       "country": "Brazil",
       "country_status": "expected_value",
-      "region": "Serra Gaúcha",
+      "region": "Rio Grande do Sul",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Serra Gaúcha",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "SAFRA appears without a printed year; 1931 is an establishment date, not a vintage.",
+      "subregion_review": "Printed geographic designation, mapped beneath its broader region; see geography source.",
+      "geography_source": "https://www.vinoverace.com.br/vinho-aurora-reserva-chardonnay-750-ml"
     },
     {
       "image": "b2fd7f0b1c3cd50393b8cc52e71311ec27be268c.jpg",
@@ -294,13 +300,15 @@
       "region": "Vinho Verde",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
+      "vintage_status": "expected_blank",
       "producer_alternates": [
         "Fonte Pequena"
       ],
-      "single_wine_bottle_reviewed": true
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "e6438f5ba4a52f06566f0273fd781b3d6fcad276.jpg",
@@ -325,10 +333,12 @@
       "region": "Lisboa",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "1c25fa9486edd62b229274195c4d0e1a91d80976.jpg",
@@ -350,10 +360,12 @@
       "region": "Bairrada",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "3ed37ec010cfed8c28271f7f3a87b60fd8703bbc.jpg",
@@ -378,10 +390,12 @@
       "region": "Douro",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "bdd16e40d7c8ce7356fef37c961a8f1819a1227e.jpg",
@@ -406,10 +420,12 @@
       "region": "Douro",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "0e2606e4f055552415571cf0f6af4c92376e99a5.jpg",
@@ -436,8 +452,9 @@
       "subregion": "Saar",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "613db1eb619acc2d06678df257cc4832feb1a45e.jpg",
@@ -462,10 +479,12 @@
       "region": "Württemberg",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "b3f5ec0613a02f85688e601bf0cd3d220f3a568b.jpg",
@@ -490,10 +509,12 @@
       "region": "Württemberg",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "3d4be7874e553f32dabbb410fe16a59da0c70bda.jpg",
@@ -517,8 +538,9 @@
       "subregion": "Sauternes",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year printed; 1855 is a classification date, not a vintage."
     },
     {
       "image": "cd772b19b3f69b4602c57628a44ca2d12b2b1379.jpg",
@@ -545,8 +567,9 @@
       "subregion": "Gevrey-Chambertin",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "14cd780fd2c85c02bfff102e411b0f6b1ffefb2e.jpg",
@@ -573,8 +596,9 @@
       "subregion": "Pommard",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "7a0a23f28a1518225d2d9769dcfe3ba5d185b1e0.jpg",
@@ -601,8 +625,9 @@
       "subregion": "Coteaux d'Aix-en-Provence",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "82e45db886ac62bd45fbda99010be20929ab8554.jpg",
@@ -629,8 +654,9 @@
       "subregion": "Sancerre",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "6c0a6ff2e121b5a2a2ca959cc6ee3087e26a2d3e.jpg",
@@ -654,8 +680,9 @@
       "subregion": "Moulis-en-Médoc",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "3812ac89787f81c8978798732c60b4fa72be84ad.jpg",
@@ -679,8 +706,9 @@
       "subregion": "Santenay",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "91de944f2a3b921bea4dc4ca9737a88bd98164fa.jpg",
@@ -707,8 +735,9 @@
       "subregion": "Fleurie",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "9029a1691e64399f1ef5757fd536316391e02f0c.jpg",
@@ -735,8 +764,9 @@
       "subregion": "Nuits-Saint-Georges",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "c3feeea95a9bddf5a17a95ea95749be279a17b93.jpg",
@@ -760,8 +790,9 @@
       "subregion": "Gigondas",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "b995d1fb7630a398bee64c7e13e586b83d47036e.jpg",
@@ -788,8 +819,9 @@
       "subregion": "Chambolle-Musigny",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "9ee83cd9a5aa923aad8d15da57eb081fa770ae7f.jpg",
@@ -813,8 +845,9 @@
       "subregion": "Cabardès",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "a44792d5468d8f3d07fe203688f208eafedbb60e.jpg",
@@ -841,8 +874,9 @@
       "subregion": "Chablis",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "1e8fec781efb5445f6b72c5042a2e69ddecca57f.jpg",
@@ -867,10 +901,12 @@
       "region": "Piedmont",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "aecf67810abb7e9ebbad3d6278e04ccaa34908ad.jpg",
@@ -897,8 +933,9 @@
       "subregion": "Barbera d'Alba",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "d94d32e7f694d3ad9d12f1442025df202fafecef.jpg",
@@ -922,8 +959,9 @@
       "subregion": "Langhe",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "f4a18a6f7362cc4e8718535088d04712acfa2ce5.jpg",
@@ -948,10 +986,12 @@
       "region": "Tuscany",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "Gaiole in Chianti is part of the bottler address; the front denotes Toscana, not Chianti as this wine’s appellation."
     },
     {
       "image": "eefcf66a5279cff4c76da608b1559a0ad2b147c3.jpg",
@@ -975,11 +1015,14 @@
       "country_status": "expected_value",
       "region": "",
       "region_status": "unresolved",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Delle Venezie",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year printed; EST 1480 is an establishment date.",
+      "subregion_review": "Delle Venezie DOC is printed. It spans multiple regions, so a single region is not established for this bottle.",
+      "geography_source": "https://www.castellogabbiano.it/product_detail/gabbiano-cdo/"
     },
     {
       "image": "a1585fb6d2775efc5ab6f32b2fe03cadf15d7a7a.jpg",
@@ -1001,10 +1044,12 @@
       "region": "Puglia",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "861fbf6cc4e000f4be4e0dadeda049dcb1e71106.jpg",
@@ -1026,10 +1071,12 @@
       "region": "Alto Adige",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "ee4402a75bc44771dba9006e41997f48e5610429.jpg",
@@ -1053,8 +1100,9 @@
       "subregion": "Brachetto d'Acqui",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "7820490dc99b3991958990045bee478e6f711116.jpg",
@@ -1076,10 +1124,12 @@
       "region": "Tuscany",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "df303b456b6d729cce16990437763f65ae587f12.jpg",
@@ -1106,8 +1156,9 @@
       "subregion": "Moscato d'Asti",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "c122696f1d0a46544d3a2a3c9f06151e609c5d5c.jpg",
@@ -1134,8 +1185,9 @@
       "subregion": "Barbaresco",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "5b333011147e4737b58f6fbbfcc06622a4f207b9.jpg",
@@ -1162,8 +1214,9 @@
       "subregion": "Moscato d'Asti",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "9589f741e499a9e747ffadfba7c6bbedc6de878a.jpg",
@@ -1190,8 +1243,9 @@
       "subregion": "Chianti Classico",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "c57e4ddb935fa23c3ddcd5a2d8bf9178f216177f.jpg",
@@ -1215,8 +1269,9 @@
       "subregion": "Langhe",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "c90c90d0f1afb834f3d79530ebbf8dc25d848fa8.jpg",
@@ -1240,8 +1295,9 @@
       "subregion": "Barolo",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "13ba9b1b74a7bae2c650468c24bc7c9929e94f19.jpg",
@@ -1268,8 +1324,9 @@
       "subregion": "Barolo",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "a7fb544c5b1e59da4e834a79a1d3dd276a145412.jpg",
@@ -1294,7 +1351,8 @@
       "subregion_status": "expected_value",
       "vintage": "",
       "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "Vendemmia and faint, indistinct marks below it are visible; whether a vintage year is printed is ambiguous at this resolution. Do not guess or score as blank."
     },
     {
       "image": "db7301f7548cf33c25dfb74d16629e245f84021a.jpg",
@@ -1375,13 +1433,19 @@
       "wine_name_status": "expected_value",
       "country": "Chile",
       "country_status": "expected_value",
-      "region": "Colchagua Valley",
+      "region": "Central Valley",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Colchagua Valley",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "Valle de Colchagua is printed; Los Robles is the estate, not another subregion.",
+      "subregion_alternates": [
+        "Valle de Colchagua"
+      ],
+      "geography_source": "https://www.cellartours.com/chile/wine-regions/central-valley"
     },
     {
       "image": "ee5a71871baf09b2d4f47caf9254caa8c66cb541.jpg",
@@ -1406,10 +1470,12 @@
       "region": "Central Valley",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "74e946ebf2e40bc66aba79c65464bd973ed5c4ca.jpg",
@@ -1431,13 +1497,20 @@
       ],
       "country": "Chile",
       "country_status": "expected_value",
-      "region": "Cachapoal Valley",
+      "region": "Central Valley",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Cachapoal Valley",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "Cachapoal is printed as part of the wine name; catalog geography identifies the valley. Broader hierarchy is Central Valley.",
+      "subregion_alternates": [
+        "Cachapoal",
+        "Valle de Cachapoal"
+      ],
+      "geography_source": "https://www.cellartours.com/chile/wine-regions/central-valley"
     },
     {
       "image": "95a3f46c0f0db8efa8ef79f901e6168648237cda.jpg",
@@ -1456,13 +1529,19 @@
       "wine_name_status": "expected_value",
       "country": "Chile",
       "country_status": "expected_value",
-      "region": "Maule Valley",
+      "region": "Central Valley",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Maule Valley",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "Printed geographic designation, mapped beneath its broader region; see geography source.",
+      "subregion_alternates": [
+        "Valle del Maule"
+      ],
+      "geography_source": "https://www.cellartours.com/chile/wine-regions/central-valley"
     },
     {
       "image": "d59836882ecbb248cd7c04e31ff0bf183e9fab62.jpg",
@@ -1487,10 +1566,12 @@
       "region": "Maldonado",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "025536553f37b11cfe4710473e9703c69f612491.jpg",
@@ -1515,10 +1596,12 @@
       "region": "Mendoza",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "a601263f2caad4fc1765b7be14b76243f8641cb5.jpg",
@@ -1542,8 +1625,9 @@
       "subregion": "Luján de Cuyo",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year printed; Viña 1924 is a wine designation, not a vintage."
     },
     {
       "image": "ecf6effdf677cc33479ae65fb0faaf6dc4ebdb66.jpg",
@@ -1565,10 +1649,12 @@
       "region": "South Australia",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "73cb85818c9f95232ba192124c4d71917e9acfe8.jpg",
@@ -1590,13 +1676,16 @@
       ],
       "country": "Australia",
       "country_status": "expected_value",
-      "region": "Clare Valley",
+      "region": "South Australia",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion": "Clare Valley",
+      "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "Printed geographic designation, mapped beneath its broader region; see geography source.",
+      "geography_source": "https://www.taylorswines.com.au/products/the-visionary-cabernet-sauvignon-2012"
     },
     {
       "image": "461a3720defae4335f95479fe149fba01c18b045.jpg",
@@ -1623,8 +1712,9 @@
       "subregion": "Frankland River",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "21905d7c5e672a81d8088eebe915e060dfceed47.jpg",
@@ -1651,8 +1741,9 @@
       "subregion": "Mornington Peninsula",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "adb8c66f1980f31f169f0261aca646c168cc7cdd.jpg",
@@ -1677,10 +1768,12 @@
       "region": "Willamette Valley",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "50be6a1367f8911e7c036518f0279dac8a044857.jpg",
@@ -1702,10 +1795,12 @@
       "region": "Lodi",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "fd58f35b02afa27f15ac5626dd30f483b280c13c.jpg",
@@ -1729,8 +1824,9 @@
       "subregion": "Dry Creek Valley",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "44506dcf522c0e801bfee60ef4a9cab3cca59e09.jpg",
@@ -1757,8 +1853,9 @@
       "subregion": "Horse Heaven Hills",
       "subregion_status": "expected_value",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
     },
     {
       "image": "c91cd2262bbf502bec394ad21c0e44af30225d46.jpg",
@@ -1780,10 +1877,12 @@
       "region": "Marlborough",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "e311924fd740df4f0e083db8b67dd8a566ce305b.jpg",
@@ -1805,10 +1904,12 @@
       "region": "Niederösterreich",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "b8e938609ee6b676a74ffbd0fd8392b245fc2331.jpg",
@@ -1833,10 +1934,12 @@
       "region": "Marlborough",
       "region_status": "expected_value",
       "subregion": "",
-      "subregion_status": "unresolved",
+      "subregion_status": "expected_blank",
       "vintage": "",
-      "vintage_status": "unresolved",
-      "single_wine_bottle_reviewed": true
+      "vintage_status": "expected_blank",
+      "single_wine_bottle_reviewed": true,
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
     },
     {
       "image": "32008b5372b06c513543e531032fc4ed6f916961.jpg",
@@ -1866,5 +1969,6 @@
       "vintage_status": "expected_value",
       "single_wine_bottle_reviewed": true
     }
-  ]
+  ],
+  "reference_policy": "For these internet additions, expected_blank vintage or subregion means no such value is printed on the photographed front label, not proof the wine has no vintage or geographic origin. Unreadable or genuinely ambiguous references remain unresolved. Region/appellation hierarchy uses a broader region and a printed, supported narrower designation where available."
 }
