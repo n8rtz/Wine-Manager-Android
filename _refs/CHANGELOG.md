@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **GLiNER score tables placement:** moved the always-visible curated summary and field score tables above the personal audit and imported photo cards, so large personal batches cannot bury them. Android/device verification remains pending; this does not restore process-only GLiNER run results.
 - **GLiNER and dataset page startup:** initialize the dynamic corpus-selection delegate before starting the shared Lab ViewModel, and validate the selected count on the background loading path so a bad corpus asset is reported instead of crashing the page. GLiNER also displays the shared baseline-loading error. Android/device verification remains pending.
 
 ### Added

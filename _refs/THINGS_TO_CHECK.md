@@ -2,6 +2,14 @@
 
 > **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
 
+## GLiNER curated score tables placement
+
+*Last run: host source checks only; phone and Android UI verification pending.*
+
+- [ ] Open **GLiNER lane lab** with no run and confirm **Scored results** and its summary and field tables are directly below the run controls, before **Your images** and **Personal audit**. Missing baselines remain `—`, not fabricated zeros.
+- [ ] With 26 imported photos and with the audit results expanded, confirm the curated tables stay above those cards; run a few curated photos and check both tables update alongside the run. Personal audit scores remain separate. Export any results before stopping the app process.
+- [ ] Run `:app:testDebugUnitTest --tests com.yourapp.wine.GlinerLabStartupTest`; the host source guard checks placement but not phone rendering.
+
 ## Shared Lab startup crash after corpus expansion
 
 *Last run: host source checks only; Android unit test and phone confirmation pending.*

@@ -188,6 +188,14 @@ internal fun GlinerLabScreen(
                 TextButton(onClick=onClose) { Text("Close") }
             }
         }
+        // Keep the curated scoreboard before the personal audit and imported-photo cards. A large
+        // personal batch must not push these always-available tables out of reach.
+        item(key="curated_scores") {
+            SelectionContainer {
+                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,
+                    state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet())
+            }
+        }
         item(key="custom_heading") {
             Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
                 Text("Your images (${state.customSamples.size})",style=MaterialTheme.typography.titleMedium)
@@ -257,12 +265,6 @@ internal fun GlinerLabScreen(
                 onCorrect={ field,value -> onCorrectField(row.sample.image,field,value) },
                 onBlank={ field,checked -> onExpectedBlank(row.sample.image,field,checked) },
                 onConfirmAll={ onConfirmAll(row.sample.image) })
-        }
-        item {
-            SelectionContainer {
-                ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,
-                    state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet())
-            }
         }
         if(state.ran || state.customRan) {
             item {
@@ -544,7 +546,7 @@ private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,complete
         val correct=a.fieldCorrect[key] ?: 0
         key to WineAppLabelsBuildLog.FieldScore(correct,(a.fieldTotal[key] ?: 0)-correct)
     }
-    Column {
+    Column(Modifier.testTag("gliner_curated_score_tables")) {
         Text("Scored results",style=MaterialTheme.typography.titleMedium)
         ScoreSummaryTable(listOf(glinerValues)+baselines.map { it.summary ?: listOf(it.title,"—","—","—","—","—","—") })
         Spacer(Modifier.height(8.dp))

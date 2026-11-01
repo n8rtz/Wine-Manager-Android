@@ -333,6 +333,13 @@ class GlinerLabScreenAndRunTests(unittest.TestCase):
         screen = self.read(self.SCREEN)
         self.assertIn("ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,", screen)
         self.assertNotIn("state.aggregate?.let", screen)
+        # The scoreboard must never be buried below an arbitrarily large imported batch.
+        score = screen.index('item(key="curated_scores")')
+        self.assertLess(score, screen.index('item(key="custom_heading")'))
+        self.assertLess(score, screen.index('item(key="audit_heading")'))
+        self.assertLess(score, screen.index('items(state.customSamples,key='))
+        self.assertIn('testTag("gliner_curated_score_tables")', screen)
+        self.assertEqual(screen.count('ScoredResults(state.aggregate ?: aggregateGlinerRows('), 1)
 
     def test_lab_and_prod_baselines_come_from_saved_lab_scoreboard(self):
         screen = self.read(self.SCREEN)

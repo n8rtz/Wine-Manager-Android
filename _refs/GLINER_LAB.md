@@ -4,8 +4,12 @@ Settings → Scanner testing → GLiNER lane lab is an experimental workflow, se
 production scanner and Lab v7. Its INT4 model is optional and is not committed to the repository.
 It uses the same curated evaluation set as Lab v7 and the frozen Prod v6 results only for scoring
 comparisons. The set currently contains 124 owner-reviewed workbook photos plus 69 internet
-front-label photos (six from Costco Wine Blog and 63 from the X-Wines test set). The score tables compare the actual photos completed by this run; old baselines
-cover new photos only after their first capture on the phone.
+front-label photos (six from Costco Wine Blog and 63 from the X-Wines test set). The curated score
+tables are directly below the run controls, before the personal audit and imported-photo cards; they
+remain visible even before a run. They compare the actual photos completed by this run; old
+baselines cover new photos only after their first capture on the phone. Curated GLiNER run results
+are held in the current app process, not automatically restored after the process ends; export JSON
+to retain them. This layout change does not restore lost runs.
 
 ## Module boundary
 
