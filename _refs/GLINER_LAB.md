@@ -1,9 +1,10 @@
 # GLiNER lane lab
 
-The current v8 policy and local saved-evidence evaluation are documented in
-`docs/gliner-policy-v8-evaluation.md`; the v7 phone-run analysis and prior replay remain in
-`docs/gliner-run-1793542448049-analysis.md`. These changes affect only the experimental workflow.
-Fresh phone performance and unseen-holdout accuracy are not yet verified.
+The current v9 policy and local saved-evidence evaluation are documented in
+`docs/gliner-policy-v9-evaluation.md`; the v8 evaluation and original phone-run analysis remain
+in `docs/gliner-policy-v8-evaluation.md` and `docs/gliner-run-1793542448049-analysis.md`.
+These changes affect only the experimental workflow. Fresh phone performance and unseen-holdout
+accuracy are not yet verified.
 
 Settings → Scanner testing → GLiNER lane lab is an experimental workflow, separate from the
 production scanner and Lab v7. Its INT4 model is optional and is not committed to the repository.
@@ -61,9 +62,12 @@ veto, so a genuine title that is also a place may be left incomplete. V8 additio
 ordinary catalogued Italian appellations with a single parent region: a unique exact printed place
 must be directly attached to independently read DOC wording, without intervening text or visible
 conflicting origin. A conflicting subregion is replaced only for a separately printed recognized
-style collision. V8 also adds guarded classification, compound title and maker-role recovery; see
-the evaluation report for the precise limitations. All rules use generic terms, geometry, model hints,
-and observed text, never benchmark reference answers. Ambiguous or unsupported
+style collision. V8 also adds guarded classification, compound title and maker-role recovery.
+V9 adds strictly corroborated producer/title roles, a documented US AVA hierarchy lookup after a
+selected grape, and Italian DOC/IGT role cues, with visible-conflict and ambiguity vetoes. It also
+narrows an unsafe style-prefix rule. The Android adapter and replay share the same catalog-index
+builder. See the evaluation reports for limitations. All rules use generic terms, geometry, model
+hints, and observed text, never benchmark reference answers. Ambiguous or unsupported
 candidates are rejected. Nonblank altered fields are YELLOW and a cleared field is RED; each
 decision is logged. These are experimental heuristics tuned on the available corpus, and need a
 phone run and held-out labels to assess real improvements and regressions.

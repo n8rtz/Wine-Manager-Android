@@ -6,9 +6,9 @@ data class GlinerAdminRegion(val country:String,val region:String,val forms:List
 
 object GlinerGeography {
     /** Exact aliases only; ambiguous same-spelling places remain separate and must abstain. */
-    fun indexOrigins(origins:List<GlinerOrigin>):Map<String,List<GlinerOrigin>> = origins.flatMap { origin ->
+    fun indexOrigins(origins:List<GlinerOrigin>,minKeyLength:Int=5):Map<String,List<GlinerOrigin>> = origins.flatMap { origin ->
         (origin.forms+origin.subregion).map { GlinerDocument.normalize(it) to origin }
-    }.filter { it.first.length>=5 }.groupBy({ it.first }, { it.second }).mapValues { (_,values) ->
+    }.filter { it.first.length>=minKeyLength }.groupBy({ it.first }, { it.second }).mapValues { (_,values) ->
         values.distinctBy { Triple(GlinerDocument.normalize(it.country),GlinerDocument.normalize(it.region),
             GlinerDocument.normalize(it.subregion)) }
     }

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Experimental GLiNER policy v9:** stricter title/style separation plus bounded producer-role and contextual AVA/DOC/IGT recovery; 138/188 complete on reused saved-OCR development evidence, with no eligible scored losses versus v8. The app and host replay share their geographic index builder. See `docs/gliner-policy-v9-evaluation.md`; fresh phone and unseen-holdout accuracy remain unverified.
 - **Experimental GLiNER policy v8:** guarded classification, maker/title, compound-name and exact catalogued DOC recovery; 135/188 complete on reused saved-OCR development evidence, with no eligible scored losses versus v7. See `docs/gliner-policy-v8-evaluation.md` for risks, a scoring caveat and unchanged personal-audit replay. Phone and unseen-holdout accuracy remain unverified.
 - **Experimental GLiNER policy v7:** role-aware producer/title assembly and guarded printed origin recovery, supported by paired saved-OCR replay, negative tests and a separate personal-audit regression check. See `docs/gliner-run-1793542448049-analysis.md`; phone and unseen-holdout accuracy remain unverified.
 - **Experimental GLiNER policy v6:** conservative corroborated title, producer, date-role and geographic-hierarchy recovery, with separately versioned front-label reference corrections and a saved-OCR no-hints ablation. See `docs/gliner-v6-implementation-evaluation.md`; replay is not phone or holdout validation, and OCR/model thresholds are unchanged.

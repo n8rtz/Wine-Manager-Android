@@ -6,6 +6,7 @@ Compile the runner with Kotlin/JRE and the Android geometry stand-ins, for examp
     gliner-workflow/src/main/java/com/yourapp/wine/gliner/{GlinerDocument,GlinerLanes,GlinerEngines,GlinerGeography,GlinerFieldDecision}.kt \
     app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
     app/src/main/java/com/yourapp/wine/kb/{WineTerms,BundledGrapes,BundledWineStyles,BundledOrigins,ReferenceWineCatalog,GeneratedWineKnowledge,WineKnowledgeBase}.kt \
+    gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerCatalogIndexes.kt \
     tools/host-lab/GlinerDecisionReplay.kt -include-runtime -d /tmp/gliner-replay.jar
   python3 tools/host-lab/replay_gliner_decisions.py export.json --runner-jar /tmp/gliner-replay.jar
 
