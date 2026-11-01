@@ -1,8 +1,9 @@
 # GLiNER lane lab
 
-The v6 decision-policy implementation, reference revision, matched saved-OCR no-hints ablation,
-and device/holdout limitations are documented in `docs/gliner-v6-implementation-evaluation.md`.
-V6 changes only this experimental workflow; fresh phone performance has not been verified.
+The current v7 policy, phone-run analysis, staged saved-OCR replay and device/holdout
+limitations are documented in `docs/gliner-run-1793542448049-analysis.md`. The earlier v6
+reference audit and ablation remain in `docs/gliner-v6-implementation-evaluation.md`.
+V7 changes only this experimental workflow; its fresh phone performance is not yet verified.
 
 Settings → Scanner testing → GLiNER lane lab is an experimental workflow, separate from the
 production scanner and Lab v7. Its INT4 model is optional and is not committed to the repository.

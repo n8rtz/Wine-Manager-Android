@@ -2,8 +2,41 @@ package com.yourapp.wine.gliner
 
 /** A small source-backed hierarchy overlay. This is ordinary geographic knowledge, not test answers. */
 data class GlinerOrigin(val country:String,val region:String,val subregion:String,val forms:List<String>)
+data class GlinerAdminRegion(val country:String,val region:String,val forms:List<String>)
 
 object GlinerGeography {
+    // Italian regional geographical indications: administrative regions and native/English
+    // spellings. Used only with an independently corroborated geographical-indication cue.
+    // https://italianwinecentral.com/italian-wine-regions/
+    val italianRegions=listOf(
+        GlinerAdminRegion("Italy","Puglia",listOf("Puglia","Apulia")),
+        GlinerAdminRegion("Italy","Tuscany",listOf("Toscana","Tuscany")),
+        GlinerAdminRegion("Italy","Piedmont",listOf("Piemonte","Piedmont")),
+        GlinerAdminRegion("Italy","Veneto",listOf("Veneto")),
+        GlinerAdminRegion("Italy","Lombardy",listOf("Lombardia","Lombardy")),
+        GlinerAdminRegion("Italy","Sicily",listOf("Sicilia","Sicily")),
+        GlinerAdminRegion("Italy","Sardinia",listOf("Sardegna","Sardinia")),
+        GlinerAdminRegion("Italy","Abruzzo",listOf("Abruzzo")),
+        GlinerAdminRegion("Italy","Basilicata",listOf("Basilicata")),
+        GlinerAdminRegion("Italy","Calabria",listOf("Calabria")),
+        GlinerAdminRegion("Italy","Campania",listOf("Campania")),
+        GlinerAdminRegion("Italy","Lazio",listOf("Lazio")),
+        GlinerAdminRegion("Italy","Liguria",listOf("Liguria")),
+        GlinerAdminRegion("Italy","Marche",listOf("Marche")),
+        GlinerAdminRegion("Italy","Molise",listOf("Molise")),
+        GlinerAdminRegion("Italy","Umbria",listOf("Umbria")),
+        GlinerAdminRegion("Italy","Emilia-Romagna",listOf("Emilia-Romagna")),
+        GlinerAdminRegion("Italy","Friuli-Venezia Giulia",listOf("Friuli-Venezia Giulia")),
+        GlinerAdminRegion("Italy","Trentino-Alto Adige",listOf("Trentino-Alto Adige")),
+        GlinerAdminRegion("Italy","Valle d'Aosta",listOf("Valle d'Aosta")),
+    )
+    // Austrian broad wine-growing regions. https://www.austrianwine.com/our-wine/wine-growing-regions
+    val austrianRegions=listOf(
+        GlinerAdminRegion("Austria","Niederösterreich",listOf("Niederösterreich","Lower Austria")),
+        GlinerAdminRegion("Austria","Burgenland",listOf("Burgenland")),
+        GlinerAdminRegion("Austria","Steiermark",listOf("Steiermark","Styria")),
+        GlinerAdminRegion("Austria","Wien",listOf("Wien","Vienna")),
+    )
     // Chilean DOs in the Central Valley; https://www.cellartours.com/chile/wine-regions/central-valley
     // Australian GIs: https://www.agw.org.au/industry-support/geographical-indications/
     // US AVA nesting: https://www.ttb.gov/regulated-commodities/beverage-alcohol/wine/american-viticultural-areas
