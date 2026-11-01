@@ -113,6 +113,14 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(targets[226]["fields"]["subregion"]["target"], "Delle Venezie")
         self.assertEqual(targets[226]["fields"]["region"]["status"], "unresolved")
         self.assertEqual(targets[225]["fields"]["subregion"]["status"], "expected_blank")
+        self.assertEqual(targets[240]["fields"]["subregion"]["status"], "expected_blank")
+        self.assertEqual(targets[239]["fields"]["subregion"]["target"], "Jerez")
+        self.assertEqual(targets[228]["fields"]["region"]["target"], "Trentino-Alto Adige")
+        self.assertEqual(targets[228]["fields"]["subregion"]["target"], "Alto Adige")
+        self.assertIn("weingutaldinger", targets[208]["fields"]["producer"]["accepted"])
+        self.assertIn("loire", targets[213]["fields"]["region"]["accepted"])
+        self.assertIn("rhone", targets[218]["fields"]["region"]["accepted"])
+        self.assertIn("chablispremiercru", targets[221]["fields"]["subregion"]["accepted"])
         self.assertEqual(targets[196]["fields"]["region"]["status"], "unresolved")
         self.assertEqual(targets[196]["fields"]["subregion"]["status"], "unresolved")
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
@@ -159,7 +167,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 85)
         self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 68)
         self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (193, 193))
-        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (185, 187))
+        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (187, 187))
         self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (126, 126))
         self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 193 for row in params))
         # Source-level databases remain in the asset for provenance auditing.
@@ -177,7 +185,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         # (editorial + UC Davis AVA) folded into the knowledge-base place list.
         # The nested catalog adds the Bordeaux, Portuguese, Georgian and Italian names the
         # workbook prints; geography-role rows are counted as regions, not appellations.
-        self.assertEqual(rows["kb_appellations"]["matched_labels"], 108)
+        self.assertEqual(rows["kb_appellations"]["matched_labels"], 107)
         self.assertEqual(rows["kb_appellations"]["database_records_matched"], 62)
         self.assertEqual(rows["kb_producers"]["matched_labels"], 18)
         self.assertTrue(all(0 <= row["matched_labels"] <= 193 for row in rows.values()))

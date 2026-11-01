@@ -1,5 +1,6 @@
 {
   "description": "Temporary scanner-test additions: visually reviewed to show exactly one visible wine bottle with a complete, unobscured front label. Original retained corpus is unchanged.",
+  "reference_revision": "front-label-audit-2026-10-31-v2",
   "source": "CostcoWineBlog.com and X-Wines (see per-record source and rights notes)",
   "photo_reuse_note": "The site FAQ explicitly permits using label photos elsewhere online: https://costcowineblog.com/frequently-asked-questions-about-costco-wine-and-this-website/ X-Wines repository declares CC0 for its dataset, but the underlying individual photographs were collected from the web and their rights have not been independently verified; testing only, remove when model is finalized.",
   "records": [
@@ -514,7 +515,11 @@
       "vintage_status": "expected_blank",
       "single_wine_bottle_reviewed": true,
       "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
-      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
+      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy.",
+      "producer_alternates": [
+        "Weingut Aldinger"
+      ],
+      "producer_review": "Weingut means winery; label and independent producer listing use Weingut Aldinger: https://www.ripleywines.com/product-category/explore-producers/germany-explore-producers/wurttemberg-germany-explore-producers/aldinger-germany-explore-producers/"
     },
     {
       "image": "3d4be7874e553f32dabbb410fe16a59da0c70bda.jpg",
@@ -656,7 +661,10 @@
       "vintage": "",
       "vintage_status": "expected_blank",
       "single_wine_bottle_reviewed": true,
-      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "region_alternates": [
+        "Loire"
+      ]
     },
     {
       "image": "6c0a6ff2e121b5a2a2ca959cc6ee3087e26a2d3e.jpg",
@@ -792,7 +800,10 @@
       "vintage": "",
       "vintage_status": "expected_blank",
       "single_wine_bottle_reviewed": true,
-      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "region_alternates": [
+        "Rhône"
+      ]
     },
     {
       "image": "b995d1fb7630a398bee64c7e13e586b83d47036e.jpg",
@@ -876,7 +887,11 @@
       "vintage": "",
       "vintage_status": "expected_blank",
       "single_wine_bottle_reviewed": true,
-      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage."
+      "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
+      "subregion_alternates": [
+        "Chablis Premier Cru"
+      ],
+      "subregion_review": "Chablis Premier Cru is the printed Chablis appellation plus classification, not a separate geographic parent."
     },
     {
       "image": "1e8fec781efb5445f6b72c5042a2e69ddecca57f.jpg",
@@ -1068,15 +1083,19 @@
       "wine_name_status": "expected_value",
       "country": "Italy",
       "country_status": "expected_value",
-      "region": "Alto Adige",
+      "region": "Trentino-Alto Adige",
       "region_status": "expected_value",
-      "subregion": "",
-      "subregion_status": "expected_blank",
+      "subregion": "Alto Adige",
+      "subregion_status": "expected_value",
       "vintage": "",
       "vintage_status": "expected_blank",
       "single_wine_bottle_reviewed": true,
       "vintage_review": "No vintage year is printed on the photographed front; this does not assert the wine itself is non-vintage.",
-      "subregion_review": "No narrower geographic designation established from the photographed front; expected blank for this reference hierarchy."
+      "subregion_review": "Alto Adige/Südtirol DOC is printed. Alto Adige is within the Trentino-Alto Adige region.",
+      "subregion_alternates": [
+        "Südtirol"
+      ],
+      "geography_source": "https://italianwinecentral.com/region-province/trentino-alto-adige/"
     },
     {
       "image": "ee4402a75bc44771dba9006e41997f48e5610429.jpg",
@@ -1383,7 +1402,9 @@
       "reference_sources": [
         "https://www.elitewines.com/winery/lustau/?wine=37680"
       ],
-      "single_wine_bottle_reviewed": true
+      "single_wine_bottle_reviewed": true,
+      "subregion_review": "SHERRY is printed; this product is Jerez-Sherry appellation, not merely a bottler address.",
+      "geography_source": "https://www.skurnik.com/sku/rare-cream-sherry-solera-reserva-e-lustau-2/"
     },
     {
       "image": "aafe8c19f13995958c0a4f4f1e79c713f09133ac.jpg",
@@ -1407,14 +1428,15 @@
       "country_status": "expected_value",
       "region": "Andalusia",
       "region_status": "expected_value",
-      "subregion": "Montilla-Moriles",
-      "subregion_status": "expected_value",
+      "subregion": "",
+      "subregion_status": "expected_blank",
       "vintage": "",
       "vintage_status": "expected_blank",
       "reference_sources": [
         "https://casaortega.com/es/vinos/30978-fino-3-fases-electrico-bombilla-75-cl.html"
       ],
-      "single_wine_bottle_reviewed": true
+      "single_wine_bottle_reviewed": true,
+      "subregion_review": "The photographed front does not list Montilla-Moriles. Expected blank is a photo-level target, not a claim the wine lacks a geographic origin."
     },
     {
       "image": "262b0951792d7329afd655b8a51d49f73188a697.jpg",

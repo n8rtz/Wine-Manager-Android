@@ -27,7 +27,7 @@ fun main() {
             val p=raw.split(',')
             GlinerEvidenceLine(decode(p[0]),decode(p[1]),p[2].toFloat(),p[3].toFloat(),p[4].toFloat(),p[5].toFloat())
         }
-        val result=GlinerFieldDecisionPolicy.applyWithEvidence(fields,hints,readings,grapes,styles,places)
+        val result=GlinerFieldDecisionPolicy.applyWithEvidence(fields,hints,readings,grapes,styles,places,GlinerGeography.origins)
         println(parts[3]+"\t"+fieldNames.joinToString(",") { encode(result.fields[it].orEmpty()) }+
             "\t"+result.changes.joinToString(",") { encode(it) })
     }

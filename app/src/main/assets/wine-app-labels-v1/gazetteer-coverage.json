@@ -13,8 +13,8 @@
       "dataset_labels": 193,
       "expected_blank_labels": 0,
       "unresolved_labels": 0,
-      "unique_known_values_matched": 135,
-      "database_records_matched": 244
+      "unique_known_values_matched": 136,
+      "database_records_matched": 246
     },
     {
       "id": "wine_name",
@@ -43,7 +43,7 @@
     {
       "id": "region",
       "label": "Region",
-      "matched_labels": 185,
+      "matched_labels": 187,
       "total_labels": 187,
       "dataset_labels": 193,
       "expected_blank_labels": 4,
@@ -59,8 +59,8 @@
       "dataset_labels": 193,
       "expected_blank_labels": 66,
       "unresolved_labels": 1,
-      "unique_known_values_matched": 84,
-      "database_records_matched": 155
+      "unique_known_values_matched": 86,
+      "database_records_matched": 157
     }
   ],
   "databases": [
@@ -69,16 +69,16 @@
       "label": "LWIN producers",
       "matched_labels": 135,
       "total_labels": 193,
-      "unique_known_values_matched": 101,
-      "database_records_matched": 101
+      "unique_known_values_matched": 102,
+      "database_records_matched": 102
     },
     {
       "id": "expanded_producers",
       "label": "Expanded producers (Lab)",
       "matched_labels": 167,
       "total_labels": 193,
-      "unique_known_values_matched": 135,
-      "database_records_matched": 135
+      "unique_known_values_matched": 136,
+      "database_records_matched": 136
     },
     {
       "id": "approved_brands",
@@ -101,16 +101,16 @@
       "label": "Appellations",
       "matched_labels": 141,
       "total_labels": 193,
-      "unique_known_values_matched": 99,
+      "unique_known_values_matched": 100,
       "database_records_matched": 95
     },
     {
       "id": "wine_geography",
       "label": "Regions/subregions",
-      "matched_labels": 178,
+      "matched_labels": 181,
       "total_labels": 193,
-      "unique_known_values_matched": 38,
-      "database_records_matched": 36
+      "unique_known_values_matched": 39,
+      "database_records_matched": 37
     },
     {
       "id": "kb_producers",
@@ -131,9 +131,9 @@
     {
       "id": "kb_appellations",
       "label": "Scanner KB appellations",
-      "matched_labels": 108,
+      "matched_labels": 107,
       "total_labels": 193,
-      "unique_known_values_matched": 63,
+      "unique_known_values_matched": 64,
       "database_records_matched": 62
     },
     {
@@ -141,8 +141,8 @@
       "label": "Scanner KB regions",
       "matched_labels": 193,
       "total_labels": 193,
-      "unique_known_values_matched": 76,
-      "database_records_matched": 76
+      "unique_known_values_matched": 77,
+      "database_records_matched": 77
     }
   ]
 }

@@ -16,6 +16,6 @@
   "rights": "No license is declared for the two original source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights. Additional CostcoWineBlog.com label photographs credited by source page; site FAQ permits label photo use elsewhere online. X-Wines repository declares CC0 but underlying web photo rights have not been independently verified; see per-photo source and image member. Temporary testing assets; remove when model is finalized.",
   "inputs_sha256": "b539f3b700bc08448d64a06814459937edf14f07edbea95fd20b3c3deb63285e",
   "evaluation_set_sha256": "bc9e31f1aa006bd292532b894510b8243dc8ed4fd16dac4de771d41a6c7c9e5e",
-  "scoring_sha256": "05a11f49786fb45e9af54d5a879f92929991b3cd7f4c7444eb91a76641821495",
-  "gazetteer_coverage_sha256": "9ffc267e4d559db75d2f5a7f0bb68bd57d4324d58d881225a180d11f3f0c7323"
+  "scoring_sha256": "011f473f7889e09a19e381b06ebdd5b9a9716feb8a9bcd3ebd031641b762b3c4",
+  "gazetteer_coverage_sha256": "73fab26d890f394741d0d3024fe7d30486e5e9934b7e3af61c2f50657c9deb6c"
 }

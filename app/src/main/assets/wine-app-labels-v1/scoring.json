@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "reference_sha256": "76f66e56950dc7b66dc4d8f8749f37189a51d7b9a0b09d29d1272be1fca44703",
+  "reference_sha256": "7c83821a179e89ed91334fe46f4cc23de988d5a1d75f3233a7b6e840d6bfb623",
   "note": "Owner-corrected workbook references and internet front-label candidate references; unresolved fields are unscored. Targets are scorer-only and never provided to OCR.",
   "images": [
     {
@@ -6909,7 +6909,8 @@
         "producer": {
           "status": "expected_value",
           "accepted": [
-            "aldinger"
+            "aldinger",
+            "weingutaldinger"
           ],
           "target": "Aldinger"
         },
@@ -7168,6 +7169,7 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "loire",
             "loirevalley"
           ],
           "target": "Loire Valley"
@@ -7405,6 +7407,7 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "rhone",
             "rhonevalley"
           ],
           "target": "Rhône Valley"
@@ -7555,7 +7558,8 @@
         "subregion": {
           "status": "expected_value",
           "accepted": [
-            "chablis"
+            "chablis",
+            "chablispremiercru"
           ],
           "target": "Chablis"
         },
@@ -7873,14 +7877,17 @@
         "region": {
           "status": "expected_value",
           "accepted": [
-            "altoadige"
+            "trentinoaltoadige"
           ],
-          "target": "Alto Adige"
+          "target": "Trentino-Alto Adige"
         },
         "subregion": {
-          "status": "expected_blank",
-          "accepted": [],
-          "target": ""
+          "status": "expected_value",
+          "accepted": [
+            "altoadige",
+            "sudtirol"
+          ],
+          "target": "Alto Adige"
         },
         "vintage": {
           "status": "expected_blank",
@@ -8445,11 +8452,9 @@
           "target": "Andalusia"
         },
         "subregion": {
-          "status": "expected_value",
-          "accepted": [
-            "montillamoriles"
-          ],
-          "target": "Montilla-Moriles"
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
         },
         "vintage": {
           "status": "expected_blank",

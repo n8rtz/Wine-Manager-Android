@@ -3,7 +3,7 @@
 
 Compile the runner with Kotlin/JRE and the Android geometry stand-ins, for example:
   kotlinc tools/logic-checks/AndroidGeometry.kt \
-    gliner-workflow/src/main/java/com/yourapp/wine/gliner/{GlinerDocument,GlinerLanes,GlinerEngines,GlinerFieldDecision}.kt \
+    gliner-workflow/src/main/java/com/yourapp/wine/gliner/{GlinerDocument,GlinerLanes,GlinerEngines,GlinerGeography,GlinerFieldDecision}.kt \
     app/src/main/java/com/yourapp/wine/merge/TextNorm.kt \
     app/src/main/java/com/yourapp/wine/kb/{WineTerms,BundledGrapes,BundledWineStyles,BundledOrigins,ReferenceWineCatalog,GeneratedWineKnowledge,WineKnowledgeBase}.kt \
     tools/host-lab/GlinerDecisionReplay.kt -include-runtime -d /tmp/gliner-replay.jar
@@ -70,6 +70,8 @@ def main():
     parser.add_argument('--runner-jar', required=True, type=pathlib.Path)
     parser.add_argument('--java', default='java')
     parser.add_argument('--rescore', action='store_true', help='Score against current references even if the exported reference outcomes differ')
+    parser.add_argument('--no-hints', action='store_true', help='Ablate all GLiNER lane hints while retaining the same OCR and deterministic decision policy')
+    parser.add_argument('--output-json', type=pathlib.Path, help='Write replay fields and changes for a paired analysis')
     args = parser.parse_args()
     data = json.loads(args.export.read_text())
     refs = {r['image']: r['fields'] for r in json.loads(
@@ -81,7 +83,7 @@ def main():
     protocol = []
     for row in rows:
         fields = ','.join(enc(row['base_fields'].get(f, '')) for f in FIELDS)
-        lane_hints = ';'.join(f'{lane},{score},{enc(text)}' for lane, score, text in hints(row))
+        lane_hints = '' if args.no_hints else ';'.join(f'{lane},{score},{enc(text)}' for lane, score, text in hints(row))
         readings = ';'.join(','.join([enc(r['engine']), enc(r['text'])] + list(map(str, r['box'])))
                             for r in row.get('decision_readings', row['raw_readings']))
         protocol.append('\t'.join((fields, lane_hints, readings, str(row['review_number']))))
@@ -160,6 +162,9 @@ def main():
     print(f'exported final complete {current_complete}; replay complete {new_complete}; new gains {current_gain}; new losses {current_loss}')
     print('field gains vs exported final:', current_field_gains, 'field losses:', current_field_losses)
     print('excluded resolved-field gains vs exported final:', excluded_field_gains, 'field losses:', excluded_field_losses)
+    if args.output_json:
+        args.output_json.write_text(json.dumps({str(n): {'fields': fields, 'changes': changes}
+                                                for n, (fields, changes) in results.items()}, indent=2) + '\n')
 
 
 if __name__ == '__main__':

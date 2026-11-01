@@ -150,7 +150,7 @@ internal object GlinerLabRunner {
                     reading.box.right,reading.box.bottom)
             }
             val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
-                post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys) else GlinerFieldDecision(post.fields,emptyList())
+                post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys,GlinerGeography.origins) else GlinerFieldDecision(post.fields,emptyList())
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
                 PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }
