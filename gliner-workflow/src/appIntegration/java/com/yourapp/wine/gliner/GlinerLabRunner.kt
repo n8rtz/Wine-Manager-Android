@@ -6,6 +6,7 @@ import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.gazetteer.ProducerGazetteer
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.kb.BundledGrapes
+import com.yourapp.wine.kb.BundledOrigins
 import com.yourapp.wine.kb.BundledWineStyles
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
 import com.yourapp.wine.textlab.TextLabBudgets
@@ -87,6 +88,11 @@ internal object GlinerLabRunner {
     private val styleTerms:Set<String> by lazy {
         BundledWineStyles.terms.flatMap { listOf(it.name)+it.aliases }.toSet()
     }
+    // Only vetoes title/producer completions; geography is never inferred from this set.
+    private val knownPlaceKeys:Set<String> by lazy {
+        BundledOrigins.terms.flatMap { listOf(it.name,it.country,it.region)+it.aliases }
+            .filter(String::isNotBlank).map(GlinerDocument::normalize).toSet()
+    }
     val fieldLabels=linkedMapOf(
         "producer" to "Producer",
         "wine_name" to "Wine name",
@@ -144,7 +150,7 @@ internal object GlinerLabRunner {
                     reading.box.right,reading.box.bottom)
             }
             val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
-                post.fields,laneHints,decisionReadings,grapeTerms,styleTerms) else GlinerFieldDecision(post.fields,emptyList())
+                post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys) else GlinerFieldDecision(post.fields,emptyList())
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
                 PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }

@@ -192,11 +192,11 @@ internal class PhoneCorpusScoreboard(
         csv.addAll(funnel.map { it.csv(mode.pipelineId) })
         val text=buildString {
             appendLine("WINE APP LABELS · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
-            appendLine("This test uses all 124 retained rows in the updated, owner-reviewed workbook. Club des Sommeliers #14, review #67 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded.")
-            appendLine("Unresolved workbook references remain unscorable; other unknown locations/vintages are expected blank. These development references are not held-out accuracy.")
+            appendLine("This test uses the retained owner-reviewed workbook photos and selected internet front-label photos. Club des Sommeliers #14, review #67 and the marked-red workbook rows remain excluded; IMG_2732.jpeg remains excluded.")
+            appendLine("Unresolved references remain unscorable; explicitly expected blanks are scored as blanks. These development references are not held-out accuracy.")
             appendLine(headers.joinToString(" | "));rows.forEach { appendLine(it.joinToString(" | ")) }
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
-            appendLine("This screen scores the 124 retained workbook rows.")
+            appendLine("This screen scores the selected ${includedImages.size} curated photos.")
             appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v4.0 and Lab v5 use the same current spatial pipeline (original readings plus producer and linked-wine resolution over spatial spans) and differ only in producer data: Prod v4.0 uses the verified LWIN producer index only, Lab v5 uses the Lab expanded producer index (the same LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates). Each mode runs and scores only its selected implementation.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")

@@ -25,14 +25,15 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         scoring = json.loads((ASSETS / "scoring.json").read_text())
         inputs = inputs_doc["images"]
         targets = scoring["images"]
-        self.assertEqual((len(labels["records"]), len(inputs), len(targets)), (124, 124, 124))
-        self.assertEqual((selection["included_count"], selection["excluded_count"]), (124, 11))
+        extra = json.loads((REVIEW / "internet-labels-v1.json").read_text())["records"]
+        self.assertEqual((len(labels["records"]), len(extra), len(inputs), len(targets)), (124, 69, 193, 193))
+        self.assertEqual((selection["included_count"], selection["excluded_count"]), (193, 11))
         self.assertIn(67, selection["excluded_review_numbers"])
         self.assertEqual({row["image"] for row in inputs}, {row["image"] for row in targets})
         self.assertEqual({row["image"] for row in selection["included_images"]}, {row["image"] for row in inputs})
         self.assertEqual({p.name for p in (ASSETS / "images").glob("*.jpg")}, {row["image"] for row in inputs})
         self.assertNotIn("IMG_2732.jpeg", {p.name for p in (ASSETS / "images").iterdir()})
-        self.assertEqual(manifest["count"], 124)
+        self.assertEqual(manifest["count"], 193)
         self.assertEqual(sum(row["source_repo"] == "AntoninLeroy/wine_label_reader_toolkit" for row in inputs), 102)
         self.assertEqual(sum(row["source_repo"] == "n8rtz/Wine-Reference-Drop" for row in inputs), 22)
         self.assertEqual(manifest["bytes"], sum((ASSETS / "images" / row["image"]).stat().st_size for row in inputs))
@@ -47,9 +48,45 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             # bytes are packaged under wine-app-labels-v1, so verify provenance there.
             packaged = ASSETS / "images" / by_sha[row["source_sha256"]]
             self.assertEqual(hashlib.sha256(packaged.read_bytes()).hexdigest(), row["source_sha256"], row["source_path"])
-        self.assertEqual({row["review_number"] for row in targets}, {row["review_number"] for row in labels["records"]})
+        self.assertEqual({row["review_number"] for row in targets}, {row["review_number"] for row in labels["records"] + extra})
         self.assertFalse({14, 49, 52, 55, 64, 67, 73, 133, 159, 168} & {row["review_number"] for row in targets})
         self.assertTrue(all(set(row["fields"]) == {"producer", "wine_name", "country", "region", "subregion", "vintage"} for row in targets))
+
+    def test_internet_front_labels_share_the_existing_corpus_and_keep_unresolved_fields(self):
+        additions = json.loads((REVIEW / "internet-labels-v1.json").read_text())["records"]
+        inputs = {row["review_number"]: row for row in json.loads((ASSETS / "inputs.json").read_text())["images"]}
+        targets = {row["review_number"]: row for row in json.loads((ASSETS / "scoring.json").read_text())["images"]}
+        self.assertEqual([row["review_number"] for row in additions], list(range(191, 260)))
+        for row in additions:
+            number = row["review_number"]
+            self.assertIs(row["single_wine_bottle_reviewed"], True)  # manual visual review, not an object detector
+            self.assertEqual(row["image"], inputs[number]["image"])
+            self.assertEqual(row["image"], targets[number]["image"])
+            if row["source_repo"] == "CostcoWineBlog.com":
+                self.assertTrue(row["source_page"].startswith("https://costcowineblog.com/"))
+                self.assertTrue(row["source_url"].startswith("https://costcowineblog.com/wp-content/uploads/"))
+            else:
+                self.assertEqual(row["source_repo"], "rogerioxavier/X-Wines")
+                self.assertIn("/Dataset/last/XWines_Test_100_labels.zip", row["source_url"])
+                self.assertEqual(row["source_image_member"], "XWines_Test_100_labels/" + row["catalog_wine_id"] + ".jpeg")
+                self.assertEqual(row["source_filename"], "X-Wines label " + row["catalog_wine_id"] + ".jpeg")
+            self.assertEqual(hashlib.sha256((ASSETS / "images" / row["image"]).read_bytes()).hexdigest(), row["sha256"])
+            for field in ("producer", "wine_name", "country", "region", "subregion", "vintage"):
+                self.assertEqual(targets[number]["fields"][field]["status"], row[field + "_status"])
+        xwines = [row for row in additions if row["source_repo"] == "rogerioxavier/X-Wines"]
+        self.assertEqual(len(xwines), 63)
+        self.assertEqual(len({row["catalog_wine_id"] for row in xwines}), 63)
+        self.assertEqual(sum(row["vintage_status"] == "unresolved" for row in xwines), 58)
+        self.assertEqual(sum(all(row[f + "_status"] != "unresolved" for f in
+                                 ("producer", "wine_name", "country", "region", "subregion", "vintage"))
+                             for row in xwines), 5)
+        self.assertEqual(targets[196]["fields"]["region"]["status"], "unresolved")
+        self.assertEqual(targets[196]["fields"]["subregion"]["status"], "unresolved")
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        self.assertIn("private val expectedCount: Int get() = includedIds().size", viewmodel)
+        self.assertIn("captures.values.all { it.count == expectedCount }", viewmodel)
+        self.assertIn("store.migrateRetainedBaselines(BASELINE_MODES, hashes)", viewmodel)
+        self.assertIn("val neededBaselines = BASELINE_MODES.filter", viewmodel)
 
     def test_legacy_saved_photo_map_uses_exact_bytes(self):
         # The 168-photo debug corpus is retired, so the map is checked for internal consistency
@@ -69,7 +106,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
 
     def test_gazetteer_coverage_counts_unique_known_labels_on_scoring_side(self):
         coverage = json.loads((ASSETS / "gazetteer-coverage.json").read_text())
-        self.assertEqual(coverage["dataset_count"], 124)
+        self.assertEqual(coverage["dataset_count"], 193)
         self.assertIn("never provided to the OCR runner", coverage["method"])
         # Per-parameter total coverage across all consulted databases (rendered on screen).
         params = coverage["parameters"]
@@ -84,33 +121,33 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             ],
         )
         by_param = {row["id"]: row for row in params}
-        self.assertEqual((by_param["producer"]["matched_labels"], by_param["producer"]["total_labels"]), (100, 124))
-        self.assertEqual((by_param["wine_name"]["matched_labels"], by_param["wine_name"]["total_labels"]), (106, 123))
-        self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 42)
-        self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 64)
-        self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (124, 124))
-        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (120, 120))
-        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (81, 81))
-        self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 124 for row in params))
+        self.assertEqual((by_param["producer"]["matched_labels"], by_param["producer"]["total_labels"]), (167, 193))
+        self.assertEqual((by_param["wine_name"]["matched_labels"], by_param["wine_name"]["total_labels"]), (153, 192))
+        self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 85)
+        self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 68)
+        self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (193, 193))
+        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (185, 187))
+        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (119, 119))
+        self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 193 for row in params))
         # Source-level databases remain in the asset for provenance auditing.
         rows = {row["id"]: row for row in coverage["databases"]}
-        self.assertEqual(set(rows), {"lwin_producers", "expanded_producers", "lwin_wines", "appellations", "wine_geography",
+        self.assertEqual(set(rows), {"lwin_producers", "expanded_producers", "approved_brands", "lwin_wines", "appellations", "wine_geography",
                                      "kb_producers", "kb_wine_names", "kb_appellations", "kb_geography"})
-        self.assertEqual(rows["lwin_producers"]["matched_labels"], 86)
+        self.assertEqual(rows["lwin_producers"]["matched_labels"], 135)
         # The Lab expanded producer index (LWIN + X-Wines/TTB/OSM candidates) is a
         # strict superset of the LWIN-only producer coverage.
-        self.assertEqual(rows["expanded_producers"]["matched_labels"], 100)
+        self.assertEqual(rows["expanded_producers"]["matched_labels"], 167)
         self.assertGreater(rows["expanded_producers"]["matched_labels"], rows["lwin_producers"]["matched_labels"])
-        self.assertEqual(rows["lwin_wines"]["matched_labels"], 42)
-        self.assertEqual(rows["appellations"]["matched_labels"], 89)
+        self.assertEqual(rows["lwin_wines"]["matched_labels"], 85)
+        self.assertEqual(rows["appellations"]["matched_labels"], 140)
         # Scanner KB rows include the bundled wine-knowledge origins catalog
         # (editorial + UC Davis AVA) folded into the knowledge-base place list.
         # The nested catalog adds the Bordeaux, Portuguese, Georgian and Italian names the
         # workbook prints; geography-role rows are counted as regions, not appellations.
-        self.assertEqual(rows["kb_appellations"]["matched_labels"], 78)
-        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 42)
-        self.assertEqual(rows["kb_producers"]["matched_labels"], 13)
-        self.assertTrue(all(0 <= row["matched_labels"] <= 124 for row in rows.values()))
+        self.assertEqual(rows["kb_appellations"]["matched_labels"], 108)
+        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 62)
+        self.assertEqual(rows["kb_producers"]["matched_labels"], 18)
+        self.assertTrue(all(0 <= row["matched_labels"] <= 193 for row in rows.values()))
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         self.assertIn('Text("Database coverage"', activity)
         self.assertNotIn("Gazetteer database coverage", activity)
@@ -184,7 +221,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(corrections[181], {"region": "Maipo Valley", "subregion": "Puente Alto"})
         self.assertEqual(corrections[184], {"region": "Willamette Valley", "subregion": "Dundee Hills"})
         self.assertTrue((REVIEW / "reference-data-scrubbed-updated.xlsx").is_file())
-        self.assertEqual(len(json.loads((ASSETS / "inputs.json").read_text())["images"]), 124)
+        self.assertEqual(len(json.loads((ASSETS / "inputs.json").read_text())["images"]), 193)
 
     def test_main_profile_routes_to_the_124_label_test(self):
         profile = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/ProfileScreen.kt").read_text()
@@ -687,7 +724,8 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
                 self.assertIn("mlkit_reference", cands, img)
                 self.assertIn("candidate_3", cands, img)
                 seen[img] = rec["model_signature"]
-        self.assertEqual(set(seen.keys()), set(inputs.keys()))
+        extra = json.loads((REVIEW / "internet-labels-v1.json").read_text())["records"]
+        self.assertEqual(set(seen), set(inputs) - {row["image"] for row in extra})
         self.assertEqual(len(set(seen.values())), 1)
 
     def test_post_ocr_modules_are_individually_selectable_and_auto_isolated(self):

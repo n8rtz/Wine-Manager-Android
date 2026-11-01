@@ -133,7 +133,9 @@ app/src/test/java/...                  # JVM tests: aromawheel, drinkingwindow, 
                                        #   image provider, vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
 app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
+gliner-workflow/src/test/java/com/yourapp/wine/gliner/GlinerFieldDecisionV5Test.kt # Synthetic paired-OCR decision-policy positive and abstention regressions
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
+tools/evaluation/wine-app-labels-review-v1/internet-labels-v1.json # Temporary front-label test photos: provenance, checksums and scorer-only candidate references
 app/src/main/assets/producer-gazetteer-v1/ # Verified primary LWIN producer/wine indexes (producers.sqlite 33,160, wines.sqlite) + manifest/NOTICE; primary_verified gate
 app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OSM and 17 owner-approved brands, 78,632); used by Lab and GLiNER post-processing + Database Lookup
 tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report and approved brands

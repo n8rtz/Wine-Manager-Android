@@ -1,18 +1,21 @@
 {
-  "count": 124,
-  "bytes": 20080218,
+  "count": 193,
+  "bytes": 27105143,
   "source_repositories": [
     "AntoninLeroy/wine_label_reader_toolkit",
-    "n8rtz/Wine-Reference-Drop"
+    "n8rtz/Wine-Reference-Drop",
+    "CostcoWineBlog.com",
+    "rogerioxavier/X-Wines"
   ],
   "source_commits": [
+    "5e43c7f38ff4abaee1815f84dbdd2b54aa873b1d",
     "eb2c14ba4f9a1b6efaa476696439754a9abde8ce",
     "main"
   ],
   "updated_workbook_sha256": "825618b3b54d6dfd74eb213741b57ee9e2c8cfcb0911353eb7b345b6b2b143b5",
-  "rights": "No license is declared for the two source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
-  "inputs_sha256": "9a0d78f0a79c0a75ac8f552029a9f717bef28edcfd8274b9ee863ab2885e9d59",
-  "evaluation_set_sha256": "584ce0990caa817beb64374c0416afbe235f2d0b56b620c9738b01bc45aa2c24",
-  "scoring_sha256": "884b058f14390b83f0b7ea6198721441d6168e112b82eae6cf188f9ff870bb24",
-  "gazetteer_coverage_sha256": "ba843f745fadb86c8b5fcdc793dcf44b0f0e92e4c47e0bcdd0848be95fb5eb76"
+  "rights": "No license is declared for the two original source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights. Additional CostcoWineBlog.com label photographs credited by source page; site FAQ permits label photo use elsewhere online. X-Wines repository declares CC0 but underlying web photo rights have not been independently verified; see per-photo source and image member. Temporary testing assets; remove when model is finalized.",
+  "inputs_sha256": "b539f3b700bc08448d64a06814459937edf14f07edbea95fd20b3c3deb63285e",
+  "evaluation_set_sha256": "bc9e31f1aa006bd292532b894510b8243dc8ed4fd16dac4de771d41a6c7c9e5e",
+  "scoring_sha256": "061bf9bbe427ea115fdcacc3d02100711232561bd503a1aa6d8949d58b08f279",
+  "gazetteer_coverage_sha256": "a6a32994beaedfc716f0052f0697c6e4a323c88fed9640242bf06c3a21171b33"
 }

@@ -2,6 +2,7 @@ package com.yourapp.wine.gliner
 
 import java.util.Base64
 import com.yourapp.wine.kb.BundledGrapes
+import com.yourapp.wine.kb.BundledOrigins
 import com.yourapp.wine.kb.BundledWineStyles
 
 // Line protocol for the host replay: scoring targets are never passed into the decision process.
@@ -12,6 +13,8 @@ private val fieldNames=listOf("producer","wine_name","country","region","subregi
 fun main() {
     val grapes=BundledGrapes.terms.flatMap { listOf(it.name)+it.aliases }.toSet()
     val styles=BundledWineStyles.terms.flatMap { listOf(it.name)+it.aliases }.toSet()
+    val places=BundledOrigins.terms.flatMap { listOf(it.name,it.country,it.region)+it.aliases }
+        .filter(String::isNotBlank).map(GlinerDocument::normalize).toSet()
     generateSequence(::readLine).forEach { line ->
         val parts=line.split('\t')
         require(parts.size==4)
@@ -24,7 +27,7 @@ fun main() {
             val p=raw.split(',')
             GlinerEvidenceLine(decode(p[0]),decode(p[1]),p[2].toFloat(),p[3].toFloat(),p[4].toFloat(),p[5].toFloat())
         }
-        val result=GlinerFieldDecisionPolicy.applyWithEvidence(fields,hints,readings,grapes,styles)
+        val result=GlinerFieldDecisionPolicy.applyWithEvidence(fields,hints,readings,grapes,styles,places)
         println(parts[3]+"\t"+fieldNames.joinToString(",") { encode(result.fields[it].orEmpty()) }+
             "\t"+result.changes.joinToString(",") { encode(it) })
     }

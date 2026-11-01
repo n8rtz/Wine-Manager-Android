@@ -212,6 +212,10 @@ def main() -> None:
     records = doc["records"]
     if len(records) != EXPECTED_LABELS:
         raise ValueError(f"Expected {EXPECTED_LABELS} workbook labels, got {len(records)}")
+    # Independently reviewed internet additions are kept outside the historical workbook.
+    records = records + json.loads((HERE / "internet-labels-v1.json").read_text())["records"]
+    if len({row["review_number"] for row in records}) != len(records):
+        raise ValueError("Duplicate review numbers in the combined coverage set")
 
     producer_db = DBS / "main/assets/producer-gazetteer-v1/producers.sqlite"
     expanded_db = DBS / "main/assets/producer-gazetteer-expanded-v1/producers-expanded.sqlite"
@@ -429,7 +433,7 @@ def main() -> None:
         "dataset_count": len(records),
         "source_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
         "source_workbook_sha256": doc["source_workbook_sha256"],
-        "method": "Exact normalized match of workbook-known targets and accepted alternatives across all packaged lookup databases consulted by the app. Parameter totals count labels with a known expected value for each parameter (excluding expected blanks and unresolved targets) matched in any consulted database for that parameter: producers across LWIN, Expanded Lab, and Scanner KB; wine names across LWIN wine names, Scanner KB cuvees, appellation/place databases for appellation-named wines, and bundled grape varietals; country, region, and subregion across packaged geography and appellation databases. Source-level database rows remain recorded under databases for provenance auditing. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
+        "method": "Exact normalized match of workbook and internet-photo known targets and accepted alternatives across all packaged lookup databases consulted by the app. Parameter totals count labels with a known expected value for each parameter (excluding expected blanks and unresolved targets) matched in any consulted database for that parameter: producers across LWIN, Expanded Lab, and Scanner KB; wine names across LWIN wine names, Scanner KB cuvees, appellation/place databases for appellation-named wines, and bundled grape varietals; country, region, and subregion across packaged geography and appellation databases. Source-level database rows remain recorded under databases for provenance auditing. This scorer-side audit is separate from OCR and its reference values are never provided to the OCR runner.",
         "parameters": parameters,
         "databases": results,
     }

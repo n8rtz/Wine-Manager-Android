@@ -6,8 +6,8 @@
   "updated_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
   "updated_workbook_sha256": "825618b3b54d6dfd74eb213741b57ee9e2c8cfcb0911353eb7b345b6b2b143b5",
   "source_zip": "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/Wine%20App%20Labels.zip",
-  "review_decision": "Run all 124 retained rows in the updated owner-reviewed workbook. Owner-removed workbook rows including review #67 and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run.",
-  "included_count": 124,
+  "review_decision": "Run all 124 retained rows in the updated owner-reviewed workbook. Owner-removed workbook rows including review #67 and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run. Front-label internet photos are appended for temporary testing.",
+  "included_count": 193,
   "excluded_count": 11,
   "included_images": [
     {
@@ -753,6 +753,420 @@
       "image": "a3da97fef7642c7ccee9817f89da3011a628174c.jpg",
       "source_filename": "IMG_9703.jpg",
       "source_repo": "n8rtz/Wine-Reference-Drop"
+    },
+    {
+      "review_number": 191,
+      "image": "9fe8c7bf7549df2f8234a7bfe2ab69b98ff1f32f.jpg",
+      "source_filename": "2023 Groth Sauvignon Blanc",
+      "source_repo": "CostcoWineBlog.com"
+    },
+    {
+      "review_number": 192,
+      "image": "5383af32f2f23a83880aa4b7e353eeee05449415.jpg",
+      "source_filename": "2024 Stag's Leap Wine Cellars Karia Chardonnay",
+      "source_repo": "CostcoWineBlog.com"
+    },
+    {
+      "review_number": 193,
+      "image": "3ecad8b5a87f775a8e848e65655109b08ee65e35.jpg",
+      "source_filename": "2022 Kirkland Signature Sancerre",
+      "source_repo": "CostcoWineBlog.com"
+    },
+    {
+      "review_number": 194,
+      "image": "dfa1ad1c22d4419113db17ac81b6a63226be1470.jpg",
+      "source_filename": "2024 Gérard Bertrand Côte des Roses Rosé",
+      "source_repo": "CostcoWineBlog.com"
+    },
+    {
+      "review_number": 195,
+      "image": "5db4f4b3d4d2944e90a4a29eb07cb85ea47e8a5d.jpg",
+      "source_filename": "Kirkland Signature Asolo Prosecco Superiore",
+      "source_repo": "CostcoWineBlog.com"
+    },
+    {
+      "review_number": 196,
+      "image": "a028d305e55bd34350cbc9164b9e4192e7e82a55.jpg",
+      "source_filename": "2022 My Favorite Neighbor Cabernet Sauvignon",
+      "source_repo": "CostcoWineBlog.com"
+    },
+    {
+      "review_number": 197,
+      "image": "e3557b2d5cee8bc81abf6a48da340d3911a66911.jpg",
+      "source_filename": "X-Wines label 100062.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 198,
+      "image": "d4d98a63dd5a26ed33e7e3d39c893b31873ac764.jpg",
+      "source_filename": "X-Wines label 100191.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 199,
+      "image": "b2fd7f0b1c3cd50393b8cc52e71311ec27be268c.jpg",
+      "source_filename": "X-Wines label 101847.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 200,
+      "image": "6c1fd0459fcdbdd3c0c597456776317aa2ad55da.jpg",
+      "source_filename": "X-Wines label 102055.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 201,
+      "image": "0f9b50a862e45ae4e4461c7fc4120eba4a93049c.jpg",
+      "source_filename": "X-Wines label 102079.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 202,
+      "image": "e6438f5ba4a52f06566f0273fd781b3d6fcad276.jpg",
+      "source_filename": "X-Wines label 103003.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 203,
+      "image": "1c25fa9486edd62b229274195c4d0e1a91d80976.jpg",
+      "source_filename": "X-Wines label 103070.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 204,
+      "image": "3ed37ec010cfed8c28271f7f3a87b60fd8703bbc.jpg",
+      "source_filename": "X-Wines label 103435.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 205,
+      "image": "bdd16e40d7c8ce7356fef37c961a8f1819a1227e.jpg",
+      "source_filename": "X-Wines label 103667.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 206,
+      "image": "0e2606e4f055552415571cf0f6af4c92376e99a5.jpg",
+      "source_filename": "X-Wines label 107214.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 207,
+      "image": "613db1eb619acc2d06678df257cc4832feb1a45e.jpg",
+      "source_filename": "X-Wines label 108974.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 208,
+      "image": "b3f5ec0613a02f85688e601bf0cd3d220f3a568b.jpg",
+      "source_filename": "X-Wines label 109954.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 209,
+      "image": "3d4be7874e553f32dabbb410fe16a59da0c70bda.jpg",
+      "source_filename": "X-Wines label 111478.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 210,
+      "image": "cd772b19b3f69b4602c57628a44ca2d12b2b1379.jpg",
+      "source_filename": "X-Wines label 112875.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 211,
+      "image": "14cd780fd2c85c02bfff102e411b0f6b1ffefb2e.jpg",
+      "source_filename": "X-Wines label 113730.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 212,
+      "image": "7a0a23f28a1518225d2d9769dcfe3ba5d185b1e0.jpg",
+      "source_filename": "X-Wines label 114717.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 213,
+      "image": "82e45db886ac62bd45fbda99010be20929ab8554.jpg",
+      "source_filename": "X-Wines label 114973.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 214,
+      "image": "6c0a6ff2e121b5a2a2ca959cc6ee3087e26a2d3e.jpg",
+      "source_filename": "X-Wines label 116418.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 215,
+      "image": "3812ac89787f81c8978798732c60b4fa72be84ad.jpg",
+      "source_filename": "X-Wines label 117009.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 216,
+      "image": "91de944f2a3b921bea4dc4ca9737a88bd98164fa.jpg",
+      "source_filename": "X-Wines label 118457.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 217,
+      "image": "9029a1691e64399f1ef5757fd536316391e02f0c.jpg",
+      "source_filename": "X-Wines label 118927.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 218,
+      "image": "c3feeea95a9bddf5a17a95ea95749be279a17b93.jpg",
+      "source_filename": "X-Wines label 120737.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 219,
+      "image": "b995d1fb7630a398bee64c7e13e586b83d47036e.jpg",
+      "source_filename": "X-Wines label 125678.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 220,
+      "image": "9ee83cd9a5aa923aad8d15da57eb081fa770ae7f.jpg",
+      "source_filename": "X-Wines label 126510.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 221,
+      "image": "a44792d5468d8f3d07fe203688f208eafedbb60e.jpg",
+      "source_filename": "X-Wines label 128544.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 222,
+      "image": "1e8fec781efb5445f6b72c5042a2e69ddecca57f.jpg",
+      "source_filename": "X-Wines label 138299.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 223,
+      "image": "aecf67810abb7e9ebbad3d6278e04ccaa34908ad.jpg",
+      "source_filename": "X-Wines label 138625.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 224,
+      "image": "d94d32e7f694d3ad9d12f1442025df202fafecef.jpg",
+      "source_filename": "X-Wines label 138765.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 225,
+      "image": "f4a18a6f7362cc4e8718535088d04712acfa2ce5.jpg",
+      "source_filename": "X-Wines label 139210.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 226,
+      "image": "eefcf66a5279cff4c76da608b1559a0ad2b147c3.jpg",
+      "source_filename": "X-Wines label 139388.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 227,
+      "image": "a1585fb6d2775efc5ab6f32b2fe03cadf15d7a7a.jpg",
+      "source_filename": "X-Wines label 139693.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 228,
+      "image": "861fbf6cc4e000f4be4e0dadeda049dcb1e71106.jpg",
+      "source_filename": "X-Wines label 140262.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 229,
+      "image": "ee4402a75bc44771dba9006e41997f48e5610429.jpg",
+      "source_filename": "X-Wines label 141193.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 230,
+      "image": "7820490dc99b3991958990045bee478e6f711116.jpg",
+      "source_filename": "X-Wines label 142170.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 231,
+      "image": "df303b456b6d729cce16990437763f65ae587f12.jpg",
+      "source_filename": "X-Wines label 143222.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 232,
+      "image": "c122696f1d0a46544d3a2a3c9f06151e609c5d5c.jpg",
+      "source_filename": "X-Wines label 143800.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 233,
+      "image": "5b333011147e4737b58f6fbbfcc06622a4f207b9.jpg",
+      "source_filename": "X-Wines label 143806.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 234,
+      "image": "9589f741e499a9e747ffadfba7c6bbedc6de878a.jpg",
+      "source_filename": "X-Wines label 147123.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 235,
+      "image": "c57e4ddb935fa23c3ddcd5a2d8bf9178f216177f.jpg",
+      "source_filename": "X-Wines label 149407.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 236,
+      "image": "c90c90d0f1afb834f3d79530ebbf8dc25d848fa8.jpg",
+      "source_filename": "X-Wines label 149550.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 237,
+      "image": "13ba9b1b74a7bae2c650468c24bc7c9929e94f19.jpg",
+      "source_filename": "X-Wines label 150384.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 238,
+      "image": "a7fb544c5b1e59da4e834a79a1d3dd276a145412.jpg",
+      "source_filename": "X-Wines label 150820.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 239,
+      "image": "db7301f7548cf33c25dfb74d16629e245f84021a.jpg",
+      "source_filename": "X-Wines label 160271.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 240,
+      "image": "aafe8c19f13995958c0a4f4f1e79c713f09133ac.jpg",
+      "source_filename": "X-Wines label 160277.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 241,
+      "image": "262b0951792d7329afd655b8a51d49f73188a697.jpg",
+      "source_filename": "X-Wines label 162507.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 242,
+      "image": "ee5a71871baf09b2d4f47caf9254caa8c66cb541.jpg",
+      "source_filename": "X-Wines label 163101.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 243,
+      "image": "74e946ebf2e40bc66aba79c65464bd973ed5c4ca.jpg",
+      "source_filename": "X-Wines label 163876.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 244,
+      "image": "95a3f46c0f0db8efa8ef79f901e6168648237cda.jpg",
+      "source_filename": "X-Wines label 165143.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 245,
+      "image": "d59836882ecbb248cd7c04e31ff0bf183e9fab62.jpg",
+      "source_filename": "X-Wines label 167079.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 246,
+      "image": "025536553f37b11cfe4710473e9703c69f612491.jpg",
+      "source_filename": "X-Wines label 167464.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 247,
+      "image": "a601263f2caad4fc1765b7be14b76243f8641cb5.jpg",
+      "source_filename": "X-Wines label 168182.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 248,
+      "image": "ecf6effdf677cc33479ae65fb0faaf6dc4ebdb66.jpg",
+      "source_filename": "X-Wines label 174274.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 249,
+      "image": "73cb85818c9f95232ba192124c4d71917e9acfe8.jpg",
+      "source_filename": "X-Wines label 175454.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 250,
+      "image": "461a3720defae4335f95479fe149fba01c18b045.jpg",
+      "source_filename": "X-Wines label 175754.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 251,
+      "image": "21905d7c5e672a81d8088eebe915e060dfceed47.jpg",
+      "source_filename": "X-Wines label 175908.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 252,
+      "image": "adb8c66f1980f31f169f0261aca646c168cc7cdd.jpg",
+      "source_filename": "X-Wines label 179958.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 253,
+      "image": "50be6a1367f8911e7c036518f0279dac8a044857.jpg",
+      "source_filename": "X-Wines label 180268.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 254,
+      "image": "fd58f35b02afa27f15ac5626dd30f483b280c13c.jpg",
+      "source_filename": "X-Wines label 180712.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 255,
+      "image": "44506dcf522c0e801bfee60ef4a9cab3cca59e09.jpg",
+      "source_filename": "X-Wines label 185481.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 256,
+      "image": "c91cd2262bbf502bec394ad21c0e44af30225d46.jpg",
+      "source_filename": "X-Wines label 193488.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 257,
+      "image": "e311924fd740df4f0e083db8b67dd8a566ce305b.jpg",
+      "source_filename": "X-Wines label 195300.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 258,
+      "image": "b8e938609ee6b676a74ffbd0fd8392b245fc2331.jpg",
+      "source_filename": "X-Wines label 198580.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
+    },
+    {
+      "review_number": 259,
+      "image": "32008b5372b06c513543e531032fc4ed6f916961.jpg",
+      "source_filename": "X-Wines label 192515.jpeg",
+      "source_repo": "rogerioxavier/X-Wines"
     }
   ],
   "excluded_review_numbers": [

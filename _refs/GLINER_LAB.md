@@ -2,8 +2,10 @@
 
 Settings → Scanner testing → GLiNER lane lab is an experimental workflow, separate from the
 production scanner and Lab v7. Its INT4 model is optional and is not committed to the repository.
-It uses the same curated 124-photo evaluation set and the Lab v7 / frozen Prod v6 results only for
-scoring comparisons. The score tables compare the actual photos completed by this run.
+It uses the same curated evaluation set as Lab v7 and the frozen Prod v6 results only for scoring
+comparisons. The set currently contains 124 owner-reviewed workbook photos plus 69 internet
+front-label photos (six from Costco Wine Blog and 63 from the X-Wines test set). The score tables compare the actual photos completed by this run; old baselines
+cover new photos only after their first capture on the phone.
 
 ## Module boundary
 
@@ -27,13 +29,20 @@ recover a blank/legal-text-contaminated producer from corroborated estate-name e
 also considers: two-engine quoted/prominent cuvées over a geographic fallback; an adjacent title
 anchored to the selected estate; a corroborated wine style and descriptor for a blank name;
 classification-contaminated estate names supported by both OCR engines and a place read on the
-label; and removal of an unsupported subregion that appears to be a fuzzy producer-word leak. These
+label; and removal of an unsupported subregion that appears to be a fuzzy producer-word leak.
 Policy v4 adds repairs for address or grape/place leakage into the producer, nested OCR particles,
 qualified appellations, estate/appellation line concatenation, and title/producer collisions with a
 nearby producer role. It also has narrower single-engine repairs using an observed harvest/year/title
 line or a separately printed winery/company name matching the selected producer. Such single-engine
-repairs are not independent OCR consensus and carry additional risk. All rules use generic terms,
-geometry, model hints, and observed text, never reference answers. Ambiguous or unsupported
+repairs are not independent OCR consensus and carry additional risk. Policy v5 cautiously completes
+partial particle-ending producers from an adjacent, independently corroborated line; identifies a
+standalone style between such a completed producer and its geographic fallback; joins adjacent
+consensus grape lines for a blank blend; and completes an exact grape/style name with an adjacent,
+corroborated title prefix. Prefixes may differ slightly between OCR engines or be split into
+fragments. Completion requires a unique candidate and excludes known geography, legal terms and
+other conflicting fields. The shared bundled origin names and aliases are a conservative veto, not
+an inference source; a genuine title that is also a place may therefore be left incomplete.
+All rules use generic terms, geometry, model hints, and observed text, never reference answers. Ambiguous or unsupported
 candidates are rejected. Nonblank altered fields are YELLOW and a cleared field is RED; each
 decision is logged. These are experimental heuristics tuned on the available corpus, and need a
 phone run and held-out labels to assess real improvements and regressions.
@@ -60,6 +69,65 @@ yet been verified on Android**: replay doesn't rerun OCR or inference. This data
 develop these rules; these are in-sample results, not a holdout accuracy claim. More than 90% would
 require 109/121. The remaining replay errors comprise eight producer, eight wine and one subregion
 field on 16 labels. The partial module boundary described above remains unfinished.
+
+#### Policy v5 replay (in-sample)
+
+The current #154 Porto reference correction changes the curated v3 export to 96/121 and its v4
+replay to 106/121. On the exact saved readings, lane hints and base fields, v5 also scores
+**106/121**; all final fields across all 124 rows are identical to v4 (including excluded fields).
+Thus v5 adds no measured curated gains or losses versus v4. This is not a fresh curated run.
+
+For the latest exported set of 26 reviewed personal photos, scored against the corrected bundled
+references with the app's Kotlin normalizer and aliases, paired saved-input replay gives:
+
+| | v4 saved/replayed | v5 replay | Paired gains / losses |
+|---|---:|---:|---:|
+| Complete labels | 11/26 | 14/26 | +3 / −0 |
+| Correct fields | 129/156 | 135/156 | +6 / −0 |
+
+The field gains are one producer and five wine names; other fields have no gains or losses. An older
+export of the same photos replays from 12/26 and 130/156 to 15/26 and 136/156, also +3/−0 labels and
++6/−0 fields. These are repeated observations of the same photos, not another independent dataset.
+Both engines' saved OCR was used as-is; no OCR, base extraction or GLiNER model was run again. The
+approved expanded producer index may change future base extraction, so these figures do not predict a
+fresh phone run. None of the policy-v5 results is verified on Android, and no single-scan latency has
+been measured for v5. Both sets informed development and cannot establish holdout performance.
+
+### Temporary internet front-label additions
+
+The combined 193-photo set contains 124 retained workbook photos, six Costco Wine Blog photos
+(#191–196), and 63 more selected X-Wines test-set photos (#197–259). Each addition was visually checked to show one wine bottle and a whole, unobscured front label;
+the owner chose to retain the original 124 unchanged even when background bottles appear. Many X-Wines samples are catalog-style, tightly framed bottle
+photos rather than handheld scans; they do not replace diverse real-world photos. The X-Wines images
+are 480×640, and its catalog is also a source for the expanded producer database, so this is not an
+independent database holdout. Source archive/member, catalog ID, hash, and scorer-side references
+are recorded in `tools/evaluation/wine-app-labels-review-v1/internet-labels-v1.json`; source titles
+are not supplied to extraction.
+
+Costco Wine Blog's FAQ permits use of its label photos elsewhere online. The X-Wines repository
+provides a CC0 dataset license but its paper describes collecting data on the open web; we have not
+verified the rights of the individual underlying photos. **Testing only**; do not redistribute those
+photos without resolving rights. Both sets are included in normal app assets temporarily at the
+owner's direction. Remove all additions, their records and any associated cache/baseline entries
+when model testing is finalized, then regenerate the corpus, coverage and manifests. The original
+124 owner-reviewed photos and their historical records must be retained unless separately directed.
+Credit and citation: R. X. de Azambuja, A. J. Morais, V. Filipe, “X-Wines: A Wine Dataset for
+Recommender Systems and Machine Learning,” 2023, https://doi.org/10.3390/bdcc7010020.
+
+These are candidate references, not owner adjudications. For 58 of the 63 X-Wines images the
+pictured vintage cannot be established, so it remains unresolved: only five currently qualify for
+whole-label accuracy; the others contribute only their individually resolved field scores. Some
+subregions and one region also remain unresolved. No catalog list of available vintages is treated
+as the vintage of a particular photo. Review those fields before using the new images for an
+all-six-fields comparison. #196 geography below California also awaits review.
+
+The 69 internet photos have no packaged OCR seed or frozen comparison records. On a new Lab v7
+run, retained matching frozen per-photo Prod records migrate across the changed corpus signature;
+new photos need fresh capture. The scoreboard identifies missing baselines rather than treating
+them as zero or claiming they were already run. Historic 121-eligible scores above refer to the
+prior 124-photo set. Neither these added photos nor their references have been run or validated on a
+phone; after tuning, they are not an independent model holdout.
+
 ### Your own images and review
 
 Choose **Your images → Choose images** to select multiple files, then **Run your images**. The picker

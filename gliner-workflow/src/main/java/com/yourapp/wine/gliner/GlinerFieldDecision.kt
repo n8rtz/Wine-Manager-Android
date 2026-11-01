@@ -15,7 +15,7 @@ data class GlinerEvidenceLine(
  * The base result wins unless an explicit, auditable rule finds independent OCR evidence.
  */
 object GlinerFieldDecisionPolicy {
-    const val VERSION="gliner-field-policy-v4"
+    const val VERSION="gliner-field-policy-v5"
 
     fun apply(fields:Map<String,String>,hints:List<GlinerFieldHint>,rawLines:List<String>):GlinerFieldDecision {
         val producer=fields["producer"].orEmpty()
@@ -61,10 +61,12 @@ object GlinerFieldDecisionPolicy {
     fun applyWithEvidence(
         fields:Map<String,String>,hints:List<GlinerFieldHint>,readings:List<GlinerEvidenceLine>,grapeTerms:Set<String>,
         styleTerms:Set<String> = emptySet(),
+        knownPlaceKeys:Set<String> = emptySet(),
     ):GlinerFieldDecision {
         val lines=consensus(readings)
         val grapes=grapeTerms.map(::key).filter { it.length>=4 }.toSet()
-        val styles=styleTerms.map(::key).filter { it.length>=8 }.toSet()
+        val allStyles=styleTerms.map(::key).filter { it.length>=4 }.toSet()
+        val styles=allStyles.filter { it.length>=8 }.toSet()
         val updated=fields.toMutableMap()
         val changes=mutableListOf<String>()
         fun replace(field:String,value:String,reason:String) {
@@ -92,6 +94,36 @@ object GlinerFieldDecisionPolicy {
                 candidates += "${line.text.trim()} ${next.text.trim()}"
             }
             unique(candidates)?.let { replace("producer",it,"two-engine estate evidence") }
+        }
+
+        // Complete a producer that visibly ends in a connecting particle. The existing value
+        // must itself be an exact Paddle line; the following line must be independently read
+        // at the same position by the other engine. Never use a grape, style, place or legal
+        // text as the missing name, and abstain if more than one completion is plausible.
+        val partialProducer=updated["producer"].orEmpty().trim()
+        var producerContinuation:GlinerEvidenceLine?=null
+        if(Regex("(?i)^.+\\s+(de|del|du|des|di|da|della)$").matches(partialProducer)) {
+            val partialKey=key(partialProducer)
+            val blocked=listOf("wine_name","country","region","subregion")
+                .map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }.toSet()
+            val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+            val completions=mutableListOf<Pair<String,GlinerEvidenceLine>>()
+            primary.filter { key(it.text)==partialKey }.forEach { first ->
+                primary.forEach secondLoop@ { second ->
+                    val candidate=key(second.text)
+                    if(candidate.length<5 || candidate.any(Char::isDigit) || candidate in blocked || candidate in knownPlaceKeys ||
+                        candidate in grapes || candidate in allStyles || legal(second.text) || !fragmentConsensus(second,readings)) return@secondLoop
+                    val overlap=(minOf(first.bottom,second.bottom)-maxOf(first.top,second.top)).coerceAtLeast(0f)
+                    val shortest=minOf(first.bottom-first.top,second.bottom-second.top)
+                    if(second.top<=first.top || second.top-first.bottom>0.06f || shortest<=0f ||
+                        overlap>0.40f*shortest || horizontalOverlap(first,second)<0.5f) return@secondLoop
+                    completions += "$partialProducer ${second.text.trim()}" to second
+                }
+            }
+            unique(completions.map { it.first })?.let { completed ->
+                producerContinuation=completions.first { key(it.first)==key(completed) }.second
+                replace("producer",completed,"two-engine continuation of partial producer")
+            }
         }
 
         // A legal or vineyard-role fragment can be selected instead of a prominent two-line
@@ -291,6 +323,17 @@ object GlinerFieldDecisionPolicy {
             val wine=key(updated["wine_name"].orEmpty())
             val producer=key(updated["producer"].orEmpty())
             val grapeLines=lines.filter { key(it.text) in grapes }.groupBy { key(it.text) }
+            // A blank name can be a blend printed as two separate lines. Each complete
+            // varietal must have independent OCR agreement, and they must form one unique,
+            // adjacent pair; do not replace an existing title with an assumed blend.
+            if(wine.isBlank()) {
+                val blends=lines.zipWithNext().mapNotNull { (first,second) ->
+                    val a=key(first.text); val b=key(second.text)
+                    if(a in grapes && b in grapes && a!=b && adjacent(first,second,allowOverlap=false))
+                        "${first.text.trim()} ${second.text.trim()}" else null
+                }
+                unique(blends)?.let { replace("wine_name",it,"two-engine adjacent grape blend") }
+            }
             if(grapeLines.size==1) {
                 val (grape,group)=grapeLines.entries.single()
                 if(wine.isBlank() || (producer.isNotBlank() && wine==producer+grape)) {
@@ -300,13 +343,14 @@ object GlinerFieldDecisionPolicy {
             // If the entire base name ends in a grape, allow exactly one independently confirmed
             // preceding line. Exclude producers, places, years and common legal/growing claims.
             val current=key(updated["wine_name"].orEmpty())
+            var exactAdjacentPrefixes:List<String> = emptyList()
             if(current.isNotBlank() && grapes.any { current.endsWith(it) }) {
                 val prefixes=mutableListOf<String>()
                 lines.forEachIndexed { index,first ->
                     val fk=key(first.text)
                     val producerKey=key(updated["producer"].orEmpty())
                     val blocked=listOf("country","region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
-                    if(fk.length<3 || fk.any(Char::isDigit) || fk in blocked || legal(first.text) ||
+                    if(fk.length<3 || fk.any(Char::isDigit) || fk in blocked || fk in knownPlaceKeys || legal(first.text) ||
                         (producerKey.isNotBlank() && (fk in producerKey || producerKey in fk))) return@forEachIndexed
                     val suffix=StringBuilder()
                     for(end in index+1 until minOf(lines.size,index+4)) {
@@ -318,7 +362,35 @@ object GlinerFieldDecisionPolicy {
                         if(suffix.length>current.length) break
                     }
                 }
-                unique(prefixes)?.let { replace("wine_name",it,"two-engine adjacent title completion") }
+                if(current in grapes || current in styles) exactAdjacentPrefixes=prefixes
+                else unique(prefixes)?.let { replace("wine_name",it,"two-engine adjacent title completion") }
+            }
+            // OCR engines may differ by a character or split a line into fragments. A complete
+            // Paddle title prefix and the already-selected exact varietal/style are safe to join
+            // only when both lines have spatially corroborating readings from another engine.
+            val selected=key(updated["wine_name"].orEmpty())
+            if(selected in grapes || selected in styles) {
+                val blocked=listOf("country","region","subregion").map { key(updated[it].orEmpty()) }
+                    .filter { it.isNotBlank() }.toSet()
+                val selectedProducer=key(updated["producer"].orEmpty())
+                val primary=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE }
+                val candidates=exactAdjacentPrefixes.toMutableList()
+                primary.filter { key(it.text)==selected && nearLineConsensus(it,readings) }.forEach { suffix ->
+                    primary.forEach prefixLoop@ { prefix ->
+                        val value=prefix.text.trim(); val k=key(value)
+                        if(k.length<6 || k.any(Char::isDigit) || value.split(Regex("\\s+")).size<2 ||
+                            k in blocked || k in knownPlaceKeys || k in grapes || k in styles || legal(value) ||
+                            (selectedProducer.isNotBlank() && (k in selectedProducer || selectedProducer in k)) ||
+                            !nearLineConsensus(prefix,readings)) return@prefixLoop
+                        val shorter=minOf(prefix.bottom-prefix.top,suffix.bottom-suffix.top)
+                        val overlap=(minOf(prefix.bottom,suffix.bottom)-maxOf(prefix.top,suffix.top)).coerceAtLeast(0f)
+                        val centerGap=(suffix.top+suffix.bottom-prefix.top-prefix.bottom)/2f
+                        if(shorter<=0f || centerGap<0.35f*shorter || overlap>0.85f*shorter ||
+                            !adjacent(prefix,suffix) || horizontalOverlap(prefix,suffix)<0.5f) return@prefixLoop
+                        candidates += "$value ${suffix.text.trim()}"
+                    }
+                }
+                unique(candidates)?.let { replace("wine_name",it,"corroborated adjacent title and varietal") }
             }
         }
         // OCR sometimes concatenates an estate-name line with the following appellation line.
@@ -360,6 +432,26 @@ object GlinerFieldDecisionPolicy {
             valid(second) && second.engine!=first.engine && iou(first,second)>=0.3f && premierClassification(second.text)
         } }
         if(classificationSupported) replace("wine_name","Premier Grand Cru Classé","two-engine standalone classification spelling")
+
+        // After completing an incomplete producer, an independently read standalone style
+        // printed between that continuation and the selected geographic fallback can be the
+        // label's wine name. The bounded ordering prevents an unrelated back-label style from
+        // displacing an existing non-geographic title. Suggestions remain subject to review.
+        val continued=producerContinuation
+        val styleFallback=key(updated["wine_name"].orEmpty())
+        val stylePlaces=listOf("region","subregion").map { key(updated[it].orEmpty()) }.filter { it.isNotBlank() }
+        if(continued!=null && styleFallback.isNotBlank() && styleFallback in stylePlaces) {
+            val standaloneStyles=allStyles.filter { it.length>=6 }.toSet()
+            val places=readings.filter { valid(it) && it.engine==GlinerEngines.PADDLE && key(it.text)==styleFallback }
+            val candidates=lines.filter { line ->
+                val k=key(line.text)
+                k in standaloneStyles && line.top+line.bottom>continued.top+continued.bottom &&
+                    horizontalOverlap(line,continued)>=0.5f && places.any { place ->
+                        line.top+line.bottom<place.top+place.bottom && horizontalOverlap(line,place)>=0.5f
+                    }
+            }.map { it.text.trim() }
+            unique(candidates)?.let { replace("wine_name",it,"two-engine style between completed producer and place") }
+        }
 
         // A blank wine may be an adjacent wine-style term and sweetness descriptor. The complete
         // style must be in the shared vocabulary, and independently supported even if the other
@@ -579,6 +671,10 @@ object GlinerFieldDecisionPolicy {
         val union=(a.right-a.left)*(a.bottom-a.top)+(b.right-b.left)*(b.bottom-b.top)-intersection
         return if(union>0f) intersection/union else 0f
     }
+
+    private fun nearLineConsensus(primary:GlinerEvidenceLine,readings:List<GlinerEvidenceLine>):Boolean =
+        readings.any { other -> valid(other) && other.engine!=primary.engine && iou(primary,other)>=0.3f &&
+            editDistanceAtMostTwo(key(primary.text),key(other.text)) } || fragmentConsensus(primary,readings)
 
     private fun fragmentConsensus(primary:GlinerEvidenceLine,readings:List<GlinerEvidenceLine>):Boolean {
         val target=key(primary.text)

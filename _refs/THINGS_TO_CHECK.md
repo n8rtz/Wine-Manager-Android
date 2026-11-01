@@ -2,6 +2,17 @@
 
 > **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
 
+## Branch `arena/1bab4a14-wine-manager-android` — GLiNER policy v5
+
+*Last run: host-only saved-OCR replay and Kotlin policy tests; Android compilation and device checks pending.*
+
+- [ ] Build/install on the phone and confirm Settings → Scanner testing → GLiNER lane lab opens; the JSON export reports `gliner-field-policy-v5`.
+- [ ] Run the 26-photo Personal audit using the original image bytes. Compare its paired fields and label scores to the saved v4 baseline; inspect Altos de Valdoso, its Crianza, and the grape-blend/title cases, as well as any newly wrong fields. Host replay is not a predicted phone score: OCR, model and expanded index may differ.
+- [ ] Run the combined 193-photo curated set on Lab v7 and GLiNER. Check #191–259 each show one wine bottle and a whole front label, review their candidate reference fields, and verify unresolved fields are unscored. Compare old-photo results with the earlier 124-photo run, particularly #126: `Pays d'Oc` should not be incorrectly prefixed to its grape name. Do not compare raw aggregate totals across the different sets.
+- [ ] The 63 X-Wines additions have 58 unresolved vintages and 28 unresolved subregions; only five are eligible for whole-label scoring until reviewed. Verify field-level denominators and never substitute an expected blank for an unknown vintage.
+- [ ] Confirm matching frozen Prod results for the original photos carry over, and the 69 internet photos receive their own first baseline captures and fresh OCR. In GLiNER, verify the Lab/Prod table shows missing or partial coverage until those captures finish; no fabricated baseline score.
+- [ ] Check cold single-scan wall time including model setup and compare with the previous build; confirm Prod and Lab v7 remain unchanged. Export the diagnostic JSON for comparison.
+
 ### 2f. Lab v6 Item 1a integration (bounded wine-title pairs)
 
 **Phone-verified 2026-10-29 on build `d1e44611074f`: EXACT match with host.** Lab v6 = 66/122 fully correct, 47 one-error, 9 with 2+ errors; wine_name 86 (was 82, exactly the +4 host gains), producer 97, country/region 124, subregion 122, vintage 123. Prod v5.0 unchanged at 62/122 with wine_name 82 (frozen; did not gain the 1a pairs).
