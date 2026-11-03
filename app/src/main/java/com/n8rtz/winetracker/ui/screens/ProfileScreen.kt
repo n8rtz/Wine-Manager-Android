@@ -66,6 +66,7 @@ fun ProfileScreen(
     onSettingsClick: () -> Unit = {},
     onBack: () -> Unit = {},
     onAppInfoClick: () -> Unit = {},
+    onBackupRestoreClick: () -> Unit = {},
     onDatabaseLookupClick: () -> Unit = {},
     onParetoClick: () -> Unit = {},
     onImportComplete: () -> Unit
@@ -251,6 +252,29 @@ fun ProfileScreen(
                         color = bordeauxRed,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                     )
+
+                    // Backup & Restore submenu (automatic local backups and off-device destinations).
+                    ListItem(
+                        headlineContent = { Text("Backup & Restore") },
+                        supportingContent = {
+                            Text("Automatic backups, schedule, copies to keep, destinations, restore")
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = null,
+                                tint = bordeauxRed
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onBackupRestoreClick)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     // Import Data (JSON)
                     ListItem(

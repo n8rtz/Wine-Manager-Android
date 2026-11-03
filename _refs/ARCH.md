@@ -28,7 +28,7 @@ and token-efficient. **Do not create "God Objects" or monolithic files.**
 app/src/main/java/com/n8rtz/winetracker/
 │
 ├── MainActivity.kt                    # Entry point, nav host (routes: cellar, notes, rankings, history, profile, settings,
-│                                      #   app_info, pareto, add_wine, wine/note editors), bottom bar, Add FAB menu
+│                                      #   app_info, pareto, backup_restore, add_wine, wine/note editors), bottom bar, Add FAB menu
 │
 ├── ui/
 │   ├── theme/
@@ -47,7 +47,8 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── RankingsFilterState.kt     # Rankings filter/sort state
 │   │   ├── ParetoScreen.kt            # Price-vs-rating Pareto chart, detail card, Red/White dashboards
 │   │   ├── ProfileScreen.kt           # Profile tab (Price vs. Rating, reviewers, Settings link) and the Settings screen (ProfileSection.SETTINGS: backup/restore, legacy CSV import, image review/storage, app info)
-│   │   └── AppInfoScreen.kt           # App/DB version, build time, commit and branch
+│   │   ├── AppInfoScreen.kt           # App/DB version, build time, commit and branch
+│   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles, schedule, keep-N, back up now, restore picker
 │   └── components/
 │       ├── WineCard.kt                # Colour-coded expandable card (Cellar, Rankings, Notes); Coil image
 │       ├── HistoryWineCard.kt         # Compact history list item
@@ -81,12 +82,19 @@ app/src/main/java/com/n8rtz/winetracker/
 │   ├── repository/
 │   │   ├── WineRepository.kt          # Single source of truth; inventory and consumption-event transactions
 │   │   └── WineImageImportRepository.kt # Reviewed image import, provenance, offline-copy removal
-│   └── importer/
+│   ├── importer/
 │       ├── BackupData.kt              # JSON backup model
 │       ├── JsonExporter.kt            # JSON export (Gson)
 │       ├── DataImporter.kt            # Validated, transactional JSON restore + relational ID mapping (file URI or stream)
 │       ├── DevSeedRestorer.kt         # DEBUG ONLY: restores the bundled debug seed backup into an empty database after a fresh install
 │       └── CsvImportHelper.kt         # Legacy tasting-note and consumption-history CSV importers
+│   └── backup/                        # W-057 Phase 1a: Backup & Restore (automatic local backups, no background work)
+│       ├── BackupSchedule.kt           # Pure Kotlin settings, calendar due rule, snapshot naming, retention, protection
+│       ├── BackupDestination.kt       # Destination contract and snapshot model for later off-device targets
+│       ├── BackupSettingsStore.kt     # SharedPreferences settings and per-destination confirmed status
+│       ├── LocalBackupDestination.kt  # Documents/WineManager/ via MediaStore.Files, read-back verification
+│       ├── BackupCoordinator.kt       # Snapshot -> verify -> prune pipeline; app-open due check only
+│       └── BackupViewModel.kt         # Backup & Restore screen state
 │
 ├── scanner/                           # On-device label scanning (CameraX still photo -> ML Kit OCR)
 │   ├── ScannerManager.kt              # Runs the OCR passes; owns the ML Kit recognizer
@@ -129,7 +137,7 @@ app/src/main/java/com/n8rtz/winetracker/
     └── WineImageImportViewModel.kt    # Reviewed image-import queue, storage budget, offline-copy management
 
 app/src/main/res/xml/                  # backup_rules.xml, data_extraction_rules.xml (exclude files/wine-images/), file_paths.xml
-app/src/test/java/...                  # JVM tests: aromawheel, drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
+app/src/test/java/...                  # JVM tests: aromawheel, backup (schedule/naming/retention), drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
                                        #   image provider, vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
 app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
@@ -171,6 +179,7 @@ docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals an
 docs/lab-v4-accuracy-roadmap.md        # Checkable (- [ ]) root-cause roadmap from the 0c88bda41164 125-label run + shipped Phase 0 d=0 fast-paths
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
+_refs/major-feature-planning/off-device-backup-and-restore.md # W-057 phase decisions: SAF Drive, GitHub, TrueNAS WebDAV, app-open scheduling
 _backup/                               # Personal cellar JSON backups (source of the debug seed), one-off convert_csv.py (its CSV input was removed)
 README.md                              # Project overview, build steps, documentation index
 .agents/instructions.md                # AI-agent operating rules

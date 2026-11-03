@@ -16,6 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/fff57f7b-wine-manager-android` | not opened | current work | W-057 Phase 1a: Backup & Restore submenu, app-open automatic local backups, calendar interval, keep-newest-N, restore picker | [Jump](#branch-arenaffff57f7b-wine-manager-android) |
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
 | `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
@@ -26,6 +27,45 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/fff57f7b-wine-manager-android`
+
+**Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
+
+**What changed:** W-057 Phase 1a — **Profile → Settings → Backup & Restore**, automatic local backups started on app open when the last confirmed copy is older than the chosen interval, calendar-based days/weeks/months frequency, keep-newest-N retention, and a restore picker reusing the existing validated importer. The three off-device toggles are visible but disabled until their uploads are built. No WorkManager, service, alarm, new permission or Room change.
+
+### Backup & Restore — fresh install and first automatic backup
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a fresh disposable install, open the app once without touching Settings. Expect the first automatic local backup on that app open (nothing has ever been confirmed, so it is due). Confirm a `WineTracker_<date>_<time>.json` file appears in **Documents/WineManager/** (Device Explorer or a Files app).
+2. [ ] Open **Profile → Settings → Backup & Restore**. Confirm defaults: **Automatic backup** on, **Every 1 month**, **Local folder** toggle on, **Delete old backups** on, **Keep the newest 5**, and the three off-device toggles visible but disabled with "Planned next pass" descriptions.
+3. [ ] Confirm the status card reads **Only a local copy exists — it does not protect against losing the phone** and the Local row shows a **Last confirmed <date/time>** line. A local copy must never be reported as off-device protection.
+4. [ ] Close and reopen the app immediately. Confirm no second backup file is created (the last confirmed copy is younger than the interval).
+5. [ ] Confirm no new runtime permission prompt appears and that the app manifest is unchanged (no service/receiver entries).
+
+### Frequency, overdue flag and manual backup
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set the number box to `1` and the unit dropdown to **days**. Leave and reopen the screen; confirm the setting persisted. The number box must reject values outside 1–365.
+2. [ ] With the device clock moved forward more than one day (or after waiting a day), reopen the app. Expect an overdue notice ("Your last confirmed backup was older than the selected interval…") and a new local snapshot created on that app open.
+3. [ ] Turn **Automatic backup** off. After the interval passes, expect an **overdue** warning card and **no** automatic upload; **Back up now** then creates a copy and clears the warning.
+4. [ ] Tap **Back up now** twice in a row (allow a second to pass between taps). Confirm each produces a distinct file name (the name includes seconds) and the run message names **Local folder: confirmed**.
+5. [ ] Confirm nothing is ever scheduled while the app is closed: no notification, no service and no new file appears after the app has been in the background across an interval boundary until it is opened again.
+6. [ ] Simulate a failed write (e.g. no free space) and confirm **Needs attention** appears with a reason and no "confirmed" status; a later successful **Back up now** clears it. Old snapshots must survive a failed run.
+
+### Retention and restore round-trip
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set **Keep the newest 2**, tap **Back up now** until at least four app-owned snapshots exist in **Documents/WineManager/**. Confirm exactly the two newest remain and unrelated files (e.g. a `notes.json` you place in the same folder) are untouched.
+2. [ ] Turn **Delete old backups** off, create another backup, and confirm the older snapshots remain.
+3. [ ] From **Restore from backup…**, confirm the dialog lists app-owned snapshots **newest first** and that **No local backups were found** appears only when the folder is empty.
+4. [ ] Pick a snapshot, read **Replace app data?**, tap **Cancel**, and confirm no data changes. Pick it again and tap **Replace and restore**. Expect the same wines/bottles/notes/history counts as the exported snapshot and the snackbar "Backup restored. Existing app data was replaced."
+5. [ ] Restore a deliberately malformed JSON file through **Settings → Import Data (JSON)** and confirm the existing cellar is unchanged and an error is shown (the existing validated importer is reused).
+6. [ ] On a second disposable install, restore a snapshot from **Documents/WineManager/** and compare counts. Note any MediaStore ownership limitation after reinstall and fall back to **Import Data (JSON)** with the system file picker.
+7. [ ] Run `:app:testDebugUnitTest` and confirm `BackupScheduleTest` passes (month ends, leap year, DST, clock rollback, naming round-trip, keep-newest-N, protection).
 
 ## Branch `arena/673cafd4-wine-manager-android`
 

@@ -57,6 +57,7 @@ import coil.request.ImageRequest
 import com.n8rtz.winetracker.ui.components.BottomBarLabelSizing
 import com.n8rtz.winetracker.ui.screens.AddWineScreen
 import com.n8rtz.winetracker.ui.screens.AppInfoScreen
+import com.n8rtz.winetracker.ui.screens.BackupRestoreScreen
 import com.n8rtz.winetracker.ui.screens.DatabaseLookupScreen
 import com.n8rtz.winetracker.ui.screens.HistoryScreen
 import com.n8rtz.winetracker.data.importer.DevSeedRestorer
@@ -74,6 +75,7 @@ import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.RankingsViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import com.n8rtz.winetracker.viewmodels.WineImageImportViewModel
+import com.n8rtz.winetracker.backup.BackupViewModel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -171,6 +173,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val backupViewModel: BackupViewModel by viewModels {
+        object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                Log.d("WineTracker", "MainActivity: Creating BackupViewModel")
+                return BackupViewModel(this@MainActivity.application, database) as T
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("WineTracker", "MainActivity: onCreate started")
@@ -208,10 +220,18 @@ class MainActivity : ComponentActivity() {
                     tastingNoteViewModel,
                     rankingsViewModel,
                     scannerViewModel,
-                    wineImageImportViewModel
+                    wineImageImportViewModel,
+                    backupViewModel
                 )
             }
         }
+    }
+
+    /** Backup due-check runs on app open / return to the foreground only; no background work. */
+    override fun onResume() {
+        super.onResume()
+        Log.d("WineTracker", "MainActivity: onResume — backup due-check")
+        backupViewModel.onAppOpened()
     }
 }
 
@@ -284,7 +304,8 @@ fun MainAppScaffold(
     tastingNoteViewModel: TastingNoteViewModel,
     rankingsViewModel: RankingsViewModel,
     scannerViewModel: ScannerViewModel,
-    wineImageImportViewModel: WineImageImportViewModel
+    wineImageImportViewModel: WineImageImportViewModel,
+    backupViewModel: BackupViewModel
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -398,7 +419,7 @@ fun MainAppScaffold(
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_RANKINGS, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "profile" || currentRoute == "settings" || currentRoute == "app_info" || currentRoute == "pareto",
+                    selected = currentRoute == "profile" || currentRoute == "settings" || currentRoute == "app_info" || currentRoute == "pareto" || currentRoute == "backup_restore",
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
@@ -460,7 +481,17 @@ fun MainAppScaffold(
                     section = ProfileSection.SETTINGS,
                     onBack = { navController.popBackStack() },
                     onAppInfoClick = { navController.navigate("app_info") },
+                    onBackupRestoreClick = { navController.navigate("backup_restore") },
                     onDatabaseLookupClick = { navController.navigate("database_lookup") }
+                ) {
+                    navigateToTab(navController, "cellar")
+                }
+            }
+            composable("backup_restore") {
+                BackupRestoreScreen(
+                    backupViewModel = backupViewModel,
+                    wineViewModel = viewModel,
+                    onBack = { navController.popBackStack() }
                 ) {
                     navigateToTab(navController, "cellar")
                 }
