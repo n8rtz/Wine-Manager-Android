@@ -18,6 +18,12 @@ interface BackupDestination {
 
     fun isConfigured(): Boolean
 
+    /**
+     * Checks the saved setup (credentials, folder grant, reachability) and returns a short status.
+     * Throws with an actionable message when the destination cannot be used.
+     */
+    suspend fun testConnection(): String
+
     /** Writes [snapshot] and returns the name it was stored under. */
     suspend fun upload(snapshot: BackupSnapshot): String
 

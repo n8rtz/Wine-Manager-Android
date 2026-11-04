@@ -18,6 +18,9 @@ object JsonExporter {
                 ratings = db.ratingDao().getAllRatingsOnce(),
                 consumptionEvents = db.consumptionEventDao().getAllEventsOnce(),
                 imageAssets = db.wineImageAssetDao().getAllOnce().map { it.copy(relativePath = null) }
+            ).copy(
+                reviewerNames = BackupPreferences.readReviewers(context),
+                imageStorageBudgetBytes = BackupPreferences.readBudgetBytes(context)
             )
         }
 

@@ -10,12 +10,7 @@ import java.time.format.ResolverStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-/**
- * The destinations the Backup & Restore screen knows about.
- *
- * Only [LOCAL] has an upload implementation in this phase. The other three are declared so the
- * settings model, the stored priority and the screen stay stable when their implementations land.
- */
+/** The four destinations the Backup & Restore screen knows about; all four can upload. */
 enum class BackupDestinationId(
     val storageKey: String,
     val displayName: String,
@@ -23,9 +18,9 @@ enum class BackupDestinationId(
     val isImplemented: Boolean
 ) {
     LOCAL("local", "Local folder", false, true),
-    GOOGLE_DRIVE("google_drive", "Google Drive", true, false),
-    GITHUB("github", "GitHub", true, false),
-    WEBDAV("webdav", "Local server (WebDAV)", true, false);
+    GOOGLE_DRIVE("google_drive", "Google Drive", true, true),
+    GITHUB("github", "GitHub", true, true),
+    WEBDAV("webdav", "Local server (WebDAV)", true, true);
 
     companion object {
         fun fromStorageKey(key: String): BackupDestinationId? =
@@ -78,7 +73,7 @@ data class BackupSettings(
     }
 }
 
-enum class BackupHealth { NEVER_BACKED_UP, OVERDUE, FAILED, CURRENT }
+enum class BackupHealth { NEVER_BACKED_UP, OVERDUE, FAILED, NEEDS_SETUP, CURRENT }
 
 enum class BackupProtection { NONE, LOCAL_ONLY, OFF_DEVICE_ACTIVE }
 
@@ -94,6 +89,12 @@ data class BackupDestinationSnapshot(
  * confirmed backup and calls [isDue] whenever it is opened, then starts a backup on the spot.
  */
 object BackupSchedule {
+
+    /** A destination that is due but has not completed for this many days raises a "no backup" warning. */
+    const val OVERDUE_WARNING_DAYS = 3L
+
+    /** In manual mode, remind when the last confirmed copy is at least this old. */
+    const val MANUAL_REMINDER_DAYS = 30L
 
     /** Calendar-aware deadline: months clamp to month ends, weeks/days follow the device time zone. */
     fun nextDueEpochMillis(lastSuccessEpochMillis: Long, interval: BackupInterval, zone: ZoneId): Long {
@@ -137,16 +138,66 @@ object BackupSchedule {
         return ChronoUnit.DAYS.between(dueDate, today).coerceAtLeast(0L)
     }
 
+    /** Due for at least [thresholdDays] calendar days without a confirmed copy. */
+    fun shouldWarnOverdue(
+        nowEpochMillis: Long,
+        lastSuccessEpochMillis: Long?,
+        interval: BackupInterval,
+        zone: ZoneId,
+        thresholdDays: Long = OVERDUE_WARNING_DAYS
+    ): Boolean {
+        val days = daysOverdue(nowEpochMillis, lastSuccessEpochMillis, interval, zone)
+            ?: return false
+        return days >= thresholdDays
+    }
+
+    /** Manual mode: gentle reminder when nothing has been confirmed for [reminderDays] days. */
+    fun shouldRemindManually(
+        nowEpochMillis: Long,
+        lastSuccessEpochMillis: Long?,
+        automaticEnabled: Boolean,
+        reminderDays: Long = MANUAL_REMINDER_DAYS
+    ): Boolean {
+        if (automaticEnabled) return false
+        val last = lastSuccessEpochMillis ?: return true
+        if (last > nowEpochMillis) return false
+        val elapsedDays = ChronoUnit.DAYS.between(
+            Instant.ofEpochMilli(last),
+            Instant.ofEpochMilli(nowEpochMillis)
+        )
+        return elapsedDays >= reminderDays
+    }
+
     fun health(
         nowEpochMillis: Long,
         snapshot: BackupDestinationSnapshot,
         interval: BackupInterval,
-        zone: ZoneId
+        zone: ZoneId,
+        needsSetup: Boolean = false
     ): BackupHealth = when {
         snapshot.lastError != null -> BackupHealth.FAILED
+        needsSetup -> BackupHealth.NEEDS_SETUP
         snapshot.lastConfirmedEpochMillis == null -> BackupHealth.NEVER_BACKED_UP
         isDue(nowEpochMillis, snapshot.lastConfirmedEpochMillis, interval, zone) -> BackupHealth.OVERDUE
         else -> BackupHealth.CURRENT
+    }
+
+    /**
+     * Moves [id] one slot towards the front (offset -1) or the back (offset +1) of the priority
+     * list. Every destination appears exactly once in the result; out-of-range moves are no-ops.
+     */
+    fun moveInPriority(
+        priority: List<BackupDestinationId>,
+        id: BackupDestinationId,
+        offset: Int
+    ): List<BackupDestinationId> {
+        val current = priority.indexOf(id)
+        if (current < 0 || offset == 0) return priority
+        val target = current + offset
+        if (target !in priority.indices) return priority
+        return priority.toMutableList().also { list ->
+            java.util.Collections.swap(list, current, target)
+        }
     }
 
     /**

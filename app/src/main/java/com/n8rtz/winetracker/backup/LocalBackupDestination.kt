@@ -26,6 +26,8 @@ class LocalBackupDestination(private val context: Context) : BackupDestination {
 
     override fun isConfigured(): Boolean = true
 
+    override suspend fun testConnection(): String = "Local folder ${relativePath()}"
+
     override suspend fun upload(snapshot: BackupSnapshot): String = withContext(Dispatchers.IO) {
         val relativePath = relativePath()
         val values = ContentValues().apply {

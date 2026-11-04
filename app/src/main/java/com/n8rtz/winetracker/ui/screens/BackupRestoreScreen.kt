@@ -1,6 +1,9 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.n8rtz.winetracker.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.n8rtz.winetracker.backup.BackupConfigRules
 import com.n8rtz.winetracker.backup.BackupDestinationId
 import com.n8rtz.winetracker.backup.BackupHealth
 import com.n8rtz.winetracker.backup.BackupInterval
@@ -50,10 +55,42 @@ fun BackupRestoreScreen(
     val bordeauxRed = Color(0xFF722F37)
 
     var showRestoreList by remember { mutableStateOf(false) }
+    var showRestoreSnapshots by remember { mutableStateOf(false) }
     var pendingRestoreName by remember { mutableStateOf<String?>(null) }
+    var pendingRestoreDestination by remember { mutableStateOf<BackupDestinationId?>(null) }
+    var showGitHubSetup by remember { mutableStateOf(false) }
+    var showWebDavSetup by remember { mutableStateOf(false) }
+    var showGitHubWarning by remember { mutableStateOf(false) }
+    var githubRepoDraft by remember { mutableStateOf("") }
+    var githubTokenDraft by remember { mutableStateOf("") }
+    var webDavUrlDraft by remember { mutableStateOf("") }
+    var webDavUserDraft by remember { mutableStateOf("") }
+    var webDavPasswordDraft by remember { mutableStateOf("") }
     var unitMenuExpanded by remember { mutableStateOf(false) }
     var countText by remember(state.settings.interval.count) {
         mutableStateOf(state.settings.interval.count.toString())
+    }
+
+    val driveFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? -> backupViewModel.onDriveFolderPicked(uri) }
+
+    fun openSetup(id: BackupDestinationId) {
+        when (id) {
+            BackupDestinationId.GITHUB -> {
+                githubRepoDraft = ""
+                githubTokenDraft = ""
+                showGitHubSetup = true
+            }
+            BackupDestinationId.WEBDAV -> {
+                webDavUrlDraft = ""
+                webDavUserDraft = ""
+                webDavPasswordDraft = ""
+                showWebDavSetup = true
+            }
+            BackupDestinationId.GOOGLE_DRIVE -> driveFolderLauncher.launch(null)
+            BackupDestinationId.LOCAL -> Unit
+        }
     }
 
     LaunchedEffect(Unit) { backupViewModel.refresh() }
@@ -125,8 +162,7 @@ fun BackupRestoreScreen(
                 }
             }
 
-            val localHealth = state.health[BackupDestinationId.LOCAL]
-            if (localHealth != null && localHealth != BackupHealth.CURRENT) {
+            if (state.warningBanner != null) {
                 Card(
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(
@@ -135,13 +171,12 @@ fun BackupRestoreScreen(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
                     Column(Modifier.padding(16.dp)) {
-                        Text(
-                            state.statusLines[BackupDestinationId.LOCAL] ?: "Backup needs attention",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text("Backup needs attention", style = MaterialTheme.typography.titleSmall)
+                        Spacer(Modifier.height(4.dp))
+                        Text(state.warningBanner!!, style = MaterialTheme.typography.bodyMedium)
                         Text(
                             "A backup starts on the next app open when the last confirmed copy " +
-                                "is older than the interval below.",
+                                "is older than the interval below. Nothing runs in the background.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -186,8 +221,15 @@ fun BackupRestoreScreen(
             }
 
             SectionHeader("Destinations", bordeauxRed)
-            BackupDestinationId.values().forEach { id ->
-                val canToggle = id.isImplemented
+            Text(
+                "All enabled destinations receive every backup. Priority order decides the order " +
+                    "they are attempted and which one Restore offers first; use ↑ / ↓ to change it.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            state.settings.destinationPriority.forEach { id ->
+                val enabled = id in state.settings.enabledDestinations
+                val configured = state.needsSetup[id] != true
                 ListItem(
                     headlineContent = { Text(id.displayName) },
                     supportingContent = {
@@ -197,9 +239,35 @@ fun BackupRestoreScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(
+                                state.setupDetails[id].orEmpty(),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
                                 destinationDescription(id),
                                 style = MaterialTheme.typography.bodySmall
                             )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (id != BackupDestinationId.LOCAL) {
+                                    TextButton(
+                                        onClick = { openSetup(id) },
+                                        enabled = !state.setupInProgress
+                                    ) { Text(if (configured) "Change setup" else "Set up…") }
+                                    if (configured) {
+                                        TextButton(onClick = { backupViewModel.disconnect(id) }) {
+                                            Text("Disconnect")
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.weight(1f))
+                                TextButton(
+                                    onClick = { backupViewModel.movePriority(id, -1) },
+                                    enabled = enabled
+                                ) { Text("↑") }
+                                TextButton(
+                                    onClick = { backupViewModel.movePriority(id, 1) },
+                                    enabled = enabled
+                                ) { Text("↓") }
+                            }
                         }
                     },
                     leadingContent = {
@@ -207,11 +275,14 @@ fun BackupRestoreScreen(
                     },
                     trailingContent = {
                         Switch(
-                            checked = id in state.settings.enabledDestinations,
+                            checked = enabled,
                             onCheckedChange = { checked ->
-                                backupViewModel.setDestinationEnabled(id, checked)
-                            },
-                            enabled = canToggle
+                                if (checked && id == BackupDestinationId.GITHUB && !configured) {
+                                    showGitHubWarning = true
+                                } else {
+                                    backupViewModel.setDestinationEnabled(id, checked)
+                                }
+                            }
                         )
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -360,8 +431,10 @@ fun BackupRestoreScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Text(
-                "Off = manual only. The existing Import Data (JSON) and Export Data rows in " +
-                    "Settings remain available as a manual escape hatch.",
+                "Automatic off = manual only. The existing Import Data (JSON) and Export Data " +
+                    "rows in Settings remain available as an escape hatch. Backups are plain JSON " +
+                    "(not encrypted): only enable destinations you trust. If a backup fails, a " +
+                    "popup appears every time you open the app until it succeeds again.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
@@ -369,32 +442,83 @@ fun BackupRestoreScreen(
     }
 
     if (showRestoreList) {
+        val candidates = state.settings.orderedEnabledDestinations().filter { id ->
+            id == BackupDestinationId.LOCAL || state.needsSetup[id] != true
+        }
         AlertDialog(
             onDismissRequest = { showRestoreList = false },
             title = { Text("Restore from backup") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    if (state.availableBackups.isEmpty()) {
-                        Text(
-                            "No local backups were found in Documents/WineManager/. " +
-                                "Use Import Data (JSON) in Settings to restore a file you pick yourself."
-                        )
+                    Text(
+                        "Choose where the saved copy lives. Priority order is offered first.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (candidates.isEmpty()) {
+                        Text("No backup destination is enabled or configured yet.")
                     } else {
-                        Text("Newest first. Tap a backup to review it.", style = MaterialTheme.typography.bodySmall)
-                        state.availableBackups.forEach { name ->
+                        candidates.forEach { id ->
                             TextButton(
                                 onClick = {
-                                    pendingRestoreName = name
+                                    backupViewModel.loadRestoreBackups(id)
                                     showRestoreList = false
+                                    showRestoreSnapshots = true
                                 },
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text(name) }
+                            ) { Text(id.displayName) }
                         }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showRestoreList = false }) { Text("Cancel") }
+                TextButton(onClick = {
+                    showRestoreList = false
+                    backupViewModel.clearRestoreSelection()
+                }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showRestoreSnapshots) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestoreSnapshots = false
+                backupViewModel.clearRestoreSelection()
+            },
+            title = { Text("Saved backups · ${state.restoreDestination?.displayName.orEmpty()}") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    when {
+                        state.restoreLoading -> Text("Loading backups…")
+                        state.restoreError != null -> Text(state.restoreError!!)
+                        state.restoreBackups.isEmpty() -> Text(
+                            "No app-owned backups were found at this destination. " +
+                                "Use Import Data (JSON) in Settings to pick a file yourself."
+                        )
+                        else -> {
+                            Text(
+                                "Newest first. Tap a backup to review it.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            state.restoreBackups.forEach { name ->
+                                TextButton(
+                                    onClick = {
+                                        pendingRestoreDestination = state.restoreDestination
+                                        pendingRestoreName = name
+                                        showRestoreSnapshots = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text(name) }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRestoreSnapshots = false
+                    backupViewModel.clearRestoreSelection()
+                }) { Text("Cancel") }
             }
         )
     }
@@ -413,11 +537,14 @@ fun BackupRestoreScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val name = pendingRestoreName
+                    val destination = pendingRestoreDestination
+                        ?: BackupDestinationId.LOCAL
                     pendingRestoreName = null
+                    pendingRestoreDestination = null
                     if (name != null) {
                         coroutineScope.launch {
                             try {
-                                val uri = backupViewModel.restoreUri(name)
+                                val uri = backupViewModel.restoreUri(destination, name)
                                 wineViewModel.importJsonFile(uri)
                             } catch (error: Exception) {
                                 snackbarHostState.showSnackbar(
@@ -431,7 +558,153 @@ fun BackupRestoreScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRestoreName = null }) { Text("Cancel") }
+                TextButton(onClick = {
+                    pendingRestoreName = null
+                    pendingRestoreDestination = null
+                }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showGitHubWarning) {
+        AlertDialog(
+            onDismissRequest = { showGitHubWarning = false },
+            title = { Text("Back up to GitHub?") },
+            text = {
+                Text(
+                    "Backups are plain JSON and GitHub keeps old versions in git history: deleting " +
+                        "a backup here cannot fully erase earlier copies. Use a PRIVATE repository " +
+                        "and only enable this if you accept that."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showGitHubWarning = false
+                    backupViewModel.setDestinationEnabled(BackupDestinationId.GITHUB, true)
+                    openSetup(BackupDestinationId.GITHUB)
+                }) { Text("I understand") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGitHubWarning = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showGitHubSetup) {
+        AlertDialog(
+            onDismissRequest = { showGitHubSetup = false },
+            title = { Text("GitHub setup") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Private repository as owner/name and a fine-grained token limited to " +
+                            "that one repository (Contents: read and write). The token is stored " +
+                            "with an Android Keystore key, never in the JSON backup.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = githubRepoDraft,
+                        onValueChange = { githubRepoDraft = it },
+                        label = { Text("owner/repo") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = githubTokenDraft,
+                        onValueChange = { githubTokenDraft = it },
+                        label = { Text("Fine-grained token") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        "The app tests the token and refuses a public repository.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showGitHubSetup = false
+                        backupViewModel.saveGitHubConfig(githubRepoDraft, githubTokenDraft)
+                    },
+                    enabled = !state.setupInProgress
+                ) { Text("Save and test") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGitHubSetup = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showWebDavSetup) {
+        AlertDialog(
+            onDismissRequest = { showWebDavSetup = false },
+            title = { Text("WebDAV setup (TrueNAS SCALE)") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        "The WebDAV share folder, e.g. https://nas/share/WineManager/ or the " +
+                            "Nextcloud app's /remote.php/dav/files/<user>/WineManager/.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = webDavUrlDraft,
+                        onValueChange = { webDavUrlDraft = it },
+                        label = { Text("WebDAV folder URL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = webDavUserDraft,
+                        onValueChange = { webDavUserDraft = it },
+                        label = { Text("Username") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = webDavPasswordDraft,
+                        onValueChange = { webDavPasswordDraft = it },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (BackupConfigRules.isInsecureWebDavUrl(webDavUrlDraft)) {
+                        Text(
+                            "Plain http sends your cellar JSON and password unencrypted across " +
+                                "the network. Use https if the NAS supports it.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWebDavSetup = false
+                        backupViewModel.saveWebDavConfig(
+                            webDavUrlDraft, webDavUserDraft, webDavPasswordDraft
+                        )
+                    },
+                    enabled = !state.setupInProgress
+                ) { Text("Save and test") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWebDavSetup = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (state.setupMessage != null) {
+        AlertDialog(
+            onDismissRequest = { backupViewModel.dismissSetupMessage() },
+            title = { Text("Backup setup") },
+            text = { Text(state.setupMessage!!) },
+            confirmButton = {
+                TextButton(onClick = { backupViewModel.dismissSetupMessage() }) { Text("OK") }
             }
         )
     }
@@ -457,9 +730,9 @@ private fun destinationDescription(id: BackupDestinationId): String = when (id) 
     BackupDestinationId.LOCAL ->
         "Documents/WineManager/ — a local copy, not protection against losing the phone"
     BackupDestinationId.GOOGLE_DRIVE ->
-        "Planned next pass: a Drive folder picked once with the Android folder picker"
+        "A Drive folder picked once with the Android folder picker; the grant is persisted"
     BackupDestinationId.GITHUB ->
-        "Planned next pass: a private repository and a fine-grained token"
+        "Private repository + fine-grained token. Old versions stay in git history and cannot be fully erased"
     BackupDestinationId.WEBDAV ->
-        "Planned next pass: a TrueNAS SCALE WebDAV share or Nextcloud app"
+        "TrueNAS SCALE WebDAV share or the Nextcloud app, reachable from this device"
 }

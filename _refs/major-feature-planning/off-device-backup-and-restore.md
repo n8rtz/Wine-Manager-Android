@@ -4,6 +4,13 @@ Written 2026-11-03 on `arena/fff57f7b-wine-manager-android`. Supersedes only the
 [`BACKLOG.md`](../BACKLOG.md) §2 W-057 that the owner answered again for this branch; the rest of that
 entry (destination semantics, retention, failure handling, restore) still applies.
 
+> **Update 2026-11-04:** the remaining phases shipped on the same branch. The "Owner decisions",
+> "What shipped in this phase", "Deliberate deviations", "Next phases" and "Verification status"
+> sections below describe **Phase 1a only** and are kept as the historical record. See
+> **[Final pass — all remaining W-057 work](#final-pass--all-remaining-w-057-work)** at the end for the
+> current state. In particular: all four destinations now upload, no backup encryption was added, and
+> failure alerts are an app-open popup (no notification or Wi-Fi permissions).
+
 ## Owner decisions for this branch
 
 | Decision | Answer |
@@ -80,3 +87,45 @@ No JDK/Android SDK in the authoring sandbox: `./gradlew :app:assembleDebug` and
 compiler and its rules exercised by a 42-assertion harness; all new Kotlin files type-checked
 against host stubs (this checks signatures and syntax, not Android/Compose runtime behaviour).
 Device checks are listed in this branch's section of `THINGS_TO_CHECK.md`.
+
+## Final pass — all remaining W-057 work
+
+Written 2026-11-04 on the same branch. The owner asked to "implement the rest of the backup and
+restore" and chose **all of W-057** with two explicit changes:
+
+| Decision | Final answer |
+| --- | --- |
+| Scope | Everything still outstanding in W-057: three off-device destinations + restore from any of them, priority reorder UI, failure alerts, Auto Backup Phase 0 rules, Phase 2 preferences in `BackupData`. |
+| Backup encryption | **No encryption.** Backups stay plain JSON. The setup dialogs and the screen state this plainly; GitHub enabling requires accepting the git-history warning. |
+| Alerts | **Popup dialog every time the app opens while a backup is failing**, plus a persistent in-app banner. **No** POST_NOTIFICATIONS, **no** ACCESS_NETWORK_STATE, **no** Wi-Fi-only toggle. |
+| Scheduling | Unchanged: app-open due check only, no background work. |
+
+### Shipped
+
+* **`BackupConfigRules.kt`** — pure validation of `owner/repo` and absolute http(s) WebDAV URLs; JVM tests in `BackupConfigRulesTest.kt`.
+* **`BackupCredentialStore.kt`** — AES-256-GCM with an Android Keystore key protects the GitHub PAT, DAV password and Drive tree URI. Values throw an actionable "reconnect" error if the Keystore key cannot be unlocked after a device transfer; no silent fallback. `backup_credentials.xml` is excluded in both Auto Backup rule files, which now carry explicit include/exclude decisions (no `<include>`, so Android's default set is preserved). No credential appears in `BackupData` or a JSON export.
+* **`GitHubDestination.kt`** — GitHub contents API. `testConnection()` verifies `private == true` and refuses a public repo; upload/verify/list/download/delete; old versions stay in git history, shown as a warning that must be accepted before enabling.
+* **`GoogleDriveDestination.kt`** — SAF `OpenDocumentTree` with `takePersistableUriPermission`; `isConfigured()` checks the persisted grant, so a revoked grant becomes "needs reconnect" instead of a failed upload.
+* **`WebDavDestination.kt`** — TrueNAS SCALE share or Nextcloud: MKCOL, PUT, Depth-1 PROPFIND parsed with `android.util.Xml`, GET, DELETE; plain `http://` is allowed on a LAN but flagged in setup.
+* **`BackupCoordinator.kt` / `BackupViewModel.kt` / `BackupRestoreScreen.kt`** — all four destinations built fresh per run, independent verify/prune, `needsSetup` results kept separate from failed uploads, setup/connection-test dialogs, priority ↑/↓, restore destination chooser + snapshot list, `NEEDS_SETUP` health, 3-day overdue warning and 30-day manual reminder.
+* **`MainActivity.kt`** — app-open **Backup failed** popup at scaffold level (so it shows on any screen) and `refreshAfterRestore()` so the reviewer list and image budget update immediately after a restore.
+* **W-057 Phase 2** — `BackupData` gains optional `reviewerNames` / `imageStorageBudgetBytes`; `JsonExporter` writes them; `DataImporter` validates them **before** the destructive transaction and leaves current values untouched when an older backup omits them. `BackupPreferences.kt` is the canonical key holder; `tools/tests/test_backup_preferences.py` asserts its literals match the two ViewModels.
+
+### Deliberately not done
+
+* Backup-file encryption (passphrase, AES-GCM header, Keystore-wrapped derived key) — declined by owner; the JSON is plaintext, so only trusted destinations should be enabled.
+* System notifications, Wi-Fi-only uploads, `POST_NOTIFICATIONS` / `ACCESS_NETWORK_STATE` permissions, any manifest change.
+* Change detection / "skip unchanged" fingerprinting — the owner's scheduling rule is a simple due check; every due run uploads a new snapshot.
+* WorkManager/AlarmManager/service/background polling, dependency or version changes, Room schema changes.
+* CSV/ZIP export, image-byte bundling, live multi-device sync (declined in `ARCHIVE.md` Part D).
+
+### Verification
+
+No JDK/Android SDK is available in the authoring sandbox, so `./gradlew :app:assembleDebug`,
+`:app:testDebugUnitTest`, JUnit execution and all device/emulator checks remain outstanding. Host
+checks that did run: 25 pure-logic runtime assertions, JVM test-source compilation for
+`BackupScheduleTest` / `BackupConfigRulesTest`, a stub-based signature/syntax compile of every new
+Kotlin file (exit 0), syntax-only parses of the seven modified existing Kotlin files, and
+`python3 tools/tests/test_backup_preferences.py` (5 tests, OK). The full device checklist — including
+real MediaStore/SAF/GitHub/WebDAV behaviour, Keystore survival and Auto Backup payload inspection —
+is in this branch's section of `THINGS_TO_CHECK.md`.

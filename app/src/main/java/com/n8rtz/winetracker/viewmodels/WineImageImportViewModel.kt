@@ -190,6 +190,16 @@ class WineImageImportViewModel(
         }
     }
 
+    /** Re-reads the soft budget after a JSON restore rewrote the preferences (W-057 Phase 2). */
+    fun refreshPreferences() {
+        val budget = preferences.getLong(
+            SOFT_BUDGET_KEY,
+            WineImageFileStore.DEFAULT_SOFT_BUDGET_BYTES
+        ).coerceIn(MIN_BUDGET_BYTES, MAX_BUDGET_BYTES)
+        _storageStatus.value = _storageStatus.value.copy(softBudgetBytes = budget)
+        refreshStorageStatus()
+    }
+
     fun observeOfflineImages() {
         if (offlineImagesObserverJob?.isActive == true) return
         _offlineImageManagement.value = _offlineImageManagement.value.copy(

@@ -312,7 +312,14 @@ fun MainAppScaffold(
     val currentRoute = currentDestination?.route
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val backupState by backupViewModel.state.collectAsState()
     var isMenuExpanded by remember { mutableStateOf(false) }
+
+    /** A JSON restore rewrites SharedPreferences; refresh the in-memory ViewModels immediately. */
+    fun refreshAfterRestore() {
+        tastingNoteViewModel.refreshReviewerNames()
+        wineImageImportViewModel.refreshPreferences()
+    }
     // Used only so "Add Note" from a wine's detail screen can prefill that wine.
     val activeInventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val fabRotation by animateFloatAsState(targetValue = if (isMenuExpanded) 45f else 0f, label = "fabRotation")
@@ -470,6 +477,7 @@ fun MainAppScaffold(
                     onSettingsClick = { navController.navigate("settings") },
                     onParetoClick = { navController.navigate("pareto") }
                 ) {
+                    refreshAfterRestore()
                     navigateToTab(navController, "cellar")
                 }
             }
@@ -484,6 +492,7 @@ fun MainAppScaffold(
                     onBackupRestoreClick = { navController.navigate("backup_restore") },
                     onDatabaseLookupClick = { navController.navigate("database_lookup") }
                 ) {
+                    refreshAfterRestore()
                     navigateToTab(navController, "cellar")
                 }
             }
@@ -493,6 +502,7 @@ fun MainAppScaffold(
                     wineViewModel = viewModel,
                     onBack = { navController.popBackStack() }
                 ) {
+                    refreshAfterRestore()
                     navigateToTab(navController, "cellar")
                 }
             }
@@ -584,6 +594,27 @@ fun MainAppScaffold(
                 }
             }
         }
+    }
+
+    // W-057: in-app popup on EVERY app open while a backup remains failed. No system
+    // notification permission and no background work are involved.
+    if (backupState.failureDialog != null) {
+        AlertDialog(
+            onDismissRequest = { backupViewModel.dismissFailureDialog() },
+            title = { Text("Backup failed") },
+            text = { Text(backupState.failureDialog!!) },
+            confirmButton = {
+                TextButton(onClick = { backupViewModel.dismissFailureDialog() }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    backupViewModel.dismissFailureDialog()
+                    navController.navigate("backup_restore")
+                }) { Text("Open Backup & Restore") }
+            }
+        )
     }
 
     // Dimming Overlay

@@ -48,7 +48,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── ParetoScreen.kt            # Price-vs-rating Pareto chart, detail card, Red/White dashboards
 │   │   ├── ProfileScreen.kt           # Profile tab (Price vs. Rating, reviewers, Settings link) and the Settings screen (ProfileSection.SETTINGS: backup/restore, legacy CSV import, image review/storage, app info)
 │   │   ├── AppInfoScreen.kt           # App/DB version, build time, commit and branch
-│   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles, schedule, keep-N, back up now, restore picker
+│   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles + setup, priority, schedule, keep-N, restore picker, failure popup
 │   └── components/
 │       ├── WineCard.kt                # Colour-coded expandable card (Cellar, Rankings, Notes); Coil image
 │       ├── HistoryWineCard.kt         # Compact history list item
@@ -83,18 +83,26 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── WineRepository.kt          # Single source of truth; inventory and consumption-event transactions
 │   │   └── WineImageImportRepository.kt # Reviewed image import, provenance, offline-copy removal
 │   ├── importer/
-│       ├── BackupData.kt              # JSON backup model
-│       ├── JsonExporter.kt            # JSON export (Gson)
+│       ├── BackupData.kt              # JSON backup model (optional reviewer list + image budget since W-057 Phase 2)
+│       ├── JsonExporter.kt            # JSON export (Gson) incl. optional preferences
 │       ├── DataImporter.kt            # Validated, transactional JSON restore + relational ID mapping (file URI or stream)
 │       ├── DevSeedRestorer.kt         # DEBUG ONLY: restores the bundled debug seed backup into an empty database after a fresh install
-│       └── CsvImportHelper.kt         # Legacy tasting-note and consumption-history CSV importers
-│   └── backup/                        # W-057 Phase 1a: Backup & Restore (automatic local backups, no background work)
-│       ├── BackupSchedule.kt           # Pure Kotlin settings, calendar due rule, snapshot naming, retention, protection
-│       ├── BackupDestination.kt       # Destination contract and snapshot model for later off-device targets
+│       ├── CsvImportHelper.kt         # Legacy tasting-note and consumption-history CSV importers
+│       └── BackupPreferences.kt       # Canonical reviewer/budget preference keys + read/write for backup round-trip
+│   └── backup/                        # W-057: Backup & Restore (app-open scheduled backups, no background work)
+│       ├── BackupSchedule.kt           # Pure Kotlin settings, calendar due rule, priority, naming, retention, warnings
+│       ├── BackupConfigRules.kt       # Pure validation of GitHub owner/repo and WebDAV URL setup values
+│       ├── BackupDestination.kt       # Upload/verify/list/download/delete contract + snapshot model
 │       ├── BackupSettingsStore.kt     # SharedPreferences settings and per-destination confirmed status
+│       ├── BackupCredentialStore.kt   # Keystore-wrapped GitHub/DAV secrets + Drive grant (excluded from Auto Backup)
+│       ├── BackupHttp.kt              # Shared OkHTTP plumbing and actionable HTTP errors
+│       ├── BackupDownloadCache.kt     # Stages a remote snapshot through FileProvider for the validated importer
 │       ├── LocalBackupDestination.kt  # Documents/WineManager/ via MediaStore.Files, read-back verification
-│       ├── BackupCoordinator.kt       # Snapshot -> verify -> prune pipeline; app-open due check only
-│       └── BackupViewModel.kt         # Backup & Restore screen state
+│       ├── GoogleDriveDestination.kt  # SAF tree folder with persisted read/write grant
+│       ├── GitHubDestination.kt       # Private repo + fine-grained PAT, refuses public repos, contents API
+│       ├── WebDavDestination.kt       # TrueNAS SCALE WebDAV share / Nextcloud (PUT, PROPFIND, GET, DELETE)
+│       ├── BackupCoordinator.kt       # Snapshot -> verify -> prune per destination; app-open due check only
+│       └── BackupViewModel.kt         # Backup & Restore state, setup, failure popup, restore picker
 │
 ├── scanner/                           # On-device label scanning (CameraX still photo -> ML Kit OCR)
 │   ├── ScannerManager.kt              # Runs the OCR passes; owns the ML Kit recognizer
@@ -136,8 +144,8 @@ app/src/main/java/com/n8rtz/winetracker/
     ├── ScannerViewModel.kt            # Label scan state (capture, OCR, review)
     └── WineImageImportViewModel.kt    # Reviewed image-import queue, storage budget, offline-copy management
 
-app/src/main/res/xml/                  # backup_rules.xml, data_extraction_rules.xml (exclude files/wine-images/), file_paths.xml
-app/src/test/java/...                  # JVM tests: aromawheel, backup (schedule/naming/retention), drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
+app/src/main/res/xml/                  # backup_rules.xml / data_extraction_rules.xml (W-057 Phase 0: exclude wine-images/ and backup_credentials.xml), file_paths.xml
+app/src/test/java/...                  # JVM tests: aromawheel, backup (schedule/naming/retention/config rules), drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
                                        #   image provider, vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
 app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
@@ -170,6 +178,7 @@ app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt # LAB ONLY, o
 app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt # LAB ONLY: per-label collector of explicit origin anchors, legal classification cues and unambiguous KB producer countries for cross-line disambiguation and PlaceRepair
 tools/tests/test_bottle_filter_and_zoom_crop.py # Host wiring & generality checks for Lab v4 bottle-column/sticker filter and conditional zoom-crop
 tools/tests/test_label_context_and_accent_scrubbing.py # Host checks for TextNorm.scrub, framed appellations, LabelContext, Lab v4 geography backfill and frozen Prod subset scoping
+tools/tests/test_backup_preferences.py  # W-057 host contract: preference key parity, Auto Backup rules, secrets, failure popup wiring
 tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 data/wine-knowledge/                # Authored catalog inputs: editorial-origins.txt, geography/*.txt region/subregion trees, label-terms.csv, typical-grapes.csv, sources/registry.json + pinned CC0 AVA snapshot
 tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> origins.csv (+ path column) and kb/GeneratedWineKnowledge.kt; --check detects stale outputs

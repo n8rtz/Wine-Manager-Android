@@ -1,13 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  W-057 Phase 0: explicit cloud-backup and device-transfer decision for API 31+.
+  Mirrors res/xml/backup_rules.xml: keep Android's default set (Room database + SharedPreferences)
+  and exclude only the app-private image bytes and the Keystore-wrapped credential store.
+  See backup_rules.xml for the rationale; keep the two files in sync.
 -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="wine-images/" />
+        <exclude domain="sharedpref" path="backup_credentials.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="wine-images/" />
+        <exclude domain="sharedpref" path="backup_credentials.xml" />
     </device-transfer>
 </data-extraction-rules>

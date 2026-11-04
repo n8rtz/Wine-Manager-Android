@@ -21,12 +21,22 @@ data class BackupUiState(
     val statuses: Map<BackupDestinationId, BackupDestinationSnapshot> = emptyMap(),
     val health: Map<BackupDestinationId, BackupHealth> = emptyMap(),
     val statusLines: Map<BackupDestinationId, String> = emptyMap(),
-    val availableBackups: List<String> = emptyList(),
+    val setupDetails: Map<BackupDestinationId, String> = emptyMap(),
+    val needsSetup: Map<BackupDestinationId, Boolean> = emptyMap(),
     val protection: BackupProtection = BackupProtection.LOCAL_ONLY,
     val protectionLine: String = "",
+    val warningBanner: String? = null,
+    /** Popup shown on every app open while a backup remains failed. No system notification. */
+    val failureDialog: String? = null,
     val isRunning: Boolean = false,
     val runMessage: String? = null,
     val overdueNotice: String? = null,
+    val setupMessage: String? = null,
+    val setupInProgress: Boolean = false,
+    val restoreDestination: BackupDestinationId? = null,
+    val restoreBackups: List<String> = emptyList(),
+    val restoreLoading: Boolean = false,
+    val restoreError: String? = null,
     val nowEpochMillis: Long = System.currentTimeMillis()
 )
 
@@ -61,7 +71,36 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
             }
             refreshState()
             if (report != null) applyReport(report, overdue = true)
+            showAppOpenFailureDialog()
         }
+    }
+
+    /**
+     * Owner decision: a plain in-app popup on EVERY app open while a destination still has a
+     * recorded failure. No POST_NOTIFICATIONS permission and no background notification channel.
+     */
+    private fun showAppOpenFailureDialog() {
+        val current = _state.value
+        val failures = current.statuses.filter { (id, snapshot) ->
+            id in current.settings.enabledDestinations &&
+                current.needsSetup[id] != true &&
+                snapshot.lastError != null
+        }
+        if (failures.isEmpty()) return
+        val text = "A backup failed and has not succeeded since:\n" +
+            failures.entries.joinToString("\n") { (id, snapshot) ->
+                "• ${id.displayName}: ${snapshot.lastError}"
+            } +
+            "\n\nOpen Backup & Restore to reconnect the destination or run Back up now."
+        _state.value = current.copy(failureDialog = current.failureDialog ?: text)
+    }
+
+    fun dismissFailureDialog() {
+        _state.value = _state.value.copy(failureDialog = null)
+    }
+
+    fun dismissSetupMessage() {
+        _state.value = _state.value.copy(setupMessage = null)
     }
 
     fun backUpNow() {
@@ -104,10 +143,6 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
     }
 
     fun setDestinationEnabled(id: BackupDestinationId, enabled: Boolean) {
-        if (!id.isImplemented) {
-            Log.w("WineTracker", "BackupViewModel: ${id.displayName} has no upload implementation yet")
-            return
-        }
         persist { current ->
             val next = if (enabled) {
                 current.enabledDestinations + id
@@ -118,7 +153,130 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
         }
     }
 
-    suspend fun restoreUri(name: String): Uri = coordinator.restoreUri(name)
+    /** Reorders the priority list; the order decides upload and restore-offer order. */
+    fun movePriority(id: BackupDestinationId, offset: Int) = persist { current ->
+        current.copy(
+            destinationPriority = BackupSchedule.moveInPriority(
+                current.destinationPriority, id, offset
+            )
+        )
+    }
+
+    fun saveGitHubConfig(repository: String, token: String) {
+        if (!BackupConfigRules.isValidGitHubRepository(repository)) {
+            _state.value = _state.value.copy(
+                setupMessage = "Enter the repository as owner/name. A full URL is not accepted."
+            )
+            return
+        }
+        if (token.isBlank()) {
+            _state.value = _state.value.copy(
+                setupMessage = "A fine-grained personal access token with Contents: read/write is required."
+            )
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(setupInProgress = true, setupMessage = null)
+            coordinator.saveGitHubConfig(repository, token)
+            val message = try {
+                "GitHub ready: ${coordinator.testConnection(BackupDestinationId.GITHUB)}"
+            } catch (error: Exception) {
+                coordinator.clearConfig(BackupDestinationId.GITHUB)
+                "GitHub setup failed: ${error.message ?: "unknown error"}"
+            }
+            refreshState()
+            _state.value = _state.value.copy(setupInProgress = false, setupMessage = message)
+        }
+    }
+
+    fun saveWebDavConfig(url: String, username: String, password: String) {
+        if (!BackupConfigRules.isValidWebDavUrl(url)) {
+            _state.value = _state.value.copy(
+                setupMessage = "Enter an absolute http(s) URL with a host and no embedded password."
+            )
+            return
+        }
+        if (username.isBlank() || password.isEmpty()) {
+            _state.value = _state.value.copy(
+                setupMessage = "The share username and password are both required."
+            )
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(setupInProgress = true, setupMessage = null)
+            coordinator.saveWebDavConfig(url, username, password)
+            val message = try {
+                "WebDAV ready: ${coordinator.testConnection(BackupDestinationId.WEBDAV)}"
+            } catch (error: Exception) {
+                coordinator.clearConfig(BackupDestinationId.WEBDAV)
+                "WebDAV setup failed: ${error.message ?: "unknown error"}"
+            }
+            refreshState()
+            _state.value = _state.value.copy(setupInProgress = false, setupMessage = message)
+        }
+    }
+
+    fun onDriveFolderPicked(uri: Uri?) {
+        if (uri == null) {
+            _state.value = _state.value.copy(setupMessage = "No Drive folder was selected.")
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(setupInProgress = true, setupMessage = null)
+            val message = try {
+                GoogleDriveDestination.persistTreeUri(getApplication(), uri)
+                "Drive ready: ${coordinator.testConnection(BackupDestinationId.GOOGLE_DRIVE)}"
+            } catch (error: Exception) {
+                "Drive setup failed: ${error.message ?: "unknown error"}"
+            }
+            refreshState()
+            _state.value = _state.value.copy(setupInProgress = false, setupMessage = message)
+        }
+    }
+
+    fun disconnect(id: BackupDestinationId) {
+        coordinator.clearConfig(id)
+        refresh()
+    }
+
+    fun loadRestoreBackups(id: BackupDestinationId) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                restoreDestination = id,
+                restoreBackups = emptyList(),
+                restoreLoading = true,
+                restoreError = null
+            )
+            var fetched: List<String> = emptyList()
+            var listingError: String? = null
+            try {
+                fetched = coordinator.listBackups(id)
+                listingError = null
+            } catch (error: Exception) {
+                fetched = emptyList()
+                listingError = "Could not list backups at ${id.displayName}: " +
+                    (error.message ?: "unknown error")
+            }
+            refreshState()
+            _state.value = _state.value.copy(
+                restoreLoading = false,
+                restoreBackups = fetched,
+                restoreError = listingError
+            )
+        }
+    }
+
+    fun clearRestoreSelection() {
+        _state.value = _state.value.copy(
+            restoreDestination = null,
+            restoreBackups = emptyList(),
+            restoreLoading = false,
+            restoreError = null
+        )
+    }
+
+    suspend fun restoreUri(id: BackupDestinationId, name: String): Uri =
+        coordinator.restoreUri(id, name)
 
     private fun persist(change: (BackupSettings) -> BackupSettings) {
         val updated = try {
@@ -141,9 +299,20 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
                     if (result.succeeded) "confirmed" else "failed — ${result.message}"
             }
         }
+        // A missing/invalid setup is reported in the result line and the banner, but is not a
+        // failed upload: the owner's popup is for backups that were attempted and failed.
+        val failures = report.results.filter { !it.succeeded && !it.needsSetup }
+        val dialog = if (failures.isEmpty()) {
+            null
+        } else {
+            "The last backup did not complete for:\n" +
+                failures.joinToString("\n") { "• ${it.id.displayName}: ${it.message}" } +
+                "\n\nOpen Backup & Restore to reconnect the destination or run Back up now."
+        }
         _state.value = _state.value.copy(
             runMessage = results,
-            overdueNotice = if (overdue && report.overdueTriggered) OVERDUE_NOTICE else null
+            overdueNotice = if (overdue && report.overdueTriggered) OVERDUE_NOTICE else null,
+            failureDialog = dialog
         )
     }
 
@@ -152,14 +321,23 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
         val zone = ZoneId.systemDefault()
         val settings = coordinator.loadSettings()
         val statuses = BackupDestinationId.values().associateWith { coordinator.statusFor(it) }
-        val health = statuses.mapValues { (_, snapshot) ->
-            BackupSchedule.health(now, snapshot, settings.interval, zone)
+        val setupStates = BackupDestinationId.values().associateWith { coordinator.setupState(it) }
+        val needsSetup = setupStates.mapValues { (id, setup) ->
+            !setup.configured && id in settings.enabledDestinations
+        }
+        val health = statuses.mapValues { (id, snapshot) ->
+            BackupSchedule.health(
+                now, snapshot, settings.interval, zone,
+                needsSetup = needsSetup[id] == true
+            )
         }
         val statusLines = statuses.mapValues { (_, snapshot) ->
             val last = formatTimestamp(snapshot.lastConfirmedEpochMillis)
             when (health.getValue(snapshot.id)) {
                 BackupHealth.FAILED ->
                     "Needs attention: ${snapshot.lastError ?: "last attempt failed"} · last confirmed $last"
+                BackupHealth.NEEDS_SETUP ->
+                    "Needs setup/reconnect · ${setupStates.getValue(snapshot.id).detail}"
                 BackupHealth.NEVER_BACKED_UP -> "No confirmed backup yet"
                 BackupHealth.OVERDUE -> {
                     val days = BackupSchedule.daysOverdue(
@@ -177,20 +355,44 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
             .filter { it.id.isOffDevice && it.lastConfirmedEpochMillis != null }
             .mapTo(mutableSetOf()) { it.id }
         val protection = BackupSchedule.protection(settings, confirmedOffDevice)
-        val backups = try {
-            BackupSnapshots.newestFirst(coordinator.listBackups())
-        } catch (error: Exception) {
-            Log.w("WineTracker", "BackupViewModel: could not list local backups", error)
-            emptyList()
+        val warnings = mutableListOf<String>()
+        settings.orderedEnabledDestinations().forEach { id ->
+            val snapshot = statuses.getValue(id)
+            when {
+                health[id] == BackupHealth.FAILED ->
+                    warnings += "${id.displayName}: ${snapshot.lastError ?: "last backup failed"}"
+                health[id] == BackupHealth.NEEDS_SETUP ->
+                    warnings += "${id.displayName} needs setup or reconnection before backups can run"
+                BackupSchedule.shouldWarnOverdue(
+                    now, snapshot.lastConfirmedEpochMillis, settings.interval, zone
+                ) -> {
+                    val days = BackupSchedule.daysOverdue(
+                        now, snapshot.lastConfirmedEpochMillis, settings.interval, zone
+                    )
+                    warnings += "${id.displayName}: no confirmed backup for $days day(s)"
+                }
+            }
+        }
+        val oldestConfirmed = settings.orderedEnabledDestinations()
+            .mapNotNull { statuses[it]?.lastConfirmedEpochMillis }
+            .minOrNull()
+        if (BackupSchedule.shouldRemindManually(
+                now, oldestConfirmed, settings.automaticEnabled
+            )
+        ) {
+            warnings += "Manual backups are on and the last confirmed copy is over " +
+                "${BackupSchedule.MANUAL_REMINDER_DAYS} days old. Run Back up now."
         }
         _state.value = _state.value.copy(
             settings = settings,
             statuses = statuses,
             health = health,
             statusLines = statusLines,
-            availableBackups = backups,
+            setupDetails = setupStates.mapValues { it.value.detail },
+            needsSetup = needsSetup,
             protection = protection,
             protectionLine = protectionLine(protection),
+            warningBanner = warnings.distinct().takeIf { it.isNotEmpty() }?.joinToString("\n"),
             nowEpochMillis = now
         )
     }

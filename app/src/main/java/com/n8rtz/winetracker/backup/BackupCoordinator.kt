@@ -15,8 +15,12 @@ import java.time.ZoneId
 data class BackupDestinationResult(
     val id: BackupDestinationId,
     val succeeded: Boolean,
-    val message: String
+    val message: String,
+    /** A missing/invalid setup is surfaced for reconnection, not counted as a failed upload. */
+    val needsSetup: Boolean = false
 )
+
+data class BackupSetupState(val configured: Boolean, val detail: String)
 
 data class BackupRunReport(
     val fileName: String,
@@ -38,10 +42,16 @@ class BackupCoordinator(
     private val database: WineDatabase
 ) {
     private val settingsStore = BackupSettingsStore(context)
-    private val destinations: Map<BackupDestinationId, BackupDestination> = mapOf(
-        BackupDestinationId.LOCAL to LocalBackupDestination(context)
-    )
+    private val credentials = BackupCredentialStore(context)
     private val runMutex = Mutex()
+
+    /** Built fresh for each run so a newly saved setup is used without restarting the app. */
+    private fun destinationFor(id: BackupDestinationId): BackupDestination = when (id) {
+        BackupDestinationId.LOCAL -> LocalBackupDestination(context)
+        BackupDestinationId.GOOGLE_DRIVE -> GoogleDriveDestination(context, credentials)
+        BackupDestinationId.GITHUB -> GitHubDestination(context, credentials)
+        BackupDestinationId.WEBDAV -> WebDavDestination(context, credentials)
+    }
 
     fun loadSettings(): BackupSettings = settingsStore.load()
 
@@ -49,14 +59,49 @@ class BackupCoordinator(
 
     fun statusFor(id: BackupDestinationId): BackupDestinationSnapshot = settingsStore.statusFor(id)
 
-    suspend fun listBackups(id: BackupDestinationId = BackupDestinationId.LOCAL): List<String> =
-        withContext(Dispatchers.IO) {
-            destinations[id]?.list() ?: emptyList()
+    /** Does not touch the network: only reads the locally saved setup. */
+    suspend fun setupState(id: BackupDestinationId): BackupSetupState = withContext(Dispatchers.IO) {
+        val result = runCatching { destinationFor(id).isConfigured() }
+        val error = result.exceptionOrNull()
+        when {
+            error != null -> BackupSetupState(false, error.message ?: "Reconnect this destination.")
+            result.getOrNull() == true -> BackupSetupState(true, configurationSummary(id))
+            else -> BackupSetupState(false, "Set up ${id.displayName} before backups can run.")
         }
+    }
 
-    suspend fun restoreUri(name: String): Uri = withContext(Dispatchers.IO) {
-        destinations[BackupDestinationId.LOCAL]?.download(name)
-            ?: throw IOException("No local backup destination is available.")
+    /** Non-secret description of the saved setup, safe to show in the UI. */
+    fun configurationSummary(id: BackupDestinationId): String = when (id) {
+        BackupDestinationId.LOCAL -> "Documents/WineManager/"
+        BackupDestinationId.GOOGLE_DRIVE -> "Drive folder selected"
+        BackupDestinationId.GITHUB -> runCatching { credentials.githubRepository() }
+            .getOrDefault("not configured")
+        BackupDestinationId.WEBDAV -> runCatching { credentials.webDavUrl() }
+            .getOrDefault("not configured")
+    }
+
+    suspend fun testConnection(id: BackupDestinationId): String =
+        destinationFor(id).testConnection()
+
+    fun saveGitHubConfig(repository: String, token: String) =
+        credentials.saveGitHub(repository, token)
+
+    fun saveWebDavConfig(url: String, username: String, password: String) =
+        credentials.saveWebDav(url, username, password)
+
+    fun saveDriveTreeUri(treeUri: Uri) = credentials.saveDriveTreeUri(treeUri.toString())
+
+    fun clearConfig(id: BackupDestinationId) {
+        credentials.clear(id)
+        settingsStore.clearFailure(id)
+    }
+
+    suspend fun listBackups(id: BackupDestinationId): List<String> = withContext(Dispatchers.IO) {
+        BackupSnapshots.newestFirst(destinationFor(id).list())
+    }
+
+    suspend fun restoreUri(id: BackupDestinationId, name: String): Uri = withContext(Dispatchers.IO) {
+        destinationFor(id).download(name)
     }
 
     /** Returns null when automatic backup is off or nothing is due. */
@@ -123,12 +168,24 @@ class BackupCoordinator(
 
         val results = mutableListOf<BackupDestinationResult>()
         targets.forEach { id ->
-            val destination = destinations[id]
-            if (destination == null) {
-                val message = "${id.displayName} has no upload implementation yet."
-                Log.w("WineTracker", "BackupCoordinator: $message")
-                settingsStore.recordFailure(id, message, nowEpochMillis)
-                results += BackupDestinationResult(id, false, message)
+            // A destination with no valid setup is reported for reconnection, but is NOT recorded
+            // as a failed upload: the app-open failure popup is for backup attempts that failed.
+            val destination = try {
+                val candidate = destinationFor(id)
+                if (!candidate.isConfigured()) {
+                    val message = "${id.displayName} needs setup or reconnection: ${setupState(id).detail}"
+                    Log.w("WineTracker", "BackupCoordinator: $message")
+                    settingsStore.clearFailure(id)
+                    results += BackupDestinationResult(id, false, message, needsSetup = true)
+                    return@forEach
+                }
+                candidate
+            } catch (error: Exception) {
+                val message = "${id.displayName} cannot be used: " +
+                    (error.message ?: error.javaClass.simpleName)
+                Log.w("WineTracker", "BackupCoordinator: $message", error)
+                settingsStore.clearFailure(id)
+                results += BackupDestinationResult(id, false, message, needsSetup = true)
                 return@forEach
             }
             var uploadedName: String? = null

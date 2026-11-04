@@ -32,7 +32,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
 
-**What changed:** W-057 Phase 1a — **Profile → Settings → Backup & Restore**, automatic local backups started on app open when the last confirmed copy is older than the chosen interval, calendar-based days/weeks/months frequency, keep-newest-N retention, and a restore picker reusing the existing validated importer. The three off-device toggles are visible but disabled until their uploads are built. No WorkManager, service, alarm, new permission or Room change.
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration.
 
 ### Backup & Restore — fresh install and first automatic backup
 
@@ -66,6 +66,33 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 5. [ ] Restore a deliberately malformed JSON file through **Settings → Import Data (JSON)** and confirm the existing cellar is unchanged and an error is shown (the existing validated importer is reused).
 6. [ ] On a second disposable install, restore a snapshot from **Documents/WineManager/** and compare counts. Note any MediaStore ownership limitation after reinstall and fall back to **Import Data (JSON)** with the system file picker.
 7. [ ] Run `:app:testDebugUnitTest` and confirm `BackupScheduleTest` passes (month ends, leap year, DST, clock rollback, naming round-trip, keep-newest-N, protection).
+
+### Off-device destinations — setup, independent uploads, verification
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Backup & Restore**. Confirm all four toggles work independently, each row shows a status line and a non-secret setup detail, and ↑ / ↓ reorders the priority (order must persist after leaving and reopening).
+2. [ ] **Google Drive → Set up…**: the system folder picker opens; choose a Drive folder. Expect **Drive ready** and a persisted grant. Restart the app and confirm the grant is still valid without re-picking. Revoke it in Android Settings → Apps → special access (or pick another folder) and confirm the row reads **Needs setup/reconnect** and no "failed backup" popup appears.
+3. [ ] **GitHub → Set up…**: enabling it first shows the **Back up to GitHub?** warning naming git history; cancel leaves it off. Accepting opens setup. Enter `owner/repo` and a fine-grained PAT for a **private** repo; expect **GitHub ready: Private owner/repo on branch …**. Verify a `WineManager/` folder appears in the repo with the snapshot as a commit.
+4. [ ] Repeat GitHub setup against a **public** repository and confirm setup fails with an explicit refusal and the credentials are cleared. Confirm a full URL (`https://github.com/…`) is rejected with the owner/name hint.
+5. [ ] **WebDAV → Set up…**: point at a TrueNAS SCALE WebDAV share (or Nextcloud's `/remote.php/dav/files/<user>/WineManager/`). Expect **WebDAV ready**. Enter an `http://` URL and confirm the unencrypted warning appears; enter `ftp://`, a URL with `user:pass@`, or one with spaces and confirm setup is rejected with a visible reason.
+6. [ ] Enable all four destinations and tap **Back up now**. Expect a result line per destination, each with **confirmed**. Deliberately break one (expired PAT / wrong DAV password / revoked Drive grant) and confirm only that one fails, the other three still confirm, and old snapshots at the broken destination survive.
+7. [ ] Confirm every destination verifies by read-back: tamper with one remote copy if possible and expect a checksum/read-back failure with a **Needs attention** reason, not a silent "confirmed".
+8. [ ] Confirm **Back up now** on an unchanged database still creates a new snapshot at each enabled destination (no fingerprint/skip logic was requested), and **keep the newest N** applies independently at GitHub, Drive, WebDAV and Local without touching unrelated files in any folder/repo.
+
+### Failure popup, warnings and restore from off-device
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] With one destination deliberately broken, close and reopen the app. Expect a **Backup failed** popup naming the destination and its reason **every time** the app opens, plus the persistent **Backup needs attention** banner on Backup & Restore. Confirm no system notification appears and Android shows no runtime permission prompt.
+2. [ ] Fix the destination and run **Back up now**. Expect the popup and banner to clear, and `Last confirmed <date/time>` to update. Confirm no popup on the next app open.
+3. [ ] Turn **Automatic backup** off and leave the last confirmed copy older than 30 days (clock change). Expect the manual reminder in the banner, and no automatic upload. After 3+ days overdue in automatic mode, expect **no confirmed backup for N day(s)** in the banner.
+4. [ ] **Restore from backup…** now offers a destination chooser in priority order. Pick GitHub (then Drive, then WebDAV), confirm the list is newest-first and contains only `WineTracker_<date>_<time>.json` names, and cancel once to confirm no data changes.
+5. [ ] Restore a snapshot from each off-device destination on a disposable install and compare wine/bottle/note/rating/event counts with the source. Expect the same **Replace app data?** confirmation and the existing validated importer's error message for a deliberately malformed file.
+6. [ ] Export a JSON backup and inspect it: confirm `reviewerNames` and `imageStorageBudgetBytes` are present, and that no token, password, Drive URI or image bytes appear. Restore a backup produced **before** these fields existed and confirm the current reviewer list and image-storage budget are unchanged (no silent defaults).
+7. [ ] After a restore, change the reviewer list and the offline-image budget in the source install, export, restore, and confirm both appear immediately in **Wine reviewers** and **Offline wine image storage** without restarting the app.
+8. [ ] In Android Backup settings / `adb shell bmgr`, confirm `backup_credentials.xml` and `files/wine-images/` are excluded from cloud backup and device transfer, and that the Room database and the two settings preference files are still included.
+9. [ ] Run `:app:testDebugUnitTest` (`BackupScheduleTest`, `BackupConfigRulesTest`) and `python3 tools/tests/test_backup_preferences.py`.
 
 ## Branch `arena/673cafd4-wine-manager-android`
 
