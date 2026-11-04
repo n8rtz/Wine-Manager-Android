@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-060**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-061**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-028**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -76,10 +76,12 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 5 | W-035 | Country flags on wine cards | S | Open | 0.7.0 |
 | 6 | W-053 | Filter tasting notes by aroma | M | Open | 0.8.0 |
 | 7 | W-052 | Wine Resources page (glossary, grapes, regions, map) | XL (Phase A = L) | Planned (brief only) | 0.9.0+ |
+| 8 | W-060 | Cellar page selector — Bottles / Racks views, rack tiles + text-free plus tile, rack tags | L (Room migration + new subsystem; needs a brief) | Needs decision | TBD (owner to rank) |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
+*(W-060 was logged 2026-11-04 at the owner's request and sits last because no priority was given; the owner should re-rank it.)*
 
-**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased.
+**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060 was logged afterwards with no priority given, so rank 8 is a placeholder until the owner re-ranks it.
 
 ---
 
@@ -298,6 +300,22 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
   * **Phase B — interactive map (XL):** only after Phase A ships. Needs a licensed boundary source and a rendering approach (the app has no map dependency; a custom Canvas like the aroma wheel is one option). The list view stays as the accessible equivalent.
   * **Phase C — link to cellar wines (L, optional):** a grape-variety field on `WineDefinition` (Room migration v22, backup/restore and importer updates, per rules 14–16) would also unlock grape-aware W-050 rules. Do not start without an explicit decision.
 * **Open decisions (from the brief):** initial region/grape coverage; map and educational-data sources and their licences/offline needs; content review/update ownership.
+
+### 8. W-060 — Cellar page selector: Bottles / Racks views with rack tiles and rack tags *(logged 2026-11-04)*
+**Complexity:** L (new Room entities + migration, a new tile screen, and backup/restore + importer updates; needs an L-feature brief) · **Status:** Needs decision
+* **Goal:** Give the Cellar page two views. **Bottles** is the existing list and stays exactly as it is. **Racks** is a tile view, like albums in a photo-gallery app, that separates the cellared wines into groups. Each rack has an associated **tag**, and wines in the cellar can be tagged with it, so racks separate wines earmarked for different purposes — for example wines kept for long-term storage/aging, wines for immediate consumption, and wines without a tasting note/review yet.
+* **UI-Trigger / Location:** A two-option **cellar page selector** on the Cellar tab (above the existing analytics row / search bar in `CellarScreen.kt`), with **Bottles** and the racks option. Selecting the racks option replaces the `LazyColumn` of `WineCard`s with a grid of rack tiles. A **plus tile containing only a `+` glyph and no text** creates a new rack; tapping a rack tile opens that rack's wines. The existing search / filter / sort state stays with the Bottles view. The bottom bar (W-024) and the WineCard layout (W-003) do not change.
+* **Reference styling:** [`_refs/ui/W-060-cellar-view-selector-reference.jpg`](ui/W-060-cellar-view-selector-reference.jpg) (owner-supplied screenshot, 2026-11-04) — a wide rounded cream/beige container holding two segments: the inactive **Bottles** segment with a small list icon in grey, and the active **Rack Map** segment as a white raised rounded card with a grid icon and a bold two-line label. It is an in-page selector, not a new tab or bottom-nav destination. Tiles should read as photo-gallery albums (cover image, rack name, bottle count).
+* **Data shape (proposed, not decided):** a rack entity (id, name, associated tag, optional cover/colour, sort order) plus a many-to-many wine↔tag link so a wine can appear in more than one rack. Racks are **logical purpose groups**, not physical storage locations: do not reuse `WineBottle.location` (free text per bottle) or `WineRepository.locationData` (country/region/subregion) as the rack tag. New entities must be added to `BackupData`, `JsonExporter` and `DataImporter` with ID mapping preserved, and older backups that lack racks must restore without inventing values (rules 14–16, `ARCH.md` §5, `LESSONS_LEARNED.md`).
+* **Open decisions (owner):**
+  1. Label: the request says **Racks**, the reference screenshot says **Rack Map** — pick one.
+  2. Purely tag-based (static membership) or **smart/dynamic** racks? "Without a tasting note/review yet" is a computed condition, not a tag, and "long-term aging" could be rule-based on W-050 drinking windows.
+  3. May one wine/bottle belong to several racks at once, and is the tag applied per bottle or per wine definition/vintage?
+  4. Tile contents (rack name, bottle count, cover/thumbnail), empty-rack state, and whether the plus tile comes first or last.
+  5. Styling conflict: the reference uses a full pill container and beige/black, while W-002 forbids pill shapes (cards/buttons use `RoundedCornerShape(8.dp)`) and W-001 fixes the palette (`#F8F9FA` background, `#FFFFFF` surface, `#722F37` accent). Confirm a deliberate exception or adapt to the archived rules.
+  6. Do rack tiles show only in-cellar bottles, and what happens to a rack when its last bottle is consumed?
+* **Out of scope / do not re-propose:** CSV/ZIP export, bundling label-image bytes into backups, live multi-device sync (`ARCHIVE.md` Part D, W-027R). No WorkManager/background work, no change to the W-057 backup format until this wish is decided.
+* **Done when:** the selector switches between the unchanged Bottles list and a rack tile grid; the text-free plus tile creates/renames/deletes racks; tagging a cellar wine adds it to a rack; racks and tags survive a backup → restore round trip on a clean install; JVM tests for grouping, an instrumented snapshot→restore check, an L-feature brief, `ARCH.md` map update, `CHANGELOG.md`, a `THINGS_TO_CHECK.md` checklist and a device run per `PIPELINE.md`.
 
 ---
 

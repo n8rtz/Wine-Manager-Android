@@ -189,6 +189,7 @@ docs/lab-v4-accuracy-roadmap.md        # Checkable (- [ ]) root-cause roadmap fr
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
 _refs/major-feature-planning/off-device-backup-and-restore.md # W-057 phase decisions: SAF Drive, GitHub, TrueNAS WebDAV, app-open scheduling
+_refs/ui/W-060-cellar-view-selector-reference.jpg # Owner-supplied styling reference for W-060's Bottles/Racks cellar selector
 _backup/                               # Personal cellar JSON backups (source of the debug seed), one-off convert_csv.py (its CSV input was removed)
 README.md                              # Project overview, build steps, documentation index
 .agents/instructions.md                # AI-agent operating rules
