@@ -29,6 +29,8 @@ data class BackupUiState(
     /** Popup shown on every app open while a backup remains failed. No system notification. */
     val failureDialog: String? = null,
     val isRunning: Boolean = false,
+    /** Which destination a manual "Back up now" is currently writing to. */
+    val runningDestination: BackupDestinationId? = null,
     val runMessage: String? = null,
     val overdueNotice: String? = null,
     val setupMessage: String? = null,
@@ -103,21 +105,31 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
         _state.value = _state.value.copy(setupMessage = null)
     }
 
-    fun backUpNow() {
+    /**
+     * Manual backup. [target] null means every enabled destination; a concrete destination backs
+     * up only that one, so the per-destination buttons on the Backup & Restore screen can select a
+     * specific target. The coordinator's Mutex still serialises overlapping requests.
+     */
+    fun backUpNow(target: BackupDestinationId? = null) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isRunning = true, runMessage = "Backing up…")
+            _state.value = _state.value.copy(
+                isRunning = true,
+                runningDestination = target,
+                runMessage = "Backing up…"
+            )
             val report = try {
-                coordinator.backUpNow()
+                coordinator.backUpNow(targets = target?.let(::listOf))
             } catch (error: Exception) {
                 Log.e("WineTracker", "BackupViewModel: manual backup failed", error)
                 _state.value = _state.value.copy(
                     isRunning = false,
+                    runningDestination = null,
                     runMessage = "Backup failed: ${error.message ?: "unknown error"}"
                 )
                 return@launch
             }
             refreshState()
-            _state.value = _state.value.copy(isRunning = false)
+            _state.value = _state.value.copy(isRunning = false, runningDestination = null)
             applyReport(report, overdue = false)
         }
     }

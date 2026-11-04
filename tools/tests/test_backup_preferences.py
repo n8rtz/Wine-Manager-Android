@@ -103,6 +103,29 @@ class BackupPreferenceContractTests(unittest.TestCase):
         self.assertIn("showAppOpenFailureDialog()", viewmodel)
         self.assertIn("POST_NOTIFICATIONS", viewmodel)  # documented as deliberately unused
 
+    def test_per_destination_backup_buttons_and_unsquished_layout(self):
+        """W-057 follow-up: each destination owns its Back up now button; actions are not crammed
+        into a ListItem supportingContent (that rendered 'Disconnect' one letter per line)."""
+        screen = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/BackupRestoreScreen.kt").read_text()
+        viewmodel = (BACKUP / "BackupViewModel.kt").read_text()
+        coordinator = (BACKUP / "BackupCoordinator.kt").read_text()
+        self.assertIn("DestinationCard(", screen)
+        self.assertIn("FlowRow(", screen)
+        self.assertIn("onBackUpNow = { backupViewModel.backUpNow(id) }", screen)
+        self.assertIn("state.runningDestination == id", screen)
+        self.assertNotIn('headlineContent = { Text("Back up now") }', screen)
+        self.assertIn('SectionHeader("Restore", bordeauxRed)', screen)
+        self.assertNotIn('SectionHeader("Actions", bordeauxRed)', screen)
+        # No Column of action buttons inside a ListItem's supportingContent.
+        self.assertNotIn("supportingContent = {\n                        Column {", screen)
+        self.assertIn("fun backUpNow(target: BackupDestinationId? = null)", viewmodel)
+        self.assertIn("coordinator.backUpNow(targets = target?.let(::listOf))", viewmodel)
+        self.assertIn("val runningDestination: BackupDestinationId? = null", viewmodel)
+        self.assertIn("targets: List<BackupDestinationId>? = null", coordinator)
+        main = MAIN.read_text()
+        self.assertIn("val showAddMenu = currentRoute != \"backup_restore\"", main)
+        self.assertIn('if (currentRoute == "backup_restore") isMenuExpanded = false', main)
+
     def test_all_four_destinations_are_wired(self):
         schedule = (BACKUP / "BackupSchedule.kt").read_text()
         implemented = re.findall(

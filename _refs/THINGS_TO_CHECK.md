@@ -32,7 +32,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
 
-**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration.
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: each destination is a full-width card with its own **Back up now** button (single-target manual run), wrapping actions, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration.
 
 ### Backup & Restore — fresh install and first automatic backup
 
@@ -71,14 +71,24 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
-1. [ ] Open **Backup & Restore**. Confirm all four toggles work independently, each row shows a status line and a non-secret setup detail, and ↑ / ↓ reorders the priority (order must persist after leaving and reopening).
+1. [ ] Open **Backup & Restore**. Confirm all four destinations are readable full-width cards, their toggles work independently, each shows a status line and a non-secret setup detail, and **Move up / Move down** reorder the priority (order must persist after leaving and reopening). Confirm **Disconnect**, **Change setup** and **Back up now** are rendered as whole horizontal buttons — no letter-per-line text — and that no `+` FAB overlaps the page.
 2. [ ] **Google Drive → Set up…**: the system folder picker opens; choose a Drive folder. Expect **Drive ready** and a persisted grant. Restart the app and confirm the grant is still valid without re-picking. Revoke it in Android Settings → Apps → special access (or pick another folder) and confirm the row reads **Needs setup/reconnect** and no "failed backup" popup appears.
 3. [ ] **GitHub → Set up…**: enabling it first shows the **Back up to GitHub?** warning naming git history; cancel leaves it off. Accepting opens setup. Enter `owner/repo` and a fine-grained PAT for a **private** repo; expect **GitHub ready: Private owner/repo on branch …**. Verify a `WineManager/` folder appears in the repo with the snapshot as a commit.
 4. [ ] Repeat GitHub setup against a **public** repository and confirm setup fails with an explicit refusal and the credentials are cleared. Confirm a full URL (`https://github.com/…`) is rejected with the owner/name hint.
 5. [ ] **WebDAV → Set up…**: point at a TrueNAS SCALE WebDAV share (or Nextcloud's `/remote.php/dav/files/<user>/WineManager/`). Expect **WebDAV ready**. Enter an `http://` URL and confirm the unencrypted warning appears; enter `ftp://`, a URL with `user:pass@`, or one with spaces and confirm setup is rejected with a visible reason.
-6. [ ] Enable all four destinations and tap **Back up now**. Expect a result line per destination, each with **confirmed**. Deliberately break one (expired PAT / wrong DAV password / revoked Drive grant) and confirm only that one fails, the other three still confirm, and old snapshots at the broken destination survive.
+6. [ ] Enable all four destinations and tap **Back up now** on each card in turn. Expect one result line per tap, naming only that destination, with **confirmed**. Deliberately break one (expired PAT / wrong DAV password / revoked Drive grant) and confirm only that card's run fails, the other three still confirm when pressed, and old snapshots at the broken destination survive.
 7. [ ] Confirm every destination verifies by read-back: tamper with one remote copy if possible and expect a checksum/read-back failure with a **Needs attention** reason, not a silent "confirmed".
-8. [ ] Confirm **Back up now** on an unchanged database still creates a new snapshot at each enabled destination (no fingerprint/skip logic was requested), and **keep the newest N** applies independently at GitHub, Drive, WebDAV and Local without touching unrelated files in any folder/repo.
+8. [ ] Confirm **Back up now** on an unchanged database still creates a new snapshot (no fingerprint/skip logic was requested), and **keep the newest N** applies independently at GitHub, Drive, WebDAV and Local without touching unrelated files in any folder/repo.
+
+### Per-destination "Back up now" and page layout (W-057 follow-up)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a phone-width screen, confirm every destination card shows **Back up now**, **Backing up…** while its own run is in flight, **Move up / Move down**, and (except Local) **Change setup** / **Disconnect** on readable wrapped rows. Rotate the device and try the largest system font size: no letter-per-line or clipped button labels.
+2. [ ] Confirm the standalone **Actions → Back up now** row is gone, the section is titled **Restore**, and no `+` FAB or Add submenu appears anywhere on this route. Navigate away and back: the FAB returns on other screens.
+3. [ ] With **GitHub** toggled off but fully configured, tap its **Back up now**. Expect a new snapshot only at GitHub and `Last confirmed` to update. Confirm Local, Drive and WebDAV did **not** receive a snapshot and that their status lines are unchanged. (Single-target manual runs intentionally ignore the toggle; automatic runs still obey it.)
+4. [ ] Tap **Back up now** on Local, then immediately on WebDAV before the first finishes. Expect the second tap to be disabled or queued (the coordinator Mutex serialises runs), no duplicate snapshots, and each card's **Backing up…** to clear when its own run ends.
+5. [ ] Tap **Back up now** on a destination with **Needs setup**. Expect a visible failure or setup-needed result, not a crash, and no snapshot written anywhere else. Check the failure popup/banner behaviour still matches the section below.
 
 ### Failure popup, warnings and restore from off-device
 

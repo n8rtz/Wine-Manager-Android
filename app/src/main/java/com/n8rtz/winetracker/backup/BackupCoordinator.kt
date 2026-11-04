@@ -127,21 +127,33 @@ class BackupCoordinator(
             runBackupLocked(settings, due, nowEpochMillis, zone, overdueTriggered = true)
         }
 
-    /** Manual "Back up now": every enabled implemented destination, regardless of the interval. */
-    suspend fun backUpNow(nowEpochMillis: Long = System.currentTimeMillis()): BackupRunReport =
+    /**
+     * Manual "Back up now". When [targets] is null, every enabled destination is used (the old
+     * all-at-once behaviour); a single-element list backs up just that destination, whether or not
+     * the toggle is enabled, so the user can pick a specific target from the Backup & Restore screen.
+     */
+    suspend fun backUpNow(
+        nowEpochMillis: Long = System.currentTimeMillis(),
+        targets: List<BackupDestinationId>? = null
+    ): BackupRunReport =
         runMutex.withLock {
             val settings = settingsStore.load()
             val zone = ZoneId.systemDefault()
-            val targets = settings.orderedEnabledDestinations().filter { it.isImplemented }
-            if (targets.isEmpty()) {
-                Log.w("WineTracker", "BackupCoordinator: no implemented destination is enabled")
+            val selected = targets?.takeIf { it.isNotEmpty() }
+                ?: settings.orderedEnabledDestinations().filter { it.isImplemented }
+            if (selected.isEmpty()) {
+                Log.w("WineTracker", "BackupCoordinator: no backup destination selected")
                 return@withLock BackupRunReport(
                     BackupSnapshots.fileName(nowEpochMillis, zone),
                     emptyList(),
                     overdueTriggered = false
                 )
             }
-            runBackupLocked(settings, targets, nowEpochMillis, zone, overdueTriggered = false)
+            Log.d(
+                "WineTracker",
+                "BackupCoordinator: manual backup for ${selected.joinToString { it.storageKey }}"
+            )
+            runBackupLocked(settings, selected, nowEpochMillis, zone, overdueTriggered = false)
         }
 
     private suspend fun runBackupLocked(

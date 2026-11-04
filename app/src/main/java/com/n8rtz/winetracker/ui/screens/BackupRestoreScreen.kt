@@ -1,4 +1,7 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class
+)
 package com.n8rtz.winetracker.ui.screens
 
 import android.net.Uri
@@ -32,6 +35,7 @@ import com.n8rtz.winetracker.backup.BackupHealth
 import com.n8rtz.winetracker.backup.BackupInterval
 import com.n8rtz.winetracker.backup.BackupIntervalUnit
 import com.n8rtz.winetracker.backup.BackupSettings
+import com.n8rtz.winetracker.backup.BackupUiState
 import com.n8rtz.winetracker.backup.BackupViewModel
 import com.n8rtz.winetracker.viewmodels.RestoreImportState
 import com.n8rtz.winetracker.viewmodels.WineViewModel
@@ -222,72 +226,34 @@ fun BackupRestoreScreen(
 
             SectionHeader("Destinations", bordeauxRed)
             Text(
-                "All enabled destinations receive every backup. Priority order decides the order " +
-                    "they are attempted and which one Restore offers first; use ↑ / ↓ to change it.",
+                "Automatic backups go to every enabled destination. Use Back up now on a " +
+                    "destination to send a snapshot to just that one. Priority order decides the " +
+                    "attempt order and which destination Restore offers first.",
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
             state.settings.destinationPriority.forEach { id ->
                 val enabled = id in state.settings.enabledDestinations
                 val configured = state.needsSetup[id] != true
-                ListItem(
-                    headlineContent = { Text(id.displayName) },
-                    supportingContent = {
-                        Column {
-                            Text(
-                                state.statusLines[id] ?: "No status yet",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Text(
-                                state.setupDetails[id].orEmpty(),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Text(
-                                destinationDescription(id),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (id != BackupDestinationId.LOCAL) {
-                                    TextButton(
-                                        onClick = { openSetup(id) },
-                                        enabled = !state.setupInProgress
-                                    ) { Text(if (configured) "Change setup" else "Set up…") }
-                                    if (configured) {
-                                        TextButton(onClick = { backupViewModel.disconnect(id) }) {
-                                            Text("Disconnect")
-                                        }
-                                    }
-                                }
-                                Spacer(Modifier.weight(1f))
-                                TextButton(
-                                    onClick = { backupViewModel.movePriority(id, -1) },
-                                    enabled = enabled
-                                ) { Text("↑") }
-                                TextButton(
-                                    onClick = { backupViewModel.movePriority(id, 1) },
-                                    enabled = enabled
-                                ) { Text("↓") }
-                            }
+                DestinationCard(
+                    id = id,
+                    state = state,
+                    enabled = enabled,
+                    configured = configured,
+                    bordeauxRed = bordeauxRed,
+                    onToggle = { checked ->
+                        if (checked && id == BackupDestinationId.GITHUB && !configured) {
+                            showGitHubWarning = true
+                        } else {
+                            backupViewModel.setDestinationEnabled(id, checked)
                         }
                     },
-                    leadingContent = {
-                        Icon(Icons.Filled.Settings, contentDescription = null, tint = bordeauxRed)
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = enabled,
-                            onCheckedChange = { checked ->
-                                if (checked && id == BackupDestinationId.GITHUB && !configured) {
-                                    showGitHubWarning = true
-                                } else {
-                                    backupViewModel.setDestinationEnabled(id, checked)
-                                }
-                            }
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                    onBackUpNow = { backupViewModel.backUpNow(id) },
+                    onSetUp = { openSetup(id) },
+                    onDisconnect = { backupViewModel.disconnect(id) },
+                    onMoveUp = { backupViewModel.movePriority(id, -1) },
+                    onMoveDown = { backupViewModel.movePriority(id, 1) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
             SectionHeader("Schedule", bordeauxRed)
@@ -356,7 +322,7 @@ fun BackupRestoreScreen(
             }
             Text(
                 "A new backup starts on the next app open once the last confirmed copy is " +
-                    "older than this interval. Back up now always runs immediately.",
+                    "older than this interval. A destination's Back up now button runs immediately.",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -401,27 +367,11 @@ fun BackupRestoreScreen(
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SectionHeader("Actions", bordeauxRed)
-            ListItem(
-                headlineContent = { Text("Back up now") },
-                supportingContent = {
-                    Text(
-                        if (state.isRunning) "Backing up…" else
-                            "Sends a new snapshot to every enabled destination."
-                    )
-                },
-                leadingContent = {
-                    Icon(Icons.Filled.Download, contentDescription = null, tint = bordeauxRed)
-                },
-                modifier = Modifier.fillMaxWidth().clickable(enabled = !state.isRunning) {
-                    backupViewModel.backUpNow()
-                }
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            SectionHeader("Restore", bordeauxRed)
             ListItem(
                 headlineContent = { Text("Restore from backup…") },
                 supportingContent = {
-                    Text("Choose a saved local copy; the app asks before replacing any data.")
+                    Text("Choose a destination and a saved copy; the app asks before replacing any data.")
                 },
                 leadingContent = {
                     Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
@@ -710,6 +660,115 @@ fun BackupRestoreScreen(
     }
 }
 
+/**
+ * One destination as a full-width card. The actions live in a FlowRow *outside* ListItem's
+ * supportingContent: nesting a Row of buttons there measured them against the trailing Switch,
+ * which squeezed "Disconnect" into a one-letter-per-line column. FlowRow wraps whole buttons onto
+ * the next line instead of shrinking them.
+ */
+@Composable
+private fun DestinationCard(
+    id: BackupDestinationId,
+    state: BackupUiState,
+    enabled: Boolean,
+    configured: Boolean,
+    bordeauxRed: Color,
+    onToggle: (Boolean) -> Unit,
+    onBackUpNow: () -> Unit,
+    onSetUp: () -> Unit,
+    onDisconnect: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Settings, contentDescription = null, tint = bordeauxRed)
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    id.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(checked = enabled, onCheckedChange = onToggle)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                state.statusLines[id] ?: "No status yet",
+                style = MaterialTheme.typography.bodySmall
+            )
+            val detail = state.setupDetails[id].orEmpty()
+            if (detail.isNotBlank() && id != BackupDestinationId.LOCAL) {
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                destinationDescription(id),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                TextButton(
+                    onClick = onBackUpNow,
+                    enabled = !state.isRunning,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Download,
+                        contentDescription = null,
+                        tint = bordeauxRed,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        if (state.runningDestination == id) "Backing up…" else "Back up now",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                if (id != BackupDestinationId.LOCAL) {
+                    TextButton(
+                        onClick = onSetUp,
+                        enabled = !state.setupInProgress,
+                        shape = RoundedCornerShape(8.dp)
+                    ) { Text(if (configured) "Change setup" else "Set up…") }
+                    if (configured) {
+                        TextButton(
+                            onClick = onDisconnect,
+                            shape = RoundedCornerShape(8.dp)
+                        ) { Text("Disconnect") }
+                    }
+                }
+                TextButton(
+                    onClick = onMoveUp,
+                    enabled = enabled,
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Move up ↑") }
+                TextButton(
+                    onClick = onMoveDown,
+                    enabled = enabled,
+                    shape = RoundedCornerShape(8.dp)
+                ) { Text("Move down ↓") }
+            }
+        }
+    }
+}
+
 @Composable
 private fun SectionHeader(text: String, color: Color) {
     Text(
@@ -728,11 +787,11 @@ private fun unitLabel(unit: BackupIntervalUnit): String = when (unit) {
 
 private fun destinationDescription(id: BackupDestinationId): String = when (id) {
     BackupDestinationId.LOCAL ->
-        "Documents/WineManager/ — a local copy, not protection against losing the phone"
+        "Documents/WineManager/ · a local copy, not off-device protection"
     BackupDestinationId.GOOGLE_DRIVE ->
-        "A Drive folder picked once with the Android folder picker; the grant is persisted"
+        "Drive folder · persisted Android folder-picker grant"
     BackupDestinationId.GITHUB ->
-        "Private repository + fine-grained token. Old versions stay in git history and cannot be fully erased"
+        "Private repo · old versions stay in git history and cannot be fully erased"
     BackupDestinationId.WEBDAV ->
-        "TrueNAS SCALE WebDAV share or the Nextcloud app, reachable from this device"
+        "TrueNAS SCALE WebDAV share or Nextcloud"
 }

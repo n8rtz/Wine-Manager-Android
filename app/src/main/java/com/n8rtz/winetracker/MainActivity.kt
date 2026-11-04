@@ -310,10 +310,16 @@ fun MainAppScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
+    // The Add FAB and its submenu overlap the Backup & Restore form; keep them off that route.
+    val showAddMenu = currentRoute != "backup_restore"
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val backupState by backupViewModel.state.collectAsState()
     var isMenuExpanded by remember { mutableStateOf(false) }
+    // Don't let an open Add submenu reappear when the user returns from Backup & Restore.
+    LaunchedEffect(currentRoute) {
+        if (currentRoute == "backup_restore") isMenuExpanded = false
+    }
 
     /** A JSON restore rewrites SharedPreferences; refresh the in-memory ViewModels immediately. */
     fun refreshAfterRestore() {
@@ -328,31 +334,33 @@ fun MainAppScaffold(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
-                Surface(
-                    onClick = {
-                        if (currentRoute == "notes") {
-                            // On Tasting Notes the only sensible add is a note: skip the submenu.
-                            Log.d("WineTracker", "FAB: Tasting Notes, opening Add Note directly")
-                            isMenuExpanded = false
-                            navController.navigate("note_editor/create")
-                        } else {
-                            isMenuExpanded = !isMenuExpanded
+                if (showAddMenu) {
+                    Surface(
+                        onClick = {
+                            if (currentRoute == "notes") {
+                                // On Tasting Notes the only sensible add is a note: skip the submenu.
+                                Log.d("WineTracker", "FAB: Tasting Notes, opening Add Note directly")
+                                isMenuExpanded = false
+                                navController.navigate("note_editor/create")
+                            } else {
+                                isMenuExpanded = !isMenuExpanded
+                            }
+                        },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
+                        modifier = Modifier.size(56.dp),
+                        shadowElevation = 4.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = if (isMenuExpanded) "Close Menu" else "Add",
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .graphicsLayer { rotationZ = fabRotation }
+                            )
                         }
-                    },
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                    modifier = Modifier.size(56.dp),
-                    shadowElevation = 4.dp
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = if (isMenuExpanded) "Close Menu" else "Add",
-                            modifier = Modifier
-                                .size(32.dp)
-                                .graphicsLayer { rotationZ = fabRotation }
-                        )
                     }
                 }
             },
@@ -619,7 +627,7 @@ fun MainAppScaffold(
 
     // Dimming Overlay
     AnimatedVisibility(
-        visible = isMenuExpanded,
+        visible = isMenuExpanded && showAddMenu,
         enter = fadeIn(),
         exit = fadeOut()
     ) {
@@ -643,7 +651,7 @@ fun MainAppScaffold(
 
     // Popup Menu
     AnimatedVisibility(
-        visible = isMenuExpanded,
+        visible = isMenuExpanded && showAddMenu,
         enter = slideInVertically(initialOffsetY = { 40 }) + fadeIn() + expandVertically(),
         exit = slideOutVertically(targetOffsetY = { 40 }) + fadeOut() + shrinkVertically(),
         modifier = Modifier.fillMaxSize()
