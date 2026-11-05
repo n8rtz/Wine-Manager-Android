@@ -18,7 +18,10 @@ LIST_SCREENS = {
 }
 
 SEARCH_HINT_FILES = (
-    # Cellar, Rankings and Tasting Notes now use the shared floating search control.
+    # The three list tabs keep their top search row and also use the pop-up control.
+    UI / "screens/CellarScreen.kt",
+    UI / "screens/RankingsScreen.kt",
+    UI / "screens/TastingNotesScreen.kt",
     UI / "components/FloatingSearchFilterControls.kt",
     UI / "screens/TastingNoteEditorScreen.kt",
     UI / "screens/DatabaseLookupScreen.kt",

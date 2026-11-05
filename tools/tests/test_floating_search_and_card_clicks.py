@@ -72,14 +72,29 @@ class FloatingControlsTests(unittest.TestCase):
             self.assertIn("onOpenSearch = { searchExpanded = true }", source, name)
             self.assertIn("onOpenFilters = { showFilterSheet = true }", source, name)
             self.assertIn("Modifier.align(Alignment.TopCenter)", source, name)
-            self.assertIn("top = 60.dp", source, name)
+            self.assertIn("if (showCompactControls || searchExpanded)", source, name)
+            self.assertIn("contentPadding = PaddingValues(16.dp)", source, name)
+            self.assertNotIn("top = 60.dp", source, name)
 
-    def test_no_fixed_full_width_search_row_remains_on_the_list_screens(self):
+    def test_original_top_search_row_is_restored_as_scrolling_content(self):
         for name in LIST_SCREENS:
             source = screen_body(name)
-            self.assertNotIn('Text("Search", maxLines = 1)', source, name)
-            self.assertNotIn("OutlinedTextField(", source, name)
-            self.assertNotIn("Icons.Default.Tune", source, name)
+            self.assertIn(f'item(key = "{name}_search")', source, name)
+            self.assertIn('placeholder = { Text("Search", maxLines = 1) }', source, name)
+            self.assertIn("OutlinedTextField(", source, name)
+            self.assertIn("Icons.Default.Tune", source, name)
+            self.assertIn("Icons.Default.Search", source, name)
+            # The row is an item inside the scrolling list, not a fixed Column above it.
+            self.assertLess(source.index("LazyColumn("), source.index(f'item(key = "{name}_search")'), name)
+
+    def test_compact_controls_appear_only_after_the_search_row_scrolls_away(self):
+        for name in LIST_SCREENS:
+            source = screen_body(name)
+            self.assertIn("derivedStateOf {", source, name)
+            self.assertIn("firstVisibleItemIndex > 1", source, name)
+            self.assertIn("if (showCompactControls || searchExpanded)", source, name)
+            self.assertIn("LaunchedEffect(showCompactControls)", source, name)
+            self.assertNotIn("scrollToItem(0)\n        }\n    }\n\n    if (showCompactControls", source, name)
 
 
 class ScrollPositionTests(unittest.TestCase):
@@ -98,7 +113,8 @@ class ScrollPositionTests(unittest.TestCase):
     def test_opening_search_does_not_change_the_list_state(self):
         for name, path in LIST_SCREENS.items():
             source = path.read_text()
-            self.assertNotIn("LaunchedEffect(searchExpanded)", source, name)
+            self.assertNotIn("LaunchedEffect(searchQuery)", source, name)
+            self.assertNotIn("LaunchedEffect(filterState)", source, name)
             self.assertIn("onOpenSearch = { searchExpanded = true }", source, name)
             self.assertEqual(source.count("scrollToItem(0)"), 1, name)
 

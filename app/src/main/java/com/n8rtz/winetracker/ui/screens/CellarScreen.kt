@@ -47,6 +47,15 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     // screen where it was scrolled to instead of at the top.
     val cellarListState = remember { LazyListState() }
     LaunchedEffect(Unit) { cellarListState.scrollToItem(0) }
+    // The restored top search row scrolls away with the list; the compact controls appear once
+    // both the header and the search row are out of view, and stay visible while scrolling.
+    val showCompactControls by remember {
+        derivedStateOf { cellarListState.firstVisibleItemIndex > 1 }
+    }
+    // Back at the top the full search row is visible again, so the pop-up is no longer needed.
+    LaunchedEffect(showCompactControls) {
+        if (!showCompactControls) searchExpanded = false
+    }
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
@@ -185,7 +194,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         LazyColumn(
             state = cellarListState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 60.dp, end = 16.dp, bottom = 16.dp),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item(key = "cellar_header") {
@@ -201,6 +210,33 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+            item(key = "cellar_search") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search", maxLines = 1) },
+                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { showFilterSheet = true },
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            "Filter & Sort",
+                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -277,16 +313,18 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             }
         }
 
-        FloatingSearchFilterControls(
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            searchExpanded = searchExpanded,
-            onOpenSearch = { searchExpanded = true },
-            onCloseSearch = { searchExpanded = false },
-            onOpenFilters = { showFilterSheet = true },
-            filterActive = isFilterActive,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
+        if (showCompactControls || searchExpanded) {
+            FloatingSearchFilterControls(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                searchExpanded = searchExpanded,
+                onOpenSearch = { searchExpanded = true },
+                onCloseSearch = { searchExpanded = false },
+                onOpenFilters = { showFilterSheet = true },
+                filterActive = isFilterActive,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
     }
 
     if (showStatsDialog) {

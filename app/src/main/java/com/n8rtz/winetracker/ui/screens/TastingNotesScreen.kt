@@ -108,6 +108,15 @@ fun TastingNotesScreen(
     // screen where it was scrolled to instead of at the top.
     val notesListState = remember { LazyListState() }
     LaunchedEffect(Unit) { notesListState.scrollToItem(0) }
+    // The restored top search row scrolls away with the list; the compact controls appear once
+    // both the title and the search row are out of view, and stay visible while scrolling.
+    val showCompactControls by remember {
+        derivedStateOf { notesListState.firstVisibleItemIndex > 1 }
+    }
+    // Back at the top the full search row is visible again, so the pop-up is no longer needed.
+    LaunchedEffect(showCompactControls) {
+        if (!showCompactControls) searchExpanded = false
+    }
 
     // Opening search or changing a filter keeps the list exactly where it is.
 
@@ -122,7 +131,7 @@ fun TastingNotesScreen(
         LazyColumn(
             state = notesListState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 60.dp, end = 16.dp, bottom = 16.dp),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item(key = "notes_header") {
@@ -131,6 +140,44 @@ fun TastingNotesScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
+            }
+            item(key = "notes_search") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Search", maxLines = 1) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { showFilterSheet = true },
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Filter Notes",
+                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             if (groupedHistory.isEmpty()) {
                 item(key = "notes_empty") {
@@ -166,16 +213,18 @@ fun TastingNotesScreen(
             }
         }
 
-        FloatingSearchFilterControls(
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            searchExpanded = searchExpanded,
-            onOpenSearch = { searchExpanded = true },
-            onCloseSearch = { searchExpanded = false },
-            onOpenFilters = { showFilterSheet = true },
-            filterActive = isFilterActive,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
+        if (showCompactControls || searchExpanded) {
+            FloatingSearchFilterControls(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                searchExpanded = searchExpanded,
+                onOpenSearch = { searchExpanded = true },
+                onCloseSearch = { searchExpanded = false },
+                onOpenFilters = { showFilterSheet = true },
+                filterActive = isFilterActive,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
     }
 
     if (showFilterSheet) {

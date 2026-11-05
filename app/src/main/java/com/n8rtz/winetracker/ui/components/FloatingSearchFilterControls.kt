@@ -34,8 +34,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
- * Two small bubbles in the upper right instead of a fixed full-width search row. Opening the
- * search bubble shows the field at the top of the screen without changing the list's scroll offset.
+ * Compact upper-right buttons for when the list's own top search row has scrolled away. Opening the
+ * search button shows the field at the top of the screen without changing the list's scroll offset.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

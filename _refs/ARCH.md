@@ -35,7 +35,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── Color.kt                   # Bordeaux Red, off-white, slate, gray palette
 │   │   └── Theme.kt                   # Light/dark theme
 │   ├── screens/
-│   │   ├── CellarScreen.kt            # Active inventory, scrolling stats-icon header, stats dialog, floating search/filter, Filter & Sort sheet
+│   │   ├── CellarScreen.kt            # Active inventory, scrolling top search row + stats-icon header, stats dialog, compact controls, Filter & Sort sheet
 │   │   ├── CellarFilterState.kt       # Cellar filter/sort state
 │   │   ├── WineDetailScreen.kt        # Wine detail, edit mode, Mark as Consumed with a bottle-count selector, per-wine note history
 │   │   ├── AddWineScreen.kt           # Manual entry (cascading dropdowns) + label-photo scan and review dialog
@@ -51,7 +51,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles + setup, priority, schedule, keep-N, restore picker, failure popup
 │   └── components/
 │       ├── WineCard.kt                # Colour-coded card; 48dp carat expands, body navigates, Coil image
-│       ├── FloatingSearchFilterControls.kt # Upper-right search/filter bubbles + pop-up search row (Cellar, Rankings, Notes)
+│       ├── FloatingSearchFilterControls.kt # Compact search/filter buttons that appear after the top row scrolls away, plus the pop-up search row
 │       ├── HistoryWineCard.kt         # Compact history list item
 │       ├── AnalyticsCard.kt           # Dashboard metric cards (bottles, unique wines, value)
 │       ├── EmptyState.kt              # Empty-list placeholder
