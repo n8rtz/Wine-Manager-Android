@@ -35,7 +35,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── Color.kt                   # Bordeaux Red, off-white, slate, gray palette
 │   │   └── Theme.kt                   # Light/dark theme
 │   ├── screens/
-│   │   ├── CellarScreen.kt            # Active inventory, scrolling top search row + stats-icon header, stats dialog, compact controls, Filter & Sort sheet
+│   │   ├── CellarScreen.kt            # Active inventory, scrolling top search row with inline stats/filter icons, stats dialog, compact controls, Filter & Sort sheet
 │   │   ├── CellarFilterState.kt       # Cellar filter/sort state
 │   │   ├── WineDetailScreen.kt        # Wine detail, edit mode, Mark as Consumed with a bottle-count selector, per-wine note history
 │   │   ├── AddWineScreen.kt           # Manual entry (cascading dropdowns) + label-photo scan and review dialog

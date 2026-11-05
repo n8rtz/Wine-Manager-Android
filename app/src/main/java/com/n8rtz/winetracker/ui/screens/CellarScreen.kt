@@ -48,9 +48,9 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     val cellarListState = remember { LazyListState() }
     LaunchedEffect(Unit) { cellarListState.scrollToItem(0) }
     // The restored top search row scrolls away with the list; the compact controls appear once
-    // both the header and the search row are out of view, and stay visible while scrolling.
+    // that row is out of view, and stay visible while scrolling.
     val showCompactControls by remember {
-        derivedStateOf { cellarListState.firstVisibleItemIndex > 1 }
+        derivedStateOf { cellarListState.firstVisibleItemIndex > 0 }
     }
     // Back at the top the full search row is visible again, so the pop-up is no longer needed.
     LaunchedEffect(showCompactControls) {
@@ -197,46 +197,45 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item(key = "cellar_header") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { showStatsDialog = true }) {
-                        Icon(Icons.Default.DonutLarge, "Stats")
+            item(key = "cellar_search") {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search", maxLines = 1) },
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            singleLine = true
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { showStatsDialog = true },
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Icon(Icons.Default.DonutLarge, "Stats")
+                        }
+                        IconButton(
+                            onClick = { showFilterSheet = true },
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Icon(
+                                Icons.Default.Tune,
+                                "Filter & Sort",
+                                tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                     Text(
                         text = "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
-                }
-            }
-            item(key = "cellar_search") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search", maxLines = 1) },
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        singleLine = true
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { showFilterSheet = true },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Icon(
-                            Icons.Default.Tune,
-                            "Filter & Sort",
-                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
 

@@ -41,8 +41,8 @@ The top search bars and filter buttons stay, but now scroll away; compact search
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
-1. [ ] On **Cellar**, confirm the full-width **Search** bar and filter button are still at the top, the same as before, with a slim **Showing N bottles** header row and stats icon. Confirm no compact buttons are visible yet.
-2. [ ] Tap the stats icon: **Cellar Stats** opens with **Total Bottles**, **Unique Wines** and **Est. Value**. Close it and confirm the list did not move. Confirm the three analytics cards are not back at the top of the screen.
+1. [ ] On **Cellar**, confirm the full-width **Search** bar, the stats icon and the filter button all sit on one line at the top, with **Showing N bottles** directly below. There is no separate stats header row above the search bar. Confirm no compact buttons are visible yet.
+2. [ ] Tap the inline stats icon: **Cellar Stats** opens with **Total Bottles**, **Unique Wines** and **Est. Value**. Close it and confirm the list did not move. Confirm the three analytics cards are not back at the top of the screen.
 3. [ ] Scroll down until the top search row has scrolled out of view. Confirm two small search/filter buttons then appear in the upper right and stay visible as you keep scrolling. Scroll back to the top and confirm they disappear again.
 4. [ ] Scroll down, tap the compact **Search** button, and confirm a one-line **Search** field pops up at the top of the screen while the same cards stay exactly where they were. Type a query and confirm the list still does not jump to the top. Close the field and confirm the compact buttons return.
 5. [ ] Scroll down again, tap compact **Tune**, change a filter or sort, and confirm the list stays at the same position. Check the filter button shows its active colour when a filter is set.

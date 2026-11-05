@@ -91,10 +91,11 @@ class FloatingControlsTests(unittest.TestCase):
         for name in LIST_SCREENS:
             source = screen_body(name)
             self.assertIn("derivedStateOf {", source, name)
-            self.assertIn("firstVisibleItemIndex > 1", source, name)
+            # Cellar has only the search row above the cards; the other two also have a title row.
+            threshold = "> 0" if name == "cellar" else "> 1"
+            self.assertIn(f"firstVisibleItemIndex {threshold}", source, name)
             self.assertIn("if (showCompactControls || searchExpanded)", source, name)
             self.assertIn("LaunchedEffect(showCompactControls)", source, name)
-            self.assertNotIn("scrollToItem(0)\n        }\n    }\n\n    if (showCompactControls", source, name)
 
 
 class ScrollPositionTests(unittest.TestCase):
@@ -162,10 +163,19 @@ class CardClickTests(unittest.TestCase):
 
 
 class StatsAndHeaderTests(unittest.TestCase):
-    def test_stats_are_in_a_dialog_behind_a_scrolling_header_icon(self):
+    def test_stats_is_one_icon_inline_with_the_search_bar_and_filters(self):
         source = CELLAR.read_text()
-        self.assertIn('item(key = "cellar_header")', source)
-        self.assertIn("IconButton(onClick = { showStatsDialog = true })", source)
+        self.assertNotIn('item(key = "cellar_header")', source)
+        search_item = source[source.index('item(key = "cellar_search")'):]
+        search_item = search_item[: search_item.index("items(filteredInventory")]
+        self.assertIn("onClick = { showStatsDialog = true },", search_item)
+        self.assertIn("Icons.Default.DonutLarge", search_item)
+        self.assertIn("Icons.Default.Tune", search_item)
+        self.assertIn("OutlinedTextField(", search_item)
+        # A single stats icon: no stats card or second stats button in the row.
+        self.assertEqual(search_item.count("showStatsDialog = true"), 1)
+        self.assertNotIn("AnalyticsCard(", search_item)
+        self.assertIn("Showing $displayedBottleCount", search_item)
         self.assertIn("if (showStatsDialog) {", source)
         self.assertIn("AlertDialog(", source)
         self.assertIn('title = { Text("Cellar Stats") }', source)
