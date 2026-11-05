@@ -18,9 +18,8 @@ LIST_SCREENS = {
 }
 
 SEARCH_HINT_FILES = (
-    UI / "screens/CellarScreen.kt",
-    UI / "screens/RankingsScreen.kt",
-    UI / "screens/TastingNotesScreen.kt",
+    # Cellar, Rankings and Tasting Notes now use the shared floating search control.
+    UI / "components/FloatingSearchFilterControls.kt",
     UI / "screens/TastingNoteEditorScreen.kt",
     UI / "screens/DatabaseLookupScreen.kt",
     UI / "components/AromaWheelDialog.kt",
@@ -54,13 +53,15 @@ class TabStartsAtTopTests(unittest.TestCase):
                 name,
             )
 
-    def test_in_screen_filter_and_sort_scroll_resets_remain(self):
-        cellar = LIST_SCREENS["cellar"].read_text()
-        self.assertIn("LaunchedEffect(filterState, searchQuery) {", cellar)
-        rankings = LIST_SCREENS["rankings"].read_text()
-        self.assertIn("LaunchedEffect(rankedWines) {", rankings)
-        notes = LIST_SCREENS["notes"].read_text()
-        self.assertIn("LaunchedEffect(listKey) {", notes)
+    def test_search_and_filter_changes_keep_the_scroll_position(self):
+        # The floating search/filter bubbles replaced the fixed rows; changing them no longer
+        # scrolls the user back to the top. Only re-entering the tab resets the list.
+        for name, path in LIST_SCREENS.items():
+            source = path.read_text()
+            self.assertNotIn("LaunchedEffect(filterState, searchQuery)", source, name)
+            self.assertNotIn("LaunchedEffect(rankedWines)", source, name)
+            self.assertNotIn("LaunchedEffect(listKey)", source, name)
+            self.assertIn("FloatingSearchFilterControls(", source, name)
 
     def test_tab_navigation_itself_is_unchanged(self):
         main = (A / "MainActivity.kt").read_text()

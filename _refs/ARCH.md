@@ -35,22 +35,23 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── Color.kt                   # Bordeaux Red, off-white, slate, gray palette
 │   │   └── Theme.kt                   # Light/dark theme
 │   ├── screens/
-│   │   ├── CellarScreen.kt            # Active inventory, analytics header, search, Filter & Sort sheet
+│   │   ├── CellarScreen.kt            # Active inventory, scrolling stats-icon header, stats dialog, floating search/filter, Filter & Sort sheet
 │   │   ├── CellarFilterState.kt       # Cellar filter/sort state
 │   │   ├── WineDetailScreen.kt        # Wine detail, edit mode, Mark as Consumed with a bottle-count selector, per-wine note history
 │   │   ├── AddWineScreen.kt           # Manual entry (cascading dropdowns) + label-photo scan and review dialog
-│   │   ├── TastingNotesScreen.kt      # Notes repository: search, filters, expandable cards
+│   │   ├── TastingNotesScreen.kt      # Notes repository: floating search/filter, one-open expandable cards, scrolling title
 │   │   ├── TastingNotesFilterState.kt # Notes filter/sort state
 │   │   ├── TastingNoteEditorScreen.kt # Add/edit note: Cellar/Manual entry, sensory form, aroma wheel launcher
-│   │   ├── HistoryScreen.kt           # Consumption-event history, note links, undo-safe list
-│   │   ├── RankingsScreen.kt          # Rankings by 100-point score + search + filters
+│   │   ├── HistoryScreen.kt           # Consumption-event history, note links, undo-safe list, scrolling title
+│   │   ├── RankingsScreen.kt          # Rankings by 100-point score + floating search/filter, scrolling title
 │   │   ├── RankingsFilterState.kt     # Rankings filter/sort state
 │   │   ├── ParetoScreen.kt            # Price-vs-rating Pareto chart, detail card, Red/White dashboards
 │   │   ├── ProfileScreen.kt           # Profile tab (Price vs. Rating, reviewers, Settings link) and the Settings screen (ProfileSection.SETTINGS: backup/restore, import/export, app info)
 │   │   ├── AppInfoScreen.kt           # App/DB version, build time, commit and branch
 │   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles + setup, priority, schedule, keep-N, restore picker, failure popup
 │   └── components/
-│       ├── WineCard.kt                # Colour-coded expandable card (Cellar, Rankings, Notes); Coil image
+│       ├── WineCard.kt                # Colour-coded card; 48dp carat expands, body navigates, Coil image
+│       ├── FloatingSearchFilterControls.kt # Upper-right search/filter bubbles + pop-up search row (Cellar, Rankings, Notes)
 │       ├── HistoryWineCard.kt         # Compact history list item
 │       ├── AnalyticsCard.kt           # Dashboard metric cards (bottles, unique wines, value)
 │       ├── EmptyState.kt              # Empty-list placeholder
@@ -180,6 +181,7 @@ tools/tests/test_consume_quantity.py # Host wiring checks for the multi-bottle M
 tools/tests/test_settings_cleanup.py # Host contract: the five retired Settings entries and their code/routes are gone, benchmark entry stays
 tools/tests/test_tab_top_and_search_labels.py # Host contract: Cellar/Rankings/Notes open at the top on re-entry and search hints are one line
 tools/tests/test_drive_folder_change_setup.py # Host contract: cancelling Drive "Change setup" keeps the already-selected folder
+tools/tests/test_floating_search_and_card_clicks.py # Host contract: floating search/filter bubbles, carat-only expansion, stats dialog and scrolling headers
 tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 data/wine-knowledge/                # Authored catalog inputs: editorial-origins.txt, geography/*.txt region/subregion trees, label-terms.csv, typical-grapes.csv, sources/registry.json + pinned CC0 AVA snapshot
 tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> origins.csv (+ path column) and kb/GeneratedWineKnowledge.kt; --check detects stale outputs

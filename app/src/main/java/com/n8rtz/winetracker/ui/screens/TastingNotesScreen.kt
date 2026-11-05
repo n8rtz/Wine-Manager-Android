@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
+import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +59,12 @@ fun TastingNotesScreen(
     val prices by tastingNoteViewModel.rankingsPrices.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var searchExpanded by remember { mutableStateOf(false) }
     var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    val isFilterActive = filterState.types.isNotEmpty() ||
+            filterState.status != "All" ||
+            filterState.country != null || filterState.region != null || filterState.subregion != null ||
+            filterState.priceRange != null
 
     val filteredHistory = remember(history, searchQuery, filterState, prices) {
         history.filter { item ->
@@ -103,15 +109,7 @@ fun TastingNotesScreen(
     val notesListState = remember { LazyListState() }
     LaunchedEffect(Unit) { notesListState.scrollToItem(0) }
 
-    // Back to the top when the sort, a filter or the search changes.
-    val listKey = remember(filterState, searchQuery) { 31 * filterState.hashCode() + searchQuery.hashCode() }
-    var lastListKey by remember { mutableIntStateOf(listKey) }
-    LaunchedEffect(listKey) {
-        if (listKey != lastListKey) {
-            lastListKey = listKey
-            notesListState.scrollToItem(0)
-        }
-    }
+    // Opening search or changing a filter keeps the list exactly where it is.
 
     val groupedHistory = remember(filteredHistory) {
         filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
@@ -120,107 +118,78 @@ fun TastingNotesScreen(
 
     val listDateFormat = remember { java.text.SimpleDateFormat("M/d/yy", java.util.Locale.getDefault()) }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Tasting Notes") }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search", maxLines = 1) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = notesListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, top = 60.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item(key = "notes_header") {
+                Text(
+                    "Tasting Notes",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = { showFilterSheet = true },
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    val isFilterActive = filterState.types.isNotEmpty() ||
-                            filterState.status != "All" ||
-                            filterState.country != null || filterState.region != null || filterState.subregion != null ||
-                            filterState.priceRange != null
-                    Icon(
-                        Icons.Default.Tune, 
-                        contentDescription = "Filter Notes",
-                        tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
-
             if (groupedHistory.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Description, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(16.dp))
-                        Text("No notes found", style = MaterialTheme.typography.titleLarge)
+                item(key = "notes_empty") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Description, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(16.dp))
+                            Text("No notes found", style = MaterialTheme.typography.titleLarge)
+                        }
                     }
                 }
             } else {
-                LazyColumn(
-                    state = notesListState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(groupedHistory, key = { group ->
-                        "${group.first().note.definitionId}_${com.n8rtz.winetracker.data.local.displayVintage(group.first().note.vintage)}"
-                    }) { group ->
-                        val firstItem = group.first()
-                        val groupKey = firstItem.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)
-                        CompactNoteItem(
-                            group = group,
-                            expanded = expandedGroupKey == groupKey,
-                            rating = ratingsMap[groupKey],
-                            listDateFormat = listDateFormat,
-                            onExpandToggle = {
-                                expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
-                            },
-                            price = prices[groupKey],
-                            onNoteClick = onNoteClick
-                        )
-                    }
+                items(groupedHistory, key = { group ->
+                    "${group.first().note.definitionId}_${com.n8rtz.winetracker.data.local.displayVintage(group.first().note.vintage)}"
+                }) { group ->
+                    val firstItem = group.first()
+                    val groupKey = firstItem.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)
+                    CompactNoteItem(
+                        group = group,
+                        expanded = expandedGroupKey == groupKey,
+                        rating = ratingsMap[groupKey],
+                        listDateFormat = listDateFormat,
+                        onExpandToggle = {
+                            expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
+                        },
+                        price = prices[groupKey],
+                        onNoteClick = onNoteClick
+                    )
                 }
             }
         }
 
-        if (showFilterSheet) {
-            val maxPrice = prices.values.filterNotNull().maxOrNull()?.toFloat() ?: 500f
-            TastingNotesFilterSheet(
-                currentState = filterState,
-                locationData = locationData,
-                maxPrice = maxPrice,
-                onDismiss = { showFilterSheet = false },
-                onApply = { newState ->
-                    tastingNoteViewModel.updateFilterState(newState)
-                },
-                onClearAll = { searchQuery = "" }
-            )
-        }
+        FloatingSearchFilterControls(
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            searchExpanded = searchExpanded,
+            onOpenSearch = { searchExpanded = true },
+            onCloseSearch = { searchExpanded = false },
+            onOpenFilters = { showFilterSheet = true },
+            filterActive = isFilterActive,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+    }
+
+    if (showFilterSheet) {
+        val maxPrice = prices.values.filterNotNull().maxOrNull()?.toFloat() ?: 500f
+        TastingNotesFilterSheet(
+            currentState = filterState,
+            locationData = locationData,
+            maxPrice = maxPrice,
+            onDismiss = { showFilterSheet = false },
+            onApply = { newState ->
+                tastingNoteViewModel.updateFilterState(newState)
+            },
+            onClearAll = { searchQuery = "" }
+        )
     }
 }
 
@@ -235,6 +204,9 @@ fun CompactNoteItem(
     onNoteClick: (Long) -> Unit
 ) {
     val firstItem = group.first()
+    val latestNoteId = remember(group) {
+        group.maxByOrNull { it.note.dateTasted }?.note?.noteId ?: firstItem.note.noteId
+    }
     com.n8rtz.winetracker.ui.components.WineCard(
         title = run {
             "${firstItem.definition.maker} - ${firstItem.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)})"
@@ -251,7 +223,8 @@ fun CompactNoteItem(
         imageLocalPath = firstItem.imageAsset?.relativePath,
         rating = rating,
         isExpanded = expanded,
-        onClick = onExpandToggle,
+        onExpandToggle = onExpandToggle,
+        onClick = { onNoteClick(latestNoteId) },
         details = {
             Column(modifier = Modifier.padding(top = 8.dp)) {
                 group.sortedByDescending { it.note.dateTasted }.forEach { item ->

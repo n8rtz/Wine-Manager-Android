@@ -35,6 +35,21 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 **What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
 Cellar, Rankings and Tasting Notes reopen at the top of their lists, and every search bar hint is just **Search** on one line.
 Cancelling Google Drive **Change setup** without choosing a folder keeps the previously selected folder.
+Fixed search rows are now floating search/filter bubbles, card bodies navigate while the carat expands, Cellar stats live in a dialog, and page titles scroll away with their content.
+
+### Floating search/filter bubbles, card clicks, stats dialog and scrolling headers
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On **Cellar**, confirm the fixed search row and the three analytics cards are gone; two small bubbles sit in the upper right and a slim **Showing N bottles** header row with a stats icon sits at the top of the list.
+2. [ ] Tap the stats icon: **Cellar Stats** opens with **Total Bottles**, **Unique Wines** and **Est. Value**. Close it and confirm the list did not move.
+3. [ ] Scroll down several cards, tap the **Search** bubble, and confirm the **Search** field appears at the top while the same cards stay exactly where they were. Type a query, apply it, and confirm the list still does not jump to the top. Close the field and confirm the bubbles return.
+4. [ ] Scroll down again, tap **Tune**, change a filter or sort, and confirm the list stays at the same position. Check the filter icon shows its active colour when a filter is set.
+5. [ ] Repeat 3–4 on **Rankings** and **Tasting Notes**. Confirm their titles (**Rankings**, **Tasting Notes**) and **Consumption History** scroll away with the list instead of staying frozen at the top.
+6. [ ] On **Cellar**, tap near the carat on one card: it expands without opening the detail screen. Tap a second card's carat: the first collapses. Tap the open card's carat: it collapses. Tap anywhere else on a card (image, title, blank space): the wine detail screen opens and no card expands.
+7. [ ] On **Tasting Notes**, repeat the carat checks for the one-open accordion. Tap an expanded note row: that note opens in the editor. Tap anywhere else on a collapsed card: that wine's most recent tasting note opens in the editor.
+8. [ ] On **Rankings**, confirm the carat still expands a card and tapping elsewhere does nothing.
+9. [ ] On **Add / Edit Tasting Note**, **Add New Wine**, **Wine Detail**, **App Information**, **Database Lookup**, **Settings**, **Backup & Restore** and **Price vs. Rating**, scroll down and confirm the title bar scrolls away; scroll back up and confirm back/actions return. Check at the largest display size that the two bubbles do not cover a card's carat when the list is at the top.
 
 ### Google Drive folder change — cancel keeps the folder
 

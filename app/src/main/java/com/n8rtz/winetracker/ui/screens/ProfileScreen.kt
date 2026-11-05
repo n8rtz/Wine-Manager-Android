@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -98,7 +99,15 @@ fun ProfileScreen(
         }
     }
 
+    // Keep the title, but let the header scroll away with the content.
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
+        modifier = if (section == ProfileSection.SETTINGS) {
+            Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+        } else {
+            Modifier
+        },
         topBar = {
             if (section == ProfileSection.SETTINGS) {
                 TopAppBar(
@@ -110,7 +119,8 @@ fun ProfileScreen(
                                 contentDescription = "Back"
                             )
                         }
-                    }
+                    },
+                    scrollBehavior = scrollBehavior
                 )
             }
         },
@@ -126,8 +136,8 @@ fun ProfileScreen(
                 if (section == ProfileSection.HOME) {
                     Text(
                         text = "Profile",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
 
                     ListItem(

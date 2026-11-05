@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -212,8 +213,12 @@ fun AddWineScreen(
     } else emptyList()
 
     val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
+    // Keep the title, but let the header scroll away with the content.
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Add New Wine") }) }
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = { TopAppBar(title = { Text("Add New Wine") }, scrollBehavior = scrollBehavior) }
     ) { padding ->
         Column(
             modifier = Modifier
