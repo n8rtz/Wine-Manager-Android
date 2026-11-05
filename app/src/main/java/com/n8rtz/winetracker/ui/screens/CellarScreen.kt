@@ -203,6 +203,13 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        IconButton(
+                            onClick = { showStatsDialog = true },
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Icon(Icons.Default.QueryStats, "Stats")
+                        }
+                        Spacer(Modifier.width(4.dp))
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -213,12 +220,6 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                             singleLine = true
                         )
                         Spacer(Modifier.width(8.dp))
-                        IconButton(
-                            onClick = { showStatsDialog = true },
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Icon(Icons.Default.DonutLarge, "Stats")
-                        }
                         IconButton(
                             onClick = { showFilterSheet = true },
                             colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)

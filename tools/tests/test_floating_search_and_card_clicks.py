@@ -57,11 +57,19 @@ class FloatingControlsTests(unittest.TestCase):
         self.assertIn("onCloseSearch", source)
         self.assertNotIn("scrollToItem", source)
 
-    def test_bubbles_are_small_round_surfaces_not_a_full_width_row(self):
+    def test_bubbles_are_small_round_surfaces_stacked_vertically(self):
         source = CONTROLS.read_text()
         self.assertIn("shape = CircleShape", source)
         self.assertIn("Modifier.size(44.dp)", source)
         self.assertIn("if (searchExpanded) {", source)
+        bubbles = source[source.index("} else {"):]
+        self.assertIn("Column(", bubbles)
+        self.assertIn("verticalArrangement = Arrangement.spacedBy(8.dp)", bubbles)
+        self.assertIn("horizontalAlignment = Alignment.End", bubbles)
+        self.assertNotIn("horizontalArrangement", bubbles)
+        self.assertIn("import androidx.compose.foundation.layout.Column", source)
+        # Search sits above the filter button in the stack.
+        self.assertLess(bubbles.index('contentDescription = "Search"'), bubbles.index('contentDescription = "Filter & Sort"'))
 
     def test_all_three_list_screens_use_the_shared_controls(self):
         for name, path in LIST_SCREENS.items():
@@ -169,9 +177,13 @@ class StatsAndHeaderTests(unittest.TestCase):
         search_item = source[source.index('item(key = "cellar_search")'):]
         search_item = search_item[: search_item.index("items(filteredInventory")]
         self.assertIn("onClick = { showStatsDialog = true },", search_item)
-        self.assertIn("Icons.Default.DonutLarge", search_item)
+        self.assertIn("Icons.Default.QueryStats", search_item)
+        self.assertNotIn("DonutLarge", search_item)
         self.assertIn("Icons.Default.Tune", search_item)
         self.assertIn("OutlinedTextField(", search_item)
+        # The single stats icon is on the left of the search field, with the filter on the right.
+        self.assertLess(search_item.index("Icons.Default.QueryStats"), search_item.index("OutlinedTextField("))
+        self.assertLess(search_item.index("OutlinedTextField("), search_item.index("Icons.Default.Tune"))
         # A single stats icon: no stats card or second stats button in the row.
         self.assertEqual(search_item.count("showStatsDialog = true"), 1)
         self.assertNotIn("AnalyticsCard(", search_item)

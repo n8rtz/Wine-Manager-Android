@@ -3,6 +3,7 @@ package com.n8rtz.winetracker.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,7 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
- * Compact upper-right buttons for when the list's own top search row has scrolled away. Opening the
+ * Vertically stacked upper-right buttons for when the list's own top search row has scrolled away. Opening the
  * search button shows the field at the top of the screen without changing the list's scroll offset.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,11 +90,12 @@ fun FloatingSearchFilterControls(
                 }
             }
         } else {
-            Row(
+            Column(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.End
             ) {
                 FloatingControlBubble(
                     icon = Icons.Default.Search,

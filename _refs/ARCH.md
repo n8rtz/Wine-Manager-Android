@@ -51,7 +51,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles + setup, priority, schedule, keep-N, restore picker, failure popup
 │   └── components/
 │       ├── WineCard.kt                # Colour-coded card; 48dp carat expands, body navigates, Coil image
-│       ├── FloatingSearchFilterControls.kt # Compact search/filter buttons that appear after the top row scrolls away, plus the pop-up search row
+│       ├── FloatingSearchFilterControls.kt # Vertically stacked compact search/filter buttons that appear after the top row scrolls away, plus the pop-up search row
 │       ├── HistoryWineCard.kt         # Compact history list item
 │       ├── AnalyticsCard.kt           # Dashboard metric cards (bottles, unique wines, value)
 │       ├── EmptyState.kt              # Empty-list placeholder
