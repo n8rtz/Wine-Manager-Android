@@ -34,6 +34,17 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
 Cellar, Rankings and Tasting Notes reopen at the top of their lists, and every search bar hint is just **Search** on one line.
+Cancelling Google Drive **Change setup** without choosing a folder keeps the previously selected folder.
+
+### Google Drive folder change — cancel keeps the folder
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set up a Google Drive folder under **Backup & Restore → Google Drive**, confirm the row shows **Change setup** and **Drive folder selected**.
+2. [ ] Tap **Change setup**, then press Back repeatedly until the folder picker closes without selecting anything. Confirm no "No Drive folder was selected." popup appears and the row still shows **Change setup** / **Drive folder selected**.
+3. [ ] Run **Back up now** after that cancel and confirm it still writes to the same Drive folder; leave the screen and come back to confirm the folder is still configured.
+4. [ ] Tap **Change setup** again and select a *different* folder. Confirm the new folder replaces the old one and backups go there.
+5. [ ] Tap **Disconnect** and confirm it is still the only action that leaves no folder selected.
 
 ### Tab re-entry scroll and one-line search hints
 

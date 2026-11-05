@@ -45,7 +45,11 @@ class BackupCredentialStore(context: Context) {
 
     fun webDavPassword(): String = get(KEY_WEBDAV_PASSWORD)
 
-    fun saveDriveTreeUri(treeUri: String) = put(KEY_DRIVE_TREE_URI, treeUri)
+    /** A blank picker result must not clear the saved folder; clear(GOOGLE_DRIVE) disconnects it. */
+    fun saveDriveTreeUri(treeUri: String) {
+        if (treeUri.isBlank()) return
+        put(KEY_DRIVE_TREE_URI, treeUri)
+    }
 
     fun driveTreeUri(): String = get(KEY_DRIVE_TREE_URI)
 

@@ -146,6 +146,7 @@ class GoogleDriveDestination(
 
         /** Called once after the folder picker returns; the grant must be persisted for app-open uploads. */
         fun persistTreeUri(context: Context, uri: Uri) {
+            require(uri.toString().isNotBlank()) { "Invalid Drive folder result." }
             val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             context.contentResolver.takePersistableUriPermission(uri, flags)
             BackupCredentialStore(context).saveDriveTreeUri(uri.toString())

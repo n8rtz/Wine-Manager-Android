@@ -233,8 +233,11 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
     }
 
     fun onDriveFolderPicked(uri: Uri?) {
-        if (uri == null) {
-            _state.value = _state.value.copy(setupMessage = "No Drive folder was selected.")
+        // Backing out of the folder picker keeps the Drive folder that was already selected. Only a
+        // confirmed, non-empty selection is written to the credential store.
+        if (uri == null || uri.toString().isBlank()) {
+            _state.value = _state.value.copy(setupInProgress = false, setupMessage = null)
+            refresh()
             return
         }
         viewModelScope.launch {
