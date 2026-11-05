@@ -310,15 +310,16 @@ fun MainAppScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
-    // The Add FAB and its submenu overlap the Backup & Restore form; keep them off that route.
-    val showAddMenu = currentRoute != "backup_restore"
+    // The Add menu is only available from the Cellar and Notes tabs. It stays off every other
+    // route, including wine detail cards, editors, Settings and Backup & Restore.
+    val showAddMenu = currentRoute == "cellar" || currentRoute == "notes"
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val backupState by backupViewModel.state.collectAsState()
     var isMenuExpanded by remember { mutableStateOf(false) }
-    // Don't let an open Add submenu reappear when the user returns from Backup & Restore.
+    // Close an open Add submenu as soon as the user leaves Cellar or Notes.
     LaunchedEffect(currentRoute) {
-        if (currentRoute == "backup_restore") isMenuExpanded = false
+        if (!showAddMenu) isMenuExpanded = false
     }
 
     /** A JSON restore rewrites SharedPreferences; refresh the in-memory ViewModels immediately. */
@@ -385,20 +386,14 @@ fun MainAppScaffold(
                     onClick = { 
                         Log.d("WineTracker", "BottomBar: Cellar clicked")
                         isMenuExpanded = false
-                        if (currentRoute == "cellar") {
-                            viewModel.resetCellarScreen()
-                        } else {
-                            if (currentRoute == "add_wine" || currentRoute?.startsWith("note_editor/") == true) {
-                                // Return directly to the cellar when leaving an editor flow, even if the note
-                                // was opened from another tab or a wine detail screen.
-                                if (!navController.popBackStack("cellar", inclusive = false)) {
-                                    navigateToTab(navController, "cellar")
-                                }
-                            } else {
+                        if (currentRoute != "cellar") {
+                            // Always land on the Cellar root: this covers a wine detail card, an
+                            // add/note editor reached from any tab, and every other tab.
+                            if (!navController.popBackStack("cellar", inclusive = false)) {
                                 navigateToTab(navController, "cellar")
                             }
-                            viewModel.resetCellarScreen()
                         }
+                        viewModel.resetCellarScreen()
                     },
                     icon = { Icon(Icons.Default.WineBar, "Cellar") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_CELLAR, bottomBarLabelSize) }

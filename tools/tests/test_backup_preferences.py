@@ -155,13 +155,25 @@ class BackupPreferenceContractTests(unittest.TestCase):
         self.assertIn("val runningDestination: BackupDestinationId? = null", viewmodel)
         self.assertIn("targets: List<BackupDestinationId>? = null", coordinator)
         main = MAIN.read_text()
-        self.assertIn("val showAddMenu = currentRoute != \"backup_restore\"", main)
-        self.assertIn('if (currentRoute == "backup_restore") isMenuExpanded = false', main)
+        self.assertIn('val showAddMenu = currentRoute == "cellar" || currentRoute == "notes"', main)
+        self.assertIn("if (!showAddMenu) isMenuExpanded = false", main)
 
     def test_agent_rules_forbid_unrequested_ui_copy(self):
         rules = (ROOT / ".agents/instructions.md").read_text()
         self.assertIn("18. **NO UNREQUESTED IN-APP TEXT", rules)
         self.assertIn("A layout, formatting or refactor task is **not** permission to write new prose.", rules)
+
+    def test_add_menu_only_on_cellar_and_notes_and_cellar_tab_returns_home(self):
+        main = MAIN.read_text()
+        self.assertIn('val showAddMenu = currentRoute == "cellar" || currentRoute == "notes"', main)
+        self.assertNotIn('val showAddMenu = currentRoute != "backup_restore"', main)
+        self.assertIn("if (!showAddMenu) isMenuExpanded = false", main)
+        self.assertIn("visible = isMenuExpanded && showAddMenu", main)
+        # The Cellar tab pops to its root from a wine detail card, an editor or another tab.
+        self.assertIn('if (currentRoute != "cellar") {', main)
+        self.assertIn('if (!navController.popBackStack("cellar", inclusive = false)) {', main)
+        self.assertIn("viewModel.resetCellarScreen()", main)
+        self.assertNotIn('currentRoute?.startsWith("note_editor/") == true', main)
 
     def test_backup_frequency_unit_never_wraps(self):
         """The interval unit button must not be squeezed into a two-line 'mon' / 'ths' column."""
