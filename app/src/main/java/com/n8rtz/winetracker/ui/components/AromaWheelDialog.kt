@@ -638,7 +638,7 @@ private fun AromaListContent(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            label = { Text("Search aromas") },
+            label = { Text("Search", maxLines = 1) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
             modifier = Modifier

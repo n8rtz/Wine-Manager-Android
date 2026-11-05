@@ -4,7 +4,7 @@ package com.n8rtz.winetracker.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -39,7 +39,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     val cellarResetKey by viewModel.cellarResetKey.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
-    val cellarListState = rememberLazyListState()
+    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
+    // screen where it was scrolled to instead of at the top.
+    val cellarListState = remember { LazyListState() }
+    LaunchedEffect(Unit) { cellarListState.scrollToItem(0) }
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
@@ -186,7 +189,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search producer or name...") },
+                placeholder = { Text("Search", maxLines = 1) },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),

@@ -4,7 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -99,11 +98,14 @@ fun TastingNotesScreen(
         }
     }
 
-    // Back to the top when the sort, a filter or the search changes. The saved key means coming back to
-    // this tab (or from a note) with nothing changed leaves the list where it was.
-    val notesListState = rememberLazyListState()
+    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
+    // screen where it was scrolled to instead of at the top.
+    val notesListState = remember { LazyListState() }
+    LaunchedEffect(Unit) { notesListState.scrollToItem(0) }
+
+    // Back to the top when the sort, a filter or the search changes.
     val listKey = remember(filterState, searchQuery) { 31 * filterState.hashCode() + searchQuery.hashCode() }
-    var lastListKey by rememberSaveable { mutableIntStateOf(listKey) }
+    var lastListKey by remember { mutableIntStateOf(listKey) }
     LaunchedEffect(listKey) {
         if (listKey != lastListKey) {
             lastListKey = listKey
@@ -137,7 +139,7 @@ fun TastingNotesScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search Producer, Name, or Vintage") },
+                    placeholder = { Text("Search", maxLines = 1) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {

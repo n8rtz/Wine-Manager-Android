@@ -388,7 +388,7 @@ fun TastingNoteEditorScreen(
                             wineMenuExpanded = true
                         },
                         label = { Text("Wine") },
-                        placeholder = { Text("Search producer or wine") },
+                        placeholder = { Text("Search", maxLines = 1) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -178,6 +178,7 @@ tools/tests/test_label_context_and_accent_scrubbing.py # Host checks for TextNor
 tools/tests/test_backup_preferences.py  # W-057 host contract: preference key parity, Auto Backup rules, secrets, failure popup wiring
 tools/tests/test_consume_quantity.py # Host wiring checks for the multi-bottle Mark as Consumed selector and one-event/quantity-undo integrity
 tools/tests/test_settings_cleanup.py # Host contract: the five retired Settings entries and their code/routes are gone, benchmark entry stays
+tools/tests/test_tab_top_and_search_labels.py # Host contract: Cellar/Rankings/Notes open at the top on re-entry and search hints are one line
 tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 data/wine-knowledge/                # Authored catalog inputs: editorial-origins.txt, geography/*.txt region/subregion trees, label-terms.csv, typical-grapes.csv, sources/registry.json + pinned CC0 AVA snapshot
 tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> origins.csv (+ path column) and kb/GeneratedWineKnowledge.kt; --check detects stale outputs

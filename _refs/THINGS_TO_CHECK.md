@@ -33,6 +33,17 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 **Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
 
 **What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
+Cellar, Rankings and Tasting Notes reopen at the top of their lists, and every search bar hint is just **Search** on one line.
+
+### Tab re-entry scroll and one-line search hints
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On **Cellar**, scroll down several cards, then switch to **Rankings** and back via the bottom bar. Confirm Cellar opens at the top (analytics cards and search bar visible), not at the previous card.
+2. [ ] Repeat on **Rankings** and **Tasting Notes**, including leaving Notes by opening a note and returning with the back arrow.
+3. [ ] Open a wine detail card from Cellar after scrolling down, then tap **Cellar** and **Back**. Both should show the top of the Cellar list.
+4. [ ] On each of the three tabs, check the search bar shows only **Search** on a single line; widen the font to the largest display size and confirm it still does not wrap or grow the field.
+5. [ ] Check the same on **Add Note → Wine**, the **aroma wheel** search, and **Settings → Database Lookup**; Database Lookup should show no second hint under the field.
 
 ### Add menu visibility and Cellar tab
 

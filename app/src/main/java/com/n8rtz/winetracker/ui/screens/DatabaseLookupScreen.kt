@@ -319,8 +319,7 @@ fun DatabaseLookupScreen(onBack: () -> Unit) {
                         value = query,
                         onValueChange = { query = it; browseOffset = 0 },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Search ${category.label.lowercase()}") },
-                        placeholder = { Text("Type a name") },
+                        label = { Text("Search", maxLines = 1) },
                         singleLine = true
                     )
                 }
