@@ -4,7 +4,7 @@ Planning briefs for larger Wine Manager features. These documents describe propo
 
 ## WBS numbering convention
 
-Each feature brief has its own numbered root: **1.0** Pareto screen, **2.0** aroma wheel, **3.0** bottle/label image importer, **4.0** camera recognition, and **5.0** resources page. Within a brief, `N.x` identifies an architecture workstream/component, `N.x.x` a task, and `N.x.x.x` a subtask. Here, `N` is that feature's root number. IDs organize scope; they do not imply priority, sequencing, ownership, or estimates.
+Each feature brief has its own numbered root: **1.0** Pareto screen, **2.0** aroma wheel, **3.0** bottle/label image importer, **4.0** camera recognition, **5.0** resources page, and **6.0** structured tasting notes. Within a brief, `N.x` identifies an architecture workstream/component, `N.x.x` a task, and `N.x.x.x` a subtask. Here, `N` is that feature's root number. IDs organize scope; they do not imply priority, sequencing, ownership, or estimates.
 
 ## Feature briefs
 
@@ -14,11 +14,13 @@ Each feature brief has its own numbered root: **1.0** Pareto screen, **2.0** aro
 - [Camera wine recognition](camera-wine-recognition.md) — scan a label and prefill a wine form for user review.
 - [Scanner accuracy recovery (W-058)](../../docs/scanner-accuracy-plan.md) — measured phone failures, label-level pipeline diagnostics and staged >80% complete / <5% multi-error plan; experimental Lab only until authorized.
 - [Wine resources page](wine-resources-page.md) — educational material, interactive region maps, and grape-variety tasting profiles.
+- [Structured tasting notes (W-061)](structured-tasting-notes.md) — wine color, phase-aware aromas, aroma intensity and four tasting sections.
 
 ## Cross-feature boundaries
 
 - **Image importer vs. camera recognition:** The importer finds or brings in an image for a known wine record. The camera flow identifies information from a newly scanned label and proposes form values. They may share catalog matching or image storage later, but should remain separate user workflows.
 - **Aroma wheel vs. resources:** The wheel is an interactive note-taking control. The resources page explains aromas, grapes, regions, and styles; it should not silently change a tasting note.
+- **Aroma wheel vs. structured tasting notes:** The wheel remains the stable-ID descriptor selector; W-061 owns tasting phase, aroma intensity and phase-section presentation. Do not silently assign phases to existing flat aroma IDs.
 - **Analytics vs. records:** Pareto calculations are derived from existing notes and price data. A visualization must not create or repair cellar, tasting, or consumption records.
 
 ## Shared planning guardrails

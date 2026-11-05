@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-061**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-062**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-028**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -77,11 +77,12 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 6 | W-053 | Filter tasting notes by aroma | M | Open | 0.8.0 |
 | 7 | W-052 | Wine Resources page (glossary, grapes, regions, map) | XL (Phase A = L) | Planned (brief only) | 0.9.0+ |
 | 8 | W-060 | Cellar page selector — Bottles / Racks views, rack tiles + text-free plus tile, rack tags | L (Room migration + new subsystem; needs a brief) | Needs decision | TBD (owner to rank) |
+| 9 | W-061 | Structured tasting notes — color picker, phase-aware aromas, aroma intensity, four sections | L (new subsystem; brief written) | Needs decision | TBD (owner to rank) |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
-*(W-060 was logged 2026-11-04 at the owner's request and sits last because no priority was given; the owner should re-rank it.)*
+*(W-060 was logged 2026-11-04 and W-061 on 2026-11-05, both at the owner's request; ranks 8–9 are placeholders until the owner re-ranks them.)*
 
-**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060 was logged afterwards with no priority given, so rank 8 is a placeholder until the owner re-ranks it.
+**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060 and W-061 were logged afterwards with no priority given, so ranks 8 and 9 are placeholders until the owner re-ranks them.
 
 ---
 
@@ -316,6 +317,15 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
   6. Do rack tiles show only in-cellar bottles, and what happens to a rack when its last bottle is consumed?
 * **Out of scope / do not re-propose:** CSV/ZIP export, bundling label-image bytes into backups, live multi-device sync (`ARCHIVE.md` Part D, W-027R). No WorkManager/background work, no change to the W-057 backup format until this wish is decided.
 * **Done when:** the selector switches between the unchanged Bottles list and a rack tile grid; the text-free plus tile creates/renames/deletes racks; tagging a cellar wine adds it to a rack; racks and tags survive a backup → restore round trip on a clean install; JVM tests for grouping, an instrumented snapshot→restore check, an L-feature brief, `ARCH.md` map update, `CHANGELOG.md`, a `THINGS_TO_CHECK.md` checklist and a device run per `PIPELINE.md`.
+
+### 9. W-061 — Structured tasting notes: color, phase-aware aromas, intensity and sections *(logged 2026-11-05)*
+**Complexity:** L (phase-aware aroma data, new interactive controls and a sectioned editor; brief written) · **Status:** Needs decision
+* **Goal:** Record a tasting by **Visual / aroma**, **Entry**, **Mid-palate** and **Finish** instead of one flat sensory list: add a wine color picker; separate aroma-wheel descriptors by where they appear (**Aroma (before tasting)**, **Entry**, **Mid-palate**, **Finish**); differentiate pronounced from subtle aromas; put the existing sliders into the four sections; and add **Entry (Tight, Open)** sliders.
+* **UI-Trigger / Location:** Add/Edit Tasting Note (`TastingNoteEditorScreen.kt`, `SensoryEvaluationFields.kt`, `AromaWheelLauncherCard`/`AromaWheelDialog`) and the saved-note display in `WineDetailScreen.kt`. The aroma wheel keeps its stable descriptor IDs and remains the descriptor picker.
+* **Brief:** [Implementation Plan: Structured Tasting Notes](major-feature-planning/structured-tasting-notes.md) (WBS 6.0) — current source shape, candidate slider/section mapping, open decisions, WBS and acceptance checks. **Planning only: no code or schema change is authorized by this request.**
+* **Design alternatives kept open (owner):** 2D color-picker plot vs curated swatches; color format/scope; whether the same descriptor may appear in several phases and how the 24-descriptor cap applies; explicit treatment of legacy unphased aromas without inferred phases; pinch-to-resize word cloud vs darker/lighter chips (or both); intensity scale and its relation to current prevalence chip order; final slider-to-section mapping; two **Tight**/**Open** sliders vs one bipolar **Tight ↔ Open** slider; section layout.
+* **Out of scope:** no new permissions, dependencies, network calls or background work; no Room migration or W-057 backup-format change; no unrequested in-app explanatory prose; no changes to inventory, consumption events or W-053 until separately decided.
+* **Done when:** the owner closes the open decisions and authorizes implementation; color, phase, intensity and sectioned slider data survive JSON backup → restore; legacy notes remain intact; JVM and device/emulator checks, `CHANGELOG.md` and a `THINGS_TO_CHECK.md` checklist are completed per `PIPELINE.md`.
 
 ---
 
