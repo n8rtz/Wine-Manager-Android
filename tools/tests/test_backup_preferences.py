@@ -113,6 +113,13 @@ class BackupPreferenceContractTests(unittest.TestCase):
         self.assertIn("if (destination == null) {", screen)
         self.assertIn("modifier = Modifier.fillMaxWidth().clickable { activeDestination = id }", screen)
         self.assertIn('title = { Text(activeDestination?.displayName ?: "Backup & Restore") }', screen)
+        # Enabled destinations carry a small last-backup date/time; disabled ones carry none.
+        self.assertIn("val lastBackup = if (enabled) state.lastBackupLines[id] else null", screen)
+        self.assertIn("if (lastBackup != null) {", screen)
+        self.assertIn("style = MaterialTheme.typography.bodySmall", screen)
+        self.assertIn("val lastBackupLines: Map<BackupDestinationId, String?> = emptyMap()", viewmodel)
+        self.assertIn("lastBackupLines = lastBackupLines,", viewmodel)
+        self.assertIn('snapshot.lastConfirmedEpochMillis?.let { "Last confirmed ${formatTimestamp(it)}" }', viewmodel)
         self.assertIn("if (activeDestination != null) activeDestination = null else onBack()", screen)
         # Submenu options.
         self.assertIn('Text(if (state.runningDestination == id) "Backing up…" else "Back up now")', screen)

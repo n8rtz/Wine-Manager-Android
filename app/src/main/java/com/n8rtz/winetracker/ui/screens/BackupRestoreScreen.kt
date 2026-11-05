@@ -224,8 +224,21 @@ fun BackupRestoreScreen(
                 state.settings.destinationPriority.forEach { id ->
                     val enabled = id in state.settings.enabledDestinations
                     val configured = state.needsSetup[id] != true
+                    // Only toggled-on destinations show their last confirmed date/time.
+                    val lastBackup = if (enabled) state.lastBackupLines[id] else null
                     ListItem(
-                        headlineContent = { Text(id.displayName) },
+                        headlineContent = {
+                            Column {
+                                Text(id.displayName)
+                                if (lastBackup != null) {
+                                    Text(
+                                        lastBackup,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
                         trailingContent = {
                             Switch(
                                 checked = enabled,

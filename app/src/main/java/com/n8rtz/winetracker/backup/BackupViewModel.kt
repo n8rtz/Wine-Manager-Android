@@ -21,6 +21,8 @@ data class BackupUiState(
     val statuses: Map<BackupDestinationId, BackupDestinationSnapshot> = emptyMap(),
     val health: Map<BackupDestinationId, BackupHealth> = emptyMap(),
     val statusLines: Map<BackupDestinationId, String> = emptyMap(),
+    /** Short "Last confirmed <date/time>" line for the toggle menu; null when never confirmed. */
+    val lastBackupLines: Map<BackupDestinationId, String?> = emptyMap(),
     val setupDetails: Map<BackupDestinationId, String> = emptyMap(),
     val needsSetup: Map<BackupDestinationId, Boolean> = emptyMap(),
     val protection: BackupProtection = BackupProtection.LOCAL_ONLY,
@@ -363,6 +365,9 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
                 BackupHealth.CURRENT -> "Last confirmed $last"
             }
         }
+        val lastBackupLines = statuses.mapValues { (_, snapshot) ->
+            snapshot.lastConfirmedEpochMillis?.let { "Last confirmed ${formatTimestamp(it)}" }
+        }
         val confirmedOffDevice = statuses.values
             .filter { it.id.isOffDevice && it.lastConfirmedEpochMillis != null }
             .mapTo(mutableSetOf()) { it.id }
@@ -400,6 +405,7 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
             statuses = statuses,
             health = health,
             statusLines = statusLines,
+            lastBackupLines = lastBackupLines,
             setupDetails = setupStates.mapValues { it.value.detail },
             needsSetup = needsSetup,
             protection = protection,
