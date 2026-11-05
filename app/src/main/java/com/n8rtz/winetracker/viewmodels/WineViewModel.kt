@@ -238,10 +238,13 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         notes: String?,
         rebuy: Boolean,
         consumptionDate: Long,
+        quantity: Int = 1,
         onComplete: (Long) -> Unit
     ) {
         viewModelScope.launch {
-            val eventId = repository.consumeBottle(bottleId, rating, notes, rebuy, consumptionDate)
+            val eventId = repository.consumeBottle(
+                bottleId, rating, notes, rebuy, consumptionDate, quantity
+            )
             if (eventId > 0L) onComplete(eventId)
         }
     }

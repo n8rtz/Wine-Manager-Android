@@ -37,7 +37,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   ├── screens/
 │   │   ├── CellarScreen.kt            # Active inventory, analytics header, search, Filter & Sort sheet
 │   │   ├── CellarFilterState.kt       # Cellar filter/sort state
-│   │   ├── WineDetailScreen.kt        # Wine detail, edit mode, Mark as Consumed, per-wine note history
+│   │   ├── WineDetailScreen.kt        # Wine detail, edit mode, Mark as Consumed with a bottle-count selector, per-wine note history
 │   │   ├── AddWineScreen.kt           # Manual entry (cascading dropdowns) + label-photo scan and review dialog
 │   │   ├── TastingNotesScreen.kt      # Notes repository: search, filters, expandable cards
 │   │   ├── TastingNotesFilterState.kt # Notes filter/sort state
@@ -179,6 +179,7 @@ app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt # LAB ONLY: 
 tools/tests/test_bottle_filter_and_zoom_crop.py # Host wiring & generality checks for Lab v4 bottle-column/sticker filter and conditional zoom-crop
 tools/tests/test_label_context_and_accent_scrubbing.py # Host checks for TextNorm.scrub, framed appellations, LabelContext, Lab v4 geography backfill and frozen Prod subset scoping
 tools/tests/test_backup_preferences.py  # W-057 host contract: preference key parity, Auto Backup rules, secrets, failure popup wiring
+tools/tests/test_consume_quantity.py # Host wiring checks for the multi-bottle Mark as Consumed selector and one-event/quantity-undo integrity
 tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 data/wine-knowledge/                # Authored catalog inputs: editorial-origins.txt, geography/*.txt region/subregion trees, label-terms.csv, typical-grapes.csv, sources/registry.json + pinned CC0 AVA snapshot
 tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> origins.csv (+ path column) and kb/GeneratedWineKnowledge.kt; --check detects stale outputs

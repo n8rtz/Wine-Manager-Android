@@ -32,7 +32,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
 
-**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root.
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event.
 
 ### Add menu visibility and Cellar tab
 
@@ -42,6 +42,17 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 2. [ ] Open a wine detail card, **Add Wine**, a note editor, **History**, **Rankings**, **Profile**, **Settings**, **Backup & Restore** and **Database Lookup**. Confirm no `+` FAB appears on any of them, and that an open submenu closes when you leave Cellar or Notes.
 3. [ ] From a wine detail card, tap **Cellar**. Expect the unfiltered Cellar root: expanded cards collapsed, search cleared, filters reset.
 4. [ ] From **Add Wine**, a note editor opened from any tab, and from **History / Rankings / Profile → Settings → Backup & Restore**, tap **Cellar**. Each time expect the Cellar root, not the previous screen or a restored filtered view. Repeat with **Back** to confirm no stale screens remain in the back stack.
+
+### Mark as Consumed — bottle count selector
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a wine with 1 bottle in the cellar, tap **Mark as Consumed**. The **Bottles** dropdown offers only `1`; confirm and check the cellar row drops to 0, **History** shows one entry with quantity 1, and the snackbar says "Consumed 1 bottle …".
+2. [ ] On a wine with 4 bottles in the cellar, select `3` in the **Bottles** dropdown. Confirm the dropdown never offers more than the in-cellar count, the cellar row drops to 1, **one** History entry shows quantity 3, and the snackbar says "Consumed 3 bottles …".
+3. [ ] Right after that 3-bottle consumption, tap the snackbar **UNDO**. Confirm the cellar count returns to 4 and the History entry disappears.
+4. [ ] Consume 2 bottles with a rating and tasting note, then in **History** press and hold → **Restore to cellar → Restore**. Confirm the cellar count goes up by 2, the entry disappears and the note stays in **Tasting Notes**.
+5. [ ] Consume all remaining bottles of a wine. Confirm the wine leaves the active Cellar list, **History** shows the full count, and no extra events were created.
+6. [ ] Open the dialog with the tasting-note checkbox on and confirm the date, rating, notes and **Would buy again** controls still work unchanged.
 
 ### Backup & Restore — fresh install and first automatic backup
 

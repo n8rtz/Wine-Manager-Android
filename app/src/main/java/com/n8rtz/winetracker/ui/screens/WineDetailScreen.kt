@@ -621,17 +621,20 @@ fun WineDetailScreen(
 
         if (showConsumeDialog) {
             ConsumeDialog(
+                availableQuantity = bottle.quantity,
                 onDismiss = { showConsumeDialog = false },
-                onConfirm = { rating, notes, rebuy, consumptionDate ->
+                onConfirm = { quantity, rating, notes, rebuy, consumptionDate ->
                     showConsumeDialog = false
                     viewModel.consumeBottle(
                         bottleId = bottle.bottleId,
                         rating = rating,
                         notes = notes,
                         rebuy = rebuy,
-                        consumptionDate = consumptionDate
+                        consumptionDate = consumptionDate,
+                        quantity = quantity
                     ) { eventId ->
-                        onConsumed("Consumed 1 bottle of ${editedWine.name}", eventId)
+                        val unit = if (quantity == 1) "bottle" else "bottles"
+                        onConsumed("Consumed $quantity $unit of ${editedWine.name}", eventId)
                         onBack()
                     }
                 }
@@ -658,9 +661,14 @@ fun DetailRow(icon: ImageVector, label: String, value: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConsumeDialog(
+    availableQuantity: Int,
     onDismiss: () -> Unit,
-    onConfirm: (Double?, String?, Boolean, Long) -> Unit
+    onConfirm: (Int, Double?, String?, Boolean, Long) -> Unit
 ) {
+    val maxQuantity = availableQuantity.coerceAtLeast(1)
+    var selectedCount by remember { mutableStateOf(1) }
+    val selectedQuantity = selectedCount.coerceIn(1, maxQuantity)
+    var quantityExpanded by remember { mutableStateOf(false) }
     var rating by remember { mutableStateOf(90f) }
     var notes by remember { mutableStateOf("") }
     var rebuy by remember { mutableStateOf(false) }
@@ -677,6 +685,45 @@ fun ConsumeDialog(
         title = { Text("Log Consumption") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Bottles",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = quantityExpanded,
+                        onExpandedChange = { quantityExpanded = !quantityExpanded },
+                        modifier = Modifier.width(120.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = "$selectedQuantity",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = quantityExpanded)
+                            },
+                            modifier = Modifier.menuAnchor(
+                                ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                                true
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = quantityExpanded,
+                            onDismissRequest = { quantityExpanded = false }
+                        ) {
+                            (1..maxQuantity).forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text("$option") },
+                                    onClick = {
+                                        selectedCount = option
+                                        quantityExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 Text("Consumption date", style = MaterialTheme.typography.titleSmall)
                 OutlinedButton(onClick = { showDatePicker = true }) {
                     Icon(Icons.Default.CalendarMonth, contentDescription = null)
@@ -712,6 +759,7 @@ fun ConsumeDialog(
         confirmButton = {
             Button(onClick = {
                 onConfirm(
+                    selectedQuantity,
                     rating.takeIf { includeTastingNote }?.toDouble(),
                     notes.takeIf { includeTastingNote },
                     rebuy && includeTastingNote,

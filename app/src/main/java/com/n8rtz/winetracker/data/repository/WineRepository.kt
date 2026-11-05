@@ -245,12 +245,14 @@ class WineRepository(
         rating: Double?,
         notes: String?,
         rebuy: Boolean,
-        consumptionDate: Long = System.currentTimeMillis()
+        consumptionDate: Long = System.currentTimeMillis(),
+        quantity: Int = 1
     ): Long = database.withTransaction {
         val bottle = inventoryDao.getBottleById(bottleId) ?: return@withTransaction 0L
         if (bottle.status != BottleStatus.IN_CELLAR || bottle.quantity <= 0) {
             return@withTransaction 0L
         }
+        val consumedQuantity = quantity.coerceIn(1, bottle.quantity)
 
         val noteId = if (rating != null || !notes.isNullOrBlank() || rebuy) {
             tastingNoteDao.insertNote(
@@ -273,7 +275,7 @@ class WineRepository(
                 bottleId = bottleId,
                 vintage = bottle.vintage,
                 consumedAt = consumptionDate,
-                quantity = 1,
+                quantity = consumedQuantity,
                 price = bottle.price,
                 noteId = noteId
             )
@@ -283,7 +285,7 @@ class WineRepository(
         // A zero quantity row is hidden from active inventory and can be reused when restocked.
         inventoryDao.updateBottle(
             bottle.copy(
-                quantity = bottle.quantity - 1,
+                quantity = bottle.quantity - consumedQuantity,
                 status = BottleStatus.IN_CELLAR,
                 dateConsumed = null
             )
@@ -316,7 +318,7 @@ class WineRepository(
                         matchingCellarRow.copy(quantity = matchingCellarRow.quantity + event.quantity)
                     )
                 } else {
-                    // Restore this exact event's one-bottle contribution if its original cellar row
+                    // Restore this exact event's bottle count if its original cellar row
                     // was explicitly removed after the consumption.
                     inventoryDao.insertBottle(
                         WineBottle(
