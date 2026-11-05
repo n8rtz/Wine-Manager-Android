@@ -163,6 +163,15 @@ class BackupPreferenceContractTests(unittest.TestCase):
         self.assertIn("18. **NO UNREQUESTED IN-APP TEXT", rules)
         self.assertIn("A layout, formatting or refactor task is **not** permission to write new prose.", rules)
 
+    def test_backup_frequency_unit_never_wraps(self):
+        """The interval unit button must not be squeezed into a two-line 'mon' / 'ths' column."""
+        screen = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/BackupRestoreScreen.kt").read_text()
+        self.assertIn("maxLines = 1", screen)
+        self.assertIn("softWrap = false", screen)
+        self.assertIn("Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {", screen)
+        self.assertIn("Spacer(Modifier.height(4.dp))", screen)
+        self.assertNotIn("Spacer(Modifier.weight(1f))\n                    OutlinedTextField(", screen)
+
     def test_all_four_destinations_are_wired(self):
         schedule = (BACKUP / "BackupSchedule.kt").read_text()
         implemented = re.findall(

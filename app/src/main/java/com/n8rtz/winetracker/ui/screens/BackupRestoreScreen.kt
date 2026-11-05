@@ -347,47 +347,52 @@ fun BackupRestoreScreen(
                 )
                 HorizontalDivider()
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                // Label and controls get separate lines so the unit button is never squeezed
+                // into a narrow column ("months" used to wrap into "mon" / "ths").
+                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                     Text("Backup frequency", style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = countText,
-                        onValueChange = { newValue ->
-                            val digits = newValue.filter { it.isDigit() }
-                            countText = digits
-                            val parsed = digits.toIntOrNull()
-                            if (parsed != null && parsed in BackupInterval.MIN_COUNT..BackupInterval.MAX_COUNT) {
-                                backupViewModel.setInterval(parsed, state.settings.interval.unit)
-                            }
-                        },
-                        label = { Text("Every") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.width(88.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Box {
-                        TextButton(onClick = { unitMenuExpanded = true }) {
-                            Text(unitLabel(state.settings.interval.unit))
-                        }
-                        DropdownMenu(
-                            expanded = unitMenuExpanded,
-                            onDismissRequest = { unitMenuExpanded = false }
-                        ) {
-                            BackupIntervalUnit.values().forEach { unit ->
-                                DropdownMenuItem(
-                                    text = { Text(unitLabel(unit)) },
-                                    onClick = {
-                                        unitMenuExpanded = false
-                                        backupViewModel.setInterval(
-                                            state.settings.interval.count,
-                                            unit
-                                        )
-                                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = countText,
+                            onValueChange = { newValue ->
+                                val digits = newValue.filter { it.isDigit() }
+                                countText = digits
+                                val parsed = digits.toIntOrNull()
+                                if (parsed != null && parsed in BackupInterval.MIN_COUNT..BackupInterval.MAX_COUNT) {
+                                    backupViewModel.setInterval(parsed, state.settings.interval.unit)
+                                }
+                            },
+                            label = { Text("Every") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.width(88.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Box {
+                            TextButton(onClick = { unitMenuExpanded = true }) {
+                                Text(
+                                    unitLabel(state.settings.interval.unit),
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
+                            }
+                            DropdownMenu(
+                                expanded = unitMenuExpanded,
+                                onDismissRequest = { unitMenuExpanded = false }
+                            ) {
+                                BackupIntervalUnit.values().forEach { unit ->
+                                    DropdownMenuItem(
+                                        text = { Text(unitLabel(unit), maxLines = 1, softWrap = false) },
+                                        onClick = {
+                                            unitMenuExpanded = false
+                                            backupViewModel.setInterval(
+                                                state.settings.interval.count,
+                                                unit
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
