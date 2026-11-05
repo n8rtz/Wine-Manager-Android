@@ -67,6 +67,7 @@ class FloatingControlsTests(unittest.TestCase):
         for name, path in LIST_SCREENS.items():
             source = path.read_text()
             self.assertIn("FloatingSearchFilterControls(", source, name)
+            self.assertIn("import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls", source, name)
             self.assertIn("searchExpanded = searchExpanded", source, name)
             self.assertIn("onOpenSearch = { searchExpanded = true }", source, name)
             self.assertIn("onOpenFilters = { showFilterSheet = true }", source, name)
@@ -174,11 +175,51 @@ class StatsAndHeaderTests(unittest.TestCase):
             self.assertIn("TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())", source, name)
             self.assertIn("Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)", source, name)
             self.assertIn("scrollBehavior = scrollBehavior", source, name)
+            self.assertIn("androidx.compose.ui.input.nestedscroll.nestedScroll", source, name)
+            # Files without a material3 wildcard import need these two explicitly.
+            if "import androidx.compose.material3.*" not in source:
+                self.assertIn("import androidx.compose.material3.TopAppBarDefaults", source, name)
+                self.assertIn("import androidx.compose.material3.rememberTopAppBarState", source, name)
 
     def test_no_explanatory_prose_was_added_to_the_new_controls(self):
         source = CONTROLS.read_text()
         for phrase in ("how it works", "Tap to", "Use the", "Scroll to", "Please"):
             self.assertNotIn(phrase, source)
+
+
+class ComposeImportTests(unittest.TestCase):
+    """A screen with explicit layout imports must import every extension it calls.
+
+    This caught the real :app:compileDebugKotlin failure: HistoryScreen used
+    Modifier.fillMaxWidth() without importing androidx.compose.foundation.layout.fillMaxWidth.
+    """
+    GROUPS = {
+        "androidx.compose.foundation.layout": (
+            "fillMaxWidth", "fillMaxSize", "fillMaxHeight", "wrapContentHeight",
+            "wrapContentWidth", "wrapContentSize", "padding", "size", "height",
+            "width", "heightIn", "widthIn", "sizeIn", "absolutePadding",
+        ),
+        "androidx.compose.foundation": ("background", "clickable", "verticalScroll", "border"),
+        "androidx.compose.ui.draw": ("clip", "shadow", "rotate"),
+        "androidx.compose.ui.focus": ("focusRequester",),
+    }
+
+    def test_every_called_compose_extension_is_imported(self):
+        for path in sorted(UI.rglob("*.kt")):
+            source = path.read_text()
+            body = "\n".join(
+                line for line in source.splitlines() if not line.startswith("import ")
+            )
+            for package, names in self.GROUPS.items():
+                wildcard = f"import {package}.*" in source
+                for name in names:
+                    if not re.search(r"\." + name + r"\(", body):
+                        continue
+                    if wildcard or f"import {package}.{name}\n" in source:
+                        continue
+                    if f"{package}.{name}(" in body:
+                        continue  # fully-qualified call, no import needed
+                    self.fail(f"{path.name}: uses .{name}( without importing {package}.{name}")
 
 
 if __name__ == "__main__":
