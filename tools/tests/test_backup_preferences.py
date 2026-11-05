@@ -124,13 +124,22 @@ class BackupPreferenceContractTests(unittest.TestCase):
         # Submenu options.
         self.assertIn('Text(if (state.runningDestination == id) "Backing up…" else "Back up now")', screen)
         self.assertIn("backupViewModel.backUpNow(id)", screen)
-        self.assertIn("Restore from this destination…", screen)
         self.assertIn('SectionHeader("Schedule", bordeauxRed)', screen)
         self.assertIn('SectionHeader("Old backups", bordeauxRed)', screen)
-        self.assertIn("backupViewModel.loadRestoreBackups(id)", screen)
+        # One unified restore button on the main menu, no per-destination restore rows.
+        self.assertIn('headlineContent = { Text("Restore from backup…") }', screen)
+        self.assertIn("backupViewModel.loadRestoreBackups()", screen)
+        self.assertIn("state.restoreEntries.forEach", screen)
+        self.assertIn("pendingRestoreDestination = entry.destination", screen)
+        self.assertIn("data class RestoreEntry(val name: String, val destination: BackupDestinationId)", viewmodel)
+        self.assertIn("val restoreEntries: List<RestoreEntry> = emptyList()", viewmodel)
+        self.assertIn("fun loadRestoreBackups()", viewmodel)
+        self.assertIn("entries += RestoreEntry(name, id)", viewmodel)
         # Move up/down and the old card/flow layout are gone.
         for gone in ("movePriority", "Move up", "Move down", "DestinationCard", "FlowRow",
-                     "destinationDescription", "showRestoreList", 'SectionHeader("Actions", bordeauxRed)'):
+                     "destinationDescription", "showRestoreList", 'SectionHeader("Actions", bordeauxRed)',
+                     "Restore from this destination…", "loadRestoreBackups(id)",
+                     "restoreDestination", "restoreBackups"):
             self.assertNotIn(gone, screen)
         # No unrequested explanatory prose on the page.
         for phrase in ("Automatic backups go to every enabled destination",
@@ -167,7 +176,7 @@ class BackupPreferenceContractTests(unittest.TestCase):
         screen = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/BackupRestoreScreen.kt").read_text()
         self.assertIn("OpenDocumentTree()", screen)
         self.assertIn("showGitHubWarning", screen)
-        self.assertIn("loadRestoreBackups(id)", screen)
+        self.assertIn("loadRestoreBackups()", screen)
 
 
 if __name__ == "__main__":

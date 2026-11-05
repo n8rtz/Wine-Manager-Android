@@ -16,6 +16,8 @@ import java.text.DateFormat
 import java.time.ZoneId
 import java.util.Date
 
+data class RestoreEntry(val name: String, val destination: BackupDestinationId)
+
 data class BackupUiState(
     val settings: BackupSettings = BackupSettings(),
     val statuses: Map<BackupDestinationId, BackupDestinationSnapshot> = emptyMap(),
@@ -37,8 +39,8 @@ data class BackupUiState(
     val overdueNotice: String? = null,
     val setupMessage: String? = null,
     val setupInProgress: Boolean = false,
-    val restoreDestination: BackupDestinationId? = null,
-    val restoreBackups: List<String> = emptyList(),
+    /** All snapshots across the enabled, configured destinations, newest first. */
+    val restoreEntries: List<RestoreEntry> = emptyList(),
     val restoreLoading: Boolean = false,
     val restoreError: String? = null,
     val nowEpochMillis: Long = System.currentTimeMillis()
@@ -253,37 +255,39 @@ class BackupViewModel(application: Application, database: WineDatabase) : Androi
         refresh()
     }
 
-    fun loadRestoreBackups(id: BackupDestinationId) {
+    /** Unified restore: list every snapshot at every enabled, configured destination at once. */
+    fun loadRestoreBackups() {
         viewModelScope.launch {
             _state.value = _state.value.copy(
-                restoreDestination = id,
-                restoreBackups = emptyList(),
+                restoreEntries = emptyList(),
                 restoreLoading = true,
                 restoreError = null
             )
-            var fetched: List<String> = emptyList()
-            var listingError: String? = null
-            try {
-                fetched = coordinator.listBackups(id)
-                listingError = null
-            } catch (error: Exception) {
-                fetched = emptyList()
-                listingError = "Could not list backups at ${id.displayName}: " +
-                    (error.message ?: "unknown error")
+            val settings = coordinator.loadSettings()
+            val entries = mutableListOf<RestoreEntry>()
+            val errors = mutableListOf<String>()
+            for (id in settings.orderedEnabledDestinations()) {
+                if (id != BackupDestinationId.LOCAL && !coordinator.setupState(id).configured) continue
+                try {
+                    for (name in coordinator.listBackups(id)) {
+                        entries += RestoreEntry(name, id)
+                    }
+                } catch (error: Exception) {
+                    errors += "${id.displayName}: ${error.message ?: "unknown error"}"
+                }
             }
             refreshState()
             _state.value = _state.value.copy(
                 restoreLoading = false,
-                restoreBackups = fetched,
-                restoreError = listingError
+                restoreEntries = entries.sortedByDescending { it.name },
+                restoreError = errors.takeIf { it.isNotEmpty() }?.joinToString("\n")
             )
         }
     }
 
     fun clearRestoreSelection() {
         _state.value = _state.value.copy(
-            restoreDestination = null,
-            restoreBackups = emptyList(),
+            restoreEntries = emptyList(),
             restoreLoading = false,
             restoreError = null
         )

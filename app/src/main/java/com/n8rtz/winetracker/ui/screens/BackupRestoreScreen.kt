@@ -255,6 +255,16 @@ fun BackupRestoreScreen(
                     )
                     HorizontalDivider()
                 }
+                ListItem(
+                    headlineContent = { Text("Restore from backup…") },
+                    leadingContent = {
+                        Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        backupViewModel.loadRestoreBackups()
+                        showRestoreSnapshots = true
+                    }
+                )
             } else {
                 val id = destination
                 val configured = state.needsSetup[id] != true
@@ -321,18 +331,6 @@ fun BackupRestoreScreen(
                         HorizontalDivider()
                     }
                 }
-                ListItem(
-                    headlineContent = { Text("Restore from this destination…") },
-                    leadingContent = {
-                        Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
-                    },
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        backupViewModel.loadRestoreBackups(id)
-                        showRestoreSnapshots = true
-                    }
-                )
-                HorizontalDivider()
-
                 SectionHeader("Schedule", bordeauxRed)
                 ListItem(
                     headlineContent = { Text("Automatic backup") },
@@ -440,24 +438,31 @@ fun BackupRestoreScreen(
                 showRestoreSnapshots = false
                 backupViewModel.clearRestoreSelection()
             },
-            title = { Text("Saved backups · ${state.restoreDestination?.displayName.orEmpty()}") },
+            title = { Text("Saved backups") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    when {
-                        state.restoreLoading -> Text("Loading backups…")
-                        state.restoreError != null -> Text(state.restoreError!!)
-                        state.restoreBackups.isEmpty() -> Text("No backups found.")
-                        else -> {
-                            state.restoreBackups.forEach { name ->
-                                TextButton(
-                                    onClick = {
-                                        pendingRestoreDestination = state.restoreDestination
-                                        pendingRestoreName = name
-                                        showRestoreSnapshots = false
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) { Text(name) }
-                            }
+                    if (state.restoreLoading) {
+                        Text("Loading backups…")
+                    } else {
+                        if (state.restoreError != null) {
+                            Text(
+                                state.restoreError!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        if (state.restoreEntries.isEmpty() && state.restoreError == null) {
+                            Text("No backups found.")
+                        }
+                        state.restoreEntries.forEach { entry ->
+                            TextButton(
+                                onClick = {
+                                    pendingRestoreDestination = entry.destination
+                                    pendingRestoreName = entry.name
+                                    showRestoreSnapshots = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("${entry.destination.displayName} · ${entry.name}") }
                         }
                     }
                 }
@@ -476,7 +481,7 @@ fun BackupRestoreScreen(
             onDismissRequest = { pendingRestoreName = null },
             title = { Text("Replace app data?") },
             text = {
-                Text("Restoring ${pendingRestoreName} replaces all current data. This cannot be undone.")
+                Text("Restoring ${pendingRestoreDestination?.displayName.orEmpty()} · ${pendingRestoreName} replaces all current data. This cannot be undone.")
             },
             confirmButton = {
                 TextButton(onClick = {
