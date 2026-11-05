@@ -10,8 +10,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.importer.DataImporter
 import com.n8rtz.winetracker.data.importer.JsonExporter
-import com.n8rtz.winetracker.data.importer.CsvImportHelper
-import com.n8rtz.winetracker.data.importer.LegacyCsvImportType
 import com.n8rtz.winetracker.data.local.MIGRATION_5_6
 import com.n8rtz.winetracker.data.local.MIGRATION_6_7
 import com.n8rtz.winetracker.scanner.ScannedWine
@@ -24,7 +22,6 @@ import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
-import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -169,27 +166,6 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
             } catch (e: Exception) {
                 Log.e("WineViewModel", "JSON import failed", e)
                 importState.value = RestoreImportState.Error(e.message ?: "Import failed")
-            }
-        }
-    }
-
-    fun importLegacyCsv(uri: Uri, type: LegacyCsvImportType) {
-        viewModelScope.launch(Dispatchers.IO) {
-            importState.value = RestoreImportState.Loading
-            try {
-                val result = when (type) {
-                    LegacyCsvImportType.TASTING_NOTES ->
-                        CsvImportHelper.importTastingNotes(getApplication(), repository.database, uri)
-                    LegacyCsvImportType.CONSUMPTION_HISTORY ->
-                        CsvImportHelper.importConsumptionHistory(getApplication(), repository.database, uri)
-                }
-                importState.value = RestoreImportState.Success(
-                    "Imported ${result.imported}; ${result.alreadyPresent} already present; " +
-                        "${result.skippedInvalid} incomplete row(s) skipped."
-                )
-            } catch (e: Exception) {
-                Log.e("WineViewModel", "Legacy CSV import failed", e)
-                importState.value = RestoreImportState.Error(e.message ?: "CSV import failed")
             }
         }
     }

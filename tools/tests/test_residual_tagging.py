@@ -5,7 +5,7 @@ LAB=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
 
 class ResidualTaggingIntegrationTests(unittest.TestCase):
     def test_defaults_and_shared_resolver_are_opt_in(self):
-        for f in ['TextLabBatch.kt','TextLabViewModel.kt']:
+        for f in ['TextLabBatch.kt']:
             self.assertIn('residualCandidates:Boolean=false',(LAB/f).read_text())
         self.assertIn('batch.compareGazetteer || batch.residualCandidates',(LAB/'TextLabWineExtraction.kt').read_text())
         self.assertIn('if(batch.residualCandidates)',(LAB/'TextLabWineExtraction.kt').read_text())

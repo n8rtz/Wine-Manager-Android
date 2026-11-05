@@ -74,7 +74,6 @@ import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.RankingsViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
-import com.n8rtz.winetracker.viewmodels.WineImageImportViewModel
 import com.n8rtz.winetracker.backup.BackupViewModel
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -163,16 +162,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val wineImageImportViewModel: WineImageImportViewModel by viewModels {
-        object : androidx.lifecycle.ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                Log.d("WineTracker", "MainActivity: Creating WineImageImportViewModel")
-                return WineImageImportViewModel(this@MainActivity.application, repository) as T
-            }
-        }
-    }
-
     private val backupViewModel: BackupViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -220,7 +209,6 @@ class MainActivity : ComponentActivity() {
                     tastingNoteViewModel,
                     rankingsViewModel,
                     scannerViewModel,
-                    wineImageImportViewModel,
                     backupViewModel
                 )
             }
@@ -304,7 +292,6 @@ fun MainAppScaffold(
     tastingNoteViewModel: TastingNoteViewModel,
     rankingsViewModel: RankingsViewModel,
     scannerViewModel: ScannerViewModel,
-    wineImageImportViewModel: WineImageImportViewModel,
     backupViewModel: BackupViewModel
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -325,7 +312,6 @@ fun MainAppScaffold(
     /** A JSON restore rewrites SharedPreferences; refresh the in-memory ViewModels immediately. */
     fun refreshAfterRestore() {
         tastingNoteViewModel.refreshReviewerNames()
-        wineImageImportViewModel.refreshPreferences()
     }
     // Used only so "Add Note" from a wine's detail screen can prefill that wine.
     val activeInventory by viewModel.activeInventory.collectAsState(initial = emptyList())
@@ -475,7 +461,6 @@ fun MainAppScaffold(
             composable("profile") {
                 ProfileScreen(
                     viewModel = viewModel,
-                    wineImageImportViewModel = wineImageImportViewModel,
                     tastingNoteViewModel = tastingNoteViewModel,
                     onSettingsClick = { navController.navigate("settings") },
                     onParetoClick = { navController.navigate("pareto") }
@@ -487,7 +472,6 @@ fun MainAppScaffold(
             composable("settings") {
                 ProfileScreen(
                     viewModel = viewModel,
-                    wineImageImportViewModel = wineImageImportViewModel,
                     tastingNoteViewModel = tastingNoteViewModel,
                     section = ProfileSection.SETTINGS,
                     onBack = { navController.popBackStack() },

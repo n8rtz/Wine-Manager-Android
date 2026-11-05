@@ -29,22 +29,18 @@ def literals(source, names):
 
 
 class BackupPreferenceContractTests(unittest.TestCase):
-    def test_preference_keys_match_the_two_viewmodels(self):
+    def test_preference_keys_match_the_reviewer_viewmodel(self):
         prefs = PREFS.read_text()
         tasting = (ROOT / "app/src/main/java/com/n8rtz/winetracker/viewmodels/TastingNoteViewModel.kt").read_text()
-        images = (ROOT / "app/src/main/java/com/n8rtz/winetracker/viewmodels/WineImageImportViewModel.kt").read_text()
         canonical = literals(prefs, ["REVIEWER_PREFERENCES_FILE", "REVIEWER_NAMES_KEY",
                                      "IMAGE_SETTINGS_FILE", "SOFT_BUDGET_KEY"])
         reviewers = literals(tasting, ["REVIEWER_PREFERENCES_FILE", "REVIEWER_NAMES_KEY"])
-        image_settings = literals(images, ["PREFERENCES_FILE", "SOFT_BUDGET_KEY"])
         self.assertEqual("wine_manager_settings", canonical["REVIEWER_PREFERENCES_FILE"])
         self.assertEqual("wine_reviewer_names", canonical["REVIEWER_NAMES_KEY"])
         self.assertEqual("wine_image_import_settings", canonical["IMAGE_SETTINGS_FILE"])
         self.assertEqual("soft_budget_bytes", canonical["SOFT_BUDGET_KEY"])
         self.assertEqual(canonical["REVIEWER_PREFERENCES_FILE"], reviewers["REVIEWER_PREFERENCES_FILE"])
         self.assertEqual(canonical["REVIEWER_NAMES_KEY"], reviewers["REVIEWER_NAMES_KEY"])
-        self.assertEqual(canonical["IMAGE_SETTINGS_FILE"], image_settings["PREFERENCES_FILE"])
-        self.assertEqual(canonical["SOFT_BUDGET_KEY"], image_settings["SOFT_BUDGET_KEY"])
 
     def test_fresh_install_reviewer_defaults_are_exported_not_emptied(self):
         """A missing prefs key must export the built-in list, or a restore would clear it."""

@@ -32,7 +32,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
 
-**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event.
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
 
 ### Add menu visibility and Cellar tab
 
@@ -53,6 +53,17 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 4. [ ] Consume 2 bottles with a rating and tasting note, then in **History** press and hold → **Restore to cellar → Restore**. Confirm the cellar count goes up by 2, the entry disappears and the note stays in **Tasting Notes**.
 5. [ ] Consume all remaining bottles of a wine. Confirm the wine leaves the active Cellar list, **History** shows the full count, and no extra events were created.
 6. [ ] Open the dialog with the tasting-note checkbox on and confirm the date, rating, notes and **Would buy again** controls still work unchanged.
+
+### Settings cleanup — obsolete entries
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings**. Confirm **Backup & Restore**, **Import Data (JSON)**, **Export Data**, **Reset Database**, **Database Lookup** and **App Information** are still present, and that no **Wine images** section, legacy CSV import row, OCR Text Lab, OCR Lab or Export OCR test data row appears.
+2. [ ] In a debug build, confirm **Scanner testing** contains only **Large image dataset test** and that it still opens the 125-label benchmark. In a release build, confirm the whole **Scanner testing** block is absent.
+3. [ ] Open **Add Wine** in a debug build and confirm the **OCR Lab — test production stack** button is gone and the label scanner still works.
+4. [ ] Confirm **Import Data (JSON)**, **Export Data** and **Reset Database** still behave as before, and that an exported JSON still restores image provenance rows without trying to fetch or import new images.
+5. [ ] Confirm no Open Food Facts image review, offline-image management or storage-budget dialog can be reached anywhere in the app, and that a wine card with an existing local image still displays it.
+6. [ ] Run `python3 tools/tests/test_settings_cleanup.py` and the rest of `tools/tests/`; all host checks should pass. Then `./gradlew :app:assembleDebug :app:testDebugUnitTest` to confirm no dangling references to the deleted classes.
 
 ### Backup & Restore — fresh install and first automatic backup
 

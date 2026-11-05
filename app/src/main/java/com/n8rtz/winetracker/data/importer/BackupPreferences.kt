@@ -6,7 +6,7 @@ import java.util.Locale
 /**
  * W-057 Phase 2: the two app preferences that are not in Room but must survive a restore.
  *
- * The file/key literals mirror `TastingNoteViewModel` and `WineImageImportViewModel`
+ * The reviewer literals mirror `TastingNoteViewModel`
  * (`tools/tests/test_backup_preferences.py` asserts they stay in sync). Only these values are
  * written; no credentials, tokens or image bytes are ever included in a backup.
  */

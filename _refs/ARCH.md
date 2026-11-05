@@ -46,7 +46,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── RankingsScreen.kt          # Rankings by 100-point score + search + filters
 │   │   ├── RankingsFilterState.kt     # Rankings filter/sort state
 │   │   ├── ParetoScreen.kt            # Price-vs-rating Pareto chart, detail card, Red/White dashboards
-│   │   ├── ProfileScreen.kt           # Profile tab (Price vs. Rating, reviewers, Settings link) and the Settings screen (ProfileSection.SETTINGS: backup/restore, legacy CSV import, image review/storage, app info)
+│   │   ├── ProfileScreen.kt           # Profile tab (Price vs. Rating, reviewers, Settings link) and the Settings screen (ProfileSection.SETTINGS: backup/restore, import/export, app info)
 │   │   ├── AppInfoScreen.kt           # App/DB version, build time, commit and branch
 │   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles + setup, priority, schedule, keep-N, restore picker, failure popup
 │   └── components/
@@ -81,13 +81,11 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   └── WineDaos.kt                # DAOs: Wine, WineImageAsset, Inventory, TastingNote, Rating, ConsumptionEvent
 │   ├── repository/
 │   │   ├── WineRepository.kt          # Single source of truth; inventory and consumption-event transactions
-│   │   └── WineImageImportRepository.kt # Reviewed image import, provenance, offline-copy removal
 │   ├── importer/
 │       ├── BackupData.kt              # JSON backup model (optional reviewer list + image budget since W-057 Phase 2)
 │       ├── JsonExporter.kt            # JSON export (Gson) incl. optional preferences
 │       ├── DataImporter.kt            # Validated, transactional JSON restore + relational ID mapping (file URI or stream)
 │       ├── DevSeedRestorer.kt         # DEBUG ONLY: restores the bundled debug seed backup into an empty database after a fresh install
-│       ├── CsvImportHelper.kt         # Legacy tasting-note and consumption-history CSV importers
 │       └── BackupPreferences.kt       # Canonical reviewer/budget preference keys + read/write for backup round-trip
 │   └── backup/                        # W-057: Backup & Restore (app-open scheduled backups, no background work)
 │       ├── BackupSchedule.kt           # Pure Kotlin settings, calendar due rule, priority, naming, retention, warnings
@@ -128,26 +126,24 @@ app/src/main/java/com/n8rtz/winetracker/
 │   ├── BarcodeIdentityCache.kt        # On-disk barcode lookup cache (works offline)
 │   └── WineBarcodeIdentity.kt         # Identity model + Open Food Facts product mapper
 │
-├── image/                             # Reviewed stock-image import (Open Food Facts) and offline storage
-│   ├── OpenFoodFactsWineImageProvider.kt # Candidate search/mapping/filtering; WineImageKind
-│   ├── WineImageFileStore.kt          # Downloads, downsamples, stores local WebP copies (<= 500 KB each)
+├── image/                             # Local image file paths, display model and restore cleanup
+│   ├── WineImageFileStore.kt          # Resolves local image paths; clears stored images on a JSON restore
 │   └── WineImageDisplay.kt            # Prefer approved local file, else legacy URL (for Coil)
 │
 ├── network/
-│   ├── OpenFoodFactsApi.kt            # Retrofit interface (image search + barcode product lookup)
+│   ├── OpenFoodFactsApi.kt            # Retrofit interface (barcode product lookup)
 │   └── OpenFoodFactsProductResponse.kt # Response models
 │
 └── viewmodels/
     ├── WineViewModel.kt               # Cellar/History state, filters, consume/undo, import/export
     ├── TastingNoteViewModel.kt        # Note editor state, save/delete, event-note linking
     ├── RankingsViewModel.kt           # Rankings filtering, sorting, price lookups
-    ├── ScannerViewModel.kt            # Label scan state (capture, OCR, review)
-    └── WineImageImportViewModel.kt    # Reviewed image-import queue, storage budget, offline-copy management
+    └── ScannerViewModel.kt            # Label scan state (capture, OCR, review)
 
 app/src/main/res/xml/                  # backup_rules.xml / data_extraction_rules.xml (W-057 Phase 0: exclude wine-images/ and backup_credentials.xml), file_paths.xml
 app/src/test/java/...                  # JVM tests: aromawheel, backup (schedule/naming/retention/config rules), drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
-                                       #   image provider, vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
-app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
+                                       #   vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
+app/src/androidTest/java/...           # Instrumented: LabelOcrImageRegressionTest, scanner/evidence device tests
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
 app/src/main/assets/producer-gazetteer-v1/ # Verified primary LWIN producer/wine indexes (producers.sqlite 33,160, wines.sqlite) + manifest/NOTICE; primary_verified gate
@@ -174,12 +170,14 @@ app/src/androidTest/java/com/yourapp/wine/textlab/PipelineFunnelDeviceTest.kt # 
 tools/tests/test_pipeline_funnel.py      # Host fixture, compact-mobile layout contract, export wiring and build metadata checks
 tools/tests/test_wine_app_labels_corpus.py # 125-label asset/route contract + frozen-baseline capture and CSV-save wiring
 app/src/main/java/com/yourapp/wine/textlab/TextLabBottleFilter.kt # LAB ONLY: post-OCR spatial bottle-column & medal/critic sticker filter (works with Cached OCR) + conditional padded tiny-footprint zoom-crop
+app/src/main/java/com/yourapp/wine/textlab/TextLabState.kt # Default-off Lab engine switches asserted by the instrumented engine tests
 app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt # LAB ONLY, off by default: bounded appellation repair (explicit origin anchor, LabelContext country cue, or >=10-letter globally unique unanchored appellation)
 app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt # LAB ONLY: per-label collector of explicit origin anchors, legal classification cues and unambiguous KB producer countries for cross-line disambiguation and PlaceRepair
 tools/tests/test_bottle_filter_and_zoom_crop.py # Host wiring & generality checks for Lab v4 bottle-column/sticker filter and conditional zoom-crop
 tools/tests/test_label_context_and_accent_scrubbing.py # Host checks for TextNorm.scrub, framed appellations, LabelContext, Lab v4 geography backfill and frozen Prod subset scoping
 tools/tests/test_backup_preferences.py  # W-057 host contract: preference key parity, Auto Backup rules, secrets, failure popup wiring
 tools/tests/test_consume_quantity.py # Host wiring checks for the multi-bottle Mark as Consumed selector and one-event/quantity-undo integrity
+tools/tests/test_settings_cleanup.py # Host contract: the five retired Settings entries and their code/routes are gone, benchmark entry stays
 tools/evaluation/retired-phone-corpus-v1/ # OFFLINE ONLY inputs of the retired 168-photo corpus (scoring, adjudication, saved v2); never packaged
 data/wine-knowledge/                # Authored catalog inputs: editorial-origins.txt, geography/*.txt region/subregion trees, label-terms.csv, typical-grapes.csv, sources/registry.json + pinned CC0 AVA snapshot
 tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> origins.csv (+ path column) and kb/GeneratedWineKnowledge.kt; --check detects stale outputs
