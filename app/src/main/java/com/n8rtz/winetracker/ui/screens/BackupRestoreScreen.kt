@@ -1,7 +1,4 @@
-@file:OptIn(
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.foundation.layout.ExperimentalLayoutApi::class
-)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.n8rtz.winetracker.ui.screens
 
 import android.net.Uri
@@ -35,15 +32,15 @@ import com.n8rtz.winetracker.backup.BackupHealth
 import com.n8rtz.winetracker.backup.BackupInterval
 import com.n8rtz.winetracker.backup.BackupIntervalUnit
 import com.n8rtz.winetracker.backup.BackupSettings
-import com.n8rtz.winetracker.backup.BackupUiState
 import com.n8rtz.winetracker.backup.BackupViewModel
 import com.n8rtz.winetracker.viewmodels.RestoreImportState
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import kotlinx.coroutines.launch
 
 /**
- * Profile -> Settings -> Backup & Restore. Toggles, schedule, retention, manual backup and a
- * restore picker that feeds the existing validated, transactional JSON importer.
+ * Profile -> Settings -> Backup & Restore. The main menu holds only the destination toggles;
+ * tapping a destination opens its submenu with the actions and the shared schedule/retention
+ * settings. Restore feeds the existing validated, transactional JSON importer.
  */
 @Composable
 fun BackupRestoreScreen(
@@ -58,7 +55,7 @@ fun BackupRestoreScreen(
     val coroutineScope = rememberCoroutineScope()
     val bordeauxRed = Color(0xFF722F37)
 
-    var showRestoreList by remember { mutableStateOf(false) }
+    var activeDestination by remember { mutableStateOf<BackupDestinationId?>(null) }
     var showRestoreSnapshots by remember { mutableStateOf(false) }
     var pendingRestoreName by remember { mutableStateOf<String?>(null) }
     var pendingRestoreDestination by remember { mutableStateOf<BackupDestinationId?>(null) }
@@ -117,9 +114,11 @@ fun BackupRestoreScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Backup & Restore") },
+                title = { Text(activeDestination?.displayName ?: "Backup & Restore") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        if (activeDestination != null) activeDestination = null else onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -134,38 +133,6 @@ fun BackupRestoreScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Card(
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "Backup status",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = bordeauxRed
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(state.protectionLine, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        "Schedule: " + if (state.settings.automaticEnabled) {
-                            "automatic, every ${state.settings.interval.count} ${unitLabel(state.settings.interval.unit)}"
-                        } else {
-                            "manual only"
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        "Copies kept: " + if (state.settings.pruneEnabled) {
-                            "newest ${state.settings.keepCount}"
-                        } else {
-                            "all"
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
             if (state.warningBanner != null) {
                 Card(
                     shape = RoundedCornerShape(8.dp),
@@ -178,11 +145,6 @@ fun BackupRestoreScreen(
                         Text("Backup needs attention", style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(4.dp))
                         Text(state.warningBanner!!, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            "A backup starts on the next app open when the last confirmed copy " +
-                                "is older than the interval below. Nothing runs in the background.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
                     }
                 }
             }
@@ -224,209 +186,239 @@ fun BackupRestoreScreen(
                 }
             }
 
-            SectionHeader("Destinations", bordeauxRed)
-            Text(
-                "Automatic backups go to every enabled destination. Use Back up now on a " +
-                    "destination to send a snapshot to just that one. Priority order decides the " +
-                    "attempt order and which destination Restore offers first.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            state.settings.destinationPriority.forEach { id ->
-                val enabled = id in state.settings.enabledDestinations
-                val configured = state.needsSetup[id] != true
-                DestinationCard(
-                    id = id,
-                    state = state,
-                    enabled = enabled,
-                    configured = configured,
-                    bordeauxRed = bordeauxRed,
-                    onToggle = { checked ->
-                        if (checked && id == BackupDestinationId.GITHUB && !configured) {
-                            showGitHubWarning = true
-                        } else {
-                            backupViewModel.setDestinationEnabled(id, checked)
-                        }
-                    },
-                    onBackUpNow = { backupViewModel.backUpNow(id) },
-                    onSetUp = { openSetup(id) },
-                    onDisconnect = { backupViewModel.disconnect(id) },
-                    onMoveUp = { backupViewModel.movePriority(id, -1) },
-                    onMoveDown = { backupViewModel.movePriority(id, 1) }
-                )
-            }
-
-            SectionHeader("Schedule", bordeauxRed)
-            ListItem(
-                headlineContent = { Text("Automatic backup") },
-                supportingContent = {
-                    Text("Checks on every app open; nothing runs in the background.")
-                },
-                leadingContent = {
-                    Icon(Icons.Filled.History, contentDescription = null, tint = bordeauxRed)
-                },
-                trailingContent = {
-                    Switch(
-                        checked = state.settings.automaticEnabled,
-                        onCheckedChange = { backupViewModel.setAutomaticEnabled(it) }
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Backup frequency", style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.weight(1f))
-                OutlinedTextField(
-                    value = countText,
-                    onValueChange = { newValue ->
-                        val digits = newValue.filter { it.isDigit() }
-                        countText = digits
-                        val parsed = digits.toIntOrNull()
-                        if (parsed != null && parsed in BackupInterval.MIN_COUNT..BackupInterval.MAX_COUNT) {
-                            backupViewModel.setInterval(parsed, state.settings.interval.unit)
-                        }
-                    },
-                    label = { Text("Every") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(88.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Box {
-                    TextButton(onClick = { unitMenuExpanded = true }) {
-                        Text(unitLabel(state.settings.interval.unit))
+            val destination = activeDestination
+            if (destination == null) {
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            "Backup status",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = bordeauxRed
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(state.protectionLine, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Schedule: " + if (state.settings.automaticEnabled) {
+                                "automatic, every ${state.settings.interval.count} ${unitLabel(state.settings.interval.unit)}"
+                            } else {
+                                "manual only"
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "Copies kept: " + if (state.settings.pruneEnabled) {
+                                "newest ${state.settings.keepCount}"
+                            } else {
+                                "all"
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
-                    DropdownMenu(
-                        expanded = unitMenuExpanded,
-                        onDismissRequest = { unitMenuExpanded = false }
-                    ) {
-                        BackupIntervalUnit.values().forEach { unit ->
-                            DropdownMenuItem(
-                                text = { Text(unitLabel(unit)) },
-                                onClick = {
-                                    unitMenuExpanded = false
-                                    backupViewModel.setInterval(
-                                        state.settings.interval.count,
-                                        unit
-                                    )
+                }
+
+                SectionHeader("Destinations", bordeauxRed)
+                state.settings.destinationPriority.forEach { id ->
+                    val enabled = id in state.settings.enabledDestinations
+                    val configured = state.needsSetup[id] != true
+                    ListItem(
+                        headlineContent = { Text(id.displayName) },
+                        trailingContent = {
+                            Switch(
+                                checked = enabled,
+                                onCheckedChange = { checked ->
+                                    if (checked && id == BackupDestinationId.GITHUB && !configured) {
+                                        showGitHubWarning = true
+                                    } else {
+                                        backupViewModel.setDestinationEnabled(id, checked)
+                                    }
                                 }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable { activeDestination = id }
+                    )
+                    HorizontalDivider()
+                }
+            } else {
+                val id = destination
+                val configured = state.needsSetup[id] != true
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            "Status",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = bordeauxRed
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            state.statusLines[id] ?: "No status yet",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        val detail = state.setupDetails[id].orEmpty()
+                        if (detail.isNotBlank() && id != BackupDestinationId.LOCAL) {
+                            Text(
+                                detail,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
-            }
-            Text(
-                "A new backup starts on the next app open once the last confirmed copy is " +
-                    "older than this interval. A destination's Back up now button runs immediately.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SectionHeader("Old backups", bordeauxRed)
-            ListItem(
-                headlineContent = { Text("Delete old backups") },
-                supportingContent = {
-                    Text("Only files named WineTracker_<date>_<time>.json are ever removed.")
-                },
-                leadingContent = {
-                    Icon(Icons.Filled.DeleteForever, contentDescription = null, tint = bordeauxRed)
-                },
-                trailingContent = {
-                    Switch(
-                        checked = state.settings.pruneEnabled,
-                        onCheckedChange = { backupViewModel.setPruneEnabled(it) }
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Keep the newest ${state.settings.keepCount}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
+                ListItem(
+                    headlineContent = {
+                        Text(if (state.runningDestination == id) "Backing up…" else "Back up now")
+                    },
+                    leadingContent = {
+                        Icon(Icons.Filled.Download, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable(enabled = !state.isRunning) {
+                        backupViewModel.backUpNow(id)
+                    }
                 )
-                TextButton(
-                    onClick = { backupViewModel.setKeepCount(state.settings.keepCount - 1) },
-                    enabled = state.settings.pruneEnabled &&
-                        state.settings.keepCount > BackupSettings.MIN_KEEP_COUNT
-                ) { Text("−") }
-                TextButton(
-                    onClick = { backupViewModel.setKeepCount(state.settings.keepCount + 1) },
-                    enabled = state.settings.pruneEnabled &&
-                        state.settings.keepCount < BackupSettings.MAX_KEEP_COUNT
-                ) { Text("+") }
-            }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            SectionHeader("Restore", bordeauxRed)
-            ListItem(
-                headlineContent = { Text("Restore from backup…") },
-                supportingContent = {
-                    Text("Choose a destination and a saved copy; the app asks before replacing any data.")
-                },
-                leadingContent = {
-                    Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
-                },
-                modifier = Modifier.fillMaxWidth().clickable { showRestoreList = true }
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            Text(
-                "Automatic off = manual only. The existing Import Data (JSON) and Export Data " +
-                    "rows in Settings remain available as an escape hatch. Backups are plain JSON " +
-                    "(not encrypted): only enable destinations you trust. If a backup fails, a " +
-                    "popup appears every time you open the app until it succeeds again.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-    }
-
-    if (showRestoreList) {
-        val candidates = state.settings.orderedEnabledDestinations().filter { id ->
-            id == BackupDestinationId.LOCAL || state.needsSetup[id] != true
-        }
-        AlertDialog(
-            onDismissRequest = { showRestoreList = false },
-            title = { Text("Restore from backup") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "Choose where the saved copy lives. Priority order is offered first.",
-                        style = MaterialTheme.typography.bodySmall
+                HorizontalDivider()
+                if (id != BackupDestinationId.LOCAL) {
+                    ListItem(
+                        headlineContent = { Text(if (configured) "Change setup" else "Set up…") },
+                        leadingContent = {
+                            Icon(Icons.Filled.Settings, contentDescription = null, tint = bordeauxRed)
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable(enabled = !state.setupInProgress) {
+                            openSetup(id)
+                        }
                     )
-                    if (candidates.isEmpty()) {
-                        Text("No backup destination is enabled or configured yet.")
-                    } else {
-                        candidates.forEach { id ->
-                            TextButton(
-                                onClick = {
-                                    backupViewModel.loadRestoreBackups(id)
-                                    showRestoreList = false
-                                    showRestoreSnapshots = true
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text(id.displayName) }
+                    HorizontalDivider()
+                    if (configured) {
+                        ListItem(
+                            headlineContent = { Text("Disconnect") },
+                            leadingContent = {
+                                Icon(Icons.Filled.DeleteForever, contentDescription = null, tint = bordeauxRed)
+                            },
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                backupViewModel.disconnect(id)
+                            }
+                        )
+                        HorizontalDivider()
+                    }
+                }
+                ListItem(
+                    headlineContent = { Text("Restore from this destination…") },
+                    leadingContent = {
+                        Icon(Icons.Filled.Upload, contentDescription = null, tint = bordeauxRed)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        backupViewModel.loadRestoreBackups(id)
+                        showRestoreSnapshots = true
+                    }
+                )
+                HorizontalDivider()
+
+                SectionHeader("Schedule", bordeauxRed)
+                ListItem(
+                    headlineContent = { Text("Automatic backup") },
+                    leadingContent = {
+                        Icon(Icons.Filled.History, contentDescription = null, tint = bordeauxRed)
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = state.settings.automaticEnabled,
+                            onCheckedChange = { backupViewModel.setAutomaticEnabled(it) }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                HorizontalDivider()
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Backup frequency", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.weight(1f))
+                    OutlinedTextField(
+                        value = countText,
+                        onValueChange = { newValue ->
+                            val digits = newValue.filter { it.isDigit() }
+                            countText = digits
+                            val parsed = digits.toIntOrNull()
+                            if (parsed != null && parsed in BackupInterval.MIN_COUNT..BackupInterval.MAX_COUNT) {
+                                backupViewModel.setInterval(parsed, state.settings.interval.unit)
+                            }
+                        },
+                        label = { Text("Every") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(88.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Box {
+                        TextButton(onClick = { unitMenuExpanded = true }) {
+                            Text(unitLabel(state.settings.interval.unit))
+                        }
+                        DropdownMenu(
+                            expanded = unitMenuExpanded,
+                            onDismissRequest = { unitMenuExpanded = false }
+                        ) {
+                            BackupIntervalUnit.values().forEach { unit ->
+                                DropdownMenuItem(
+                                    text = { Text(unitLabel(unit)) },
+                                    onClick = {
+                                        unitMenuExpanded = false
+                                        backupViewModel.setInterval(
+                                            state.settings.interval.count,
+                                            unit
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showRestoreList = false
-                    backupViewModel.clearRestoreSelection()
-                }) { Text("Cancel") }
+                HorizontalDivider()
+
+                SectionHeader("Old backups", bordeauxRed)
+                ListItem(
+                    headlineContent = { Text("Delete old backups") },
+                    leadingContent = {
+                        Icon(Icons.Filled.DeleteForever, contentDescription = null, tint = bordeauxRed)
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = state.settings.pruneEnabled,
+                            onCheckedChange = { backupViewModel.setPruneEnabled(it) }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Keep the newest ${state.settings.keepCount}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { backupViewModel.setKeepCount(state.settings.keepCount - 1) },
+                        enabled = state.settings.pruneEnabled &&
+                            state.settings.keepCount > BackupSettings.MIN_KEEP_COUNT
+                    ) { Text("−") }
+                    TextButton(
+                        onClick = { backupViewModel.setKeepCount(state.settings.keepCount + 1) },
+                        enabled = state.settings.pruneEnabled &&
+                            state.settings.keepCount < BackupSettings.MAX_KEEP_COUNT
+                    ) { Text("+") }
+                }
             }
-        )
+        }
     }
 
     if (showRestoreSnapshots) {
@@ -441,15 +433,8 @@ fun BackupRestoreScreen(
                     when {
                         state.restoreLoading -> Text("Loading backups…")
                         state.restoreError != null -> Text(state.restoreError!!)
-                        state.restoreBackups.isEmpty() -> Text(
-                            "No app-owned backups were found at this destination. " +
-                                "Use Import Data (JSON) in Settings to pick a file yourself."
-                        )
+                        state.restoreBackups.isEmpty() -> Text("No backups found.")
                         else -> {
-                            Text(
-                                "Newest first. Tap a backup to review it.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
                             state.restoreBackups.forEach { name ->
                                 TextButton(
                                     onClick = {
@@ -478,11 +463,7 @@ fun BackupRestoreScreen(
             onDismissRequest = { pendingRestoreName = null },
             title = { Text("Replace app data?") },
             text = {
-                Text(
-                    "Restoring ${pendingRestoreName} replaces all current wines, cellar inventory, " +
-                        "tasting notes, ratings, and consumption history. This cannot be undone. " +
-                        "Continue only if this is the backup you want to restore."
-                )
+                Text("Restoring ${pendingRestoreName} replaces all current data. This cannot be undone.")
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -546,12 +527,6 @@ fun BackupRestoreScreen(
             title = { Text("GitHub setup") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "Private repository as owner/name and a fine-grained token limited to " +
-                            "that one repository (Contents: read and write). The token is stored " +
-                            "with an Android Keystore key, never in the JSON backup.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
                     OutlinedTextField(
                         value = githubRepoDraft,
                         onValueChange = { githubRepoDraft = it },
@@ -562,14 +537,10 @@ fun BackupRestoreScreen(
                     OutlinedTextField(
                         value = githubTokenDraft,
                         onValueChange = { githubTokenDraft = it },
-                        label = { Text("Fine-grained token") },
+                        label = { Text("Fine-grained token (Contents: read/write)") },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        "The app tests the token and refuses a public repository.",
-                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             },
@@ -594,11 +565,6 @@ fun BackupRestoreScreen(
             title = { Text("WebDAV setup (TrueNAS SCALE)") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "The WebDAV share folder, e.g. https://nas/share/WineManager/ or the " +
-                            "Nextcloud app's /remote.php/dav/files/<user>/WineManager/.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
                     OutlinedTextField(
                         value = webDavUrlDraft,
                         onValueChange = { webDavUrlDraft = it },
@@ -623,8 +589,7 @@ fun BackupRestoreScreen(
                     )
                     if (BackupConfigRules.isInsecureWebDavUrl(webDavUrlDraft)) {
                         Text(
-                            "Plain http sends your cellar JSON and password unencrypted across " +
-                                "the network. Use https if the NAS supports it.",
+                            "Plain http sends your data unencrypted. Use https.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -660,115 +625,6 @@ fun BackupRestoreScreen(
     }
 }
 
-/**
- * One destination as a full-width card. The actions live in a FlowRow *outside* ListItem's
- * supportingContent: nesting a Row of buttons there measured them against the trailing Switch,
- * which squeezed "Disconnect" into a one-letter-per-line column. FlowRow wraps whole buttons onto
- * the next line instead of shrinking them.
- */
-@Composable
-private fun DestinationCard(
-    id: BackupDestinationId,
-    state: BackupUiState,
-    enabled: Boolean,
-    configured: Boolean,
-    bordeauxRed: Color,
-    onToggle: (Boolean) -> Unit,
-    onBackUpNow: () -> Unit,
-    onSetUp: () -> Unit,
-    onDisconnect: () -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Filled.Settings, contentDescription = null, tint = bordeauxRed)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    id.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(checked = enabled, onCheckedChange = onToggle)
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                state.statusLines[id] ?: "No status yet",
-                style = MaterialTheme.typography.bodySmall
-            )
-            val detail = state.setupDetails[id].orEmpty()
-            if (detail.isNotBlank() && id != BackupDestinationId.LOCAL) {
-                Text(
-                    detail,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Text(
-                destinationDescription(id),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                TextButton(
-                    onClick = onBackUpNow,
-                    enabled = !state.isRunning,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        Icons.Filled.Download,
-                        contentDescription = null,
-                        tint = bordeauxRed,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        if (state.runningDestination == id) "Backing up…" else "Back up now",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-                if (id != BackupDestinationId.LOCAL) {
-                    TextButton(
-                        onClick = onSetUp,
-                        enabled = !state.setupInProgress,
-                        shape = RoundedCornerShape(8.dp)
-                    ) { Text(if (configured) "Change setup" else "Set up…") }
-                    if (configured) {
-                        TextButton(
-                            onClick = onDisconnect,
-                            shape = RoundedCornerShape(8.dp)
-                        ) { Text("Disconnect") }
-                    }
-                }
-                TextButton(
-                    onClick = onMoveUp,
-                    enabled = enabled,
-                    shape = RoundedCornerShape(8.dp)
-                ) { Text("Move up ↑") }
-                TextButton(
-                    onClick = onMoveDown,
-                    enabled = enabled,
-                    shape = RoundedCornerShape(8.dp)
-                ) { Text("Move down ↓") }
-            }
-        }
-    }
-}
-
 @Composable
 private fun SectionHeader(text: String, color: Color) {
     Text(
@@ -783,15 +639,4 @@ private fun unitLabel(unit: BackupIntervalUnit): String = when (unit) {
     BackupIntervalUnit.DAYS -> "days"
     BackupIntervalUnit.WEEKS -> "weeks"
     BackupIntervalUnit.MONTHS -> "months"
-}
-
-private fun destinationDescription(id: BackupDestinationId): String = when (id) {
-    BackupDestinationId.LOCAL ->
-        "Documents/WineManager/ · a local copy, not off-device protection"
-    BackupDestinationId.GOOGLE_DRIVE ->
-        "Drive folder · persisted Android folder-picker grant"
-    BackupDestinationId.GITHUB ->
-        "Private repo · old versions stay in git history and cannot be fully erased"
-    BackupDestinationId.WEBDAV ->
-        "TrueNAS SCALE WebDAV share or Nextcloud"
 }

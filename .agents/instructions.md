@@ -77,3 +77,11 @@ Key project documents (all in `_refs/`): `BACKLOG.md` (open work), `ARCHIVE.md` 
     - If the database feeds OCR or a benchmark, extend the scorer-side coverage audit (`tools/build_gazetteer_coverage.py`) in the same change.
     - The packaged-asset byte caps in the loaders (`ProducerCatalogDatabaseLookup.MAX_DATABASE_BYTES`, `ProducerGazetteer.load`) are self-imposed sanity bounds, NOT Android/SQLite limits. Raise them deliberately, in step with each other, when a catalog legitimately grows. The practical constraints are APK size, ~2× on-device storage (compressed asset + cache copy), and cold-install copy+hash time — the benchmark loader's per-contender time budget (`checkBudget`) is the binding one, so a much larger catalog needs its install decoupled from the per-photo budget, not just a higher cap.
     - **Rationale:** The Lab expanded producer index (X-Wines/TTB/OSM) was packaged for Lab v4 without any way for the owner to inspect it; the owner required lookup-page parity for this and all future databases (2026-10-26).
+
+18. **NO UNREQUESTED IN-APP TEXT (OWNER RULE, 2026-11-05)**
+    - Never add explanatory paragraphs, helper text, captions, descriptions, "how it works" notes or status sentences to the app unless the owner explicitly asks for that exact text. A layout, formatting or refactor task is **not** permission to write new prose.
+    - Keep UI strings to short labels, values and action names. Do not expand an existing label into a sentence, and do not add a second line of explanation.
+    - Apply this to edits of existing screens too: do not introduce a longer reworded version of copy that was already there. Prefer removing prose over adding it.
+    - Required safety warnings, confirmation dialogs and error messages are the exception, but keep them short.
+    - If behaviour genuinely needs explaining, suggest it under rule 6 (the Hold Rule) and wait for permission.
+    - **Rationale:** the Destinations intro paragraph, schedule notes and footer prose added to Backup & Restore during a formatting fix were called unacceptable by the owner (screenshot, 2026-11-05). Long in-app text is not acceptable by default.

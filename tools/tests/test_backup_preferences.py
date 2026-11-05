@@ -103,21 +103,37 @@ class BackupPreferenceContractTests(unittest.TestCase):
         self.assertIn("showAppOpenFailureDialog()", viewmodel)
         self.assertIn("POST_NOTIFICATIONS", viewmodel)  # documented as deliberately unused
 
-    def test_per_destination_backup_buttons_and_unsquished_layout(self):
-        """W-057 follow-up: each destination owns its Back up now button; actions are not crammed
-        into a ListItem supportingContent (that rendered 'Disconnect' one letter per line)."""
+    def test_destination_toggle_menu_and_submenus(self):
+        """The main menu shows only destination toggles; every option lives in a submenu."""
         screen = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/BackupRestoreScreen.kt").read_text()
         viewmodel = (BACKUP / "BackupViewModel.kt").read_text()
         coordinator = (BACKUP / "BackupCoordinator.kt").read_text()
-        self.assertIn("DestinationCard(", screen)
-        self.assertIn("FlowRow(", screen)
-        self.assertIn("onBackUpNow = { backupViewModel.backUpNow(id) }", screen)
-        self.assertIn("state.runningDestination == id", screen)
-        self.assertNotIn('headlineContent = { Text("Back up now") }', screen)
-        self.assertIn('SectionHeader("Restore", bordeauxRed)', screen)
-        self.assertNotIn('SectionHeader("Actions", bordeauxRed)', screen)
-        # No Column of action buttons inside a ListItem's supportingContent.
-        self.assertNotIn("supportingContent = {\n                        Column {", screen)
+        self.assertIn("var activeDestination by remember { mutableStateOf<BackupDestinationId?>(null) }", screen)
+        self.assertIn("val destination = activeDestination", screen)
+        self.assertIn("if (destination == null) {", screen)
+        self.assertIn("modifier = Modifier.fillMaxWidth().clickable { activeDestination = id }", screen)
+        self.assertIn('title = { Text(activeDestination?.displayName ?: "Backup & Restore") }', screen)
+        self.assertIn("if (activeDestination != null) activeDestination = null else onBack()", screen)
+        # Submenu options.
+        self.assertIn('Text(if (state.runningDestination == id) "Backing up…" else "Back up now")', screen)
+        self.assertIn("backupViewModel.backUpNow(id)", screen)
+        self.assertIn("Restore from this destination…", screen)
+        self.assertIn('SectionHeader("Schedule", bordeauxRed)', screen)
+        self.assertIn('SectionHeader("Old backups", bordeauxRed)', screen)
+        self.assertIn("backupViewModel.loadRestoreBackups(id)", screen)
+        # Move up/down and the old card/flow layout are gone.
+        for gone in ("movePriority", "Move up", "Move down", "DestinationCard", "FlowRow",
+                     "destinationDescription", "showRestoreList", 'SectionHeader("Actions", bordeauxRed)'):
+            self.assertNotIn(gone, screen)
+        # No unrequested explanatory prose on the page.
+        for phrase in ("Automatic backups go to every enabled destination",
+                       "A new backup starts on the next app open",
+                       "Automatic off = manual only",
+                       "Choose where the saved copy lives",
+                       "Nothing runs in the background",
+                       "Only files named"):
+            self.assertNotIn(phrase, screen)
+        # Single-target manual backups and hidden FAB survive.
         self.assertIn("fun backUpNow(target: BackupDestinationId? = null)", viewmodel)
         self.assertIn("coordinator.backUpNow(targets = target?.let(::listOf))", viewmodel)
         self.assertIn("val runningDestination: BackupDestinationId? = null", viewmodel)
@@ -125,6 +141,11 @@ class BackupPreferenceContractTests(unittest.TestCase):
         main = MAIN.read_text()
         self.assertIn("val showAddMenu = currentRoute != \"backup_restore\"", main)
         self.assertIn('if (currentRoute == "backup_restore") isMenuExpanded = false', main)
+
+    def test_agent_rules_forbid_unrequested_ui_copy(self):
+        rules = (ROOT / ".agents/instructions.md").read_text()
+        self.assertIn("18. **NO UNREQUESTED IN-APP TEXT", rules)
+        self.assertIn("A layout, formatting or refactor task is **not** permission to write new prose.", rules)
 
     def test_all_four_destinations_are_wired(self):
         schedule = (BACKUP / "BackupSchedule.kt").read_text()
