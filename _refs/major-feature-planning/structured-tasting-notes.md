@@ -1,6 +1,6 @@
-# Implementation Plan: Structured Tasting Notes (W-061)
+# Implementation Framework: Structured Tasting Notes (W-061)
 
-> **Status: planning only (logged 2026-11-05).** No app code, Room migration, dependency, permission, network use, background work or UI change is authorized by this request. The owner asked to record the design alternatives as open decisions, not to choose or implement them.
+> **Status: decisions resolved 2026-11-05; ready for implementation, but implementation is not authorized by this documentation task.** Every prior open decision is closed below. No app code, Room schema, dependency, permission, network use, background work or UI change was made while creating this framework. A Room v22 migration is specified for future implementation only.
 
 ## Goal
 
@@ -22,75 +22,235 @@ Improve the tasting-note function so a note records **what the wine looked like 
 * `data/local/WineDatabase.kt` defines `SensoryData` with ten `Int` traits, `flaws: List<String>`, `aromas: List<String>`, and `overallScore`. A Gson `TypeConverter` stores it in the opaque `tasting_notes.sensoryData` JSON column; its legacy float-model parser normalizes missing lists. `JsonExporter` serializes whole entities with Gson, so additive `SensoryData` fields can travel in existing JSON backups without a Room schema change.
 * `aromawheel/AromaTaxonomy.kt` exposes stable descriptor IDs and `MAX_SELECTED_DESCRIPTORS = 24`; `AromaSelection` enforces the cap. `ui/components/AromaWheelDialog.kt` hosts the wheel/list picker and removable chips. `ui/components/AromaChipDrag.kt` contains pure drag-reorder maths for chips of uneven widths, and current chip order is described as most-to-least prevalent.
 * `ui/screens/WineDetailScreen.kt` renders saved aroma IDs as one flat `FlowRow` of chips. W-053 (filter tasting notes by aroma) is still open in `BACKLOG.md`.
+* `WineDatabase.kt` is Room schema **v21** today; `WineDefinition` has no color field. `MainActivity.kt` registers migrations through `MIGRATION_20_21`; `BackupData`/`JsonExporter` serialize whole entities with Gson and `DataImporter` restores them with definition-ID mapping.
 
-## Decisions to close before implementation
+## Decision log (closed 2026-11-05)
 
-The owner explicitly left the design alternatives open. Each item below needs an owner decision; the “recommended default” is a planning suggestion only.
+The owner resolved every design alternative before this framework was written. The W-061 backlog status changes from **Needs decision** to **Open**; no implementation is authorized yet.
 
-| ID | Open decision | Options / recommended default |
+| ID | Decision | Resolved value |
 | --- | --- | --- |
-| 6.D1 | Color-picker presentation | 2D hue/saturation-style plot with a separate lightness/value control (owner's example), curated wine-color swatches, or both. **Recommended default:** prototype the 2D plot plus a tappable swatch/numeric fallback for accessibility; no new color-picker dependency without approval. |
-| 6.D2 | Color value and scope | Store ARGB, HSV components, or a named palette ID; record color per tasting note only, or also on `WineDefinition`. **Recommended default:** one nullable color per note, versioned in `SensoryData`; do not infer a color for old notes. |
-| 6.D3 | Aroma-phase model | Four phase buckets; whether one descriptor may appear in several phases; whether the 24-descriptor cap is per note or per phase. **Recommended default:** allow the same stable ID in different phases, keep one cap across the note, and never derive phase from taxonomy family. |
-| 6.D4 | Legacy aroma mapping | Existing `aromas` have no phase. **Recommended default:** preserve them as explicitly unphased in legacy notes; do not silently assign them to “Aroma (before tasting)” (rules 14–16, `ARCH.md` §5, `LESSONS_LEARNED.md`). Owner must choose the visible treatment or approve an explicit migration. |
-| 6.D5 | Intensity representation | Pinch-to-resize word cloud, darker/lighter chip shading, or both. **Recommended default:** choose after a small interactive prototype; if color is used, provide a non-color cue and a non-pinch control for TalkBack, large fonts and small screens. |
-| 6.D6 | Intensity data and meaning | Discrete levels vs continuous value; intensity per descriptor, per phase, or both; relation to the existing prevalence chip order. **Recommended default:** one explicit discrete intensity per aroma observation, independent of chip order; keep current drag-to-reorder behavior until the owner decides whether it stays. |
-| 6.D7 | Section slider mapping | Which of the ten existing trait sliders belongs in each phase section. **Recommended default:** the candidate mapping below; owner confirms. `OverallScoreSlider`, common faults and written notes stay outside the phase sections unless the owner says otherwise. |
-| 6.D8 | “Entry (Tight, Open)” shape | Two independent **Tight** and **Open** sliders, or one bipolar **Tight ↔ Open** slider. **Recommended default:** leave open; both readings of the request must be presented to the owner before coding. |
-| 6.D9 | Section layout | One long scroll with four short headers, collapsible sections, or tabs/steps. **Recommended default:** one scroll with four short section labels; use only short labels/values, no explanatory prose (`.agents/instructions.md` rule 18). |
+| 6.D1 | Color-picker presentation | **Hue strip + saturation/value square**: choose hue on a rainbow strip, then saturation left→right and value bottom→top on a 2D plot. Include a tappable swatch/numeric fallback. |
+| 6.D2a | Color format | **HSV components** (`hue`, `saturation`, `value`), not ARGB or a named palette. |
+| 6.D2b | Color scope | **WineDefinition default + per-note override**. Effective color is the note override when present, otherwise the definition default. Clearing the override reverts to the definition default. |
+| 6.D13 | Where the definition default lives | **Room column + migration v22**: add a nullable `defaultColorHsv` column to `wine_definitions`. No data backfill or inference. |
+| 6.D3 | Aroma-phase model | **Same descriptor may appear in several phases**; one cap of **24 distinct descriptor IDs per note**. Duplicate `(descriptorId, phase)` pairs are rejected. The cap counts IDs, not observation rows. |
+| 6.D4 | Legacy flat aromas | **Prompt on edit**: before saving changes to a note that still has legacy flat aromas, show a phase-assignment sheet; Save is disabled until every legacy descriptor has an explicit phase or is removed. No phase is preselected or inferred. Read-only display of untouched legacy notes remains valid. |
+| 6.D5 | Intensity interaction | **Pinch-sized word cloud + stepper**, with a near-stepless feel and at least ~10 usable steps. No color-shading option was selected. |
+| 6.D6 | Intensity storage | **Continuous `0f..1f` per descriptor-phase pair** (overrides the earlier 1–5 answer). Pinch is stepless; the stepper nudges by `0.1f`. Chip order remains a separate field, not the intensity value. |
+| 6.D8 | Entry Tight/Open controls | **One bipolar `Tight ↔ Open` slider**, stored as one value; no two-slider or derived-score variant. |
+| 6.D7 | Existing slider mapping | **Candidate mapping with Complexity moved to Mid-palate**. See the fixed control map below. |
+| 6.D7b | Global controls | **Overall score, Common faults, written notes, reviewer/recommend/value and save/delete stay outside** the four phase sections. |
+| 6.D9 | Section layout | **Single vertical scroll with four short headers**. No collapsible sections, tabs or wizard steps. |
+| 6.D10 | Data compatibility | **Observations only + derived flat view**: store phase-aware observations; expose the old flat `aromas` list as a read-only compatibility view, never as a second writable source of truth. |
+| 6.D11 | W-053 aroma filter | **Search all phases by default**, with an optional phase filter once W-053 ships. |
+| 6.D14 | Phase assignment UI | **Active phase selector in the aroma wheel/list picker**; descriptors selected while a phase is active are assigned to that phase. Wheel and list modes share the same contract. |
 
-### Candidate slider/section mapping (not approved)
+## Fixed product behavior
 
-| Section | Existing controls | New controls / aroma bucket |
+### Color
+
+* `WineDefinition.defaultColorHsv` is editable from the existing Add/Edit Wine and Wine Detail wine-definition flows using the same compact picker. Short labels only.
+* The tasting-note editor shows the resolved color and offers **Use default** / **Override** actions. The override is a nullable `HsvColor`; `null` means inherit the definition default.
+* Legacy notes and definitions have no color until the user sets one. No color is inferred from wine type, vintage, image or name.
+* The picker uses a hue strip plus a 2D saturation/value square (`S` horizontal, `V` vertical). A swatch and numeric HSV values provide a non-drag fallback.
+
+### Aromas and intensity
+
+* Four stable phases: `AROMA_BEFORE_TASTING`, `ENTRY`, `MID_PALATE`, `FINISH`, displayed as **Aroma (before tasting)**, **Entry**, **Mid-palate**, **Finish**.
+* The aroma wheel/list picker has an active-phase selector. Selecting a descriptor creates an observation in that phase; the same descriptor may be selected again in another phase.
+* `AromaSelection.MAX_SELECTED_DESCRIPTORS = 24` becomes a limit on distinct descriptor IDs per note. Unknown/retired stored IDs are preserved and displayed as raw labels; the wheel never adds unknown IDs.
+* Each observation has an independent continuous intensity in `0f..1f`. `null` means unrated and renders at neutral chip size with no numeric badge. Pinch updates the value continuously; the stepper changes it by `0.1f` and converts `null` to `0.5f` first.
+* Chip size is a monotonic function of intensity, with explicit minimum/maximum scale bounds for large fonts and small screens. Existing group colors from `AromaWheelTheme` are unchanged; intensity is **not** encoded by darkening chips.
+* `displayOrder` remains independent of intensity. Drag-reorder changes order only; pinch/stepper changes intensity only.
+* W-053 filtering matches descriptor IDs across all phases by default. An optional phase predicate narrows results; legacy unphased notes appear only in the all-phase mode.
+
+### Sections and global controls
+
+* One `verticalScroll` `Column` with four short headers: **Visual / aroma**, **Entry**, **Mid-palate**, **Finish**.
+* The ten existing `SensoryEvaluationFields` sliders are placed inside those sections as fixed below. A single bipolar **Tight ↔ Open** slider is added to Entry.
+* `OverallScoreSlider`, **Common faults**, **Tasting notes and impressions**, reviewer/recommend/value controls and save/delete remain outside the four sections.
+* No explanatory paragraphs, helper text, captions, “how it works” notes or longer reworded labels are added (`.agents/instructions.md` rule 18).
+
+## Data model contract (specification only — not source code yet)
+
+These illustrative Kotlin shapes define the future contract. They are **not** present in the repository after this documentation task.
+
+```kotlin
+enum class TastingPhase { AROMA_BEFORE_TASTING, ENTRY, MID_PALATE, FINISH }
+
+data class HsvColor(
+    val hue: Float,        // 0f..360f
+    val saturation: Float, // 0f..1f
+    val value: Float       // 0f..1f
+)
+
+data class AromaObservation(
+    val descriptorId: String,      // stable AromaTaxonomy ID
+    val phase: TastingPhase,
+    val intensity: Float? = null,  // null = unrated; otherwise 0f..1f
+    val displayOrder: Int          // independent of intensity
+)
+
+data class SensoryData(
+    /* existing ten Int traits, flaws, overallScore remain unchanged */,
+    val colorHsv: HsvColor? = null,                 // note override; null = inherit
+    val entryTightOpen: Float = 0.5f,               // 0f = Tight, 1f = Open
+    val aromaObservations: List<AromaObservation> = emptyList(),
+    val aromas: List<String> = emptyList()          // derived, read-only compatibility view
+)
+
+data class WineDefinition(
+    /* existing fields remain unchanged */,
+    val defaultColorHsv: HsvColor? = null
+)
+```
+
+### Normalization and validation rules
+
+1. `HsvColor`: `hue` in `0f..360f`, `saturation` and `value` in `0f..1f`; reject out-of-range values rather than clamping silently.
+2. `entryTightOpen`: `0f..1f`; `0f` displays **Tight**, `1f` displays **Open**, `0.5f` is the neutral default.
+3. `AromaObservation.intensity`: `null` or `0f..1f`; reject values outside the range.
+4. At most **24 distinct `descriptorId` values** per note, regardless of phase count.
+5. No duplicate `(descriptorId, phase)` pair. Reordering changes `displayOrder` only.
+6. Preserve unknown/retired descriptor IDs on read; never drop them from storage. The wheel may add only active IDs.
+7. `aromas` is derived as unique descriptor IDs in first-appearance/display order. It is never written by UI code and is never a second source of truth.
+8. Effective color is `sensoryData.colorHsv ?: definition.defaultColorHsv`. No fallback to wine type, image, vintage or name.
+9. Legacy JSON with only flat `aromas` parses to `aromaObservations = emptyList()` and `colorHsv = null`. Missing lists become empty lists because Gson bypasses Kotlin defaults.
+10. Legacy float-model sensory JSON keeps its existing parser path and gains the same empty defaults. No phase, color or intensity is inferred.
+
+## Persistence and Room migration framework
+
+* `SensoryData` additions stay inside the existing opaque `tasting_notes.sensoryData` JSON column, so they need **no Room migration**. `Converters.toSensoryData` must normalize the new fields and extend the legacy float-JSON parser.
+* `WineDefinition.defaultColorHsv` needs **schema v22**:
+  1. Re-read `ARCH.md` §5, `LESSONS_LEARNED.md` and rules 14–16 before writing the migration.
+  2. Inspect real data rather than assuming values; add `MIGRATION_21_22` with `ALTER TABLE wine_definitions ADD COLUMN defaultColorHsv TEXT` and a `HsvColor` Room `TypeConverter`. Use `NULL` for all existing rows. No backfill.
+  3. Bump `@Database(version = 22)` and register `MIGRATION_21_22` in `MainActivity.kt`'s `addMigrations(...)` chain.
+  4. Verify `BackupData`/`JsonExporter` include the new entity field through Gson and `DataImporter` restores it with the existing definition-ID mapping; older backups without the field stay `NULL`.
+  5. Update `ARCH.md` directory/schema notes when the implementation files are created (rule 12).
+* JSON backup → restore must round-trip: definition default, note override, cleared override, four phases, repeated descriptor IDs, continuous intensities, `null` intensity, display order and legacy flat aromas.
+* No change to `WineBottle`, `ConsumptionEvent`, `Rating`, `WineImageAsset`, W-057 backup destinations, permissions, network calls or background work.
+
+## UI component framework
+
+Proposed future files are listed for planning only; **none are created by this task**.
+
+| Path | Role |
+| --- | --- |
+| `data/local/TastingNoteStructure.kt` (new) | Pure-Kotlin `TastingPhase`, `HsvColor`, `AromaObservation`, normalization/validation helpers and pure reducer functions; JVM-testable. |
+| `ui/components/WineColorPicker.kt` (new) | Hue strip + S/V square, current swatch, numeric HSV fallback, Use default / Override actions. Custom Compose Canvas/pointer handling; no new dependency. |
+| `ui/components/PhaseAromaCloud.kt` (new) | Phase-grouped chips sized by intensity; pinch gesture, 0.1 stepper, drag reorder, TalkBack labels and min/max scale bounds. |
+| `ui/components/TastingPhaseSections.kt` (new) | Four short section headers and section-aware composition of sliders, color picker, aroma cloud and chips. |
+| `ui/components/LegacyAromaPhaseSheet.kt` (new) | Blocking phase-assignment sheet shown on first edit of a legacy note; Save disabled until all legacy descriptors are assigned or removed. |
+| `WineDatabase.kt` | `SensoryData` additions, `HsvColor` converter, `WineDefinition` field, version 22, `MIGRATION_21_22`, legacy JSON normalization. |
+| `MainActivity.kt` | Register the v22 migration. |
+| `BackupData.kt`, `JsonExporter.kt`, `DataImporter.kt` | Confirm entity-level Gson serialization, ID mapping and older-backup compatibility. |
+| `TastingNoteEditorScreen.kt` | Single-scroll four-section layout; effective color state; legacy prompt; active-phase wheel; save/cancel flow. |
+| `SensoryEvaluationFields.kt` | Reuse `SensoryTraitSlider`/`GradientSensorySlider`; expose ten existing traits as section-aware composables and add the bipolar Tight↔Open slider. |
+| `AromaWheelDialog.kt`, `AromaWheelLauncherCard` | Active-phase selector, phase-grouped chips, wheel/list-mode parity, 24-distinct-ID cap and repeated-ID rules. |
+| `AromaChipDrag.kt` | Keep pure width-dependent drag maths; test with variable chip widths caused by intensity scaling. |
+| `AddWineScreen.kt`, `WineDetailScreen.kt` | Compact definition-default color control in the existing wine-definition editing flows; saved-note display grouped by phase. |
+| `WineRepository.kt`, `TastingNoteViewModel.kt`, `TastingNotesScreen.kt` | Persist/load the new fields, expose effective color and phase-aware observations, and reserve the W-053 all-phase + optional phase filter contract. |
+
+## State and event contracts
+
+Keep these as pure functions so the data rules can be JVM-tested without Compose:
+
+```kotlin
+fun normalizeSensoryData(raw: SensoryData?): SensoryData
+fun resolveEffectiveColor(noteColor: HsvColor?, definitionColor: HsvColor?): HsvColor?
+fun groupByPhase(observations: List<AromaObservation>): Map<TastingPhase, List<AromaObservation>>
+fun addAromaObservation(state: SensoryData, descriptorId: String, phase: TastingPhase): Result<SensoryData>
+fun setAromaIntensity(state: SensoryData, key: Pair<String, TastingPhase>, intensity: Float?): SensoryData
+fun reorderAromaChips(state: SensoryData, phase: TastingPhase, from: Int, to: Int): SensoryData
+fun toFlatAromaIds(observations: List<AromaObservation>): List<String>
+fun validateForSave(state: SensoryData): List<ValidationError>
+```
+
+Editor state sequence:
+
+1. Load note and definition; compute effective color.
+2. If `aromaObservations` is empty but legacy `aromas` is not, open the phase-assignment sheet on first edit. Cancel leaves the note unchanged; Save remains disabled until every legacy ID is explicitly assigned or removed.
+3. Wheel/list picker starts on the active phase. Adding a descriptor calls `addAromaObservation`; removing deletes that observation.
+4. Pinch or stepper calls `setAromaIntensity`; drag calls `reorderAromaChips`.
+5. Save calls `validateForSave`, then persists the existing `TastingNote` entity. No bottle or consumption row is created, moved or deleted.
+
+## Fixed section/control map
+
+| Section | Controls |
+| --- | --- |
+| **Visual / aroma** | Wine color picker (definition default / note override), **Aroma / bouquet** slider, **Aroma (before tasting)** aroma cloud and chips |
+| **Entry** | **Tight ↔ Open** bipolar slider, **Sweetness** slider, **Entry** aroma cloud and chips |
+| **Mid-palate** | **Acidity**, **Tannins / grip**, **Body**, **Balance**, **Concentration**, **Complexity** sliders, **Mid-palate** aroma cloud and chips |
+| **Finish** | **Finish**, **Quality** sliders, **Finish** aroma cloud and chips |
+| **Outside the four sections** | Overall score, Common faults, Tasting notes and impressions, reviewer/recommend/value, save/delete |
+
+All section headers and control labels stay short. The phase labels are also short; no in-app explanatory prose is added.
+
+## WBS 6.0 — implementation phases
+
+| Phase | Scope | Exit gate |
 | --- | --- | --- |
-| **Visual / aroma** | Aroma / bouquet; Complexity (owner to confirm whether this means aroma complexity) | Wine color picker; **Aroma (before tasting)** descriptors and intensity |
-| **Entry** | Sweetness (candidate; owner to confirm) | **Tight** and **Open** sliders; **Entry** descriptors and intensity |
-| **Mid-palate** | Acidity; Tannins / grip; Body; Balance; Concentration | **Mid-palate** descriptors and intensity |
-| **Finish** | Finish; Quality (candidate; owner to confirm) | **Finish** descriptors and intensity |
+| **6.0 Decisions + framework** | Resolve all owner decisions; expand this brief into the detailed framework; change W-061 to `Open`. | **Complete (this task).** No app code changed. |
+| **6.1 Pure data contract** | Add `TastingNoteStructure.kt`, `HsvColor`/`AromaObservation`/phase helpers, `SensoryData` normalization, derived flat view, validation and JVM tests. | Legacy JSON, new JSON, cap, duplicate-key, intensity and color validation tests pass. No UI yet. |
+| **6.2 Room v22 + backup** | `WineDefinition.defaultColorHsv`, `MIGRATION_21_22`, `MainActivity` registration, Gson converter, backup/restore checks. | Migration adds nullable column without backfill; old and new backups restore; no data loss. |
+| **6.3 Color UI** | `WineColorPicker`, definition-default controls in Add/Edit Wine and Wine Detail, note override in the editor, accessibility fallback. | Color persists through save/edit/backup; legacy rows stay unset; TalkBack and large-font checks pass. |
+| **6.4 Phase-aware aromas + word cloud** | Active-phase wheel/list picker, phase grouping, 24-ID cap, repeated IDs, pinch-sized chips, 0.1 stepper, variable-width drag maths, legacy phase sheet. | Wheel/list parity, phase assignment, intensity save/restore and no silent legacy inference verified. |
+| **6.5 Sectioned editor + detail** | Four section headers, fixed slider mapping, bipolar Tight↔Open slider, global controls outside sections, grouped saved-note display. | All ten existing sliders remain editable; new slider persists; no unrequested prose; note detail grouped by phase. |
+| **6.6 W-053 contract + docs** | All-phase search with optional phase filter, `ARCH.md` map update, `THINGS_TO_CHECK.md` checklist, `CHANGELOG.md` entry. | W-053 integration contract documented; docs and host checks pass. |
+| **6.7 Android verification** | `:app:assembleDebug`, `:app:testDebugUnitTest`, Compose checks, device/emulator checklist. | Real Android build and device run pass per `PIPELINE.md`; only then can W-061 move to `ARCHIVE.md`. |
 
-Keep `OverallScoreSlider`, **Common faults**, **Tasting notes and impressions**, reviewer/recommend/value controls, and save/delete behavior outside the four sections unless the owner explicitly includes them.
+## Test framework
 
-## Architecture work breakdown (WBS 6.0)
+Future tests; none exist for this framework yet.
 
-### 6.1 Data contract and compatibility
+| Layer | Tests |
+| --- | --- |
+| JVM pure logic | `HsvColor` ranges; `entryTightOpen` range; `AromaObservation` normalization; 24-distinct-ID cap; duplicate `(id, phase)` rejection; unknown-ID preservation; `toFlatAromaIds`; intensity/order independence; pure reducer transitions. |
+| Gson/Room | `SensoryData` JSON round trip; legacy float-JSON parser; missing/null fields; `HsvColor` TypeConverter; `MIGRATION_21_22` column with `NULL` old rows; backup → restore on a clean install. |
+| Compose / UI | Color picker hit targets and numeric fallback; active-phase wheel/list parity; pinch + 0.1 stepper; variable-width drag; large font/dark theme/narrow screen; legacy phase sheet Save-disabled state; four section headers and global controls placement. |
+| Regression | Existing overall score, faults, written notes, wine identity, inventory and consumption history unchanged; W-053 all-phase filter; no new prose; no new permission/dependency/network/background work. |
+| Device / emulator | `THINGS_TO_CHECK.md` checklist, TalkBack, font scale 1.0–2.0, rotation/process recreation, backup → restore, real Android build. Not run for this documentation-only task. |
 
-- **6.1.1** Define a versioned representation for wine color, phase-aware aroma observations (`stable descriptor ID`, `phase`, `intensity`, `order`), and new entry slider values. Keep stable IDs from `AromaTaxonomy`; never derive IDs from labels.
-- **6.1.2** Extend `SensoryData` and its Gson converter carefully. Normalize nullable/missing fields after Gson parsing. Preserve unknown/retired IDs rather than dropping them. No silent phase or intensity inference for legacy notes.
-- **6.1.3** Verify JSON backup → restore round trips, including notes with no color, no phase, no intensity and the old flat `aromas` list. Confirm no Room migration is required for additive JSON fields; if a schema change is proposed later, follow rules 14–16, `ARCH.md` §5 and `LESSONS_LEARNED.md`.
-- **6.1.4** Decide whether the existing ordered `aromas` list remains as a compatibility view, or whether note detail, wheel launcher, chips and W-053 filtering all consume the new observation model. Do not leave two competing sources of truth.
+## Traceability matrix
 
-### 6.2 Visual / aroma controls
+| Owner request | Decisions | Data / UI | Tests |
+| --- | --- | --- | --- |
+| 1. Color picker | 6.D1, 6.D2a, 6.D2b, 6.D13 | `HsvColor`, `WineDefinition.defaultColorHsv`, `SensoryData.colorHsv`, `WineColorPicker`, v22 migration | Color ranges, effective-color resolution, picker fallback, migration and backup round trip |
+| 2. Aromas by tasting phase | 6.D3, 6.D4, 6.D14 | `TastingPhase`, `AromaObservation`, active-phase wheel, legacy phase sheet | Cap, duplicate key, legacy prompt, wheel/list parity, phase grouping |
+| 3. Pronounced vs subtle aromas | 6.D5, 6.D6 | Continuous intensity, pinch-sized word cloud, 0.1 stepper, independent `displayOrder` | Intensity normalization, pinch/stepper, drag with variable widths, no color-only cue |
+| 4. Four sections + existing sliders + Entry Tight/Open | 6.D7, 6.D7b, 6.D8, 6.D9 | `TastingPhaseSections`, fixed control map, `entryTightOpen`, single-scroll layout | Slider persistence, all ten traits editable, no prose, note-detail grouping |
 
-- **6.2.1** Build the chosen color picker with a readable current-color swatch and an accessibility fallback. Keep the stored color nullable for old notes.
-- **6.2.2** Add four phase buckets — **Aroma (before tasting)**, **Entry**, **Mid-palate**, **Finish** — to the aroma-wheel launcher, wheel/list picker and chips without changing the 116-descriptor taxonomy or its group colors.
-- **6.2.3** Implement the chosen intensity interaction. If chips are resized, check `aromaChipDragTarget`'s width-dependent maths and wrapping behavior. If chips are darkened, check contrast against existing group colors and provide a non-color cue.
-- **6.2.4** Supply a non-gesture intensity control and clear semantics for TalkBack, large font scales and small screens.
+## Risk register
 
-### 6.3 Sectioned note editor
+| Risk | Mitigation |
+| --- | --- |
+| Two writable aroma representations | Observations are the only source; `aromas` is derived read-only. |
+| Silent inference for legacy notes | Blocking phase-assignment sheet; no default phase, color or intensity. |
+| Gson bypassing Kotlin defaults | Explicit normalization of every nullable/missing list and new field in `Converters`. |
+| Room migration data loss | Inspect data first, add nullable column only, no backfill, register migration, backup/restore round trip. |
+| Pinch-only intensity excludes users | Always provide the 0.1 stepper, TalkBack labels and a non-drag path. |
+| Variable chip sizes break drag maths | Extend `aromaChipDragTarget` tests with width ranges and explicit scale bounds. |
+| Group-color confusion | Keep `AromaWheelTheme` colors unchanged; intensity uses size only. |
+| W-053 regression | Search all phases by default; phase filter optional; legacy unphased notes remain visible in all-phase mode. |
+| Unrequested in-app prose | Short labels/values only; rule 18 applies to every new composable. |
 
-- **6.3.1** Group the ten existing `SensoryEvaluationFields` sliders into the four confirmed sections; add the confirmed **Entry (Tight, Open)** slider shape.
-- **6.3.2** Place the color picker, phase-specific aroma chips and relevant sliders inside their sections; keep the editor's existing save/cancel state flow.
-- **6.3.3** Use short section labels only. Do not add explanatory paragraphs, helper text, captions, “how it works” prose or longer reworded labels (rule 18).
+## Guardrails and non-goals
 
-### 6.4 Note display, filtering and boundaries
+* No new permissions, dependencies, network calls, notifications or background work.
+* No change to inventory, quantities, consumption events, ratings, image assets or W-057 backup destinations.
+* No Room schema change beyond the explicitly authorized v22 `defaultColorHsv` column; no data backfill.
+* No CSV/ZIP export, bundled image bytes, live sync or OCR/scanner changes.
+* No new in-app explanatory prose, helper text, captions or “how it works” notes.
+* **This task writes documentation only.** It does not create the proposed Kotlin files, change the Room version, implement UI, or authorize coding. No Android build or device verification was run for the framework itself.
 
-- **6.4.1** Render saved note details grouped by the four sections, showing color, aromas by phase, intensity, and the mapped sliders. Preserve legacy/unphased notes without inventing values.
-- **6.4.2** Define W-053 compatibility: search across all phases by default, with optional phase-specific filtering once W-053 is implemented. Do not silently change the open W-053 scope.
-- **6.4.3** No new permissions, dependencies, network calls, background work, notification, or change to inventory/consumption semantics. A tasting-note edit must not create, move or delete bottles or consumption events.
-- **6.4.4** Keep the wheel as the descriptor-selection control; this plan owns phase, intensity and section presentation.
+## Definition of Done (future implementation)
 
-### 6.5 Verification (when implementation is authorized)
-
-- **6.5.1** JVM tests: `SensoryData` JSON round trip and legacy float-JSON parser; missing/null color, phase and intensity; stable-ID preservation; phase assignment; intensity normalization; chip-drag maths with variable chip sizes.
-- **6.5.2** Editor tests: create/edit/cancel/save; all ten existing sliders remain editable; new Tight/Open controls persist; color and intensity survive rotation/process recreation; no unrequested prose.
-- **6.5.3** Accessibility/device checks: pinch alternative, TalkBack labels, large fonts, dark/light theme, narrow screens, 2D color plot hit targets, grouped note detail, and JSON backup → restore on a clean install.
-- **6.5.4** Android build, unit tests and device/emulator validation per `PIPELINE.md`, plus a `THINGS_TO_CHECK.md` checklist when the feature is implemented. This plan itself has no build or device verification.
-
-## Acceptance checks (future implementation)
-
-* A selected wine color is saved, displayed and restored; notes without a color remain explicitly unset.
-* Aroma descriptors are grouped into the four phases, and existing flat aroma IDs are preserved without invented phases.
-* The chosen intensity representation makes pronounced vs subtle aromas distinguishable, is adjustable, survives save/restore, and has an accessible alternative.
-* The editor has **Visual / aroma**, **Entry**, **Mid-palate**, **Finish** sections containing all existing sensory sliders, plus the confirmed **Tight / Open** entry controls.
-* Overall score, faults, written notes, wine identity, inventory, consumption history and W-057 backup destinations are otherwise unchanged.
-* No new in-app explanatory prose, permissions, dependencies, network use or background work appears.
+* A wine-definition default color and a per-note override can be set, cleared and restored; legacy rows remain unset.
+* Aroma descriptors are assigned to the four phases through an active-phase wheel/list picker, with the same stable ID allowed in multiple phases and the 24-distinct-ID cap enforced.
+* Legacy flat aromas require explicit phase assignment on edit; no phase is inferred.
+* Pronounced vs subtle aromas are represented by near-stepless chip sizing, with a 0.1 stepper and an accessible non-pinch path; size and order are independent.
+* The editor has one scroll with four short section headers containing all ten existing sensory sliders plus one bipolar Tight↔Open slider; global controls remain outside.
+* Saved-note details group aromas, color, intensity and sliders by section; W-053 can search all phases with an optional phase filter.
+* JSON backup → restore, Room v22 migration, JVM tests, Compose checks, `ARCH.md`, `CHANGELOG.md`, `THINGS_TO_CHECK.md` and a real Android/device run all pass per `PIPELINE.md`.
+* No unrequested prose, new permissions, new dependencies, network use, background work, or changes to inventory/consumption records.

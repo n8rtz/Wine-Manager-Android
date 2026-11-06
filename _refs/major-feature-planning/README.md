@@ -14,7 +14,7 @@ Each feature brief has its own numbered root: **1.0** Pareto screen, **2.0** aro
 - [Camera wine recognition](camera-wine-recognition.md) — scan a label and prefill a wine form for user review.
 - [Scanner accuracy recovery (W-058)](../../docs/scanner-accuracy-plan.md) — measured phone failures, label-level pipeline diagnostics and staged >80% complete / <5% multi-error plan; experimental Lab only until authorized.
 - [Wine resources page](wine-resources-page.md) — educational material, interactive region maps, and grape-variety tasting profiles.
-- [Structured tasting notes (W-061)](structured-tasting-notes.md) — wine color, phase-aware aromas, aroma intensity and four tasting sections.
+- [Structured tasting notes (W-061)](structured-tasting-notes.md) — detailed implementation framework: color picker, phase-aware aromas, word-cloud intensity and four tasting sections.
 
 ## Cross-feature boundaries
 

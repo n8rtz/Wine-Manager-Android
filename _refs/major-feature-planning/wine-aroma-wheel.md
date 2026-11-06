@@ -69,7 +69,7 @@ with header, notice banner, chips, list mode, and attribution caption.
 ## Future (explicitly out of scope now)
 
 - Filtering the tasting-notes list by aroma.
-- **Phase-aware aromas and per-aroma intensity** are tracked in [Structured Tasting Notes (W-061)](structured-tasting-notes.md); they are not part of the shipped wheel.
+- **Phase-aware aromas and per-aroma intensity** are tracked in the [W-061 implementation framework](structured-tasting-notes.md); they are not part of the shipped wheel.
 - Taxonomy localization/synonyms; vocabulary growth beyond the Wine Folly set.
 - ~~Exporting aromas in CSV~~ — declined (no CSV export; JSON backup already includes aromas).
 
