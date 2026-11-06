@@ -33,7 +33,7 @@ SCROLLING_TOP_BAR_SCREENS = (
     "ParetoScreen.kt",
     "TastingNoteEditorScreen.kt",
     "AddWineScreen.kt",
-    "WineDetailScreen.kt",
+    "WineEditScreen.kt",
     "AppInfoScreen.kt",
     "DatabaseLookupScreen.kt",
     "ProfileScreen.kt",
@@ -129,7 +129,7 @@ class ScrollPositionTests(unittest.TestCase):
 
 
 class CardClickTests(unittest.TestCase):
-    def test_body_click_only_navigates(self):
+    def test_body_click_uses_the_action_supplied_by_its_screen(self):
         source = WINE_CARD.read_text()
         self.assertIn(".clickable(onClick = onClick)", source)
         self.assertNotIn("if (details != null && isExpanded == null)", source)
@@ -147,12 +147,14 @@ class CardClickTests(unittest.TestCase):
         self.assertIn("Icons.Default.ExpandLess", carat)
         self.assertIn("Icons.Default.ExpandMore", carat)
 
-    def test_cellar_hoists_one_open_card(self):
+    def test_cellar_body_and_caret_toggle_one_open_card(self):
         source = CELLAR.read_text()
         self.assertIn("var expandedBottleId by remember { mutableStateOf<Long?>(null) }", source)
         self.assertIn("isExpanded = expandedBottleId == item.bottle.bottleId", source)
         self.assertIn("expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId", source)
-        self.assertIn("onClick = { onWineClick(item.bottle.bottleId) }", source)
+        self.assertIn("onExpandToggle = toggleExpanded", source)
+        self.assertIn("onClick = toggleExpanded", source)
+        self.assertNotIn("onWineClick", source)
         self.assertIn("expandedBottleId = null", source)
 
     def test_notes_hoists_one_open_group_and_body_opens_the_latest_note(self):

@@ -16,39 +16,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.n8rtz.winetracker.data.local.WineBottle
-import com.n8rtz.winetracker.drinkingwindow.DrinkingWindowEstimator
-import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.resolveWineImageModel
 import com.n8rtz.winetracker.ui.components.DefaultColorField
-import com.n8rtz.winetracker.ui.components.StructuredNoteSummary
-import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
-import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import java.util.Calendar
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WineDetailScreen(
+fun WineEditScreen(
     bottleId: Long,
     viewModel: WineViewModel,
-    onBack: () -> Unit,
-    onConsumed: (String, Long) -> Unit,
-    onAddNote: (Long, String) -> Unit,
-    onViewNote: (Long) -> Unit
+    onBack: () -> Unit
 ) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val item = remember(inventory, bottleId) { inventory.find { it.bottle.bottleId == bottleId } }
@@ -67,13 +55,8 @@ fun WineDetailScreen(
         resolveWineImageModel(context, item.imageAsset?.relativePath, legacyImageUrl)
     }
 
-    val tastingNotes by remember(item.definition.definitionId, item.bottle.vintage) {
-        viewModel.tastingNotesForWine(item.definition.definitionId, item.bottle.vintage)
-    }.collectAsState(initial = emptyList())
-
     var editedWine by remember(item.definition) { mutableStateOf(item.definition) }
     var editedBottle by remember(item.bottle) { mutableStateOf(item.bottle) }
-    val bottle = item.bottle
 
     // Form states for editing
     var maker by remember(editedWine.maker) { mutableStateOf(editedWine.maker) }
@@ -105,8 +88,6 @@ fun WineDetailScreen(
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val vintages = (currentYear downTo 1950).map { it.toString() } + listOf("NV")
 
-    var showConsumeDialog by remember { mutableStateOf(false) }
-    var isEditing by remember { mutableStateOf(false) }
     var drinkingWindowError by remember { mutableStateOf<String?>(null) }
 
     // Keep the title, but let the header scroll away with the content.
@@ -116,9 +97,9 @@ fun WineDetailScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Column {
-                        Text(if (isEditing) "Edit Wine" else editedWine.maker, style = MaterialTheme.typography.labelMedium)
+                        Text("Edit Wine", style = MaterialTheme.typography.labelMedium)
                         Text(editedWine.name)
                     }
                 },
@@ -129,44 +110,40 @@ fun WineDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        if (isEditing) {
-                            val startYear = drinkingWindowStart.toIntOrNull()
-                            val endYear = drinkingWindowEnd.toIntOrNull()
-                            val yearsAreComplete = (drinkingWindowStart.isBlank() || drinkingWindowStart.length == 4) &&
-                                    (drinkingWindowEnd.isBlank() || drinkingWindowEnd.length == 4)
-                            if (!yearsAreComplete) {
-                                drinkingWindowError = "Enter each drinking-window year as four digits."
-                                return@IconButton
-                            }
-                            if (startYear != null && endYear != null && startYear > endYear) {
-                                drinkingWindowError = "Start year must be no later than the end year."
-                                return@IconButton
-                            }
-                            drinkingWindowError = null
-                            viewModel.updateWine(
-                                editedWine.copy(
-                                    maker = maker,
-                                    name = name,
-                                    type = type,
-                                    country = selectedCountry,
-                                    region = selectedRegion.takeIf { it.isNotBlank() },
-                                    subregion = selectedAppellation.takeIf { it.isNotBlank() },
-                                    drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                                    drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
-                                    defaultColorHsv = defaultColorHsv
-                                ),
-                                editedBottle.copy(
-                                    vintage = vintage,
-                                    quantity = quantity.toIntOrNull() ?: editedBottle.quantity,
-                                    price = price.toDoubleOrNull()
-                                )
-                            )
-                            isEditing = false
-                        } else {
-                            isEditing = true
+                        val startYear = drinkingWindowStart.toIntOrNull()
+                        val endYear = drinkingWindowEnd.toIntOrNull()
+                        val yearsAreComplete = (drinkingWindowStart.isBlank() || drinkingWindowStart.length == 4) &&
+                                (drinkingWindowEnd.isBlank() || drinkingWindowEnd.length == 4)
+                        if (!yearsAreComplete) {
+                            drinkingWindowError = "Enter each drinking-window year as four digits."
+                            return@IconButton
                         }
+                        if (startYear != null && endYear != null && startYear > endYear) {
+                            drinkingWindowError = "Start year must be no later than its end year."
+                            return@IconButton
+                        }
+                        drinkingWindowError = null
+                        viewModel.updateWine(
+                            editedWine.copy(
+                                maker = maker,
+                                name = name,
+                                type = type,
+                                country = selectedCountry,
+                                region = selectedRegion.takeIf { it.isNotBlank() },
+                                subregion = selectedAppellation.takeIf { it.isNotBlank() },
+                                drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
+                                drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                                defaultColorHsv = defaultColorHsv
+                            ),
+                            editedBottle.copy(
+                                vintage = vintage,
+                                quantity = quantity.toIntOrNull() ?: editedBottle.quantity,
+                                price = price.toDoubleOrNull()
+                            )
+                        )
+                        onBack()
                     }) {
-                        Icon(if (isEditing) Icons.Default.Check else Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Check, contentDescription = "Save wine")
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -246,8 +223,7 @@ fun WineDetailScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            if (isEditing) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     DefaultColorField(
                         color = defaultColorHsv,
                         onColorChange = { defaultColorHsv = it }
@@ -486,302 +462,8 @@ fun WineDetailScreen(
                         )
                     }
                 }
-            } else {
-                Text(
-                    text = "${editedWine.maker} ${editedWine.name}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = com.n8rtz.winetracker.data.local.displayVintage(bottle.vintage),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                DetailRow(Icons.Default.Public, "Origin", run {
-                    val subregion = editedWine.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                    val region = editedWine.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                    val country = editedWine.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                    listOfNotNull(subregion, region, country).joinToString(", ")
-                })
-                DetailRow(Icons.Default.Category, "Type", editedWine.type)
-                DetailRow(Icons.Default.Inventory, "In Cellar", "${bottle.quantity} ${bottle.qtyType ?: "Bottles"}")
-                DetailRow(Icons.Default.AttachMoney, "Purchase Price", "$${"%.2f".format(bottle.price ?: 0.0)}")
-                val windowStart = editedWine.drinkingWindowStart
-                val windowEnd = editedWine.drinkingWindowEnd
-                // W-050 Phase 1: display-only estimate, shown only while the owner has entered no window.
-                // It is never saved and never feeds the Cellar filters or sorts.
-                val estimatedWindow = remember(editedWine, bottle.vintage) {
-                    if (windowStart != null || windowEnd != null) null
-                    else DrinkingWindowEstimator.estimate(
-                        WineDescription(
-                            type = editedWine.type,
-                            country = editedWine.country,
-                            region = editedWine.region,
-                            subregion = editedWine.subregion,
-                            maker = editedWine.maker,
-                            name = editedWine.name,
-                            vintage = bottle.vintage
-                        )
-                    )?.also {
-                        android.util.Log.d("DrinkingWindow", "wine=${editedWine.definitionId} profile=${it.profileId} ${it.startYear}-${it.endYear} level=${it.level}")
-                    }
-                }
-                DetailRow(
-                    Icons.Default.Schedule,
-                    "Drinking Window",
-                    when {
-                        windowStart != null || windowEnd != null -> "${windowStart ?: "Any time"} – ${windowEnd ?: "No end year"}"
-                        estimatedWindow != null -> buildString {
-                            append("Est. ${estimatedWindow.startYear} – ${estimatedWindow.endYear}")
-                            estimatedWindow.note?.let { append(" ($it)") }
-                        }
-                        else -> "Not set"
-                    }
-                )
-                Spacer(Modifier.height(16.dp))
-                Text("Tasting Notes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if (tastingNotes.isEmpty()) {
-                    Text("No notes for this wine yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    tastingNotes.forEach { note ->
-                        val noteDate = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-                            .format(java.util.Date(note.dateTasted))
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().clickable { onViewNote(note.noteId) },
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Column(Modifier.padding(12.dp)) {
-                                val score = note.rating.takeIf { it > 0.0 }?.toInt()?.let { "$it points" } ?: "Unrated"
-                                Text("$noteDate · $score", fontWeight = FontWeight.SemiBold)
-                                Text(
-                                    text = note.notes?.takeIf { it.isNotBlank() } ?: "No written notes",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 3
-                                )
-                                StructuredNoteSummary(
-                                    sensoryData = note.sensoryData,
-                                    definitionColor = editedWine.defaultColorHsv,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                                if (!note.recommendedBy.isNullOrBlank()) {
-                                    Text("Recommended by ${note.recommendedBy}", style = MaterialTheme.typography.bodySmall)
-                                }
-                                note.reviewerRating?.let { reviewerRating ->
-                                    Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
-                                }
-                                note.valueScore?.let { valueScore ->
-                                    Text("Value: $valueScore/10", style = MaterialTheme.typography.bodySmall)
-                                }
-                                note.price?.let { notePrice ->
-                                    Text("Price: $${"%.2f".format(notePrice)}", style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-                }
-                OutlinedButton(
-                    onClick = { onAddNote(editedWine.definitionId, bottle.vintage) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.NoteAdd, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add Tasting Note")
-                }
-            }
-
-            Spacer(Modifier.weight(1f))
-            Spacer(Modifier.height(32.dp))
-
-            if (!isEditing) {
-                Button(
-                    onClick = { showConsumeDialog = true },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.LocalDrink, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Mark as Consumed", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                }
-            }
         }
 
-        if (showConsumeDialog) {
-            ConsumeDialog(
-                availableQuantity = bottle.quantity,
-                onDismiss = { showConsumeDialog = false },
-                onConfirm = { quantity, rating, notes, rebuy, consumptionDate ->
-                    showConsumeDialog = false
-                    viewModel.consumeBottle(
-                        bottleId = bottle.bottleId,
-                        rating = rating,
-                        notes = notes,
-                        rebuy = rebuy,
-                        consumptionDate = consumptionDate,
-                        quantity = quantity
-                    ) { eventId ->
-                        val unit = if (quantity == 1) "bottle" else "bottles"
-                        onConsumed("Consumed $quantity $unit of ${editedWine.name}", eventId)
-                        onBack()
-                    }
-                }
-            )
-        }
-    }
-}
 
-@Composable
-fun DetailRow(icon: ImageVector, label: String, value: String) {
-    Row(
-        modifier = Modifier.padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(label, style = MaterialTheme.typography.labelSmall)
-            Text(value, style = MaterialTheme.typography.bodyLarge)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ConsumeDialog(
-    availableQuantity: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int, Double?, String?, Boolean, Long) -> Unit
-) {
-    val maxQuantity = availableQuantity.coerceAtLeast(1)
-    var selectedCount by remember { mutableStateOf(1) }
-    val selectedQuantity = selectedCount.coerceIn(1, maxQuantity)
-    var quantityExpanded by remember { mutableStateOf(false) }
-    var rating by remember { mutableStateOf(90f) }
-    var notes by remember { mutableStateOf("") }
-    var rebuy by remember { mutableStateOf(false) }
-    var includeTastingNote by remember { mutableStateOf(true) }
-    var consumptionDate by remember { mutableStateOf(System.currentTimeMillis()) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    val formattedDate = remember(consumptionDate) {
-        java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-            .format(java.util.Date(consumptionDate))
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Log Consumption") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Bottles",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f)
-                    )
-                    ExposedDropdownMenuBox(
-                        expanded = quantityExpanded,
-                        onExpandedChange = { quantityExpanded = !quantityExpanded },
-                        modifier = Modifier.width(120.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = "$selectedQuantity",
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = quantityExpanded)
-                            },
-                            modifier = Modifier.menuAnchor(
-                                ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                                true
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = quantityExpanded,
-                            onDismissRequest = { quantityExpanded = false }
-                        ) {
-                            (1..maxQuantity).forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text("$option") },
-                                    onClick = {
-                                        selectedCount = option
-                                        quantityExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                Text("Consumption date", style = MaterialTheme.typography.titleSmall)
-                OutlinedButton(onClick = { showDatePicker = true }) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(formattedDate)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = includeTastingNote, onCheckedChange = { includeTastingNote = it })
-                    Text("Add a tasting note")
-                }
-                if (includeTastingNote) {
-                    Text("Rate this bottle (100-point scale): ${rating.toInt()}")
-                    Slider(
-                        value = rating,
-                        onValueChange = { rating = it },
-                        valueRange = 50f..100f,
-                        steps = 49
-                    )
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Tasting Notes") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = rebuy, onCheckedChange = { rebuy = it })
-                        Text("Would buy again")
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                onConfirm(
-                    selectedQuantity,
-                    rating.takeIf { includeTastingNote }?.toDouble(),
-                    notes.takeIf { includeTastingNote },
-                    rebuy && includeTastingNote,
-                    consumptionDate
-                )
-            }) {
-                Text("Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
-    )
-
-    if (showDatePicker) {
-        val datePickerState = androidx.compose.material3.rememberDatePickerState(
-            initialSelectedDateMillis = timestampToDatePickerMillis(consumptionDate)
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { consumptionDate = datePickerMillisToTimestamp(it) }
-                    showDatePicker = false
-                }) { Text("Done") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
     }
 }

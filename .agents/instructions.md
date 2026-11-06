@@ -85,3 +85,12 @@ Key project documents (all in `_refs/`): `BACKLOG.md` (open work), `ARCHIVE.md` 
     - Required safety warnings, confirmation dialogs and error messages are the exception, but keep them short.
     - If behaviour genuinely needs explaining, suggest it under rule 6 (the Hold Rule) and wait for permission.
     - **Rationale:** the Destinations intro paragraph, schedule notes and footer prose added to Backup & Restore during a formatting fix were called unacceptable by the owner (screenshot, 2026-11-05). Long in-app text is not acceptable by default.
+
+19. **CONSERVE GITHUB-HOSTED COMPUTE AND ACTIONS STORAGE (OWNER RULE, 2026-11-06)**
+    - When the owner's GitHub account is connected, treat its included **$4/month allowance for compute minutes and Actions storage** as a limited monthly budget that refreshes each month. Use it strategically; do not spend it on unnecessary tasks or redundant verifications.
+    - Prefer local/offline checks when they are sufficient. Avoid unnecessary hosted builds, workflow dispatches or reruns, broad CI matrices, benchmarks, and artifact/cache uploads. Do not skip a verification that is genuinely required; instead, determine whether it needs hosted resources.
+    - Before any action that is expected to consume this allowance (including GitHub-hosted workflow runs, cloud compute, or Actions artifact/cache storage), first explain in a response what resource would be used, why it is necessary, and whether a lower-cost alternative exists. Then ask the owner to approve or deny it, and wait for explicit approval before starting. Routine GitHub reads or git operations that do not consume the allowance do not require this approval.
+
+20. **CODE ON THE GO: DISCARD CHANGES BEFORE CHECKOUT (OWNER TIP, 2026-11-06)**
+    - When branch checkout is blocked by local changes and Code on the Go's Git pane has no discard/stash action, use the left-pane menu → **Close Project** (second item from the bottom, above **Help**) → **Discard changes**. Reopen the project, then pull from GitHub.
+    - This permanently discards uncommitted edits. Use this route only when the owner has decided those local changes can be discarded; do not commit them merely to get past the checkout conflict.

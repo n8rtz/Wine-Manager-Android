@@ -165,7 +165,7 @@ class BackupPreferenceContractTests(unittest.TestCase):
         self.assertNotIn('val showAddMenu = currentRoute != "backup_restore"', main)
         self.assertIn("if (!showAddMenu) isMenuExpanded = false", main)
         self.assertIn("visible = isMenuExpanded && showAddMenu", main)
-        # The Cellar tab pops to its root from a wine detail card, an editor or another tab.
+        # The Cellar tab pops to its root from the wine editor, a note editor or another tab.
         self.assertIn('if (currentRoute != "cellar") {', main)
         self.assertIn('if (!navController.popBackStack("cellar", inclusive = false)) {', main)
         self.assertIn("viewModel.resetCellarScreen()", main)

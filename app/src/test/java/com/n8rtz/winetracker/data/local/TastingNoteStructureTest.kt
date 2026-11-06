@@ -88,6 +88,31 @@ class TastingNoteStructureTest {
     }
 
     @Test
+    fun pinchContinuouslyResizesAromaWithoutVisibleStepValues() {
+        val initial = intensityAfterPinch(null, 1f)
+        val larger = intensityAfterPinch(initial, 1.4f)
+        val smaller = intensityAfterPinch(initial, 0.7f)
+        assertTrue(larger > initial)
+        assertTrue(smaller < initial)
+        assertEquals(1f, intensityAfterPinch(0.95f, 2f), 0f)
+        assertEquals(0f, intensityAfterPinch(0.05f, 0.5f), 0f)
+        assertEquals(0.5f, visualAromaIntensity(Float.NaN), 0f)
+    }
+
+    @Test
+    fun wordCloudSortsLargestAromasFirstAndKeepsTiesStable() {
+        val sorted = sortAromaObservationsByIntensity(
+            listOf(
+                AromaObservation("small", TastingPhase.ENTRY, 0.2f, 0),
+                AromaObservation("tie-later", TastingPhase.ENTRY, 0.7f, 3),
+                AromaObservation("largest", TastingPhase.ENTRY, 0.9f, 2),
+                AromaObservation("tie-first", TastingPhase.ENTRY, 0.7f, 1)
+            )
+        )
+        assertEquals(listOf("largest", "tie-first", "tie-later", "small"), sorted.map { it.descriptorId })
+    }
+
+    @Test
     fun reorderChangesOnlyTheRequestedPhase() {
         val data = SensoryData(
             aromaObservations = listOf(

@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,18 +25,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
 import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
-import com.n8rtz.winetracker.data.local.AromaObservation
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.groupByPhase
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.removeAromaObservation
-import com.n8rtz.winetracker.data.local.reorderAromaChips
 import com.n8rtz.winetracker.data.local.resolveEffectiveColor
 import com.n8rtz.winetracker.data.local.setAromaIntensity
 
@@ -101,9 +96,6 @@ fun SectionedSensoryFields(
                 observations = byPhase[phase].orEmpty(),
                 onIntensityChange = { id, phaseValue, intensity ->
                     onDataChange(setAromaIntensity(normalized, id, phaseValue, intensity))
-                },
-                onReorder = { phaseValue, from, to ->
-                    onDataChange(reorderAromaChips(normalized, phaseValue, from, to))
                 },
                 onRemove = { id, phaseValue ->
                     onDataChange(removeAromaObservation(normalized, id, phaseValue))
@@ -252,34 +244,13 @@ fun StructuredNoteSummary(
                     )
                 }
             }
-            ReadOnlyAromaChips(byPhase[phase].orEmpty())
-        }
-    }
-}
-
-@Composable
-private fun ReadOnlyAromaChips(observations: List<AromaObservation>) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        observations.forEach { observation ->
-            val info = AromaTaxonomy.describe(observation.descriptorId)
-            val scale = scaleForIntensity(observation.intensity)
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
-                modifier = Modifier.graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-            ) {
-                Text(
-                    "${info.label} %.1f".format(observation.intensity ?: 0.5f),
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
+            PhaseAromaCloud(
+                phase = phase,
+                observations = byPhase[phase].orEmpty(),
+                onIntensityChange = { _, _, _ -> },
+                onRemove = { _, _ -> },
+                readOnly = true
+            )
         }
     }
 }

@@ -36,8 +36,10 @@ import java.util.*
 @Composable
 fun CellarScreen(
     viewModel: WineViewModel,
-    onWineClick: (Long) -> Unit,
-    onNoteClick: (Long) -> Unit
+    onAddNote: (Long, String) -> Unit,
+    onEditWine: (Long) -> Unit,
+    onNoteClick: (Long) -> Unit,
+    onConsumed: (String, Long) -> Unit
 ) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
@@ -250,6 +252,9 @@ fun CellarScreen(
                 val ratingStr = ratingsMap[item.definition.definitionId to displayVintage]
                 val itemNotes = notesMap[item.definition.definitionId to displayVintage] ?: emptyList()
                 val formattedAddedDate = formattedDatesMap[item.bottle.bottleId]
+                val toggleExpanded = {
+                    expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId
+                }
 
                 WineCard(
                     title = "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)})",
@@ -260,16 +265,59 @@ fun CellarScreen(
                         listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
                     },
                     type = item.definition.type,
-                    metadata = "Qty: ${item.bottle.quantity}",
+                    metadata = "Stock: ${item.bottle.quantity}",
                     imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
                     imageLocalPath = item.imageAsset?.relativePath,
                     rating = ratingStr,
                     isExpanded = expandedBottleId == item.bottle.bottleId,
-                    onExpandToggle = {
-                        expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId
-                    },
+                    onExpandToggle = toggleExpanded,
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        viewModel.consumeBottle(
+                                            bottleId = item.bottle.bottleId,
+                                            rating = null,
+                                            notes = null,
+                                            rebuy = false,
+                                            consumptionDate = System.currentTimeMillis(),
+                                            quantity = 1
+                                        ) { eventId ->
+                                            onConsumed("Consumed 1 bottle of ${item.definition.name}", eventId)
+                                        }
+                                    },
+                                    enabled = item.bottle.quantity > 0
+                                ) {
+                                    Icon(Icons.Default.Remove, contentDescription = "Consume one bottle")
+                                }
+                                Text(
+                                    text = "Stock: ${item.bottle.quantity}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                IconButton(onClick = { viewModel.addBottleToStock(item.bottle.bottleId) }) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add one bottle")
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                IconButton(onClick = { onEditWine(item.bottle.bottleId) }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit wine")
+                                }
+                                IconButton(
+                                    onClick = {
+                                        onAddNote(item.definition.definitionId, item.bottle.vintage)
+                                    }
+                                ) {
+                                    Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
+                                }
+                            }
                             if (formattedAddedDate != null) {
                                 Text(
                                     text = "Added on: $formattedAddedDate",
@@ -307,7 +355,7 @@ fun CellarScreen(
                             }
                         }
                     },
-                    onClick = { onWineClick(item.bottle.bottleId) }
+                    onClick = toggleExpanded
                 )
             }
             

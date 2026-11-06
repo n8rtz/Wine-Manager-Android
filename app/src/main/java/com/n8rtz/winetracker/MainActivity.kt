@@ -67,7 +67,7 @@ import com.n8rtz.winetracker.ui.screens.ParetoScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
 import com.n8rtz.winetracker.ui.screens.TastingNoteDetailScreen
 import com.n8rtz.winetracker.ui.screens.TastingNoteEditorScreen
-import com.n8rtz.winetracker.ui.screens.WineDetailScreen
+import com.n8rtz.winetracker.ui.screens.WineEditScreen
 import com.n8rtz.winetracker.ui.screens.CellarScreen
 import com.n8rtz.winetracker.ui.screens.RankingsScreen
 import com.n8rtz.winetracker.ui.theme.WineTrackerTheme
@@ -300,10 +300,22 @@ fun MainAppScaffold(
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
     // The Add menu is only available from the Cellar and Notes tabs. It stays off every other
-    // route, including wine detail cards, editors, Settings and Backup & Restore.
+    // route, including the wine editor, note editors, Settings and Backup & Restore.
     val showAddMenu = currentRoute == "cellar" || currentRoute == "notes"
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    fun showConsumptionUndo(message: String, eventId: Long) {
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "UNDO",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoConsumeBottle(eventId)
+            }
+        }
+    }
     val backupState by backupViewModel.state.collectAsState()
     var isMenuExpanded by remember { mutableStateOf(false) }
     // Close an open Add submenu as soon as the user leaves Cellar or Notes.
@@ -315,8 +327,6 @@ fun MainAppScaffold(
     fun refreshAfterRestore() {
         tastingNoteViewModel.refreshReviewerNames()
     }
-    // Used only so "Add Note" from a wine's detail screen can prefill that wine.
-    val activeInventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val fabRotation by animateFloatAsState(targetValue = if (isMenuExpanded) 45f else 0f, label = "fabRotation")
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -375,7 +385,7 @@ fun MainAppScaffold(
                         Log.d("WineTracker", "BottomBar: Cellar clicked")
                         isMenuExpanded = false
                         if (currentRoute != "cellar") {
-                            // Always land on the Cellar root: this covers a wine detail card, an
+                            // Always land on the Cellar root: this covers the wine editor, an
                             // add/note editor reached from any tab, and every other tab.
                             if (!navController.popBackStack("cellar", inclusive = false)) {
                                 navigateToTab(navController, "cellar")
@@ -438,8 +448,14 @@ fun MainAppScaffold(
             composable("cellar") {
                 CellarScreen(
                     viewModel = viewModel,
-                    onWineClick = { bottleId -> navController.navigate("detail/$bottleId") },
-                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
+                    onAddNote = { definitionId, vintage ->
+                        navController.navigate(
+                            "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}"
+                        )
+                    },
+                    onEditWine = { bottleId -> navController.navigate("wine_edit/$bottleId") },
+                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") },
+                    onConsumed = ::showConsumptionUndo
                 )
             }
             composable("notes") {
@@ -568,33 +584,15 @@ fun MainAppScaffold(
                 }
             }
             composable(
-                route = "detail/{bottleId}",
+                route = "wine_edit/{bottleId}",
                 arguments = listOf(navArgument("bottleId") { type = NavType.LongType })
             ) { backStackEntry ->
                 val bottleId = backStackEntry.arguments?.getLong("bottleId")
                 if (bottleId != null) {
-                    WineDetailScreen(
+                    WineEditScreen(
                         bottleId = bottleId,
                         viewModel = viewModel,
-                        onBack = { navController.popBackStack() },
-                        onAddNote = { definitionId, vintage ->
-                            navController.navigate(
-                                "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}"
-                            )
-                        },
-                        onViewNote = { noteId -> navController.navigate("note_detail/$noteId") },
-                        onConsumed = { message, eventId ->
-                            scope.launch {
-                                val result = snackbarHostState.showSnackbar(
-                                    message = message,
-                                    actionLabel = "UNDO",
-                                    duration = SnackbarDuration.Short
-                                )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.undoConsumeBottle(eventId)
-                                }
-                            }
-                        }
+                        onBack = { navController.popBackStack() }
                     )
                 }
             }
@@ -686,22 +684,7 @@ fun MainAppScaffold(
                         onClick = {
                             Log.d("WineTracker", "Popup: Add Note clicked")
                             isMenuExpanded = false
-                            // From a wine's detail screen, start the note on that wine and vintage.
-                            val detailBottleId = if (currentRoute == "detail/{bottleId}") {
-                                navBackStackEntry?.arguments?.getLong("bottleId")
-                            } else null
-                            val detailBottle = detailBottleId?.let { id ->
-                                activeInventory.find { it.bottle.bottleId == id }
-                            }
-                            Log.d("WineTracker", "Popup: Add Note from detail bottleId=$detailBottleId found=${detailBottle != null}")
-                            if (detailBottle != null) {
-                                navController.navigate(
-                                    "note_editor/create?definitionId=${detailBottle.definition.definitionId}" +
-                                        "&vintage=${Uri.encode(detailBottle.bottle.vintage)}"
-                                )
-                            } else {
-                                navController.navigate("note_editor/create")
-                            }
+                            navController.navigate("note_editor/create")
                         }
                     )
                 }

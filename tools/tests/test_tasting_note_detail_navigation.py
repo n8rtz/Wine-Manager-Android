@@ -13,11 +13,14 @@ CLOUD = APP / "ui/components/PhaseAromaCloud.kt"
 
 
 class TastingNoteDetailNavigationTests(unittest.TestCase):
-    def test_expanded_cellar_note_row_opens_its_own_note(self):
+    def test_expanded_cellar_note_row_opens_its_own_note_without_a_wine_detail_route(self):
         cellar = CELLAR.read_text()
+        main = MAIN.read_text()
         self.assertIn("onNoteClick: (Long) -> Unit", cellar)
         self.assertIn(".clickable { onNoteClick(noteWithDef.note.noteId) }", cellar)
-        self.assertIn("onClick = { onWineClick(item.bottle.bottleId) }", cellar)
+        self.assertIn("onClick = toggleExpanded", cellar)
+        self.assertIn('route = "note_detail/{noteId}"', main)
+        self.assertNotIn('route = "detail/{bottleId}"', main)
 
     def test_note_routes_open_read_only_detail_and_edit_is_explicit(self):
         main = MAIN.read_text()

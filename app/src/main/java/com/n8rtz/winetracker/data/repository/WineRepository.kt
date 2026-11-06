@@ -142,6 +142,15 @@ class WineRepository(
         wineDao.updateDefinition(definition)
     }
 
+    /** Add one bottle to a cellar row without deriving the update from potentially stale UI state. */
+    suspend fun addBottleToStock(bottleId: Long) {
+        database.withTransaction {
+            val bottle = inventoryDao.getBottleById(bottleId) ?: return@withTransaction
+            if (bottle.status != BottleStatus.IN_CELLAR) return@withTransaction
+            inventoryDao.updateBottle(bottle.copy(quantity = bottle.quantity + 1))
+        }
+    }
+
     suspend fun updateWine(definition: WineDefinition, bottle: WineBottle) {
         database.withTransaction {
             wineDao.updateDefinition(definition)

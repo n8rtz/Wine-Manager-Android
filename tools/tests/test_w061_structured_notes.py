@@ -54,7 +54,7 @@ class W061SourceContractTests(unittest.TestCase):
         repo = read(APP / "data/repository/WineRepository.kt")
         vm = read(APP / "viewmodels/WineViewModel.kt")
         add = read(UI / "screens/AddWineScreen.kt")
-        detail = read(UI / "screens/WineDetailScreen.kt")
+        detail = read(UI / "screens/WineEditScreen.kt")
         self.assertIn("defaultColorHsv: HsvColor? = null", repo)
         self.assertIn("defaultColorHsv = defaultColorHsv", repo)
         self.assertIn("defaultColorHsv: HsvColor? = null", vm)
@@ -62,6 +62,22 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("DefaultColorField(", add)
         self.assertIn("defaultColorHsv = defaultColorHsv", detail)
         self.assertIn("DefaultColorField(", detail)
+
+    def test_wine_color_uses_a_swatch_menu_and_curated_palette(self):
+        picker = read(UI / "components/WineColorPicker.kt")
+        self.assertIn("ColorSwatchButton(", picker)
+        self.assertIn("DropdownMenu(", picker)
+        self.assertIn("WineColorOptions", picker)
+        for family in ('"Red"', '"White"', '"Rosé"'):
+            self.assertIn(family, picker)
+        self.assertNotIn('Text("Use default")', picker)
+        self.assertNotIn('Text("Override")', picker)
+        self.assertNotIn('"Blue"', picker)
+        self.assertNotIn('"Pink"', picker)
+        self.assertNotIn('"Purple"', picker)
+        self.assertNotIn("HueStrip(", picker)
+        self.assertNotIn("SaturationValueSquare(", picker)
+        self.assertNotIn("NumericColorField(", picker)
 
     def test_editor_uses_sectioned_phase_aware_controls(self):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")
@@ -85,18 +101,24 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("TastingPhase.values().forEach", wheel)
         self.assertIn("toggleAromaObservation(", wheel)
         self.assertIn("fun PhaseAromaCloud(", cloud)
+        self.assertIn("FlowRow(", cloud)
         self.assertIn("detectTransformGestures", cloud)
-        self.assertIn("0.1f", cloud)
-        self.assertIn("aromaChipDragTarget", cloud)
+        self.assertIn("sortAromaObservationsByIntensity", cloud)
+        self.assertNotIn('Text("%.1f".format', cloud)
+        self.assertNotIn('"${info.label} %.1f"', sections)
+        self.assertNotIn("onReorder", cloud)
+        self.assertIn("intensityAfterPinch", read(DATA / "TastingNoteStructure.kt"))
         self.assertIn("fun SectionedSensoryFields(", sections)
         self.assertIn("Tight ↔ Open", sections)
         self.assertIn("StructuredNoteSummary(", sections)
         self.assertIn("fun LegacyAromaPhaseSheet(", legacy)
         self.assertIn("TastingPhase.values().forEach", legacy)
 
-    def test_note_detail_uses_structured_summary(self):
-        detail = read(UI / "screens/WineDetailScreen.kt")
-        self.assertIn("StructuredNoteSummary(", detail)
+    def test_note_detail_uses_read_only_sectioned_sensory_controls(self):
+        detail = read(UI / "screens/TastingNoteDetailScreen.kt")
+        self.assertIn("SectionedSensoryFields(", detail)
+        self.assertIn("CommonFaultsFields(", detail)
+        self.assertIn("readOnly = true", detail)
         self.assertNotIn("noteAromas", detail)
         self.assertNotIn("AromaTaxonomy.describe(aromaId)", detail)
 
@@ -111,12 +133,14 @@ class W061SourceContractTests(unittest.TestCase):
 
     def test_backup_restore_and_pure_contract_are_present(self):
         importer = read(APP / "data/importer/DataImporter.kt")
+        models = read(DATA / "TastingNoteModels.kt")
         structure = read(DATA / "TastingNoteStructure.kt")
+        self.assertNotIn("SensoryData", models)
+        self.assertNotIn("AromaTaxonomy", models)
         self.assertIn("normalizeSensoryData(oldNote.sensoryData)", importer)
+        for token in ["enum class TastingPhase", "data class HsvColor", "data class AromaObservation"]:
+            self.assertIn(token, models)
         for token in [
-            "enum class TastingPhase",
-            "data class HsvColor",
-            "data class AromaObservation",
             "fun normalizeSensoryData",
             "fun withDerivedAromas",
             "fun addAromaObservation",

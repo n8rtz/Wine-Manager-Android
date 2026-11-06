@@ -16,7 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
-| `arena/fff57f7b-wine-manager-android` | not opened | current work | W-057 Phase 1a: Backup & Restore submenu, app-open automatic local backups, calendar interval, keep-newest-N, restore picker | [Jump](#branch-arenaffff57f7b-wine-manager-android) |
+| `arena/fff57f7b-wine-manager-android` | not opened | current work | W-057 Backup & Restore, W-061 structured notes, and Cellar stock/edit/note actions | [Jump](#branch-arenaffff57f7b-wine-manager-android) |
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
 | `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
@@ -32,10 +32,10 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 **Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
 
-**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. **Mark as Consumed** now has a **Bottles** dropdown so several bottles can be consumed in one event. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. Expanded Cellar cards have `− Stock: N +` controls (one bottle per tap, with consumption recorded in History and snackbar UNDO), an Add Tasting Note icon prefilled for that wine/vintage, and a separate Edit icon; the Wine Detail route is gone. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
 Cellar, Rankings and Tasting Notes reopen at the top of their lists, and every search bar hint is just **Search** on one line.
 Cancelling Google Drive **Change setup** without choosing a folder keeps the previously selected folder.
-The top search bars and filter buttons stay, but now scroll away; compact search/filter buttons appear in the upper right once they are out of view and follow the user down the list. Card bodies navigate while the carat expands, Cellar stats live in a dialog, and page titles scroll away with their content.
+The top search bars and filter buttons stay, but now scroll away; compact search/filter buttons appear in the upper right once they are out of view and follow the user down the list. Cellar card bodies and carets both expand/collapse, Cellar stats live in a dialog, and page titles scroll away with their content.
 
 ### Floating search/filter bubbles, card clicks, stats dialog and scrolling headers
 
@@ -47,10 +47,10 @@ The top search bars and filter buttons stay, but now scroll away; compact search
 4. [ ] Scroll down, tap the compact **Search** button, and confirm a one-line **Search** field pops up at the top of the screen while the same cards stay exactly where they were. Type a query and confirm the list still does not jump to the top. Close the field and confirm the compact buttons return.
 5. [ ] Scroll down again, tap compact **Tune**, change a filter or sort, and confirm the list stays at the same position. Check the filter button shows its active colour when a filter is set.
 6. [ ] Repeat 3–5 on **Rankings** and **Tasting Notes**. Confirm the top search rows and the titles (**Rankings**, **Tasting Notes**) and **Consumption History** scroll away with the list instead of staying frozen at the top.
-7. [ ] On **Cellar**, tap near the carat on one card: it expands without opening the detail screen. Tap a second card's carat: the first collapses. Tap the open card's carat: it collapses. Tap anywhere else on a card (image, title, blank space): the wine detail screen opens and no card expands.
+7. [ ] On **Cellar**, tap the card body and caret: both expand/collapse it, and opening a second card collapses the first. In the expanded card verify `− Stock: N +`, the Edit icon, and Add Tasting Note icon. The body no longer opens a Wine Detail screen.
 8. [ ] On **Tasting Notes**, repeat the carat checks for the one-open accordion. Tap an expanded note row: that note opens in the editor. Tap anywhere else on a collapsed card: that wine's most recent tasting note opens in the editor.
 9. [ ] On **Rankings**, confirm the carat still expands a card and tapping elsewhere does nothing.
-10. [ ] On **Add / Edit Tasting Note**, **Add New Wine**, **Wine Detail**, **App Information**, **Database Lookup**, **Settings**, **Backup & Restore** and **Price vs. Rating**, scroll down and confirm the title bar scrolls away; scroll back up and confirm back/actions return. Check at the largest display size that the compact buttons do not cover a card's carat while scrolling.
+10. [ ] On **Add / Edit Tasting Note**, **Add New Wine**, **Edit Wine**, **App Information**, **Database Lookup**, **Settings**, **Backup & Restore** and **Price vs. Rating**, scroll down and confirm the title bar scrolls away; scroll back up and confirm back/actions return. Check at the largest display size that the compact buttons do not cover a card's caret while scrolling.
 
 ### Google Drive folder change — cancel keeps the folder
 
@@ -68,7 +68,7 @@ The top search bars and filter buttons stay, but now scroll away; compact search
 
 1. [ ] On **Cellar**, scroll down several cards, then switch to **Rankings** and back via the bottom bar. Confirm Cellar opens at the top (analytics cards and search bar visible), not at the previous card.
 2. [ ] Repeat on **Rankings** and **Tasting Notes**, including leaving Notes by opening a note and returning with the back arrow.
-3. [ ] Open a wine detail card from Cellar after scrolling down, then tap **Cellar** and **Back**. Both should show the top of the Cellar list.
+3. [ ] Expand a Cellar card and open **Edit Wine** after scrolling down, then tap **Cellar** and **Back**. Both should show the top of the Cellar list.
 4. [ ] On each of the three tabs, check the search bar shows only **Search** on a single line; widen the font to the largest display size and confirm it still does not wrap or grow the field.
 5. [ ] Check the same on **Add Note → Wine**, the **aroma wheel** search, and **Settings → Database Lookup**; Database Lookup should show no second hint under the field.
 
@@ -77,20 +77,21 @@ The top search bars and filter buttons stay, but now scroll away; compact search
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
 1. [ ] From **Cellar** and **Notes** confirm the `+` FAB is present. On Notes it opens **Add Note** directly; on Cellar it opens the **Add Wine / Add Note** submenu.
-2. [ ] Open a wine detail card, **Add Wine**, a note editor, **History**, **Rankings**, **Profile**, **Settings**, **Backup & Restore** and **Database Lookup**. Confirm no `+` FAB appears on any of them, and that an open submenu closes when you leave Cellar or Notes.
-3. [ ] From a wine detail card, tap **Cellar**. Expect the unfiltered Cellar root: expanded cards collapsed, search cleared, filters reset.
+2. [ ] Open **Edit Wine**, **Add Wine**, a note editor, **History**, **Rankings**, **Profile**, **Settings**, **Backup & Restore** and **Database Lookup**. Confirm no `+` FAB appears on any of them, and that an open submenu closes when you leave Cellar or Notes.
+3. [ ] From **Edit Wine**, tap **Cellar**. Expect the unfiltered Cellar root: expanded cards collapsed, search cleared, filters reset.
 4. [ ] From **Add Wine**, a note editor opened from any tab, and from **History / Rankings / Profile → Settings → Backup & Restore**, tap **Cellar**. Each time expect the Cellar root, not the previous screen or a restored filtered view. Repeat with **Back** to confirm no stale screens remain in the back stack.
 
-### Mark as Consumed — bottle count selector
+### Cellar stock controls, Add Tasting Note and wine editing
 
 *Last run: never (update this line with the date, device/emulator and result after each run).*
 
-1. [ ] On a wine with 1 bottle in the cellar, tap **Mark as Consumed**. The **Bottles** dropdown offers only `1`; confirm and check the cellar row drops to 0, **History** shows one entry with quantity 1, and the snackbar says "Consumed 1 bottle …".
-2. [ ] On a wine with 4 bottles in the cellar, select `3` in the **Bottles** dropdown. Confirm the dropdown never offers more than the in-cellar count, the cellar row drops to 1, **one** History entry shows quantity 3, and the snackbar says "Consumed 3 bottles …".
-3. [ ] Right after that 3-bottle consumption, tap the snackbar **UNDO**. Confirm the cellar count returns to 4 and the History entry disappears.
-4. [ ] Consume 2 bottles with a rating and tasting note, then in **History** press and hold → **Restore to cellar → Restore**. Confirm the cellar count goes up by 2, the entry disappears and the note stays in **Tasting Notes**.
-5. [ ] Consume all remaining bottles of a wine. Confirm the wine leaves the active Cellar list, **History** shows the full count, and no extra events were created.
-6. [ ] Open the dialog with the tasting-note checkbox on and confirm the date, rating, notes and **Would buy again** controls still work unchanged.
+1. [ ] On a wine with 3 bottles, expand the card and tap `+` twice. Confirm the stock count increments to 5 without changing any existing History rows.
+2. [ ] Tap `−` once. Confirm the stock drops to 4, exactly one History event with quantity 1 appears, and no tasting note is created automatically.
+3. [ ] Right after that consumption, tap snackbar **UNDO**. Confirm the stock returns to 5 and the History entry disappears.
+4. [ ] Consume one bottle again, then in **History** press and hold → **Restore to cellar → Restore**. Confirm the stock goes up by one, the entry disappears, and no note is created.
+5. [ ] Consume all remaining bottles one at a time. Confirm the wine leaves active Cellar after the last bottle and each `−` tap creates one History event.
+6. [ ] Tap the expanded-card **Add Tasting Note** icon. Confirm the editor is prefilled with that wine and vintage (including NV); save and verify the note appears in **Tasting Notes**. Keep the separate read-only tasting-note detail route working.
+7. [ ] Tap the expanded-card **Edit Wine** icon. Change wine metadata and save; confirm it persists and returns to Cellar. No Wine Detail screen or route should appear.
 
 ### Settings cleanup — obsolete entries
 
@@ -655,16 +656,16 @@ Use a throwaway install or the debug seed, not data you can't replace.
 
 1. [ ] Run `./gradlew :app:assembleDebug` and `:app:testDebugUnitTest` (including `TastingNoteStructureTest`). The agent sandbox has no JDK or Android SDK, so these were not run here.
 2. [ ] On a disposable install with a v21 database, open the app and confirm `MIGRATION_21_22` succeeds. In Database Inspector, confirm `wine_definitions.defaultColorHsv` is NULL for every pre-existing row and no other table or column changed.
-3. [ ] Add a wine, set its default color with the hue strip / saturation-value square, save, reopen, and confirm the swatch persists. Edit the same wine and clear the color; confirm it returns to unset.
-4. [ ] Create a tasting note, override the inherited color, then save and reopen. Confirm the note color wins, while the wine-definition default remains available to other notes.
+3. [ ] Add a wine and tap the color swatch. Confirm a compact menu offers only curated red, white and rosé wine colors (no blue/neon spectrum). Choose one, save, reopen, and confirm the swatch persists. Repeat in **Edit Wine** and clear the default color.
+4. [ ] Create a tasting note. Confirm its swatch opens the color menu directly, with no separate **Use default** / **Override** buttons. Choose a note color, save and reopen; then choose **Wine default** from the same menu and confirm it inherits the definition color.
 5. [ ] Open the aroma wheel, choose each of **Aroma (before tasting)**, **Entry**, **Mid-palate** and **Finish**, and add descriptors. Confirm the same stable ID can appear in multiple phases and the 24-distinct-ID limit still applies to the whole note. Confirm the list/search mode matches the wheel selection.
-6. [ ] In the word cloud, pinch a chip and use the **− / +** stepper. Confirm near-stepless `0f..1f` intensity changes chip size without changing order; long-press drag changes order without changing intensity. Save, reopen and confirm both persist.
+6. [ ] In each aroma phase, confirm the labels form a wrapping cluster rather than a vertical list and show no numeric intensity badges or steppers. Pinch labels larger/smaller; confirm the word size changes continuously and the most intense/largest labels move to the top. Save, reopen and confirm sizes and largest-first order persist.
 7. [ ] Confirm the editor is one scroll with exactly four short headers: **Visual / aroma**, **Entry**, **Mid-palate**, **Finish**. All ten existing sliders remain editable in their assigned sections, **Complexity** is in Mid-palate, and one **Tight ↔ Open** slider is in Entry. Overall score, Common faults, written notes, reviewer/recommend/value and save/delete remain outside the sections.
 8. [ ] On an old note with flat aromas and no observations, open edit mode. Confirm the phase-assignment sheet appears, no phase is preselected, Save stays disabled until every retained aroma is explicitly assigned or removed, and Cancel makes no silent phase inference.
 9. [ ] Expand a Cellar wine with multiple tasting notes and tap each dated note line. Confirm each opens its own read-only detail with the note-entry layout, color, phase-grouped aromas/intensity, sectioned sliders, faults, written notes and other saved values. Only the explicit Edit action opens the editor; the wine-card body and caret retain their own behaviors.
 10. [ ] In **Tasting Notes**, search an aroma descriptor without a phase filter and confirm notes match from any phase, including legacy flat notes. Apply an optional phase filter and confirm only observations in that phase match.
 11. [ ] Export JSON, inspect it for `defaultColorHsv`, `colorHsv`, `entryTightOpen`, `aromaObservations`, per-observation intensity and all slider values. Restore on a second disposable install and confirm counts, legacy notes, colors, phases, intensities and sectioned slider values are unchanged.
-12. [ ] Run Compose/large-font/TalkBack checks for the color picker, wheel phase chips, word-cloud stepper, legacy sheet and section headers on an emulator/device. Confirm no new permissions, dependencies, network use or background work.
+12. [ ] Run Compose/large-font/TalkBack checks for the curated color menu, wheel phase chips, pinch-only word cloud, legacy sheet and section headers on an emulator/device. Confirm no new permissions, dependencies, network use or background work.
 
 ## Template for a new branch
 

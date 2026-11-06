@@ -207,6 +207,9 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }
     fun updateWine(definition: WineDefinition, bottle: WineBottle) { viewModelScope.launch { repository.updateWine(definition, bottle) } }
+    fun addBottleToStock(bottleId: Long) {
+        viewModelScope.launch { repository.addBottleToStock(bottleId) }
+    }
     
     // Removed direct inventoryDao accessor to enforce Repository pattern
 

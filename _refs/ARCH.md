@@ -35,9 +35,9 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── Color.kt                   # Bordeaux Red, off-white, slate, gray palette
 │   │   └── Theme.kt                   # Light/dark theme
 │   ├── screens/
-│   │   ├── CellarScreen.kt            # Active inventory, scrolling top search row with inline stats/filter icons, stats dialog, compact controls, Filter & Sort sheet
+│   │   ├── CellarScreen.kt            # Active inventory, stock controls, note/edit shortcuts, search, stats and Filter & Sort
 │   │   ├── CellarFilterState.kt       # Cellar filter/sort state
-│   │   ├── WineDetailScreen.kt        # Wine detail, edit mode, Mark as Consumed with a bottle-count selector, per-wine note history
+│   │   ├── WineEditScreen.kt          # Edit-only wine metadata and cellar-bottle fields
 │   │   ├── AddWineScreen.kt           # Manual entry (cascading dropdowns) + label-photo scan and review dialog
 │   │   ├── TastingNotesScreen.kt      # Notes repository: floating search/filter, one-open expandable cards, scrolling title
 │   │   ├── TastingNotesFilterState.kt # Notes filter/sort state
@@ -51,7 +51,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── AppInfoScreen.kt           # App/DB version, build time, commit and branch
 │   │   └── BackupRestoreScreen.kt     # W-057 submenu: destination toggles + setup, priority, schedule, keep-N, restore picker, failure popup
 │   └── components/
-│       ├── WineCard.kt                # Colour-coded card; 48dp carat expands, body navigates, Coil image
+│       ├── WineCard.kt                # Colour-coded card; body and 48dp caret expand, Coil image
 │       ├── FloatingSearchFilterControls.kt # Vertically stacked compact search/filter buttons that appear after the top row scrolls away, plus the pop-up search row
 │       ├── HistoryWineCard.kt         # Compact history list item
 │       ├── AnalyticsCard.kt           # Dashboard metric cards (bottles, unique wines, value)
@@ -63,8 +63,8 @@ app/src/main/java/com/n8rtz/winetracker/
 │       ├── AromaChipDrag.kt           # Long-press drag-reorder logic for aroma chips
 │       ├── AromaWheelDialog.kt        # Full-screen aroma wheel: wheel/list mode plus phase-aware W-061 picker
 │       ├── LabelScanCameraPreview.kt  # CameraX preview + framing guide for label capture
-│       ├── WineColorPicker.kt         # W-061: hue strip + S/V square, default/override color fields
-│       ├── PhaseAromaCloud.kt         # W-061: pinch-sized chips, 0.1 stepper, drag reorder
+│       ├── WineColorPicker.kt         # W-061: swatch-anchored menu with a curated wine-color palette
+│       ├── PhaseAromaCloud.kt         # W-061: clustered aroma labels resized by pinch and sorted largest-first
 │       ├── TastingPhaseSections.kt   # W-061: four sections, bipolar slider, structured summary
 │       └── LegacyAromaPhaseSheet.kt  # W-061: explicit legacy aroma phase assignment
 │
@@ -85,7 +85,8 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   │                              #   TastingNote, Rating, ConsumptionEvent; BottleStatus; SensoryData;
 │   │   │                              #   Converters; vintage helpers; all migrations
 │   │   ├── WineDaos.kt                # DAOs: Wine, WineImageAsset, Inventory, TastingNote, Rating, ConsumptionEvent
-│   │   └── TastingNoteStructure.kt # W-061: HSV, phases, observations, reducers and validation
+│   │   ├── TastingNoteModels.kt     # W-061: standalone Room-referenced color/phase/aroma value types
+│   │   └── TastingNoteStructure.kt  # W-061: normalization, reducers and validation
 │   ├── repository/
 │   │   ├── WineRepository.kt          # Single source of truth; inventory and consumption-event transactions
 │   ├── importer/
