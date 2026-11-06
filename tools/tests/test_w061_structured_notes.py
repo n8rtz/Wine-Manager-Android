@@ -85,6 +85,20 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertNotIn('Text("Use default")', picker)
         self.assertNotIn('Text("Override")', picker)
 
+    def test_wine_color_picker_shows_live_swatch_and_wine_glass(self):
+        picker = read(UI / "components/WineColorPicker.kt")
+        self.assertIn("WineGlassPreview(", picker)
+        self.assertIn("modifier = Modifier.width(64.dp).height(206.dp)", picker)
+        self.assertIn("swatchSize = 56.dp", picker)
+        self.assertEqual(
+            picker.count("FloatingColorPreviewSwatch(color, previewPosition, controlSize)"),
+            2,
+        )
+        self.assertIn("onSizeChanged { controlSize = it }", picker)
+        self.assertIn("previewEpoch++", picker)
+        self.assertNotIn("Spacer(", picker)
+        self.assertNotIn(".size(40.dp)", picker)
+
     def test_editor_uses_sectioned_phase_aware_controls(self):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")
         sections = read(UI / "components/TastingPhaseSections.kt")

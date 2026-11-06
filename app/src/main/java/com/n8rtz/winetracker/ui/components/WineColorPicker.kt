@@ -1,5 +1,6 @@
 package com.n8rtz.winetracker.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -9,12 +10,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,14 +41,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.resolveEffectiveColor
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private val NeutralSwatch = Color(0xFFE0E0E0)
@@ -116,30 +128,35 @@ fun WineColorPicker(
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(current.toArgb()))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            WineGlassPreview(
+                color = current,
+                modifier = Modifier.width(64.dp).height(206.dp)
             )
-            Spacer(Modifier.size(12.dp))
-            Text("H", style = MaterialTheme.typography.labelSmall)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                HueStrip(
+                    hue = current.hue,
+                    color = current,
+                    onHueChange = ::updateHue,
+                    modifier = Modifier.fillMaxWidth().height(28.dp)
+                )
+                SaturationValueSquare(
+                    hue = current.hue,
+                    saturation = current.saturation,
+                    value = current.value,
+                    color = current,
+                    onSaturationValueChange = ::updateSaturationValue,
+                    modifier = Modifier.fillMaxWidth().height(170.dp)
+                )
+            }
         }
-
-        HueStrip(
-            hue = current.hue,
-            onHueChange = ::updateHue,
-            modifier = Modifier.fillMaxWidth().height(28.dp)
-        )
-
-        SaturationValueSquare(
-            hue = current.hue,
-            saturation = current.saturation,
-            value = current.value,
-            onSaturationValueChange = ::updateSaturationValue,
-            modifier = Modifier.fillMaxWidth().height(170.dp)
-        )
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             NumericColorField(
@@ -174,6 +191,88 @@ fun WineColorPicker(
 }
 
 @Composable
+private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
+    val wine = Color(color.toArgb())
+    val outline = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+        val centerX = width / 2f
+        val top = height * 0.06f
+        val bowlBottom = height * 0.61f
+        val left = width * 0.14f
+        val right = width * 0.86f
+        val strokeWidth = 2.dp.toPx()
+
+        val bowl = Path().apply {
+            moveTo(left, top)
+            cubicTo(
+                left,
+                top + height * 0.30f,
+                centerX - width * 0.16f,
+                bowlBottom,
+                centerX,
+                bowlBottom
+            )
+            cubicTo(centerX + width * 0.16f, bowlBottom, right, top + height * 0.30f, right, top)
+            close()
+        }
+        drawPath(bowl, Color.White.copy(alpha = 0.25f))
+
+        val liquidTop = top + (bowlBottom - top) * 0.53f
+        val liquidLeft = centerX - width * 0.22f
+        val liquidRight = centerX + width * 0.22f
+        val liquidBottom = bowlBottom - strokeWidth
+        val liquid = Path().apply {
+            moveTo(liquidLeft, liquidTop)
+            quadraticTo(centerX, liquidTop + strokeWidth * 0.7f, liquidRight, liquidTop)
+            cubicTo(
+                liquidRight - width * 0.02f,
+                liquidTop + (liquidBottom - liquidTop) * 0.45f,
+                centerX + width * 0.09f,
+                liquidBottom,
+                centerX,
+                liquidBottom
+            )
+            cubicTo(
+                centerX - width * 0.09f,
+                liquidBottom,
+                liquidLeft + width * 0.02f,
+                liquidTop + (liquidBottom - liquidTop) * 0.45f,
+                liquidLeft,
+                liquidTop
+            )
+            close()
+        }
+        drawPath(liquid, wine)
+        drawPath(bowl, outline, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+        drawLine(outline, Offset(left, top), Offset(right, top), strokeWidth, cap = StrokeCap.Round)
+        drawLine(
+            outline,
+            Offset(centerX, bowlBottom),
+            Offset(centerX, height * 0.91f),
+            strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            outline,
+            Offset(width * 0.27f, height * 0.93f),
+            Offset(width * 0.73f, height * 0.93f),
+            strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            Color.White.copy(alpha = 0.8f),
+            Offset(left + width * 0.09f, top + height * 0.10f),
+            Offset(left + width * 0.11f, top + height * 0.25f),
+            strokeWidth * 0.75f,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
 private fun NumericColorField(
     label: String,
     value: String,
@@ -192,12 +291,56 @@ private fun NumericColorField(
 }
 
 @Composable
+private fun FloatingColorPreviewSwatch(
+    color: HsvColor,
+    position: Offset?,
+    controlSize: IntSize
+) {
+    val pointer = position ?: return
+    if (controlSize.width <= 0) return
+
+    val density = LocalDensity.current
+    val swatchSize = 56.dp
+    val swatchPx = with(density) { swatchSize.roundToPx() }
+    val gapPx = with(density) { 10.dp.roundToPx() }
+    val left = (pointer.x.roundToInt() - swatchPx / 2)
+        .coerceIn(0, (controlSize.width - swatchPx).coerceAtLeast(0))
+    val above = pointer.y.roundToInt() - swatchPx - gapPx
+    val top = if (above >= 0) above else pointer.y.roundToInt() + gapPx
+
+    Popup(
+        alignment = Alignment.TopStart,
+        offset = IntOffset(left, top),
+        properties = PopupProperties(focusable = false)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(color.toArgb()),
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.size(swatchSize)
+        ) {}
+    }
+}
+
+@Composable
 private fun HueStrip(
     hue: Float,
+    color: HsvColor,
     onHueChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val callback by rememberUpdatedState(onHueChange)
+    var previewPosition by remember { mutableStateOf<Offset?>(null) }
+    var previewEpoch by remember { mutableStateOf(0) }
+    var isDragging by remember { mutableStateOf(false) }
+    var controlSize by remember { mutableStateOf(IntSize.Zero) }
+    LaunchedEffect(previewEpoch, isDragging) {
+        if (previewPosition != null && !isDragging) {
+            delay(700)
+            previewPosition = null
+        }
+    }
     val colors = remember {
         (0..12).map { step ->
             Color(HsvColor(wineHueAtFraction(step / 12f), 1f, 1f).toArgb())
@@ -205,22 +348,30 @@ private fun HueStrip(
     }
     Box(
         modifier = modifier
+            .onSizeChanged { controlSize = it }
             .clip(RoundedCornerShape(8.dp))
             .background(Brush.horizontalGradient(colors))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     callback(wineHueAtFraction(offset.x / size.width.toFloat()))
+                    previewPosition = offset
+                    previewEpoch++
                 }
             }
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
+                        isDragging = true
+                        previewPosition = offset
                         callback(wineHueAtFraction(offset.x / size.width.toFloat()))
                     },
                     onDrag = { change, _ ->
+                        previewPosition = change.position
                         callback(wineHueAtFraction(change.position.x / size.width.toFloat()))
                         change.consume()
-                    }
+                    },
+                    onDragEnd = { isDragging = false },
+                    onDragCancel = { isDragging = false }
                 )
             }
     ) {
@@ -231,6 +382,7 @@ private fun HueStrip(
                 center = Offset(size.width * wineHueFraction(hue), size.height / 2f)
             )
         }
+        FloatingColorPreviewSwatch(color, previewPosition, controlSize)
     }
 }
 
@@ -239,10 +391,21 @@ private fun SaturationValueSquare(
     hue: Float,
     saturation: Float,
     value: Float,
+    color: HsvColor,
     onSaturationValueChange: (Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val callback by rememberUpdatedState(onSaturationValueChange)
+    var previewPosition by remember { mutableStateOf<Offset?>(null) }
+    var previewEpoch by remember { mutableStateOf(0) }
+    var isDragging by remember { mutableStateOf(false) }
+    var controlSize by remember { mutableStateOf(IntSize.Zero) }
+    LaunchedEffect(previewEpoch, isDragging) {
+        if (previewPosition != null && !isDragging) {
+            delay(700)
+            previewPosition = null
+        }
+    }
     val base = Color(HsvColor(hue, 1f, 1f).toArgb())
     fun setFromOffset(x: Float, y: Float, width: Float, height: Float) {
         val s = (x / width.coerceAtLeast(1f)).coerceIn(0f, 1f)
@@ -251,19 +414,25 @@ private fun SaturationValueSquare(
     }
     Box(
         modifier = modifier
+            .onSizeChanged { controlSize = it }
             .clip(RoundedCornerShape(8.dp))
             .background(base)
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
+                    previewPosition = offset
+                    previewEpoch++
                     setFromOffset(offset.x, offset.y, size.width.toFloat(), size.height.toFloat())
                 }
             }
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
+                        isDragging = true
+                        previewPosition = offset
                         setFromOffset(offset.x, offset.y, size.width.toFloat(), size.height.toFloat())
                     },
                     onDrag = { change, _ ->
+                        previewPosition = change.position
                         setFromOffset(
                             change.position.x,
                             change.position.y,
@@ -271,7 +440,9 @@ private fun SaturationValueSquare(
                             size.height.toFloat()
                         )
                         change.consume()
-                    }
+                    },
+                    onDragEnd = { isDragging = false },
+                    onDragCancel = { isDragging = false }
                 )
             }
     ) {
@@ -291,6 +462,7 @@ private fun SaturationValueSquare(
                 )
             )
         }
+        FloatingColorPreviewSwatch(color, previewPosition, controlSize)
     }
 }
 
