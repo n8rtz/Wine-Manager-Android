@@ -27,10 +27,15 @@ SHA = {'gliner_small_int4.onnx': 'a4d97745ba14a2b5f3606b30fa46a4c9a78e7b78a5f8b6
 THREE = ('wine producer or winery name', 'wine name or cuvee', 'wine appellation, region or country')
 SIX = ('wine producer or winery name', 'wine name or cuvee', 'wine appellation, region or country',
        'country where the wine was made', 'wine region', 'wine vintage year')
+SPECIALIZED = ('wine producer or winery name', 'wine name or cuvee', 'wine appellation or subregion',
+               'country where the wine was made', 'wine region', 'wine vintage year')
+REPHRASED = ('winery or wine producer', 'wine cuvee or wine brand name', 'wine place of origin or appellation')
+PROMPT_SETS = {'three': THREE, 'six': SIX, 'specialized': SPECIALIZED, 'rephrased': REPHRASED}
 # Thresholds and prompts are fixed before scoring. The six-label variant preserves the existing
 # three roles, and the new labels are evaluated separately; no geography/year policy is invented.
 VARIANTS = {'control': ('three', .5, False), 'low_threshold': ('three', .35, False),
-            'lane_overlap': ('three', .5, True), 'six_labels': ('six', .5, True)}
+            'lane_overlap': ('three', .5, True), 'six_labels': ('six', .5, True),
+            'specialized_six': ('specialized', .5, True), 'rephrased_three': ('rephrased', .5, False)}
 
 
 def sha(path):
@@ -110,7 +115,7 @@ def prepare_documents(rows, jar, java):
 
 def verify_tokenizer(documents, tokenizer, path, host, java):
     # Exercise every word and prompt that can enter this experiment using shipping Kotlin code.
-    words=sorted({w[1] for doc in documents.values() for w in doc} | set(THREE) | set(SIX))
+    words=sorted({w[1] for doc in documents.values() for w in doc} | {p for ps in PROMPT_SETS.values() for p in ps})
     cp=str(host/'tokenizer.jar')+':'+str(host/'json.jar')
     p=subprocess.run([java,'-cp',cp,'com.yourapp.wine.gliner.TokenizerParityKt',str(path)],
                      input='\n'.join(enc(w) for w in words)+'\n',text=True,capture_output=True,check=True)
@@ -219,10 +224,10 @@ def main():
     tokenizer=Tokenizer(args.bundle/'tokenizer.json');config=json.loads((args.bundle/'gliner_config.json').read_text())
     parity_words=verify_tokenizer(docs,tokenizer,args.bundle/'tokenizer.json',args.host,args.java)
     t=time.perf_counter();session=ort.InferenceSession(str(args.bundle/'gliner_small_int4.onnx'),providers=['CPUExecutionProvider']); load=time.perf_counter()-t
-    hints={v:{} for v in VARIANTS}; failures={v:[] for v in VARIANTS}; times={v:[] for v in ('three','six')}; extra={}
+    hints={v:{} for v in VARIANTS}; failures={v:[] for v in VARIANTS}; times={v:[] for v in PROMPT_SETS}; extra={'six_labels':{},'specialized_six':{}}
     for row in rows:
         number=row['review_number']; doc=docs[number]
-        for group,prompts in [('three',THREE),('six',SIX)]:
+        for group,prompts in PROMPT_SETS.items():
             try:
                 words,width,feed=make_feed(doc,prompts,tokenizer,config,session.get_inputs()); t=time.perf_counter()
                 logits=session.run(None,feed)[0]; times[group].append(time.perf_counter()-t)
@@ -230,7 +235,7 @@ def main():
                     if grp!=group: continue
                     decoded=decode_logits(logits,words,width,prompts,threshold,per_lane)
                     hints[variant][number]=[(('producer','wine_name','appellation')[label],score,text) for label,score,text in decoded if label<3]
-                    if variant=='six_labels': extra[number]=decoded
+                    if variant in extra: extra[variant][number]=decoded
             except Exception as e:
                 for variant,(grp,_,_) in VARIANTS.items():
                     if grp==group: failures[variant].append({'image':row['image'],'error':str(e)})
@@ -250,15 +255,24 @@ def main():
         control=predictions['control'];report['control_phone_field_differences']=[{'number':r['review_number'],'field':f,'phone':r['fields'].get(f,''),'control':control[r['review_number']].get(f,'')} for r in rows for f in FIELDS if control[r['review_number']].get(f,'')!=r['fields'].get(f,'')]
         for v,results in predictions.items(): report['variants'][v]=score(rows,results,refs,control)
         report['control_verified'] = not report['control_phone_field_differences']
+        hint_mismatch=[]
+        for r in rows:
+            actual=hints['control'][r['review_number']]
+            saved=[(h['lane'],h['score'],h['text']) for h in r['lane_hints']]
+            if len(actual)!=len(saved) or any(a[0]!=b[0] or a[2]!=b[2] or abs(a[1]-b[1])>0.001 for a,b in zip(actual,saved)):
+                hint_mismatch.append(r['review_number'])
+        report['control_hint_parity']={'matched':len(rows)-len(hint_mismatch),'total':len(rows),'different_rows':hint_mismatch,'score_tolerance':0.001}
     else: report['control_verified']=False
-    if 'six_labels' in predictions:
+    report['extra_exact_span_recall']={}
+    for variant in extra:
+        if variant not in predictions: continue
         recall={}
-        for label,field in [(3,'country'),(4,'region'),(5,'vintage')]:
+        for label,field in [(2,'subregion'),(3,'country'),(4,'region'),(5,'vintage')]:
             eligible=[r for r in rows if r['eligible'] and refs[r['image']][field]['status']=='expected_value']
             blanks=[r for r in rows if r['eligible'] and refs[r['image']][field]['status']=='expected_blank']
-            recall[field]={'expected_value_cases':len(eligible),'exact_span_found':sum(any(norm(text) in refs[r['image']][field]['accepted'] for l,_,text in extra[r['review_number']] if l==label) for r in eligible),
-                           'expected_blank_cases':len(blanks),'blank_with_any_span':sum(any(l==label for l,_,_ in extra[r['review_number']]) for r in blanks)}
-        report['six_extra_exact_span_recall']=recall
+            recall[field]={'expected_value_cases':len(eligible),'exact_span_found':sum(any(norm(text) in refs[r['image']][field]['accepted'] for l,_,text in extra[variant][r['review_number']] if l==label) for r in eligible),
+                           'expected_blank_cases':len(blanks),'blank_with_any_span':sum(any(l==label for l,_,_ in extra[variant][r['review_number']]) for r in blanks)}
+        report['extra_exact_span_recall'][variant]=recall
     report['wall_seconds']=time.perf_counter()-start
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n')
     print(json.dumps({k:report[k] for k in ['control_verified','load_seconds','inference_seconds','wall_seconds']},indent=2))
