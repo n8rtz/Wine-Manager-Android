@@ -17,17 +17,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,7 +49,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -108,16 +105,6 @@ fun WineColorPicker(
     val current = color ?: HsvColor(0f, 0f, 1f)
     val currentState by rememberUpdatedState(current)
     val currentCallback by rememberUpdatedState(onColorChange)
-    var hText by remember { mutableStateOf(current.hue.roundToInt().toString()) }
-    var sText by remember { mutableStateOf("%.2f".format(current.saturation)) }
-    var vText by remember { mutableStateOf("%.2f".format(current.value)) }
-
-    LaunchedEffect(current) {
-        hText = current.hue.roundToInt().toString()
-        sText = "%.2f".format(current.saturation)
-        vText = "%.2f".format(current.value)
-    }
-
     fun updateHue(hue: Float) {
         if (isWineHue(hue)) currentCallback(currentState.copy(hue = normalizedHue(hue)))
     }
@@ -157,36 +144,6 @@ fun WineColorPicker(
                     modifier = Modifier.fillMaxWidth().height(170.dp)
                 )
             }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumericColorField(
-                label = "H",
-                value = hText,
-                onValueChange = { text ->
-                    hText = text
-                    text.toFloatOrNull()?.let { updateHue(it) }
-                },
-                modifier = Modifier.weight(1f)
-            )
-            NumericColorField(
-                label = "S",
-                value = sText,
-                onValueChange = { text ->
-                    sText = text
-                    text.toFloatOrNull()?.let { updateSaturationValue(it, current.value) }
-                },
-                modifier = Modifier.weight(1f)
-            )
-            NumericColorField(
-                label = "V",
-                value = vText,
-                onValueChange = { text ->
-                    vText = text
-                    text.toFloatOrNull()?.let { updateSaturationValue(current.saturation, it) }
-                },
-                modifier = Modifier.weight(1f)
-            )
         }
     }
 }
@@ -280,24 +237,6 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
             cap = StrokeCap.Round
         )
     }
-}
-
-@Composable
-private fun NumericColorField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp)
-    )
 }
 
 @Composable
@@ -538,13 +477,17 @@ fun NoteColorField(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                IconButton(onClick = {
                     onNoteColorChange(draft)
                     showPicker = false
-                }) { Text("Done") }
+                }) {
+                    Icon(Icons.Default.Check, contentDescription = "Done")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                IconButton(onClick = { showPicker = false }) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel")
+                }
             }
         )
     }
@@ -592,13 +535,17 @@ fun DefaultColorField(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                IconButton(onClick = {
                     onColorChange(draft)
                     showPicker = false
-                }) { Text("Done") }
+                }) {
+                    Icon(Icons.Default.Check, contentDescription = "Done")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                IconButton(onClick = { showPicker = false }) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel")
+                }
             }
         )
     }

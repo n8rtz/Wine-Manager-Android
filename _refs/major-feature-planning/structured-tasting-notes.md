@@ -30,7 +30,7 @@ The owner resolved every design alternative before this framework was written. T
 
 | ID | Decision | Resolved value |
 | --- | --- | --- |
-| 6.D1 | Color-picker presentation | **Interactive HSV editor from the swatch**: a hue strip restricted to the wine-tone arc 330°→0°→60°, plus saturation/value plane and numeric H/S/V fields. |
+| 6.D1 | Color-picker presentation | **Interactive HSV editor from the swatch**: a hue strip restricted to the wine-tone arc 330°→0°→60° plus saturation/value plane, without numeric H/S/V boxes. Use icon-only X and checkmark actions. |
 | 6.D2a | Color format | **HSV components** (`hue`, `saturation`, `value`), not ARGB or a named palette. |
 | 6.D2b | Color scope | **WineDefinition default + per-note override**. Effective color is the note override when present, otherwise the definition default. Clearing the override reverts to the definition default. |
 | 6.D13 | Where the definition default lives | **Room column + migration v22**: add a nullable `defaultColorHsv` column to `wine_definitions`. No data backfill or inference. |
@@ -144,7 +144,7 @@ Proposed future files are listed for planning only; **none are created by this t
 | --- | --- |
 | `data/local/TastingNoteModels.kt` (new) | Standalone `TastingPhase`, `HsvColor`, and `AromaObservation` value types referenced by Room entities/converters; kept independent of reducers to avoid a source dependency cycle in KSP. |
 | `data/local/TastingNoteStructure.kt` (new) | Pure-Kotlin normalization/validation helpers and reducer functions; JVM-testable. |
-| `ui/components/WineColorPicker.kt` (new) | HSV editor opened from the color swatch: wine-tone hue arc (330°→0°→60°), saturation/value plane, and numeric H/S/V fields. Note color can be cleared back to the wine default. |
+| `ui/components/WineColorPicker.kt` (new) | HSV editor opened from the color swatch: wine-tone hue arc (330°→0°→60°) and saturation/value plane, no numeric H/S/V boxes, and icon-only X/checkmark actions. Note color can be cleared back to the wine default. |
 | `ui/components/PhaseAromaCloud.kt` (new) | Wrapping, intensity-sized label cluster; pinch gesture and largest-first sorting; no numeric badges, stepper or drag handles. |
 | `ui/components/TastingPhaseSections.kt` (new) | Four short section headers and section-aware composition of sliders, color picker, aroma cloud and chips. |
 | `ui/components/LegacyAromaPhaseSheet.kt` (new) | Blocking phase-assignment sheet shown on first edit of a legacy note; Save disabled until all legacy descriptors are assigned or removed. |
@@ -214,7 +214,7 @@ JVM `TastingNoteStructureTest` and host `test_w061_structured_notes.py` are writ
 | --- | --- |
 | JVM pure logic | `HsvColor` ranges; `entryTightOpen` range; `AromaObservation` normalization; 24-distinct-ID cap; duplicate `(id, phase)` rejection; unknown-ID preservation; `toFlatAromaIds`; pinch intensity math; largest-first sort with stable ties; pure reducer transitions. |
 | Gson/Room | `SensoryData` JSON round trip; legacy float-JSON parser; missing/null fields; `HsvColor` TypeConverter; `MIGRATION_21_22` column with `NULL` old rows; backup → restore on a clean install. |
-| Compose / UI | HSV color editor (wine-tone hue arc 330°→0°→60°, saturation/value plane, H/S/V fields) and inheritance choice; active-phase wheel/list parity; pinch-only word-cloud sizing and largest-first sorting; large font/dark theme/narrow screen; legacy phase sheet Save-disabled state; four section headers and global controls placement. |
+| Compose / UI | HSV color editor (wine-tone hue arc 330°→0°→60°, saturation/value plane, no numeric boxes, icon-only X/checkmark actions) and inheritance choice; active-phase wheel/list parity; pinch-only word-cloud sizing and largest-first sorting; large font/dark theme/narrow screen; legacy phase sheet Save-disabled state; four section headers and global controls placement. |
 | Regression | Existing overall score, faults, written notes, wine identity, inventory and consumption history unchanged; W-053 all-phase filter; no new prose; no new permission/dependency/network/background work. |
 | Device / emulator | `THINGS_TO_CHECK.md` checklist, TalkBack, font scale 1.0–2.0, rotation/process recreation, backup → restore, real Android build. Not run for this documentation-only task. |
 
