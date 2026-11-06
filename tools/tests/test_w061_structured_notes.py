@@ -174,8 +174,14 @@ class W061SourceContractTests(unittest.TestCase):
 
     def test_aroma_phase_has_the_short_display_label(self):
         models = read(DATA / "TastingNoteModels.kt")
+        fields = read(UI / "components/SensoryEvaluationFields.kt")
+        sections = read(UI / "components/TastingPhaseSections.kt")
         self.assertIn('AROMA_BEFORE_TASTING("Aroma")', models)
         self.assertNotIn('"Aroma (before tasting)"', models)
+        self.assertIn('SensoryTraitControl("aroma"', fields)
+        self.assertIn('"aroma" -> listOf(', fields)
+        self.assertIn('TastingPhase.AROMA_BEFORE_TASTING -> listOf("aroma")', sections)
+        self.assertNotIn('SensoryTraitControl("Aroma / bouquet"', fields)
 
     def test_backup_restore_and_pure_contract_are_present(self):
         importer = read(APP / "data/importer/DataImporter.kt")

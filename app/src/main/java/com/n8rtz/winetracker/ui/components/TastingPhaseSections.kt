@@ -34,7 +34,7 @@ import com.n8rtz.winetracker.data.local.setAromaIntensity
 import com.n8rtz.winetracker.data.local.sortAromaObservationsByIntensity
 
 private fun traitTitlesFor(phase: TastingPhase): List<String> = when (phase) {
-    TastingPhase.AROMA_BEFORE_TASTING -> listOf("Aroma / bouquet")
+    TastingPhase.AROMA_BEFORE_TASTING -> listOf("aroma")
     TastingPhase.ENTRY -> listOf("Sweetness")
     TastingPhase.MID_PALATE -> listOf(
         "Acidity", "Tannins / grip", "Body", "Balance", "Concentration", "Complexity"

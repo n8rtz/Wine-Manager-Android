@@ -185,7 +185,7 @@ Editor state sequence:
 
 | Section | Controls |
 | --- | --- |
-| **Visual / aroma** | Wine color swatch opening an HSV editor, **Aroma / bouquet** slider, **Aroma** pinch-sized aroma cloud |
+| **Visual / aroma** | Wine color swatch opening an HSV editor, **aroma** slider, **Aroma** pinch-sized aroma cloud |
 | **Entry** | **Tight ↔ Open** bipolar slider, **Sweetness** slider, **Entry** aroma cloud and chips |
 | **Mid-palate** | **Acidity**, **Tannins / grip**, **Body**, **Balance**, **Concentration**, **Complexity** sliders, **Mid-palate** aroma cloud and chips |
 | **Finish** | **Finish**, **Quality** sliders, **Finish** aroma cloud and chips |
