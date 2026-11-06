@@ -254,7 +254,8 @@ fun NoteColorField(
     definitionColor: HsvColor?,
     noteColor: HsvColor?,
     onNoteColorChange: (HsvColor?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readOnly: Boolean = false
 ) {
     var showPicker by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf(noteColor ?: definitionColor ?: HsvColor(0f, 0f, 1f)) }
@@ -271,19 +272,21 @@ fun NoteColorField(
                 .clip(RoundedCornerShape(8.dp))
                 .background(effective?.let { Color(it.toArgb()) } ?: NeutralSwatch)
         )
-        TextButton(
-            onClick = { onNoteColorChange(null) },
-            enabled = noteColor != null
-        ) { Text("Use default") }
-        TextButton(
-            onClick = {
-                draft = noteColor ?: definitionColor ?: HsvColor(0f, 0f, 1f)
-                showPicker = true
-            }
-        ) { Text("Override") }
+        if (!readOnly) {
+            TextButton(
+                onClick = { onNoteColorChange(null) },
+                enabled = noteColor != null
+            ) { Text("Use default") }
+            TextButton(
+                onClick = {
+                    draft = noteColor ?: definitionColor ?: HsvColor(0f, 0f, 1f)
+                    showPicker = true
+                }
+            ) { Text("Override") }
+        }
     }
 
-    if (showPicker) {
+    if (showPicker && !readOnly) {
         AlertDialog(
             onDismissRequest = { showPicker = false },
             title = { Text("Color") },

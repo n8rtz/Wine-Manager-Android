@@ -42,6 +42,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── TastingNotesScreen.kt      # Notes repository: floating search/filter, one-open expandable cards, scrolling title
 │   │   ├── TastingNotesFilterState.kt # Notes filter/sort state
 │   │   ├── TastingNoteEditorScreen.kt # Add/edit note: Cellar/Manual entry, four sectioned sensory groups, phase wheel
+│   │   ├── TastingNoteDetailScreen.kt # Read-only note detail using the entry layout; explicit Edit action
 │   │   ├── HistoryScreen.kt           # Consumption-event history, note links, undo-safe list, scrolling title
 │   │   ├── RankingsScreen.kt          # Rankings by 100-point score + floating search/filter, scrolling title
 │   │   ├── RankingsFilterState.kt     # Rankings filter/sort state

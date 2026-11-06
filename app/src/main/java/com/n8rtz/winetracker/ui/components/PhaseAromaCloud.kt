@@ -52,6 +52,7 @@ fun PhaseAromaCloud(
     onIntensityChange: (String, TastingPhase, Float?) -> Unit,
     onReorder: (TastingPhase, Int, Int) -> Unit,
     onRemove: (String, TastingPhase) -> Unit,
+    readOnly: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -82,15 +83,10 @@ fun PhaseAromaCloud(
             val currentId by rememberUpdatedState(observation.descriptorId)
             var dragX by remember(observation.descriptorId, phase) { mutableStateOf(0f) }
 
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
+            val gestureModifier = if (readOnly) {
+                Modifier
+            } else {
+                Modifier
                     .pointerInput(currentId, phase) {
                         detectTransformGestures { _, _, zoom, _ ->
                             if (zoom != 1f) {
@@ -123,47 +119,65 @@ fun PhaseAromaCloud(
                             onDragCancel = { dragX = 0f }
                         )
                     }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    .then(gestureModifier)
                     .semantics { contentDescription = "${info.label} %.1f".format(shown) }
             ) {
                 Row(
-                    modifier = Modifier.padding(start = 4.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
+                    modifier = Modifier.padding(start = 4.dp, end = 6.dp, top = 2.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(18.dp)
-                            .semantics { contentDescription = "Reorder ${info.label}" },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("≡", style = MaterialTheme.typography.labelSmall)
+                    if (!readOnly) {
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .semantics { contentDescription = "Reorder ${info.label}" },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("≡", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                     Text(
                         info.label,
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.width(92.dp).padding(horizontal = 4.dp)
                     )
-                    IconButton(
-                        onClick = {
-                            currentOnIntensityChange(currentId, phase, (currentShown - 0.1f).coerceIn(0f, 1f))
-                        },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(Icons.Default.Remove, contentDescription = "Less", modifier = Modifier.size(14.dp))
-                    }
-                    Text("%.1f".format(shown), style = MaterialTheme.typography.labelSmall)
-                    IconButton(
-                        onClick = {
-                            currentOnIntensityChange(currentId, phase, (currentShown + 0.1f).coerceIn(0f, 1f))
-                        },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "More", modifier = Modifier.size(14.dp))
-                    }
-                    IconButton(
-                        onClick = { currentOnRemove(currentId, phase) },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(14.dp))
+                    if (readOnly) {
+                        Text("%.1f".format(shown), style = MaterialTheme.typography.labelSmall)
+                    } else {
+                        IconButton(
+                            onClick = {
+                                currentOnIntensityChange(currentId, phase, (currentShown - 0.1f).coerceIn(0f, 1f))
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Remove, contentDescription = "Less", modifier = Modifier.size(14.dp))
+                        }
+                        Text("%.1f".format(shown), style = MaterialTheme.typography.labelSmall)
+                        IconButton(
+                            onClick = {
+                                currentOnIntensityChange(currentId, phase, (currentShown + 0.1f).coerceIn(0f, 1f))
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "More", modifier = Modifier.size(14.dp))
+                        }
+                        IconButton(
+                            onClick = { currentOnRemove(currentId, phase) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(14.dp))
+                        }
                     }
                 }
             }

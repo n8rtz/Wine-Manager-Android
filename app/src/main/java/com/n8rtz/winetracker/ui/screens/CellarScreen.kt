@@ -2,6 +2,7 @@
 package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
@@ -33,7 +34,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
+fun CellarScreen(
+    viewModel: WineViewModel,
+    onWineClick: (Long) -> Unit,
+    onNoteClick: (Long) -> Unit
+) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
     val cellarLocationData by viewModel.cellarLocationData.collectAsState()
@@ -289,6 +294,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                                     val noteDate = dateFormat.format(Date(noteWithDef.note.dateTasted))
                                     Text(
                                         text = "$noteDate: ${noteWithDef.note.notes ?: ""}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { onNoteClick(noteWithDef.note.noteId) }
+                                            .padding(vertical = 2.dp),
                                         style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,

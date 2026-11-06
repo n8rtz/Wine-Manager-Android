@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +59,7 @@ fun SectionedSensoryFields(
     onDataChange: (SensoryData) -> Unit,
     onOpenWheel: () -> Unit,
     onAssignLegacy: () -> Unit,
+    readOnly: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val normalized = normalizeSensoryData(data)
@@ -71,23 +73,28 @@ fun SectionedSensoryFields(
                     NoteColorField(
                         definitionColor = definitionColor,
                         noteColor = normalized.colorHsv,
-                        onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) }
+                        onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
+                        readOnly = readOnly
                     )
                     AromaWheelLauncherButton(
-                        count = normalized.aromaObservations.map { it.descriptorId }.distinct().size,
+                        count = (normalized.aromaObservations.map { it.descriptorId } + normalized.aromas).distinct().size,
+                        enabled = !readOnly,
                         onClick = onOpenWheel
                     )
-                    if (legacyAromasUnresolved) {
+                    if (readOnly && normalized.aromaObservations.isEmpty() && normalized.aromas.isNotEmpty()) {
+                        LegacyAromaReadOnlyChips(normalized.aromas)
+                    }
+                    if (legacyAromasUnresolved && !readOnly) {
                         TextButton(onClick = onAssignLegacy) { Text("Assign") }
                     }
                 }
                 TastingPhase.ENTRY -> {
-                    BipolarTraitSlider(data = normalized, onDataChange = onDataChange)
+                    BipolarTraitSlider(data = normalized, onDataChange = onDataChange, enabled = !readOnly)
                 }
                 else -> Unit
             }
             traits.filter { it.title in traitTitlesFor(phase) }.forEach { trait ->
-                SensoryTraitSlider(trait)
+                SensoryTraitSlider(trait, enabled = !readOnly)
             }
             PhaseAromaCloud(
                 phase = phase,
@@ -100,7 +107,8 @@ fun SectionedSensoryFields(
                 },
                 onRemove = { id, phaseValue ->
                     onDataChange(removeAromaObservation(normalized, id, phaseValue))
-                }
+                },
+                readOnly = readOnly
             )
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
         }
@@ -108,20 +116,48 @@ fun SectionedSensoryFields(
 }
 
 @Composable
-private fun AromaWheelLauncherButton(count: Int, onClick: () -> Unit) {
+private fun AromaWheelLauncherButton(count: Int, enabled: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            disabledContainerColor = MaterialTheme.colorScheme.primary,
+            disabledContentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
         Text("Aromas · $count")
     }
 }
 
 @Composable
+private fun LegacyAromaReadOnlyChips(aromaIds: List<String>) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        aromaIds.distinct().forEach { id ->
+            val info = AromaTaxonomy.describe(id)
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f)
+            ) {
+                Text(
+                    info.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun BipolarTraitSlider(
     data: SensoryData,
-    onDataChange: (SensoryData) -> Unit
+    onDataChange: (SensoryData) -> Unit,
+    enabled: Boolean = true
 ) {
     val value = data.entryTightOpen ?: 0.5f
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -138,6 +174,7 @@ private fun BipolarTraitSlider(
             valueRange = 0f..1f,
             steps = 0,
             gradientColors = gradientColorsFor("Body"),
+            enabled = enabled,
             onValueChange = { onDataChange(data.copy(entryTightOpen = it)) }
         )
     }
@@ -146,7 +183,8 @@ private fun BipolarTraitSlider(
 @Composable
 fun CommonFaultsFields(
     data: SensoryData,
-    onChange: (SensoryData) -> Unit
+    onChange: (SensoryData) -> Unit,
+    readOnly: Boolean = false
 ) {
     val normalized = normalizeSensoryData(data)
     Text("Common faults", style = MaterialTheme.typography.titleSmall)
@@ -162,9 +200,12 @@ fun CommonFaultsFields(
             val selected = flaw in normalized.flaws
             FilterChip(
                 selected = selected,
+                enabled = !readOnly,
                 onClick = {
-                    val updated = if (selected) normalized.flaws - flaw else normalized.flaws + flaw
-                    onChange(normalized.copy(flaws = updated))
+                    if (!readOnly) {
+                        val updated = if (selected) normalized.flaws - flaw else normalized.flaws + flaw
+                        onChange(normalized.copy(flaws = updated))
+                    }
                 },
                 label = { Text(flaw) }
             )

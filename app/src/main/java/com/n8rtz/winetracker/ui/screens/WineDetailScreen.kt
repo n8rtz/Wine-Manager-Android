@@ -48,7 +48,7 @@ fun WineDetailScreen(
     onBack: () -> Unit,
     onConsumed: (String, Long) -> Unit,
     onAddNote: (Long, String) -> Unit,
-    onEditNote: (Long) -> Unit
+    onViewNote: (Long) -> Unit
 ) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val item = remember(inventory, bottleId) { inventory.find { it.bottle.bottleId == bottleId } }
@@ -551,7 +551,7 @@ fun WineDetailScreen(
                         val noteDate = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
                             .format(java.util.Date(note.dateTasted))
                         Surface(
-                            modifier = Modifier.fillMaxWidth().clickable { onEditNote(note.noteId) },
+                            modifier = Modifier.fillMaxWidth().clickable { onViewNote(note.noteId) },
                             shape = RoundedCornerShape(8.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant
                         ) {

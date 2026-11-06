@@ -117,6 +117,7 @@ private fun overallScoreBand(score: Int): OverallScoreBand = when {
 fun OverallScoreSlider(
     score: Float,
     scoreSelected: Boolean = true,
+    enabled: Boolean = true,
     onScoreChange: (Float) -> Unit
 ) {
     // Reserve a font-scaled label width at both endpoints. The explicit thumb
@@ -192,6 +193,7 @@ fun OverallScoreSlider(
             Slider(
                 value = sliderScore,
                 onValueChange = { onScoreChange(it.coerceIn(50f, 100f)) },
+                enabled = enabled,
                 valueRange = 50f..100f,
                 steps = 49,
                 modifier = Modifier.fillMaxWidth(),
@@ -212,10 +214,15 @@ fun OverallScoreSlider(
                 },
                 colors = SliderDefaults.colors(
                     thumbColor = indicatorColor,
+                    disabledThumbColor = indicatorColor,
                     activeTrackColor = Color.Transparent,
                     activeTickColor = Color.Transparent,
                     inactiveTrackColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent
+                    inactiveTickColor = Color.Transparent,
+                    disabledActiveTrackColor = Color.Transparent,
+                    disabledActiveTickColor = Color.Transparent,
+                    disabledInactiveTrackColor = Color.Transparent,
+                    disabledInactiveTickColor = Color.Transparent
                 )
             )
         }
@@ -241,7 +248,7 @@ fun OverallScoreSlider(
 }
 
 @Composable
-internal fun SensoryTraitSlider(trait: SensoryTraitControl) {
+internal fun SensoryTraitSlider(trait: SensoryTraitControl, enabled: Boolean = true) {
     val maxValue = (trait.descriptors.size - 1).coerceAtLeast(1)
     val value = trait.value.coerceIn(0, maxValue)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -276,6 +283,7 @@ internal fun SensoryTraitSlider(trait: SensoryTraitControl) {
             valueRange = 0f..maxValue.toFloat(),
             steps = (trait.descriptors.size - 2).coerceAtLeast(0),
             gradientColors = gradientColorsFor(trait.title),
+            enabled = enabled,
             onValueChange = { trait.onValueChange(it.roundToInt().coerceIn(0, maxValue)) }
         )
     }
@@ -300,6 +308,7 @@ internal fun GradientSensorySlider(
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
     gradientColors: List<Color>,
+    enabled: Boolean = true,
     onValueChange: (Float) -> Unit
 ) {
     val progress = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
@@ -334,13 +343,17 @@ internal fun GradientSensorySlider(
         Slider(
             value = value,
             onValueChange = onValueChange,
+            enabled = enabled,
             valueRange = valueRange,
             steps = steps,
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
                 thumbColor = thumbColor,
+                disabledThumbColor = thumbColor,
                 activeTrackColor = Color.Transparent,
-                inactiveTrackColor = Color.Transparent
+                inactiveTrackColor = Color.Transparent,
+                disabledActiveTrackColor = Color.Transparent,
+                disabledInactiveTrackColor = Color.Transparent
             )
         )
     }

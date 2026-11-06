@@ -65,6 +65,7 @@ import com.n8rtz.winetracker.ui.screens.ProfileScreen
 import com.n8rtz.winetracker.ui.screens.ProfileSection
 import com.n8rtz.winetracker.ui.screens.ParetoScreen
 import com.n8rtz.winetracker.ui.screens.TastingNotesScreen
+import com.n8rtz.winetracker.ui.screens.TastingNoteDetailScreen
 import com.n8rtz.winetracker.ui.screens.TastingNoteEditorScreen
 import com.n8rtz.winetracker.ui.screens.WineDetailScreen
 import com.n8rtz.winetracker.ui.screens.CellarScreen
@@ -435,14 +436,16 @@ fun MainAppScaffold(
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             composable("cellar") {
-                CellarScreen(viewModel) { bottleId ->
-                    navController.navigate("detail/$bottleId")
-                }
+                CellarScreen(
+                    viewModel = viewModel,
+                    onWineClick = { bottleId -> navController.navigate("detail/$bottleId") },
+                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
+                )
             }
             composable("notes") {
                 TastingNotesScreen(
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onNoteClick = { noteId -> navController.navigate("note_editor/edit/$noteId") }
+                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
                 )
             }
             composable("rankings") {
@@ -451,7 +454,7 @@ fun MainAppScaffold(
             composable("history") {
                 HistoryScreen(viewModel) { noteId, eventId, definitionId, vintage, consumedAt ->
                     if (noteId != null) {
-                        navController.navigate("note_editor/edit/$noteId")
+                        navController.navigate("note_detail/$noteId")
                     } else {
                         navController.navigate(
                             "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}&eventId=$eventId&dateTasted=${consumedAt ?: -1L}"
@@ -516,6 +519,20 @@ fun MainAppScaffold(
                 }
             }
             composable(
+                route = "note_detail/{noteId}",
+                arguments = listOf(navArgument("noteId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val noteId = backStackEntry.arguments?.getLong("noteId")
+                if (noteId != null) {
+                    TastingNoteDetailScreen(
+                        viewModel = tastingNoteViewModel,
+                        noteId = noteId,
+                        onBack = { navController.popBackStack() },
+                        onEdit = { navController.navigate("note_editor/edit/$noteId") }
+                    )
+                }
+            }
+            composable(
                 route = "note_editor/create?definitionId={definitionId}&vintage={vintage}&eventId={eventId}&dateTasted={dateTasted}",
                 arguments = listOf(
                     navArgument("definitionId") { type = NavType.LongType; defaultValue = -1L },
@@ -565,7 +582,7 @@ fun MainAppScaffold(
                                 "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}"
                             )
                         },
-                        onEditNote = { noteId -> navController.navigate("note_editor/edit/$noteId") },
+                        onViewNote = { noteId -> navController.navigate("note_detail/$noteId") },
                         onConsumed = { message, eventId ->
                             scope.launch {
                                 val result = snackbarHostState.showSnackbar(
