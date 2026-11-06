@@ -13,7 +13,10 @@ print('# Automated GLiNER saved-OCR comparison\n')
 print('193 attempted, 188 eligible development images; OCR and references frozen. No new OCR or Android build.\n')
 print('**Control parity:** '+('verified against all saved phone output fields.' if r['control_verified'] else 'FAILED — diagnostic only; do not interpret gains as verified.'))
 if 'control_hint_parity' in r:
-    h=r['control_hint_parity'];print(f"Model hint parity: {h['matched']}/{h['total']} images within {h['score_tolerance']} confidence.")
+    h=r['control_hint_parity'];print(f"Model hint parity: {h['matched']}/{h['total']} images within {h['score_tolerance']} confidence. Categories: {h['categories']}.")
+    if h['matched'] != h['total']: print('**Caution:** final fields match, but underlying model hints do not all match the phone. Host comparisons are exploratory until that discrepancy is understood.')
+    for ex in h['examples']:
+        print(f"- Hint mismatch example #{ex['number']} ({ex['category']}): host {ex['host']}; phone {ex['phone']}")
 print(f"\nModel load {r['load_seconds']:.2f}s; total wall time {r['wall_seconds']:.1f}s, host CPU only (not phone latency).")
 for group,t in r['inference_latency_seconds'].items():
     if t['first'] is not None: print(f"- {group}: first {t['first']:.3f}s, median {t['median']:.3f}s, p90 {t['p90']:.3f}s per model invocation.")

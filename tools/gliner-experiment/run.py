@@ -255,13 +255,22 @@ def main():
         control=predictions['control'];report['control_phone_field_differences']=[{'number':r['review_number'],'field':f,'phone':r['fields'].get(f,''),'control':control[r['review_number']].get(f,'')} for r in rows for f in FIELDS if control[r['review_number']].get(f,'')!=r['fields'].get(f,'')]
         for v,results in predictions.items(): report['variants'][v]=score(rows,results,refs,control)
         report['control_verified'] = not report['control_phone_field_differences']
-        hint_mismatch=[]
+        hint_mismatch=[]; hint_categories=Counter(); hint_examples=[]
         for r in rows:
             actual=hints['control'][r['review_number']]
             saved=[(h['lane'],h['score'],h['text']) for h in r['lane_hints']]
-            if len(actual)!=len(saved) or any(a[0]!=b[0] or a[2]!=b[2] or abs(a[1]-b[1])>0.001 for a,b in zip(actual,saved)):
+            signatures=lambda hs: [(h[0],h[2]) for h in hs]
+            if signatures(actual)==signatures(saved):
+                kind='identical' if all(abs(a[1]-b[1])<=0.001 for a,b in zip(actual,saved)) else 'confidence_only'
+            elif sorted(signatures(actual))==sorted(signatures(saved)):
+                kind='order_only'
+            else: kind='different_spans_or_lanes'
+            hint_categories[kind]+=1
+            if kind!='identical':
                 hint_mismatch.append(r['review_number'])
-        report['control_hint_parity']={'matched':len(rows)-len(hint_mismatch),'total':len(rows),'different_rows':hint_mismatch,'score_tolerance':0.001}
+                if len(hint_examples)<3: hint_examples.append({'number':r['review_number'],'category':kind,'host':actual,'phone':saved})
+        report['control_hint_parity']={'matched':hint_categories['identical'],'total':len(rows),'different_rows':hint_mismatch,
+                                       'categories':dict(hint_categories),'examples':hint_examples,'score_tolerance':0.001}
     else: report['control_verified']=False
     report['extra_exact_span_recall']={}
     for variant in extra:
