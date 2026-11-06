@@ -33,6 +33,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.data.local.HsvColor
+import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.isBusy
 import com.n8rtz.winetracker.scanner.WineLabelFraming
@@ -108,6 +110,7 @@ fun AddWineScreen(
     var price by remember { mutableStateOf("") }
     var drinkingWindowStart by remember { mutableStateOf("") }
     var drinkingWindowEnd by remember { mutableStateOf("") }
+    var defaultColorHsv by remember { mutableStateOf<HsvColor?>(null) }
 
     // Cascading Location State
     var selectedCountry by remember { mutableStateOf("") }
@@ -296,6 +299,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         producerSearchExpanded = false
                                     }
                                 )
@@ -358,6 +362,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         nameSearchExpanded = false
                                     }
                                 )
@@ -602,6 +607,11 @@ fun AddWineScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                DefaultColorField(
+                    color = defaultColorHsv,
+                    onColorChange = { defaultColorHsv = it }
+                )
+
                 Button(
                     enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
                     onClick = {
@@ -616,7 +626,8 @@ fun AddWineScreen(
                             quantity = quantity.toIntOrNull() ?: 1,
                             price = price.toDoubleOrNull(),
                             drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
+                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                            defaultColorHsv = defaultColorHsv
                         )
                         onWineAdded()
                     },

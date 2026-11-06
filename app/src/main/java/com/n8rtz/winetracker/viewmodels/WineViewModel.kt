@@ -20,6 +20,7 @@ import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
 import kotlinx.coroutines.Dispatchers
@@ -194,12 +195,13 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         quantity: Int,
         price: Double?,
         drinkingWindowStart: Int? = null,
-        drinkingWindowEnd: Int? = null
+        drinkingWindowEnd: Int? = null,
+        defaultColorHsv: HsvColor? = null
     ) {
         viewModelScope.launch {
             repository.addWine(
                 maker, name, vintage, type, country, region, subregion, quantity, price,
-                drinkingWindowStart, drinkingWindowEnd
+                drinkingWindowStart, drinkingWindowEnd, defaultColorHsv
             )
         }
     }

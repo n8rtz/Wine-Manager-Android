@@ -93,6 +93,14 @@ import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 import com.n8rtz.winetracker.aromawheel.MAX_SELECTED_DESCRIPTORS
 import com.n8rtz.winetracker.aromawheel.TaxNode
 import kotlinx.coroutines.delay
+import com.n8rtz.winetracker.data.local.AromaEditException
+import com.n8rtz.winetracker.data.local.AromaEditReason
+import com.n8rtz.winetracker.data.local.AromaObservation
+import com.n8rtz.winetracker.data.local.SensoryData
+import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.data.local.normalizeSensoryData
+import com.n8rtz.winetracker.data.local.toFlatAromaIds
+import com.n8rtz.winetracker.data.local.toggleAromaObservation
 
 /**
  * Tasting-note launcher for the aroma wheel: a summary card with a live
@@ -823,6 +831,180 @@ private fun AromaListLeafRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun PhaseAromaWheelDialog(
+    initialObservations: List<AromaObservation>,
+    initialPhase: TastingPhase,
+    onConfirm: (TastingPhase, List<AromaObservation>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val observations = remember {
+        mutableStateListOf<AromaObservation>().apply {
+            addAll(
+                normalizeSensoryData(SensoryData(aromaObservations = initialObservations))
+                    .aromaObservations
+            )
+        }
+    }
+    var activePhase by remember { mutableStateOf(initialPhase) }
+    var showListMode by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
+    var notice by remember { mutableStateOf<String?>(null) }
+
+    fun applyToggle(id: String) {
+        val result = toggleAromaObservation(
+            SensoryData(aromaObservations = observations.toList()),
+            id,
+            activePhase
+        )
+        result.onSuccess { updated ->
+            observations.clear()
+            observations.addAll(updated.aromaObservations)
+        }.onFailure { error ->
+            notice = when ((error as? AromaEditException)?.reason) {
+                AromaEditReason.LIMIT -> "Limit of $MAX_SELECTED_DESCRIPTORS descriptors reached"
+                AromaEditReason.DUPLICATE -> "Already selected"
+                else -> null
+            }
+        }
+    }
+
+    fun clearActivePhase() {
+        observations.removeAll { it.phase == activePhase }
+    }
+
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            delay(2600)
+            notice = null
+        }
+    }
+
+    val activeIds = observations
+        .filter { it.phase == activePhase }
+        .sortedBy { it.displayOrder }
+        .map { it.descriptorId }
+    val distinctCount = toFlatAromaIds(observations).size
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Aroma wheel",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "$distinctCount/$MAX_SELECTED_DESCRIPTORS",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(
+                        onClick = { showListMode = !showListMode },
+                        modifier = Modifier.semantics {
+                            contentDescription =
+                                if (showListMode) "Switch to wheel view" else "Switch to list view"
+                        }
+                    ) {
+                        Icon(
+                            if (showListMode) Icons.Default.DonutLarge else Icons.AutoMirrored.Filled.List,
+                            contentDescription = null
+                        )
+                    }
+                    TextButton(onClick = { onConfirm(activePhase, observations.toList()) }) {
+                        Text("Done")
+                    }
+                }
+
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    TastingPhase.values().forEach { phase ->
+                        FilterChip(
+                            selected = activePhase == phase,
+                            onClick = { activePhase = phase },
+                            label = { Text(phase.label) }
+                        )
+                    }
+                }
+
+                if (notice != null) {
+                    Text(
+                        notice!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 2.dp)
+                    )
+                }
+
+                Crossfade(targetState = showListMode, label = "PhaseAromaWheelMode") { listMode ->
+                    if (listMode) {
+                        AromaListContent(
+                            selectedIds = activeIds,
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            expandedGroups = expandedGroups,
+                            onToggleLeaf = { id -> applyToggle(id) }
+                        )
+                    } else {
+                        val selectedSet: Set<String> = activeIds.toSet()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            AromaWheel(
+                                selectedIds = selectedSet,
+                                onToggle = { id -> applyToggle(id) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            if (activeIds.isNotEmpty()) {
+                                SelectedAromasOverlay(
+                                    selectedIds = activeIds,
+                                    onRemove = { id -> applyToggle(id) },
+                                    onClear = { clearActivePhase() },
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

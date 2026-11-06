@@ -41,7 +41,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │   │   ├── AddWineScreen.kt           # Manual entry (cascading dropdowns) + label-photo scan and review dialog
 │   │   ├── TastingNotesScreen.kt      # Notes repository: floating search/filter, one-open expandable cards, scrolling title
 │   │   ├── TastingNotesFilterState.kt # Notes filter/sort state
-│   │   ├── TastingNoteEditorScreen.kt # Add/edit note: Cellar/Manual entry, sensory form, aroma wheel launcher
+│   │   ├── TastingNoteEditorScreen.kt # Add/edit note: Cellar/Manual entry, four sectioned sensory groups, phase wheel
 │   │   ├── HistoryScreen.kt           # Consumption-event history, note links, undo-safe list, scrolling title
 │   │   ├── RankingsScreen.kt          # Rankings by 100-point score + floating search/filter, scrolling title
 │   │   ├── RankingsFilterState.kt     # Rankings filter/sort state
@@ -58,10 +58,14 @@ app/src/main/java/com/n8rtz/winetracker/
 │       ├── WheelPicker.kt             # Birthday-style scroll picker + cascading location wheels
 │       ├── DatePickerUtils.kt         # Local-date <-> Material DatePicker UTC-midnight conversion
 │       ├── BottomBarLabelSizing.kt    # Uniform bottom-bar label sizing
-│       ├── SensoryEvaluationFields.kt # Ombre sensory sliders, score slider, aroma launcher card, faults
+│       ├── SensoryEvaluationFields.kt # Shared ombre sensory controls, score slider and fault helpers
 │       ├── AromaChipDrag.kt           # Long-press drag-reorder logic for aroma chips
-│       ├── AromaWheelDialog.kt        # Full-screen aroma wheel: wheel host, list+search mode, chips
-│       └── LabelScanCameraPreview.kt  # CameraX preview + framing guide for label capture
+│       ├── AromaWheelDialog.kt        # Full-screen aroma wheel: wheel/list mode plus phase-aware W-061 picker
+│       ├── LabelScanCameraPreview.kt  # CameraX preview + framing guide for label capture
+│       ├── WineColorPicker.kt         # W-061: hue strip + S/V square, default/override color fields
+│       ├── PhaseAromaCloud.kt         # W-061: pinch-sized chips, 0.1 stepper, drag reorder
+│       ├── TastingPhaseSections.kt   # W-061: four sections, bipolar slider, structured summary
+│       └── LegacyAromaPhaseSheet.kt  # W-061: explicit legacy aroma phase assignment
 │
 ├── drinkingwindow/                    # W-050 Phase 1: offline drinking-window estimate (pure Kotlin)
 │   ├── DrinkingWindowEstimator.kt     # Text normaliser, profile matcher, EstimatedWindow (display-only)
@@ -76,10 +80,11 @@ app/src/main/java/com/n8rtz/winetracker/
 │
 ├── data/
 │   ├── local/
-│   │   ├── WineDatabase.kt            # Room DB (v21): entities WineDefinition, WineImageAsset, WineBottle,
+│   │   ├── WineDatabase.kt            # Room DB (v22): entities WineDefinition, WineImageAsset, WineBottle,
 │   │   │                              #   TastingNote, Rating, ConsumptionEvent; BottleStatus; SensoryData;
 │   │   │                              #   Converters; vintage helpers; all migrations
-│   │   └── WineDaos.kt                # DAOs: Wine, WineImageAsset, Inventory, TastingNote, Rating, ConsumptionEvent
+│   │   ├── WineDaos.kt                # DAOs: Wine, WineImageAsset, Inventory, TastingNote, Rating, ConsumptionEvent
+│   │   └── TastingNoteStructure.kt # W-061: HSV, phases, observations, reducers and validation
 │   ├── repository/
 │   │   ├── WineRepository.kt          # Single source of truth; inventory and consumption-event transactions
 │   ├── importer/

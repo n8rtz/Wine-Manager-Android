@@ -649,6 +649,23 @@ Use a throwaway install or the debug seed, not data you can't replace.
 3. [ ] Legacy CSV imports (W-033 / W-034) and JSON restore, on a disposable install.
 
 
+## W-061 — Structured tasting notes
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run `./gradlew :app:assembleDebug` and `:app:testDebugUnitTest` (including `TastingNoteStructureTest`). The agent sandbox has no JDK or Android SDK, so these were not run here.
+2. [ ] On a disposable install with a v21 database, open the app and confirm `MIGRATION_21_22` succeeds. In Database Inspector, confirm `wine_definitions.defaultColorHsv` is NULL for every pre-existing row and no other table or column changed.
+3. [ ] Add a wine, set its default color with the hue strip / saturation-value square, save, reopen, and confirm the swatch persists. Edit the same wine and clear the color; confirm it returns to unset.
+4. [ ] Create a tasting note, override the inherited color, then save and reopen. Confirm the note color wins, while the wine-definition default remains available to other notes.
+5. [ ] Open the aroma wheel, choose each of **Aroma (before tasting)**, **Entry**, **Mid-palate** and **Finish**, and add descriptors. Confirm the same stable ID can appear in multiple phases and the 24-distinct-ID limit still applies to the whole note. Confirm the list/search mode matches the wheel selection.
+6. [ ] In the word cloud, pinch a chip and use the **− / +** stepper. Confirm near-stepless `0f..1f` intensity changes chip size without changing order; long-press drag changes order without changing intensity. Save, reopen and confirm both persist.
+7. [ ] Confirm the editor is one scroll with exactly four short headers: **Visual / aroma**, **Entry**, **Mid-palate**, **Finish**. All ten existing sliders remain editable in their assigned sections, **Complexity** is in Mid-palate, and one **Tight ↔ Open** slider is in Entry. Overall score, Common faults, written notes, reviewer/recommend/value and save/delete remain outside the sections.
+8. [ ] On an old note with flat aromas and no observations, open edit mode. Confirm the phase-assignment sheet appears, no phase is preselected, Save stays disabled until every retained aroma is explicitly assigned or removed, and Cancel makes no silent phase inference.
+9. [ ] Open the saved-note detail. Confirm color, phase-grouped aromas with intensity, and sectioned slider values are visible; no unrequested explanatory prose appears.
+10. [ ] In **Tasting Notes**, search an aroma descriptor without a phase filter and confirm notes match from any phase, including legacy flat notes. Apply an optional phase filter and confirm only observations in that phase match.
+11. [ ] Export JSON, inspect it for `defaultColorHsv`, `colorHsv`, `entryTightOpen`, `aromaObservations`, per-observation intensity and all slider values. Restore on a second disposable install and confirm counts, legacy notes, colors, phases, intensities and sectioned slider values are unchanged.
+12. [ ] Run Compose/large-font/TalkBack checks for the color picker, wheel phase chips, word-cloud stepper, legacy sheet and section headers on an emulator/device. Confirm no new permissions, dependencies, network use or background work.
+
 ## Template for a new branch
 
 Copy this block, fill it in, place it under the table at the top, and add a table row.

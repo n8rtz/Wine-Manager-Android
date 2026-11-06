@@ -25,6 +25,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.data.local.matchesAromaQuery
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
@@ -64,7 +66,7 @@ fun TastingNotesScreen(
     val isFilterActive = filterState.types.isNotEmpty() ||
             filterState.status != "All" ||
             filterState.country != null || filterState.region != null || filterState.subregion != null ||
-            filterState.priceRange != null
+            filterState.priceRange != null || filterState.aromaQuery.isNotBlank() || filterState.aromaPhase != null
 
     val filteredHistory = remember(history, searchQuery, filterState, prices) {
         history.filter { item ->
@@ -90,8 +92,15 @@ fun TastingNotesScreen(
             val matchesRegion = filterState.region == null || item.definition.region?.trim()?.equals(filterState.region, ignoreCase = true) == true
             val matchesSubregion = filterState.subregion == null || item.definition.subregion?.trim()?.equals(filterState.subregion, ignoreCase = true) == true
 
+            val matchesAroma = matchesAromaQuery(
+                item.note.sensoryData?.aromaObservations.orEmpty(),
+                item.note.sensoryData?.aromas.orEmpty(),
+                filterState.aromaQuery,
+                filterState.aromaPhase
+            )
+
             matchesSearch && matchesType && matchesStatus && matchesPrice &&
-                    matchesCountry && matchesRegion && matchesSubregion
+                    matchesCountry && matchesRegion && matchesSubregion && matchesAroma
         }.sortedWith { a, b ->
             val priceA = prices[Pair(a.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(a.note.vintage))] ?: 0.0
             val priceB = prices[Pair(b.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(b.note.vintage))] ?: 0.0
@@ -541,6 +550,51 @@ fun TastingNotesFilterSheet(
                         onApply(newState)
                     }
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Text("Aroma", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = state.aromaQuery,
+                    onValueChange = { text ->
+                        val newState = state.copy(aromaQuery = text)
+                        state = newState
+                        onApply(newState)
+                    },
+                    label = { Text("Aroma") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = state.aromaPhase == null,
+                        onClick = {
+                            val newState = state.copy(aromaPhase = null)
+                            state = newState
+                            onApply(newState)
+                        },
+                        label = { Text("All") },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    TastingPhase.values().forEach { phase ->
+                        FilterChip(
+                            selected = state.aromaPhase == phase,
+                            onClick = {
+                                val newState = state.copy(aromaPhase = phase)
+                                state = newState
+                                onApply(newState)
+                            },
+                            label = { Text(phase.label) },
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(16.dp))
             }

@@ -1,6 +1,6 @@
 # Implementation Framework: Structured Tasting Notes (W-061)
 
-> **Status: decisions resolved 2026-11-05; ready for implementation, but implementation is not authorized by this documentation task.** Every prior open decision is closed below. No app code, Room schema, dependency, permission, network use, background work or UI change was made while creating this framework. A Room v22 migration is specified for future implementation only.
+> **Status: decisions resolved 2026-11-05; Source implementation written 2026-11-06; Android build/device verification pending.** Every prior open decision is closed below. The implementation adds the Kotlin source and exactly one Room v22 migration, with no new permissions, dependencies, network calls or background work. The agent sandbox has no JDK/Android SDK, so `:app:assembleDebug`, JVM/Compose/device checks have not been run here.
 
 ## Goal
 
@@ -72,9 +72,9 @@ The owner resolved every design alternative before this framework was written. T
 * `OverallScoreSlider`, **Common faults**, **Tasting notes and impressions**, reviewer/recommend/value controls and save/delete remain outside the four sections.
 * No explanatory paragraphs, helper text, captions, “how it works” notes or longer reworded labels are added (`.agents/instructions.md` rule 18).
 
-## Data model contract (specification only — not source code yet)
+## Data model contract (implemented in source)
 
-These illustrative Kotlin shapes define the future contract. They are **not** present in the repository after this documentation task.
+These Kotlin shapes are implemented in `TastingNoteStructure.kt`, `WineDatabase.kt` and the W-061 UI components; the snippets below remain a compact contract view.
 
 ```kotlin
 enum class TastingPhase { AROMA_BEFORE_TASTING, ENTRY, MID_PALATE, FINISH }
@@ -191,7 +191,7 @@ All section headers and control labels stay short. The phase labels are also sho
 
 | Phase | Scope | Exit gate |
 | --- | --- | --- |
-| **6.0 Decisions + framework** | Resolve all owner decisions; expand this brief into the detailed framework; change W-061 to `Open`. | **Complete (this task).** No app code changed. |
+| **6.0 Decisions + framework** | Resolve all owner decisions; expand this brief into the detailed framework; change W-061 to `Open`. | **Complete (framework task, doc-only).** Source implementation is written below. |
 | **6.1 Pure data contract** | Add `TastingNoteStructure.kt`, `HsvColor`/`AromaObservation`/phase helpers, `SensoryData` normalization, derived flat view, validation and JVM tests. | Legacy JSON, new JSON, cap, duplicate-key, intensity and color validation tests pass. No UI yet. |
 | **6.2 Room v22 + backup** | `WineDefinition.defaultColorHsv`, `MIGRATION_21_22`, `MainActivity` registration, Gson converter, backup/restore checks. | Migration adds nullable column without backfill; old and new backups restore; no data loss. |
 | **6.3 Color UI** | `WineColorPicker`, definition-default controls in Add/Edit Wine and Wine Detail, note override in the editor, accessibility fallback. | Color persists through save/edit/backup; legacy rows stay unset; TalkBack and large-font checks pass. |
@@ -202,7 +202,7 @@ All section headers and control labels stay short. The phase labels are also sho
 
 ## Test framework
 
-Future tests; none exist for this framework yet.
+JVM `TastingNoteStructureTest` and host `test_w061_structured_notes.py` are written; Android/Compose/device checks remain pending.
 
 | Layer | Tests |
 | --- | --- |
@@ -242,7 +242,7 @@ Future tests; none exist for this framework yet.
 * No Room schema change beyond the explicitly authorized v22 `defaultColorHsv` column; no data backfill.
 * No CSV/ZIP export, bundled image bytes, live sync or OCR/scanner changes.
 * No new in-app explanatory prose, helper text, captions or “how it works” notes.
-* **This task writes documentation only.** It does not create the proposed Kotlin files, change the Room version, implement UI, or authorize coding. No Android build or device verification was run for the framework itself.
+* **Framework task was documentation only; the implementation task wrote Kotlin source and exactly one Room v22 migration.** No Android build or device verification was run in the agent sandbox.
 
 ## Definition of Done (future implementation)
 
@@ -252,5 +252,5 @@ Future tests; none exist for this framework yet.
 * Pronounced vs subtle aromas are represented by near-stepless chip sizing, with a 0.1 stepper and an accessible non-pinch path; size and order are independent.
 * The editor has one scroll with four short section headers containing all ten existing sensory sliders plus one bipolar Tight↔Open slider; global controls remain outside.
 * Saved-note details group aromas, color, intensity and sliders by section; W-053 can search all phases with an optional phase filter.
-* JSON backup → restore, Room v22 migration, JVM tests, Compose checks, `ARCH.md`, `CHANGELOG.md`, `THINGS_TO_CHECK.md` and a real Android/device run all pass per `PIPELINE.md`.
+* JSON backup → restore, Room v22 migration, JVM tests, Compose checks, `ARCH.md`, `CHANGELOG.md`, `THINGS_TO_CHECK.md` and a real Android/device run all pass per `PIPELINE.md`; JVM/host source tests are written, Android/Compose/device verification remains pending in the agent sandbox.
 * No unrequested prose, new permissions, new dependencies, network use, background work, or changes to inventory/consumption records.

@@ -16,6 +16,7 @@ import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDao
 import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.normalizeVintage
 import kotlinx.coroutines.flow.Flow
 
@@ -74,7 +75,8 @@ class WineRepository(
         quantity: Int,
         price: Double?,
         drinkingWindowStart: Int? = null,
-        drinkingWindowEnd: Int? = null
+        drinkingWindowEnd: Int? = null,
+        defaultColorHsv: HsvColor? = null
     ) {
         require(drinkingWindowStart == null || drinkingWindowEnd == null || drinkingWindowStart <= drinkingWindowEnd) {
             "Drinking window start year cannot be later than its end year."
@@ -96,7 +98,8 @@ class WineRepository(
                     subregion = subregion,
                     imageUrl = imageUrl,
                     drinkingWindowStart = drinkingWindowStart,
-                    drinkingWindowEnd = drinkingWindowEnd
+                    drinkingWindowEnd = drinkingWindowEnd,
+                    defaultColorHsv = defaultColorHsv
                 )
             )
         } else {
@@ -108,7 +111,8 @@ class WineRepository(
                     subregion = subregion,
                     imageUrl = imageUrl ?: existingDefinition.imageUrl,
                     drinkingWindowStart = drinkingWindowStart ?: existingDefinition.drinkingWindowStart,
-                    drinkingWindowEnd = drinkingWindowEnd ?: existingDefinition.drinkingWindowEnd
+                    drinkingWindowEnd = drinkingWindowEnd ?: existingDefinition.drinkingWindowEnd,
+                    defaultColorHsv = defaultColorHsv ?: existingDefinition.defaultColorHsv
                 )
             )
             existingDefinition.definitionId

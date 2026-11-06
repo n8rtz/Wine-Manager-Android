@@ -180,7 +180,8 @@ class DataImporter(
             }
             oldNote.copy(
                 vintage = normalizeVintage(oldNote.vintage?.takeIf { it.isNotBlank() } ?: directBottleVintage),
-                valueScore = oldNote.valueScore?.takeIf { it in 1..10 }
+                valueScore = oldNote.valueScore?.takeIf { it in 1..10 },
+                sensoryData = com.n8rtz.winetracker.data.local.normalizeSensoryData(oldNote.sensoryData)
             )
         }
         val restoredEvents = (eventsFromBackup + legacyArchiveEvents).map { event ->

@@ -27,13 +27,13 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
-import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.drinkingwindow.DrinkingWindowEstimator
 import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.resolveWineImageModel
+import com.n8rtz.winetracker.ui.components.DefaultColorField
+import com.n8rtz.winetracker.ui.components.StructuredNoteSummary
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
 import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
 import com.n8rtz.winetracker.viewmodels.WineViewModel
@@ -88,6 +88,7 @@ fun WineDetailScreen(
     var drinkingWindowEnd by remember(editedWine.drinkingWindowEnd) {
         mutableStateOf(editedWine.drinkingWindowEnd?.toString() ?: "")
     }
+    var defaultColorHsv by remember(editedWine.defaultColorHsv) { mutableStateOf(editedWine.defaultColorHsv) }
 
     var selectedCountry by remember(editedWine.country) { mutableStateOf(editedWine.country) }
     var selectedRegion by remember(editedWine.region) { mutableStateOf(editedWine.region ?: "") }
@@ -151,7 +152,8 @@ fun WineDetailScreen(
                                     region = selectedRegion.takeIf { it.isNotBlank() },
                                     subregion = selectedAppellation.takeIf { it.isNotBlank() },
                                     drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                                    drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
+                                    drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                                    defaultColorHsv = defaultColorHsv
                                 ),
                                 editedBottle.copy(
                                     vintage = vintage,
@@ -246,6 +248,11 @@ fun WineDetailScreen(
 
             if (isEditing) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DefaultColorField(
+                        color = defaultColorHsv,
+                        onColorChange = { defaultColorHsv = it }
+                    )
+
                     // Producer
                     OutlinedTextField(
                         value = maker,
@@ -556,33 +563,11 @@ fun WineDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 3
                                 )
-                                val noteAromas = note.sensoryData?.aromas.orEmpty()
-                                if (noteAromas.isNotEmpty()) {
-                                    androidx.compose.foundation.layout.FlowRow(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 4.dp),
-                                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp),
-                                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        noteAromas.forEach { aromaId ->
-                                            val aromaInfo = AromaTaxonomy.describe(aromaId)
-                                            Surface(
-                                                shape = RoundedCornerShape(50),
-                                                color = androidx.compose.ui.graphics.Color(
-                                                    AromaWheelTheme.groupColor(aromaInfo.groupId)
-                                                ).copy(alpha = 0.16f),
-                                                contentColor = MaterialTheme.colorScheme.onSurface
-                                            ) {
-                                                Text(
-                                                    text = aromaInfo.label,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                StructuredNoteSummary(
+                                    sensoryData = note.sensoryData,
+                                    definitionColor = editedWine.defaultColorHsv,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
                                 if (!note.recommendedBy.isNullOrBlank()) {
                                     Text("Recommended by ${note.recommendedBy}", style = MaterialTheme.typography.bodySmall)
                                 }
