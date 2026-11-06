@@ -32,6 +32,15 @@ class ExperimentTests(unittest.TestCase):
         self.assertEqual([x[0] for x in e.decode_logits(logits,words,2,['a','b'],.5,True)],[0,1,1])
         with self.assertRaisesRegex(ValueError,'Unexpected graph output'): e.decode_logits(logits,words,2,['a'],.5,False)
 
+    def test_direct_override_is_confidence_based_and_uses_control_fallback(self):
+        control={1:{f:'original' for f in e.FIELDS}}
+        candidates={1:[(0,.8,'Estate'),(0,.9,'Best Estate'),(3,.65,'France'),(5,.95,'2020')]}
+        actual=e.apply_direct(control,candidates,.7)[1]
+        self.assertEqual(actual['producer'],'Best Estate')
+        self.assertEqual(actual['country'],'original')
+        self.assertEqual(actual['vintage'],'2020')
+        self.assertEqual(control[1]['producer'],'original')
+
     def test_frozen_device_control_with_actual_kotlin(self):
         host=os.environ.get('GLINER_HOST');java=os.environ.get('JAVA_HOME')
         if not host or not java: self.skipTest('Set GLINER_HOST and JAVA_HOME for Kotlin parity')

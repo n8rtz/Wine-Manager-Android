@@ -52,7 +52,7 @@ jobs:
           mkdir "$RUNNER_TEMP/bundle"
           gh release download gliner-small-int4-v1 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/bundle" \
             -p gliner_small_int4.onnx -p tokenizer.json -p gliner_config.json 2>&1 | tee -a "$RUNNER_TEMP/gliner-results/trace.txt"
-      - name: Run both prompt sets and automatically score all variants
+      - name: Run all prompt sets and automatically score all variants
         run: python tools/gliner-experiment/run.py --bundle "$RUNNER_TEMP/bundle" --host "$GLINER_HOST" --output "$RUNNER_TEMP/gliner-results/report.json" 2>&1 | tee -a "$RUNNER_TEMP/gliner-results/trace.txt"
       - name: Render result, including failures
         if: always()

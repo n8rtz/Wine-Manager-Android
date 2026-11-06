@@ -15,15 +15,13 @@ print('**Control parity:** '+('verified against all saved phone output fields.' 
 if 'control_hint_parity' in r:
     h=r['control_hint_parity'];print(f"Model hint parity: {h['matched']}/{h['total']} images within {h['score_tolerance']} confidence. Categories: {h['categories']}.")
     if h['matched'] != h['total']: print('**Caution:** final fields match, but underlying model hints do not all match the phone. Host comparisons are exploratory until that discrepancy is understood.')
-    for ex in h['examples']:
-        print(f"- Hint mismatch example #{ex['number']} ({ex['category']}): host {ex['host']}; phone {ex['phone']}")
 print(f"\nModel load {r['load_seconds']:.2f}s; total wall time {r['wall_seconds']:.1f}s, host CPU only (not phone latency).")
 for group,t in r['inference_latency_seconds'].items():
     if t['first'] is not None: print(f"- {group}: first {t['first']:.3f}s, median {t['median']:.3f}s, p90 {t['p90']:.3f}s per model invocation.")
 print('\n| Configuration | Complete | Complete gains / losses vs control | Correct fields | Field gains / losses | Failures |')
 print('|---|---:|---:|---:|---:|---:|')
-for name in ['control','low_threshold','lane_overlap','six_labels','specialized_six','rephrased_three']:
-    fail=len(r['failures'][name]);v=r['variants'].get(name)
+for name in ['control','low_threshold','lane_overlap','six_labels','specialized_six','rephrased_three','direct_six_50','direct_six_70','direct_six_90']:
+    fail=len(r['failures'].get(name,r['failures']['specialized_six']));v=r['variants'].get(name)
     if not v:
         print(f'| {name} | not scored | — | — | — | {fail} |');continue
     l=v['labels'];f=v['fields'];n=sum(x.get('correct',0) for x in f.values());gain=sum(x.get('gain',0) for x in f.values());loss=sum(x.get('loss',0) for x in f.values())
@@ -33,7 +31,7 @@ print('|---|---|---:|---:|---:|---:|---:|')
 for name,v in r['variants'].items():
     for f,x in v['fields'].items():
         print(f"| {name} | {f} | {x.get('correct',0)} | +{x.get('gain',0)} / -{x.get('loss',0)} | {x.get('wrong_value',0)} | {x.get('missing_value',0)} | {x.get('unsupported_fill',0)} |")
-print('\nThe six-label runs send only their first three lane results into the existing hybrid policy. Their additional country, region and vintage spans are diagnostic only; they do not fill these fields.')
+print('\nThe six-label hybrid runs send only their first three lanes into the existing policy. The direct_six runs instead override all six control fields with their highest-scoring specialized span above 0.50, 0.70 or 0.90; these are experimental raw-span assignments, not production code.')
 if r.get('extra_exact_span_recall'):
     print('\n| Configuration | Lane compared with field | Exact accepted span found (expected-value cases) | Blank cases with any predicted span |')
     print('|---|---|---:|---:|')

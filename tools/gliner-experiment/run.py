@@ -193,6 +193,20 @@ def run_policy(rows, hint_map, jar, java):
     return result
 
 
+# Experimental direct span override, evaluated only, never used by the application.
+# It uses model confidence alone, and the same control fields as a fallback. No scoring targets enter.
+def apply_direct(control, extra, threshold):
+    fields=('producer','wine_name','subregion','country','region','vintage')
+    output={number:values.copy() for number,values in control.items()}
+    for number, candidates in extra.items():
+        best={}
+        for label,confidence,text in candidates:
+            if label not in range(len(fields)) or confidence < threshold or not text.strip(): continue
+            if label not in best or confidence > best[label][0]: best[label]=(confidence,text)
+        for label,(_,text) in best.items(): output[number][fields[label]]=text
+    return output
+
+
 def score(rows, predictions, refs, control):
     counts=Counter(); fields={f:Counter() for f in FIELDS}; changes=[]
     for row in rows:
@@ -244,12 +258,17 @@ def main():
     predictions={}
     for v in VARIANTS:
         if not failures[v]: predictions[v]=run_policy(rows,hints[v],args.host/'decision.jar',args.java)
+    # Three fully automatic six-field candidate-override diagnostics. These start from the same
+    # hybrid control and never consult target labels or recorded phone answers.
+    if 'control' in predictions and 'specialized_six' in predictions:
+        for threshold in (.5,.7,.9):
+            predictions[f'direct_six_{int(threshold*100)}']=apply_direct(predictions['control'],extra['specialized_six'],threshold)
     with gzip.open(REFERENCES,'rt') as f: refs={r['image']:r['fields'] for r in json.load(f)['images']}
     phone={r['review_number']:r['fields'] for r in rows}
     report={'evidence_sha256':sha(EVIDENCE),'reference_sha256':sha(REFERENCES),'model_sha256':SHA['gliner_small_int4.onnx'],
             'source_export_sha256':evidence['source_sha256'],'tokenizer_parity_words':parity_words,'load_seconds':load,'inference_seconds':{k:sum(v) for k,v in times.items()},
             'inference_latency_seconds':{k:{'first':v[0] if v else None,'median':float(np.median(v)) if v else None,'p90':float(np.percentile(v,90)) if v else None} for k,v in times.items()},
-            'failures':failures,'variants':{},'notes':['Development set only; independent validation required.', 'Six-label extra outputs are measured as span recall, not used to overwrite geography or vintage.', 'Host timing is not phone single-scan latency.']}
+            'failures':failures,'variants':{},'notes':['Development set only; independent validation required.', 'Six-label hybrid configurations do not use extra geography/year lanes; direct_six variants experimentally override all six fields.', 'Host timing is not phone single-scan latency.']}
     report['phone']=score(rows,phone,refs,phone)
     if 'control' in predictions:
         control=predictions['control'];report['control_phone_field_differences']=[{'number':r['review_number'],'field':f,'phone':r['fields'].get(f,''),'control':control[r['review_number']].get(f,'')} for r in rows for f in FIELDS if control[r['review_number']].get(f,'')!=r['fields'].get(f,'')]
