@@ -86,8 +86,8 @@ jobs:
             opencv-minimal/build/native
             opencv-minimal/build/generated
           key: ${{ steps.opencv-cache.outputs.cache-primary-key }}
-      - name: Exercise main app startup with a populated cellar
-        run: bash tools/run-ci-check.sh 'Main app startup Robolectric test' ./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.MainActivityStartupTest'
+      - name: Exercise main app startup and populated list scrolling
+        run: bash tools/run-ci-check.sh 'Main app startup Robolectric test' ./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.MainActivityStartupTest' --tests 'com.yourapp.wine.MainActivityListScrollTest'
       - name: Exercise GLiNER screen startup
         run: bash tools/run-ci-check.sh 'GLiNER startup Robolectric test' ./gradlew --no-daemon --console=plain :app:testDebugUnitTest --tests 'com.yourapp.wine.GlinerLabStartupTest'
       - name: Compile instrumented scanner tests (device execution is separate)
