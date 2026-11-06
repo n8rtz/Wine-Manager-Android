@@ -30,7 +30,7 @@ The owner resolved every design alternative before this framework was written. T
 
 | ID | Decision | Resolved value |
 | --- | --- | --- |
-| 6.D1 | Color-picker presentation | **Interactive HSV editor from the swatch**: a hue strip, saturation/value plane, and numeric H/S/V fields, preserving the owner’s earlier HSV selection. |
+| 6.D1 | Color-picker presentation | **Interactive HSV editor from the swatch**: a hue strip restricted to the wine-tone arc 330°→0°→60°, plus saturation/value plane and numeric H/S/V fields. |
 | 6.D2a | Color format | **HSV components** (`hue`, `saturation`, `value`), not ARGB or a named palette. |
 | 6.D2b | Color scope | **WineDefinition default + per-note override**. Effective color is the note override when present, otherwise the definition default. Clearing the override reverts to the definition default. |
 | 6.D13 | Where the definition default lives | **Room column + migration v22**: add a nullable `defaultColorHsv` column to `wine_definitions`. No data backfill or inference. |
@@ -48,7 +48,7 @@ The owner resolved every design alternative before this framework was written. T
 
 ### UI refinements (owner, 2026-11-06)
 
-* The color swatch itself opens a short menu of restrained red, white and rosé swatches. Remove separate **Use default** / **Override** actions; the wine default remains an option inside the menu.
+* The swatch opens the HSV editor. Its hue track covers the wine-tone arc from 330° through red at 0° to 60°; saturation and value remain adjustable. Clearing a note override returns it to the wine default.
 * Aroma intensity is controlled by pinching each label. The cloud is a wrapping cluster with no numeric badges, steppers or drag handles, and the most intense/largest labels sort to the top.
 
 ## Fixed product behavior
@@ -56,9 +56,9 @@ The owner resolved every design alternative before this framework was written. T
 ### Color
 
 * `WineDefinition.defaultColorHsv` is editable from Add Wine and the separate Edit Wine screen using the same compact picker. Short labels only.
-* The tasting-note editor shows the resolved color; tapping the swatch opens the palette. A **Wine default** choice clears the nullable note override and inherits the definition color, without separate **Use default** / **Override** buttons.
+* The tasting-note editor shows the resolved color; tapping the swatch opens the HSV editor with the restricted wine-tone hue arc. A clear action removes the nullable note override and returns to the definition color.
 * Legacy notes and definitions have no color until the user sets one. No color is inferred from wine type, vintage, image or name.
-* The picker uses the previously selected HSV interaction: a hue strip, saturation/value plane, and numeric H/S/V fields. It is not limited to preset wine-color swatches.
+* The picker uses the selected HSV interaction: its hue track wraps from 330° through red at 0° to 60° (burgundy/ruby through amber/straw). Green, cyan and blue hues are outside the selectable track; saturation and value remain adjustable.
 
 ### Aromas and intensity
 
@@ -144,7 +144,7 @@ Proposed future files are listed for planning only; **none are created by this t
 | --- | --- |
 | `data/local/TastingNoteModels.kt` (new) | Standalone `TastingPhase`, `HsvColor`, and `AromaObservation` value types referenced by Room entities/converters; kept independent of reducers to avoid a source dependency cycle in KSP. |
 | `data/local/TastingNoteStructure.kt` (new) | Pure-Kotlin normalization/validation helpers and reducer functions; JVM-testable. |
-| `ui/components/WineColorPicker.kt` (new) | HSV editor opened from the color swatch: hue strip, saturation/value plane, and numeric H/S/V fields. Note color can be cleared back to the wine default. |
+| `ui/components/WineColorPicker.kt` (new) | HSV editor opened from the color swatch: wine-tone hue arc (330°→0°→60°), saturation/value plane, and numeric H/S/V fields. Note color can be cleared back to the wine default. |
 | `ui/components/PhaseAromaCloud.kt` (new) | Wrapping, intensity-sized label cluster; pinch gesture and largest-first sorting; no numeric badges, stepper or drag handles. |
 | `ui/components/TastingPhaseSections.kt` (new) | Four short section headers and section-aware composition of sliders, color picker, aroma cloud and chips. |
 | `ui/components/LegacyAromaPhaseSheet.kt` (new) | Blocking phase-assignment sheet shown on first edit of a legacy note; Save disabled until all legacy descriptors are assigned or removed. |
@@ -214,7 +214,7 @@ JVM `TastingNoteStructureTest` and host `test_w061_structured_notes.py` are writ
 | --- | --- |
 | JVM pure logic | `HsvColor` ranges; `entryTightOpen` range; `AromaObservation` normalization; 24-distinct-ID cap; duplicate `(id, phase)` rejection; unknown-ID preservation; `toFlatAromaIds`; pinch intensity math; largest-first sort with stable ties; pure reducer transitions. |
 | Gson/Room | `SensoryData` JSON round trip; legacy float-JSON parser; missing/null fields; `HsvColor` TypeConverter; `MIGRATION_21_22` column with `NULL` old rows; backup → restore on a clean install. |
-| Compose / UI | HSV color editor (hue strip, saturation/value plane, H/S/V fields) and inheritance choice; active-phase wheel/list parity; pinch-only word-cloud sizing and largest-first sorting; large font/dark theme/narrow screen; legacy phase sheet Save-disabled state; four section headers and global controls placement. |
+| Compose / UI | HSV color editor (wine-tone hue arc 330°→0°→60°, saturation/value plane, H/S/V fields) and inheritance choice; active-phase wheel/list parity; pinch-only word-cloud sizing and largest-first sorting; large font/dark theme/narrow screen; legacy phase sheet Save-disabled state; four section headers and global controls placement. |
 | Regression | Existing overall score, faults, written notes, wine identity, inventory and consumption history unchanged; W-053 all-phase filter; no new prose; no new permission/dependency/network/background work. |
 | Device / emulator | `THINGS_TO_CHECK.md` checklist, TalkBack, font scale 1.0–2.0, rotation/process recreation, backup → restore, real Android build. Not run for this documentation-only task. |
 
@@ -222,7 +222,7 @@ JVM `TastingNoteStructureTest` and host `test_w061_structured_notes.py` are writ
 
 | Owner request | Decisions | Data / UI | Tests |
 | --- | --- | --- | --- |
-| 1. Color picker | 6.D1, 6.D2a, 6.D2b, 6.D13 | `HsvColor`, `WineDefinition.defaultColorHsv`, `SensoryData.colorHsv`, swatch-anchored `WineColorPicker`, v22 migration | Curated palette, default inheritance choice, migration and backup round trip |
+| 1. Color picker | 6.D1, 6.D2a, 6.D2b, 6.D13 | `HsvColor`, `WineDefinition.defaultColorHsv`, `SensoryData.colorHsv`, swatch-anchored `WineColorPicker`, v22 migration | Restricted wine-tone hue arc, HSV controls, default inheritance, migration and backup round trip |
 | 2. Aromas by tasting phase | 6.D3, 6.D4, 6.D14 | `TastingPhase`, `AromaObservation`, active-phase wheel, legacy phase sheet | Cap, duplicate key, legacy prompt, wheel/list parity, phase grouping |
 | 3. Pronounced vs subtle aromas | 6.D5, 6.D6 | Continuous intensity, pinch-sized cluster, intensity-descending display order | Pinch math, largest-first sorting, no numeric label or stepper, no color-only cue |
 | 4. Four sections + existing sliders + Entry Tight/Open | 6.D7, 6.D7b, 6.D8, 6.D9 | `TastingPhaseSections`, fixed control map, `entryTightOpen`, single-scroll layout | Slider persistence, all ten traits editable, no prose, note-detail grouping |

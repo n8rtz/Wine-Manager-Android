@@ -63,7 +63,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │       ├── AromaChipDrag.kt           # Long-press drag-reorder logic for aroma chips
 │       ├── AromaWheelDialog.kt        # Full-screen aroma wheel: wheel/list mode plus phase-aware W-061 picker
 │       ├── LabelScanCameraPreview.kt  # CameraX preview + framing guide for label capture
-│       ├── WineColorPicker.kt         # W-061: swatch-opened HSV editor for hue, saturation and value
+│       ├── WineColorPicker.kt         # W-061: HSV editor with wine-tone hue arc and full saturation/value controls
 │       ├── PhaseAromaCloud.kt         # W-061: clustered aroma labels resized by pinch and sorted largest-first
 │       ├── TastingPhaseSections.kt   # W-061: four sections, bipolar slider, structured summary
 │       └── LegacyAromaPhaseSheet.kt  # W-061: explicit legacy aroma phase assignment

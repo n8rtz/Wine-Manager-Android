@@ -51,6 +51,41 @@ import kotlin.math.roundToInt
 
 private val NeutralSwatch = Color(0xFFE0E0E0)
 
+// Wine colors span burgundy/red through amber/straw, crossing hue zero.
+private const val WINE_HUE_START = 330f
+private const val WINE_HUE_SPAN = 90f
+private const val WINE_HUE_END = 60f
+
+private fun normalizedHue(hue: Float): Float {
+    if (hue.isNaN() || hue.isInfinite()) return WINE_HUE_START
+    return ((hue % 360f) + 360f) % 360f
+}
+
+private fun wineHueAtFraction(fraction: Float): Float =
+    (WINE_HUE_START + fraction.coerceIn(0f, 1f) * WINE_HUE_SPAN) % 360f
+
+private fun isWineHue(hue: Float): Boolean {
+    if (hue.isNaN() || hue.isInfinite() || hue !in 0f..360f) return false
+    val normalized = normalizedHue(hue)
+    return normalized >= WINE_HUE_START || normalized <= WINE_HUE_END
+}
+
+private fun wineHueFraction(hue: Float): Float {
+    val normalized = normalizedHue(hue)
+    val offsetFromStart = (normalized - WINE_HUE_START + 360f) % 360f
+    if (offsetFromStart <= WINE_HUE_SPAN) return offsetFromStart / WINE_HUE_SPAN
+
+    val distanceToStart = minOf(
+        (normalized - WINE_HUE_START + 360f) % 360f,
+        (WINE_HUE_START - normalized + 360f) % 360f
+    )
+    val distanceToEnd = minOf(
+        (normalized - WINE_HUE_END + 360f) % 360f,
+        (WINE_HUE_END - normalized + 360f) % 360f
+    )
+    return if (distanceToStart <= distanceToEnd) 0f else 1f
+}
+
 @Composable
 fun WineColorPicker(
     color: HsvColor?,
@@ -71,7 +106,7 @@ fun WineColorPicker(
     }
 
     fun updateHue(hue: Float) {
-        if (hue in 0f..360f) currentCallback(currentState.copy(hue = hue))
+        if (isWineHue(hue)) currentCallback(currentState.copy(hue = normalizedHue(hue)))
     }
 
     fun updateSaturationValue(saturation: Float, value: Float) {
@@ -164,7 +199,9 @@ private fun HueStrip(
 ) {
     val callback by rememberUpdatedState(onHueChange)
     val colors = remember {
-        (0..6).map { Color(HsvColor(it * 60f, 1f, 1f).toArgb()) }
+        (0..12).map { step ->
+            Color(HsvColor(wineHueAtFraction(step / 12f), 1f, 1f).toArgb())
+        }
     }
     Box(
         modifier = modifier
@@ -172,16 +209,16 @@ private fun HueStrip(
             .background(Brush.horizontalGradient(colors))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
-                    callback((offset.x / size.width.toFloat()).coerceIn(0f, 1f) * 360f)
+                    callback(wineHueAtFraction(offset.x / size.width.toFloat()))
                 }
             }
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        callback((offset.x / size.width.toFloat()).coerceIn(0f, 1f) * 360f)
+                        callback(wineHueAtFraction(offset.x / size.width.toFloat()))
                     },
                     onDrag = { change, _ ->
-                        callback((change.position.x / size.width.toFloat()).coerceIn(0f, 1f) * 360f)
+                        callback(wineHueAtFraction(change.position.x / size.width.toFloat()))
                         change.consume()
                     }
                 )
@@ -191,7 +228,7 @@ private fun HueStrip(
             drawCircle(
                 color = Color.White,
                 radius = 5.dp.toPx(),
-                center = Offset(size.width * (hue / 360f).coerceIn(0f, 1f), size.height / 2f)
+                center = Offset(size.width * wineHueFraction(hue), size.height / 2f)
             )
         }
     }
