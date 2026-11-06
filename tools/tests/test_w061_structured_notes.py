@@ -63,21 +63,19 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("defaultColorHsv = defaultColorHsv", detail)
         self.assertIn("DefaultColorField(", detail)
 
-    def test_wine_color_uses_a_swatch_menu_and_curated_palette(self):
+    def test_wine_color_picker_uses_hsv_controls(self):
         picker = read(UI / "components/WineColorPicker.kt")
-        self.assertIn("ColorSwatchButton(", picker)
-        self.assertIn("DropdownMenu(", picker)
-        self.assertIn("WineColorOptions", picker)
-        for family in ('"Red"', '"White"', '"Rosé"'):
-            self.assertIn(family, picker)
+        self.assertIn("HueStrip(", picker)
+        self.assertIn("SaturationValueSquare(", picker)
+        self.assertIn("NumericColorField(", picker)
+        for channel in ("H", "S", "V"):
+            self.assertIn(f'label = "{channel}"', picker)
+        self.assertIn("AlertDialog(", picker)
+        self.assertIn("resolveEffectiveColor", picker)
+        self.assertNotIn("WineColorOptions", picker)
+        self.assertNotIn("DropdownMenu(", picker)
         self.assertNotIn('Text("Use default")', picker)
         self.assertNotIn('Text("Override")', picker)
-        self.assertNotIn('"Blue"', picker)
-        self.assertNotIn('"Pink"', picker)
-        self.assertNotIn('"Purple"', picker)
-        self.assertNotIn("HueStrip(", picker)
-        self.assertNotIn("SaturationValueSquare(", picker)
-        self.assertNotIn("NumericColorField(", picker)
 
     def test_editor_uses_sectioned_phase_aware_controls(self):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")
