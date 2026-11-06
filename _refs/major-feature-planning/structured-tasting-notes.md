@@ -38,7 +38,7 @@ The owner resolved every design alternative before this framework was written. T
 | 6.D4 | Legacy flat aromas | **Prompt on edit**: before saving changes to a note that still has legacy flat aromas, show a phase-assignment sheet; Save is disabled until every legacy descriptor is assigned to one or more phases or removed. A descriptor may be assigned to multiple phases. No phase is preselected or inferred. Read-only display of untouched legacy notes remains valid. |
 | 6.D5 | Intensity interaction | **Pinch-sized aroma cluster**: pinch labels to resize them; show no numeric badges or stepper, and sort the largest labels first. |
 | 6.D6 | Intensity storage | **Continuous `0f..1f` per descriptor-phase pair** (overrides the earlier 1–5 answer). Pinch continuously adjusts intensity; the word cloud derives visible order from intensity, with `displayOrder` as a stable tie-breaker. |
-| 6.D8 | Entry Tight/Open controls | **One bipolar `Tight ↔ Open` slider**, stored as one value; no two-slider or derived-score variant. |
+| 6.D8 | Entry Tight/Open controls | **One bipolar scale titled `Entry` with `Tight`/`Open` endpoints**, stored as one value; no two-slider or derived-score variant. |
 | 6.D7 | Existing slider mapping | **Candidate mapping with Complexity moved to Mid-palate**. See the fixed control map below. |
 | 6.D7b | Global controls | **Overall score, Common faults, written notes, reviewer/recommend/value and save/delete stay outside** the four phase sections. |
 | 6.D9 | Section layout | **Single vertical scroll with four short headers**. No collapsible sections, tabs or wizard steps. |
@@ -73,7 +73,7 @@ The owner resolved every design alternative before this framework was written. T
 ### Sections and global controls
 
 * One `verticalScroll` `Column` with four short headers: **Visual / aroma**, **Entry**, **Mid-palate**, **Finish**.
-* The ten existing `SensoryEvaluationFields` sliders are placed inside those sections as fixed below. A single bipolar **Tight ↔ Open** slider is added to Entry.
+* The ten existing `SensoryEvaluationFields` sliders are placed inside those sections as fixed below. One bipolar **Entry** scale with **Tight** and **Open** endpoints is added.
 * `OverallScoreSlider`, **Common faults**, **Tasting notes and impressions**, reviewer/recommend/value controls and save/delete remain outside the four sections.
 * No explanatory paragraphs, helper text, captions, “how it works” notes or longer reworded labels are added (`.agents/instructions.md` rule 18).
 
@@ -152,7 +152,7 @@ Proposed future files are listed for planning only; **none are created by this t
 | `MainActivity.kt` | Register the v22 migration. |
 | `BackupData.kt`, `JsonExporter.kt`, `DataImporter.kt` | Confirm entity-level Gson serialization, ID mapping and older-backup compatibility. |
 | `TastingNoteEditorScreen.kt` | Single-scroll four-section layout; effective color state; legacy prompt; active-phase wheel; save/cancel flow. |
-| `SensoryEvaluationFields.kt` | Reuse `SensoryTraitSlider`/`GradientSensorySlider`; expose ten existing traits as section-aware composables and add the bipolar Tight↔Open slider. |
+| `SensoryEvaluationFields.kt` | Reuse `SensoryTraitSlider`/`GradientSensorySlider`; expose ten existing traits as section-aware composables and add the Entry scale with Tight/Open endpoints. |
 | `AromaWheelDialog.kt`, `AromaWheelLauncherCard` | Live mini-wheel and selected-aroma chip summary, active-phase selector, phase-grouped wheel/list modes, 24-distinct-ID cap and repeated-ID rules. |
 | `AromaChipDrag.kt` | Keep pure width-dependent drag maths; test with variable chip widths caused by intensity scaling. |
 | `AddWineScreen.kt`, `WineEditScreen.kt`, `TastingNoteDetailScreen.kt` | Compact definition-default color control in wine-definition editing; read-only saved-note detail in its distinct route. |
@@ -186,7 +186,7 @@ Editor state sequence:
 | Section | Controls |
 | --- | --- |
 | **Visual / aroma** | Wine color swatch opening an HSV editor, **aroma** slider, **Aroma** pinch-sized aroma cloud |
-| **Entry** | **Tight ↔ Open** bipolar slider, **Sweetness** slider, **Entry** aroma cloud and chips |
+| **Entry** | **Entry** scale (**Tight** to **Open**), **Sweetness** slider, **Entry** aroma cloud and chips |
 | **Mid-palate** | **Acidity**, **Tannins / grip**, **Body**, **Balance**, **Concentration**, **Complexity** sliders, **Mid-palate** aroma cloud and chips |
 | **Finish** | **Finish**, **Quality** sliders, **Finish** aroma cloud and chips |
 | **Outside the four sections** | Overall score, Common faults, Tasting notes and impressions, reviewer/recommend/value, save/delete |
@@ -202,7 +202,7 @@ All section headers and control labels stay short. The phase labels are also sho
 | **6.2 Room v22 + backup** | `WineDefinition.defaultColorHsv`, `MIGRATION_21_22`, `MainActivity` registration, Gson converter, backup/restore checks. | Migration adds nullable column without backfill; old and new backups restore; no data loss. |
 | **6.3 Color UI** | `WineColorPicker`, definition-default controls in Add Wine and Wine Edit, note color in the editor, accessibility fallback. | Color persists through save/edit/backup; legacy rows stay unset; TalkBack and large-font checks pass. |
 | **6.4 Phase-aware aromas + word cloud** | Active-phase wheel/list picker, phase grouping, 24-ID cap, repeated IDs, pinch-sized clustered labels, intensity-descending sort and legacy phase sheet. | Wheel/list parity, phase assignment, intensity save/restore and no silent legacy inference verified. |
-| **6.5 Sectioned editor + detail** | Four section headers, fixed slider mapping, bipolar Tight↔Open slider, global controls outside sections, grouped saved-note display. | All ten existing sliders remain editable; new slider persists; no unrequested prose; note detail grouped by phase. |
+| **6.5 Sectioned editor + detail** | Four section headers, fixed slider mapping, Entry scale with Tight/Open endpoints, global controls outside sections, grouped saved-note display. | All ten existing sliders remain editable; Entry scale persists; no unrequested prose; note detail grouped by phase. |
 | **6.6 W-053 contract + docs** | All-phase search with optional phase filter, `ARCH.md` map update, `THINGS_TO_CHECK.md` checklist, `CHANGELOG.md` entry. | W-053 integration contract documented; docs and host checks pass. |
 | **6.7 Android verification** | `:app:assembleDebug`, `:app:testDebugUnitTest`, Compose checks, device/emulator checklist. | Real Android build and device run pass per `PIPELINE.md`; only then can W-061 move to `ARCHIVE.md`. |
 
@@ -256,7 +256,7 @@ JVM `TastingNoteStructureTest` and host `test_w061_structured_notes.py` are writ
 * Aroma descriptors are assigned to the four phases through an active-phase wheel/list picker, with the same stable ID allowed in multiple phases and the 24-distinct-ID cap enforced.
 * Legacy flat aromas require explicit phase assignment on edit; no phase is inferred.
 * Pronounced vs subtle aromas are represented by pinch-sized labels in a wrapping cluster; no numeric intensity badges or stepper are shown, and the cloud auto-sorts largest-first.
-* The editor has one scroll with four short section headers containing all ten existing sensory sliders plus one bipolar Tight↔Open slider; global controls remain outside.
+* The editor has one scroll with four short section headers containing all ten existing sensory sliders plus one Entry scale with Tight/Open endpoints; global controls remain outside.
 * Saved-note details group aromas, color, intensity and sliders by section; W-053 can search all phases with an optional phase filter.
 * JSON backup → restore, Room v22 migration, JVM tests, Compose checks, `ARCH.md`, `CHANGELOG.md`, `THINGS_TO_CHECK.md` and a real Android/device run all pass per `PIPELINE.md`; JVM/host source tests are written, Android/Compose/device verification remains pending in the agent sandbox.
 * No unrequested prose, new permissions, new dependencies, network use, background work, or changes to inventory/consumption records.

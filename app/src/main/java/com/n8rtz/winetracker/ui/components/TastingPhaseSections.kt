@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.SensoryData
@@ -82,7 +84,7 @@ fun SectionedSensoryFields(
                     }
                 }
                 TastingPhase.ENTRY -> {
-                    BipolarTraitSlider(data = normalized, onDataChange = onDataChange, enabled = !readOnly)
+                    EntryScaleSlider(data = normalized, onDataChange = onDataChange, enabled = !readOnly)
                 }
                 else -> Unit
             }
@@ -106,7 +108,7 @@ fun SectionedSensoryFields(
 }
 
 @Composable
-private fun BipolarTraitSlider(
+private fun EntryScaleSlider(
     data: SensoryData,
     onDataChange: (SensoryData) -> Unit,
     enabled: Boolean = true
@@ -115,11 +117,30 @@ private fun BipolarTraitSlider(
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Tight ↔ Open",
+                "Entry",
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
             Text("%.1f".format(value), style = MaterialTheme.typography.bodySmall)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Tight",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "Open",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End
+            )
         }
         GradientSensorySlider(
             value = value,
@@ -191,7 +212,7 @@ fun StructuredNoteSummary(
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             if (phase == TastingPhase.ENTRY) {
                 Text(
-                    "Tight ↔ Open: %.1f".format(data.entryTightOpen ?: 0.5f),
+                    "Entry (Tight ↔ Open): %.1f".format(data.entryTightOpen ?: 0.5f),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
