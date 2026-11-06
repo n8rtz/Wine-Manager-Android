@@ -45,6 +45,7 @@ class ExperimentTests(unittest.TestCase):
         host=os.environ.get('GLINER_HOST');java=os.environ.get('JAVA_HOME')
         if not host or not java: self.skipTest('Set GLINER_HOST and JAVA_HOME for Kotlin parity')
         with gzip.open(e.EVIDENCE,'rt') as f: rows=json.load(f)['images']
+        e.verify_control_defaults(pathlib.Path(host)/'documents.jar',java+'/bin/java')
         docs=e.prepare_documents(rows,pathlib.Path(host)/'documents.jar',java+'/bin/java')
         self.assertEqual([(r['review_number'],len(docs[r['review_number']])) for r in rows],[(r['review_number'],r['words']) for r in rows])
         hints={r['review_number']:[(h['lane'],h['score'],h['text']) for h in r['lane_hints']] for r in rows}

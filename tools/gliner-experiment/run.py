@@ -99,6 +99,15 @@ class Tokenizer:
         return ids[::-1]
 
 
+def verify_control_defaults(jar, java):
+    output=subprocess.run([java,'-jar',str(jar),'--config'],text=True,capture_output=True,check=True).stdout.strip().split('\t')
+    if len(output)!=6: raise ValueError('Unexpected Kotlin control configuration')
+    prompts=tuple(dec(x) for x in output[:3])
+    threshold,width,words=float(output[3]),int(output[4]),int(output[5])
+    if prompts!=THREE or threshold!=.5 or width!=12 or words!=320:
+        raise ValueError(f'Shipping control changed: prompts={prompts}, threshold={threshold}, width={width}, words={words}; update frozen experiment explicitly')
+
+
 def prepare_documents(rows, jar, java):
     lines=[]
     for row in rows:
@@ -232,6 +241,7 @@ def main():
         if actual!=expected: raise ValueError(f'{file} SHA-256 mismatch: {actual}, expected {expected}')
     with gzip.open(EVIDENCE,'rt') as f: evidence=json.load(f)
     rows=evidence['images']; assert len(rows)==193 and sum(r['eligible'] for r in rows)==188
+    verify_control_defaults(args.host/'documents.jar',args.java)
     docs=prepare_documents(rows,args.host/'documents.jar',args.java)
     mismatches=[r['review_number'] for r in rows if len(docs[r['review_number']]) != r['words']]
     if mismatches: raise ValueError(f'Reconstructed OCR word counts differ from phone: {mismatches}')

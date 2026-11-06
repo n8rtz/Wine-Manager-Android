@@ -5,6 +5,15 @@ on:
     paths:
       - '.github/workflows/gliner-saved-ocr-experiment.yml'
       - 'tools/gliner-experiment/**'
+      - 'tools/host-lab/GlinerDecisionReplay.kt'
+      - 'tools/host-lab/replay_gliner_decisions.py'
+      - 'tools/logic-checks/AndroidGeometry.kt'
+      - 'gliner-workflow/src/main/java/com/yourapp/wine/gliner/**'
+      - 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerFusion.kt'
+      - 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerCatalogIndexes.kt'
+      - 'app/src/main/java/com/yourapp/wine/merge/TextNorm.kt'
+      - 'app/src/main/java/com/yourapp/wine/merge/BoxMath.kt'
+      - 'app/src/main/java/com/yourapp/wine/kb/**'
   workflow_dispatch:
 permissions:
   contents: read

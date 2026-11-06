@@ -7,7 +7,13 @@ import java.util.Base64
 private fun dec(s:String) = String(Base64.getUrlDecoder().decode(s), Charsets.UTF_8)
 private fun enc(s:String) = Base64.getUrlEncoder().withoutPadding().encodeToString(s.toByteArray(Charsets.UTF_8))
 
-fun main() = generateSequence(::readLine).forEach { line ->
+fun main(args:Array<String>) {
+    if(args.contentEquals(arrayOf("--config"))) {
+        val config=GlinerLaneConfig()
+        println(config.prompts.joinToString("\t") { enc(it) }+"\t${config.threshold}\t${config.maxWidth}\t${config.maxWords}")
+        return
+    }
+    generateSequence(::readLine).forEach { line ->
     val (id, raw) = line.split('\t', limit=2)
     val readings=raw.split(';').filter { it.isNotEmpty() }.map { record ->
         val p=record.split(',')
@@ -16,4 +22,5 @@ fun main() = generateSequence(::readLine).forEach { line ->
     }
     val words=GlinerDocument.build(GlinerFusion.fuse(readings)).words.take(320)
     println(id+"\t"+words.joinToString(";") { enc(it.text)+","+enc(it.normalized) })
+}
 }
