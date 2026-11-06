@@ -53,7 +53,7 @@ internal fun sensoryTraitControls(
     onChange: (SensoryData) -> Unit
 ): List<SensoryTraitControl> = listOf(
         SensoryTraitControl("Sweetness", listOf("Bone dry", "Dry", "Off-dry", "Medium sweet", "Sweet", "Luscious"), data.sweetness) { onChange(data.copy(sweetness = it)) },
-        SensoryTraitControl("aroma", listOf("Very subdued", "Subdued", "Moderate", "Expressive", "Powerful"), data.aroma) { onChange(data.copy(aroma = it)) },
+        SensoryTraitControl("Aroma", listOf("Very subdued", "Subdued", "Moderate", "Expressive", "Powerful"), data.aroma) { onChange(data.copy(aroma = it)) },
         SensoryTraitControl("Acidity", listOf("Flabby", "Low", "Balanced", "Crisp", "Tart / searing"), data.acidity) { onChange(data.copy(acidity = it)) },
         SensoryTraitControl("Tannins / grip", listOf("Silky", "Low", "Medium", "Grippy", "Harsh"), data.tannins) { onChange(data.copy(tannins = it)) },
         SensoryTraitControl("Body", listOf("Light", "Medium-minus", "Medium", "Medium-plus", "Full"), data.body) { onChange(data.copy(body = it)) },
@@ -290,7 +290,7 @@ internal fun SensoryTraitSlider(trait: SensoryTraitControl, enabled: Boolean = t
 }
 
 internal fun gradientColorsFor(title: String): List<Color> = when (title) {
-    "aroma" -> listOf(Color(0xFFF6DCE6), Color(0xFFA25D89), Color(0xFF4B1F55))
+    "Aroma" -> listOf(Color(0xFFF6DCE6), Color(0xFFA25D89), Color(0xFF4B1F55))
     "Acidity" -> listOf(Color(0xFFD7EFC5), Color(0xFF63A875), Color(0xFF246B5B))
     "Tannins / grip" -> listOf(Color(0xFFF1D0D3), Color(0xFFA65E75), Color(0xFF532342))
     "Body" -> listOf(Color(0xFFF6DFC9), Color(0xFFC9826B), Color(0xFF722F37))

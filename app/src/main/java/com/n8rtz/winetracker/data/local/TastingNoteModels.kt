@@ -12,7 +12,7 @@ enum class TastingPhase(val label: String) {
 
     val sectionLabel: String
         get() = when (this) {
-            AROMA_BEFORE_TASTING -> "Visual / aroma"
+            AROMA_BEFORE_TASTING -> "Visual / Aroma"
             ENTRY -> "Entry"
             MID_PALATE -> "Mid-palate"
             FINISH -> "Finish"

@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -199,26 +200,22 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
         val width = size.width
         val height = size.height
         val centerX = width / 2f
-        val top = height * 0.06f
-        val bowlBottom = height * 0.61f
-        val left = width * 0.14f
-        val right = width * 0.86f
+        val top = height * 0.07f
+        val bowlBottom = height * 0.58f
+        val left = width * 0.12f
+        val right = width * 0.88f
+        val sideControlY = top + (bowlBottom - top) * 0.58f
+        val bottomHalfWidth = width * 0.18f
         val strokeWidth = 2.dp.toPx()
+        val rimHeight = 4.dp.toPx()
 
-        val bowl = Path().apply {
+        val bowlFill = Path().apply {
             moveTo(left, top)
-            cubicTo(
-                left,
-                top + height * 0.30f,
-                centerX - width * 0.16f,
-                bowlBottom,
-                centerX,
-                bowlBottom
-            )
-            cubicTo(centerX + width * 0.16f, bowlBottom, right, top + height * 0.30f, right, top)
+            cubicTo(left, sideControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
+            cubicTo(centerX + bottomHalfWidth, bowlBottom, right, sideControlY, right, top)
             close()
         }
-        drawPath(bowl, Color.White.copy(alpha = 0.25f))
+        drawPath(bowlFill, Color.White.copy(alpha = 0.25f))
 
         val liquidTop = top + (bowlBottom - top) * 0.53f
         val liquidLeft = centerX - width * 0.22f
@@ -246,27 +243,40 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
             close()
         }
         drawPath(liquid, wine)
-        drawPath(bowl, outline, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
-        drawLine(outline, Offset(left, top), Offset(right, top), strokeWidth, cap = StrokeCap.Round)
-        drawLine(
-            outline,
-            Offset(centerX, bowlBottom),
-            Offset(centerX, height * 0.91f),
-            strokeWidth,
-            cap = StrokeCap.Round
+
+        val bowlSides = Path().apply {
+            moveTo(left, top)
+            cubicTo(left, sideControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
+            moveTo(centerX, bowlBottom)
+            cubicTo(centerX + bottomHalfWidth, bowlBottom, right, sideControlY, right, top)
+        }
+        drawPath(bowlSides, outline, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+        drawOval(
+            color = outline,
+            topLeft = Offset(left, top - rimHeight / 2f),
+            size = Size(right - left, rimHeight),
+            style = Stroke(width = strokeWidth)
         )
         drawLine(
-            outline,
-            Offset(width * 0.27f, height * 0.93f),
-            Offset(width * 0.73f, height * 0.93f),
-            strokeWidth,
+            color = outline,
+            start = Offset(centerX, bowlBottom),
+            end = Offset(centerX, height * 0.90f),
+            strokeWidth = strokeWidth,
             cap = StrokeCap.Round
         )
+
+        val footSize = Size(width * 0.52f, height * 0.035f)
+        drawOval(
+            color = outline,
+            topLeft = Offset(centerX - footSize.width / 2f, height * 0.90f),
+            size = footSize,
+            style = Stroke(width = strokeWidth)
+        )
         drawLine(
-            Color.White.copy(alpha = 0.8f),
-            Offset(left + width * 0.09f, top + height * 0.10f),
-            Offset(left + width * 0.11f, top + height * 0.25f),
-            strokeWidth * 0.75f,
+            color = Color.White.copy(alpha = 0.8f),
+            start = Offset(left + width * 0.10f, top + height * 0.10f),
+            end = Offset(left + width * 0.12f, top + height * 0.24f),
+            strokeWidth = strokeWidth * 0.75f,
             cap = StrokeCap.Round
         )
     }
@@ -302,11 +312,10 @@ private fun FloatingColorPreviewSwatch(
     val density = LocalDensity.current
     val swatchSize = 56.dp
     val swatchPx = with(density) { swatchSize.roundToPx() }
-    val gapPx = with(density) { 10.dp.roundToPx() }
+    val gapPx = with(density) { 12.dp.roundToPx() }
     val left = (pointer.x.roundToInt() - swatchPx / 2)
         .coerceIn(0, (controlSize.width - swatchPx).coerceAtLeast(0))
-    val above = pointer.y.roundToInt() - swatchPx - gapPx
-    val top = if (above >= 0) above else pointer.y.roundToInt() + gapPx
+    val top = pointer.y.roundToInt() - swatchPx - gapPx
 
     Popup(
         alignment = Alignment.TopStart,

@@ -72,7 +72,7 @@ The owner resolved every design alternative before this framework was written. T
 
 ### Sections and global controls
 
-* One `verticalScroll` `Column` with four short headers: **Visual / aroma**, **Entry**, **Mid-palate**, **Finish**.
+* One `verticalScroll` `Column` with four short headers: **Visual / Aroma**, **Entry**, **Mid-palate**, **Finish**.
 * The ten existing `SensoryEvaluationFields` sliders are placed inside those sections as fixed below. One bipolar **Entry** scale with **Tight** and **Open** endpoints is added.
 * `OverallScoreSlider`, **Common faults**, **Tasting notes and impressions**, reviewer/recommend/value controls and save/delete remain outside the four sections.
 * No explanatory paragraphs, helper text, captions, “how it works” notes or longer reworded labels are added (`.agents/instructions.md` rule 18).
@@ -185,7 +185,7 @@ Editor state sequence:
 
 | Section | Controls |
 | --- | --- |
-| **Visual / aroma** | Wine color swatch opening an HSV editor, **aroma** slider, **Aroma** pinch-sized aroma cloud |
+| **Visual / Aroma** | Wine color swatch opening an HSV editor, **Aroma** slider, **Aroma** pinch-sized aroma cloud |
 | **Entry** | **Entry** scale (**Tight** to **Open**), **Sweetness** slider, **Entry** aroma cloud and chips |
 | **Mid-palate** | **Acidity**, **Tannins / grip**, **Body**, **Balance**, **Concentration**, **Complexity** sliders, **Mid-palate** aroma cloud and chips |
 | **Finish** | **Finish**, **Quality** sliders, **Finish** aroma cloud and chips |

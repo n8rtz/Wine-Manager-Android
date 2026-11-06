@@ -90,6 +90,9 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("WineGlassPreview(", picker)
         self.assertIn("modifier = Modifier.width(64.dp).height(206.dp)", picker)
         self.assertIn("swatchSize = 56.dp", picker)
+        self.assertIn("val top = pointer.y.roundToInt() - swatchPx - gapPx", picker)
+        self.assertIn("val bowlSides = Path().apply", picker)
+        self.assertIn("val footSize = Size", picker)
         self.assertEqual(
             picker.count("FloatingColorPreviewSwatch(color, previewPosition, controlSize)"),
             2,
@@ -180,10 +183,11 @@ class W061SourceContractTests(unittest.TestCase):
         fields = read(UI / "components/SensoryEvaluationFields.kt")
         sections = read(UI / "components/TastingPhaseSections.kt")
         self.assertIn('AROMA_BEFORE_TASTING("Aroma")', models)
+        self.assertIn('AROMA_BEFORE_TASTING -> "Visual / Aroma"', models)
         self.assertNotIn('"Aroma (before tasting)"', models)
-        self.assertIn('SensoryTraitControl("aroma"', fields)
-        self.assertIn('"aroma" -> listOf(', fields)
-        self.assertIn('TastingPhase.AROMA_BEFORE_TASTING -> listOf("aroma")', sections)
+        self.assertIn('SensoryTraitControl("Aroma"', fields)
+        self.assertIn('"Aroma" -> listOf(', fields)
+        self.assertIn('TastingPhase.AROMA_BEFORE_TASTING -> listOf("Aroma")', sections)
         self.assertNotIn('SensoryTraitControl("Aroma / bouquet"', fields)
 
     def test_backup_restore_and_pure_contract_are_present(self):
