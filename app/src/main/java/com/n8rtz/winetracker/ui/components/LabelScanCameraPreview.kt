@@ -22,12 +22,16 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import java.io.File
 
 /** CameraX preview used only in the explicit, full-screen label scanner. */
@@ -68,12 +72,19 @@ fun LabelScanCameraPreview(
     }
 
     val capturedPhotoPath = (labelScanState as? LabelScanState.Processing)?.photoPath
+    // Keep the camera visible until the still actually loads; otherwise a slow decode flashes black.
+    var frameLoaded by remember(capturedPhotoPath) { mutableStateOf(false) }
+    val frozenPhoto = remember(context, capturedPhotoPath) {
+        capturedPhotoPath?.let { capturedLabelImageRequest(context, it) }
+    }
 
     Box(modifier = modifier.background(Color.Black)) {
         AndroidView(
             factory = { viewContext ->
                 val previewView = PreviewView(viewContext).apply {
                     scaleType = PreviewView.ScaleType.FILL_CENTER
+                    // TextureView permits the captured still to be composited above the camera.
+                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 }
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
@@ -101,13 +112,21 @@ fun LabelScanCameraPreview(
             },
             update = { previewView ->
                 previewView.visibility =
-                    if (capturedPhotoPath == null) View.VISIBLE else View.INVISIBLE
+                    if (capturedPhotoPath != null && frameLoaded) View.INVISIBLE else View.VISIBLE
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Do not decode the JPEG again with Coil while OCR owns its two working bitmaps.
-        // The live preview is a CameraX surface, not a working Bitmap.
+        if (frozenPhoto != null) {
+            AsyncImage(
+                model = frozenPhoto,
+                contentDescription = "Captured wine label photo",
+                contentScale = ContentScale.Crop,
+                onSuccess = { frameLoaded = true },
+                onError = { frameLoaded = false },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
@@ -204,3 +223,13 @@ private class CameraUseCaseBinding(
         cameraProvider = null
     }
 }
+
+/** A display-only, bounded thumbnail; neither image cache retains a private label photo. */
+internal fun capturedLabelImageRequest(context: Context, photoPath: String): ImageRequest =
+    ImageRequest.Builder(context)
+        .data(File(photoPath))
+        .size(1024)
+        .memoryCachePolicy(CachePolicy.DISABLED)
+        .diskCachePolicy(CachePolicy.DISABLED)
+        .networkCachePolicy(CachePolicy.DISABLED)
+        .build()
