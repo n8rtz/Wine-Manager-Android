@@ -99,6 +99,19 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertNotIn("Spacer(", picker)
         self.assertNotIn(".size(40.dp)", picker)
 
+    def test_aromas_can_be_assigned_to_multiple_phases(self):
+        legacy = read(UI / "components/LegacyAromaPhaseSheet.kt")
+        editor = read(UI / "screens/TastingNoteEditorScreen.kt")
+        model_test = read(TESTS / "TastingNoteStructureTest.kt")
+        self.assertIn("Map<String, Set<TastingPhase>>", legacy)
+        self.assertIn("phase in assignments[id].orEmpty()", legacy)
+        self.assertIn(
+            "allAssigned = remaining.all { assignments[it].orEmpty().isNotEmpty() }",
+            legacy,
+        )
+        self.assertIn(".filter { it in assignments.getValue(id) }", editor)
+        self.assertIn("sameDescriptorCanBeAssignedToMultiplePhasesIndependently", model_test)
+
     def test_editor_uses_sectioned_phase_aware_controls(self):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")
         sections = read(UI / "components/TastingPhaseSections.kt")

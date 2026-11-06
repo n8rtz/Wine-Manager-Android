@@ -52,7 +52,10 @@ data class HsvColor(
     }
 }
 
-/** One descriptor observed in one phase; `displayOrder` preserves order and breaks intensity ties. */
+/**
+ * One descriptor-phase observation; descriptors may recur across phases.
+ * `displayOrder` preserves order and breaks intensity ties.
+ */
 data class AromaObservation(
     val descriptorId: String = "",
     val phase: TastingPhase = TastingPhase.AROMA_BEFORE_TASTING,

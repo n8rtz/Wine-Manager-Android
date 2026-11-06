@@ -27,13 +27,13 @@ import com.n8rtz.winetracker.data.local.TastingPhase
 @Composable
 fun LegacyAromaPhaseSheet(
     aromaIds: List<String>,
-    onApply: (Map<String, TastingPhase>, Set<String>) -> Unit,
+    onApply: (Map<String, Set<TastingPhase>>, Set<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val assignments = remember { mutableStateMapOf<String, TastingPhase?>() }
+    val assignments = remember { mutableStateMapOf<String, Set<TastingPhase>>() }
     val removed = remember { mutableStateListOf<String>() }
     val remaining = aromaIds.filterNot { it in removed }
-    val allAssigned = remaining.all { assignments[it] != null }
+    val allAssigned = remaining.all { assignments[it].orEmpty().isNotEmpty() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -56,9 +56,14 @@ fun LegacyAromaPhaseSheet(
                         ) {
                             TastingPhase.values().forEach { phase ->
                                 FilterChip(
-                                    selected = assignments[id] == phase,
+                                    selected = phase in assignments[id].orEmpty(),
                                     onClick = {
-                                        assignments[id] = if (assignments[id] == phase) null else phase
+                                        val current = assignments[id].orEmpty()
+                                        assignments[id] = if (phase in current) {
+                                            current - phase
+                                        } else {
+                                            current + phase
+                                        }
                                     },
                                     label = { Text(phase.label) }
                                 )
@@ -73,10 +78,7 @@ fun LegacyAromaPhaseSheet(
             TextButton(
                 enabled = allAssigned,
                 onClick = {
-                    val resolved = assignments
-                        .filterKeys { it !in removed }
-                        .mapNotNull { (id, phase) -> phase?.let { id to it } }
-                        .toMap()
+                    val resolved = remaining.associateWith { assignments.getValue(it) }
                     onApply(resolved, removed.toSet())
                 }
             ) { Text("Apply") }

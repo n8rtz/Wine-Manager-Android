@@ -35,7 +35,7 @@ The owner resolved every design alternative before this framework was written. T
 | 6.D2b | Color scope | **WineDefinition default + per-note override**. Effective color is the note override when present, otherwise the definition default. Clearing the override reverts to the definition default. |
 | 6.D13 | Where the definition default lives | **Room column + migration v22**: add a nullable `defaultColorHsv` column to `wine_definitions`. No data backfill or inference. |
 | 6.D3 | Aroma-phase model | **Same descriptor may appear in several phases**; one cap of **24 distinct descriptor IDs per note**. Duplicate `(descriptorId, phase)` pairs are rejected. The cap counts IDs, not observation rows. |
-| 6.D4 | Legacy flat aromas | **Prompt on edit**: before saving changes to a note that still has legacy flat aromas, show a phase-assignment sheet; Save is disabled until every legacy descriptor has an explicit phase or is removed. No phase is preselected or inferred. Read-only display of untouched legacy notes remains valid. |
+| 6.D4 | Legacy flat aromas | **Prompt on edit**: before saving changes to a note that still has legacy flat aromas, show a phase-assignment sheet; Save is disabled until every legacy descriptor is assigned to one or more phases or removed. A descriptor may be assigned to multiple phases. No phase is preselected or inferred. Read-only display of untouched legacy notes remains valid. |
 | 6.D5 | Intensity interaction | **Pinch-sized aroma cluster**: pinch labels to resize them; show no numeric badges or stepper, and sort the largest labels first. |
 | 6.D6 | Intensity storage | **Continuous `0f..1f` per descriptor-phase pair** (overrides the earlier 1–5 answer). Pinch continuously adjusts intensity; the word cloud derives visible order from intensity, with `displayOrder` as a stable tie-breaker. |
 | 6.D8 | Entry Tight/Open controls | **One bipolar `Tight ↔ Open` slider**, stored as one value; no two-slider or derived-score variant. |
@@ -176,7 +176,7 @@ fun validateForSave(state: SensoryData): List<ValidationError>
 Editor state sequence:
 
 1. Load note and definition; compute effective color.
-2. If `aromaObservations` is empty but legacy `aromas` is not, open the phase-assignment sheet on first edit. Cancel leaves the note unchanged; Save remains disabled until every legacy ID is explicitly assigned or removed.
+2. If `aromaObservations` is empty but legacy `aromas` is not, open the phase-assignment sheet on first edit. Cancel leaves the note unchanged; Save remains disabled until every legacy ID is explicitly assigned to one or more phases or removed.
 3. Wheel/list picker starts on the active phase. Adding a descriptor calls `addAromaObservation`; removing deletes that observation.
 4. Pinch calls `setAromaIntensity`; the cluster re-sorts by intensity after each change.
 5. Save calls `validateForSave`, then persists the existing `TastingNote` entity. No bottle or consumption row is created, moved or deleted.

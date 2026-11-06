@@ -72,6 +72,40 @@ class TastingNoteStructureTest {
     }
 
     @Test
+    fun sameDescriptorCanBeAssignedToMultiplePhasesIndependently() {
+        val first = addAromaObservation(
+            SensoryData(),
+            "id-a",
+            TastingPhase.AROMA_BEFORE_TASTING
+        ).getOrThrow()
+        val both = addAromaObservation(first, "id-a", TastingPhase.FINISH).getOrThrow()
+
+        assertEquals(listOf("id-a"), both.aromas)
+        assertEquals(2, both.aromaObservations.size)
+        assertEquals(
+            setOf(TastingPhase.AROMA_BEFORE_TASTING, TastingPhase.FINISH),
+            both.aromaObservations.map { it.phase }.toSet()
+        )
+        assertTrue(validateForSave(both).isEmpty())
+
+        val updated = setAromaIntensity(
+            both,
+            "id-a",
+            TastingPhase.AROMA_BEFORE_TASTING,
+            0.3f
+        )
+        val beforeAromaIntensity = updated.aromaObservations
+            .single { it.phase == TastingPhase.AROMA_BEFORE_TASTING }
+            .intensity!!
+        assertEquals(0.3f, beforeAromaIntensity, 0.0001f)
+        assertNull(updated.aromaObservations.single { it.phase == TastingPhase.FINISH }.intensity)
+
+        val removed = removeAromaObservation(updated, "id-a", TastingPhase.AROMA_BEFORE_TASTING)
+        assertEquals(listOf(TastingPhase.FINISH), removed.aromaObservations.map { it.phase })
+        assertEquals(listOf("id-a"), removed.aromas)
+    }
+
+    @Test
     fun intensityIsContinuousPerPhaseAndRejectsOutOfRange() {
         val initial = SensoryData(
             aromaObservations = listOf(

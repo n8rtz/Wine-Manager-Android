@@ -852,10 +852,14 @@ fun TastingNoteEditorScreen(
             aromaIds = sensoryData.aromas,
             onApply = { assignments, removedIds ->
                 val remainingIds = sensoryData.aromas.filterNot { it in removedIds }
-                val observations = remainingIds.mapIndexed { index, id ->
+                val observations = remainingIds.flatMap { id ->
+                    TastingPhase.values()
+                        .filter { it in assignments.getValue(id) }
+                        .map { phase -> id to phase }
+                }.mapIndexed { index, (id, phase) ->
                     AromaObservation(
                         descriptorId = id,
-                        phase = assignments.getValue(id),
+                        phase = phase,
                         intensity = null,
                         displayOrder = index
                     )
