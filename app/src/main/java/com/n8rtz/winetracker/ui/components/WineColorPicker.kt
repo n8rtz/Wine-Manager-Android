@@ -161,10 +161,15 @@ private fun ColorPickerDialog(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp
         ) {
-            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+                WineColorPicker(
+                    color = draft,
+                    onColorChange = { onDraftChange(it ?: HsvColor(0f, 0f, 1f)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDismiss) {
@@ -174,11 +179,6 @@ private fun ColorPickerDialog(
                         Icon(Icons.Default.Check, contentDescription = "Done")
                     }
                 }
-                WineColorPicker(
-                    color = draft,
-                    onColorChange = { onDraftChange(it ?: HsvColor(0f, 0f, 1f)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
     }
@@ -194,27 +194,28 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
         val height = size.height
         val centerX = width / 2f
         val top = height * 0.07f
-        val bowlBottom = height * 0.57f
+        val bowlBottom = height * 0.60f
         val bowlHeight = bowlBottom - top
-        // Bordeaux silhouette: narrow rim, broad upper shoulders, tapered lower bowl.
-        val rimLeft = width * 0.20f
-        val rimRight = width * 0.80f
-        val bowlLeft = width * 0.07f
-        val bowlRight = width * 0.93f
-        val shoulderY = top + bowlHeight * 0.32f
-        val upperControlY = top + bowlHeight * 0.12f
-        val lowerControlY = top + bowlHeight * 0.70f
-        val bottomHalfWidth = width * 0.13f
+        // Bordeaux bowl: narrower rim, broad rounded shoulders, and a rounded lower taper.
+        val rimLeft = width * 0.15f
+        val rimRight = width * 0.85f
+        val bowlLeft = width * 0.035f
+        val bowlRight = width * 0.965f
+        val shoulderY = top + bowlHeight * 0.52f
+        val upperControlY = top + bowlHeight * 0.18f
+        val upperShoulderControlY = top + bowlHeight * 0.36f
+        val lowerControlY = top + bowlHeight * 0.86f
+        val bottomHalfWidth = width * 0.17f
         val strokeWidth = 2.dp.toPx()
-        val rimHeight = 4.dp.toPx()
+        val rimHeight = 5.dp.toPx()
 
         val bowlFill = Path().apply {
             moveTo(rimLeft, top)
             cubicTo(
-                rimLeft - width * 0.01f,
+                rimLeft - width * 0.015f,
                 upperControlY,
                 bowlLeft,
-                upperControlY,
+                upperShoulderControlY,
                 bowlLeft,
                 shoulderY
             )
@@ -222,8 +223,8 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
             cubicTo(centerX + bottomHalfWidth, bowlBottom, bowlRight, lowerControlY, bowlRight, shoulderY)
             cubicTo(
                 bowlRight,
-                upperControlY,
-                rimRight + width * 0.01f,
+                upperShoulderControlY,
+                rimRight + width * 0.015f,
                 upperControlY,
                 rimRight,
                 top
@@ -232,26 +233,28 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
         }
         drawPath(bowlFill, Color.White.copy(alpha = 0.25f))
 
-        val liquidTop = top + bowlHeight * 0.53f
-        val liquidLeft = centerX - width * 0.25f
-        val liquidRight = centerX + width * 0.25f
-        val liquidBottom = bowlBottom - strokeWidth
+        val liquidTop = top + bowlHeight * 0.52f
+        val liquidHalfWidth = width * 0.42f
+        val liquidLeft = centerX - liquidHalfWidth
+        val liquidRight = centerX + liquidHalfWidth
+        val liquidBottom = bowlBottom - bowlHeight * 0.07f
+        val lowerLiquidControlY = liquidTop + (liquidBottom - liquidTop) * 0.45f
         val liquid = Path().apply {
             moveTo(liquidLeft, liquidTop)
             quadraticTo(centerX, liquidTop + strokeWidth * 0.7f, liquidRight, liquidTop)
             cubicTo(
                 liquidRight - width * 0.02f,
-                liquidTop + (liquidBottom - liquidTop) * 0.45f,
-                centerX + width * 0.09f,
+                lowerLiquidControlY,
+                centerX + width * 0.16f,
                 liquidBottom,
                 centerX,
                 liquidBottom
             )
             cubicTo(
-                centerX - width * 0.09f,
+                centerX - width * 0.16f,
                 liquidBottom,
                 liquidLeft + width * 0.02f,
-                liquidTop + (liquidBottom - liquidTop) * 0.45f,
+                lowerLiquidControlY,
                 liquidLeft,
                 liquidTop
             )
@@ -261,11 +264,25 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
 
         val bowlSides = Path().apply {
             moveTo(rimLeft, top)
-            cubicTo(rimLeft - width * 0.01f, upperControlY, bowlLeft, upperControlY, bowlLeft, shoulderY)
+            cubicTo(
+                rimLeft - width * 0.015f,
+                upperControlY,
+                bowlLeft,
+                upperShoulderControlY,
+                bowlLeft,
+                shoulderY
+            )
             cubicTo(bowlLeft, lowerControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
             moveTo(centerX, bowlBottom)
             cubicTo(centerX + bottomHalfWidth, bowlBottom, bowlRight, lowerControlY, bowlRight, shoulderY)
-            cubicTo(bowlRight, upperControlY, rimRight + width * 0.01f, upperControlY, rimRight, top)
+            cubicTo(
+                bowlRight,
+                upperShoulderControlY,
+                rimRight + width * 0.015f,
+                upperControlY,
+                rimRight,
+                top
+            )
         }
         drawPath(bowlSides, outline, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
         drawOval(
@@ -274,25 +291,26 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
             size = Size(rimRight - rimLeft, rimHeight),
             style = Stroke(width = strokeWidth)
         )
+        val stemEndY = height * 0.90f
         drawLine(
             color = outline,
             start = Offset(centerX, bowlBottom),
-            end = Offset(centerX, height * 0.90f),
+            end = Offset(centerX, stemEndY),
             strokeWidth = strokeWidth,
             cap = StrokeCap.Round
         )
 
-        val footSize = Size(width * 0.52f, height * 0.035f)
+        val footSize = Size(width * 0.68f, height * 0.04f)
         drawOval(
             color = outline,
-            topLeft = Offset(centerX - footSize.width / 2f, height * 0.90f),
+            topLeft = Offset(centerX - footSize.width / 2f, stemEndY),
             size = footSize,
             style = Stroke(width = strokeWidth)
         )
         drawLine(
             color = Color.White.copy(alpha = 0.8f),
-            start = Offset(bowlLeft + width * 0.10f, top + height * 0.10f),
-            end = Offset(bowlLeft + width * 0.12f, top + height * 0.24f),
+            start = Offset(bowlLeft + width * 0.16f, top + height * 0.10f),
+            end = Offset(bowlLeft + width * 0.18f, top + height * 0.25f),
             strokeWidth = strokeWidth * 0.75f,
             cap = StrokeCap.Round
         )
