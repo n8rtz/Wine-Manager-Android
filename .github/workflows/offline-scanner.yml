@@ -3,6 +3,10 @@ on:
   pull_request:
   push:
     branches: ['arena/**', 'main', 'master']
+    # Host-only saved-OCR experiments do not change or build the Android app.
+    paths-ignore:
+      - 'tools/gliner-experiment/**'
+      - '.github/workflows/gliner-saved-ocr-experiment.yml'
   workflow_dispatch:
 permissions:
   contents: read
