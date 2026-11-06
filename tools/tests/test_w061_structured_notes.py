@@ -103,7 +103,7 @@ class W061SourceContractTests(unittest.TestCase):
     def test_wine_color_picker_shows_live_swatch_and_wine_glass(self):
         picker = read(UI / "components/WineColorPicker.kt")
         self.assertIn("WineGlassPreview(", picker)
-        self.assertIn("modifier = Modifier.width(64.dp).height(206.dp)", picker)
+        self.assertIn("modifier = Modifier.width(80.dp).height(200.dp)", picker)
         self.assertIn("swatchSize = 56.dp", picker)
         self.assertIn("val gapPx = with(density) { 28.dp.roundToPx() }", picker)
         self.assertIn("val top = (fixedY ?: pointer.y).roundToInt() - swatchPx - gapPx", picker)

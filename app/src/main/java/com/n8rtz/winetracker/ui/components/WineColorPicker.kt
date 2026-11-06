@@ -123,7 +123,7 @@ fun WineColorPicker(
         ) {
             WineGlassPreview(
                 color = current,
-                modifier = Modifier.width(64.dp).height(206.dp)
+                modifier = Modifier.width(80.dp).height(200.dp)
             )
             Column(
                 modifier = Modifier.weight(1f),
