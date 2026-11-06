@@ -1,0 +1,79 @@
+name: GLiNER saved-OCR experiment
+on:
+  push:
+    branches: ['arena/1bab4a14-wine-manager-android']
+    paths:
+      - '.github/workflows/gliner-saved-ocr-experiment.yml'
+      - 'tools/gliner-experiment/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+  checks: write
+concurrency:
+  group: gliner-saved-ocr-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Create temporary results directory
+        run: mkdir -p "$RUNNER_TEMP/gliner-results"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare host-only test dependencies
+        run: |
+          python -m pip install 'numpy<2' 'onnxruntime==1.21.1'
+          npm install --prefix "$RUNNER_TEMP/kotlin" kotlin-compiler@2.2.10 --silent
+          git clone --quiet --depth 1 --branch 20240303 https://github.com/stleary/JSON-java.git "$RUNNER_TEMP/json-java"
+          mkdir "$RUNNER_TEMP/json-classes"
+          javac -d "$RUNNER_TEMP/json-classes" "$RUNNER_TEMP/json-java"/src/main/java/org/json/*.java
+          jar cf "$RUNNER_TEMP/json.jar" -C "$RUNNER_TEMP/json-classes" .
+          echo "KOTLIN_HOME=$RUNNER_TEMP/kotlin/node_modules/kotlin-compiler" >> "$GITHUB_ENV"
+          echo "JSON_JAR=$RUNNER_TEMP/json.jar" >> "$GITHUB_ENV"
+          echo "GLINER_HOST=$RUNNER_TEMP/host" >> "$GITHUB_ENV"
+      - name: Compile the actual Kotlin OCR fusion, tokenizer and decision policy
+        run: bash tools/gliner-experiment/build-host.sh "$GLINER_HOST" 2>&1 | tee -a "$RUNNER_TEMP/gliner-results/trace.txt"
+      - name: Check test machinery and saved phone control
+        run: python -m unittest discover -s tools/gliner-experiment -p 'test_*.py' -v 2>&1 | tee -a "$RUNNER_TEMP/gliner-results/trace.txt"
+      - name: Download the existing pinned INT4 model (runner temporary storage only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir "$RUNNER_TEMP/bundle"
+          gh release download gliner-small-int4-v1 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/bundle" \
+            -p gliner_small_int4.onnx -p tokenizer.json -p gliner_config.json 2>&1 | tee -a "$RUNNER_TEMP/gliner-results/trace.txt"
+      - name: Run both prompt sets and automatically score all variants
+        run: python tools/gliner-experiment/run.py --bundle "$RUNNER_TEMP/bundle" --host "$GLINER_HOST" --output "$RUNNER_TEMP/gliner-results/report.json" 2>&1 | tee -a "$RUNNER_TEMP/gliner-results/trace.txt"
+      - name: Render result, including failures
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gliner-results"
+          python tools/gliner-experiment/summary.py "$RUNNER_TEMP/gliner-results/report.json" | tee "$RUNNER_TEMP/gliner-results/summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gliner-saved-ocr-results
+          path: ${{ runner.temp }}/gliner-results/
+          retention-days: 14
+      - name: Publish phone-readable aggregate and diagnostic check
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const p = `${process.env.RUNNER_TEMP}/gliner-results/summary.md`;
+            let text = fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : 'The experiment failed before a report was produced. Inspect workflow steps.';
+            const trace = `${process.env.RUNNER_TEMP}/gliner-results/trace.txt`;
+            if ('${{ job.status }}' !== 'success' && fs.existsSync(trace)) text += `\n\nFailure trace (tail):\n\`\`\`\n${fs.readFileSync(trace, 'utf8').slice(-12000)}\n\`\`\``;
+            await github.rest.checks.create({...context.repo, name:'GLiNER saved-OCR comparison results', head_sha:context.sha,
+              status:'completed', conclusion:'neutral', output:{title:'GLiNER saved-OCR results',summary:text.slice(0,60000)}});
