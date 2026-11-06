@@ -18,6 +18,8 @@ class ProductionScanBackgroundTest(unittest.TestCase):
             self.assertNotIn('ON_STOP) scannerViewModel.cancelActiveLabelScan()',source)
         source=SESSION.read_text()
         self.assertIn('CoroutineScope(SupervisorJob() + Dispatchers.Default)',source)
+        self.assertIn('scope.launch(start = CoroutineStart.LAZY)',source)
+        self.assertIn('if (owns) launched.start() else launched.cancel()',source)
         self.assertIn('ProductionLabelScanner.scan(app, photo.file, started, source)',source)
         self.assertIn('(mutable.value as? LabelScanState.CapturingPhoto)?.requestId',source)
     def test_foreground_lifetime_and_private_result_recovery(self):

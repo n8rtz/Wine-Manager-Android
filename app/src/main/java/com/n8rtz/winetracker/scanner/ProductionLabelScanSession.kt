@@ -15,6 +15,7 @@ import com.yourapp.wine.diagnostics.ScanStageTiming
 import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -118,7 +119,8 @@ internal object ProductionLabelScanSession {
 
     private fun launchPhotoScan(app: Context, id: Long, started: Long, source: ScanInputSource,
         initialFile: File? = null, obtain: suspend () -> LocalLabelPhoto) {
-        val launched = scope.launch {
+        // Install the job before dispatch so cancellation cannot race an as-yet unassigned job.
+        val launched = scope.launch(start = CoroutineStart.LAZY) {
             var ownedFile: File? = initialFile
             var stage = if (source == ScanInputSource.PHOTO_LIBRARY) ScanStage.IMPORT else ScanStage.INITIALIZE
             var completed: ScanReport? = null
@@ -182,7 +184,6 @@ internal object ProductionLabelScanSession {
                 finish(app, id, completed, saved)
             }
         }
-        synchronized(lock) { job = launched }
         launched.invokeOnCompletion {
             initialFile?.delete()
             PendingLabelScanStore(app).clearActive(id)
@@ -193,6 +194,13 @@ internal object ProductionLabelScanSession {
                 }
             }
             finish(app, id, null, false)
+        }
+        synchronized(lock) {
+            job = launched
+            val current = mutable.value
+            val owns = (current is LabelScanState.ImportingPhoto && current.requestId == id) ||
+                (current is LabelScanState.Processing && current.requestId == id)
+            if (owns) launched.start() else launched.cancel()
         }
     }
 
