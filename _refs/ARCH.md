@@ -61,7 +61,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │       ├── BottomBarLabelSizing.kt    # Uniform bottom-bar label sizing
 │       ├── SensoryEvaluationFields.kt # Shared ombre sensory controls, score slider and fault helpers
 │       ├── AromaChipDrag.kt           # Long-press drag-reorder logic for aroma chips
-│       ├── AromaWheelDialog.kt        # Full-screen aroma wheel: wheel/list mode plus phase-aware W-061 picker
+│       ├── AromaWheelDialog.kt        # Full-screen phase-aware picker plus live aroma-launcher summary card
 │       ├── LabelScanCameraPreview.kt  # CameraX preview + framing guide for label capture
 │       ├── WineColorPicker.kt         # W-061: HSV editor with wine-tone hue arc and full saturation/value controls
 │       ├── PhaseAromaCloud.kt         # W-061: clustered aroma labels resized by pinch and sorted largest-first

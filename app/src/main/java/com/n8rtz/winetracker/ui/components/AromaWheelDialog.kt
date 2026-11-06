@@ -103,26 +103,21 @@ import com.n8rtz.winetracker.data.local.toFlatAromaIds
 import com.n8rtz.winetracker.data.local.toggleAromaObservation
 
 /**
- * Tasting-note launcher for the aroma wheel: a summary card with a live
- * [AromaWheelGlyph] preview (tagged groups light up in their group colour),
- * a chevron into the full wheel, and — once aromas are chosen — the selected
- * aromas as chips in [ReorderableAromaChipRow]. Chip order is meaningful
- * (most to least prevalent): long-press and drag to arrange it; it is stored
- * as-is on the note. Blank (title row only) until aromas are chosen.
+ * Live tasting-note launcher: the mini wheel and selected-aroma chips update
+ * from the current selection. The whole card opens the phase-aware wheel.
  */
 @Composable
 fun AromaWheelLauncherCard(
     selectedIds: List<String>,
     onClick: () -> Unit,
-    onReorder: (List<String>) -> Unit,
-    onRemove: (String) -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
-            .clickable(onClickLabel = "Open the aroma wheel", onClick = onClick)
+            .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)
     ) {
         Column {
@@ -149,12 +144,47 @@ fun AromaWheelLauncherCard(
             }
             if (selectedIds.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                ReorderableAromaChipRow(
+                AromaSummaryChipRow(
                     ids = selectedIds,
-                    onReorder = onReorder,
-                    onRemove = onRemove,
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AromaSummaryChipRow(ids: List<String>, modifier: Modifier = Modifier) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        ids.distinct().forEach { id ->
+            key(id) {
+                val info = AromaTaxonomy.describe(id)
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(AromaWheelTheme.groupColor(info.groupId)))
+                        )
+                        Text(
+                            info.label,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(start = 6.dp)
+                        )
+                    }
+                }
             }
         }
     }

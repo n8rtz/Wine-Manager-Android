@@ -12,12 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,8 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.n8rtz.winetracker.aromawheel.AromaTaxonomy
-import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingPhase
@@ -36,6 +31,7 @@ import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.removeAromaObservation
 import com.n8rtz.winetracker.data.local.resolveEffectiveColor
 import com.n8rtz.winetracker.data.local.setAromaIntensity
+import com.n8rtz.winetracker.data.local.sortAromaObservationsByIntensity
 
 private fun traitTitlesFor(phase: TastingPhase): List<String> = when (phase) {
     TastingPhase.AROMA_BEFORE_TASTING -> listOf("Aroma / bouquet")
@@ -60,6 +56,10 @@ fun SectionedSensoryFields(
     val normalized = normalizeSensoryData(data)
     val traits = sensoryTraitControls(normalized, onDataChange)
     val byPhase = groupByPhase(normalized.aromaObservations)
+    val selectedAromaIds = (
+        sortAromaObservationsByIntensity(normalized.aromaObservations).map { it.descriptorId } +
+            normalized.aromas
+        ).distinct()
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         TastingPhase.values().forEach { phase ->
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
@@ -71,14 +71,12 @@ fun SectionedSensoryFields(
                         onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
                         readOnly = readOnly
                     )
-                    AromaWheelLauncherButton(
-                        count = (normalized.aromaObservations.map { it.descriptorId } + normalized.aromas).distinct().size,
+                    AromaWheelLauncherCard(
+                        selectedIds = selectedAromaIds,
+                        onClick = onOpenWheel,
                         enabled = !readOnly,
-                        onClick = onOpenWheel
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    if (readOnly && normalized.aromaObservations.isEmpty() && normalized.aromas.isNotEmpty()) {
-                        LegacyAromaReadOnlyChips(normalized.aromas)
-                    }
                     if (legacyAromasUnresolved && !readOnly) {
                         TextButton(onClick = onAssignLegacy) { Text("Assign") }
                     }
@@ -103,44 +101,6 @@ fun SectionedSensoryFields(
                 readOnly = readOnly
             )
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
-        }
-    }
-}
-
-@Composable
-private fun AromaWheelLauncherButton(count: Int, enabled: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            disabledContainerColor = MaterialTheme.colorScheme.primary,
-            disabledContentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    ) {
-        Text("Aromas · $count")
-    }
-}
-
-@Composable
-private fun LegacyAromaReadOnlyChips(aromaIds: List<String>) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        aromaIds.distinct().forEach { id ->
-            val info = AromaTaxonomy.describe(id)
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f)
-            ) {
-                Text(
-                    info.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
         }
     }
 }

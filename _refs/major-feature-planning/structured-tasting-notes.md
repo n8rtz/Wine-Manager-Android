@@ -153,7 +153,7 @@ Proposed future files are listed for planning only; **none are created by this t
 | `BackupData.kt`, `JsonExporter.kt`, `DataImporter.kt` | Confirm entity-level Gson serialization, ID mapping and older-backup compatibility. |
 | `TastingNoteEditorScreen.kt` | Single-scroll four-section layout; effective color state; legacy prompt; active-phase wheel; save/cancel flow. |
 | `SensoryEvaluationFields.kt` | Reuse `SensoryTraitSlider`/`GradientSensorySlider`; expose ten existing traits as section-aware composables and add the bipolar Tight↔Open slider. |
-| `AromaWheelDialog.kt`, `AromaWheelLauncherCard` | Active-phase selector, phase-grouped chips, wheel/list-mode parity, 24-distinct-ID cap and repeated-ID rules. |
+| `AromaWheelDialog.kt`, `AromaWheelLauncherCard` | Live mini-wheel and selected-aroma chip summary, active-phase selector, phase-grouped wheel/list modes, 24-distinct-ID cap and repeated-ID rules. |
 | `AromaChipDrag.kt` | Keep pure width-dependent drag maths; test with variable chip widths caused by intensity scaling. |
 | `AddWineScreen.kt`, `WineEditScreen.kt`, `TastingNoteDetailScreen.kt` | Compact definition-default color control in wine-definition editing; read-only saved-note detail in its distinct route. |
 | `WineRepository.kt`, `TastingNoteViewModel.kt`, `TastingNotesScreen.kt` | Persist/load the new fields, expose effective color and phase-aware observations, and reserve the W-053 all-phase + optional phase filter contract. |
