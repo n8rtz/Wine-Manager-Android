@@ -68,6 +68,12 @@ internal data class GlinerLabImageResult(
     val baseFields:Map<String,String> = emptyMap(),
     val baseOutcomes:Map<String,String> = emptyMap(),
     val fieldDecisions:List<String> = emptyList(),
+    val originalWidth:Int = 1,
+    val originalHeight:Int = 1,
+    val workingWidth:Int = 1,
+    val workingHeight:Int = 1,
+    val peakWorkingBitmaps:Int = 0,
+    val engineReadings:Map<String,Int> = emptyMap(),
 ) {
     val complete:Boolean get() = status=="complete" && eligible && errorCount==0
 }
@@ -76,7 +82,8 @@ internal data class GlinerLabImageResult(
  * ML Kit and PP-OCRv6 run in parallel; fusion is used only for GLiNER-Small INT4 inference.
  * The base `TextLabSpatialPreview` contender receives the original independent readings, not
  * grouped lane fragments. The GLiNER-specific policy then evaluates typed hints and corroborated
- * OCR candidates without seeing scoring targets. Lab v7 and production do not call this policy.
+ * OCR candidates without seeing scoring targets. The Add Wine scanner uses the same photo path;
+ * Lab v7 and the legacy production baseline remain separate.
  */
 internal object GlinerLabRunner {
     const val OCR_BUDGET_MS=60_000L
@@ -113,24 +120,44 @@ internal object GlinerLabRunner {
     ):GlinerLabImageResult = withContext(Dispatchers.Default) {
         val started=SystemClock.elapsedRealtime()
         val photo=File(workFolder,"${sample.image}")
+        try {
+            GlinerLabCorpus.copyTo(context,sample,photo)
+            runPhoto(context,photo,sample,model,laneConfig,warm,modules,started)
+        } finally {
+            photo.delete()
+        }
+    }
+
+    /** Same OCR, inference and decision pipeline as the lab, on a caller-owned photo. No references. */
+    suspend fun runProduction(context:Context,photo:File,model:GlinerOnnxModel,
+        warm:TextLabWineExtraction.WarmSession,deadlineAtMs:Long):GlinerLabImageResult {
+        val sample=GlinerLabSample("production-photo",0,"", "",true,emptyMap())
+        return runPhoto(context,photo,sample,model,GlinerLaneConfig(),warm,
+            LabPostOcrModules.none.withIntegrated(),SystemClock.elapsedRealtime(),deadlineAtMs)
+    }
+
+    private suspend fun runPhoto(context:Context,photo:File,sample:GlinerLabSample,model:GlinerOnnxModel,
+        laneConfig:GlinerLaneConfig,warm:TextLabWineExtraction.WarmSession,modules:LabPostOcrModules,
+        started:Long,deadlineAtMs:Long=Long.MAX_VALUE):GlinerLabImageResult {
         var ocrMs=0L
         var glinerMs=0L
         var postMs=0L
         try {
-            GlinerLabCorpus.copyTo(context,sample,photo)
-            val ocr=GlinerOcr.recognize(context,photo,SystemClock.elapsedRealtime()+OCR_BUDGET_MS)
+            check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached before OCR" }
+            val ocr=GlinerOcr.recognize(context,photo,minOf(deadlineAtMs,SystemClock.elapsedRealtime()+OCR_BUDGET_MS))
+            check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during OCR" }
             ocrMs=ocr.elapsedMs
             val document=GlinerDocument.build(ocr.lines)
             if(document.words.isEmpty()) {
-                return@withContext failed(sample,"no_text","No OCR words on this label",ocr.lines.map { it.text },
+                return failed(sample,"no_text","No OCR words on this label",ocr.lines.map { it.text },
                     ocrMs,0,0,SystemClock.elapsedRealtime()-started,model)
             }
             val labelled=try {
-                model.label(document,SystemClock.elapsedRealtime()+GLINER_BUDGET_MS)
+                model.label(document,minOf(deadlineAtMs,SystemClock.elapsedRealtime()+GLINER_BUDGET_MS))
             } catch(cancel:CancellationException) { throw cancel }
             catch(error:Exception) {
                 val promptHint=runCatching { "prompt ids ${model.promptPreview()}" }.getOrDefault("")
-                return@withContext failed(sample,"gliner_failed","GLiNER stage failed: ${error.message} · $promptHint",
+                return failed(sample,"gliner_failed","GLiNER stage failed: ${error.message} · $promptHint",
                     ocr.lines.map { it.text },ocrMs,0,0,SystemClock.elapsedRealtime()-started,model)
             }
             glinerMs=labelled.elapsedMs
@@ -138,12 +165,14 @@ internal object GlinerLabRunner {
             // downstream evidence graph, so lane claims cannot delete words or manufacture votes.
             val records=GlinerLaneRecords.originalRecords(ocr.readings)
             if(records.isEmpty()) {
-                return@withContext failed(sample,"no_observations","GLiNER produced no lane or residual observations",
+                return failed(sample,"no_observations","GLiNER produced no lane or residual observations",
                     ocr.lines.map { it.text },ocrMs,glinerMs,0,SystemClock.elapsedRealtime()-started,model)
             }
             val postStarted=SystemClock.elapsedRealtime()
+            check(postStarted<deadlineAtMs) { "Scan deadline reached before field extraction" }
             val post=postProcess(context,records,warm,modules,labelled)
             postMs=SystemClock.elapsedRealtime()-postStarted
+            check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during field extraction" }
             val laneHints=labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) }
             val decisionReadings=ocr.readings.map { reading ->
                 GlinerEvidenceLine(reading.engineId,reading.text,reading.box.left,reading.box.top,
@@ -170,7 +199,7 @@ internal object GlinerLabRunner {
                 GlinerFieldResult(field,fieldLabels.getValue(field),sample.target(field).display,
                     fields[field].orEmpty(),fieldStates[field].orEmpty(),outcomes.getValue(field))
             }
-            GlinerLabImageResult(
+            return GlinerLabImageResult(
                 image=sample.image,
                 reviewNumber=sample.reviewNumber,
                 status=if(post.status=="failed") "post_processing_failed" else "complete",
@@ -201,6 +230,9 @@ internal object GlinerLabRunner {
                 baseFields=post.fields,
                 baseOutcomes=baseOutcomes,
                 fieldDecisions=decision.changes,
+                originalWidth=ocr.originalWidth,originalHeight=ocr.originalHeight,
+                workingWidth=ocr.workingWidth,workingHeight=ocr.workingHeight,
+                peakWorkingBitmaps=ocr.peakWorkingBitmaps,engineReadings=ocr.engineReadings,
                 notes=buildString {
                     appendLine(ocr.description)
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
@@ -217,10 +249,8 @@ internal object GlinerLabRunner {
             )
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
-            failed(sample,"error","${error.javaClass.simpleName}: ${error.message}",
+            return failed(sample,"error","${error.javaClass.simpleName}: ${error.message}",
                 emptyList(),ocrMs,glinerMs,postMs,SystemClock.elapsedRealtime()-started,model)
-        } finally {
-            photo.delete()
         }
     }
 

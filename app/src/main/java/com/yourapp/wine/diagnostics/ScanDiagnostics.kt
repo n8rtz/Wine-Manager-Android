@@ -3,7 +3,7 @@ package com.yourapp.wine.diagnostics
 /** No coordinates: the input is local in every case; selecting a photo never uploads it. */
 enum class ScanInputSource { CAMERA, PHOTO_LIBRARY, FILE }
 
-enum class ScanStage { CAPTURE, IMPORT, INITIALIZE, WAIT_FOR_SLOT, NATIVE_LOAD, DECODE, QUALITY, LOCALIZE, WARP, OCR, FILL }
+enum class ScanStage { CAPTURE, IMPORT, INITIALIZE, WAIT_FOR_SLOT, NATIVE_LOAD, DECODE, QUALITY, LOCALIZE, WARP, OCR, GLINER, FILL }
 
 data class ScanStageTiming(val stage: ScanStage, val ms: Long)
 data class ScanFailure(val stage: ScanStage, val type: String)
@@ -17,6 +17,8 @@ data class ScanReadSample(val text: String, val score: Float, val estimated: Boo
 /** Immutable, bounded scalar/text diagnostics only; never retains a Bitmap, Mat, Uri, photo path or Throwable. */
 data class ScanDiagnostics(
     val source: ScanInputSource = ScanInputSource.FILE,
+    val pipeline: String = "legacy",
+    val budgetMs: Long = com.yourapp.wine.ocr.ScanDeadline.BUDGET_MS,
     val inputBytes: Long = 0,
     val importMs: Long = 0,
     val workW: Int = 0,

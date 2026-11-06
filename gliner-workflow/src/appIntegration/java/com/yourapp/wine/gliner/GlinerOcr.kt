@@ -48,6 +48,11 @@ internal object GlinerOcr {
         val elapsedMs:Long,
         val description:String,
         val engineReadings:Map<String,Int>,
+        val originalWidth:Int,
+        val originalHeight:Int,
+        val workingWidth:Int,
+        val workingHeight:Int,
+        val peakWorkingBitmaps:Int,
     )
 
     /** App-scoped client: the recognizer is bundled, so constructing one per photo is waste. */
@@ -73,7 +78,8 @@ internal object GlinerOcr {
                     val elapsed=SystemClock.elapsedRealtime()-started
                     Outcome(fused,mlKitReadings+paddleReadings,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
                         "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines"+
-                        (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings)
+                        (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings,
+                        decoded.origW,decoded.origH,bitmap.width,bitmap.height,workspace.peakCount)
                 }
             }
         }

@@ -766,7 +766,7 @@ private fun LabelScanCameraDialog(
                         }
                         is LabelScanState.ImportingPhoto -> LabelScanProgress("Opening selected photo…")
                         is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
-                        is LabelScanState.Processing -> LabelScanProgress("Reading offline… 8-second budget, then review any partial results.")
+                        is LabelScanState.Processing -> LabelScanProgress("Reading the label offline… This can take a little while; review the suggestions when finished.")
                         is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
                         is LabelScanState.Review -> Text(
                             "Scan complete. Review the suggestions.",

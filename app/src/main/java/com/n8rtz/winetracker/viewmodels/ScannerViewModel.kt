@@ -13,6 +13,7 @@ import com.yourapp.wine.diagnostics.ScanInputSource
 import com.yourapp.wine.diagnostics.ScanStage
 import com.yourapp.wine.diagnostics.ScanStageTiming
 import com.yourapp.wine.capture.WineScannerServices
+import com.yourapp.wine.capture.ProductionLabelScanner
 import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.Job
 import androidx.compose.runtime.getValue
@@ -136,7 +137,7 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
             var stage = if (source == ScanInputSource.PHOTO_LIBRARY) ScanStage.IMPORT else ScanStage.INITIALIZE
             var importMs = 0L
             try {
-                val deadline = ScanDeadline(started + ScanDeadline.BUDGET_MS)
+                val deadline = ScanDeadline(started + ProductionLabelScanner.BUDGET_MS)
                 val photo = deadline.run { obtain().also { ownedFile = it.file } }
                 if (photo == null) {
                     finishScan(requestId, ScanReport.red("Time budget reached while opening the photo — choose again or enter manually",
@@ -155,25 +156,19 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
                 }
                 if (!admitted) return@launch
                 stage = ScanStage.INITIALIZE
-                val initializationStarted = SystemClock.elapsedRealtime()
-                val scanner = deadline.run { WineScannerServices.get(getApplication()) }
-                val initializationMs = SystemClock.elapsedRealtime() - initializationStarted
-                val result = scanner?.scan(photo.file, started, source) ?: ScanReport.red(
-                    "Time budget reached while starting the scanner — retake or enter manually",
-                    SystemClock.elapsedRealtime() - started, true, source, stage)
+                val result = ProductionLabelScanner.scan(getApplication(),photo.file,started,source)
                 finishScan(requestId, result.copy(diagnostics = result.diagnostics.copy(
                     source = source, inputBytes = photo.bytes, importMs = importMs,
-                    stages = listOfNotNull(
+                    stages = listOf(
                         if (source == ScanInputSource.PHOTO_LIBRARY) ScanStageTiming(ScanStage.IMPORT, importMs)
-                        else ScanStageTiming(ScanStage.CAPTURE, preparationMs),
-                        ScanStageTiming(ScanStage.INITIALIZE, initializationMs)) + result.diagnostics.stages)))
+                        else ScanStageTiming(ScanStage.CAPTURE, preparationMs)) + result.diagnostics.stages)))
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 currentCoroutineContext().ensureActive()
                 Log.w("ScannerViewModel", "Local label input/scan failed", error)
                 val elapsed = SystemClock.elapsedRealtime() - started
-                val timedOut = elapsed >= ScanDeadline.BUDGET_MS
+                val timedOut = elapsed >= ProductionLabelScanner.BUDGET_MS
                 val hint = when {
                     timedOut -> "Time budget reached while reading the photo — choose again or enter manually"
                     error is LabelPhotoTooLargeException -> "Selected photo exceeds 32 MiB — choose a smaller image"
