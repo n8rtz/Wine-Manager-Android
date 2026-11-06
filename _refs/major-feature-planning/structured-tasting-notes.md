@@ -9,7 +9,7 @@ Improve the tasting-note function so a note records **what the wine looked like 
 ## Owner request (2026-11-05)
 
 1. Add a **wine color picker**. The owner suggested a **2D color-picker plot like photo-editing programs** as a possibility, not a settled design.
-2. Stop lumping all aroma-wheel descriptors together. Separate them by **where in the tasting they appear**: **Aroma (before tasting)**, **Entry**, **Mid-palate**, **Finish**.
+2. Stop lumping all aroma-wheel descriptors together. Separate them by **where in the tasting they appear**: **Aroma**, **Entry**, **Mid-palate**, **Finish**.
 3. Differentiate **stronger / more pronounced aromas** from subtler ones. Two alternatives were offered:
    * **Pinch to resize aroma chips** — bigger means more pronounced, forming a word cloud.
    * **Modulate chip color** — darker means more pronounced, lighter means more subtle.
@@ -62,7 +62,7 @@ The owner resolved every design alternative before this framework was written. T
 
 ### Aromas and intensity
 
-* Four stable phases: `AROMA_BEFORE_TASTING`, `ENTRY`, `MID_PALATE`, `FINISH`, displayed as **Aroma (before tasting)**, **Entry**, **Mid-palate**, **Finish**.
+* Four stable phases: `AROMA_BEFORE_TASTING`, `ENTRY`, `MID_PALATE`, `FINISH`, displayed as **Aroma**, **Entry**, **Mid-palate**, **Finish**.
 * The aroma wheel/list picker has an active-phase selector. Selecting a descriptor creates an observation in that phase; the same descriptor may be selected again in another phase.
 * `AromaSelection.MAX_SELECTED_DESCRIPTORS = 24` becomes a limit on distinct descriptor IDs per note. Unknown/retired stored IDs are preserved and displayed as raw labels; the wheel never adds unknown IDs.
 * Each observation has an independent continuous intensity in `0f..1f`. `null` means unrated and renders at neutral size with no numeric badge. Pinching continuously adjusts the value, starting from neutral intensity when it was unset.
@@ -185,7 +185,7 @@ Editor state sequence:
 
 | Section | Controls |
 | --- | --- |
-| **Visual / aroma** | Wine color swatch opening an HSV editor, **Aroma / bouquet** slider, **Aroma (before tasting)** pinch-sized aroma cloud |
+| **Visual / aroma** | Wine color swatch opening an HSV editor, **Aroma / bouquet** slider, **Aroma** pinch-sized aroma cloud |
 | **Entry** | **Tight ↔ Open** bipolar slider, **Sweetness** slider, **Entry** aroma cloud and chips |
 | **Mid-palate** | **Acidity**, **Tannins / grip**, **Body**, **Balance**, **Concentration**, **Complexity** sliders, **Mid-palate** aroma cloud and chips |
 | **Finish** | **Finish**, **Quality** sliders, **Finish** aroma cloud and chips |

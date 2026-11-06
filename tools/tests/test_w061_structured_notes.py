@@ -129,6 +129,11 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("filterState.aromaPhase", screen)
         self.assertIn("TastingPhase.values().forEach", screen)
 
+    def test_aroma_phase_has_the_short_display_label(self):
+        models = read(DATA / "TastingNoteModels.kt")
+        self.assertIn('AROMA_BEFORE_TASTING("Aroma")', models)
+        self.assertNotIn('"Aroma (before tasting)"', models)
+
     def test_backup_restore_and_pure_contract_are_present(self):
         importer = read(APP / "data/importer/DataImporter.kt")
         models = read(DATA / "TastingNoteModels.kt")

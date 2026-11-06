@@ -5,7 +5,7 @@ import kotlin.math.roundToInt
 
 /** Stable W-061 phase IDs. Labels are display-only and must never be persisted as IDs. */
 enum class TastingPhase(val label: String) {
-    AROMA_BEFORE_TASTING("Aroma (before tasting)"),
+    AROMA_BEFORE_TASTING("Aroma"),
     ENTRY("Entry"),
     MID_PALATE("Mid-palate"),
     FINISH("Finish");
