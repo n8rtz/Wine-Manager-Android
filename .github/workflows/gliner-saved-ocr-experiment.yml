@@ -16,7 +16,7 @@ on:
       - 'app/src/main/java/com/yourapp/wine/kb/**'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
   checks: write
 concurrency:
   group: gliner-saved-ocr-${{ github.ref }}
@@ -86,54 +86,3 @@ jobs:
             if ('${{ job.status }}' !== 'success' && fs.existsSync(trace)) text += `\n\nFailure trace (tail):\n\`\`\`\n${fs.readFileSync(trace, 'utf8').slice(-12000)}\n\`\`\``;
             await github.rest.checks.create({...context.repo, name:'GLiNER saved-OCR comparison results', head_sha:context.sha,
               status:'completed', conclusion:'neutral', output:{title:'GLiNER saved-OCR results',summary:text.slice(0,60000)}});
-
-  model-transfer:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - name: Fetch existing tested bundle into temporary runner storage
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/transfer"
-          gh release download gliner-small-int4-v1 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/transfer" \
-            -p gliner_small_int4.onnx -p tokenizer.json -p gliner_config.json
-      - name: Verify, split and stage temporary unreferenced blobs
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PYCODE'
-          import base64, hashlib, json, os, pathlib, subprocess
-          folder=pathlib.Path(os.environ['RUNNER_TEMP'])/'transfer'
-          expected={'gliner_small_int4.onnx':'a4d97745ba14a2b5f3606b30fa46a4c9a78e7b78a5f8b6c9e9fb35078d7c4a6d', 'tokenizer.json':'1731c431e5e851a4a73487b5bbfbef265b29ab64de190c402b4e6df9ce2cb0ab', 'gliner_config.json':'74fa245ddcaf2ad5ec1c611d197b829a352ada033d14c797564a67ffe2902365'}
-          manifest=[]
-          def stage(name,data):
-              request=folder/'request.json'
-              request.write_text(json.dumps({'content':base64.b64encode(data).decode(),'encoding':'base64'}))
-              result=subprocess.run(['gh','api',f"repos/{os.environ['GITHUB_REPOSITORY']}/git/blobs",'--method','POST','--input',str(request)],check=True,capture_output=True,text=True)
-              manifest.append({'name':name,'size':len(data),'sha256':hashlib.sha256(data).hexdigest(),'blob':json.loads(result.stdout)['sha']})
-              request.unlink()
-          for name,sha in expected.items():
-              path=folder/name
-              h=hashlib.sha256()
-              with path.open('rb') as f:
-                  while block:=f.read(1024*1024): h.update(block)
-              if h.hexdigest()!=sha: raise SystemExit('Bundle SHA mismatch: '+name)
-              if name.endswith('.onnx'):
-                  with path.open('rb') as f:
-                      index=1
-                      while chunk:=f.read(40_000_000):
-                          stage(f'gliner_small_int4.onnx.part-{index:02}',chunk);index+=1
-              else: stage(name,path.read_bytes())
-          (folder/'transfer.json').write_text(json.dumps(manifest))
-          PYCODE
-      - name: Surface temporary blob identifiers
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const p = `${process.env.RUNNER_TEMP}/transfer/transfer.json`;
-            const summary = fs.existsSync(p) ? fs.readFileSync(p,'utf8') : 'Transfer failed before all temporary blobs were staged.';
-            await github.rest.checks.create({...context.repo, name:'Temporary model transfer', head_sha:context.sha,
-              status:'completed', conclusion:'neutral', output:{title:'Temporary model transfer',summary}});
