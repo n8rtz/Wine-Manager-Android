@@ -33,19 +33,17 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.AddWineDraft
+import com.n8rtz.winetracker.scanner.AddWineDraftStore
 import com.n8rtz.winetracker.scanner.isBusy
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
-import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanFormState
-import com.yourapp.wine.ui.ScanFieldStatus
-import com.yourapp.wine.ui.ScanFieldChoices
-import com.yourapp.wine.ui.ScanReviewHeader
 import com.yourapp.wine.ui.LabelScanActions
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,30 +88,34 @@ fun AddWineScreen(
     }
     DisposableEffect(lifecycleOwner, scannerViewModel) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelPendingLabelCapture()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            scannerViewModel.cancelActiveLabelScan()
+            scannerViewModel.cancelPendingLabelCapture()
         }
     }
     
-    var maker by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
-    var vintage by remember { mutableStateOf("NV") }
-    var type by remember { mutableStateOf("Red") }
-    var quantity by remember { mutableStateOf("1") }
-    var price by remember { mutableStateOf("") }
-    var drinkingWindowStart by remember { mutableStateOf("") }
-    var drinkingWindowEnd by remember { mutableStateOf("") }
+    val draftStore = remember(context) { AddWineDraftStore(context) }
+    val initialDraft = remember { draftStore.load() }
+    var keepDraft by remember { mutableStateOf(true) }
+    var saving by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
+    var maker by remember { mutableStateOf(initialDraft.maker) }
+    var name by remember { mutableStateOf(initialDraft.name) }
+    var vintage by remember { mutableStateOf(initialDraft.vintage) }
+    var type by remember { mutableStateOf(initialDraft.type) }
+    var quantity by remember { mutableStateOf(initialDraft.quantity) }
+    var price by remember { mutableStateOf(initialDraft.price) }
+    var drinkingWindowStart by remember { mutableStateOf(initialDraft.windowStart) }
+    var drinkingWindowEnd by remember { mutableStateOf(initialDraft.windowEnd) }
 
-    // Cascading Location State
-    var selectedCountry by remember { mutableStateOf("") }
-    var selectedRegion by remember { mutableStateOf("") }
-    var selectedAppellation by remember { mutableStateOf("") }
+    var selectedCountry by remember { mutableStateOf(initialDraft.country) }
+    var selectedRegion by remember { mutableStateOf(initialDraft.region) }
+    var selectedAppellation by remember { mutableStateOf(initialDraft.subregion) }
 
-    var scanForm by remember { mutableStateOf(ScanFormState()) }
+    var scanForm by remember { mutableStateOf(initialDraft.formState()) }
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
     var lastScanId by remember { mutableStateOf(0L) }
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
@@ -127,19 +129,15 @@ fun AddWineScreen(
     }
     val formValues = { mapOf(FieldId.PRODUCER to maker, FieldId.WINE_NAME to name, FieldId.VINTAGE to vintage,
         FieldId.COUNTRY to selectedCountry, FieldId.REGION to selectedRegion, FieldId.SUBREGION to selectedAppellation) }
-    val selectChoice: (FieldId, String) -> Unit = { field, value ->
-        scanForm = scanForm.selectChoice(field, value)
-        syncFormToInputs()
+    val currentDraft = {
+        AddWineDraft(maker, name, vintage, type, quantity, price, drinkingWindowStart, drinkingWindowEnd,
+            selectedCountry, selectedRegion, selectedAppellation,
+            scanForm.fields.filterValues { it.edited }.keys)
     }
-    val dismissChoices: (FieldId) -> Unit = { field -> scanForm = scanForm.dismissChoices(field) }
+    SideEffect { if (keepDraft) draftStore.save(currentDraft()) }
     val clearField: (FieldId) -> Unit = { field ->
         scanForm = scanForm.clearSuggestion(field, lastScanReport?.fill, formValues(), currentYear)
         syncFormToInputs()
-    }
-    val fieldChoices: @Composable (FieldId) -> Unit = { field ->
-        ScanFieldChoices(scanForm.fields.getValue(field),
-            onSelectChoice = { value -> selectChoice(field, value) },
-            onDismissChoices = { dismissChoices(field) }, enabled = !labelScanState.isBusy)
     }
     val retake: () -> Unit = {
         if (!labelScanState.isBusy) {
@@ -152,11 +150,6 @@ fun AddWineScreen(
         if (value.isNotBlank()) IconButton(onClick = { clearField(field) }, enabled = !labelScanState.isBusy) {
             Icon(Icons.Default.Close, contentDescription = "Clear ${field.name.lowercase().replace('_', ' ')}")
         }
-    }
-    val fieldStatus: @Composable (FieldId) -> Unit = { field ->
-        ScanFieldStatus(scanForm.fields.getValue(field),
-            onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake,
-            enabled = !labelScanState.isBusy, showChoices = false)
     }
     LaunchedEffect(showLabelCamera) {
         if (showLabelCamera) {
@@ -181,7 +174,11 @@ fun AddWineScreen(
         lastScanReport = review.result
         lastScanId = review.requestId
         showLabelCamera = false
-        scannerViewModel.dismissLabelScan(review.requestId)
+        cameraError = if (review.result.fill.fields.values.all { it.state == com.yourapp.wine.fill.UiState.RED })
+            review.result.fill.overallHint ?: "Could not read the label — retake or enter details manually" else null
+        // The saved draft must exist before acknowledging/deleting the recovered scan result.
+        if (draftStore.save(currentDraft(), synchronous = true)) scannerViewModel.dismissLabelScan(review.requestId)
+        else cameraError = "Could not save the scan result — try again or enter details manually"
     }
 
     val availableCountries = (
@@ -244,11 +241,6 @@ fun AddWineScreen(
                     )
                 }
 
-                lastScanReport?.takeUnless { labelScanState.isBusy }?.let { report ->
-                    ScanReviewHeader(report = report, form = scanForm, scanId = lastScanId,
-                        allowDebugOverlay = BuildConfig.DEBUG, canRetake = !labelScanState.isBusy, onRetake = retake)
-                }
-                fieldStatus(FieldId.PRODUCER)
                 // Autocomplete Producer Search
                 var producerSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -298,9 +290,8 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.PRODUCER)
 
-                fieldStatus(FieldId.WINE_NAME)
+
                 // Autocomplete Wine Name Search
                 var nameSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -360,9 +351,8 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.WINE_NAME)
-                
-                fieldStatus(FieldId.VINTAGE)
+
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Vintage Dropdown
                     var vintageExpanded by remember(lastScanId) { mutableStateOf(false) }
@@ -428,12 +418,11 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.VINTAGE)
+
 
                 // Cascading Geography Section
                 Text("Geography", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-                
-                fieldStatus(FieldId.COUNTRY)
+
                 // Country Dropdown
                 var countryExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -473,11 +462,11 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.COUNTRY)
+
 
                 // Region stays visible and editable even when the fixture gazetteer has no suggestions.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    fieldStatus(FieldId.REGION)
+
                     var regionExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = regionExpanded,
@@ -515,7 +504,7 @@ fun AddWineScreen(
                             }
                         }
                     }
-                    fieldChoices(FieldId.REGION)
+
                 }
 
                 if(selectedAppellation.isNotBlank() && selectedRegion.isBlank()) {
@@ -523,7 +512,7 @@ fun AddWineScreen(
                 }
                 // Subregion stays visible and editable for boutique/unknown wines.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    fieldStatus(FieldId.SUBREGION)
+
                     var appellationExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = appellationExpanded,
@@ -557,7 +546,7 @@ fun AddWineScreen(
                             }
                         }
                     }
-                    fieldChoices(FieldId.SUBREGION)
+
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
@@ -597,9 +586,12 @@ fun AddWineScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                saveError?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 Button(
-                    enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
+                    enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !labelScanState.isBusy && !saving,
                     onClick = {
+                        saving = true
+                        saveError = null
                         viewModel.addWine(
                             maker = maker,
                             name = name,
@@ -611,9 +603,16 @@ fun AddWineScreen(
                             quantity = quantity.toIntOrNull() ?: 1,
                             price = price.toDoubleOrNull(),
                             drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
+                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                            onComplete = { success ->
+                                saving = false
+                                if (success) {
+                                    keepDraft = false
+                                    draftStore.clear()
+                                    onWineAdded()
+                                } else saveError = "Could not save the wine. Your draft is still here; please try again."
+                            }
                         )
-                        onWineAdded()
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     shape = RoundedCornerShape(8.dp)
@@ -635,7 +634,7 @@ fun AddWineScreen(
                 if (ready) cameraError = null
             },
             onDismiss = {
-                scannerViewModel.cancelActiveLabelScan()
+                scannerViewModel.cancelPendingLabelCapture()
                 showLabelCamera = false
                 cameraReady = false
             }
@@ -745,7 +744,6 @@ private fun LabelScanCameraDialog(
                     }
 
                     if (scanState is LabelScanState.Error || cameraError != null) {
-                        Text("RED · No fields filled", color = Color(0xffffb4ab), style = MaterialTheme.typography.labelLarge)
                         TextButton(onClick = onDismiss) { Text("Enter manually", color = Color.White) }
                     }
                     when (scanState) {
@@ -760,10 +758,10 @@ private fun LabelScanCameraDialog(
                         }
                         is LabelScanState.ImportingPhoto -> LabelScanProgress("Opening selected photo…")
                         is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
-                        is LabelScanState.Processing -> LabelScanProgress("Reading the label offline… This can take a little while; review the suggestions when finished.")
+                        is LabelScanState.Processing -> LabelScanProgress("Reading the label on this device… You can leave the app while it finishes.")
                         is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
                         is LabelScanState.Review -> Text(
-                            "Scan complete. Review the suggestions.",
+                            "Scan complete.",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium
                         )

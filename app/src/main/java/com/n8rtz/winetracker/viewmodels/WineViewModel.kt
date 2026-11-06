@@ -218,13 +218,22 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         quantity: Int,
         price: Double?,
         drinkingWindowStart: Int? = null,
-        drinkingWindowEnd: Int? = null
+        drinkingWindowEnd: Int? = null,
+        onComplete: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
-            repository.addWine(
-                maker, name, vintage, type, country, region, subregion, quantity, price,
-                drinkingWindowStart, drinkingWindowEnd
-            )
+            try {
+                repository.addWine(
+                    maker, name, vintage, type, country, region, subregion, quantity, price,
+                    drinkingWindowStart, drinkingWindowEnd
+                )
+                onComplete(true)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e("WineViewModel", "Unable to save wine", error)
+                onComplete(false)
+            }
         }
     }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }

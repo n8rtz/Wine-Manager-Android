@@ -59,12 +59,12 @@ fun LabelScanCameraPreview(
 
     DisposableEffect(lifecycleOwner, scannerViewModel) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelPendingLabelCapture()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            scannerViewModel.cancelActiveLabelScan()
+            scannerViewModel.cancelPendingLabelCapture()
             bindingState.value?.close()
             cameraReady = false
             latestOnCameraReadyChanged.value(false)

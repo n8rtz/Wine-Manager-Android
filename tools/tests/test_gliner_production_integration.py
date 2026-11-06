@@ -13,8 +13,11 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         vm=self.text(APP/'com/n8rtz/winetracker/viewmodels/ScannerViewModel.kt')
         self.assertIn('onLabelPhotoCaptured',vm)
         self.assertIn('onLabelPhotoSelected',vm)
-        self.assertEqual(vm.count('ProductionLabelScanner.scan(getApplication(),photo.file,started,source)'),1)
-        self.assertIn('result.copy(diagnostics',vm)
+        self.assertIn('ProductionLabelScanSession.captured',vm)
+        self.assertIn('ProductionLabelScanSession.selected',vm)
+        session=self.text(APP/'com/n8rtz/winetracker/scanner/ProductionLabelScanSession.kt')
+        self.assertEqual(session.count('ProductionLabelScanner.scan(app, photo.file, started, source)'),1)
+        self.assertIn('result.copy(diagnostics',session)
         manager=self.text(APP/'com/n8rtz/winetracker/scanner/ScannerManager.kt')
         self.assertIn('ProductionLabelScanner.scan(appContext,file,shutterMs,ScanInputSource.FILE)',manager)
 
