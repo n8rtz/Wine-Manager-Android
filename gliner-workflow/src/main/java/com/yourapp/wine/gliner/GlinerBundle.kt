@@ -17,6 +17,8 @@ data class GlinerBundleFile(
     val bytes:Long?,
     val sha256:String?,
     val url:String?,
+    val assetEncoding:String = "raw",
+    val assetParts:List<String> = emptyList(),
 )
 
 data class GlinerFileState(
@@ -34,8 +36,8 @@ data class GlinerFileState(
 
 /**
  * Result of resolving the GLiNER bundle. Nothing here downloads anything: the lab never reaches
- * the network at run time. Files are either shipped in `assets/gliner-lab-v1` by the opt-in
- * Gradle task, or imported by the user from storage into app-private storage.
+ * the network at run time. Files are shipped in `assets/gliner-lab-v1` and are installed
+ * into app-private storage automatically, or imported from storage by the lab user.
  */
 data class GlinerBundleStatus(
     val files:List<GlinerFileState>,
@@ -97,7 +99,11 @@ object GlinerBundle {
                 GlinerBundleFile(name,entry.optString("role","model"),
                     entry.optLong("bytes",-1L).takeIf { it>0 },
                     entry.optString("sha256").takeIf { it.length==64 },
-                    entry.optString("url").takeIf { it.startsWith("http") })
+                    entry.optString("url").takeIf { it.startsWith("http") },
+                    entry.optString("asset_encoding","raw"),
+                    entry.optJSONArray("asset_parts")?.let { parts ->
+                        (0 until parts.length()).map { parts.getString(it) }
+                    }.orEmpty())
             }
             if(parsed.isEmpty()) defaults else parsed
         }.getOrDefault(defaults)
@@ -106,14 +112,16 @@ object GlinerBundle {
     fun privateDir(context:Context):File =
         File(context.noBackupFilesDir,PRIVATE_FOLDER).apply { check(isDirectory || mkdirs()) { "Cannot create the GLiNER model folder" } }
 
-    fun status(context:Context):GlinerBundleStatus {
+    @Synchronized
+    fun status(context:Context,checkActive:()->Unit = {}):GlinerBundleStatus {
+        checkActive()
         val prefs=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE)
-        val states=manifest(context).map { entry -> resolve(context,prefs,entry) }
+        val states=manifest(context).map { entry -> resolve(context,prefs,entry,checkActive) }
         val model=states.firstOrNull { it.name==MODEL_FILE && it.present && (!it.pinned || it.matchesPin) }
             ?.let { File(privateDir(context),it.name) }
         val tokenizer=states.firstOrNull { it.name==TOKENIZER_FILE && it.present }?.let { File(privateDir(context),it.name) }
         val config=states.firstOrNull { it.name==CONFIG_FILE && it.present }?.let { File(privateDir(context),it.name) }
-        val int4=model!=null && isInt4(prefs,model)
+        val int4=model!=null && isInt4(prefs,model,checkActive)
         val notes=mutableListOf<String>()
         states.filter { it.pinned && it.present && !it.matchesPin }.forEach { notes += "${it.name}: ${it.issue}" }
         if(states.any { it.present && !it.pinned }) notes += "Bundle is not pinned yet: only file shape is verified, not the bytes"
@@ -126,33 +134,34 @@ object GlinerBundle {
      * Private copy wins; otherwise the bundled asset is copied once into private storage (ONNX
      * Runtime needs a readable file it can memory-map, and assets are compressed inside the APK).
      */
-    private fun resolve(context:Context,prefs:android.content.SharedPreferences,entry:GlinerBundleFile):GlinerFileState {
+    private fun resolve(context:Context,prefs:android.content.SharedPreferences,entry:GlinerBundleFile,checkActive:()->Unit):GlinerFileState {
         val target=File(privateDir(context),entry.name)
-        if(target.isFile) return state(prefs,entry,target,"imported")
-        val assetAvailable=runCatching { context.assets.open("$ASSET_ROOT/${entry.name}").close();true }.getOrDefault(false)
-        if(!assetAvailable) {
-            return GlinerFileState(entry.name,entry.role,false,"absent",0L,entry.bytes,"",entry.sha256!=null,false,
-                if(entry.sha256==null) "Not provisioned yet" else "Missing")
+        val existing=if(target.isFile) state(prefs,entry,target,"private",checkActive) else null
+        if(existing!=null && (!existing.pinned || existing.matchesPin)) return existing
+        // Prefer the packaged source, reconstructing split gzip streams once into private storage.
+        // A stale/bad imported file is replaced only after the bundled copy passes both pins.
+        val parts=entry.assetParts.ifEmpty { listOf(entry.name) }
+        if(parts.any { it.isBlank() || it.contains('/') || it.contains('\\') || it==".." }) {
+            return existing ?: GlinerFileState(entry.name,entry.role,false,"asset",0L,entry.bytes,"",entry.sha256!=null,false,"Invalid bundled asset name")
         }
+        val available=parts.all { name -> runCatching { context.assets.open("$ASSET_ROOT/$name").close();true }.getOrDefault(false) }
+        if(!available) return existing ?: GlinerFileState(entry.name,entry.role,false,"absent",0L,entry.bytes,"",entry.sha256!=null,false,"Missing bundled asset")
         val copied=runCatching {
-            val temporary=File(privateDir(context),"${entry.name}.${UUID.randomUUID()}.part")
-            try {
-                context.assets.open("$ASSET_ROOT/${entry.name}").use { input ->
-                    FileOutputStream(temporary).use { output -> input.copyTo(output,65536) }
-                }
-                check(temporary.renameTo(target)) { "Cannot install bundled $entry.name" }
-                true
-            } finally { temporary.delete() }
-        }.getOrDefault(false)
-        if(!copied) {
-            return GlinerFileState(entry.name,entry.role,false,"asset",0L,entry.bytes,"",entry.sha256!=null,false,
-                "Bundled asset could not be copied into private storage")
-        }
-        return state(prefs,entry,target,"asset")
+            val expectedBytes=entry.bytes ?: error("Bundled asset size is not pinned")
+            val expectedSha=entry.sha256 ?: error("Bundled asset hash is not pinned")
+            GlinerBundledAssetInstaller.install(parts.map { name -> { context.assets.open("$ASSET_ROOT/$name") } },
+                entry.assetEncoding,target,expectedBytes,expectedSha,checkActive)
+        }.fold({ true },{ error ->
+            if(error is java.util.concurrent.CancellationException) throw error
+            false
+        })
+        if(!copied) return existing ?: GlinerFileState(entry.name,entry.role,false,"asset",0L,entry.bytes,"",entry.sha256!=null,false,
+            "Bundled asset could not be installed or verified")
+        return state(prefs,entry,target,"asset",checkActive)
     }
 
-    private fun state(prefs:android.content.SharedPreferences,entry:GlinerBundleFile,file:File,source:String):GlinerFileState {
-        val sha=sha256(prefs,file)
+    private fun state(prefs:android.content.SharedPreferences,entry:GlinerBundleFile,file:File,source:String,checkActive:()->Unit):GlinerFileState {
+        val sha=sha256(prefs,file,checkActive)
         val matches=entry.sha256==null || entry.sha256==sha
         val sizeMatches=entry.bytes==null || entry.bytes==file.length()
         val issue=when {
@@ -164,13 +173,13 @@ object GlinerBundle {
             matches && sizeMatches,issue)
     }
 
-    fun sha256(prefs:android.content.SharedPreferences,file:File):String {
+    fun sha256(prefs:android.content.SharedPreferences,file:File,checkActive:()->Unit = {}):String {
         val key="$HASH_PREFIX${file.absolutePath}:${file.length()}:${file.lastModified()}"
         prefs.getString(key,null)?.let { return it }
         val digest=MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
             val buffer=ByteArray(65536)
-            while(true) { val read=input.read(buffer);if(read<0) break;digest.update(buffer,0,read) }
+            while(true) { checkActive();val read=input.read(buffer);if(read<0) break;digest.update(buffer,0,read) }
         }
         val value=digest.digest().joinToString("") { "%02x".format(it) }
         prefs.edit().putString(key,value).apply()
@@ -182,7 +191,7 @@ object GlinerBundle {
      * op name is an ASCII string in the graph protobuf, so a streaming scan is a cheap, reliable
      * "is this really the INT4 file" check that does not require loading the graph first.
      */
-    fun isInt4(prefs:android.content.SharedPreferences,file:File):Boolean {
+    fun isInt4(prefs:android.content.SharedPreferences,file:File,checkActive:()->Unit = {}):Boolean {
         val key="$INT4_PREFIX${file.absolutePath}:${file.length()}:${file.lastModified()}"
         prefs.getString(key,null)?.let { return it=="true" }
         val needle="MatMulNBits".toByteArray(Charsets.US_ASCII)
@@ -191,6 +200,7 @@ object GlinerBundle {
         file.inputStream().use { input ->
             val buffer=ByteArray(1 shl 20)
             while(!found) {
+                checkActive()
                 val read=input.read(buffer)
                 if(read<0) break
                 val window=ByteArray(carry.size+read)
@@ -220,6 +230,7 @@ object GlinerBundle {
      * the three declared names are accepted, and a JSON/ONNX sanity check runs before the rename so
      * a renamed screenshot cannot become "the model".
      */
+    @Synchronized
     fun import(context:Context,uris:List<Uri>):ImportOutcome {
         val allowed=manifest(context).map { it.name }.toSet()
         val imported=mutableListOf<String>()
@@ -252,6 +263,7 @@ object GlinerBundle {
         return ImportOutcome(imported,rejected,message)
     }
 
+    @Synchronized
     fun clear(context:Context) {
         privateDir(context).listFiles()?.forEach { it.delete() }
     }

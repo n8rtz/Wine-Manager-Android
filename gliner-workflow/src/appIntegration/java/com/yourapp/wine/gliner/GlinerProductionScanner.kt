@@ -13,6 +13,8 @@ import com.yourapp.wine.textlab.TextLabWineExtraction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import java.io.File
 
 /** One production photo, through exactly the same OCR and v10 post-processing as the GLiNER lab. */
@@ -27,9 +29,15 @@ internal object GlinerProductionScanner {
         var model:GlinerOnnxModel?=null
         var warm:TextLabWineExtraction.WarmSession?=null
         try {
-            val status=GlinerBundle.status(context)
-            if(!status.ready || !status.int4 || status.config==null) {
-                val why=if(!status.ready) "model bundle missing or invalid" else if(!status.int4) "model is not INT4" else "model config missing"
+            val scanContext=currentCoroutineContext()
+            val status=GlinerBundle.status(context) { scanContext.ensureActive() }
+            if(!status.ready || !status.int4 || status.config==null || status.files.any { !it.pinned || !it.matchesPin }) {
+                val why=when {
+                    !status.ready -> "model bundle missing or invalid"
+                    !status.int4 -> "model is not INT4"
+                    status.config==null -> "model config missing"
+                    else -> "model bundle is not pinned"
+                }
                 return@withContext Attempt.Unavailable(why)
             }
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext Attempt.Unavailable("model setup exceeded scan budget")
@@ -56,8 +64,13 @@ internal object GlinerProductionScanner {
                 reads=tokens.take(80).map { ScanReadSample(it.textRaw,it.score,it.scoreIsEstimated,it.engineId,it.variantId,"FULL_PHOTO",true) },
                 totalReadings=tokens.size,mappingReceived=tokens.size)
             val fill=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions).let { base ->
-                if(result.engineReadings.values.any { it==0 }) base.copy(overallHint=base.overallHint+
-                    " One OCR engine returned no text; check this result carefully.") else base
+                // A missing OCR reading is not evidence of agreement. Keep uncertain values
+                // reviewable, without exposing the implementation as a separate scan experience.
+                if(result.engineReadings.values.any { it==0 }) base.copy(fields=base.fields.mapValues { (_,candidate) ->
+                    if(candidate.state==com.yourapp.wine.fill.UiState.GREEN)
+                        candidate.copy(state=com.yourapp.wine.fill.UiState.YELLOW,reason="Check against the label")
+                    else candidate
+                }) else base
             }
             Attempt.Success(ScanReport(fill,
                 tokens,result.originalWidth,result.originalHeight,result.workingWidth,result.workingHeight,null,null,

@@ -59,8 +59,12 @@ class GlinerLabStructureTests(unittest.TestCase):
         roles = {entry["role"] for entry in manifest["files"]}
         self.assertEqual(roles, {"model", "tokenizer", "config"})
         for entry in manifest["files"]:
-            self.assertIsNone(entry["bytes"], "shipping repository must not claim a size it has not pinned")
-            self.assertIsNone(entry["sha256"], "shipping repository must not claim a hash it has not pinned")
+            self.assertGreater(entry["bytes"], 0)
+            self.assertRegex(entry["sha256"], r"^[0-9a-f]{64}$")
+            self.assertTrue(entry["asset_parts"])
+            for part in entry["asset_parts"]:
+                self.assertTrue((ASSETS / part).is_file(), part)
+                self.assertLess((ASSETS / part).stat().st_size, 90_000_000)
         self.assertIn("int4", manifest["model"]["quantization"])
         self.assertIn("MatMulNBits", manifest["model"]["quantization"])
         self.assertEqual(manifest["io_contract"]["inputs"],
@@ -186,13 +190,16 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn('android:name="com.yourapp.wine.gliner.GlinerLabActivity"', manifest)
         self.assertIn('android:exported="false"', manifest)
 
-    def test_build_time_provisioning_is_opt_in_and_pin_gated(self):
+    def test_normal_build_bundles_pinned_assets_without_network(self):
         gradle = self.read(ROOT / "app/build.gradle.kts")
-        self.assertIn('gradleProperty("glinerLabAssets")', gradle)
-        block = gradle.split("abstract class PrepareGlinerLabBundle", 1)[1].split("val prepareGlinerLab", 1)[0]
-        self.assertIn("GLiNER bundle is not pinned", block)
-        self.assertIn("checksum mismatch", block)
-        self.assertIn("No placeholder model is allowed", block)
+        self.assertNotIn('gradleProperty("glinerLabAssets")', gradle)
+        bundle = self.read(GLINER / "GlinerBundle.kt")
+        installer = self.read(GLINER / "GlinerBundledAssetInstaller.kt")
+        self.assertIn("GlinerBundledAssetInstaller.install", bundle)
+        self.assertIn('entry.assetParts', bundle)
+        self.assertIn('checksum or size mismatch', installer)
+        self.assertIn('GZIPInputStream', installer)
+        self.assertNotIn('java.net', installer)
 
     def test_fetch_tool_quantizes_int4_and_pins_hashes(self):
         tool = self.read(ROOT / "tools/fetch-gliner-small-int4.py")

@@ -159,7 +159,7 @@ internal fun GlinerLabScreen(
             }
             Row {
                 TextButton(onClick=onImport,enabled=!state.running) { Text("Import") }
-                TextButton(onClick=onClearBundle,enabled=!state.running) { Text("Remove") }
+                TextButton(onClick=onClearBundle,enabled=!state.running) { Text("Reset cache") }
                 TextButton(onClick=onRefresh,enabled=!state.running) { Text("Re-check") }
             }
             Row(Modifier.horizontalScroll(rememberScrollState()),verticalAlignment=Alignment.CenterVertically) {

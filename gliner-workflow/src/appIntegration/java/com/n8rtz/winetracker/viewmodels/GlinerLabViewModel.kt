@@ -168,7 +168,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     private val app:Application=application
     private val session=GlinerLabSession.get()
     private val mutable:MutableStateFlow<GlinerLabState> = session.mutable
-        ?: MutableStateFlow(GlinerLabState(bundle=GlinerBundle.status(application))).also { session.mutable=it }
+        ?: MutableStateFlow(GlinerLabState(bundle=GlinerBundleStatus(emptyList(),null,null,null,false,listOf("Checking bundled model")))).also { session.mutable=it }
     val state=mutable.asStateFlow()
     private val workFolder=File(application.cacheDir,"gliner-lab-run")
     private var job:Job?
@@ -206,8 +206,10 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     fun refresh() {
-        val bundle=GlinerBundle.status(app)
-        mutable.update { it.copy(bundle=bundle) }
+        session.scope.launch {
+            val bundle=GlinerBundle.status(app)
+            mutable.update { it.copy(bundle=bundle) }
+        }
         session.scope.launch {
             val samples=runCatching { GlinerLabCorpus.load(app) }
                 .getOrElse {
@@ -475,8 +477,11 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     fun dismissReviewPrompt() { mutable.update { it.copy(reviewPrompt=false) } }
 
     fun clearBundle() {
-        GlinerBundle.clear(app)
-        mutable.update { it.copy(bundle=GlinerBundle.status(app),message="Imported GLiNER files removed") }
+        session.scope.launch {
+            GlinerBundle.clear(app)
+            val bundle=GlinerBundle.status(app)
+            mutable.update { it.copy(bundle=bundle,message="Cached files removed; bundled model restored") }
+        }
     }
 
     fun setThreshold(delta:Float) {

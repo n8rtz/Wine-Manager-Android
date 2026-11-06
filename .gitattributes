@@ -6,3 +6,7 @@ app/src/main/assets/text-lab-paddle-v1/ppocrv6_dict.utf8 -text
 opencv-minimal/prebuilt/** -text
 tools/build-opencv-minimal.py -text
 tools/android_native_toolchain.py -text
+
+# Compressed model assets are byte-exact and must never undergo text conversion.
+app/src/main/assets/gliner-lab-v1/*.gz -text
+app/src/main/assets/gliner-lab-v1/*.gz.part-* -text
