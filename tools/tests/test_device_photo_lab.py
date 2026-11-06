@@ -49,7 +49,9 @@ class DevicePhotoLabContracts(unittest.TestCase):
     def test_result_cards_include_actual_photo_and_every_parameter(self):
         ui = (APP / 'ui/screens/DevicePhotoLabScreen.kt').read_text()
         result = (PHONE / 'DevicePhotoLabResult.kt').read_text()
-        self.assertIn('items(state.photos,key={ it.index })', ui)
+        # Photo and export indices share a LazyColumn. Bare numeric indices collide.
+        self.assertIn('items(state.photos,key={ "photo-${it.index}" })', ui)
+        self.assertIn('items(state.exports.withIndex().toList(),key={ "export-${it.index}" })', ui)
         self.assertIn('photo.localPhoto ?: photo.uri', ui)
         self.assertIn('SelectionContainer', ui)
         self.assertIn('Copy all results', ui)
