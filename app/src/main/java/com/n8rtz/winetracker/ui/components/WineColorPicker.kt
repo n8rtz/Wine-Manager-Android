@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -149,6 +149,42 @@ fun WineColorPicker(
 }
 
 @Composable
+private fun ColorPickerDialog(
+    draft: HsvColor,
+    onDraftChange: (HsvColor) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                    }
+                    IconButton(onClick = onConfirm) {
+                        Icon(Icons.Default.Check, contentDescription = "Done")
+                    }
+                }
+                WineColorPicker(
+                    color = draft,
+                    onColorChange = { onDraftChange(it ?: HsvColor(0f, 0f, 1f)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
     val wine = Color(color.toArgb())
     val outline = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
@@ -158,25 +194,47 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
         val height = size.height
         val centerX = width / 2f
         val top = height * 0.07f
-        val bowlBottom = height * 0.58f
-        val left = width * 0.12f
-        val right = width * 0.88f
-        val sideControlY = top + (bowlBottom - top) * 0.58f
-        val bottomHalfWidth = width * 0.18f
+        val bowlBottom = height * 0.57f
+        val bowlHeight = bowlBottom - top
+        // Bordeaux silhouette: narrow rim, broad upper shoulders, tapered lower bowl.
+        val rimLeft = width * 0.20f
+        val rimRight = width * 0.80f
+        val bowlLeft = width * 0.07f
+        val bowlRight = width * 0.93f
+        val shoulderY = top + bowlHeight * 0.32f
+        val upperControlY = top + bowlHeight * 0.12f
+        val lowerControlY = top + bowlHeight * 0.70f
+        val bottomHalfWidth = width * 0.13f
         val strokeWidth = 2.dp.toPx()
         val rimHeight = 4.dp.toPx()
 
         val bowlFill = Path().apply {
-            moveTo(left, top)
-            cubicTo(left, sideControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
-            cubicTo(centerX + bottomHalfWidth, bowlBottom, right, sideControlY, right, top)
+            moveTo(rimLeft, top)
+            cubicTo(
+                rimLeft - width * 0.01f,
+                upperControlY,
+                bowlLeft,
+                upperControlY,
+                bowlLeft,
+                shoulderY
+            )
+            cubicTo(bowlLeft, lowerControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
+            cubicTo(centerX + bottomHalfWidth, bowlBottom, bowlRight, lowerControlY, bowlRight, shoulderY)
+            cubicTo(
+                bowlRight,
+                upperControlY,
+                rimRight + width * 0.01f,
+                upperControlY,
+                rimRight,
+                top
+            )
             close()
         }
         drawPath(bowlFill, Color.White.copy(alpha = 0.25f))
 
-        val liquidTop = top + (bowlBottom - top) * 0.53f
-        val liquidLeft = centerX - width * 0.22f
-        val liquidRight = centerX + width * 0.22f
+        val liquidTop = top + bowlHeight * 0.53f
+        val liquidLeft = centerX - width * 0.25f
+        val liquidRight = centerX + width * 0.25f
         val liquidBottom = bowlBottom - strokeWidth
         val liquid = Path().apply {
             moveTo(liquidLeft, liquidTop)
@@ -202,16 +260,18 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
         drawPath(liquid, wine)
 
         val bowlSides = Path().apply {
-            moveTo(left, top)
-            cubicTo(left, sideControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
+            moveTo(rimLeft, top)
+            cubicTo(rimLeft - width * 0.01f, upperControlY, bowlLeft, upperControlY, bowlLeft, shoulderY)
+            cubicTo(bowlLeft, lowerControlY, centerX - bottomHalfWidth, bowlBottom, centerX, bowlBottom)
             moveTo(centerX, bowlBottom)
-            cubicTo(centerX + bottomHalfWidth, bowlBottom, right, sideControlY, right, top)
+            cubicTo(centerX + bottomHalfWidth, bowlBottom, bowlRight, lowerControlY, bowlRight, shoulderY)
+            cubicTo(bowlRight, upperControlY, rimRight + width * 0.01f, upperControlY, rimRight, top)
         }
         drawPath(bowlSides, outline, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
         drawOval(
             color = outline,
-            topLeft = Offset(left, top - rimHeight / 2f),
-            size = Size(right - left, rimHeight),
+            topLeft = Offset(rimLeft, top - rimHeight / 2f),
+            size = Size(rimRight - rimLeft, rimHeight),
             style = Stroke(width = strokeWidth)
         )
         drawLine(
@@ -231,8 +291,8 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
         )
         drawLine(
             color = Color.White.copy(alpha = 0.8f),
-            start = Offset(left + width * 0.10f, top + height * 0.10f),
-            end = Offset(left + width * 0.12f, top + height * 0.24f),
+            start = Offset(bowlLeft + width * 0.10f, top + height * 0.10f),
+            end = Offset(bowlLeft + width * 0.12f, top + height * 0.24f),
             strokeWidth = strokeWidth * 0.75f,
             cap = StrokeCap.Round
         )
@@ -243,7 +303,8 @@ private fun WineGlassPreview(color: HsvColor, modifier: Modifier = Modifier) {
 private fun FloatingColorPreviewSwatch(
     color: HsvColor,
     position: Offset?,
-    controlSize: IntSize
+    controlSize: IntSize,
+    fixedY: Float? = null
 ) {
     val pointer = position ?: return
     if (controlSize.width <= 0) return
@@ -251,10 +312,10 @@ private fun FloatingColorPreviewSwatch(
     val density = LocalDensity.current
     val swatchSize = 56.dp
     val swatchPx = with(density) { swatchSize.roundToPx() }
-    val gapPx = with(density) { 12.dp.roundToPx() }
+    val gapPx = with(density) { 28.dp.roundToPx() }
     val left = (pointer.x.roundToInt() - swatchPx / 2)
         .coerceIn(0, (controlSize.width - swatchPx).coerceAtLeast(0))
-    val top = pointer.y.roundToInt() - swatchPx - gapPx
+    val top = (fixedY ?: pointer.y).roundToInt() - swatchPx - gapPx
 
     Popup(
         alignment = Alignment.TopStart,
@@ -330,7 +391,12 @@ private fun HueStrip(
                 center = Offset(size.width * wineHueFraction(hue), size.height / 2f)
             )
         }
-        FloatingColorPreviewSwatch(color, previewPosition, controlSize)
+        FloatingColorPreviewSwatch(
+            color,
+            previewPosition,
+            controlSize,
+            fixedY = controlSize.height / 2f
+        )
     }
 }
 
@@ -466,29 +532,14 @@ fun NoteColorField(
     }
 
     if (showPicker && !readOnly) {
-        AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text("Color") },
-            text = {
-                WineColorPicker(
-                    color = draft,
-                    onColorChange = { draft = it ?: HsvColor(0f, 0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                )
+        ColorPickerDialog(
+            draft = draft,
+            onDraftChange = { draft = it },
+            onConfirm = {
+                onNoteColorChange(draft)
+                showPicker = false
             },
-            confirmButton = {
-                IconButton(onClick = {
-                    onNoteColorChange(draft)
-                    showPicker = false
-                }) {
-                    Icon(Icons.Default.Check, contentDescription = "Done")
-                }
-            },
-            dismissButton = {
-                IconButton(onClick = { showPicker = false }) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel")
-                }
-            }
+            onDismiss = { showPicker = false }
         )
     }
 }
@@ -524,29 +575,14 @@ fun DefaultColorField(
     }
 
     if (showPicker) {
-        AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text("Color") },
-            text = {
-                WineColorPicker(
-                    color = draft,
-                    onColorChange = { draft = it ?: HsvColor(0f, 0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                )
+        ColorPickerDialog(
+            draft = draft,
+            onDraftChange = { draft = it },
+            onConfirm = {
+                onColorChange(draft)
+                showPicker = false
             },
-            confirmButton = {
-                IconButton(onClick = {
-                    onColorChange(draft)
-                    showPicker = false
-                }) {
-                    Icon(Icons.Default.Check, contentDescription = "Done")
-                }
-            },
-            dismissButton = {
-                IconButton(onClick = { showPicker = false }) {
-                    Icon(Icons.Default.Close, contentDescription = "Cancel")
-                }
-            }
+            onDismiss = { showPicker = false }
         )
     }
 }
