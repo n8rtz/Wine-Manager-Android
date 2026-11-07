@@ -68,18 +68,26 @@ fun SectionedSensoryFields(
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             when (phase) {
                 TastingPhase.AROMA_BEFORE_TASTING -> {
-                    NoteColorField(
-                        definitionColor = definitionColor,
-                        noteColor = normalized.colorHsv,
-                        onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
-                        readOnly = readOnly
-                    )
-                    AromaWheelLauncherCard(
-                        selectedIds = selectedAromaIds,
-                        onClick = onOpenWheel,
-                        enabled = !readOnly,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        NoteColorField(
+                            definitionColor = definitionColor,
+                            noteColor = normalized.colorHsv,
+                            onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
+                            readOnly = readOnly,
+                            inline = true
+                        )
+                        AromaWheelLauncherCard(
+                            selectedIds = selectedAromaIds,
+                            onClick = onOpenWheel,
+                            enabled = !readOnly,
+                            compact = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     if (legacyAromasUnresolved && !readOnly) {
                         TextButton(onClick = onAssignLegacy) { Text("Assign") }
                     }

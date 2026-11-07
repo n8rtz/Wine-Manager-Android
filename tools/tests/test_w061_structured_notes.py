@@ -107,6 +107,9 @@ class W061SourceContractTests(unittest.TestCase):
         )[0]
         default_field = picker.split("fun DefaultColorField(", 1)[1]
         self.assertIn('Text("Color", style = MaterialTheme.typography.bodyMedium)', note_field)
+        self.assertIn("inline: Boolean = false", note_field)
+        self.assertIn("modifier = if (inline) modifier else modifier.fillMaxWidth()", note_field)
+        self.assertIn("if (!inline) Spacer(Modifier.weight(1f))", note_field)
         self.assertLess(note_field.index('Text("Color"'), note_field.index("ColorSwatchButton("))
         self.assertLess(note_field.index("ColorSwatchButton("), note_field.index("Spacer(Modifier.weight(1f))"))
         self.assertLess(
@@ -158,6 +161,27 @@ class W061SourceContractTests(unittest.TestCase):
         )
         self.assertIn(".filter { it in assignments.getValue(id) }", editor)
         self.assertIn("sameDescriptorCanBeAssignedToMultiplePhasesIndependently", model_test)
+
+    def test_color_and_aroma_launcher_share_a_row_but_keep_separate_surfaces(self):
+        sections = read(UI / "components/TastingPhaseSections.kt")
+        wheel = read(UI / "components/AromaWheelDialog.kt")
+        aroma_row = sections.split("TastingPhase.AROMA_BEFORE_TASTING -> {", 1)[1].split(
+            "if (legacyAromasUnresolved", 1
+        )[0]
+        launcher = wheel.split("fun AromaWheelLauncherCard(", 1)[1].split(
+            "private fun AromaSummaryChipRow(", 1
+        )[0]
+        self.assertIn("Row(", aroma_row)
+        self.assertIn("verticalAlignment = Alignment.Top", aroma_row)
+        self.assertIn("NoteColorField(", aroma_row)
+        self.assertIn("inline = true", aroma_row)
+        self.assertIn("AromaWheelLauncherCard(", aroma_row)
+        self.assertIn("compact = true", aroma_row)
+        self.assertIn("modifier = Modifier.weight(1f)", aroma_row)
+        self.assertLess(aroma_row.index("NoteColorField("), aroma_row.index("AromaWheelLauncherCard("))
+        self.assertIn(".background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))", launcher)
+        self.assertIn("AromaWheelGlyph(", launcher)
+        self.assertIn('"Aroma wheel"', launcher)
 
     def test_editor_uses_sectioned_phase_aware_controls(self):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")

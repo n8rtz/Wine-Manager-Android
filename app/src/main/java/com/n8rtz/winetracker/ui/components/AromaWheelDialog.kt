@@ -111,39 +111,52 @@ fun AromaWheelLauncherCard(
     selectedIds: List<String>,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    compact: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val glyphSize = if (compact) 36.dp else 44.dp
+    val titleStyle = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
+    val arrowSize = if (compact) 20.dp else 24.dp
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
-            .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp)
+            .padding(
+                start = if (compact) 8.dp else 14.dp,
+                end = if (compact) 6.dp else 8.dp,
+                top = if (compact) 6.dp else 10.dp,
+                bottom = if (compact) 6.dp else 10.dp
+            )
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AromaWheelGlyph(
                     selectedIds = selectedIds.toSet(),
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(glyphSize)
                         .semantics { contentDescription = "Aroma wheel selection overview" }
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(if (compact) 8.dp else 12.dp))
                 Text(
                     "Aroma wheel",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = titleStyle,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(arrowSize)
                 )
             }
             if (selectedIds.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
                 AromaSummaryChipRow(
                     ids = selectedIds,
                     modifier = Modifier.fillMaxWidth()

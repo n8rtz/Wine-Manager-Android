@@ -522,14 +522,15 @@ fun NoteColorField(
     noteColor: HsvColor?,
     onNoteColorChange: (HsvColor?) -> Unit,
     modifier: Modifier = Modifier,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    inline: Boolean = false
 ) {
     var showPicker by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf(noteColor ?: definitionColor ?: HsvColor(0f, 0f, 1f)) }
     val effective = resolveEffectiveColor(noteColor, definitionColor)
 
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = if (inline) modifier else modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -544,7 +545,7 @@ fun NoteColorField(
             }
         )
         if (!readOnly && noteColor != null) {
-            Spacer(Modifier.weight(1f))
+            if (!inline) Spacer(Modifier.weight(1f))
             IconButton(onClick = { onNoteColorChange(null) }) {
                 Icon(Icons.Default.Close, contentDescription = "Clear tasting-note color override")
             }
