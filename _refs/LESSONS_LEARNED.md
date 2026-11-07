@@ -116,4 +116,9 @@
 * **Cause:** Allowing direct DAO access in ViewModels for "quick fixes."
 * **Fix:** Centralized all database operations in `WineRepository`. Updated all ViewModels to use the Repository exclusively. Removed all `db` and `Dao` references from the UI layer.
 * **Key Takeaway:** The Repository is the single source of truth. Bypassing it for convenience leads to technical debt. Strict enforcement early on prevents fragmentation.
-
+
+## [Bug: Silent startup crash from a branch schema behind main] - 2026-11-07
+* **Symptom:** App opened then instantly closed on startup with no error message, on a phone where a `main` build (schema v22) had previously run.
+* **Cause:** This branch's `WineDatabase` was still schema v21 with no 22→21 path, so Room threw `IllegalStateException` on first access. The background probe caught it and only logged it; the same throw during `CellarScreen` composition was uncaught and killed the app with nothing shown.
+* **Fix:** (1) Aligned the branch schema forward to v22 — same migration, entity field, converters and rich `SensoryData` storage semantics as `main`, so v22 data opens with no loss and no destructive migration. (2) Startup now gates the cellar UI on the database probe and shows an error screen (technical detail, build identity, retry) when the database cannot be opened.
+* **Key Takeaway:** Branch builds get installed on the phone holding the real cellar, so a branch schema must never be older than the newest database on that device — forward-align the schema (never a downgrade migration, never destructive) before installing. And a startup dependency that can fail must gate the UI with a visible error instead of crashing during composition.

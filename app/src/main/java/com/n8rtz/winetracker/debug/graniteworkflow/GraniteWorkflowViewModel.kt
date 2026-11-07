@@ -73,9 +73,16 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     fun refreshModelStatus() {
         val app = getApplication<Application>()
         viewModelScope.launch(Dispatchers.IO) {
-            val status = GraniteModelStorage.inspectModels(app)
-            _uiState.update { state ->
-                state.copy(modelsStatus = status)
+            runCatching {
+                GraniteModelStorage.inspectModels(app)
+            }.onSuccess { status ->
+                _uiState.update { state ->
+                    state.copy(modelsStatus = status)
+                }
+            }.onFailure { err ->
+                _uiState.update { state ->
+                    state.copy(errorBannerMessage = "Model status check failed: ${err.message ?: err.javaClass.simpleName}")
+                }
             }
         }
     }
