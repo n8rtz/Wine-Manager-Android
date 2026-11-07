@@ -271,9 +271,12 @@ fun AddWineScreen(
     val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
     val processingStill = (labelScanState as? LabelScanState.Processing)?.photoPath
     val confirmingPhoto = holdPhotoPath
-    val liveCamera = cameraPermissionGranted && confirmingPhoto == null && processingStill == null
-    // The live preview unmounts while the captured still is shown, releasing the camera for
-    // the (up to 90-second) analysis; readiness is re-reported when the preview remounts.
+    // The camera is only on while the user is actively framing a shot: the preview unmounts
+    // (releasing the camera) for the confirm still, for the analysis, and whenever the drawer
+    // is expanded to the form. Readiness is re-reported when the preview remounts, and
+    // backgrounding releases the camera via the lifecycle binding.
+    val drawerExpanded = scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded
+    val liveCamera = cameraPermissionGranted && confirmingPhoto == null && processingStill == null && !drawerExpanded
     LaunchedEffect(processingStill != null) {
         if (processingStill != null) cameraReady = false
     }
@@ -685,6 +688,7 @@ fun AddWineScreen(
     ) {
         AddWineCameraLayer(
             liveCamera = liveCamera,
+            drawerExpanded = drawerExpanded,
             frozenPath = confirmingPhoto ?: processingStill,
             showGuide = cameraPermissionGranted && confirmingPhoto == null,
             cameraReady = cameraReady,
@@ -776,6 +780,7 @@ private fun DrawerScanProgress(scanState: LabelScanState) {
 @Composable
 private fun AddWineCameraLayer(
     liveCamera: Boolean,
+    drawerExpanded: Boolean,
     frozenPath: String?,
     showGuide: Boolean,
     cameraReady: Boolean,
@@ -816,22 +821,26 @@ private fun AddWineCameraLayer(
                 modifier = Modifier.fillMaxSize(),
                 onPhotoCaptured = onPhotoTaken
             )
-            else -> Column(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    cameraError ?: "Allow the camera to scan a label.",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = onAllowCamera, modifier = Modifier.fillMaxWidth()) {
-                    Text("Allow camera")
+            // Drawer expanded over an otherwise live camera: plain black from the Box behind,
+            // camera off, no permission prompt.
+            else -> if (!drawerExpanded) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        cameraError ?: "Allow the camera to scan a label.",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = onAllowCamera, modifier = Modifier.fillMaxWidth()) {
+                        Text("Allow camera")
+                    }
+                    TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
                 }
-                TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
             }
         }
 
