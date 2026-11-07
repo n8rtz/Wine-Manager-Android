@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -36,6 +37,8 @@ import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.AddWineDraft
 import com.n8rtz.winetracker.scanner.AddWineDraftStore
 import com.n8rtz.winetracker.scanner.isBusy
+import com.n8rtz.winetracker.scanner.scanProgressFraction
+import com.n8rtz.winetracker.scanner.scanStepLabel
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
@@ -221,17 +224,14 @@ fun AddWineScreen(
             // Form Section
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 LabelScanActions(busy = labelScanState.isBusy,
-                    progressMessage = if (showLabelCamera) null else when (labelScanState) {
-                        is LabelScanState.ImportingPhoto -> "Opening selected photo…"
-                        is LabelScanState.Processing -> "Reading selected photo on this device…"
-                        is LabelScanState.FinishingCancelledScan -> "Finishing the previous scan…"
-                        else -> null
-                    }, onCamera = retake, onChoosePhoto = {
+                    progressMessage = if (showLabelCamera) null else labelScanState.scanStepLabel,
+                    onCamera = retake, onChoosePhoto = {
                         cameraError = null
                         scannerViewModel.warmLabelScanner()
                         runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                             .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
-                    })
+                    },
+                    progress = if (showLabelCamera) null else labelScanState.scanProgressFraction)
                 (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
@@ -756,10 +756,10 @@ private fun LabelScanCameraDialog(
                             Spacer(Modifier.width(8.dp))
                             Text(if (scanState is LabelScanState.Error) "Retake Label" else "Take Label Photo")
                         }
-                        is LabelScanState.ImportingPhoto -> LabelScanProgress("Opening selected photo…")
-                        is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
-                        is LabelScanState.Processing -> LabelScanProgress("Reading the label on this device… You can leave the app while it finishes.")
-                        is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
+                        is LabelScanState.ImportingPhoto,
+                        is LabelScanState.CapturingPhoto,
+                        is LabelScanState.Processing,
+                        is LabelScanState.FinishingCancelledScan -> LabelScanProgress(scanState)
                         is LabelScanState.Review -> Text(
                             "Scan complete.",
                             color = Color.White,
@@ -780,18 +780,35 @@ private fun LabelScanCameraDialog(
 }
 
 @Composable
-private fun LabelScanProgress(message: String) {
-    Row(
+private fun LabelScanProgress(scanState: LabelScanState) {
+    val message = scanState.scanStepLabel ?: return
+    val progress = scanState.scanProgressFraction
+    val animated by animateFloatAsState(targetValue = progress ?: 0f, label = "labelScanProgress")
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(20.dp),
-            strokeWidth = 2.dp,
-            color = Color.White
+        if (progress == null) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.25f)
+            )
+        } else {
+            LinearProgressIndicator(
+                progress = { animated },
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.25f)
+            )
+        }
+        Text(
+            message,
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
-        Spacer(Modifier.width(10.dp))
-        Text(message, color = Color.White, style = MaterialTheme.typography.bodyMedium)
     }
 }

@@ -144,7 +144,16 @@ internal object ProductionLabelScanSession {
                 if (!admitted) return@launch
                 stage = ScanStage.INITIALIZE
                 val result = scannerForTesting?.invoke(app, photo.file, started, source)
-                    ?: ProductionLabelScanner.scan(app, photo.file, started, source)
+                    ?: ProductionLabelScanner.scan(app, photo.file, started, source) { reported ->
+                        // Real pipeline progress for the Add Wine analyzing bar; stale reports
+                        // from a superseded request are ignored.
+                        synchronized(lock) {
+                            val current = mutable.value
+                            if (current is LabelScanState.Processing && current.requestId == id) {
+                                mutable.value = current.copy(stage = reported)
+                            }
+                        }
+                    }
                 val importMs = if (source == ScanInputSource.PHOTO_LIBRARY) preparationMs else 0L
                 completed = result.copy(diagnostics = result.diagnostics.copy(source = source,
                     inputBytes = photo.bytes, importMs = importMs,

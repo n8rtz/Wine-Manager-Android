@@ -99,6 +99,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 2. [ ] Open and save a tasting note, then JSON-export before/after and diff the `sensoryData` payload: color, entry/tight-open and aroma observations must survive the round-trip (no silent field drops).
 3. [ ] Export a JSON backup and re-import it; the restore must succeed and `defaultColorHsv` values must survive.
 4. [ ] Run `:app:testDebugUnitTest --tests com.n8rtz.winetracker.data.local.SensoryDataAromasConverterTest` in an Android-capable environment; all six converter tests must pass unchanged.
+5. [ ] On Add Wine, scan a label with the camera and choose a photo from the library: the analyzing bar must progress left-to-right through the pipeline step labels (no spinner; one line of status below the bar) on both the camera overlay and the form.
 
 ## Branch `arena/49fc9af5-wine-manager-android`
 

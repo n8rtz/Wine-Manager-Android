@@ -16,10 +16,11 @@ internal object ProductionLabelScanner {
     // model loading, OCR and field extraction, with no second scanner or separate user action.
     const val BUDGET_MS=90_000L
 
-    suspend fun scan(context:Context,photo:File,started:Long,source:ScanInputSource):ScanReport {
+    suspend fun scan(context:Context,photo:File,started:Long,source:ScanInputSource,
+        onStage:(ScanStage)->Unit={}):ScanReport {
         val deadline=ScanDeadline(started+BUDGET_MS)
         val attempt=deadline.run {
-            GlinerProductionScanner.scan(context,photo,started,source,deadline.expiresAtMs,BUDGET_MS)
+            GlinerProductionScanner.scan(context,photo,started,source,deadline.expiresAtMs,BUDGET_MS,onStage)
         } ?: GlinerProductionScanner.Attempt.Unavailable("scanner timed out")
         return report(attempt,SystemClock.elapsedRealtime()-started,source,deadline.expired)
     }

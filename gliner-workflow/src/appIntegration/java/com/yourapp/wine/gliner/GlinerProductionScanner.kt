@@ -25,10 +25,11 @@ internal object GlinerProductionScanner {
     }
 
     suspend fun scan(context:Context,photo:File,started:Long,source:ScanInputSource,
-        deadlineAtMs:Long,budgetMs:Long):Attempt = withContext(Dispatchers.Default) {
+        deadlineAtMs:Long,budgetMs:Long,onStage:(ScanStage)->Unit={}):Attempt = withContext(Dispatchers.Default) {
         var model:GlinerOnnxModel?=null
         var warm:TextLabWineExtraction.WarmSession?=null
         try {
+            onStage(ScanStage.INITIALIZE)
             val scanContext=currentCoroutineContext()
             val status=GlinerBundle.status(context) { scanContext.ensureActive() }
             if(!status.ready || !status.int4 || status.config==null || status.files.any { !it.pinned || !it.matchesPin }) {
@@ -46,7 +47,7 @@ internal object GlinerProductionScanner {
             val readyMs=SystemClock.elapsedRealtime()
             val session=TextLabWineExtraction.WarmSession(context)
             warm=session
-            val result=GlinerLabRunner.runProduction(context,photo,opened,session,deadlineAtMs)
+            val result=GlinerLabRunner.runProduction(context,photo,opened,session,deadlineAtMs,onStage)
             if(result.status!="complete") return@withContext Attempt.Unavailable("GLiNER workflow: ${result.status}")
             if(result.rawReadings.isEmpty()) return@withContext Attempt.Unavailable("no OCR readings")
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext Attempt.Unavailable("scan budget reached")
