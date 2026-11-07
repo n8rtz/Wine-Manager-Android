@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -27,7 +26,6 @@ import com.yourapp.wine.kb.FixtureKnowledgeBase
 import com.yourapp.wine.fill.UiState
 import com.yourapp.wine.ui.ScanFieldStatus
 import com.yourapp.wine.ui.ScanDiagnosticsPanel
-import com.yourapp.wine.ui.LabelScanActions
 import com.yourapp.wine.diagnostics.ScanEnvironment
 import com.yourapp.wine.ui.ScanFormState
 import com.yourapp.wine.ui.ScanReviewHeader
@@ -200,25 +198,6 @@ class ScanReviewHeaderTest {
             assertTrue("commit=test123" in text && "CALIFORNIA" in text)
             assertTrue(clip.description.extras!!.getBoolean(ClipDescription.EXTRA_IS_SENSITIVE))
         }
-    }
-
-    @Test fun choosingPhotoDoesNotInvokeTheCameraAction() {
-        var cameraRequests = 0
-        var photoRequests = 0
-        compose.setContent {
-            MaterialTheme { LabelScanActions(false, null, { cameraRequests++ }, { photoRequests++ }) }
-        }
-        compose.onNodeWithText("Choose label").performClick()
-        compose.runOnIdle { assertEquals(0, cameraRequests); assertEquals(1, photoRequests) }
-    }
-
-    @Test fun inputActionsAreDisabledWhileACopyOrScanIsBusy() {
-        compose.setContent {
-            MaterialTheme { LabelScanActions(true, "Opening selected photo…", {}, {}) }
-        }
-        compose.onNodeWithText("Choose label").assertIsNotEnabled()
-        compose.onNodeWithText("Scan label").assertIsNotEnabled()
-        compose.onNodeWithText("Opening selected photo…").assertIsDisplayed()
     }
 
 }

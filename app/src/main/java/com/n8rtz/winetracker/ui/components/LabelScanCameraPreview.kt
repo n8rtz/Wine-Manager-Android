@@ -40,12 +40,15 @@ fun LabelScanCameraPreview(
     scannerViewModel: ScannerViewModel,
     onCameraError: (String) -> Unit,
     onCameraReadyChanged: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** When set, captured photos go here (e.g. confirm/retake hold) instead of starting a scan. */
+    onPhotoCaptured: ((Long, File) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val latestOnCameraError = rememberUpdatedState(onCameraError)
     val latestOnCameraReadyChanged = rememberUpdatedState(onCameraReadyChanged)
+    val latestOnPhotoCaptured = rememberUpdatedState(onPhotoCaptured)
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val bindingState = remember { mutableStateOf<CameraUseCaseBinding?>(null) }
     var cameraReady by remember { mutableStateOf(false) }
@@ -97,7 +100,10 @@ fun LabelScanCameraPreview(
                     context = viewContext.applicationContext,
                     preview = preview,
                     imageCapture = imageCapture,
-                    onPhotoCaptured = scannerViewModel::onLabelPhotoCaptured,
+                    onPhotoCaptured = { requestId, photoFile ->
+                        latestOnPhotoCaptured.value?.invoke(requestId, photoFile)
+                            ?: scannerViewModel.onLabelPhotoCaptured(requestId, photoFile)
+                    },
                     onCaptureFailed = scannerViewModel::onLabelCaptureFailed,
                     onCameraError = { latestOnCameraError.value(it) },
                     onCameraReadyChanged = { ready ->

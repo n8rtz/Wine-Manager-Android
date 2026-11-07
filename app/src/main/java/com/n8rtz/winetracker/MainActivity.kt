@@ -517,9 +517,9 @@ fun MainAppScaffold(
                 )
             }
             composable("add_wine") {
-                AddWineScreen(viewModel, scannerViewModel) {
-                    navController.popBackStack("cellar", inclusive = false)
-                }
+                AddWineScreen(viewModel, scannerViewModel,
+                    onWineAdded = { navController.popBackStack("cellar", inclusive = false) },
+                    onClose = { navController.popBackStack() })
             }
             composable(
                 route = "note_editor/create?definitionId={definitionId}&vintage={vintage}&eventId={eventId}&dateTasted={dateTasted}",

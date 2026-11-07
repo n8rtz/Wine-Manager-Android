@@ -44,4 +44,8 @@ internal class AddWineDraftStore(context: Context) {
         return if (synchronous) edit.commit() else { edit.apply(); true }
     }
     fun clear() { prefs.edit().remove("draft").commit() }
+
+    /** One-shot camera prompt: asked once ever, so re-entering Add Wine never re-prompts. Survives [clear]. */
+    fun wasCameraPrompted(): Boolean = prefs.getBoolean("cameraPrompted", false)
+    fun markCameraPrompted() { prefs.edit().putBoolean("cameraPrompted", true).apply() }
 }

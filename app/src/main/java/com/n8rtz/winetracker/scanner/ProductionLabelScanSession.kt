@@ -41,6 +41,11 @@ internal object ProductionLabelScanSession {
     private var nextId = System.currentTimeMillis()
     /** Single retained scan photo for the post-scan review display; replaced every scan. */
     private const val REVIEW_PHOTO_NAME = "label-scan-review.jpg"
+    /**
+     * Shutter-phase budget: capture plus the user's confirm/retake photo review. Separate from the
+     * shared 15 s capture deadline the legacy scanner still uses; scan work has its own 90 s budget.
+     */
+    private const val CAPTURE_BUDGET_MS = 60_000L
 
     private fun initialize(context: Context) {
         if (!initialized) {
@@ -71,7 +76,7 @@ internal object ProductionLabelScanSession {
         val id = ++nextId
         mutable.value = LabelScanState.CapturingPhoto(id, SystemClock.elapsedRealtime())
         scope.launch {
-            delay(ScanDeadline.BUDGET_MS)
+            delay(CAPTURE_BUDGET_MS)
             synchronized(lock) {
                 val state = mutable.value
                 if (state is LabelScanState.CapturingPhoto && state.requestId == id) {
