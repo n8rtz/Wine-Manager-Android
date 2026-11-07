@@ -897,15 +897,18 @@ private fun AddWineCameraLayer(
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onGallery,
-                            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(12.dp))
-                                .border(2.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(12.dp))) {
+                            modifier = Modifier.size(56.dp)
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .border(2.dp, Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))) {
                             Icon(Icons.Default.PhotoLibrary, contentDescription = "Choose label",
-                                tint = Color.White)
+                                tint = Color.Black)
                         }
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = onShutter, enabled = cameraReady && cameraError == null,
-                            modifier = Modifier.size(60.dp).border(3.dp, Color.White, CircleShape)) {
-                            Icon(Icons.Default.Camera, contentDescription = "Take photo", tint = Color.White,
+                            modifier = Modifier.size(60.dp)
+                                .background(Color.White, CircleShape)
+                                .border(2.dp, Color.Black.copy(alpha = 0.25f), CircleShape)) {
+                            Icon(Icons.Default.Camera, contentDescription = "Take photo", tint = Color.Black,
                                 modifier = Modifier.size(28.dp))
                         }
                         Spacer(Modifier.weight(1f))
