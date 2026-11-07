@@ -77,3 +77,8 @@ Key project documents (all in `_refs/`): `BACKLOG.md` (open work), `ARCHIVE.md` 
     - If the database feeds OCR or a benchmark, extend the scorer-side coverage audit (`tools/build_gazetteer_coverage.py`) in the same change.
     - The packaged-asset byte caps in the loaders (`ProducerCatalogDatabaseLookup.MAX_DATABASE_BYTES`, `ProducerGazetteer.load`) are self-imposed sanity bounds, NOT Android/SQLite limits. Raise them deliberately, in step with each other, when a catalog legitimately grows. The practical constraints are APK size, ~2× on-device storage (compressed asset + cache copy), and cold-install copy+hash time — the benchmark loader's per-contender time budget (`checkBudget`) is the binding one, so a much larger catalog needs its install decoupled from the per-photo budget, not just a higher cap.
     - **Rationale:** The Lab expanded producer index (X-Wines/TTB/OSM) was packaged for Lab v4 without any way for the owner to inspect it; the owner required lookup-page parity for this and all future databases (2026-10-26).
+
+18. **MINIMAL UI LABELS (OWNER RULE, 2026-11-07)**
+    - Every user-visible button, tab, menu item and heading must use the shortest label that is still unambiguous — one to three words. Drop nouns the surrounding context already supplies ("Scan label", not "Scan label with camera"; "Choose label", not "Choose label photo").
+    - When adding or touching any UI text, shorten any overlong label in the same surface; never add a new verbose label the owner will have to rename later. The standard is recorded in `_refs/ARCHIVE.md` W-062.
+    - **Rationale:** The owner repeatedly had to rename verbose agent-written labels after the fact; minimal labels are now the default (2026-11-07).

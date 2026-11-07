@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,6 +49,10 @@ import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanFormState
 import com.yourapp.wine.ui.LabelScanActions
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -231,7 +236,9 @@ fun AddWineScreen(
                         runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                             .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
                     },
-                    progress = if (showLabelCamera) null else labelScanState.scanProgressFraction)
+                    progress = if (showLabelCamera) null else labelScanState.scanProgressFraction,
+                    processingPhotoPath = if (showLabelCamera) null else
+                        (labelScanState as? LabelScanState.Processing)?.photoPath)
                 (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
@@ -654,6 +661,13 @@ private fun LabelScanCameraDialog(
     onDismiss: () -> Unit
 ) {
     val scanState by scannerViewModel.labelScanState.collectAsState()
+    val processingStill = (scanState as? LabelScanState.Processing)?.photoPath
+
+    // The live preview unmounts while the captured still is shown, releasing the camera for
+    // the (up to 90-second) analysis; readiness is re-reported when the preview remounts.
+    LaunchedEffect(processingStill != null) {
+        if (processingStill != null) onCameraReadyChanged(false)
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -665,24 +679,40 @@ private fun LabelScanCameraDialog(
     ) {
         Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
             Box(modifier = Modifier.fillMaxSize()) {
-                LabelScanCameraPreview(
-                    scannerViewModel = scannerViewModel,
-                    onCameraError = onCameraError,
-                    onCameraReadyChanged = onCameraReadyChanged,
-                    modifier = Modifier.fillMaxSize()
-                )
+                if (processingStill != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(File(processingStill))
+                            .crossfade(true)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .diskCachePolicy(CachePolicy.DISABLED)
+                            .build(),
+                        contentDescription = "Label photo being scanned",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    LabelScanCameraPreview(
+                        scannerViewModel = scannerViewModel,
+                        onCameraError = onCameraError,
+                        onCameraReadyChanged = onCameraReadyChanged,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
                 // A bottle label is portrait, so the guide is portrait too: the old full-width box
                 // was wider than any label and told the user to frame something no bottle matches.
                 // WineLabelFraming holds the shape and the guarantee that whatever the user fits
-                // inside it is inside every crop the scanner reads.
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxHeight(WineLabelFraming.GUIDE_HEIGHT_FRACTION)
-                        .aspectRatio(WineLabelFraming.ASPECT_RATIO)
-                        .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
-                )
+                // inside it is inside every crop the scanner reads. Hidden once the still is taken.
+                if (processingStill == null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxHeight(WineLabelFraming.GUIDE_HEIGHT_FRACTION)
+                            .aspectRatio(WineLabelFraming.ASPECT_RATIO)
+                            .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
+                    )
+                }
 
                 Column(
                     modifier = Modifier

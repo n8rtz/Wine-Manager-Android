@@ -100,6 +100,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 3. [ ] Export a JSON backup and re-import it; the restore must succeed and `defaultColorHsv` values must survive.
 4. [ ] Run `:app:testDebugUnitTest --tests com.n8rtz.winetracker.data.local.SensoryDataAromasConverterTest` in an Android-capable environment; all six converter tests must pass unchanged.
 5. [ ] On Add Wine, scan a label with the camera and choose a photo from the library: the analyzing bar must progress left-to-right through the pipeline step labels (no spinner; one line of status below the bar) on both the camera overlay and the form.
+6. [ ] The scan buttons read "Scan label" and "Choose label". During processing, the camera overlay shows the captured still (not the live preview or framing guide) and the form shows the photo thumbnail above the progress bar; after an error, "Retake Label" reopens a live preview.
 
 ## Branch `arena/49fc9af5-wine-manager-android`
 

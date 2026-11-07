@@ -208,7 +208,7 @@ class ScanReviewHeaderTest {
         compose.setContent {
             MaterialTheme { LabelScanActions(false, null, { cameraRequests++ }, { photoRequests++ }) }
         }
-        compose.onNodeWithText("Choose label photo").performClick()
+        compose.onNodeWithText("Choose label").performClick()
         compose.runOnIdle { assertEquals(0, cameraRequests); assertEquals(1, photoRequests) }
     }
 
@@ -216,8 +216,8 @@ class ScanReviewHeaderTest {
         compose.setContent {
             MaterialTheme { LabelScanActions(true, "Opening selected photo…", {}, {}) }
         }
-        compose.onNodeWithText("Choose label photo").assertIsNotEnabled()
-        compose.onNodeWithText("Scan label with camera").assertIsNotEnabled()
+        compose.onNodeWithText("Choose label").assertIsNotEnabled()
+        compose.onNodeWithText("Scan label").assertIsNotEnabled()
         compose.onNodeWithText("Opening selected photo…").assertIsDisplayed()
     }
 
