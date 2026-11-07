@@ -119,7 +119,7 @@ fun AromaWheelLauncherHeader(
             topStart = 16.dp,
             topEnd = 16.dp,
             bottomEnd = 0.dp,
-            bottomStart = 0.dp
+            bottomStart = 16.dp
         )
     } else {
         RoundedCornerShape(16.dp)
@@ -179,7 +179,7 @@ fun AromaWheelSummaryPanel(
         modifier = modifier
             .clip(
                 RoundedCornerShape(
-                    topStart = 0.dp,
+                    topStart = 16.dp,
                     topEnd = 0.dp,
                     bottomEnd = 16.dp,
                     bottomStart = 16.dp
