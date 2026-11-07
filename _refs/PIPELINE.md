@@ -46,6 +46,7 @@ How work moves from idea to release in this repo. Written 2026-10-15 for a one-o
 | Manual checklist | Matching section of `THINGS_TO_CHECK.md` | Before an item is called done |
 | Schema change | Bump Room version, add the migration and its test, update `ARCH.md` and the changelog schema note | Any entity change |
 | Backup round-trip | Export JSON, restore on a disposable install, compare counts (and, once W-057 ships, check an off-device snapshot restores too) | Any change to entities, `BackupData` or backup settings |
+| W-061 structured notes | `TastingNoteStructureTest`, host `test_w061_structured_notes.py`, the W-061 `THINGS_TO_CHECK.md` checklist and a Room v21→v22 migration check | Any change to `SensoryData`, phase aromas, the color picker or Room v22 |
 
 Until CI exists (W-056) the owner runs the first two gates locally in Android Studio. Agent sandboxes may have no JDK or Android SDK; when a change could not be compiled, say so in the hand-off and log it in `BACKLOG.md` §4.
 

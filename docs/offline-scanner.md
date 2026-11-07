@@ -1,7 +1,7 @@
 # Offline wine label scanner
 
 **Current change:** [ML Kit + v6 Medium](production-v6-medium.md), with a 15-second shared
-scan deadline and bundled genuine ONNX models. [Text Lab](text-lab-candidates.md) now tests only the production engines.
+scan deadline and bundled genuine ONNX models.
 Older acceptance notes below describe the prior 8-second/optional-Paddle implementation.
 
 ## Scope and entry points
@@ -283,14 +283,6 @@ stroke dilation, slant correction, skeletonization and ligature cutting are not
 implemented in the normal scanner. They need controlled original-versus-treated image/OCR comparisons;
 adding destructive filters without those measurements is not an accuracy guarantee.
 
-### Debug OCR Lab
-
-Debug builds now include **Add New Wine → OCR Lab — test production stack**.
-This opt-in benchmark is separate from normal scanning. See [ocr-lab.md](ocr-lab.md)
-for recipes, scoring limitations, budgets and explicit image/diagnostics export.
-Alternative preprocessing recipes and their filter code have been removed.
-The production pipeline remains unchanged.
-
 ### Rules learned from the first multi-label CSV
 
 The 90 completed cases (plus one setup failure) do not justify enabling every
@@ -510,11 +502,6 @@ eight-second Text Lab budget/session-retention descriptions above are superseded
 candidate gets eight seconds, with separate shared preparation and ML Kit-reference budgets.
 Sessions are released between candidates and detector/recognizer stages. No 80 MiB model-asset
 cap is imposed for this explicit experiment. Normal scanning is unaffected.
-
-Full instructions, schema, exact model/dictionary provenance, limits and validation status:
-[`text-lab-candidates.md`](text-lab-candidates.md). Candidate failures, timeout/Stop partials and
-not-run candidates are retained, never silently omitted or counted as recognition successes.
-
 
 Text Lab timeout update: the three-candidate experiment now uses **60 seconds per candidate**
 and **60 seconds for the shared ML Kit reference**, superseding the eight-second experimental

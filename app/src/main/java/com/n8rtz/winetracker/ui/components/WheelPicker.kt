@@ -47,7 +47,8 @@ fun WheelPicker(
     label: String? = null,
     itemHeight: Dp = 48.dp,
     visibleCount: Int = 5,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -65,8 +66,8 @@ fun WheelPicker(
     }
 
     // Detect settled scroll position
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress && items.isNotEmpty()) {
+    LaunchedEffect(listState.isScrollInProgress, enabled) {
+        if (enabled && !listState.isScrollInProgress && items.isNotEmpty()) {
             val centerIndex = listState.firstVisibleItemIndex
             val realIndex = centerIndex.coerceIn(0, items.lastIndex)
             if (realIndex != selectedIndex) {
@@ -96,21 +97,22 @@ fun WheelPicker(
             modifier = Modifier
                 .height(totalHeight)
                 .fillMaxWidth()
-                .pointerInput(items, selectedIndex) {
-                    awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
-                        val up = waitForUpOrCancellation()
-                        if (up != null) {
-                            val tapY = up.position.y
-                            val halfHeight = size.height / 2f
-                            val threshold = itemHeight.toPx() / 2f
-                            
-                            // Check if movement was small enough to be a tap
-                            if ((up.position - up.previousPosition).getDistance() < 24.dp.toPx()) {
-                                if (tapY < halfHeight - threshold) {
-                                    onSelectedChange((selectedIndex - 1).coerceAtLeast(0))
-                                } else if (tapY > halfHeight + threshold) {
-                                    onSelectedChange((selectedIndex + 1).coerceAtMost(items.lastIndex))
+                .pointerInput(items, selectedIndex, enabled) {
+                    if (enabled) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            val up = waitForUpOrCancellation()
+                            if (up != null) {
+                                val tapY = up.position.y
+                                val halfHeight = size.height / 2f
+                                val threshold = itemHeight.toPx() / 2f
+
+                                if ((up.position - up.previousPosition).getDistance() < 24.dp.toPx()) {
+                                    if (tapY < halfHeight - threshold) {
+                                        onSelectedChange((selectedIndex - 1).coerceAtLeast(0))
+                                    } else if (tapY > halfHeight + threshold) {
+                                        onSelectedChange((selectedIndex + 1).coerceAtMost(items.lastIndex))
+                                    }
                                 }
                             }
                         }
@@ -119,7 +121,8 @@ fun WheelPicker(
         ) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = enabled
             ) {
                 itemsIndexed(paddedItems) { index, item ->
                     val realIndex = index - halfVisible

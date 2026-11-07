@@ -16,6 +16,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/fff57f7b-wine-manager-android` | not opened | current work | W-057 Backup & Restore, W-061 structured notes, and Cellar stock/edit/note actions | [Jump](#branch-arenaffff57f7b-wine-manager-android) |
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
 | `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
@@ -26,6 +27,154 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/fff57f7b-wine-manager-android`
+
+**Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
+
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. Expanded Cellar cards have `− Stock: N +` controls (one bottle per tap, with consumption recorded in History and snackbar UNDO), an Add Tasting Note icon prefilled for that wine/vintage, and a separate Edit icon; the Wine Detail route is gone. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
+Cellar, Rankings and Tasting Notes reopen at the top of their lists, and every search bar hint is just **Search** on one line.
+Cancelling Google Drive **Change setup** without choosing a folder keeps the previously selected folder.
+The top search bars and filter buttons stay, but now scroll away; compact search/filter buttons appear in the upper right once they are out of view and follow the user down the list. Cellar card bodies and carets both expand/collapse, Cellar stats live in a dialog, and page titles scroll away with their content.
+
+### Floating search/filter bubbles, card clicks, stats dialog and scrolling headers
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On **Cellar**, confirm the stats icon (analytics glyph, not a donut) sits on the **left** of the full-width **Search** bar, with the filter button on the right, all on one line, and **Showing N bottles** directly below. There is no separate stats header row above the search bar. Confirm no compact buttons are visible yet.
+2. [ ] Tap the left-hand stats icon: **Cellar Stats** opens with **Total Bottles**, **Unique Wines** and **Est. Value**. Close it and confirm the list did not move. Confirm the three analytics cards are not back at the top of the screen.
+3. [ ] Scroll down until the top search row has scrolled out of view. Confirm two small buttons then appear in the upper right **stacked vertically** (search on top, filter below) and stay visible as you keep scrolling. Scroll back to the top and confirm they disappear again.
+4. [ ] Scroll down, tap the compact **Search** button, and confirm a one-line **Search** field pops up at the top of the screen while the same cards stay exactly where they were. Type a query and confirm the list still does not jump to the top. Close the field and confirm the compact buttons return.
+5. [ ] Scroll down again, tap compact **Tune**, change a filter or sort, and confirm the list stays at the same position. Check the filter button shows its active colour when a filter is set.
+6. [ ] Repeat 3–5 on **Rankings** and **Tasting Notes**. Confirm the top search rows and the titles (**Rankings**, **Tasting Notes**) and **Consumption History** scroll away with the list instead of staying frozen at the top.
+7. [ ] On **Cellar**, tap the card body and caret: both expand/collapse it, and opening a second card collapses the first. In the expanded card verify `− Stock: N +`, the Edit icon, and Add Tasting Note icon. The body no longer opens a Wine Detail screen.
+8. [ ] On **Tasting Notes**, repeat the carat checks for the one-open accordion. Tap an expanded note row: that note opens in the editor. Tap anywhere else on a collapsed card: that wine's most recent tasting note opens in the editor.
+9. [ ] On **Rankings**, confirm the carat still expands a card and tapping elsewhere does nothing.
+10. [ ] On **Add / Edit Tasting Note**, **Add New Wine**, **Edit Wine**, **App Information**, **Database Lookup**, **Settings**, **Backup & Restore** and **Price vs. Rating**, scroll down and confirm the title bar scrolls away; scroll back up and confirm back/actions return. Check at the largest display size that the compact buttons do not cover a card's caret while scrolling.
+
+### Google Drive folder change — cancel keeps the folder
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set up a Google Drive folder under **Backup & Restore → Google Drive**, confirm the row shows **Change setup** and **Drive folder selected**.
+2. [ ] Tap **Change setup**, then press Back repeatedly until the folder picker closes without selecting anything. Confirm no "No Drive folder was selected." popup appears and the row still shows **Change setup** / **Drive folder selected**.
+3. [ ] Run **Back up now** after that cancel and confirm it still writes to the same Drive folder; leave the screen and come back to confirm the folder is still configured.
+4. [ ] Tap **Change setup** again and select a *different* folder. Confirm the new folder replaces the old one and backups go there.
+5. [ ] Tap **Disconnect** and confirm it is still the only action that leaves no folder selected.
+
+### Tab re-entry scroll and one-line search hints
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On **Cellar**, scroll down several cards, then switch to **Rankings** and back via the bottom bar. Confirm Cellar opens at the top (analytics cards and search bar visible), not at the previous card.
+2. [ ] Repeat on **Rankings** and **Tasting Notes**, including leaving Notes by opening a note and returning with the back arrow.
+3. [ ] Expand a Cellar card and open **Edit Wine** after scrolling down, then tap **Cellar** and **Back**. Both should show the top of the Cellar list.
+4. [ ] On each of the three tabs, check the search bar shows only **Search** on a single line; widen the font to the largest display size and confirm it still does not wrap or grow the field.
+5. [ ] Check the same on **Add Note → Wine**, the **aroma wheel** search, and **Settings → Database Lookup**; Database Lookup should show no second hint under the field.
+
+### Add menu visibility and Cellar tab
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] From **Cellar** and **Notes** confirm the `+` FAB is present. On Notes it opens **Add Note** directly; on Cellar it opens the **Add Wine / Add Note** submenu.
+2. [ ] Open **Edit Wine**, **Add Wine**, a note editor, **History**, **Rankings**, **Profile**, **Settings**, **Backup & Restore** and **Database Lookup**. Confirm no `+` FAB appears on any of them, and that an open submenu closes when you leave Cellar or Notes.
+3. [ ] From **Edit Wine**, tap **Cellar**. Expect the unfiltered Cellar root: expanded cards collapsed, search cleared, filters reset.
+4. [ ] From **Add Wine**, a note editor opened from any tab, and from **History / Rankings / Profile → Settings → Backup & Restore**, tap **Cellar**. Each time expect the Cellar root, not the previous screen or a restored filtered view. Repeat with **Back** to confirm no stale screens remain in the back stack.
+
+### Cellar stock controls, Add Tasting Note and wine editing
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a wine with 3 bottles, expand the card and tap `+` twice. Confirm the stock count increments to 5 without changing any existing History rows.
+2. [ ] Tap `−` once. Confirm the stock drops to 4, exactly one History event with quantity 1 appears, and no tasting note is created automatically.
+3. [ ] Right after that consumption, tap snackbar **UNDO**. Confirm the stock returns to 5 and the History entry disappears.
+4. [ ] Consume one bottle again, then in **History** press and hold → **Restore to cellar → Restore**. Confirm the stock goes up by one, the entry disappears, and no note is created.
+5. [ ] Consume all remaining bottles one at a time. Confirm the wine leaves active Cellar after the last bottle and each `−` tap creates one History event.
+6. [ ] Tap the expanded-card **Add Tasting Note** icon. Confirm the editor is prefilled with that wine and vintage (including NV); save and verify the note appears in **Tasting Notes**. Keep the separate read-only tasting-note detail route working.
+7. [ ] Tap the expanded-card **Edit Wine** icon. Change wine metadata and save; confirm it persists and returns to Cellar. No Wine Detail screen or route should appear.
+
+### Settings cleanup — obsolete entries
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings**. Confirm **Backup & Restore**, **Import Data (JSON)**, **Export Data**, **Reset Database**, **Database Lookup** and **App Information** are still present, and that no **Wine images** section, legacy CSV import row, OCR Text Lab, OCR Lab or Export OCR test data row appears.
+2. [ ] In a debug build, confirm **Scanner testing** contains only **Large image dataset test** and that it still opens the 125-label benchmark. In a release build, confirm the whole **Scanner testing** block is absent.
+3. [ ] Open **Add Wine** in a debug build and confirm the **OCR Lab — test production stack** button is gone and the label scanner still works.
+4. [ ] Confirm **Import Data (JSON)**, **Export Data** and **Reset Database** still behave as before, and that an exported JSON still restores image provenance rows without trying to fetch or import new images.
+5. [ ] Confirm no Open Food Facts image review, offline-image management or storage-budget dialog can be reached anywhere in the app, and that a wine card with an existing local image still displays it.
+6. [ ] Run `python3 tools/tests/test_settings_cleanup.py` and the rest of `tools/tests/`; all host checks should pass. Then `./gradlew :app:assembleDebug :app:testDebugUnitTest` to confirm no dangling references to the deleted classes.
+
+### Backup & Restore — fresh install and first automatic backup
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a fresh disposable install, open the app once without touching Settings. Expect the first automatic local backup on that app open (nothing has ever been confirmed, so it is due). Confirm a `WineTracker_<date>_<time>.json` file appears in **Documents/WineManager/** (Device Explorer or a Files app).
+2. [ ] Open **Profile → Settings → Backup & Restore**. Confirm defaults: **Automatic backup** on, **Every 1 month**, **Local folder** toggle on, **Delete old backups** on, **Keep the newest 5**, and the three off-device toggles visible but off.
+3. [ ] Confirm the status card reads **Only a local copy exists — it does not protect against losing the phone** and the Local row shows a **Last confirmed <date/time>** line. A local copy must never be reported as off-device protection.
+4. [ ] Close and reopen the app immediately. Confirm no second backup file is created (the last confirmed copy is younger than the interval).
+5. [ ] Confirm no new runtime permission prompt appears and that the app manifest is unchanged (no service/receiver entries).
+
+### Frequency, overdue flag and manual backup
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open any destination submenu and set **Backup frequency** to `1` / **days**. Leave and reopen the submenu; confirm the setting persisted and that it is the same value in every other destination's submenu. The number box must reject values outside 1–365.
+2. [ ] With the device clock moved forward more than one day (or after waiting a day), reopen the app. Expect an overdue notice ("Your last confirmed backup was older than the selected interval…") and a new local snapshot created on that app open.
+3. [ ] Turn **Automatic backup** off. After the interval passes, expect an **overdue** warning card and **no** automatic upload; **Back up now** in a destination submenu then creates a copy and clears the warning.
+4. [ ] In a destination submenu, tap **Back up now** twice in a row (allow a second to pass between taps). Confirm each produces a distinct file name (the name includes seconds) and the run message names **Local folder: confirmed**.
+5. [ ] Confirm nothing is ever scheduled while the app is closed: no notification, no service and no new file appears after the app has been in the background across an interval boundary until it is opened again.
+6. [ ] Simulate a failed write (e.g. no free space) and confirm **Needs attention** appears with a reason and no "confirmed" status; a later successful **Back up now** in a destination submenu clears it. Old snapshots must survive a failed run.
+
+### Retention and restore round-trip
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set **Keep the newest 2**, tap **Back up now** until at least four app-owned snapshots exist in **Documents/WineManager/**. Confirm exactly the two newest remain and unrelated files (e.g. a `notes.json` you place in the same folder) are untouched.
+2. [ ] Turn **Delete old backups** off, create another backup, and confirm the older snapshots remain.
+3. [ ] From **Restore from backup…**, confirm the dialog lists app-owned snapshots **newest first** and that **No local backups were found** appears only when the folder is empty.
+4. [ ] Pick a snapshot, read **Replace app data?**, tap **Cancel**, and confirm no data changes. Pick it again and tap **Replace and restore**. Expect the same wines/bottles/notes/history counts as the exported snapshot and the snackbar "Backup restored. Existing app data was replaced."
+5. [ ] Restore a deliberately malformed JSON file through **Settings → Import Data (JSON)** and confirm the existing cellar is unchanged and an error is shown (the existing validated importer is reused).
+6. [ ] On a second disposable install, restore a snapshot from **Documents/WineManager/** and compare counts. Note any MediaStore ownership limitation after reinstall and fall back to **Import Data (JSON)** with the system file picker.
+7. [ ] Run `:app:testDebugUnitTest` and confirm `BackupScheduleTest` passes (month ends, leap year, DST, clock rollback, naming round-trip, keep-newest-N, protection).
+
+### Off-device destinations — setup, independent uploads, verification
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Backup & Restore**. Confirm the main menu shows only four destination name + toggle rows. Toggles work independently, there are no **Move up / Move down** controls, and no `+` FAB overlaps the page.
+2. [ ] **Google Drive → Set up…**: the system folder picker opens; choose a Drive folder. Expect **Drive ready** and a persisted grant. Restart the app and confirm the grant is still valid without re-picking. Revoke it in Android Settings → Apps → special access (or pick another folder) and confirm the row reads **Needs setup/reconnect** and no "failed backup" popup appears.
+3. [ ] **GitHub → Set up…**: enabling it first shows the **Back up to GitHub?** warning naming git history; cancel leaves it off. Accepting opens setup. Enter `owner/repo` and a fine-grained PAT for a **private** repo; expect **GitHub ready: Private owner/repo on branch …**. Verify a `WineManager/` folder appears in the repo with the snapshot as a commit.
+4. [ ] Repeat GitHub setup against a **public** repository and confirm setup fails with an explicit refusal and the credentials are cleared. Confirm a full URL (`https://github.com/…`) is rejected with the owner/name hint.
+5. [ ] **WebDAV → Set up…**: point at a TrueNAS SCALE WebDAV share (or Nextcloud's `/remote.php/dav/files/<user>/WineManager/`). Expect **WebDAV ready**. Enter an `http://` URL and confirm the unencrypted warning appears; enter `ftp://`, a URL with `user:pass@`, or one with spaces and confirm setup is rejected with a visible reason.
+6. [ ] Enable all four destinations, open each submenu in turn and tap **Back up now**. Expect one result line per tap, naming only that destination, with **confirmed**. Deliberately break one (expired PAT / wrong DAV password / revoked Drive grant) and confirm only that destination's run fails, the other three still confirm, and old snapshots at the broken destination survive.
+7. [ ] Confirm every destination verifies by read-back: tamper with one remote copy if possible and expect a checksum/read-back failure with a **Needs attention** reason, not a silent "confirmed".
+8. [ ] Confirm **Back up now** on an unchanged database still creates a new snapshot (no fingerprint/skip logic was requested), and **keep the newest N** applies independently at GitHub, Drive, WebDAV and Local without touching unrelated files in any folder/repo.
+
+### Destination toggle menu and submenus (W-057 follow-up)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a phone-width screen, confirm the main menu has only four destination rows with a working toggle each, plus the short **Backup status** values. Each **enabled** destination that has a confirmed backup shows a small **Last confirmed <date/time>** under its name; a disabled destination shows no second line, and neither does one that has never backed up. No explanatory paragraphs, descriptions, helper text or action buttons. Rotate the device and try the largest system font size: nothing wraps into unreadable columns.
+2. [ ] Turn one destination off and confirm its date/time line disappears immediately; turn it back on and confirm the line returns. Tap a destination name (not its switch). Expect a submenu titled with that destination, holding **Back up now**, **Change setup** / **Disconnect** (off-device only), **Schedule** and **Old backups**. There is no restore row inside a submenu. Tap the back arrow: it returns to the toggle menu; a second back leaves the screen. No `+` FAB or Add submenu appears anywhere on this route.
+3. [ ] Change **Backup frequency** or **Keep the newest N** in one submenu, then open another destination's submenu and confirm it shows the same values (these settings are shared, not per-destination).
+4. [ ] With **GitHub** toggled off but fully configured, open its submenu and tap **Back up now**. Expect a new snapshot only at GitHub and `Last confirmed` to update. Confirm Local, Drive and WebDAV did **not** receive a snapshot. (Single-target manual runs ignore the toggle; automatic runs still obey it.)
+5. [ ] Tap **Back up now**, then immediately try another destination's **Back up now** before the first finishes. Expect no duplicate snapshots and **Backing up…** to clear when the run ends.
+6. [ ] Tap **Back up now** on a destination with **Needs setup**. Expect a visible setup-needed result, not a crash, and no snapshot written anywhere else.
+7. [ ] Tap **Restore from backup…** on the main menu. Confirm one **Saved backups** dialog lists snapshots from every enabled, configured destination with the destination name on each row, newest first — no destination-chooser step. Pick a snapshot and confirm the replacement dialog names both the destination and the file.
+
+### Failure popup, warnings and restore from off-device
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] With one destination deliberately broken, close and reopen the app. Expect a **Backup failed** popup naming the destination and its reason **every time** the app opens, plus the persistent **Backup needs attention** banner on Backup & Restore. Confirm no system notification appears and Android shows no runtime permission prompt.
+2. [ ] Fix the destination and run **Back up now**. Expect the popup and banner to clear, and `Last confirmed <date/time>` to update. Confirm no popup on the next app open.
+3. [ ] Turn **Automatic backup** off and leave the last confirmed copy older than 30 days (clock change). Expect the manual reminder in the banner, and no automatic upload. After 3+ days overdue in automatic mode, expect **no confirmed backup for N day(s)** in the banner.
+4. [ ] **Restore from backup…** now offers a destination chooser in priority order. Pick GitHub (then Drive, then WebDAV), confirm the list is newest-first and contains only `WineTracker_<date>_<time>.json` names, and cancel once to confirm no data changes.
+5. [ ] Restore a snapshot from each off-device destination on a disposable install and compare wine/bottle/note/rating/event counts with the source. Expect the same **Replace app data?** confirmation and the existing validated importer's error message for a deliberately malformed file.
+6. [ ] Export a JSON backup and inspect it: confirm `reviewerNames` and `imageStorageBudgetBytes` are present, and that no token, password, Drive URI or image bytes appear. Restore a backup produced **before** these fields existed and confirm the current reviewer list and image-storage budget are unchanged (no silent defaults).
+7. [ ] After a restore, change the reviewer list and the offline-image budget in the source install, export, restore, and confirm both appear immediately in **Wine reviewers** and **Offline wine image storage** without restarting the app.
+8. [ ] In Android Backup settings / `adb shell bmgr`, confirm `backup_credentials.xml` and `files/wine-images/` are excluded from cloud backup and device transfer, and that the Room database and the two settings preference files are still included.
+9. [ ] Run `:app:testDebugUnitTest` (`BackupScheduleTest`, `BackupConfigRulesTest`) and `python3 tools/tests/test_backup_preferences.py`.
 
 ## Branch `arena/673cafd4-wine-manager-android`
 
@@ -500,6 +649,23 @@ Use a throwaway install or the debug seed, not data you can't replace.
 2. [ ] **Bug-019:** a non-vintage wine shows “(NV)”, not “((NV))”, on **Tasting Notes**.
 3. [ ] Legacy CSV imports (W-033 / W-034) and JSON restore, on a disposable install.
 
+
+## W-061 — Structured tasting notes
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run `./gradlew :app:assembleDebug` and `:app:testDebugUnitTest` (including `TastingNoteStructureTest`). The agent sandbox has no JDK or Android SDK, so these were not run here.
+2. [ ] On a disposable install with a v21 database, open the app and confirm `MIGRATION_21_22` succeeds. In Database Inspector, confirm `wine_definitions.defaultColorHsv` is NULL for every pre-existing row and no other table or column changed.
+3. [ ] Add a wine and tap the color swatch. Confirm the glass matches the reference: a broad, rounded Bordeaux bowl with a narrower rim, gently tapered base, long stem and broader foot; the wine fill spans most of the bowl. The popup has no **Color** heading and has comfortable horizontal and bottom padding. The icon-only X and checkmark sit together at the lower-right, in that order. The hue strip covers 330° through red at 0° to 60° and omits green/cyan/blue; the saturation/value plane remains adjustable and no H/S/V value boxes are shown. Keep the floating swatch clear of the touch point, and confirm its Y position stays fixed while moving vertically on the hue strip. Choose a color, save, reopen, and confirm it persists. Repeat in **Edit Wine**, then clear the default color.
+4. [ ] Create a tasting note. Confirm **Color**, its swatch, the aroma-wheel logo, and **Aroma wheel** title share one horizontal row. The Color label and swatch remain outside the aroma card, with matching 8 dp clearance to the right and below the swatch. The wheel header sits beside Color; the selected-aroma panel widens to the full content width below, forming one continuous stepped card with a uniformly rounded outline and no seam or gap between header and chips. Confirm the chips have even inset, wrap across the wider panel, and the card height grows/shrinks with the wrapped rows. Tap the swatch to open the HSV editor, choose a note color, save and reopen; then clear the note override and confirm it inherits the wine-definition color.
+5. [ ] Confirm the aroma launcher card's mini-wheel and selected-aroma chips update as descriptors are added or removed. Open the wheel, choose each of **Aroma**, **Entry**, **Mid-palate** and **Finish**, and add descriptors. Confirm the same stable ID can appear in multiple phases and the 24-distinct-ID limit still applies to the whole note. Confirm the list/search mode matches the wheel selection.
+6. [ ] In each aroma phase, confirm the labels form a wrapping cluster rather than a vertical list and show no numeric intensity badges or steppers. Pinch labels larger/smaller; confirm the word size changes continuously and the most intense/largest labels move to the top. Save, reopen and confirm sizes and largest-first order persist.
+7. [ ] Confirm the editor is one scroll with exactly four short headers: **Visual / Aroma**, **Entry**, **Mid-palate**, **Finish**. All ten existing sliders remain editable in their assigned sections, **Complexity** is in Mid-palate, and one **Entry** scale matches the other sliders' nonnumeric selected-label styling while retaining the **Tight** and **Open** endpoints. Overall score, Common faults, written notes, reviewer/recommend/value and save/delete remain outside the sections.
+8. [ ] On an old note with flat aromas and no observations, open edit mode. Confirm the phase-assignment sheet appears, no phase is preselected, Save stays disabled until every retained aroma is explicitly assigned or removed, and Cancel makes no silent phase inference.
+9. [ ] Expand a Cellar wine with multiple tasting notes and tap each dated note line. Confirm each opens its own read-only detail with the note-entry layout, color, phase-grouped aromas/intensity, sectioned sliders, faults, written notes and other saved values. Only the explicit Edit action opens the editor; the wine-card body and caret retain their own behaviors.
+10. [ ] In **Tasting Notes**, search an aroma descriptor without a phase filter and confirm notes match from any phase, including legacy flat notes. Apply an optional phase filter and confirm only observations in that phase match.
+11. [ ] Export JSON, inspect it for `defaultColorHsv`, `colorHsv`, `entryTightOpen`, `aromaObservations`, per-observation intensity and all slider values. Restore on a second disposable install and confirm counts, legacy notes, colors, phases, intensities and sectioned slider values are unchanged.
+12. [ ] Run Compose/large-font/TalkBack checks for the HSV color editor, wheel phase chips, pinch-only word cloud, legacy sheet and section headers on an emulator/device. Confirm no new permissions, dependencies, network use or background work.
 
 ## Template for a new branch
 

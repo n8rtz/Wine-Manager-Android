@@ -10,8 +10,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.importer.DataImporter
 import com.n8rtz.winetracker.data.importer.JsonExporter
-import com.n8rtz.winetracker.data.importer.CsvImportHelper
-import com.n8rtz.winetracker.data.importer.LegacyCsvImportType
 import com.n8rtz.winetracker.data.local.MIGRATION_5_6
 import com.n8rtz.winetracker.data.local.MIGRATION_6_7
 import com.n8rtz.winetracker.scanner.ScannedWine
@@ -22,9 +20,9 @@ import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.WineBottle
 import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
-import com.n8rtz.winetracker.network.OpenFoodFactsApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -173,27 +171,6 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         }
     }
 
-    fun importLegacyCsv(uri: Uri, type: LegacyCsvImportType) {
-        viewModelScope.launch(Dispatchers.IO) {
-            importState.value = RestoreImportState.Loading
-            try {
-                val result = when (type) {
-                    LegacyCsvImportType.TASTING_NOTES ->
-                        CsvImportHelper.importTastingNotes(getApplication(), repository.database, uri)
-                    LegacyCsvImportType.CONSUMPTION_HISTORY ->
-                        CsvImportHelper.importConsumptionHistory(getApplication(), repository.database, uri)
-                }
-                importState.value = RestoreImportState.Success(
-                    "Imported ${result.imported}; ${result.alreadyPresent} already present; " +
-                        "${result.skippedInvalid} incomplete row(s) skipped."
-                )
-            } catch (e: Exception) {
-                Log.e("WineViewModel", "Legacy CSV import failed", e)
-                importState.value = RestoreImportState.Error(e.message ?: "CSV import failed")
-            }
-        }
-    }
-
     fun prepareExport(launcher: ActivityResultLauncher<String>) { launcher.launch("WineTracker_Backup.json") }
     fun performExport(uri: Uri) {
         viewModelScope.launch {
@@ -218,17 +195,21 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         quantity: Int,
         price: Double?,
         drinkingWindowStart: Int? = null,
-        drinkingWindowEnd: Int? = null
+        drinkingWindowEnd: Int? = null,
+        defaultColorHsv: HsvColor? = null
     ) {
         viewModelScope.launch {
             repository.addWine(
                 maker, name, vintage, type, country, region, subregion, quantity, price,
-                drinkingWindowStart, drinkingWindowEnd
+                drinkingWindowStart, drinkingWindowEnd, defaultColorHsv
             )
         }
     }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }
     fun updateWine(definition: WineDefinition, bottle: WineBottle) { viewModelScope.launch { repository.updateWine(definition, bottle) } }
+    fun addBottleToStock(bottleId: Long) {
+        viewModelScope.launch { repository.addBottleToStock(bottleId) }
+    }
     
     // Removed direct inventoryDao accessor to enforce Repository pattern
 
@@ -238,10 +219,13 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         notes: String?,
         rebuy: Boolean,
         consumptionDate: Long,
+        quantity: Int = 1,
         onComplete: (Long) -> Unit
     ) {
         viewModelScope.launch {
-            val eventId = repository.consumeBottle(bottleId, rating, notes, rebuy, consumptionDate)
+            val eventId = repository.consumeBottle(
+                bottleId, rating, notes, rebuy, consumptionDate, quantity
+            )
             if (eventId > 0L) onComplete(eventId)
         }
     }

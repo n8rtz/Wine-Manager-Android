@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -36,12 +37,13 @@ fun WineCard(
     imageLocalPath: String? = null,
     rating: String? = null,
     isExpanded: Boolean? = null,
-    expansionResetKey: Any? = Unit,
+    onExpandToggle: (() -> Unit)? = null,
     details: @Composable (() -> Unit)? = null,
     dateAdded: String? = null,
     onClick: () -> Unit
 ) {
-    var internalExpanded by remember(expansionResetKey) { mutableStateOf(false) }
+    // Fallback for callers that do not hoist expansion; the carat is the only expand target.
+    var internalExpanded by remember { mutableStateOf(false) }
     val expanded = isExpanded ?: internalExpanded
     val context = LocalContext.current
     val imageModel = remember(context, imageLocalPath, imageUrl) {
@@ -58,16 +60,7 @@ fun WineCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { 
-                    if (details != null && isExpanded == null) {
-                        internalExpanded = !internalExpanded
-                    }
-                    onClick()
-                }
-            ),
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -129,10 +122,24 @@ fun WineCard(
                     }
                     
                     if (details != null) {
-                        Icon(
-                            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = "Expand"
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    if (onExpandToggle != null) {
+                                        onExpandToggle.invoke()
+                                    } else {
+                                        internalExpanded = !internalExpanded
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = "Expand"
+                            )
+                        }
                     }
                 }
 

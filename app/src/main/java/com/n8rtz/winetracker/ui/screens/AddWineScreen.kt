@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -32,6 +33,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.data.local.HsvColor
+import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.isBusy
 import com.n8rtz.winetracker.scanner.WineLabelFraming
@@ -55,9 +58,9 @@ fun AddWineScreen(
     scannerViewModel: ScannerViewModel,
     onWineAdded: () -> Unit
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
@@ -107,6 +110,7 @@ fun AddWineScreen(
     var price by remember { mutableStateOf("") }
     var drinkingWindowStart by remember { mutableStateOf("") }
     var drinkingWindowEnd by remember { mutableStateOf("") }
+    var defaultColorHsv by remember { mutableStateOf<HsvColor?>(null) }
 
     // Cascading Location State
     var selectedCountry by remember { mutableStateOf("") }
@@ -212,8 +216,12 @@ fun AddWineScreen(
     } else emptyList()
 
     val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
+    // Keep the title, but let the header scroll away with the content.
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Add New Wine") }) }
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = { TopAppBar(title = { Text("Add New Wine") }, scrollBehavior = scrollBehavior) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -235,12 +243,6 @@ fun AddWineScreen(
                         runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                             .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
                     })
-                if (BuildConfig.DEBUG) {
-                    OutlinedButton(enabled = !labelScanState.isBusy && !showLabelCamera, onClick = {
-                        context.startActivity(android.content.Intent().setClassName(context,
-                            "com.yourapp.wine.benchmark.OcrLabActivity"))
-                    }) { Text("OCR Lab — test production stack") }
-                }
                 (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
@@ -297,6 +299,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         producerSearchExpanded = false
                                     }
                                 )
@@ -359,6 +362,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         nameSearchExpanded = false
                                     }
                                 )
@@ -603,6 +607,11 @@ fun AddWineScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                DefaultColorField(
+                    color = defaultColorHsv,
+                    onColorChange = { defaultColorHsv = it }
+                )
+
                 Button(
                     enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
                     onClick = {
@@ -617,7 +626,8 @@ fun AddWineScreen(
                             quantity = quantity.toIntOrNull() ?: 1,
                             price = price.toDoubleOrNull(),
                             drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
+                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                            defaultColorHsv = defaultColorHsv
                         )
                         onWineAdded()
                     },

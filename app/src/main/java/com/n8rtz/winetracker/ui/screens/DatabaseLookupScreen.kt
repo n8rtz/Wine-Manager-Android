@@ -33,6 +33,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -221,13 +224,23 @@ fun DatabaseLookupScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(topBar = {
-        TopAppBar(title = { Text("Database Lookup") }, navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-        })
-    }) { insets ->
+    // Keep the title, but let the header scroll away with the content.
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = { Text("Database Lookup") },
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { insets ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(insets).padding(horizontal = 16.dp),
             contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
@@ -319,8 +332,7 @@ fun DatabaseLookupScreen(onBack: () -> Unit) {
                         value = query,
                         onValueChange = { query = it; browseOffset = 0 },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Search ${category.label.lowercase()}") },
-                        placeholder = { Text("Type a name") },
+                        label = { Text("Search", maxLines = 1) },
                         singleLine = true
                     )
                 }

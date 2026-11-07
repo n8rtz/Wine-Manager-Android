@@ -68,6 +68,11 @@ class TastingNoteViewModel(application: Application, private val repository: Win
         _reviewerNames.value = cleanedNames
     }
 
+    /** Re-reads SharedPreferences after a JSON restore rewrote them (W-057 Phase 2). */
+    fun refreshReviewerNames() {
+        _reviewerNames.value = loadReviewerNames()
+    }
+
     private fun loadReviewerNames(): List<String> {
         val savedNames = reviewerPreferences.getStringSet(REVIEWER_NAMES_KEY, null)
         return normalizeReviewerNames(savedNames?.toList() ?: DEFAULT_REVIEWER_NAMES)

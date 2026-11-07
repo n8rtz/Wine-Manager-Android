@@ -88,15 +88,6 @@ interface WineDao {
 
     @Query("""
         SELECT d.* FROM wine_definitions d
-        WHERE (d.imageUrl IS NULL OR TRIM(d.imageUrl) = '')
-          AND NOT EXISTS (
-            SELECT 1 FROM wine_image_assets a WHERE a.definitionId = d.definitionId
-          )
-    """)
-    suspend fun getAllWithoutImages(): List<WineDefinition>
-
-    @Query("""
-        SELECT d.* FROM wine_definitions d
         WHERE (
             (d.imageUrl IS NULL OR TRIM(d.imageUrl) = '')
             AND NOT EXISTS (

@@ -111,7 +111,7 @@ android {
 }
 
 dependencies {
-    // Production v6 Medium OCR plus the debug comparison lab share the genuine runtime.
+    // Production v6 Medium OCR uses the genuine ONNX runtime.
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.21.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
