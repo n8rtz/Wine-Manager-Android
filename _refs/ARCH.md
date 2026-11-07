@@ -29,6 +29,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │
 ├── MainActivity.kt                    # Entry point, nav host (routes: cellar, notes, rankings, history, profile, settings,
 │                                      #   app_info, pareto, add_wine, wine/note editors), bottom bar, Add FAB menu
+├── WineTrackerApp.kt                  # Application: schedules the delayed GLINER model pre-warm; nothing blocking
 │
 ├── ui/
 │   ├── theme/
@@ -136,6 +137,7 @@ app/src/test/java/...                  # JVM tests: aromawheel, drinkingwindow, 
                                        #   image provider, vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
 app/src/androidTest/java/...           # Instrumented: WineImageImportRepositoryTest, LabelOcrImageRegressionTest
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
+gliner-workflow/src/main/java/com/yourapp/wine/gliner/GlinerModelPrewarm.kt # Delayed low-priority GLINER bundle install/verify after app start (best-effort; scan-time install unchanged)
 gliner-workflow/src/test/java/com/yourapp/wine/gliner/GlinerFieldDecisionV5Test.kt # Synthetic paired-OCR decision-policy positive and abstention regressions
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
 tools/evaluation/wine-app-labels-review-v1/internet-labels-v1.json # Temporary front-label test photos: provenance, checksums and scorer-only candidate references
