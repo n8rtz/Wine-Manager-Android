@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
@@ -28,6 +29,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -189,9 +191,12 @@ fun AddWineScreen(
         syncFormToInputs()
     }
     val requestScan: () -> Unit = {
+        Log.d("WineTracker", "Shutter tapped: state=" + labelScanState.javaClass.simpleName +
+            " busy=" + labelScanState.isBusy + " permission=" + cameraPermissionGranted +
+            " ready=" + cameraReady + " error=" + cameraError)
         if (!labelScanState.isBusy) {
             cameraError = null
-            if (cameraPermissionGranted) scannerViewModel.requestLabelScan()
+            if (cameraPermissionGranted) Log.d("WineTracker", "Shutter: requestCapture returned " + scannerViewModel.requestLabelScan())
             else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
@@ -916,8 +921,12 @@ private fun AddWineCameraLayer(
                                 tint = Color.Black)
                         }
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = onShutter, enabled = cameraReady && cameraError == null,
+                        // A disabled shutter must LOOK disabled: the explicit black tint ignores
+                        // IconButton's content dimming, so dim the whole button while not ready.
+                        val shutterEnabled = cameraReady && cameraError == null
+                        IconButton(onClick = onShutter, enabled = shutterEnabled,
                             modifier = Modifier.size(60.dp)
+                                .alpha(if (shutterEnabled) 1f else 0.4f)
                                 .background(Color.White, CircleShape)
                                 .border(2.dp, Color.Black.copy(alpha = 0.25f), CircleShape)) {
                             Icon(Icons.Default.Camera, contentDescription = "Take photo", tint = Color.Black,

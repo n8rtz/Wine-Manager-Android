@@ -68,12 +68,17 @@ internal object ProductionLabelScanSession {
     fun requestCapture(context: Context): Boolean = synchronized(lock) {
         val app = context.applicationContext
         initialize(app)
-        if (mutable.value !is LabelScanState.Idle && mutable.value !is LabelScanState.Error) return false
+        if (mutable.value !is LabelScanState.Idle && mutable.value !is LabelScanState.Error) {
+            Log.d("ProductionLabelScanSession", "requestCapture rejected: state=${mutable.value}")
+            return false
+        }
         if (!LabelScanService.start(app)) {
+            Log.w("ProductionLabelScanSession", "requestCapture: LabelScanService.start failed")
             mutable.value = LabelScanState.Error(++nextId, "Could not start the scan — try again or enter details manually")
             return false
         }
         val id = ++nextId
+        Log.d("ProductionLabelScanSession", "requestCapture accepted: id=$id")
         mutable.value = LabelScanState.CapturingPhoto(id, SystemClock.elapsedRealtime())
         scope.launch {
             delay(CAPTURE_BUDGET_MS)

@@ -1,6 +1,7 @@
 package com.n8rtz.winetracker.ui.components
 
 import android.content.Context
+import android.util.Log
 import android.view.View
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -60,8 +61,14 @@ fun LabelScanCameraPreview(
 
     LaunchedEffect(bindingState.value, cameraReady, labelScanState) {
         val captureRequest = labelScanState as? LabelScanState.CapturingPhoto
-        if (cameraReady && captureRequest != null) {
-            bindingState.value?.takePicture(captureRequest.requestId)
+        if (captureRequest != null) {
+            val binding = bindingState.value
+            Log.d("LabelScanCamera", "Capture " + captureRequest.requestId + " observed: ready=" + cameraReady +
+                " bindingNull=" + (binding == null))
+            if (cameraReady) {
+                if (binding != null) binding.takePicture(captureRequest.requestId)
+                else Log.d("LabelScanCamera", "Capture " + captureRequest.requestId + " deferred: binding not yet created")
+            }
         }
     }
 
@@ -107,6 +114,8 @@ fun LabelScanCameraPreview(
                     imageCapture = imageCapture,
                     onPhotoCaptured = { requestId, photoFile ->
                         deliveredRequestId = requestId
+                        Log.d("LabelScanCamera", "Capture $requestId delivered " + photoFile.length() + "b to " +
+                            if (latestOnPhotoCaptured.value != null) "hold" else "session")
                         latestOnPhotoCaptured.value?.invoke(requestId, photoFile)
                             ?: scannerViewModel.onLabelPhotoCaptured(requestId, photoFile)
                     },
@@ -173,9 +182,11 @@ private class CameraUseCaseBinding(
                 )
                 cameraProvider = provider
                 cameraReady = true
+                Log.d("LabelScanCamera", "Camera bound")
                 onCameraReadyChanged(true)
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 if (!closed) {
+                    Log.w("LabelScanCamera", "Camera bind failed", error)
                     onCameraReadyChanged(false)
                     onCameraError("Camera could not be started. You can still enter the wine manually.")
                 }
@@ -184,11 +195,16 @@ private class CameraUseCaseBinding(
     }
 
     fun takePicture(requestId: Long) {
-        if (closed || lastCaptureRequestId == requestId) return
+        if (closed || lastCaptureRequestId == requestId) {
+            Log.d("LabelScanCamera", "takePicture($requestId) skipped: closed=$closed dup=${lastCaptureRequestId == requestId}")
+            return
+        }
         if (!cameraReady || captureInProgress) {
+            Log.d("LabelScanCamera", "takePicture($requestId) not ready: cameraReady=$cameraReady inProgress=$captureInProgress")
             onCaptureFailed(requestId, IllegalStateException("Camera is not ready to take a photo"))
             return
         }
+        Log.d("LabelScanCamera", "takePicture($requestId) starting")
 
         lastCaptureRequestId = requestId
         captureInProgress = true
@@ -208,12 +224,14 @@ private class CameraUseCaseBinding(
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                         captureInProgress = false
+                        Log.d("LabelScanCamera", "takePicture($requestId) saved " + photoFile.length() + "b closed=" + closed)
                         if (closed) photoFile.delete() else onPhotoCaptured(requestId, photoFile)
                     }
 
                     override fun onError(exception: ImageCaptureException) {
                         captureInProgress = false
                         photoFile.delete()
+                        Log.w("LabelScanCamera", "takePicture($requestId) failed", exception)
                         onCaptureFailed(requestId, exception)
                     }
                 }
@@ -226,6 +244,7 @@ private class CameraUseCaseBinding(
     }
 
     fun close() {
+        Log.d("LabelScanCamera", "Camera unbound")
         closed = true
         cameraReady = false
         onCameraReadyChanged(false)
