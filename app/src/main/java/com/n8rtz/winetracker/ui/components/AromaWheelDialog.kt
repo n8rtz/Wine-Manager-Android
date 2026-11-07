@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -102,25 +101,33 @@ import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.toFlatAromaIds
 import com.n8rtz.winetracker.data.local.toggleAromaObservation
 
-/**
- * Live tasting-note launcher: the mini wheel and selected-aroma chips update
- * from the current selection. The whole card opens the phase-aware wheel.
- */
+/** Live tasting-note launcher header, with a bottom edge open for a summary panel. */
 @Composable
-fun AromaWheelLauncherCard(
+fun AromaWheelLauncherHeader(
     selectedIds: List<String>,
     onClick: () -> Unit,
     enabled: Boolean = true,
     compact: Boolean = false,
+    hasSummary: Boolean = selectedIds.isNotEmpty(),
     modifier: Modifier = Modifier
 ) {
     val glyphSize = if (compact) 36.dp else 44.dp
     val titleStyle = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
     val arrowSize = if (compact) 20.dp else 24.dp
+    val headerShape = if (hasSummary) {
+        RoundedCornerShape(
+            topStart = 16.dp,
+            topEnd = 16.dp,
+            bottomEnd = 0.dp,
+            bottomStart = 0.dp
+        )
+    } else {
+        RoundedCornerShape(16.dp)
+    }
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(headerShape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(
@@ -130,40 +137,96 @@ fun AromaWheelLauncherCard(
                 bottom = if (compact) 6.dp else 10.dp
             )
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AromaWheelGlyph(
-                    selectedIds = selectedIds.toSet(),
-                    modifier = Modifier
-                        .size(glyphSize)
-                        .semantics { contentDescription = "Aroma wheel selection overview" }
-                )
-                Spacer(Modifier.width(if (compact) 8.dp else 12.dp))
-                Text(
-                    "Aroma wheel",
-                    style = titleStyle,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(arrowSize)
-                )
-            }
-            if (selectedIds.isNotEmpty()) {
-                Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
-                AromaSummaryChipRow(
-                    ids = selectedIds,
-                    modifier = Modifier.fillMaxWidth(),
-                    compact = compact
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AromaWheelGlyph(
+                selectedIds = selectedIds.toSet(),
+                modifier = Modifier
+                    .size(glyphSize)
+                    .semantics { contentDescription = "Aroma wheel selection overview" }
+            )
+            Spacer(Modifier.width(if (compact) 8.dp else 12.dp))
+            Text(
+                "Aroma wheel",
+                style = titleStyle,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(arrowSize)
+            )
         }
+    }
+}
+
+/** Full-width selected-aroma panel, which can sit below the narrower launcher header. */
+@Composable
+fun AromaWheelSummaryPanel(
+    selectedIds: List<String>,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    compact: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    if (selectedIds.isEmpty()) return
+
+    Box(
+        modifier = modifier
+            .clip(
+                RoundedCornerShape(
+                    topStart = 0.dp,
+                    topEnd = 0.dp,
+                    bottomEnd = 16.dp,
+                    bottomStart = 16.dp
+                )
+            )
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+            .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
+            .padding(
+                start = if (compact) 8.dp else 14.dp,
+                end = if (compact) 8.dp else 8.dp,
+                top = if (compact) 6.dp else 8.dp,
+                bottom = if (compact) 6.dp else 10.dp
+            )
+    ) {
+        AromaSummaryChipRow(
+            ids = selectedIds,
+            modifier = Modifier.fillMaxWidth(),
+            compact = compact
+        )
+    }
+}
+
+/** Convenience card for places where the header and summary share one width. */
+@Composable
+fun AromaWheelLauncherCard(
+    selectedIds: List<String>,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    compact: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        AromaWheelLauncherHeader(
+            selectedIds = selectedIds,
+            onClick = onClick,
+            enabled = enabled,
+            compact = compact,
+            hasSummary = selectedIds.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        AromaWheelSummaryPanel(
+            selectedIds = selectedIds,
+            onClick = onClick,
+            enabled = enabled,
+            compact = compact,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

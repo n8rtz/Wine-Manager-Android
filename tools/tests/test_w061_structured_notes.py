@@ -168,23 +168,35 @@ class W061SourceContractTests(unittest.TestCase):
         aroma_row = sections.split("TastingPhase.AROMA_BEFORE_TASTING -> {", 1)[1].split(
             "if (legacyAromasUnresolved", 1
         )[0]
-        launcher = wheel.split("fun AromaWheelLauncherCard(", 1)[1].split(
-            "private fun AromaSummaryChipRow(", 1
+        header = wheel.split("fun AromaWheelLauncherHeader(", 1)[1].split(
+            "@Composable\nfun AromaWheelSummaryPanel(", 1
+        )[0]
+        summary_panel = wheel.split("fun AromaWheelSummaryPanel(", 1)[1].split(
+            "@Composable\nfun AromaWheelLauncherCard(", 1
         )[0]
         summary_chips = wheel.split("private fun AromaSummaryChipRow(", 1)[1].split(
             "/** Drag positions", 1
         )[0]
+        self.assertIn("Column(", aroma_row)
         self.assertIn("Row(", aroma_row)
         self.assertIn("verticalAlignment = Alignment.Top", aroma_row)
         self.assertIn("NoteColorField(", aroma_row)
         self.assertIn("inline = true", aroma_row)
-        self.assertIn("AromaWheelLauncherCard(", aroma_row)
+        self.assertIn("AromaWheelLauncherHeader(", aroma_row)
+        self.assertIn("AromaWheelSummaryPanel(", aroma_row)
         self.assertIn("compact = true", aroma_row)
         self.assertIn("modifier = Modifier.weight(1f)", aroma_row)
-        self.assertLess(aroma_row.index("NoteColorField("), aroma_row.index("AromaWheelLauncherCard("))
-        self.assertIn(".background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))", launcher)
-        self.assertIn("AromaWheelGlyph(", launcher)
-        self.assertIn('"Aroma wheel"', launcher)
+        self.assertIn("modifier = Modifier.fillMaxWidth()", aroma_row)
+        self.assertLess(aroma_row.index("NoteColorField("), aroma_row.index("AromaWheelLauncherHeader("))
+        self.assertLess(aroma_row.index("AromaWheelLauncherHeader("), aroma_row.index("AromaWheelSummaryPanel("))
+        self.assertIn(".background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))", header)
+        self.assertIn("bottomStart = 0.dp", header)
+        self.assertIn("AromaWheelGlyph(", header)
+        self.assertIn('"Aroma wheel"', header)
+        self.assertIn("RoundedCornerShape(", summary_panel)
+        self.assertIn("topStart = 0.dp", summary_panel)
+        self.assertIn("bottomStart = 16.dp", summary_panel)
+        self.assertIn("AromaSummaryChipRow(", summary_panel)
         self.assertIn("FlowRow(", summary_chips)
         self.assertIn("ids.distinct().forEach", summary_chips)
         self.assertIn("horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp)", summary_chips)
@@ -199,7 +211,8 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("LegacyAromaPhaseSheet(", editor)
         self.assertIn("withDerivedAromas(", editor)
         self.assertIn("validateForSave(sensoryData)", editor)
-        self.assertIn("AromaWheelLauncherCard(", sections)
+        self.assertIn("AromaWheelLauncherHeader(", sections)
+        self.assertIn("AromaWheelSummaryPanel(", sections)
         self.assertIn("selectedAromaIds", sections)
         self.assertIn("sortAromaObservationsByIntensity", sections)
         self.assertNotIn("AromaWheelLauncherButton", sections)
@@ -214,7 +227,7 @@ class W061SourceContractTests(unittest.TestCase):
         legacy = read(UI / "components/LegacyAromaPhaseSheet.kt")
         self.assertIn("fun PhaseAromaWheelDialog(", wheel)
         self.assertIn("TastingPhase.values().forEach", wheel)
-        launcher = wheel.split("fun AromaWheelLauncherCard(", 1)[1].split("/** Drag positions", 1)[0]
+        launcher = wheel.split("fun AromaWheelLauncherHeader(", 1)[1].split("/** Drag positions", 1)[0]
         self.assertIn("AromaWheelGlyph(", launcher)
         self.assertIn("AromaSummaryChipRow(", launcher)
         self.assertNotIn("ReorderableAromaChipRow(", launcher)

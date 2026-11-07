@@ -68,24 +68,34 @@ fun SectionedSensoryFields(
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             when (phase) {
                 TastingPhase.AROMA_BEFORE_TASTING -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        NoteColorField(
-                            definitionColor = definitionColor,
-                            noteColor = normalized.colorHsv,
-                            onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
-                            readOnly = readOnly,
-                            inline = true
-                        )
-                        AromaWheelLauncherCard(
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            NoteColorField(
+                                definitionColor = definitionColor,
+                                noteColor = normalized.colorHsv,
+                                onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
+                                readOnly = readOnly,
+                                inline = true
+                            )
+                            AromaWheelLauncherHeader(
+                                selectedIds = selectedAromaIds,
+                                onClick = onOpenWheel,
+                                enabled = !readOnly,
+                                compact = true,
+                                hasSummary = selectedAromaIds.isNotEmpty(),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        AromaWheelSummaryPanel(
                             selectedIds = selectedAromaIds,
                             onClick = onOpenWheel,
                             enabled = !readOnly,
                             compact = true,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                     if (legacyAromasUnresolved && !readOnly) {
