@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-062**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-063**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-028**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -78,11 +78,12 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 7 | W-052 | Wine Resources page (glossary, grapes, regions, map) | XL (Phase A = L) | Planned (brief only) | 0.9.0+ |
 | 8 | W-060 | Cellar page selector — Bottles / Racks views, rack tiles + text-free plus tile, rack tags | L (Room migration + new subsystem; needs a brief) | Needs decision | TBD (owner to rank) |
 | 9 | W-061 | Structured tasting notes — color picker, phase-aware aromas, aroma intensity, four sections | L (implemented; Android verification pending) | Fixed – awaiting device check | TBD (owner to rank) |
+| 10 | W-062 | Wine wishlist — wines to buy later, not yet owned | L (persistent list + UI; brief needed) | Open — placement and scope TBD | TBD (owner to rank) |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
-*(W-060 was logged 2026-11-04 and W-061 on 2026-11-05, both at the owner's request; ranks 8–9 are placeholders until the owner re-ranks them.)*
+*(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; ranks 8–10 are placeholders until the owner re-ranks them.)*
 
-**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060 and W-061 were logged afterwards with no priority given, so ranks 8 and 9 are placeholders until the owner re-ranks them.
+**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060, W-061 and W-062 were logged afterwards with no priority given, so ranks 8–10 are placeholders until the owner re-ranks them.
 
 ---
 
@@ -326,6 +327,12 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Color-control decision (owner correction, 2026-11-06):** use an interactive HSV picker opened from the wine-color swatch (wine-tone hue arc 330°→0°→60°, saturation/value plane, no numeric HSV fields, icon-only X/check actions); retain HSV storage and the WineDefinition default + per-note override, with a clear action to return to the wine default; Room column + migration v22; same descriptor in multiple phases with one 24-distinct-ID cap per note; legacy phase-assignment prompt on edit; pinch-sized clustered word cloud with continuous `0f..1f` intensity per descriptor-phase pair, no numeric badges, stepper or drag reorder, and automatic largest-first ordering; one bipolar **Tight ↔ Open** slider; Complexity in Mid-palate; global controls outside the four sections; single-scroll four-section layout; observations-only data with derived flat view; all-phase W-053 search with optional phase filter; active-phase selector in the wheel. Full decision log and framework: `major-feature-planning/structured-tasting-notes.md`.
 * **Out of scope:** no new permissions, dependencies, network calls or background work; no W-057 backup-format change; no unrequested in-app explanatory prose; no changes to inventory or consumption events. A single Room v22 migration for `WineDefinition.defaultColorHsv` is explicitly authorized for future implementation, with no data backfill or inference; no other schema change. The framework task was doc-only; the current implementation adds Kotlin source and the single authorized Room v22 migration.
 * **Done when:** `./gradlew :app:assembleDebug`, `:app:testDebugUnitTest`, Compose and device/emulator checks pass; color, phase, intensity and sectioned slider data survive JSON backup → restore and the v22 migration; legacy notes remain intact; `ARCH.md`, `CHANGELOG.md`, `THINGS_TO_CHECK.md` and `PIPELINE.md` gates are completed. No Android build or device run has been performed in the agent sandbox.
+
+### 10. W-062 — Wine wishlist for future purchases *(logged 2026-11-07)*
+**Complexity:** L (persistent list + UI; brief needed) · **Status:** Open
+* **Goal:** Let the owner add wines they want to buy but do not yet own, separate from cellar inventory.
+* **UI-Trigger / Location:** Wishlist screen/destination and the entry point for adding a wine are TBD.
+* **Design needed before implementation:** choose the wine details to store, how a wanted wine is selected/entered, and how an item is handled when it is purchased. Do not count wishlist wines as owned stock. No implementation has been requested yet.
 
 ---
 
