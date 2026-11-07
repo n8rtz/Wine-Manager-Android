@@ -17,3 +17,13 @@ tasks.register<Exec>("switchToArenaBranch") {
     workingDir = rootDir
     commandLine("sh", "tools/switch-to-arena-branch.sh")
 }
+
+// Companion to switchToArenaBranch: one-tap return to main, same force semantics.
+// Run it alone (not chained with a build): it changes the files on disk, so
+// sync/build after it completes.
+tasks.register<Exec>("switchToMainBranch") {
+    group = "wine"
+    description = "Force-switch to main (discards local changes on it)."
+    workingDir = rootDir
+    commandLine("sh", "tools/switch-to-main-branch.sh")
+}
