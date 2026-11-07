@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-060**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-064**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -89,6 +89,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 5 | W-035 | Country flags on wine cards | S | Open | 0.7.0 |
 | 6 | W-053 | Filter tasting notes by aroma | M | Open | 0.8.0 |
 | 7 | W-052 | Wine Resources page (glossary, grapes, regions, map) | XL (Phase A = L) | Planned (brief only) | 0.9.0+ |
+| 8 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 
@@ -310,6 +311,14 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
   * **Phase B — interactive map (XL):** only after Phase A ships. Needs a licensed boundary source and a rendering approach (the app has no map dependency; a custom Canvas like the aroma wheel is one option). The list view stays as the accessible equivalent.
   * **Phase C — link to cellar wines (L, optional):** a grape-variety field on `WineDefinition` (Room migration v22, backup/restore and importer updates, per rules 14–16) would also unlock grape-aware W-050 rules. Do not start without an explicit decision.
 * **Open decisions (from the brief):** initial region/grape coverage; map and educational-data sources and their licences/offline needs; content review/update ownership.
+
+### 8. W-063 — Smart label-edge auto-crop for the scan photo *(parked, owner decision 2026-11-07)*
+**Complexity:** M, possibly L (needs a brief) · **Status:** Open — revisit when the owner asks
+* **Goal:** Crop the scan photo to the wine label using detected *label edges*, not the text bounding box, so no part of the label is ever cut off — even regions without text. Display first; feeding the crop to the OCR pipeline is a separate, later decision.
+* **UI-Trigger / Location:** Add Wine form (`LabelScanActions` scan-photo display) and possibly the scanner overlay; later, the OCR input in `GlinerOcr` / `ProductionLabelScanner`.
+* **Current state (verified in source 2026-11-07):** the production pipeline does not crop at all — it reads the full photo (decode is downsample + EXIF only; `LOCALIZE`/`WARP` exist only in the legacy `OfflineWineScanner` and the `PhoneCorpusRunner` benchmark paths). The photo kept on Add Wine therefore already shows exactly what the pipeline reads, so there is no display/pipeline mismatch to fix today.
+* **Constraints for the brief:** edge detection must be conservative — an uncertain crop falls back to the full photo (cutting the label is worse than showing background); must run on-device with no new paid provider; any pipeline-input change needs a before/after benchmark comparison (recognition behaviour change, cf. W-058).
+* **Revisit when:** the owner asks, or measurement shows cropping would help OCR accuracy.
 
 ---
 
