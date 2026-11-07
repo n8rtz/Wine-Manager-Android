@@ -51,7 +51,8 @@ class Converters {
     fun fromStatus(status: BottleStatus): String = status.name
 
     @TypeConverter
-    fun toStatus(value: String): BottleStatus = BottleStatus.valueOf(value)
+    fun toStatus(value: String): BottleStatus =
+        runCatching { BottleStatus.valueOf(value) }.getOrDefault(BottleStatus.IN_CELLAR)
 
     @TypeConverter
     fun fromHsvColor(value: HsvColor?): String? = value?.let { Gson().toJson(it) }

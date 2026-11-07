@@ -658,7 +658,7 @@ internal class WineAppLabelsBuildLog(
 
         fun currentBuildKey(): String {
             val commit = BuildConfig.BUILD_COMMIT.ifBlank { "unknown" }
-            return if (BuildConfig.BUILD_DIRTY) "$commit:dirty:${BuildConfig.BUILD_TIME_MILLIS}" else "$commit:clean"
+            return if (BuildConfig.BUILD_DIRTY) "$commit:dirty:${BuildConfig.BUILD_FINGERPRINT}" else "$commit:clean"
         }
 
         fun currentBuildInfo(): BuildInfo {

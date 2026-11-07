@@ -178,32 +178,106 @@ class MainActivity : ComponentActivity() {
      * app silently during composition; it now shows what went wrong instead.
      */
     private val startupDbState = mutableStateOf<StartupDbState>(StartupDbState.Checking)
+    private val previousCrashReport = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("WineTracker", "MainActivity: onCreate started")
+
+        val crashFile = java.io.File(filesDir, "startup_crash_report.txt")
+        runCatching {
+            if (crashFile.isFile && crashFile.length() > 0L) {
+                previousCrashReport.value = crashFile.readText().take(4000)
+            }
+        }
+        val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            val summary = "${java.util.Date()} · Build ${BuildConfig.BUILD_COMMIT} · Thread ${thread.name} · ${error.javaClass.name}: ${error.message}\n" +
+                error.stackTraceToString().take(4000)
+            runCatching { crashFile.writeText(summary) }
+            Log.e("WineTracker", "Uncaught exception on ${thread.name}", error)
+            if (thread !== android.os.Looper.getMainLooper().thread) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    startupDbState.value = StartupDbState.Failed(summary)
+                }
+            } else {
+                previousHandler?.uncaughtException(thread, error)
+            }
+        }
+
         enableEdgeToEdge()
 
         startDatabaseProbe()
 
         setContent {
             WineTrackerTheme {
-                when (val state = startupDbState.value) {
-                    StartupDbState.Checking -> StartupCheckingScreen()
-                    StartupDbState.Ready -> {
-                        val navController = rememberNavController()
-                        MainAppScaffold(
-                            navController,
-                            wineViewModel,
-                            tastingNoteViewModel,
-                            rankingsViewModel,
-                            scannerViewModel,
-                            wineImageImportViewModel
-                        )
+                val repoDbError by repository.lastDatabaseError.collectAsState()
+                val crashText = previousCrashReport.value
+                Column(modifier = Modifier.fillMaxSize()) {
+                    if (crashText != null) {
+                        val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(12.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    "Previous launch ended unexpectedly",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    crashText.lines().take(6).joinToString("\n"),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    maxLines = 6,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    TextButton(onClick = {
+                                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(crashText))
+                                    }) {
+                                        Text("Copy crash log")
+                                    }
+                                    TextButton(onClick = {
+                                        runCatching { crashFile.delete() }
+                                        previousCrashReport.value = null
+                                    }) {
+                                        Text("Dismiss")
+                                    }
+                                }
+                            }
+                        }
                     }
-                    is StartupDbState.Failed -> StartupDbErrorScreen(state.detail) {
-                        startupDbState.value = StartupDbState.Checking
-                        startDatabaseProbe()
+
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        when (val state = startupDbState.value) {
+                            StartupDbState.Checking -> StartupCheckingScreen()
+                            StartupDbState.Ready -> {
+                                if (repoDbError != null) {
+                                    StartupDbErrorScreen(repoDbError ?: "Database query failed") {
+                                        repository.clearLastDatabaseError()
+                                        startupDbState.value = StartupDbState.Checking
+                                        startDatabaseProbe()
+                                    }
+                                } else {
+                                    val navController = rememberNavController()
+                                    MainAppScaffold(
+                                        navController,
+                                        wineViewModel,
+                                        tastingNoteViewModel,
+                                        rankingsViewModel,
+                                        scannerViewModel,
+                                        wineImageImportViewModel
+                                    )
+                                }
+                            }
+                            is StartupDbState.Failed -> StartupDbErrorScreen(state.detail) {
+                                startupDbState.value = StartupDbState.Checking
+                                startDatabaseProbe()
+                            }
+                        }
                     }
                 }
             }
@@ -214,11 +288,11 @@ class MainActivity : ComponentActivity() {
     private fun startDatabaseProbe() {
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             Log.d("WineTracker", "MainActivity: Triggering background migration check")
-            val openError = try {
+            val openError: Throwable? = try {
                 database.query(androidx.sqlite.db.SimpleSQLiteQuery("SELECT 1")).use { }
                 Log.d("WineTracker", "MainActivity: Background migration check complete")
                 null
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e("WineTracker", "MainActivity: Error during background migration", e)
                 e
             }
@@ -232,19 +306,25 @@ class MainActivity : ComponentActivity() {
                 return@launch
             }
 
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                startupDbState.value = StartupDbState.Ready
+            }
+
             // Debug builds only: restore the developer's bundled backup into an empty database (see DevSeedRestorer).
-            val seedMessage = when (val result = DevSeedRestorer(applicationContext, database).restoreIfNeeded()) {
-                is DevSeedRestorer.Result.Restored -> "Dev seed restored: ${result.definitions} wines, ${result.notes} notes"
-                is DevSeedRestorer.Result.Failed -> "Dev seed restore failed: ${result.message}"
-                else -> null
+            val seedMessage = try {
+                when (val result = DevSeedRestorer(applicationContext, database).restoreIfNeeded()) {
+                    is DevSeedRestorer.Result.Restored -> "Dev seed restored: ${result.definitions} wines, ${result.notes} notes"
+                    is DevSeedRestorer.Result.Failed -> "Dev seed restore failed: ${result.message}"
+                    else -> null
+                }
+            } catch (t: Throwable) {
+                Log.w("WineTracker", "MainActivity: DevSeedRestorer failed", t)
+                null
             }
             if (seedMessage != null) {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     android.widget.Toast.makeText(applicationContext, seedMessage, android.widget.Toast.LENGTH_LONG).show()
                 }
-            }
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                startupDbState.value = StartupDbState.Ready
             }
         }
     }
@@ -739,6 +819,7 @@ private fun StartupCheckingScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text("Cellar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             CircularProgressIndicator()
             Text("Opening cellar…", style = MaterialTheme.typography.bodyLarge)
         }

@@ -6,3 +6,24 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.compose.compiler) apply false
 }
+
+// One-tap branch switch for AndroidIDE's task list: force-switches to the active Arena
+// session branch and resets it to the remote state (discards local changes on it).
+// Run it alone (not chained with a build): it changes the files on disk, so
+// sync/build after it completes.
+tasks.register<Exec>("switchToArenaBranch") {
+    group = "wine"
+    description = "Force-switch to the arena/8cd052b7 session branch (discards local changes on it)."
+    workingDir = rootDir
+    commandLine("sh", "tools/switch-to-arena-branch.sh")
+}
+
+// Companion to switchToArenaBranch: one-tap return to main, same force semantics.
+// Run it alone (not chained with a build): it changes the files on disk, so
+// sync/build after it completes.
+tasks.register<Exec>("switchToMainBranch") {
+    group = "wine"
+    description = "Force-switch to main (discards local changes on it)."
+    workingDir = rootDir
+    commandLine("sh", "tools/switch-to-main-branch.sh")
+}

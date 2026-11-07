@@ -30,7 +30,10 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
         ScannerManager(application)
     }
     private val scannerManager by scannerManagerDelegate
-    init { com.n8rtz.winetracker.scanner.ProductionLabelScanSession.connect(application) }
+    init {
+        runCatching { com.n8rtz.winetracker.scanner.ProductionLabelScanSession.connect(application) }
+            .onFailure { Log.w("ScannerViewModel", "Failed to connect scan session on init", it) }
+    }
 
     // Image Pipeline
     private val retrofit by lazy {

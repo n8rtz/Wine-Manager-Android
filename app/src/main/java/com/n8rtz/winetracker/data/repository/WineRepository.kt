@@ -18,6 +18,10 @@ import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.normalizeVintage
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 
 class WineRepository(
     private val wineDao: WineDao,
@@ -26,11 +30,43 @@ class WineRepository(
     private val ratingDao: RatingDao,
     val database: WineDatabase
 ) {
+    private val _lastDatabaseError = MutableStateFlow<String?>(null)
+    val lastDatabaseError: StateFlow<String?> = _lastDatabaseError.asStateFlow()
+
+    fun clearLastDatabaseError() {
+        _lastDatabaseError.value = null
+    }
+
     val activeInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getActiveInventory()
+        .catch { e ->
+            android.util.Log.e("WineRepository", "activeInventory failed", e)
+            _lastDatabaseError.value = "${e.javaClass.simpleName}: ${e.message}"
+            emit(emptyList())
+        }
     val archivedInventory: Flow<List<WineBottleWithDefinition>> = inventoryDao.getArchivedBottles()
+        .catch { e ->
+            android.util.Log.e("WineRepository", "archivedInventory failed", e)
+            _lastDatabaseError.value = "${e.javaClass.simpleName}: ${e.message}"
+            emit(emptyList())
+        }
     val tastingHistory: Flow<List<TastingNoteWithDefinition>> = tastingNoteDao.getTastingHistory()
+        .catch { e ->
+            android.util.Log.e("WineRepository", "tastingHistory failed", e)
+            _lastDatabaseError.value = "${e.javaClass.simpleName}: ${e.message}"
+            emit(emptyList())
+        }
     val consumptionHistory: Flow<List<ConsumptionEventWithDefinition>> = database.consumptionEventDao().getConsumptionHistory()
+        .catch { e ->
+            android.util.Log.e("WineRepository", "consumptionHistory failed", e)
+            _lastDatabaseError.value = "${e.javaClass.simpleName}: ${e.message}"
+            emit(emptyList())
+        }
     val allDefinitions: Flow<List<WineDefinition>> = wineDao.getAllDefinitions()
+        .catch { e ->
+            android.util.Log.e("WineRepository", "allDefinitions failed", e)
+            _lastDatabaseError.value = "${e.javaClass.simpleName}: ${e.message}"
+            emit(emptyList())
+        }
 
     companion object {
         val locationData = mapOf(
