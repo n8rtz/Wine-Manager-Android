@@ -101,29 +101,19 @@ import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.toFlatAromaIds
 import com.n8rtz.winetracker.data.local.toggleAromaObservation
 
-/** Live tasting-note launcher header, with a bottom edge open for a summary panel. */
+/** Header card for the live tasting-note launcher. */
 @Composable
 fun AromaWheelLauncherHeader(
     selectedIds: List<String>,
     onClick: () -> Unit,
     enabled: Boolean = true,
     compact: Boolean = false,
-    hasSummary: Boolean = selectedIds.isNotEmpty(),
     modifier: Modifier = Modifier
 ) {
     val glyphSize = if (compact) 36.dp else 44.dp
     val titleStyle = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
     val arrowSize = if (compact) 20.dp else 24.dp
-    val headerShape = if (hasSummary) {
-        RoundedCornerShape(
-            topStart = 16.dp,
-            topEnd = 16.dp,
-            bottomEnd = 0.dp,
-            bottomStart = 16.dp
-        )
-    } else {
-        RoundedCornerShape(16.dp)
-    }
+    val headerShape = RoundedCornerShape(16.dp)
 
     Box(
         modifier = modifier
@@ -131,10 +121,10 @@ fun AromaWheelLauncherHeader(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(
-                start = if (compact) 4.dp else 14.dp,
-                end = if (compact) 4.dp else 8.dp,
-                top = if (compact) 6.dp else 10.dp,
-                bottom = if (compact) 6.dp else 10.dp
+                start = if (compact) 8.dp else 14.dp,
+                end = if (compact) 8.dp else 8.dp,
+                top = if (compact) 8.dp else 10.dp,
+                bottom = if (compact) 8.dp else 10.dp
             )
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -177,21 +167,14 @@ fun AromaWheelSummaryPanel(
 
     Box(
         modifier = modifier
-            .clip(
-                RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 0.dp,
-                    bottomEnd = 16.dp,
-                    bottomStart = 16.dp
-                )
-            )
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(
                 start = if (compact) 8.dp else 14.dp,
                 end = if (compact) 8.dp else 8.dp,
-                top = if (compact) 6.dp else 8.dp,
-                bottom = if (compact) 6.dp else 10.dp
+                top = 8.dp,
+                bottom = if (compact) 8.dp else 10.dp
             )
     ) {
         AromaSummaryChipRow(
@@ -211,13 +194,12 @@ fun AromaWheelLauncherCard(
     compact: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         AromaWheelLauncherHeader(
             selectedIds = selectedIds,
             onClick = onClick,
             enabled = enabled,
             compact = compact,
-            hasSummary = selectedIds.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         )
         AromaWheelSummaryPanel(

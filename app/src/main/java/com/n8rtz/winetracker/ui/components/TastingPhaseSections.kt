@@ -68,7 +68,10 @@ fun SectionedSensoryFields(
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             when (phase) {
                 TastingPhase.AROMA_BEFORE_TASTING -> {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -86,7 +89,6 @@ fun SectionedSensoryFields(
                                 onClick = onOpenWheel,
                                 enabled = !readOnly,
                                 compact = true,
-                                hasSummary = selectedAromaIds.isNotEmpty(),
                                 modifier = Modifier.weight(1f)
                             )
                         }
