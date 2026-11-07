@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +34,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,7 +78,19 @@ fun SectionedSensoryFields(
             normalized.aromas
         ).distinct()
     var colorFieldWidthPx by remember { mutableIntStateOf(0) }
+    var colorFieldHeightPx by remember { mutableIntStateOf(0) }
     var aromaHeaderHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val swatchCardInset = 8.dp
+    val swatchCardInsetPx = with(density) { swatchCardInset.roundToPx() }
+    val aromaSummaryStartPx = if (selectedAromaIds.isEmpty()) {
+        aromaHeaderHeightPx
+    } else {
+        maxOf(aromaHeaderHeightPx, colorFieldHeightPx + swatchCardInsetPx)
+    }
+    val aromaSummaryGap = with(density) {
+        (aromaSummaryStartPx - aromaHeaderHeightPx).coerceAtLeast(0).toDp()
+    }
     val aromaCardColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         TastingPhase.values().forEach { phase ->
@@ -87,8 +102,8 @@ fun SectionedSensoryFields(
                             .fillMaxWidth()
                             .drawBehind {
                                 if (colorFieldWidthPx > 0 && aromaHeaderHeightPx > 0) {
-                                    val stepX = colorFieldWidthPx.toFloat() + 8.dp.toPx()
-                                    val stepY = aromaHeaderHeightPx.toFloat()
+                                    val stepX = colorFieldWidthPx.toFloat() + swatchCardInset.toPx()
+                                    val stepY = aromaSummaryStartPx.toFloat()
                                     if (stepX < size.width && stepY <= size.height) {
                                         if (selectedAromaIds.isEmpty()) {
                                             val headerWidth = size.width - stepX
@@ -130,7 +145,10 @@ fun SectionedSensoryFields(
                                 definitionColor = definitionColor,
                                 noteColor = normalized.colorHsv,
                                 onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
-                                modifier = Modifier.onSizeChanged { colorFieldWidthPx = it.width },
+                                modifier = Modifier.onSizeChanged {
+                                    colorFieldWidthPx = it.width
+                                    colorFieldHeightPx = it.height
+                                },
                                 readOnly = readOnly,
                                 inline = true
                             )
@@ -141,6 +159,9 @@ fun SectionedSensoryFields(
                                 compact = true,
                                 modifier = Modifier.weight(1f)
                             )
+                        }
+                        if (selectedAromaIds.isNotEmpty()) {
+                            Spacer(Modifier.height(aromaSummaryGap))
                         }
                         AromaWheelSummaryPanel(
                             selectedIds = selectedAromaIds,
