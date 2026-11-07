@@ -2,6 +2,8 @@ package com.yourapp.wine.gliner
 
 import android.content.Context
 import android.os.SystemClock
+import android.util.Log
+import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.diagnostics.ScanDiagnostics
@@ -11,6 +13,7 @@ import com.yourapp.wine.diagnostics.ScanReadSample
 import com.yourapp.wine.diagnostics.ScanStage
 import com.yourapp.wine.diagnostics.ScanStageTiming
 import com.yourapp.wine.textlab.TextLabWineExtraction
+import com.yourapp.wine.textlab.evidence.LabPostOcrModules
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,6 +27,18 @@ internal object GlinerProductionScanner {
         data class Success(val report:ScanReport):Attempt
         data class Unavailable(val reason:String):Attempt
     }
+
+    private const val TAG = "WineTracker"
+
+    /** One logcat line per failed production scan; the success line is logged with its fields. */
+    private fun unavailable(reason:String,started:Long,source:ScanInputSource):Attempt {
+        Log.i(TAG,"WineScan FAIL build=${BuildConfig.BUILD_COMMIT} branch=${BuildConfig.BUILD_BRANCH} " +
+            "source=$source elapsedMs=${SystemClock.elapsedRealtime()-started} reason=$reason")
+        return Attempt.Unavailable(reason)
+    }
+
+    private fun oneLine(value:String):String =
+        value.replace('\n',' ').replace('\r',' ').replace('\t',' ').take(48)
 
     suspend fun scan(context:Context,photo:File,started:Long,source:ScanInputSource,
         deadlineAtMs:Long,budgetMs:Long,onStage:(LabelScanProgressStep)->Unit={}):Attempt = withContext(Dispatchers.Default) {
@@ -40,19 +55,20 @@ internal object GlinerProductionScanner {
                     status.config==null -> "model config missing"
                     else -> "model bundle is not pinned"
                 }
-                return@withContext Attempt.Unavailable(why)
+                return@withContext unavailable(why,started,source)
             }
-            if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext Attempt.Unavailable("model setup exceeded scan budget")
+            if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext unavailable("model setup exceeded scan budget",started,source)
             onStage(LabelScanProgressStep.LOAD_READER)
-            val opened=GlinerOnnxModel.open(context,status,GlinerLaneConfig())
+            val laneConfig=GlinerLaneConfig()
+            val opened=GlinerOnnxModel.open(context,status,laneConfig)
             model=opened
             val readyMs=SystemClock.elapsedRealtime()
             val session=TextLabWineExtraction.WarmSession(context)
             warm=session
             val result=GlinerLabRunner.runProduction(context,photo,opened,session,deadlineAtMs,onStage)
-            if(result.status!="complete") return@withContext Attempt.Unavailable("GLiNER workflow: ${result.status}")
-            if(result.rawReadings.isEmpty()) return@withContext Attempt.Unavailable("no OCR readings")
-            if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext Attempt.Unavailable("scan budget reached")
+            if(result.status!="complete") return@withContext unavailable("GLiNER workflow: ${result.status} ${oneLine(result.message)}",started,source)
+            if(result.rawReadings.isEmpty()) return@withContext unavailable("no OCR readings",started,source)
+            if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext unavailable("scan budget reached",started,source)
             val elapsed=SystemClock.elapsedRealtime()-started
             val tokens=result.rawReadings
             val diagnostics=ScanDiagnostics(source=source,pipeline="gliner",budgetMs=budgetMs,inputBytes=photo.length(),
@@ -75,14 +91,28 @@ internal object GlinerProductionScanner {
                     else candidate
                 }) else base
             }
+            val modules=LabPostOcrModules.none.withIntegrated()
+            val engines=result.engineReadings.entries.joinToString(",") { "${it.key}=${it.value}" }
+            val lanes=result.laneHints.joinToString(";") { "${it.lane.key}=${oneLine(it.text)}@${it.confidence}" }
+            val probes=result.probes.joinToString(";") { oneLine(it) }
+            val decided=listOf("producer","wine_name","country","region","subregion","vintage").joinToString(";") { key ->
+                "$key=${oneLine(result.fields[key].orEmpty())}[${result.fieldStates[key] ?: "?"}]"
+            }
+            Log.i(TAG,"WineScan OK build=${BuildConfig.BUILD_COMMIT} branch=${BuildConfig.BUILD_BRANCH} " +
+                "policy=${GlinerFieldDecisionPolicy.VERSION} lane=${laneConfig.signatureKey()} modules=${modules.signatureKey()} " +
+                "source=$source inputBytes=${photo.length()} engines={$engines} " +
+                "ocrMs=${result.ocrMs} glinerMs=${result.glinerMs} postMs=${result.postMs} elapsedMs=$elapsed " +
+                "lanes={$lanes} probes={$probes} fields={$decided}")
             Attempt.Success(ScanReport(fill,
                 tokens,result.originalWidth,result.originalHeight,result.workingWidth,result.workingHeight,null,null,
                 emptyList(),elapsed,false,result.peakWorkingBitmaps,0,diagnostics))
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
-            Attempt.Unavailable("GLiNER initialization or scan failed: ${error.javaClass.simpleName}")
+            Log.w(TAG,"WineScan exception",error)
+            unavailable("GLiNER initialization or scan failed: ${error.javaClass.simpleName}",started,source)
         } catch(error:LinkageError) {
-            Attempt.Unavailable("native model unavailable: ${error.javaClass.simpleName}")
+            Log.w(TAG,"WineScan exception",error)
+            unavailable("native model unavailable: ${error.javaClass.simpleName}",started,source)
         } finally {
             runCatching { warm?.close() }
             runCatching { model?.close() }
