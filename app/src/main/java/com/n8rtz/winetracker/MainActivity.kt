@@ -335,6 +335,7 @@ fun MainAppScaffold(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
+            if (currentRoute != "add_wine") {
                 Surface(
                     onClick = {
                         if (currentRoute == "notes") {
@@ -362,9 +363,12 @@ fun MainAppScaffold(
                         )
                     }
                 }
+                }
             },
             floatingActionButtonPosition = FabPosition.End,
             bottomBar = {
+            // The camera-first Add Wine screen is full-bleed: no nav bar or FAB over it.
+            if (currentRoute != "add_wine") {
             // Every item is given an equal share of the bar, so one item's width is every item's
             // width: measuring the first one is enough to size the whole row's labels.
             var bottomBarItemWidthPx by remember { mutableIntStateOf(0) }
@@ -442,6 +446,7 @@ fun MainAppScaffold(
                     icon = { Icon(Icons.Default.Person, "Profile") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_PROFILE, bottomBarLabelSize) }
                 )
+            }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

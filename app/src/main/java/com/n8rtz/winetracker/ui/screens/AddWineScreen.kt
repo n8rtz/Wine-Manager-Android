@@ -846,19 +846,15 @@ private fun AddWineCameraLayer(
             )
         }
 
-        Row(
+        IconButton(
+            onClick = onClose,
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .background(Color.Black.copy(alpha = 0.55f))
+                .align(Alignment.TopStart)
                 .statusBarsPadding()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(start = 8.dp, top = 8.dp)
+                .background(Color.Black.copy(alpha = 0.35f), CircleShape)
         ) {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-            }
-            Text("Scan wine label", style = MaterialTheme.typography.titleLarge, color = Color.White)
+            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
         }
 
         // While busy the drawer carries the loading bar and status line, and the permission
@@ -868,33 +864,36 @@ private fun AddWineCameraLayer(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.68f))
                     .padding(horizontal = 20.dp)
                     .padding(bottom = controlsBottomPadding, top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (isConfirming) {
-                    Text("Use this photo?", color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(48.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
                         IconButton(onClick = onRetakePhoto,
-                            modifier = Modifier.size(64.dp).border(2.dp, Color.White, CircleShape)) {
+                            modifier = Modifier.size(52.dp).border(2.dp, Color.White, CircleShape)) {
                             Icon(Icons.Default.Close, contentDescription = "Retake", tint = Color.White,
-                                modifier = Modifier.size(32.dp))
+                                modifier = Modifier.size(26.dp))
                         }
                         IconButton(onClick = onConfirmPhoto,
-                            modifier = Modifier.size(64.dp).border(2.dp, Color.White, CircleShape)) {
+                            modifier = Modifier.size(52.dp).border(2.dp, Color.White, CircleShape)) {
                             Icon(Icons.Default.Check, contentDescription = "Use photo", tint = Color.White,
-                                modifier = Modifier.size(32.dp))
+                                modifier = Modifier.size(26.dp))
                         }
                     }
                 } else {
+                    // Errors keep a compact card so they stay readable without the old full-width bar.
                     errorMessage?.let {
-                        Text(it, color = Color.White, style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center)
-                    }
-                    if (scanState is LabelScanState.Error || cameraError != null) {
-                        TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.background(Color.Black.copy(alpha = 0.68f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(it, color = Color.White, style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center)
+                            if (scanState is LabelScanState.Error || cameraError != null) {
+                                TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
+                            }
+                        }
                     }
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onGallery,
@@ -905,20 +904,13 @@ private fun AddWineCameraLayer(
                         }
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = onShutter, enabled = cameraReady && cameraError == null,
-                            modifier = Modifier.size(76.dp).border(4.dp, Color.White, CircleShape)) {
+                            modifier = Modifier.size(60.dp).border(3.dp, Color.White, CircleShape)) {
                             Icon(Icons.Default.Camera, contentDescription = "Take photo", tint = Color.White,
-                                modifier = Modifier.size(32.dp))
+                                modifier = Modifier.size(28.dp))
                         }
                         Spacer(Modifier.weight(1f))
                         Spacer(Modifier.size(56.dp))
                     }
-                    Text(
-                        if (!cameraReady && cameraError == null) "Starting camera…"
-                        else "Fit the label in the frame.",
-                        color = Color.White.copy(alpha = 0.85f),
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }
