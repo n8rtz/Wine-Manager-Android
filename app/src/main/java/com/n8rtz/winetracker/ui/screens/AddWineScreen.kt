@@ -86,6 +86,9 @@ fun AddWineScreen(
     }
     var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    // Informational scan notices (unreadable label, busy picker, backup failure): shown like
+    // cameraError but never disables the shutter — a stale notice must not wedge the camera.
+    var scanHint by remember { mutableStateOf<String?>(null) }
     // Bumped by bind-failure retry to force a full preview remount (fresh CameraX binding).
     var cameraMountKey by remember { mutableStateOf(0) }
     // Confirm/retake hold: the photo waits here until the user confirms (scan starts) or retakes.
@@ -102,6 +105,7 @@ fun AddWineScreen(
         cameraPermissionGranted = granted
         if (granted) {
             cameraError = null
+            scanHint = null
         } else {
             cameraError = "Camera permission is needed to scan a wine label. You can still enter the wine manually."
         }
@@ -110,7 +114,8 @@ fun AddWineScreen(
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             cameraError = null
-            if (!scannerViewModel.onLabelPhotoSelected(uri)) cameraError = "Wait for the previous scan to finish, then choose the photo again."
+            scanHint = null
+            if (!scannerViewModel.onLabelPhotoSelected(uri)) scanHint = "Wait for the previous scan to finish, then choose the photo again."
         }
     }
     // Rotation must not cancel the confirm hold's pending request (the hold id/path survive
@@ -199,6 +204,7 @@ fun AddWineScreen(
             " ready=" + cameraReady + " error=" + cameraError)
         if (!labelScanState.isBusy) {
             cameraError = null
+            scanHint = null
             if (cameraPermissionGranted) Log.d("WineTracker", "Shutter: requestCapture returned " + scannerViewModel.requestLabelScan())
             else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
@@ -242,11 +248,14 @@ fun AddWineScreen(
         lastScanId = review.requestId
         // OCR done: the drawer slides up to the full entry form.
         scaffoldState.bottomSheetState.expand()
-        cameraError = if (review.result.fill.fields.values.all { it.state == com.yourapp.wine.fill.UiState.RED })
+        scanHint = if (review.result.fill.fields.values.all { it.state == com.yourapp.wine.fill.UiState.RED })
             review.result.fill.overallHint ?: "Could not read the label — retake or enter details manually" else null
-        // The saved draft must exist before acknowledging/deleting the recovered scan result.
-        if (draftStore.save(currentDraft(), synchronous = true)) scannerViewModel.dismissLabelScan(review.requestId)
-        else cameraError = "Could not save the scan result — try again or enter details manually"
+        // Acknowledge the result even if the draft backup fails: a stuck Review bricks the
+        // whole scanner (shutter silently rejected, gallery "wait"), while a lost backup
+        // only costs restart recovery — and the filled form above is kept either way.
+        val draftSaved = draftStore.save(currentDraft(), synchronous = true) || draftStore.save(currentDraft(), synchronous = true)
+        if (!draftSaved) scanHint = "Scan result kept, but this device refused the backup — it won't survive a restart"
+        scannerViewModel.dismissLabelScan(review.requestId)
     }
 
     val availableCountries = (
@@ -303,7 +312,7 @@ fun AddWineScreen(
             // Form Section
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Add New Wine", style = MaterialTheme.typography.titleLarge)
-                (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
+                (cameraError ?: scanHint ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
                         modifier = Modifier.fillMaxWidth(),
@@ -702,6 +711,7 @@ fun AddWineScreen(
             showGuide = cameraPermissionGranted && confirmingPhoto == null,
             cameraReady = cameraReady,
             cameraError = cameraError,
+            scanHint = scanHint,
             scanState = labelScanState,
             isConfirming = confirmingPhoto != null,
             controlsBottomPadding = drawerPeekHeight + 16.dp,
@@ -709,7 +719,7 @@ fun AddWineScreen(
             onCameraError = { cameraError = it },
             onCameraReadyChanged = { ready ->
                 cameraReady = ready
-                if (ready) cameraError = null
+                if (ready) { cameraError = null; scanHint = null }
             },
             onPhotoTaken = { requestId, photoFile ->
                 holdConsumed = false
@@ -719,9 +729,10 @@ fun AddWineScreen(
             onShutter = requestScan,
             onGallery = {
                 cameraError = null
+                scanHint = null
                 scannerViewModel.warmLabelScanner()
                 runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-                    .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
+                    .onFailure { scanHint = "Photo picker could not open. You can still use the camera or enter details manually." }
             },
             onConfirmPhoto = {
                 val id = holdRequestId
@@ -740,7 +751,7 @@ fun AddWineScreen(
                 holdPhotoPath = null
                 scannerViewModel.cancelPendingLabelCapture()
             },
-            onRetryCamera = { cameraError = null; cameraMountKey++ },
+            onRetryCamera = { cameraError = null; scanHint = null; cameraMountKey++ },
             onAllowCamera = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
             onEnterManually = { scope.launch { scaffoldState.bottomSheetState.expand() } },
             onClose = onClose
@@ -798,6 +809,7 @@ private fun AddWineCameraLayer(
     showGuide: Boolean,
     cameraReady: Boolean,
     cameraError: String?,
+    scanHint: String?,
     scanState: LabelScanState,
     isConfirming: Boolean,
     controlsBottomPadding: Dp,
@@ -814,7 +826,7 @@ private fun AddWineCameraLayer(
     onRetryCamera: () -> Unit,
     onClose: () -> Unit
 ) {
-    val errorMessage = cameraError ?: (scanState as? LabelScanState.Error)?.message
+    val errorMessage = cameraError ?: scanHint ?: (scanState as? LabelScanState.Error)?.message
     // Bind watchdog: a camera that never reports ready (stalled provider, wedged HAL) must
     // surface instead of leaving a dead shutter. Only runs while the preview is mounted and
     // silent; a late bind success clears the error via onCameraReadyChanged(true), and Retry
