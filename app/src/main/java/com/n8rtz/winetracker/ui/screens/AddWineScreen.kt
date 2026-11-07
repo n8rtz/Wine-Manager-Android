@@ -108,14 +108,17 @@ fun AddWineScreen(
             if (!scannerViewModel.onLabelPhotoSelected(uri)) cameraError = "Wait for the previous scan to finish, then choose the photo again."
         }
     }
+    // Rotation must not cancel the confirm hold's pending request (the hold id/path survive
+    // via rememberSaveable); only a real leave/stop cancels it.
     DisposableEffect(lifecycleOwner, scannerViewModel) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelPendingLabelCapture()
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP && !isChangingConfigurations(context))
+                scannerViewModel.cancelPendingLabelCapture()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            scannerViewModel.cancelPendingLabelCapture()
+            if (!isChangingConfigurations(context)) scannerViewModel.cancelPendingLabelCapture()
         }
     }
     

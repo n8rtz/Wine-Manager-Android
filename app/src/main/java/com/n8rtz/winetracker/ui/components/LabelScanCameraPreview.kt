@@ -52,6 +52,10 @@ fun LabelScanCameraPreview(
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val bindingState = remember { mutableStateOf<CameraUseCaseBinding?>(null) }
     var cameraReady by remember { mutableStateOf(false) }
+    // A delivered capture transfers pending-request ownership downstream (confirm hold or scan),
+    // so unmounting for the still must not cancel it. Reset with each mount; retakes remount.
+    var deliveredRequestId by remember { mutableStateOf<Long?>(null) }
+    val latestDeliveredRequestId = rememberUpdatedState(deliveredRequestId)
 
     LaunchedEffect(bindingState.value, cameraReady, labelScanState) {
         val captureRequest = labelScanState as? LabelScanState.CapturingPhoto
@@ -67,7 +71,7 @@ fun LabelScanCameraPreview(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            scannerViewModel.cancelPendingLabelCapture()
+            if (latestDeliveredRequestId.value == null) scannerViewModel.cancelPendingLabelCapture()
             bindingState.value?.close()
             cameraReady = false
             latestOnCameraReadyChanged.value(false)
@@ -101,6 +105,7 @@ fun LabelScanCameraPreview(
                     preview = preview,
                     imageCapture = imageCapture,
                     onPhotoCaptured = { requestId, photoFile ->
+                        deliveredRequestId = requestId
                         latestOnPhotoCaptured.value?.invoke(requestId, photoFile)
                             ?: scannerViewModel.onLabelPhotoCaptured(requestId, photoFile)
                     },
