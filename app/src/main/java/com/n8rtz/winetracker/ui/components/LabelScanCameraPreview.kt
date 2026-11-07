@@ -54,8 +54,9 @@ fun LabelScanCameraPreview(
     var cameraReady by remember { mutableStateOf(false) }
     // A delivered capture transfers pending-request ownership downstream (confirm hold or scan),
     // so unmounting for the still must not cancel it. Reset with each mount; retakes remount.
+    // Read directly in onDispose: this subtree is removed (not recomposed) the same frame the
+    // flag is set, so a rememberUpdatedState wrapper would still hold null at disposal time.
     var deliveredRequestId by remember { mutableStateOf<Long?>(null) }
-    val latestDeliveredRequestId = rememberUpdatedState(deliveredRequestId)
 
     LaunchedEffect(bindingState.value, cameraReady, labelScanState) {
         val captureRequest = labelScanState as? LabelScanState.CapturingPhoto
@@ -71,7 +72,7 @@ fun LabelScanCameraPreview(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            if (latestDeliveredRequestId.value == null) scannerViewModel.cancelPendingLabelCapture()
+            if (deliveredRequestId == null) scannerViewModel.cancelPendingLabelCapture()
             bindingState.value?.close()
             cameraReady = false
             latestOnCameraReadyChanged.value(false)

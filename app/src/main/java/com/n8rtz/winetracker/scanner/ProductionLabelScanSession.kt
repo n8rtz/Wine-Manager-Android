@@ -105,7 +105,11 @@ internal object ProductionLabelScanSession {
                 }
             } else null
         }
-        if (started == null) { file.delete(); return }
+        if (started == null) {
+            Log.w("ProductionLabelScanSession", "Stale capture $id ignored (state=${mutable.value}); deleting " + file.name)
+            file.delete()
+            return
+        }
         launchPhotoScan(app, id, started, ScanInputSource.CAMERA, file) { LocalLabelPhoto(file, file.length()) }
     }
 
