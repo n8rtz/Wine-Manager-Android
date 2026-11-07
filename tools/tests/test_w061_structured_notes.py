@@ -100,6 +100,24 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertNotIn('Text("Use default")', picker)
         self.assertNotIn('Text("Override")', picker)
 
+    def test_tasting_note_color_swatch_sits_next_to_its_label(self):
+        picker = read(UI / "components/WineColorPicker.kt")
+        note_field = picker.split("fun NoteColorField(", 1)[1].split(
+            "@Composable\nfun DefaultColorField(", 1
+        )[0]
+        default_field = picker.split("fun DefaultColorField(", 1)[1]
+        self.assertIn('Text("Color", style = MaterialTheme.typography.bodyMedium)', note_field)
+        self.assertLess(note_field.index('Text("Color"'), note_field.index("ColorSwatchButton("))
+        self.assertLess(note_field.index("ColorSwatchButton("), note_field.index("Spacer(Modifier.weight(1f))"))
+        self.assertLess(
+            note_field.index("Spacer(Modifier.weight(1f))"),
+            note_field.index("IconButton(onClick = { onNoteColorChange(null) })"),
+        )
+        self.assertIn(
+            'Text("Color", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))',
+            default_field,
+        )
+
     def test_wine_color_picker_shows_live_swatch_and_wine_glass(self):
         picker = read(UI / "components/WineColorPicker.kt")
         self.assertIn("WineGlassPreview(", picker)
@@ -122,7 +140,10 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("val footSize = Size(width * 0.68f, height * 0.04f)", picker)
         self.assertIn("onSizeChanged { controlSize = it }", picker)
         self.assertIn("previewEpoch++", picker)
-        self.assertNotIn("Spacer(", picker)
+        hsv_picker = picker.split("fun WineColorPicker(", 1)[1].split(
+            "@Composable\nprivate fun ColorPickerDialog(", 1
+        )[0]
+        self.assertNotIn("Spacer(", hsv_picker)
         self.assertNotIn(".size(40.dp)", picker)
 
     def test_aromas_can_be_assigned_to_multiple_phases(self):
