@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.scanner.LabelScanState
@@ -85,6 +86,8 @@ fun AddWineScreen(
     }
     var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    // Bumped by bind-failure retry to force a full preview remount (fresh CameraX binding).
+    var cameraMountKey by remember { mutableStateOf(0) }
     // Confirm/retake hold: the photo waits here until the user confirms (scan starts) or retakes.
     // Rotation-safe (id + path only); the file is deleted unless the scan consumes it.
     var holdRequestId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -693,6 +696,7 @@ fun AddWineScreen(
     ) {
         AddWineCameraLayer(
             liveCamera = liveCamera,
+            previewKey = cameraMountKey,
             drawerExpanded = drawerExpanded,
             frozenPath = confirmingPhoto ?: processingStill,
             showGuide = cameraPermissionGranted && confirmingPhoto == null,
@@ -736,12 +740,15 @@ fun AddWineScreen(
                 holdPhotoPath = null
                 scannerViewModel.cancelPendingLabelCapture()
             },
+            onRetryCamera = { cameraError = null; cameraMountKey++ },
             onAllowCamera = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
             onEnterManually = { scope.launch { scaffoldState.bottomSheetState.expand() } },
             onClose = onClose
         )
     }
 }
+
+private const val CAMERA_BIND_TIMEOUT_MS = 8_000L
 
 private val DRAWER_HANDLE_HEIGHT = 40.dp
 private val DRAWER_PROGRESS_HEIGHT = 76.dp
@@ -786,6 +793,7 @@ private fun DrawerScanProgress(scanState: LabelScanState) {
 private fun AddWineCameraLayer(
     liveCamera: Boolean,
     drawerExpanded: Boolean,
+    previewKey: Int,
     frozenPath: String?,
     showGuide: Boolean,
     cameraReady: Boolean,
@@ -803,9 +811,21 @@ private fun AddWineCameraLayer(
     onRetakePhoto: () -> Unit,
     onAllowCamera: () -> Unit,
     onEnterManually: () -> Unit,
+    onRetryCamera: () -> Unit,
     onClose: () -> Unit
 ) {
     val errorMessage = cameraError ?: (scanState as? LabelScanState.Error)?.message
+    // Bind watchdog: a camera that never reports ready (stalled provider, wedged HAL) must
+    // surface instead of leaving a dead shutter. Only runs while the preview is mounted and
+    // silent; a late bind success clears the error via onCameraReadyChanged(true), and Retry
+    // remounts the preview for a fresh bind.
+    if (liveCamera && !cameraReady && cameraError == null) {
+        LaunchedEffect(previewKey) {
+            delay(CAMERA_BIND_TIMEOUT_MS)
+            Log.w("LabelScanCamera", "Camera bind timed out; offering retry")
+            onCameraError("The camera is taking too long to start. Retry, or enter details manually.")
+        }
+    }
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         when {
             frozenPath != null -> AsyncImage(
@@ -819,13 +839,15 @@ private fun AddWineCameraLayer(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            liveCamera -> LabelScanCameraPreview(
-                scannerViewModel = scannerViewModel,
-                onCameraError = onCameraError,
-                onCameraReadyChanged = onCameraReadyChanged,
-                modifier = Modifier.fillMaxSize(),
-                onPhotoCaptured = onPhotoTaken
-            )
+            liveCamera -> key(previewKey) {
+                LabelScanCameraPreview(
+                    scannerViewModel = scannerViewModel,
+                    onCameraError = onCameraError,
+                    onCameraReadyChanged = onCameraReadyChanged,
+                    modifier = Modifier.fillMaxSize(),
+                    onPhotoCaptured = onPhotoTaken
+                )
+            }
             // Drawer expanded over an otherwise live camera: plain black from the Box behind,
             // camera off, no permission prompt.
             else -> if (!drawerExpanded) {
@@ -907,7 +929,8 @@ private fun AddWineCameraLayer(
                                 .padding(horizontal = 16.dp, vertical = 10.dp)) {
                             Text(it, color = Color.White, style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center)
-                            if (scanState is LabelScanState.Error || cameraError != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(onClick = onRetryCamera) { Text("Retry camera", color = Color.White) }
                                 TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
                             }
                         }
