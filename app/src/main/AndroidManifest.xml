@@ -45,6 +45,7 @@
         <activity android:name="com.yourapp.wine.phonecorpus.WineAppLabelsActivity" android:exported="false" android:launchMode="singleTop" />
         <activity android:name="com.yourapp.wine.phonecorpus.DevicePhotoLabActivity" android:exported="false" />
         <activity android:name="com.yourapp.wine.gliner.GlinerLabActivity" android:exported="false" />
+        <activity android:name="com.n8rtz.winetracker.debug.graniteworkflow.GraniteWorkflowActivity" android:exported="false" />
 
         <service
             android:name="com.n8rtz.winetracker.scanner.LabelScanService"

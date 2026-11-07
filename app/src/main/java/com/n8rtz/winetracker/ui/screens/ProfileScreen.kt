@@ -48,6 +48,7 @@ import com.n8rtz.winetracker.viewmodels.OfflineImageManagementState
 import com.n8rtz.winetracker.viewmodels.WineImageImportState
 import com.n8rtz.winetracker.viewmodels.WineImageImportViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import com.n8rtz.winetracker.debug.graniteworkflow.GraniteWorkflowActivity
 import com.yourapp.wine.gliner.GlinerLabActivity
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -488,6 +489,18 @@ fun ProfileScreen(
                             },
                             modifier = Modifier.fillMaxWidth().clickable {
                                 context.startActivity(android.content.Intent(context, GlinerLabActivity::class.java))
+                            }
+                        )
+
+                        ListItem(
+                            headlineContent = {
+                                Text("Dual OCR + Granite 4.2 4B Workflow")
+                            },
+                            supportingContent = {
+                                Text("Isolated Dual OCR (ML Kit v2 + PP-OCRv6 ONNX) reconciled on-device by IBM Granite 4.2 3B GGUF")
+                            },
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                context.startActivity(android.content.Intent(context, GraniteWorkflowActivity::class.java))
                             }
                         )
 

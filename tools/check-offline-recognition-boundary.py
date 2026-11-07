@@ -49,9 +49,11 @@ def violations():
     errors = []
     debug_root = ROOT / "app/src/debug/java/com/yourapp/wine"
     gliner_root = ROOT / "gliner-workflow/src"
+    granite_root = JAVA / "com/n8rtz/winetracker/debug/graniteworkflow"
     sources = (sorted(LOCAL_ROOT.rglob("*.kt")) + sorted(debug_root.rglob("*.kt")) +
                sorted((gliner_root / "main").rglob("*.kt")) +
                sorted((gliner_root / "appIntegration").rglob("*.kt")) +
+               sorted(granite_root.rglob("*.kt")) +
                sorted((JAVA / "com/n8rtz/winetracker/scanner").glob("LabelScan*.kt")) +
                [SCAN_SESSION, JAVA / "com/n8rtz/winetracker/scanner/PendingLabelScanStore.kt", FACADE])
     if len(sources) < 10:

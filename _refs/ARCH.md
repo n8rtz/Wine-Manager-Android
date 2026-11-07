@@ -128,6 +128,21 @@ app/src/main/java/com/n8rtz/winetracker/
     ├── ScannerViewModel.kt            # Label scan state (capture, OCR, review)
     └── WineImageImportViewModel.kt    # Reviewed image-import queue, storage budget, offline-copy management
 
+app/src/main/java/com/n8rtz/winetracker/debug/graniteworkflow/
+├── GraniteWorkflowActivity.kt         # Isolated Settings -> Scanner testing entry activity for Dual OCR + Granite 4.2 4B Workflow
+├── GraniteWorkflowScreen.kt           # Compose test screen: model importer, image input, ablation/think/CLAHE toggles, 4-section results inspector
+├── GraniteWorkflowViewModel.kt        # Standalone ViewModel orchestrating preprocessing, Dual OCR, Granite 4.2 extraction, and RAM/timing telemetry
+├── GraniteWorkflowModels.kt           # Standalone OcrBlock, OcrAblationMode, GraniteWineLabelJson (12-field schema), and model status models
+├── GraniteModelStorage.kt             # External model directory inspector & OpenDocument importer for models/granite and models/ppocrv6
+├── GraniteWorkflowImagePreprocessor.kt # Aspect-ratio resize (<=1280px longest edge, never <768px) + optional mild 8x8 CLAHE glare normalization
+├── DualOcrEngine.kt                   # Concurrent ML Kit v2 + standalone PP-OCRv6 ONNX (det + optional cls + rec) runner on Dispatchers.Default
+├── GraniteLabelExtractor.kt           # Granite 4.2 3B prompt builder, GBNF JSON grammar, <think> toggle, and spatial/diacritic reconciliation
+└── GraniteLlamaBridge.kt              # Isolated llama.cpp JNI wrapper for granite-4.2-3b-Q4_K_M.gguf
+
+app/src/main/cpp/graniteworkflow/      # Optional llama.cpp JNI C++ bridge (granite_llama_jni.cpp + CMakeLists.txt)
+app/src/test/java/com/n8rtz/winetracker/debug/graniteworkflow/GraniteWorkflowTest.kt # Robolectric & unit tests for Granite workflow
+tools/tests/test_granite_workflow.py   # Structural and 100%-decoupling guard tests for Dual OCR + Granite 4.2 4B Workflow
+
 app/src/main/res/xml/                  # backup_rules.xml, data_extraction_rules.xml (exclude files/wine-images/), file_paths.xml
 app/src/test/java/...                  # JVM tests: aromawheel, drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
                                        #   image provider, vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
