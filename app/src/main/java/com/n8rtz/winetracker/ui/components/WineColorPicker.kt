@@ -532,7 +532,7 @@ fun NoteColorField(
     Row(
         modifier = if (inline) modifier else modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(if (inline) 6.dp else 8.dp)
     ) {
         Text("Color", style = MaterialTheme.typography.bodyMedium)
         ColorSwatchButton(

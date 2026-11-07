@@ -70,7 +70,7 @@ fun SectionedSensoryFields(
                 TastingPhase.AROMA_BEFORE_TASTING -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.Top
                     ) {
                         NoteColorField(

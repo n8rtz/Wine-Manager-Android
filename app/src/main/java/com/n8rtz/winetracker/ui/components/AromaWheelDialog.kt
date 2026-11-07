@@ -124,8 +124,8 @@ fun AromaWheelLauncherCard(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(
-                start = if (compact) 8.dp else 14.dp,
-                end = if (compact) 6.dp else 8.dp,
+                start = if (compact) 4.dp else 14.dp,
+                end = if (compact) 4.dp else 8.dp,
                 top = if (compact) 6.dp else 10.dp,
                 bottom = if (compact) 6.dp else 10.dp
             )
@@ -159,7 +159,8 @@ fun AromaWheelLauncherCard(
                 Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
                 AromaSummaryChipRow(
                     ids = selectedIds,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    compact = compact
                 )
             }
         }
@@ -167,10 +168,14 @@ fun AromaWheelLauncherCard(
 }
 
 @Composable
-private fun AromaSummaryChipRow(ids: List<String>, modifier: Modifier = Modifier) {
+private fun AromaSummaryChipRow(
+    ids: List<String>,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
+) {
     FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         ids.distinct().forEach { id ->
@@ -182,7 +187,10 @@ private fun AromaSummaryChipRow(ids: List<String>, modifier: Modifier = Modifier
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(
+                            horizontal = if (compact) 8.dp else 10.dp,
+                            vertical = 5.dp
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(

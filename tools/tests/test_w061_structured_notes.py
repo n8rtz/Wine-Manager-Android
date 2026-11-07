@@ -171,6 +171,9 @@ class W061SourceContractTests(unittest.TestCase):
         launcher = wheel.split("fun AromaWheelLauncherCard(", 1)[1].split(
             "private fun AromaSummaryChipRow(", 1
         )[0]
+        summary_chips = wheel.split("private fun AromaSummaryChipRow(", 1)[1].split(
+            "/** Drag positions", 1
+        )[0]
         self.assertIn("Row(", aroma_row)
         self.assertIn("verticalAlignment = Alignment.Top", aroma_row)
         self.assertIn("NoteColorField(", aroma_row)
@@ -182,6 +185,10 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn(".background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))", launcher)
         self.assertIn("AromaWheelGlyph(", launcher)
         self.assertIn('"Aroma wheel"', launcher)
+        self.assertIn("FlowRow(", summary_chips)
+        self.assertIn("ids.distinct().forEach", summary_chips)
+        self.assertIn("horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp)", summary_chips)
+        self.assertIn("horizontal = if (compact) 8.dp else 10.dp", summary_chips)
 
     def test_editor_uses_sectioned_phase_aware_controls(self):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")
