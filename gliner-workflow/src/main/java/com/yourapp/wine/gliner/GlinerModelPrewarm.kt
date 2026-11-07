@@ -14,6 +14,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Best-effort only: any failure, interruption or skipped run leaves the lazy scan-time install
  * untouched, and that path still reports problems visibly at scan time. Call [schedule] once from
  * the Application; it is guarded to one run per process.
+ *
+ * Yield rule: the moment a scan starts, the pre-warm aborts and hands the install to the scan,
+ * which always performs it itself at full speed. The pre-warm must never pace a scan's wait.
  */
 object GlinerModelPrewarm {
     private const val TAG = "WineTracker"
@@ -56,7 +59,10 @@ object GlinerModelPrewarm {
                     // Lowered priority only (raising needs privileges); the paced checkActive below
                     // keeps disk/CPU pressure gentle — wall time does not matter here.
                     Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
-                    prewarm(app)
+                    prewarm(app, isScanBusy)
+                } catch (e: CancellationException) {
+                    // Yield, not failure: a live scan is installing the bundle itself at full speed.
+                    Log.i(TAG, "GlinerModelPrewarm: yielding (${e.message}); scan-time install applies")
                 } catch (e: Exception) {
                     if (e is InterruptedException) Thread.currentThread().interrupt()
                     Log.w(TAG, "GlinerModelPrewarm: pre-warm failed, scan-time install still applies", e)
@@ -69,7 +75,7 @@ object GlinerModelPrewarm {
         Log.d(TAG, "GlinerModelPrewarm: scheduled ${PREWARM_DELAY_MS}ms after start")
     }
 
-    private fun prewarm(app: Context) {
+    private fun prewarm(app: Context, isScanBusy: () -> Boolean) {
         val pinnedBytes = runCatching { GlinerBundle.manifest(app).mapNotNull { it.bytes }.sum() }.getOrDefault(0L)
         val usable = GlinerBundle.privateDir(app).usableSpace
         if (usable < pinnedBytes + SPACE_HEADROOM_BYTES) {
@@ -79,8 +85,13 @@ object GlinerModelPrewarm {
         // Every heavy loop in status() (asset copy, SHA-256, INT4 probe) honors checkActive per
         // chunk and caches its result in prefs, so pacing here slows only this worker: the scan
         // path passes its own unpaced checkActive and finds verified files waiting for it.
+        // The busy check in the same hook is the yield rule: a scan captures long before it
+        // reaches the bundle lock, so the pre-warm almost always aborts before the scan arrives,
+        // and the scan then installs the bundle itself at full speed. Partial work is discarded
+        // by the installer's own cleanup; nothing half-written is ever kept.
         var chunks = 0
         val status = GlinerBundle.status(app) {
+            if (isScanBusy()) throw CancellationException("scan started")
             if (++chunks % CHUNKS_PER_PAUSE == 0) {
                 try {
                     Thread.sleep(PAUSE_MS)
