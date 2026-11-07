@@ -117,8 +117,7 @@ fun GraniteWorkflowScreen(
     state: GraniteWorkflowUiState,
     onBack: () -> Unit,
     onRefreshModels: () -> Unit,
-    onImportModelSlot: (GraniteModelImportTarget) -> Unit,
-    onSeedBundledPpOcr: () -> Unit,
+    onImportGraniteGguf: () -> Unit,
     onPickGalleryImage: () -> Unit,
     onCameraPhotoCaptured: (File) -> Unit,
     onLoadSampleLabel: () -> Unit,
@@ -274,8 +273,7 @@ fun GraniteWorkflowScreen(
                     isImporting = state.isImportingModel,
                     expandPaths = expandModelPaths,
                     onToggleExpandPaths = { expandModelPaths = !expandModelPaths },
-                    onImportSlot = onImportModelSlot,
-                    onSeedBundledPpOcr = onSeedBundledPpOcr
+                    onImportGraniteGguf = onImportGraniteGguf
                 )
             }
 
@@ -394,8 +392,7 @@ private fun ModelFileStatusAndImporterCard(
     isImporting: Boolean,
     expandPaths: Boolean,
     onToggleExpandPaths: () -> Unit,
-    onImportSlot: (GraniteModelImportTarget) -> Unit,
-    onSeedBundledPpOcr: () -> Unit
+    onImportGraniteGguf: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -423,24 +420,24 @@ private fun ModelFileStatusAndImporterCard(
 
             ModelSlotRow(
                 slot = modelsStatus.graniteGguf,
-                onImportClick = { onImportSlot(GraniteModelImportTarget.GRANITE_GGUF) }
+                onImportClick = onImportGraniteGguf
             )
             HorizontalDivider()
             ModelSlotRow(
-                slot = modelsStatus.ppOcrDetOnnx,
-                onImportClick = { onImportSlot(GraniteModelImportTarget.PPOCR_DET) }
+                slot = modelsStatus.mlKitEngine,
+                onImportClick = null
             )
             ModelSlotRow(
-                slot = modelsStatus.ppOcrClsOnnx,
-                onImportClick = { onImportSlot(GraniteModelImportTarget.PPOCR_CLS) }
+                slot = modelsStatus.ppOcrDetOnnx,
+                onImportClick = null
             )
             ModelSlotRow(
                 slot = modelsStatus.ppOcrRecOnnx,
-                onImportClick = { onImportSlot(GraniteModelImportTarget.PPOCR_REC) }
+                onImportClick = null
             )
             ModelSlotRow(
                 slot = modelsStatus.ppOcrDict,
-                onImportClick = { onImportSlot(GraniteModelImportTarget.PPOCR_DICT) }
+                onImportClick = null
             )
 
             if (isImporting) {
@@ -452,22 +449,13 @@ private fun ModelFileStatusAndImporterCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Button(
-                    onClick = { onImportSlot(GraniteModelImportTarget.AUTO_DETECT) },
+                    onClick = onImportGraniteGguf,
                     enabled = !isImporting,
                     colors = ButtonDefaults.buttonColors(containerColor = BordeauxRed)
                 ) {
                     Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Import .gguf / .onnx Files")
-                }
-
-                if (modelsStatus.bundledPaddleAssetsAvailable && !modelsStatus.isPpOcrReady) {
-                    OutlinedButton(
-                        onClick = onSeedBundledPpOcr,
-                        enabled = !isImporting
-                    ) {
-                        Text("Copy Bundled PP-OCRv6 ONNX")
-                    }
+                    Text("Import Granite .gguf File")
                 }
             }
 
@@ -485,7 +473,7 @@ private fun ModelFileStatusAndImporterCard(
                         fontFamily = FontFamily.Monospace
                     )
                     Text(
-                        text = "PP-OCRv6 ONNX directory:\n${modelsStatus.ppOcrDirectoryPath}",
+                        text = "Shared PP-OCRv6 directory (reused, no 2nd copy):\n${modelsStatus.sharedPpOcrDirectoryPath}",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = FontFamily.Monospace
                     )
@@ -503,7 +491,7 @@ private fun ModelFileStatusAndImporterCard(
 @Composable
 private fun ModelSlotRow(
     slot: ModelFileSlotStatus,
-    onImportClick: () -> Unit
+    onImportClick: (() -> Unit)?
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -539,8 +527,18 @@ private fun ModelSlotRow(
                 )
             }
         }
-        TextButton(onClick = onImportClick) {
-            Text("Import")
+        if (onImportClick != null) {
+            TextButton(onClick = onImportClick) {
+                Text("Import")
+            }
+        } else {
+            Text(
+                text = "Reused",
+                style = MaterialTheme.typography.labelSmall,
+                color = PpOcrGreen,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
         }
     }
 }

@@ -48,9 +48,11 @@ data class GraniteWorkflowUiState(
 }
 
 /**
- * Completely standalone ViewModel for `Dual OCR + Granite 4.2 4B Workflow`.
+ * Standalone ViewModel for `Dual OCR + Granite 4.2 4B Workflow`.
  *
- * Shares zero mutable state, repositories, or services with production app classes.
+ * Reuses the app's existing ML Kit and PP-OCRv6 files (`v6-medium-det.onnx`, `v6-medium-rec.onnx`,
+ * `ppocrv6_dict.utf8`) without downloading or copying second copies, while keeping ViewModel state
+ * and Granite LLM extraction completely isolated from production repositories and services.
  */
 class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(GraniteWorkflowUiState())
@@ -98,70 +100,28 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         _uiState.update { it.copy(showPpOcrBoxes = show) }
     }
 
-    fun clearBanners() {
-        _uiState.update { it.copy(statusBannerMessage = null, errorBannerMessage = null) }
-    }
-
     /**
-     * Imports one or more model files (`.gguf`, `.onnx`, `.utf8`) selected via `ActivityResultContracts.OpenDocument`.
+     * Imports `granite-4.2-3b-Q4_K_M.gguf` selected via `ActivityResultContracts.OpenDocument`.
      */
-    fun importModelFiles(uris: List<Uri>, target: GraniteModelImportTarget) {
-        if (uris.isEmpty()) return
+    fun importGraniteModelFile(uri: Uri) {
         val app = getApplication<Application>()
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update {
                 it.copy(
                     isImportingModel = true,
-                    statusBannerMessage = "Importing ${uris.size} model file(s)...",
+                    statusBannerMessage = "Importing Granite 4.2 3B GGUF model...",
                     errorBannerMessage = null
                 )
             }
-            val importedNames = mutableListOf<String>()
-            val errors = mutableListOf<String>()
-            for (uri in uris) {
-                GraniteModelStorage.importModelUri(app, uri, target)
-                    .onSuccess { file -> importedNames.add(file.name) }
-                    .onFailure { err -> errors.add(err.message ?: err.javaClass.simpleName) }
-            }
-            val updatedStatus = GraniteModelStorage.inspectModels(app)
-            _uiState.update { state ->
-                state.copy(
-                    modelsStatus = updatedStatus,
-                    isImportingModel = false,
-                    statusBannerMessage = if (importedNames.isNotEmpty()) {
-                        "Imported: ${importedNames.joinToString(", ")}"
-                    } else null,
-                    errorBannerMessage = if (errors.isNotEmpty()) {
-                        errors.joinToString("; ")
-                    } else null
-                )
-            }
-        }
-    }
-
-    /**
-     * Copies bundled PP-OCRv6 ONNX models (`v6-medium-det.onnx` & `v6-medium-rec.onnx` + `ppocrv6_dict.utf8`)
-     * into `context.getExternalFilesDir("models/ppocrv6")` with one tap.
-     */
-    fun seedBundledPpOcrModels() {
-        val app = getApplication<Application>()
-        viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update {
-                it.copy(
-                    isImportingModel = true,
-                    statusBannerMessage = "Copying bundled PP-OCRv6 ONNX files to models/ppocrv6...",
-                    errorBannerMessage = null
-                )
-            }
-            val result = GraniteModelStorage.seedPpOcrFromBundledAssets(app)
+            val result = GraniteModelStorage.importGraniteGgufUri(app, uri)
             val updatedStatus = GraniteModelStorage.inspectModels(app)
             _uiState.update { state ->
                 result.fold(
-                    onSuccess = { count ->
+                    onSuccess = { file ->
                         state.copy(
                             modelsStatus = updatedStatus,
                             isImportingModel = false,
-                            statusBannerMessage = "Copied $count PP-OCRv6 files into ${updatedStatus.ppOcrDirectoryPath}",
+                            statusBannerMessage = "Imported ${file.name} (${updatedStatus.graniteGguf.sizeFormatted})",
                             errorBannerMessage = null
                         )
                     },
@@ -170,7 +130,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                             modelsStatus = updatedStatus,
                             isImportingModel = false,
                             statusBannerMessage = null,
-                            errorBannerMessage = "Could not copy bundled PP-OCRv6 assets: ${err.message}"
+                            errorBannerMessage = err.message ?: err.javaClass.simpleName
                         )
                     }
                 )
@@ -225,7 +185,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     /**
      * Runs the 3-stage pipeline:
      * 1. `GraniteWorkflowImagePreprocessor` (<=1280px longest edge, >=768px preserved, optional CLAHE)
-     * 2. `DualOcrEngine` (`async` / `awaitAll` on `Dispatchers.Default` for ML Kit v2 + PP-OCRv6 ONNX)
+     * 2. `DualOcrEngine` (`async` / `awaitAll` on `Dispatchers.Default` reusing existing ML Kit + PP-OCRv6)
      * 3. `GraniteLabelExtractor` (`granite-4.2-3b-Q4_K_M.gguf` / strict 12-field JSON schema + `<think>` toggle)
      */
     fun runWorkflow(allowPreviewWithoutAllModels: Boolean = true) {
@@ -294,7 +254,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     )
                 }
 
-                // Stage 2: Parallel Dual-OCR Engine
+                // Stage 2: Parallel Dual-OCR Engine (reusing existing ML Kit + PP-OCRv6 files)
                 val dualOcrResult = dualOcrEngine.recognize(
                     context = app,
                     bitmap = preprocessed.bitmap,
@@ -330,6 +290,10 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     peakCombinedRamMb = ramTracker.peakCombinedMb
                 )
 
+                val refreshedStatus = withContext(Dispatchers.IO) {
+                    GraniteModelStorage.inspectModels(app)
+                }
+
                 val runResult = GraniteWorkflowRunResult(
                     preprocessedBitmap = preprocessed.bitmap,
                     originalWidth = preprocessed.originalWidth,
@@ -352,6 +316,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
 
                 _uiState.update {
                     it.copy(
+                        modelsStatus = refreshedStatus,
                         isRunning = false,
                         activeStageMessage = "",
                         lastResult = runResult,

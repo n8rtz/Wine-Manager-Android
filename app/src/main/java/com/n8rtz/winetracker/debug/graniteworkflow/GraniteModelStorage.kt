@@ -5,47 +5,39 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import com.yourapp.wine.textlab.PaddleCandidates
 import java.io.File
 import java.io.FileOutputStream
 
 /**
  * Target model slot for one-tap Android file picker (`ActivityResultContracts.OpenDocument`) imports.
+ *
+ * ML Kit and PP-OCRv6 reuse the app's existing bundled models (`MlKitOcrEngine` and
+ * `text-lab-paddle-v1/v6-medium-det.onnx` + `v6-medium-rec.onnx` + `ppocrv6_dict.utf8`),
+ * so only the Granite GGUF file needs to be imported.
  */
 enum class GraniteModelImportTarget(
     val title: String,
     val canonicalFileName: String
 ) {
-    AUTO_DETECT("Auto-Detect (.gguf / .onnx / dict)", ""),
-    GRANITE_GGUF("Granite 4.2 3B GGUF", GraniteModelStorage.GRANITE_GGUF_FILENAME),
-    PPOCR_DET("PP-OCRv6 Detection ONNX", GraniteModelStorage.PPOCR_DET_FILENAME),
-    PPOCR_CLS("PP-OCRv6 Angle Classifier ONNX", GraniteModelStorage.PPOCR_CLS_FILENAME),
-    PPOCR_REC("PP-OCRv6 Recognition ONNX", GraniteModelStorage.PPOCR_REC_FILENAME),
-    PPOCR_DICT("PP-OCRv6 Character Dictionary", GraniteModelStorage.PPOCR_DICT_FILENAME)
+    GRANITE_GGUF("Granite 4.2 3B GGUF", GraniteModelStorage.GRANITE_GGUF_FILENAME)
 }
 
 /**
- * Isolated model storage manager for the Dual OCR + Granite 4.2 workflow.
+ * Model storage manager for the Dual OCR + Granite 4.2 workflow.
  *
- * Reads and writes exclusively under:
- * - `context.getExternalFilesDir("models/granite")`
- * - `context.getExternalFilesDir("models/ppocrv6")`
+ * - **Granite 4.2 3B (`granite-4.2-3b-Q4_K_M.gguf`):** Loaded from `context.getExternalFilesDir("models/granite")`
+ *   (or imported via the UI file picker).
+ * - **PP-OCRv6 & ML Kit:** Reuses the existing bundled `text-lab-paddle-v1` files (`v6-medium-det.onnx`,
+ *   `v6-medium-rec.onnx`, `ppocrv6_dict.utf8` in `File(context.noBackupFilesDir, "text-lab-paddle-v1")`)
+ *   and `MlKitOcrEngine` without downloading or copying second copies.
  */
 object GraniteModelStorage {
     private const val TAG = "GraniteWorkflow"
 
     const val GRANITE_SUBDIR = "models/granite"
-    const val PPOCR_SUBDIR = "models/ppocrv6"
-
+    const val SHARED_PADDLE_FOLDER = "text-lab-paddle-v1"
     const val GRANITE_GGUF_FILENAME = "granite-4.2-3b-Q4_K_M.gguf"
-    const val PPOCR_DET_FILENAME = "det.onnx"
-    const val PPOCR_CLS_FILENAME = "cls.onnx"
-    const val PPOCR_REC_FILENAME = "rec.onnx"
-    const val PPOCR_DICT_FILENAME = "ppocrv6_dict.utf8"
-
-    private const val BUNDLED_ASSET_FOLDER = "text-lab-paddle-v1"
-    private const val BUNDLED_DET_ASSET = "v6-medium-det.onnx"
-    private const val BUNDLED_REC_ASSET = "v6-medium-rec.onnx"
-    private const val BUNDLED_DICT_ASSET = "ppocrv6_dict.utf8"
 
     fun graniteDir(context: Context): File {
         val dir = context.getExternalFilesDir(GRANITE_SUBDIR)
@@ -56,14 +48,8 @@ object GraniteModelStorage {
         return dir
     }
 
-    fun ppOcrDir(context: Context): File {
-        val dir = context.getExternalFilesDir(PPOCR_SUBDIR)
-            ?: File(context.filesDir, PPOCR_SUBDIR)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-        return dir
-    }
+    fun sharedPaddleDir(context: Context): File =
+        File(context.noBackupFilesDir, SHARED_PADDLE_FOLDER)
 
     /**
      * Resolves the Granite GGUF file in `models/granite`.
@@ -80,153 +66,29 @@ object GraniteModelStorage {
     }
 
     /**
-     * Resolves the PP-OCRv6 detection ONNX model in `models/ppocrv6`.
-     */
-    fun resolvePpOcrDetFile(context: Context): File {
-        val dir = ppOcrDir(context)
-        val candidates = listOf(
-            PPOCR_DET_FILENAME,
-            "pp-ocrv6_det.onnx",
-            "pp-ocrv6_medium_det.onnx",
-            "v6-medium-det.onnx",
-            "ch_PP-OCRv4_det_infer.onnx"
-        )
-        for (name in candidates) {
-            val f = File(dir, name)
-            if (f.isFile && f.length() > 0L) return f
-        }
-        val wildcard = dir.listFiles()?.firstOrNull {
-            it.isFile && it.name.endsWith(".onnx", ignoreCase = true) &&
-                it.name.contains("det", ignoreCase = true) && it.length() > 0L
-        }
-        return wildcard ?: File(dir, PPOCR_DET_FILENAME)
-    }
-
-    /**
-     * Resolves the PP-OCRv6 angle classification ONNX model in `models/ppocrv6`.
-     */
-    fun resolvePpOcrClsFile(context: Context): File {
-        val dir = ppOcrDir(context)
-        val candidates = listOf(
-            PPOCR_CLS_FILENAME,
-            "pp-ocrv6_cls.onnx",
-            "ch_ppocr_mobile_v2.0_cls_infer.onnx"
-        )
-        for (name in candidates) {
-            val f = File(dir, name)
-            if (f.isFile && f.length() > 0L) return f
-        }
-        val wildcard = dir.listFiles()?.firstOrNull {
-            it.isFile && it.name.endsWith(".onnx", ignoreCase = true) &&
-                it.name.contains("cls", ignoreCase = true) && it.length() > 0L
-        }
-        return wildcard ?: File(dir, PPOCR_CLS_FILENAME)
-    }
-
-    /**
-     * Resolves the PP-OCRv6 recognition ONNX model in `models/ppocrv6`.
-     */
-    fun resolvePpOcrRecFile(context: Context): File {
-        val dir = ppOcrDir(context)
-        val candidates = listOf(
-            PPOCR_REC_FILENAME,
-            "pp-ocrv6_rec.onnx",
-            "pp-ocrv6_medium_rec.onnx",
-            "v6-medium-rec.onnx",
-            "ch_PP-OCRv4_rec_infer.onnx"
-        )
-        for (name in candidates) {
-            val f = File(dir, name)
-            if (f.isFile && f.length() > 0L) return f
-        }
-        val wildcard = dir.listFiles()?.firstOrNull {
-            it.isFile && it.name.endsWith(".onnx", ignoreCase = true) &&
-                it.name.contains("rec", ignoreCase = true) && it.length() > 0L
-        }
-        return wildcard ?: File(dir, PPOCR_REC_FILENAME)
-    }
-
-    /**
-     * Resolves the PP-OCRv6 character dictionary in `models/ppocrv6`.
-     * If not yet in external storage, automatically seeds `ppocrv6_dict.utf8` from app assets if present.
-     */
-    fun resolvePpOcrDictFile(context: Context, autoSeedFromAssets: Boolean = true): File {
-        val dir = ppOcrDir(context)
-        val candidates = listOf(PPOCR_DICT_FILENAME, "dict.txt", "ppocr_keys_v1.txt")
-        for (name in candidates) {
-            val f = File(dir, name)
-            if (f.isFile && f.length() > 0L) return f
-        }
-        val wildcard = dir.listFiles()?.firstOrNull {
-            it.isFile && (it.name.endsWith(".utf8", ignoreCase = true) || it.name.endsWith(".txt", ignoreCase = true)) &&
-                it.length() > 0L
-        }
-        if (wildcard != null) return wildcard
-
-        val target = File(dir, PPOCR_DICT_FILENAME)
-        if (autoSeedFromAssets) {
-            runCatching {
-                context.assets.open("$BUNDLED_ASSET_FOLDER/$BUNDLED_DICT_ASSET").use { input ->
-                    FileOutputStream(target).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-            }
-        }
-        return target
-    }
-
-    /**
-     * Checks whether the APK has bundled PP-OCRv6 assets that can be copied with one tap.
-     */
-    fun hasBundledPpOcrAssets(context: Context): Boolean = runCatching {
-        val assets = context.assets.list(BUNDLED_ASSET_FOLDER).orEmpty().toSet()
-        BUNDLED_DET_ASSET in assets && BUNDLED_REC_ASSET in assets && BUNDLED_DICT_ASSET in assets
-    }.getOrDefault(false)
-
-    /**
-     * Copies bundled PP-OCRv6 ONNX models (`v6-medium-det.onnx` -> `det.onnx`, `v6-medium-rec.onnx` -> `rec.onnx`,
-     * and `ppocrv6_dict.utf8`) into `context.getExternalFilesDir("models/ppocrv6")`.
-     */
-    fun seedPpOcrFromBundledAssets(context: Context): Result<Int> = runCatching {
-        val dir = ppOcrDir(context)
-        var copiedCount = 0
-        val mappings = listOf(
-            BUNDLED_DET_ASSET to PPOCR_DET_FILENAME,
-            BUNDLED_REC_ASSET to PPOCR_REC_FILENAME,
-            BUNDLED_DICT_ASSET to PPOCR_DICT_FILENAME
-        )
-        for ((assetName, targetName) in mappings) {
-            val target = File(dir, targetName)
-            val temp = File(dir, "$targetName.tmp")
-            try {
-                context.assets.open("$BUNDLED_ASSET_FOLDER/$assetName").use { input ->
-                    FileOutputStream(temp).use { output ->
-                        input.copyTo(output, bufferSize = 64 * 1024)
-                    }
-                }
-                if (target.exists()) target.delete()
-                check(temp.renameTo(target)) { "Failed to move $targetName into ${dir.absolutePath}" }
-                copiedCount++
-            } finally {
-                if (temp.exists()) temp.delete()
-            }
-        }
-        copiedCount
-    }
-
-    /**
-     * Inspects current model files on device without throwing or crashing.
+     * Checks whether the existing PP-OCRv6 files (`v6-medium-det.onnx`, `v6-medium-rec.onnx`,
+     * `ppocrv6_dict.utf8`) are present in the APK assets or already extracted in `noBackupFilesDir/text-lab-paddle-v1`.
      */
     fun inspectModels(context: Context): WorkflowModelsStatus {
         val gDir = graniteDir(context)
-        val pDir = ppOcrDir(context)
-
+        val pDir = sharedPaddleDir(context)
         val ggufFile = resolveGraniteGgufFile(context)
-        val detFile = resolvePpOcrDetFile(context)
-        val clsFile = resolvePpOcrClsFile(context)
-        val recFile = resolvePpOcrRecFile(context)
-        val dictFile = resolvePpOcrDictFile(context, autoSeedFromAssets = true)
+
+        val spec = PaddleCandidates.all.first()
+        val bundledAssets = runCatching {
+            context.assets.list(SHARED_PADDLE_FOLDER).orEmpty().toSet()
+        }.getOrDefault(emptySet())
+
+        val extractedDet = File(pDir, spec.detector.asset)
+        val extractedRec = File(pDir, spec.recognizer.asset)
+        val extractedDict = File(pDir, spec.dictionary.asset)
+
+        val detAvailable = (extractedDet.isFile && extractedDet.length() == spec.detector.bytes) ||
+            (spec.detector.asset in bundledAssets)
+        val recAvailable = (extractedRec.isFile && extractedRec.length() == spec.recognizer.bytes) ||
+            (spec.recognizer.asset in bundledAssets)
+        val dictAvailable = (extractedDict.isFile && extractedDict.length() == spec.dictionary.bytes) ||
+            (spec.dictionary.asset in bundledAssets)
 
         val ggufValidHeader = if (ggufFile.isFile && ggufFile.length() >= 4L) {
             hasGgufMagic(ggufFile)
@@ -236,7 +98,7 @@ object GraniteModelStorage {
 
         return WorkflowModelsStatus(
             graniteDirectoryPath = gDir.absolutePath,
-            ppOcrDirectoryPath = pDir.absolutePath,
+            sharedPpOcrDirectoryPath = pDir.absolutePath,
             graniteGguf = ModelFileSlotStatus(
                 slotName = "Granite 4.2 3B GGUF",
                 fileName = ggufFile.name,
@@ -244,46 +106,53 @@ object GraniteModelStorage {
                 present = ggufFile.isFile && ggufFile.length() > 0L,
                 sizeBytes = if (ggufFile.isFile) ggufFile.length() else 0L,
                 required = true,
+                isBuiltInShared = false,
                 notes = when {
                     !ggufFile.isFile -> "Place granite-4.2-3b-Q4_K_M.gguf in ${gDir.absolutePath}"
                     ggufValidHeader -> "Valid GGUF header verified"
                     else -> "File present (non-standard header)"
                 }
             ),
-            ppOcrDetOnnx = ModelFileSlotStatus(
-                slotName = "PP-OCRv6 Detection (det.onnx)",
-                fileName = detFile.name,
-                absolutePath = detFile.absolutePath,
-                present = detFile.isFile && detFile.length() > 0L,
-                sizeBytes = if (detFile.isFile) detFile.length() else 0L,
-                required = true
+            mlKitEngine = ModelFileSlotStatus(
+                slotName = "Google ML Kit v2 (Latin)",
+                fileName = "MlKitOcrEngine (bundled)",
+                absolutePath = "APK bundled",
+                present = true,
+                sizeBytes = 0L,
+                required = true,
+                isBuiltInShared = true,
+                notes = "Reuses existing MlKitOcrEngine (no download needed)"
             ),
-            ppOcrClsOnnx = ModelFileSlotStatus(
-                slotName = "PP-OCRv6 Angle Classifier (cls.onnx)",
-                fileName = clsFile.name,
-                absolutePath = clsFile.absolutePath,
-                present = clsFile.isFile && clsFile.length() > 0L,
-                sizeBytes = if (clsFile.isFile) clsFile.length() else 0L,
-                required = false,
-                notes = if (clsFile.isFile && clsFile.length() > 0L) "Active (0°/180° check)" else "Optional (upright default)"
+            ppOcrDetOnnx = ModelFileSlotStatus(
+                slotName = "PP-OCRv6 Detection (${spec.detector.name})",
+                fileName = spec.detector.asset,
+                absolutePath = extractedDet.absolutePath,
+                present = detAvailable,
+                sizeBytes = spec.detector.bytes,
+                required = true,
+                isBuiltInShared = true,
+                notes = if (extractedDet.isFile) "Shared in noBackupFilesDir" else "Bundled in text-lab-paddle-v1"
             ),
             ppOcrRecOnnx = ModelFileSlotStatus(
-                slotName = "PP-OCRv6 Recognition (rec.onnx)",
-                fileName = recFile.name,
-                absolutePath = recFile.absolutePath,
-                present = recFile.isFile && recFile.length() > 0L,
-                sizeBytes = if (recFile.isFile) recFile.length() else 0L,
-                required = true
+                slotName = "PP-OCRv6 Recognition (${spec.recognizer.name})",
+                fileName = spec.recognizer.asset,
+                absolutePath = extractedRec.absolutePath,
+                present = recAvailable,
+                sizeBytes = spec.recognizer.bytes,
+                required = true,
+                isBuiltInShared = true,
+                notes = if (extractedRec.isFile) "Shared in noBackupFilesDir" else "Bundled in text-lab-paddle-v1"
             ),
             ppOcrDict = ModelFileSlotStatus(
-                slotName = "PP-OCRv6 Dictionary (ppocrv6_dict.utf8)",
-                fileName = dictFile.name,
-                absolutePath = dictFile.absolutePath,
-                present = dictFile.isFile && dictFile.length() > 0L,
-                sizeBytes = if (dictFile.isFile) dictFile.length() else 0L,
-                required = true
+                slotName = "PP-OCRv6 Dictionary (${spec.dictionary.entries} chars)",
+                fileName = spec.dictionary.asset,
+                absolutePath = extractedDict.absolutePath,
+                present = dictAvailable,
+                sizeBytes = spec.dictionary.bytes,
+                required = true,
+                isBuiltInShared = true,
+                notes = "Reuses existing ppocrv6_dict.utf8"
             ),
-            bundledPaddleAssetsAvailable = hasBundledPpOcrAssets(context),
             nativeLlamaJniLoaded = GraniteLlamaBridge.isNativeLibraryLoaded()
         )
     }
@@ -304,33 +173,16 @@ object GraniteModelStorage {
     }.getOrDefault(false)
 
     /**
-     * Imports a user-selected document URI into the appropriate external model directory.
+     * Imports a user-selected Granite `.gguf` URI into `context.getExternalFilesDir("models/granite")`.
      */
-    fun importModelUri(
+    fun importGraniteGgufUri(
         context: Context,
-        uri: Uri,
-        target: GraniteModelImportTarget
+        uri: Uri
     ): Result<File> = runCatching {
         val displayName = queryDisplayName(context, uri)?.trim().orEmpty()
-        val resolvedTarget = if (target == GraniteModelImportTarget.AUTO_DETECT) {
-            inferTargetFromName(displayName, uri.lastPathSegment.orEmpty())
-        } else {
-            target
-        }
-
-        val (destDir, destName) = when (resolvedTarget) {
-            GraniteModelImportTarget.GRANITE_GGUF -> graniteDir(context) to GRANITE_GGUF_FILENAME
-            GraniteModelImportTarget.PPOCR_DET -> ppOcrDir(context) to PPOCR_DET_FILENAME
-            GraniteModelImportTarget.PPOCR_CLS -> ppOcrDir(context) to PPOCR_CLS_FILENAME
-            GraniteModelImportTarget.PPOCR_REC -> ppOcrDir(context) to PPOCR_REC_FILENAME
-            GraniteModelImportTarget.PPOCR_DICT -> ppOcrDir(context) to PPOCR_DICT_FILENAME
-            GraniteModelImportTarget.AUTO_DETECT -> error(
-                "Could not determine model slot for '$displayName'. Expected a .gguf, *det*.onnx, *cls*.onnx, *rec*.onnx, or dict file."
-            )
-        }
-
-        val destFile = File(destDir, destName)
-        val tempFile = File(destDir, "$destName.import.tmp")
+        val destDir = graniteDir(context)
+        val destFile = File(destDir, GRANITE_GGUF_FILENAME)
+        val tempFile = File(destDir, "$GRANITE_GGUF_FILENAME.import.tmp")
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
                 ?: error("Cannot open selected file URI: $uri")
@@ -352,26 +204,14 @@ object GraniteModelStorage {
                 destFile.delete()
             }
             check(tempFile.renameTo(destFile)) {
-                "Failed to save imported model to ${destFile.absolutePath}"
+                "Failed to save imported GGUF model to ${destFile.absolutePath}"
             }
-            Log.d(TAG, "Imported model '$displayName' -> ${destFile.absolutePath} (${destFile.length()} bytes)")
+            Log.d(TAG, "Imported Granite GGUF '$displayName' -> ${destFile.absolutePath} (${destFile.length()} bytes)")
             destFile
         } finally {
             if (tempFile.exists()) {
                 tempFile.delete()
             }
-        }
-    }
-
-    internal fun inferTargetFromName(displayName: String, fallbackSegment: String): GraniteModelImportTarget {
-        val name = (displayName.ifBlank { fallbackSegment }).lowercase()
-        return when {
-            name.endsWith(".gguf") || name.contains("granite") -> GraniteModelImportTarget.GRANITE_GGUF
-            name.endsWith(".onnx") && name.contains("det") -> GraniteModelImportTarget.PPOCR_DET
-            name.endsWith(".onnx") && name.contains("cls") -> GraniteModelImportTarget.PPOCR_CLS
-            name.endsWith(".onnx") && name.contains("rec") -> GraniteModelImportTarget.PPOCR_REC
-            name.endsWith(".utf8") || name.contains("dict") || name.endsWith(".txt") -> GraniteModelImportTarget.PPOCR_DICT
-            else -> GraniteModelImportTarget.AUTO_DETECT
         }
     }
 

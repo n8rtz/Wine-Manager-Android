@@ -24,16 +24,19 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         )
         self.assertIn('android:exported="false"', manifest)
 
-    def test_complete_decoupling_from_production_domain_and_gliner(self):
+    def test_decoupled_from_production_repositories_and_reuses_existing_ocr_files(self):
         kt_files = sorted(PKG.glob("*.kt"))
         self.assertGreaterEqual(len(kt_files), 6)
         forbidden_prefixes = (
-            "com.yourapp.wine.",
             "com.n8rtz.winetracker.data.",
             "com.n8rtz.winetracker.scanner.",
             "com.n8rtz.winetracker.network.",
             "com.n8rtz.winetracker.image.",
             "com.n8rtz.winetracker.viewmodels.",
+            "com.yourapp.wine.gliner.",
+            "com.yourapp.wine.phonecorpus.",
+            "com.yourapp.wine.gazetteer.",
+            "com.yourapp.wine.kb.",
         )
         for path in kt_files:
             source = self.read(path)
@@ -44,6 +47,12 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
                         imp.startswith(forbidden),
                         f"{path.name} imports coupled class {imp}",
                     )
+        # Verify DualOcrEngine reuses the existing MlKitOcrEngine and PaddleTextDetector/Recognizer
+        ocr = self.read(PKG / "DualOcrEngine.kt")
+        self.assertIn("MlKitOcrEngine", ocr)
+        self.assertIn("PaddleTextDetector.detect", ocr)
+        self.assertIn("PaddleTextRecognizer.recognize", ocr)
+        self.assertIn("PaddleCandidates", ocr)
 
     def test_preprocessor_constraints_and_clahe_toggle(self):
         prep = self.read(PKG / "GraniteWorkflowImagePreprocessor.kt")
@@ -56,8 +65,6 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         models = self.read(PKG / "GraniteWorkflowModels.kt")
         self.assertIn("async(Dispatchers.Default)", ocr)
         self.assertIn("awaitAll()", ocr)
-        self.assertIn("TextRecognition.getClient", ocr)
-        self.assertIn("OrtEnvironment.getEnvironment()", ocr)
         self.assertIn("Dual (ML Kit + PP-OCRv6)", models)
         self.assertIn("ML Kit Only", models)
         self.assertIn("PP-OCRv6 Only", models)
@@ -71,7 +78,7 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         storage = self.read(PKG / "GraniteModelStorage.kt")
         self.assertIn('const val GRANITE_GGUF_FILENAME = "granite-4.2-3b-Q4_K_M.gguf"', storage)
         self.assertIn('const val GRANITE_SUBDIR = "models/granite"', storage)
-        self.assertIn('const val PPOCR_SUBDIR = "models/ppocrv6"', storage)
+        self.assertIn('const val SHARED_PADDLE_FOLDER = "text-lab-paddle-v1"', storage)
         self.assertIn("const val DEFAULT_THINK_MODE_ENABLED = false", extractor)
         self.assertIn("WINE_LABEL_JSON_GBNF", extractor)
         for key in (

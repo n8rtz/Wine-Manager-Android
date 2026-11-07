@@ -8,7 +8,6 @@ import java.util.Locale
 
 /**
  * Identifies which OCR engine produced an [OcrBlock].
- * Completely isolated from production scanner classes.
  */
 enum class OcrEngineSource(val id: String, val label: String) {
     ML_KIT("mlkit", "ML Kit"),
@@ -44,7 +43,7 @@ data class OcrBlock(
     /** Returns `[x_center, y_center, width, height]` normalized to `[0.0..1.0]`. */
     fun normalizedCenterWh(): FloatArray = floatArrayOf(xCenter, yCenter, width, height)
 
-    /** Formatted coordinate tag `[x=0.50, y=0.22, w=0.64, h=0.05]` for prompts and UI inspection. */
+    /** Formatted coordinate tag `[x=0.500, y=0.220, w=0.640, h=0.050]` for prompts and UI inspection. */
     fun formatCenterWhTag(): String = String.format(
         Locale.US,
         "[x=%.3f, y=%.3f, w=%.3f, h=%.3f]",
@@ -282,7 +281,7 @@ data class WorkflowTimingAndMemory(
 )
 
 /**
- * Status of an individual external model file slot.
+ * Status of a model file or bundled engine asset.
  */
 data class ModelFileSlotStatus(
     val slotName: String,
@@ -291,11 +290,13 @@ data class ModelFileSlotStatus(
     val present: Boolean,
     val sizeBytes: Long,
     val required: Boolean,
+    val isBuiltInShared: Boolean = false,
     val notes: String = ""
 ) {
     val sizeFormatted: String
         get() = when {
             !present -> "Missing"
+            sizeBytes <= 0L && isBuiltInShared -> "Bundled in APK"
             sizeBytes >= 1024L * 1024L -> String.format(Locale.US, "%.1f MB", sizeBytes / (1024.0 * 1024.0))
             sizeBytes >= 1024L -> String.format(Locale.US, "%.1f KB", sizeBytes / 1024.0)
             else -> "$sizeBytes B"
@@ -303,11 +304,15 @@ data class ModelFileSlotStatus(
 }
 
 /**
- * Overall status of the external models required by the workflow.
+ * Overall status of the models used by the workflow.
+ *
+ * ML Kit and PP-OCRv6 reuse the app's existing bundled assets (`MlKitOcrEngine` and
+ * `text-lab-paddle-v1` via `PaddleAssets`) so no second copy or extra download is required.
+ * Only `granite-4.2-3b-Q4_K_M.gguf` needs to be imported into `models/granite`.
  */
 data class WorkflowModelsStatus(
     val graniteDirectoryPath: String = "",
-    val ppOcrDirectoryPath: String = "",
+    val sharedPpOcrDirectoryPath: String = "",
     val graniteGguf: ModelFileSlotStatus = ModelFileSlotStatus(
         slotName = "Granite 4.2 3B GGUF",
         fileName = "granite-4.2-3b-Q4_K_M.gguf",
@@ -316,40 +321,46 @@ data class WorkflowModelsStatus(
         sizeBytes = 0L,
         required = true
     ),
+    val mlKitEngine: ModelFileSlotStatus = ModelFileSlotStatus(
+        slotName = "Google ML Kit v2 (Latin)",
+        fileName = "Bundled com.google.mlkit:text-recognition",
+        absolutePath = "APK bundled",
+        present = true,
+        sizeBytes = 0L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Reuses existing MlKitOcrEngine"
+    ),
     val ppOcrDetOnnx: ModelFileSlotStatus = ModelFileSlotStatus(
         slotName = "PP-OCRv6 Detection ONNX",
-        fileName = "det.onnx",
+        fileName = "v6-medium-det.onnx",
         absolutePath = "",
         present = false,
-        sizeBytes = 0L,
-        required = true
-    ),
-    val ppOcrClsOnnx: ModelFileSlotStatus = ModelFileSlotStatus(
-        slotName = "PP-OCRv6 Angle Classifier ONNX",
-        fileName = "cls.onnx",
-        absolutePath = "",
-        present = false,
-        sizeBytes = 0L,
-        required = false,
-        notes = "Optional (0°/180° classifier)"
+        sizeBytes = 62032837L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Reuses existing text-lab-paddle-v1"
     ),
     val ppOcrRecOnnx: ModelFileSlotStatus = ModelFileSlotStatus(
         slotName = "PP-OCRv6 Recognition ONNX",
-        fileName = "rec.onnx",
+        fileName = "v6-medium-rec.onnx",
         absolutePath = "",
         present = false,
-        sizeBytes = 0L,
-        required = true
+        sizeBytes = 76554979L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Reuses existing text-lab-paddle-v1"
     ),
     val ppOcrDict: ModelFileSlotStatus = ModelFileSlotStatus(
         slotName = "PP-OCRv6 Dictionary",
         fileName = "ppocrv6_dict.utf8",
         absolutePath = "",
         present = false,
-        sizeBytes = 0L,
-        required = true
+        sizeBytes = 74947L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Reuses existing text-lab-paddle-v1"
     ),
-    val bundledPaddleAssetsAvailable: Boolean = false,
     val nativeLlamaJniLoaded: Boolean = false
 ) {
     val isPpOcrReady: Boolean
@@ -358,29 +369,15 @@ data class WorkflowModelsStatus(
     val isGraniteReady: Boolean
         get() = graniteGguf.present
 
-    fun canRunPipeline(ocrMode: OcrAblationMode): Boolean {
-        val ocrOk = when (ocrMode) {
-            OcrAblationMode.ML_KIT_ONLY -> true
-            OcrAblationMode.PP_OCRV6_ONLY -> isPpOcrReady
-            OcrAblationMode.DUAL -> isPpOcrReady
-        }
-        return ocrOk && isGraniteReady
-    }
-
     fun missingModelsPrompt(ocrMode: OcrAblationMode): String? {
         val missing = mutableListOf<String>()
-        if (ocrMode.runsPpOcrV6) {
-            if (!ppOcrDetOnnx.present) missing.add("PP-OCRv6 det.onnx")
-            if (!ppOcrRecOnnx.present) missing.add("PP-OCRv6 rec.onnx")
-            if (!ppOcrDict.present) missing.add("ppocrv6_dict.utf8")
-        }
         if (!graniteGguf.present) {
             missing.add("granite-4.2-3b-Q4_K_M.gguf")
         }
         return if (missing.isEmpty()) {
             null
         } else {
-            "Import Model Files to Run: missing ${missing.joinToString(", ")}"
+            "Import Model Files to Run: place or import ${missing.joinToString(", ")} (ML Kit & PP-OCRv6 reuse existing bundled app models)"
         }
     }
 }
