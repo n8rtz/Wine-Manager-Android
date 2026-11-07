@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.SensoryData
@@ -107,6 +108,9 @@ fun SectionedSensoryFields(
     }
 }
 
+private fun entryTightOpenLabel(value: Float): String =
+    if (value < 0.5f) "Tight" else "Open"
+
 @Composable
 private fun EntryScaleSlider(
     data: SensoryData,
@@ -122,7 +126,11 @@ private fun EntryScaleSlider(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
-            Text("%.1f".format(value), style = MaterialTheme.typography.bodySmall)
+            Text(
+                entryTightOpenLabel(value),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
@@ -132,14 +140,18 @@ private fun EntryScaleSlider(
                 "Tight",
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 "Open",
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.End
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
         GradientSensorySlider(
@@ -212,7 +224,7 @@ fun StructuredNoteSummary(
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             if (phase == TastingPhase.ENTRY) {
                 Text(
-                    "Entry (Tight ↔ Open): %.1f".format(data.entryTightOpen ?: 0.5f),
+                    "Entry: ${entryTightOpenLabel(data.entryTightOpen ?: 0.5f)}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

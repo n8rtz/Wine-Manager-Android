@@ -179,7 +179,15 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn('"Entry",', sections)
         self.assertIn('"Tight",', sections)
         self.assertIn('"Open",', sections)
-        self.assertIn('"Entry (Tight ↔ Open): %.1f"', sections)
+        entry_slider = sections.split("private fun EntryScaleSlider(", 1)[1].split(
+            "@Composable\nfun CommonFaultsFields(", 1
+        )[0]
+        self.assertIn('if (value < 0.5f) "Tight" else "Open"', sections)
+        self.assertIn("entryTightOpenLabel(value)", entry_slider)
+        self.assertIn("color = MaterialTheme.colorScheme.primary", entry_slider)
+        self.assertIn("GradientSensorySlider(", entry_slider)
+        self.assertNotIn("%.1f", entry_slider)
+        self.assertIn('"Entry: ${entryTightOpenLabel(data.entryTightOpen ?: 0.5f)}"', sections)
         self.assertIn("StructuredNoteSummary(", sections)
         self.assertIn("fun LegacyAromaPhaseSheet(", legacy)
         self.assertIn("TastingPhase.values().forEach", legacy)
