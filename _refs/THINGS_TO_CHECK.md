@@ -70,6 +70,7 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/a89d1ab7-wine-manager-android` | not opened | active | Silent startup crash fix: schema aligned forward to v22; startup DB gate with error screen | [Jump](#branch-arenaa89d1ab7-wine-manager-android) |
 | `arena/49fc9af5-wine-manager-android` | not opened | active | First compact-JSON diagnostic analysis; host Lab replay harness (phone = final verification only) | [Jump](#branch-arena49fc9af5-wine-manager-android) |
 | `arena/0a282176-wine-manager-android` | not opened | active | Multi-photo, unscored Lab v5 sanity checks | [Jump](#branch-arena0a282176-wine-manager-android) |
 | `arena/ab7b824f-wine-manager-android` | not opened | active | Pre-refresh 125-label results relabeled Lab v5 / Prod v4.0; legacy pipeline and frozen-baseline compatibility | [Jump](#branch-arenaab7b824f-wine-manager-android) |
@@ -83,6 +84,21 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/a89d1ab7-wine-manager-android`
+
+**Build it:** `git checkout arena/a89d1ab7-wine-manager-android`; install the debug build over the existing phone install WITHOUT clearing storage (the crash only reproduces with a v22 database left by a `main` build).
+
+**What changed:** schema aligned forward to v22 (`MIGRATION_21_22`, `WineDefinition.defaultColorHsv`, `HsvColor`/rich `SensoryData` storage parity with `main`) so branch builds open `main`-created databases with no data loss; startup now gates the cellar UI on the database probe and shows an error screen instead of closing silently.
+
+### Silent startup crash on a v22 database
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Install this branch's debug build over the phone install holding the real cellar (v22 database); do not clear storage. The app must open to the Cellar — no instant close. Cellar counts, a wine detail, notes and history must match the pre-install state.
+2. [ ] Open and save a tasting note, then JSON-export before/after and diff the `sensoryData` payload: color, entry/tight-open and aroma observations must survive the round-trip (no silent field drops).
+3. [ ] Export a JSON backup and re-import it; the restore must succeed and `defaultColorHsv` values must survive.
+4. [ ] Run `:app:testDebugUnitTest --tests com.n8rtz.winetracker.data.local.SensoryDataAromasConverterTest` in an Android-capable environment; all six converter tests must pass unchanged.
 
 ## Branch `arena/49fc9af5-wine-manager-android`
 

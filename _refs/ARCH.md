@@ -74,9 +74,12 @@ app/src/main/java/com/n8rtz/winetracker/
 │
 ├── data/
 │   ├── local/
-│   │   ├── WineDatabase.kt            # Room DB (v21): entities WineDefinition, WineImageAsset, WineBottle,
-│   │   │                              #   TastingNote, Rating, ConsumptionEvent; BottleStatus; SensoryData;
-│   │   │                              #   Converters; vintage helpers; all migrations
+│   │   ├── WineDatabase.kt            # Room DB (v22): entities WineDefinition (+defaultColorHsv),
+│   │   │                              #   WineImageAsset, WineBottle, TastingNote, Rating,
+│   │   │                              #   ConsumptionEvent; BottleStatus; SensoryData; Converters;
+│   │   │                              #   vintage helpers; all migrations
+│   │   ├── TastingNoteModels.kt       # HsvColor, TastingPhase, AromaObservation (storage parity with main)
+│   │   ├── TastingNoteStructure.kt    # Sensory-data normalization/validation/aroma helpers (parity with main)
 │   │   └── WineDaos.kt                # DAOs: Wine, WineImageAsset, Inventory, TastingNote, Rating, ConsumptionEvent
 │   ├── repository/
 │   │   ├── WineRepository.kt          # Single source of truth; inventory and consumption-event transactions
