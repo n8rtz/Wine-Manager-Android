@@ -99,8 +99,8 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 2. [ ] Open and save a tasting note, then JSON-export before/after and diff the `sensoryData` payload: color, entry/tight-open and aroma observations must survive the round-trip (no silent field drops).
 3. [ ] Export a JSON backup and re-import it; the restore must succeed and `defaultColorHsv` values must survive.
 4. [ ] Run `:app:testDebugUnitTest --tests com.n8rtz.winetracker.data.local.SensoryDataAromasConverterTest` in an Android-capable environment; all six converter tests must pass unchanged.
-5. [ ] On Add Wine, scan a label with the camera and choose a photo from the library: the analyzing bar must progress left-to-right through the pipeline step labels (no spinner; one line of status below the bar) on both the camera overlay and the form.
-6. [ ] The scan buttons read "Scan label" and "Choose label". During processing, the camera overlay shows the captured still (not the live preview or framing guide) and the form shows the photo thumbnail above the progress bar; after an error, "Retake Label" reopens a live preview.
+5. [ ] On Add Wine, scan a label with the camera and choose a photo from the library: the analyzing bar must progress left-to-right through the seven plain-language step labels (no spinner; one line of status below the bar) on both the camera overlay and the form: "Getting the label reader ready…" → "Loading the label reader…" → "Preparing the photo…" → "Reading the label text…" → "Checking with a second read…" (only while both text readers are still running) → "Understanding the label…" → "Filling in the wine details…".
+6. [ ] The scan buttons read "Scan label" and "Choose label". During processing, the camera overlay shows the captured still (not the live preview or framing guide) and the form shows the photo thumbnail above the progress bar; after the scan finishes, the label photo stays on the form under the scan buttons (even when nothing could be read) until the next scan; after an error, "Retake Label" reopens a live preview.
 
 ## Branch `arena/49fc9af5-wine-manager-android`
 

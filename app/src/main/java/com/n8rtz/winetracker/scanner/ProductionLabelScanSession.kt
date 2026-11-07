@@ -39,6 +39,8 @@ internal object ProductionLabelScanSession {
     @Volatile internal var scannerForTesting: (suspend (Context, File, Long, ScanInputSource) -> ScanReport)? = null
     private var failedServiceRequest: Long? = null
     private var nextId = System.currentTimeMillis()
+    /** Single retained scan photo for the post-scan review display; replaced every scan. */
+    private const val REVIEW_PHOTO_NAME = "label-scan-review.jpg"
 
     private fun initialize(context: Context) {
         if (!initialized) {
@@ -119,6 +121,8 @@ internal object ProductionLabelScanSession {
 
     private fun launchPhotoScan(app: Context, id: Long, started: Long, source: ScanInputSource,
         initialFile: File? = null, obtain: suspend () -> LocalLabelPhoto) {
+        // A new scan drops the previous review photo; at most one is ever retained.
+        runCatching { File(app.cacheDir, REVIEW_PHOTO_NAME).takeIf { it.exists() }?.delete() }
         // Install the job before dispatch so cancellation cannot race an as-yet unassigned job.
         val launched = scope.launch(start = CoroutineStart.LAZY) {
             var ownedFile: File? = initialFile
@@ -150,7 +154,7 @@ internal object ProductionLabelScanSession {
                         synchronized(lock) {
                             val current = mutable.value
                             if (current is LabelScanState.Processing && current.requestId == id) {
-                                mutable.value = current.copy(stage = reported)
+                                mutable.value = current.copy(step = reported)
                             }
                         }
                     }
@@ -179,18 +183,23 @@ internal object ProductionLabelScanSession {
                 completed = ScanReport.red("Not enough memory — choose a smaller photo or enter details manually",
                     SystemClock.elapsedRealtime() - started, source = source, stage = stage, failureType = error.javaClass.name)
             } finally {
-                // Persist before deleting the recoverable input, but publish only after cleanup so
+                // A finished scan (readable or not) keeps its photo for the review display; a
+                // cancelled one deletes it exactly as before. Persist after retaining so the
+                // stored result carries the photo path, but publish only after cleanup so
                 // another scan cannot start while this job is still removing files or stopping FGS.
+                val reviewPhotoPath = if (completed != null) {
+                    ownedFile?.takeIf { it.isFile }?.let { retainReviewPhoto(app, it) }
+                } else null
+                ownedFile?.let { if (it.exists() && !it.delete()) Log.w("ProductionLabelScanSession", "Could not delete private input") }
                 val saved = synchronized(lock) {
                     val current = mutable.value
                     val owns = (current is LabelScanState.ImportingPhoto && current.requestId == id) ||
                         (current is LabelScanState.Processing && current.requestId == id)
-                    if (owns && completed != null) PendingLabelScanStore(app).saveResult(id, completed!!) else false
+                    if (owns && completed != null) PendingLabelScanStore(app).saveResult(id, completed!!, reviewPhotoPath) else false
                 }
                 PendingLabelScanStore(app).clearActive()
-                ownedFile?.let { if (it.exists() && !it.delete()) Log.w("ProductionLabelScanSession", "Could not delete private input") }
                 LabelScanService.stop(app)
-                finish(app, id, completed, saved)
+                finish(app, id, completed, saved, reviewPhotoPath)
             }
         }
         launched.invokeOnCompletion {
@@ -213,16 +222,27 @@ internal object ProductionLabelScanSession {
         }
     }
 
-    private fun saveResult(app: Context, id: Long, result: ScanReport) {
-        mutable.value = if (PendingLabelScanStore(app).saveResult(id, result)) LabelScanState.Review(id, result)
+    /** Moves the finished scan's photo to the single retained review slot. Never fails the scan. */
+    private fun retainReviewPhoto(app: Context, file: File): String? = runCatching {
+        val retained = File(app.cacheDir, REVIEW_PHOTO_NAME)
+        runCatching { if (retained.exists()) retained.delete() }
+        if (!file.renameTo(retained)) {
+            file.inputStream().use { input -> retained.outputStream().use { output -> input.copyTo(output) } }
+            if (!file.delete()) Log.w("ProductionLabelScanSession", "Could not delete private input")
+        }
+        retained.takeIf { it.isFile }?.absolutePath
+    }.getOrNull()
+
+    private fun saveResult(app: Context, id: Long, result: ScanReport, photoPath: String? = null) {
+        mutable.value = if (PendingLabelScanStore(app).saveResult(id, result, photoPath)) LabelScanState.Review(id, result, photoPath)
             else LabelScanState.Error(id, "Could not save the scan result — try again or enter details manually")
     }
-    private fun finish(app: Context, id: Long, result: ScanReport?, saved: Boolean) = synchronized(lock) {
+    private fun finish(app: Context, id: Long, result: ScanReport?, saved: Boolean, reviewPhotoPath: String? = null) = synchronized(lock) {
         val current = mutable.value
         val owns = (current is LabelScanState.ImportingPhoto && current.requestId == id) ||
             (current is LabelScanState.Processing && current.requestId == id)
         when {
-            owns && result != null && saved -> mutable.value = LabelScanState.Review(id, result)
+            owns && result != null && saved -> mutable.value = LabelScanState.Review(id, result, reviewPhotoPath)
             owns && result != null -> mutable.value = LabelScanState.Error(id, "Could not save the scan result — try again or enter details manually")
             owns -> mutable.value = LabelScanState.Error(id, "Scan cancelled — retake or choose another photo")
             current is LabelScanState.FinishingCancelledScan && current.requestId == id -> {

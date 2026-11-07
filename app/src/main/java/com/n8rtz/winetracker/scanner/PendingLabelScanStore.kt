@@ -23,7 +23,7 @@ internal class PendingLabelScanStore(context: Context) {
     fun clearActive() { prefs.edit().remove("active").commit() }
     fun clearActive(id: Long) { if (active()?.requestId == id) clearActive() }
 
-    fun saveResult(id: Long, report: ScanReport): Boolean {
+    fun saveResult(id: Long, report: ScanReport, photoPath: String? = null): Boolean {
         val fields = JSONObject()
         FieldId.entries.forEach { field ->
             val candidate = report.fill.fields.getValue(field)
@@ -31,7 +31,8 @@ internal class PendingLabelScanStore(context: Context) {
                 .put("reason", candidate.reason))
         }
         val data = JSONObject().put("id", id).put("fields", fields)
-            .put("hint", report.fill.overallHint ?: JSONObject.NULL).toString()
+            .put("hint", report.fill.overallHint ?: JSONObject.NULL)
+            .put("photo", photoPath ?: JSONObject.NULL).toString()
         return prefs.edit().putString("result", data).commit()
     }
     fun result(): LabelScanState.Review? = runCatching {
@@ -44,7 +45,10 @@ internal class PendingLabelScanStore(context: Context) {
         }
         val hint = if (json.isNull("hint")) null else json.optString("hint")
         val report = ScanReport.red(hint ?: "").copy(fill = FillResult(candidates, hint))
-        LabelScanState.Review(json.getLong("id"), report)
+        // The cache file may be gone (OS pressure) while its record survives; show no photo then.
+        val photo = json.optString("photo").takeIf { it.isNotBlank() }
+            ?.let { File(it) }?.takeIf { it.isFile }?.absolutePath
+        LabelScanState.Review(json.getLong("id"), report, photo)
     }.getOrNull()
     fun clearResult(id: Long) {
         if (result()?.requestId == id) prefs.edit().remove("result").commit()

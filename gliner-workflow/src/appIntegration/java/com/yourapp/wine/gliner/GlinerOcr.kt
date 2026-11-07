@@ -10,6 +10,7 @@ import com.yourapp.wine.capture.WineScannerServices
 import com.yourapp.wine.ocr.MlKitOcrEngine
 import com.yourapp.wine.ocr.ScanDeadline
 import com.yourapp.wine.textlab.CandidateBudgetExpired
+import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.textlab.PaddleCandidates
 import com.yourapp.wine.textlab.PaddleTextDetector
 import com.yourapp.wine.textlab.PaddleTextRecognizer
@@ -58,20 +59,27 @@ internal object GlinerOcr {
     /** App-scoped client: the recognizer is bundled, so constructing one per photo is waste. */
     private val mlKit by lazy { MlKitOcrEngine(WineScannerServices.nativeGate) }
 
-    suspend fun recognize(context:Context,file:File,deadlineAtMs:Long):Outcome =
+    suspend fun recognize(context:Context,file:File,deadlineAtMs:Long,
+        onStage:(LabelScanProgressStep)->Unit={}):Outcome =
         withContext(Dispatchers.Default) {
             val started=SystemClock.elapsedRealtime()
             val spec=PaddleCandidates.all.first()
             val scanLock=WineScannerServices.get(context)
             scanLock.withBenchmarkEngines { _, _ ->
                 BitmapWorkspace().use { workspace ->
+                    onStage(LabelScanProgressStep.PREPARE_PHOTO)
                     val decoded=CaptureDecoder().decode(file,workspace)
                     val bitmap=decoded.bitmap
                     val deadline=ScanDeadline(deadlineAtMs)
+                    onStage(LabelScanProgressStep.READ_TEXT)
                     val (mlKitReadings,paddleReadings)=coroutineScope {
                         val mlkit=async(Dispatchers.Default) { readMlKit(bitmap,deadline) }
                         val paddle=async(Dispatchers.Default) { readPaddle(context,bitmap,workspace,spec,deadlineAtMs) }
-                        mlkit.await() to paddle.await()
+                        val first=mlkit.await()
+                        // The reads run together; only report the checking phase when the second
+                        // read is still running, so a fast pair never flashes a stale step.
+                        if(!paddle.isCompleted) onStage(LabelScanProgressStep.CHECK_READ)
+                        first to paddle.await()
                     }
                     val fused=GlinerFusion.fuse(mlKitReadings+paddleReadings)
                     val engineReadings=linkedMapOf(MLKIT_ID to mlKitReadings.size,PADDLE_ID to paddleReadings.size)

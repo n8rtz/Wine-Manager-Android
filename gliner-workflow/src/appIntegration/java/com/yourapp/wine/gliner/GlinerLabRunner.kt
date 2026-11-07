@@ -3,6 +3,7 @@ package com.yourapp.wine.gliner
 import android.content.Context
 import android.os.SystemClock
 import com.n8rtz.winetracker.BuildConfig
+import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.diagnostics.ScanStage
 import com.yourapp.wine.gazetteer.ProducerGazetteer
 import com.yourapp.wine.gazetteer.ProducerResolver
@@ -132,7 +133,7 @@ internal object GlinerLabRunner {
     /** Same OCR, inference and decision pipeline as the lab, on a caller-owned photo. No references. */
     suspend fun runProduction(context:Context,photo:File,model:GlinerOnnxModel,
         warm:TextLabWineExtraction.WarmSession,deadlineAtMs:Long,
-        onStage:(ScanStage)->Unit={}):GlinerLabImageResult {
+        onStage:(LabelScanProgressStep)->Unit={}):GlinerLabImageResult {
         val sample=GlinerLabSample("production-photo",0,"", "",true,emptyMap())
         return runPhoto(context,photo,sample,model,GlinerLaneConfig(),warm,
             LabPostOcrModules.none.withIntegrated(),SystemClock.elapsedRealtime(),deadlineAtMs,onStage)
@@ -141,14 +142,13 @@ internal object GlinerLabRunner {
     private suspend fun runPhoto(context:Context,photo:File,sample:GlinerLabSample,model:GlinerOnnxModel,
         laneConfig:GlinerLaneConfig,warm:TextLabWineExtraction.WarmSession,modules:LabPostOcrModules,
         started:Long,deadlineAtMs:Long=Long.MAX_VALUE,
-        onStage:(ScanStage)->Unit={}):GlinerLabImageResult {
+        onStage:(LabelScanProgressStep)->Unit={}):GlinerLabImageResult {
         var ocrMs=0L
         var glinerMs=0L
         var postMs=0L
         try {
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached before OCR" }
-            onStage(ScanStage.OCR)
-            val ocr=GlinerOcr.recognize(context,photo,minOf(deadlineAtMs,SystemClock.elapsedRealtime()+OCR_BUDGET_MS))
+            val ocr=GlinerOcr.recognize(context,photo,minOf(deadlineAtMs,SystemClock.elapsedRealtime()+OCR_BUDGET_MS),onStage)
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during OCR" }
             ocrMs=ocr.elapsedMs
             val document=GlinerDocument.build(ocr.lines)
@@ -156,7 +156,7 @@ internal object GlinerLabRunner {
                 return failed(sample,"no_text","No OCR words on this label",ocr.lines.map { it.text },
                     ocrMs,0,0,SystemClock.elapsedRealtime()-started,model)
             }
-            onStage(ScanStage.GLINER)
+            onStage(LabelScanProgressStep.UNDERSTAND_LABEL)
             val labelled=try {
                 model.label(document,minOf(deadlineAtMs,SystemClock.elapsedRealtime()+GLINER_BUDGET_MS))
             } catch(cancel:CancellationException) { throw cancel }
@@ -175,7 +175,7 @@ internal object GlinerLabRunner {
             }
             val postStarted=SystemClock.elapsedRealtime()
             check(postStarted<deadlineAtMs) { "Scan deadline reached before field extraction" }
-            onStage(ScanStage.FILL)
+            onStage(LabelScanProgressStep.FILL_DETAILS)
             val post=postProcess(context,records,warm,modules,labelled)
             postMs=SystemClock.elapsedRealtime()-postStarted
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during field extraction" }

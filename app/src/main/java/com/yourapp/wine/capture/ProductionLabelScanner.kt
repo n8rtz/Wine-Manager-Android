@@ -2,6 +2,7 @@ package com.yourapp.wine.capture
 
 import android.content.Context
 import android.os.SystemClock
+import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.diagnostics.ScanDiagnostics
 import com.yourapp.wine.diagnostics.ScanEngineStatus
 import com.yourapp.wine.diagnostics.ScanInputSource
@@ -17,7 +18,7 @@ internal object ProductionLabelScanner {
     const val BUDGET_MS=90_000L
 
     suspend fun scan(context:Context,photo:File,started:Long,source:ScanInputSource,
-        onStage:(ScanStage)->Unit={}):ScanReport {
+        onStage:(LabelScanProgressStep)->Unit={}):ScanReport {
         val deadline=ScanDeadline(started+BUDGET_MS)
         val attempt=deadline.run {
             GlinerProductionScanner.scan(context,photo,started,source,deadline.expiresAtMs,BUDGET_MS,onStage)

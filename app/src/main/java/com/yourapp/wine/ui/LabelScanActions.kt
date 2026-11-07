@@ -32,7 +32,7 @@ import java.io.File
 /** No coordinates: camera permission and the system photo picker are separate, explicit user actions. */
 @Composable
 fun LabelScanActions(busy: Boolean, progressMessage: String?, onCamera: () -> Unit, onChoosePhoto: () -> Unit,
-    progress: Float? = null, processingPhotoPath: String? = null) {
+    progress: Float? = null, scanPhotoPath: String? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick = onCamera, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.Camera, contentDescription = null)
@@ -46,20 +46,21 @@ fun LabelScanActions(busy: Boolean, progressMessage: String?, onCamera: () -> Un
         }
         Text("Camera and selected photos are scanned on this device. No photo upload.",
             style = MaterialTheme.typography.bodySmall)
+        // The scanning photo, kept on screen after the scan so the bottle stays visible with its form.
+        scanPhotoPath?.let {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(File(it))
+                    .crossfade(true)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.DISABLED)
+                    .build(),
+                contentDescription = "Scanned wine label",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp))
+            )
+        }
         progressMessage?.let {
-            if (processingPhotoPath != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(processingPhotoPath))
-                        .crossfade(true)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = "Label photo being scanned",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp))
-                )
-            }
             val animated by animateFloatAsState(targetValue = progress ?: 0f, label = "labelScanProgress")
             if (progress == null) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             else LinearProgressIndicator(progress = { animated }, modifier = Modifier.fillMaxWidth())

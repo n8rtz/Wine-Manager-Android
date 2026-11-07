@@ -126,6 +126,7 @@ fun AddWineScreen(
     var scanForm by remember { mutableStateOf(initialDraft.formState()) }
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
     var lastScanId by remember { mutableStateOf(0L) }
+    var lastScanPhotoPath by remember { mutableStateOf<String?>(null) }
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val syncFormToInputs = {
         maker = scanForm.fields.getValue(FieldId.PRODUCER).value
@@ -168,6 +169,9 @@ fun AddWineScreen(
     LaunchedEffect(lastScanId) {
         if (lastScanId != 0L) formScrollState.scrollTo(0)
     }
+    LaunchedEffect(labelScanState.isBusy) {
+        if (labelScanState.isBusy) lastScanPhotoPath = null
+    }
     LaunchedEffect((labelScanState as? LabelScanState.Review)?.requestId) {
         val review = labelScanState as? LabelScanState.Review ?: return@LaunchedEffect
         val values = mapOf(FieldId.PRODUCER to maker, FieldId.WINE_NAME to name, FieldId.VINTAGE to vintage,
@@ -181,6 +185,7 @@ fun AddWineScreen(
         selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
         lastScanReport = review.result
         lastScanId = review.requestId
+        lastScanPhotoPath = review.photoPath
         showLabelCamera = false
         cameraError = if (review.result.fill.fields.values.all { it.state == com.yourapp.wine.fill.UiState.RED })
             review.result.fill.overallHint ?: "Could not read the label — retake or enter details manually" else null
@@ -237,8 +242,8 @@ fun AddWineScreen(
                             .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
                     },
                     progress = if (showLabelCamera) null else labelScanState.scanProgressFraction,
-                    processingPhotoPath = if (showLabelCamera) null else
-                        (labelScanState as? LabelScanState.Processing)?.photoPath)
+                    scanPhotoPath = if (showLabelCamera) null else
+                        (labelScanState as? LabelScanState.Processing)?.photoPath ?: lastScanPhotoPath)
                 (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,

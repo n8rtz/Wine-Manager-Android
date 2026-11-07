@@ -2,6 +2,7 @@ package com.yourapp.wine.gliner
 
 import android.content.Context
 import android.os.SystemClock
+import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.diagnostics.ScanDiagnostics
 import com.yourapp.wine.diagnostics.ScanEngineStatus
@@ -25,11 +26,11 @@ internal object GlinerProductionScanner {
     }
 
     suspend fun scan(context:Context,photo:File,started:Long,source:ScanInputSource,
-        deadlineAtMs:Long,budgetMs:Long,onStage:(ScanStage)->Unit={}):Attempt = withContext(Dispatchers.Default) {
+        deadlineAtMs:Long,budgetMs:Long,onStage:(LabelScanProgressStep)->Unit={}):Attempt = withContext(Dispatchers.Default) {
         var model:GlinerOnnxModel?=null
         var warm:TextLabWineExtraction.WarmSession?=null
         try {
-            onStage(ScanStage.INITIALIZE)
+            onStage(LabelScanProgressStep.PREPARE_READER)
             val scanContext=currentCoroutineContext()
             val status=GlinerBundle.status(context) { scanContext.ensureActive() }
             if(!status.ready || !status.int4 || status.config==null || status.files.any { !it.pinned || !it.matchesPin }) {
@@ -42,6 +43,7 @@ internal object GlinerProductionScanner {
                 return@withContext Attempt.Unavailable(why)
             }
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext Attempt.Unavailable("model setup exceeded scan budget")
+            onStage(LabelScanProgressStep.LOAD_READER)
             val opened=GlinerOnnxModel.open(context,status,GlinerLaneConfig())
             model=opened
             val readyMs=SystemClock.elapsedRealtime()
