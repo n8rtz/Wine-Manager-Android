@@ -220,8 +220,13 @@ fun AddWineScreen(
             scannerViewModel.warmLabelScanner()
         }
     }
+    // OCR done: the drawer slides up to the full entry form, then the form scrolls to top.
+    // Separated from the dismissal above so interrupting the animation loses nothing.
     LaunchedEffect(lastScanId) {
-        if (lastScanId != 0L) formScrollState.scrollTo(0)
+        if (lastScanId != 0L) {
+            scaffoldState.bottomSheetState.expand()
+            formScrollState.scrollTo(0)
+        }
     }
     // Drawer detents: skinny handle card at rest, progress peek while busy — never during the
     // confirm hold, when the user is deciding rather than waiting. Only steers a collapsed
@@ -245,9 +250,6 @@ fun AddWineScreen(
         selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
         selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
         lastScanReport = review.result
-        lastScanId = review.requestId
-        // OCR done: the drawer slides up to the full entry form.
-        scaffoldState.bottomSheetState.expand()
         scanHint = if (review.result.fill.fields.values.all { it.state == com.yourapp.wine.fill.UiState.RED })
             review.result.fill.overallHint ?: "Could not read the label — retake or enter details manually" else null
         // Acknowledge the result even if the draft backup fails: a stuck Review bricks the
@@ -256,6 +258,9 @@ fun AddWineScreen(
         val draftSaved = draftStore.save(currentDraft(), synchronous = true) || draftStore.save(currentDraft(), synchronous = true)
         if (!draftSaved) scanHint = "Scan result kept, but this device refused the backup — it won't survive a restart"
         scannerViewModel.dismissLabelScan(review.requestId)
+        // Last: drives the completion-UI effect below. Everything above is non-suspending,
+        // so a mid-animation drag, tab switch or rotation can never skip the dismissal.
+        lastScanId = review.requestId
     }
 
     val availableCountries = (
