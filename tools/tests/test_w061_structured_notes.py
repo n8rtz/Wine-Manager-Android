@@ -162,7 +162,7 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn(".filter { it in assignments.getValue(id) }", editor)
         self.assertIn("sameDescriptorCanBeAssignedToMultiplePhasesIndependently", model_test)
 
-    def test_color_and_aroma_launcher_share_a_row_but_keep_separate_surfaces(self):
+    def test_color_and_aroma_launcher_share_one_stepped_card(self):
         sections = read(UI / "components/TastingPhaseSections.kt")
         wheel = read(UI / "components/AromaWheelDialog.kt")
         aroma_row = sections.split("TastingPhase.AROMA_BEFORE_TASTING -> {", 1)[1].split(
@@ -177,6 +177,9 @@ class W061SourceContractTests(unittest.TestCase):
         summary_chips = wheel.split("private fun AromaSummaryChipRow(", 1)[1].split(
             "/** Drag positions", 1
         )[0]
+        card_shape = sections.split("private fun roundedSteppedCardPath(", 1)[1].split(
+            "private fun entryTightOpenLabel", 1
+        )[0]
         self.assertIn("Column(", aroma_row)
         self.assertIn("Row(", aroma_row)
         self.assertIn("verticalAlignment = Alignment.Top", aroma_row)
@@ -188,16 +191,22 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("modifier = Modifier.weight(1f)", aroma_row)
         self.assertIn("modifier = Modifier.fillMaxWidth()", aroma_row)
         self.assertIn("Arrangement.spacedBy(8.dp)", aroma_row)
-        self.assertIn("Arrangement.spacedBy(4.dp)", aroma_row)
+        self.assertNotIn("Arrangement.spacedBy(4.dp)", aroma_row)
         self.assertLess(aroma_row.index("NoteColorField("), aroma_row.index("AromaWheelLauncherHeader("))
         self.assertLess(aroma_row.index("AromaWheelLauncherHeader("), aroma_row.index("AromaWheelSummaryPanel("))
-        self.assertIn(".background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))", header)
-        self.assertIn("RoundedCornerShape(16.dp)", header)
+        self.assertIn(".drawBehind {", aroma_row)
+        self.assertIn("drawPath(", aroma_row)
+        self.assertIn("roundedSteppedCardPath(", aroma_row)
+        self.assertIn("colorFieldWidthPx.toFloat() + 8.dp.toPx()", aroma_row)
+        self.assertIn("quadraticTo(", card_shape)
+        self.assertNotIn(".background(", header)
+        self.assertNotIn(".clip(", header)
         self.assertIn("start = if (compact) 8.dp else 14.dp", header)
         self.assertIn("top = if (compact) 8.dp else 10.dp", header)
         self.assertIn("AromaWheelGlyph(", header)
         self.assertIn('"Aroma wheel"', header)
-        self.assertIn(".clip(RoundedCornerShape(16.dp))", summary_panel)
+        self.assertNotIn(".background(", summary_panel)
+        self.assertNotIn(".clip(", summary_panel)
         self.assertIn("top = 8.dp", summary_panel)
         self.assertIn("bottom = if (compact) 8.dp else 10.dp", summary_panel)
         self.assertIn("AromaSummaryChipRow(", summary_panel)

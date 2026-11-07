@@ -18,14 +18,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.math.sqrt
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingPhase
@@ -63,17 +74,55 @@ fun SectionedSensoryFields(
         sortAromaObservationsByIntensity(normalized.aromaObservations).map { it.descriptorId } +
             normalized.aromas
         ).distinct()
+    var colorFieldWidthPx by remember { mutableIntStateOf(0) }
+    var aromaHeaderHeightPx by remember { mutableIntStateOf(0) }
+    val aromaCardColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         TastingPhase.values().forEach { phase ->
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             when (phase) {
                 TastingPhase.AROMA_BEFORE_TASTING -> {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .drawBehind {
+                                if (colorFieldWidthPx > 0 && aromaHeaderHeightPx > 0) {
+                                    val stepX = colorFieldWidthPx.toFloat() + 8.dp.toPx()
+                                    val stepY = aromaHeaderHeightPx.toFloat()
+                                    if (stepX < size.width && stepY <= size.height) {
+                                        if (selectedAromaIds.isEmpty()) {
+                                            val headerWidth = size.width - stepX
+                                            val radius = minOf(
+                                                16.dp.toPx(),
+                                                headerWidth / 2f,
+                                                stepY / 2f
+                                            )
+                                            drawRoundRect(
+                                                color = aromaCardColor,
+                                                topLeft = Offset(stepX, 0f),
+                                                size = Size(headerWidth, stepY),
+                                                cornerRadius = CornerRadius(radius)
+                                            )
+                                        } else {
+                                            drawPath(
+                                                path = roundedSteppedCardPath(
+                                                    width = size.width,
+                                                    height = size.height,
+                                                    stepX = stepX,
+                                                    stepY = stepY,
+                                                    radius = 16.dp.toPx()
+                                                ),
+                                                color = aromaCardColor
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { aromaHeaderHeightPx = it.height },
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.Top
                         ) {
@@ -81,6 +130,7 @@ fun SectionedSensoryFields(
                                 definitionColor = definitionColor,
                                 noteColor = normalized.colorHsv,
                                 onNoteColorChange = { onDataChange(normalized.copy(colorHsv = it)) },
+                                modifier = Modifier.onSizeChanged { colorFieldWidthPx = it.width },
                                 readOnly = readOnly,
                                 inline = true
                             )
@@ -126,6 +176,55 @@ fun SectionedSensoryFields(
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
         }
     }
+}
+
+private fun roundedSteppedCardPath(
+    width: Float,
+    height: Float,
+    stepX: Float,
+    stepY: Float,
+    radius: Float
+): Path {
+    val x = stepX.coerceIn(0f, width)
+    val y = stepY.coerceIn(0f, height)
+    val cornerRadius = minOf(
+        radius,
+        x / 2f,
+        (width - x) / 2f,
+        y / 2f,
+        (height - y) / 2f
+    )
+    val corners = listOf(
+        Offset(x, 0f),
+        Offset(width, 0f),
+        Offset(width, height),
+        Offset(0f, height),
+        Offset(0f, y),
+        Offset(x, y)
+    )
+    val path = Path()
+    corners.forEachIndexed { index, corner ->
+        val previous = corners[(index - 1 + corners.size) % corners.size]
+        val next = corners[(index + 1) % corners.size]
+        val incomingX = previous.x - corner.x
+        val incomingY = previous.y - corner.y
+        val outgoingX = next.x - corner.x
+        val outgoingY = next.y - corner.y
+        val incomingLength = sqrt(incomingX * incomingX + incomingY * incomingY)
+        val outgoingLength = sqrt(outgoingX * outgoingX + outgoingY * outgoingY)
+        val before = Offset(
+            corner.x + incomingX / incomingLength * cornerRadius,
+            corner.y + incomingY / incomingLength * cornerRadius
+        )
+        val after = Offset(
+            corner.x + outgoingX / outgoingLength * cornerRadius,
+            corner.y + outgoingY / outgoingLength * cornerRadius
+        )
+        if (index == 0) path.moveTo(before.x, before.y) else path.lineTo(before.x, before.y)
+        path.quadraticTo(corner.x, corner.y, after.x, after.y)
+    }
+    path.close()
+    return path
 }
 
 private fun entryTightOpenLabel(value: Float): String =

@@ -113,12 +113,9 @@ fun AromaWheelLauncherHeader(
     val glyphSize = if (compact) 36.dp else 44.dp
     val titleStyle = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
     val arrowSize = if (compact) 20.dp else 24.dp
-    val headerShape = RoundedCornerShape(16.dp)
 
     Box(
         modifier = modifier
-            .clip(headerShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(
                 start = if (compact) 8.dp else 14.dp,
@@ -167,8 +164,6 @@ fun AromaWheelSummaryPanel(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
             .clickable(enabled = enabled, onClickLabel = "Open the aroma wheel", onClick = onClick)
             .padding(
                 start = if (compact) 8.dp else 14.dp,
@@ -194,7 +189,11 @@ fun AromaWheelLauncherCard(
     compact: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+    ) {
         AromaWheelLauncherHeader(
             selectedIds = selectedIds,
             onClick = onClick,
