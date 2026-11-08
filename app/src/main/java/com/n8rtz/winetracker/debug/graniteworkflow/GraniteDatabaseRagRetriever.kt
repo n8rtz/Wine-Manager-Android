@@ -260,6 +260,34 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
         map
     }
 
+    /**
+     * Pre-warms SQLite knowledge bases, Aho-Corasick catalog tries, and the LWIN Producer/Wine
+     * gazetteers in the background so per-image [retrieve] calls run in ~30–120 ms instead of
+     * paying a ~20s cold index-initialization cost on the first scan.
+     */
+    suspend fun warmUp(context: Context) = withContext(Dispatchers.IO) {
+        sessionMutex.withLock {
+            runCatching {
+                val app = context.applicationContext
+                val warm = warmSession ?: TextLabWineExtraction.WarmSession(app).also {
+                    warmSession = it
+                }
+                val modules = LabPostOcrModules.none.withIntegrated()
+                val kb = warm.knowledgeBase()
+                warm.fillEngine(kb)
+                warm.evidenceExtractor(kb, true, true, modules)
+                warm.anchorHybrid(kb)
+                warm.producerRepair(kb)
+                if (warm.cachedGazetteer(true) == null) {
+                    val opened = ProducerGazetteer.openExpanded(app)
+                    warm.cacheGazetteer(true, opened, emptyMap())
+                }
+                // Touch lazy origin catalog map once
+                originsByNormalizedForm.size
+            }
+        }
+    }
+
     suspend fun retrieve(
         context: Context,
         mlKitBlocks: List<OcrBlock>,

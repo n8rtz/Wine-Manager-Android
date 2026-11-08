@@ -57,6 +57,31 @@ object GraniteLlamaBridge : AutoCloseable {
         }
     }
 
+    private val optimalDecodeThreads: Int by lazy {
+        runCatching {
+            val freqs = (0 until 16).mapNotNull { idx ->
+                val f = File("/sys/devices/system/cpu/cpu$idx/cpufreq/cpuinfo_max_freq")
+                if (f.canRead()) f.readText().trim().toLongOrNull() else null
+            }.filter { it > 0L }
+            if (freqs.size >= 4) {
+                val minFreq = freqs.minOrNull() ?: 0L
+                val maxFreq = freqs.maxOrNull() ?: 0L
+                val fastCount = if (minFreq >= 2_500_000L || maxFreq <= (minFreq * 115L) / 100L) {
+                    freqs.size.coerceAtMost(6)
+                } else {
+                    freqs.count { it > (minFreq * 112L) / 100L }
+                }
+                fastCount.coerceIn(4, 6)
+            } else {
+                val cores = Runtime.getRuntime().availableProcessors()
+                if (cores >= 8) 5 else (cores / 2).coerceIn(2, 4)
+            }
+        }.getOrElse {
+            val cores = Runtime.getRuntime().availableProcessors()
+            if (cores >= 8) 5 else (cores / 2).coerceIn(2, 4)
+        }
+    }
+
     suspend fun generateWithGguf(
         ggufFile: File,
         prompt: String,
@@ -64,11 +89,7 @@ object GraniteLlamaBridge : AutoCloseable {
         maxTokens: Int = 256,
         temperature: Float = 0.0f,
         nCtx: Int = 3072,
-        nThreads: Int = Runtime.getRuntime().availableProcessors().let { cores ->
-            // Target performance (Big/Prime) cores on Android big.LITTLE SoCs so ggml barriers
-            // do not stall waiting on slow in-order efficiency cores.
-            if (cores >= 8) 4 else (cores / 2).coerceIn(2, 4)
-        }
+        nThreads: Int = optimalDecodeThreads
     ): String = mutex.withLock {
         check(nativeLoaded) { "lib$JNI_LIB_NAME.so is not loaded" }
         check(ggufFile.isFile && ggufFile.length() > 0L) {

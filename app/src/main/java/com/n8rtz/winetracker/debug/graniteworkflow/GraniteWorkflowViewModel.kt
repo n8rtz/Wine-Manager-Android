@@ -96,6 +96,24 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     init {
         refreshModelStatus()
         loadGlinerDatasetCatalog()
+        prewarmCachesInBackground()
+    }
+
+    private fun prewarmCachesInBackground() {
+        val app = getApplication<Application>()
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val resolved = GraniteModelStorage.resolveGraniteGgufFile(app)
+                if (resolved.isFile && resolved.length() >= GraniteModelStorage.MIN_VALID_GGUF_BYTES) {
+                    GraniteModelStorage.ensureDirectFilesystemGguf(app, resolved)
+                }
+            }
+            runCatching {
+                if (_uiState.value.dbRagEnabled) {
+                    ragRetriever.warmUp(app)
+                }
+            }
+        }
     }
 
     fun refreshModelStatus() {
@@ -790,12 +808,9 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 )
                 ramTracker.sample()
 
-                // Free ~800 MB of PP-OCRv6 ONNX Runtime arenas + SQLite handles before loading/running the 2 GB Granite GGUF
-                val s3DoneLabel = "3/4 DB RAG · ${ragContext.producerCandidates.size} producers, ${ragContext.linkedWineCandidates.size} wines · freeing OCR RAM..."
+                val s3DoneLabel = "3/4 DB RAG · ${ragContext.producerCandidates.size} producers, ${ragContext.linkedWineCandidates.size} wines (${ragContext.elapsedMs} ms)"
                 stageLabel.set(s3DoneLabel)
                 _uiState.update { it.copy(activeStageMessage = s3DoneLabel) }
-                dualOcrEngine.releaseWarmPaddleSessions()
-                ragRetriever.close()
 
                 stageNumber.set(4)
                 graniteStartedAt.set(SystemClock.elapsedRealtime())

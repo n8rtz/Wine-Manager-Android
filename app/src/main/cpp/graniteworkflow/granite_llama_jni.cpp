@@ -535,17 +535,21 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             prompt.rfind("<think>\n") != std::string::npos &&
             prompt.rfind("</think>") == std::string::npos;
 
-        const std::string json_prefill_prefix = "{\"ocr_discrepancies_resolved\":";
-        const bool has_json_prefill =
-            !expect_closing_think &&
-            prompt.size() >= json_prefill_prefix.size() &&
-            prompt.compare(prompt.size() - json_prefill_prefix.size(), json_prefill_prefix.size(), json_prefill_prefix) == 0;
+        const std::string role_tag = "<|start_of_role|>assistant<|end_of_role|>";
+        const size_t role_pos = prompt.rfind(role_tag);
+        std::string prefilled_json;
+        if (!expect_closing_think && role_pos != std::string::npos) {
+            const std::string after_role = prompt.substr(role_pos + role_tag.size());
+            if (!after_role.empty() && after_role[0] == '{') {
+                prefilled_json = after_role;
+            }
+        }
 
-        std::string output = has_json_prefill ? json_prefill_prefix : "";
+        std::string output = prefilled_json;
         const int limit = max_tokens > 0 ? max_tokens : 256;
         int generated = 0;
-        int json_brace_depth = has_json_prefill ? 1 : 0;
-        bool json_started = has_json_prefill;
+        int json_brace_depth = prefilled_json.empty() ? 0 : 1;
+        bool json_started = !prefilled_json.empty();
         bool in_json_string = false;
         bool json_escape = false;
 

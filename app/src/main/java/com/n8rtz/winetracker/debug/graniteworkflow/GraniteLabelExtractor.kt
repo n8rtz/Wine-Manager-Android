@@ -170,10 +170,17 @@ class GraniteLabelExtractor : AutoCloseable {
             "Thinking OFF: emit compact single-line JSON immediately."
         }
 
-        val assistantPrefix = if (thinkModeEnabled) {
-            "<|start_of_role|>assistant<|end_of_role|><think>\n"
-        } else {
-            "<|start_of_role|>assistant<|end_of_role|>{\"ocr_discrepancies_resolved\":"
+        val hasHeaderOrWidthAnomaly =
+            alignedReadingLines.contains("LOWERCASE_INITIAL_ON_HEADER") ||
+                alignedReadingLines.contains("WIDTH_MISMATCH")
+
+        val assistantPrefix = when {
+            thinkModeEnabled ->
+                "<|start_of_role|>assistant<|end_of_role|><think>\n"
+            hasHeaderOrWidthAnomaly ->
+                "<|start_of_role|>assistant<|end_of_role|>{\"ocr_discrepancies_resolved\":"
+            else ->
+                "<|start_of_role|>assistant<|end_of_role|>{\"ocr_discrepancies_resolved\":[],\"confidence_notes\":null,\"country\":"
         }
 
         return buildString {
