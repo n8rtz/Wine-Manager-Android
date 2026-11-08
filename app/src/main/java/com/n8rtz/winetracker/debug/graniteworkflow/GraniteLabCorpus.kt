@@ -209,17 +209,19 @@ object GraniteLabCorpus {
 
         val resolvedCountry = structured.country?.trim()?.takeIf { it.isNotEmpty() }
             ?: matchedOrigin?.country.orEmpty()
-        val resolvedRegion = when {
-            matchedOrigin != null && matchedOrigin.region.isNotBlank() -> matchedOrigin.region
-            else -> rawAppellation
-        }
-        val resolvedSubregion = when {
-            matchedOrigin != null &&
-                matchedOrigin.name.isNotBlank() &&
-                PhoneCorpusMath.normalize(matchedOrigin.name) != PhoneCorpusMath.normalize(matchedOrigin.region) ->
-                matchedOrigin.name
-            else -> ""
-        }
+        val resolvedRegion = structured.region?.trim()?.takeIf { it.isNotEmpty() }
+            ?: when {
+                matchedOrigin != null && matchedOrigin.region.isNotBlank() -> matchedOrigin.region
+                else -> rawAppellation
+            }
+        val resolvedSubregion = structured.subregion?.trim()?.takeIf { it.isNotEmpty() }
+            ?: when {
+                matchedOrigin != null &&
+                    matchedOrigin.name.isNotBlank() &&
+                    PhoneCorpusMath.normalize(matchedOrigin.name) != PhoneCorpusMath.normalize(matchedOrigin.region) ->
+                    matchedOrigin.name
+                else -> ""
+            }
         val resolvedWineName = structured.wineNameOrCuvee?.trim()?.takeIf { it.isNotEmpty() }
             ?: structured.varietals.firstOrNull()?.trim().orEmpty()
         val resolvedVintage = if (structured.isNonVintage || structured.vintage == null) {

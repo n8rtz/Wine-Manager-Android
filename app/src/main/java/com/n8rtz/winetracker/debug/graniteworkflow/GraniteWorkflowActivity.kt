@@ -138,6 +138,7 @@ class GraniteWorkflowActivity : ComponentActivity() {
                         onOcrModeChange = { viewModel.setOcrMode(it) },
                         onThinkModeChange = { viewModel.setThinkModeEnabled(it) },
                         onClaheChange = { viewModel.setClaheEnabled(it) },
+                        onDbRagChange = { viewModel.setDbRagEnabled(it) },
                         onToggleMlKitBoxes = { viewModel.setShowMlKitBoxes(it) },
                         onTogglePpOcrBoxes = { viewModel.setShowPpOcrBoxes(it) },
                         onShareJson = { jsonText ->

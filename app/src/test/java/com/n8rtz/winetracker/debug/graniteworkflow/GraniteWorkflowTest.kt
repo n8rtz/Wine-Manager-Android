@@ -104,4 +104,86 @@ class GraniteWorkflowTest {
         assertEquals(outcome.structuredJson.producerOrWinery, parsedBack.producerOrWinery)
         assertEquals(outcome.structuredJson.isNonVintage, parsedBack.isNonVintage)
     }
+
+    @Test
+    fun graniteDatabaseRagContextInjectsCandidatesIntoPromptAndGroundsExtraction() = runBlocking {
+        val context = RuntimeEnvironment.getApplication()
+        val extractor = GraniteLabelExtractor()
+
+        val ragContext = GraniteDatabaseRagContext(
+            enabled = true,
+            elapsedMs = 14L,
+            producerCandidates = listOf(
+                GraniteProducerCandidate(
+                    id = "P1001",
+                    name = "Château Margaux",
+                    country = "France",
+                    distance = 1,
+                    matchedSpan = "CHATEAU MARGAUX",
+                    sources = "lwin"
+                )
+            ),
+            linkedWineCandidates = listOf(
+                GraniteLinkedWineCandidate(
+                    id = "W2001",
+                    name = "Pavillon Rouge du Château Margaux",
+                    producerId = "P1001",
+                    lwin7 = "1012345",
+                    distance = 1,
+                    matchedSpan = "PAVILLON ROUGE"
+                )
+            ),
+            appellationCandidates = listOf(
+                GraniteAppellationCandidate(
+                    appellationOrSubregion = "Margaux",
+                    region = "Bordeaux",
+                    country = "France",
+                    matchedSpan = "MARGAUX",
+                    distance = 0,
+                    source = "french_aoc"
+                )
+            ),
+            matchedGrapes = listOf("Cabernet Sauvignon"),
+            matchedStyles = listOf("Premier Grand Cru Classé"),
+            spatialContenderFields = mapOf(
+                "producer" to "Château Margaux",
+                "wine_name" to "Pavillon Rouge du Château Margaux",
+                "country" to "France",
+                "region" to "Bordeaux",
+                "subregion" to "Margaux",
+                "vintage" to "2018"
+            )
+        )
+
+        val mlKitBlocks = listOf(
+            OcrBlock("CHATEAU MARGAUX", 0.94f, RectF(0.18f, 0.20f, 0.82f, 0.29f), OcrEngineSource.ML_KIT),
+            OcrBlock("PAVILLON ROUGE 2018", 0.92f, RectF(0.20f, 0.36f, 0.80f, 0.44f), OcrEngineSource.ML_KIT)
+        )
+
+        val prompt = extractor.buildGranitePrompt(
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = emptyList(),
+            ablationMode = OcrAblationMode.DUAL,
+            thinkModeEnabled = false,
+            ragContext = ragContext
+        )
+        assertTrue(prompt.contains("Retrieved Offline Wine Database Candidates (RAG Context"))
+        assertTrue(prompt.contains("Château Margaux"))
+        assertTrue(prompt.contains("Pavillon Rouge du Château Margaux"))
+        assertTrue(prompt.contains("Subregion/Appellation=\"Margaux\" -> Region=\"Bordeaux\", Country=\"France\""))
+
+        val outcome = extractor.extract(
+            context = context,
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = emptyList(),
+            ablationMode = OcrAblationMode.ML_KIT_ONLY,
+            thinkModeEnabled = true,
+            ragContext = ragContext
+        )
+        assertEquals("Château Margaux", outcome.structuredJson.producerOrWinery)
+        assertEquals("Pavillon Rouge du Château Margaux", outcome.structuredJson.wineNameOrCuvee)
+        assertEquals("France", outcome.structuredJson.country)
+        assertEquals("Bordeaux", outcome.structuredJson.region)
+        assertEquals("Margaux", outcome.structuredJson.subregion)
+    }
 }

@@ -34,6 +34,7 @@ data class GraniteWorkflowUiState(
     val ocrMode: OcrAblationMode = OcrAblationMode.DUAL,
     val thinkModeEnabled: Boolean = GraniteLabelExtractor.DEFAULT_THINK_MODE_ENABLED,
     val claheEnabled: Boolean = false,
+    val dbRagEnabled: Boolean = true,
     val showMlKitBoxes: Boolean = true,
     val showPpOcrBoxes: Boolean = true,
     val imageSourceLabel: String = "No image selected",
@@ -74,6 +75,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     val uiState: StateFlow<GraniteWorkflowUiState> = _uiState.asStateFlow()
 
     private val dualOcrEngine = DualOcrEngine()
+    private val ragRetriever = GraniteDatabaseRagRetriever()
     private val graniteExtractor = GraniteLabelExtractor()
 
     private var currentSourceUri: Uri? = null
@@ -139,6 +141,10 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
 
     fun setClaheEnabled(enabled: Boolean) {
         _uiState.update { it.copy(claheEnabled = enabled, errorBannerMessage = null) }
+    }
+
+    fun setDbRagEnabled(enabled: Boolean) {
+        _uiState.update { it.copy(dbRagEnabled = enabled, errorBannerMessage = null) }
     }
 
     fun setShowMlKitBoxes(show: Boolean) {
@@ -304,6 +310,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
             val currentMode = _uiState.value.ocrMode
             val thinkEnabled = _uiState.value.thinkModeEnabled
             val claheEnabled = _uiState.value.claheEnabled
+            val dbRagEnabled = _uiState.value.dbRagEnabled
 
             val rows = _uiState.value.datasetRows.ifEmpty {
                 withContext(Dispatchers.IO) {
@@ -356,6 +363,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                             ocrMode = currentMode,
                             thinkEnabled = thinkEnabled,
                             claheEnabled = claheEnabled,
+                            dbRagEnabled = dbRagEnabled,
                             ramTracker = ramTracker
                         )
                         GraniteLabCorpus.evaluateRow(index, sample, runResult)
@@ -545,6 +553,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
             val currentMode = _uiState.value.ocrMode
             val thinkEnabled = _uiState.value.thinkModeEnabled
             val claheEnabled = _uiState.value.claheEnabled
+            val dbRagEnabled = _uiState.value.dbRagEnabled
 
             val missingPrompt = currentStatus.missingModelsPrompt(currentMode)
             if (missingPrompt != null && !allowPreviewWithoutAllModels) {
@@ -562,7 +571,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     modelsStatus = currentStatus,
                     isRunning = true,
                     isDatasetBatchRunning = false,
-                    activeStageMessage = "Stage 1/3: Preprocessing image (<=1280px, CLAHE=${if (claheEnabled) "ON" else "OFF"})...",
+                    activeStageMessage = "Stage 1/4: Preprocessing image (<=1280px, CLAHE=${if (claheEnabled) "ON" else "OFF"})...",
                     errorBannerMessage = null
                 )
             }
@@ -587,7 +596,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 _uiState.update {
                     it.copy(
                         previewBitmap = preprocessed.bitmap,
-                        activeStageMessage = "Stage 2/3: Running Parallel Dual-OCR (${currentMode.displayLabel})..."
+                        activeStageMessage = "Stage 2/4: Running Parallel Dual-OCR (${currentMode.displayLabel})..."
                     )
                 }
 
@@ -601,17 +610,34 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
 
                 _uiState.update {
                     it.copy(
-                        activeStageMessage = "Stage 3/3: Reconciling with Granite 4.2 3B (<think>=${if (thinkEnabled) "ON" else "OFF"})..."
+                        activeStageMessage = "Stage 3/4: Retrieving candidates from Producer, Wine & Appellation DBs (RAG=${if (dbRagEnabled) "ON" else "OFF"})..."
                     )
                 }
 
-                // Stage 3: On-Device LLM Reconciliation
+                // Stage 3: Offline Database Candidate Retrieval (RAG — same databases as GLiNER Lab)
+                val ragContext = ragRetriever.retrieve(
+                    context = app,
+                    mlKitBlocks = dualOcrResult.mlKitBlocks,
+                    ppOcrV6Blocks = dualOcrResult.ppOcrV6Blocks,
+                    ablationMode = currentMode,
+                    enabled = dbRagEnabled
+                )
+                ramTracker.sample()
+
+                _uiState.update {
+                    it.copy(
+                        activeStageMessage = "Stage 4/4: Reconciling with Granite 4.2 3B (<think>=${if (thinkEnabled) "ON" else "OFF"}, DB RAG=${if (dbRagEnabled) "ON" else "OFF"})..."
+                    )
+                }
+
+                // Stage 4: On-Device LLM Reconciliation with Database RAG Context
                 val extraction = graniteExtractor.extract(
                     context = app,
                     mlKitBlocks = dualOcrResult.mlKitBlocks,
                     ppOcrV6Blocks = dualOcrResult.ppOcrV6Blocks,
                     ablationMode = currentMode,
-                    thinkModeEnabled = thinkEnabled
+                    thinkModeEnabled = thinkEnabled,
+                    ragContext = ragContext
                 )
                 ramTracker.sample()
 
@@ -620,6 +646,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     preprocessMs = preprocessed.elapsedMs,
                     mlKitMs = dualOcrResult.mlKitElapsedMs,
                     ppOcrV6Ms = dualOcrResult.ppOcrV6ElapsedMs,
+                    dbRagMs = ragContext.elapsedMs,
                     graniteMs = extraction.elapsedMs,
                     totalMs = totalMs,
                     peakJvmHeapMb = ramTracker.peakJvmMb,
@@ -648,7 +675,8 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     rawThinkingTrace = extraction.rawThinkTrace,
                     rawLlmResponse = extraction.rawLlmOutput,
                     executionBackendNote = extraction.backendUsed,
-                    ppOcrStatusNote = dualOcrResult.ppOcrStatusMessage
+                    ppOcrStatusNote = dualOcrResult.ppOcrStatusMessage,
+                    ragContext = ragContext
                 )
 
                 _uiState.update { state ->
@@ -701,6 +729,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         ocrMode: OcrAblationMode,
         thinkEnabled: Boolean,
         claheEnabled: Boolean,
+        dbRagEnabled: Boolean,
         ramTracker: PeakRamTracker
     ): GraniteWorkflowRunResult {
         val sampleStart = SystemClock.elapsedRealtime()
@@ -717,12 +746,22 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         )
         ramTracker.sample()
 
+        val ragContext = ragRetriever.retrieve(
+            context = app,
+            mlKitBlocks = dualOcrResult.mlKitBlocks,
+            ppOcrV6Blocks = dualOcrResult.ppOcrV6Blocks,
+            ablationMode = ocrMode,
+            enabled = dbRagEnabled
+        )
+        ramTracker.sample()
+
         val extraction = graniteExtractor.extract(
             context = app,
             mlKitBlocks = dualOcrResult.mlKitBlocks,
             ppOcrV6Blocks = dualOcrResult.ppOcrV6Blocks,
             ablationMode = ocrMode,
-            thinkModeEnabled = thinkEnabled
+            thinkModeEnabled = thinkEnabled,
+            ragContext = ragContext
         )
         ramTracker.sample()
 
@@ -731,6 +770,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
             preprocessMs = preprocessed.elapsedMs,
             mlKitMs = dualOcrResult.mlKitElapsedMs,
             ppOcrV6Ms = dualOcrResult.ppOcrV6ElapsedMs,
+            dbRagMs = ragContext.elapsedMs,
             graniteMs = extraction.elapsedMs,
             totalMs = totalMs,
             peakJvmHeapMb = ramTracker.peakJvmMb,
@@ -755,7 +795,8 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
             rawThinkingTrace = extraction.rawThinkTrace,
             rawLlmResponse = extraction.rawLlmOutput,
             executionBackendNote = extraction.backendUsed,
-            ppOcrStatusNote = dualOcrResult.ppOcrStatusMessage
+            ppOcrStatusNote = dualOcrResult.ppOcrStatusMessage,
+            ragContext = ragContext
         )
     }
 
@@ -763,6 +804,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         super.onCleared()
         activeRunJob?.cancel()
         dualOcrEngine.close()
+        ragRetriever.close()
         graniteExtractor.close()
     }
 

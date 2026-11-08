@@ -117,6 +117,7 @@ fun GraniteWorkflowScreen(
     onOcrModeChange: (OcrAblationMode) -> Unit,
     onThinkModeChange: (Boolean) -> Unit,
     onClaheChange: (Boolean) -> Unit,
+    onDbRagChange: (Boolean) -> Unit = {},
     onToggleMlKitBoxes: (Boolean) -> Unit,
     onTogglePpOcrBoxes: (Boolean) -> Unit,
     onShareJson: (String) -> Unit
@@ -136,13 +137,13 @@ fun GraniteWorkflowScreen(
 
     val result = state.lastResult
     val missingPrompt = state.missingModelsPrompt
-    val configSignature = remember(state.ocrMode, state.thinkModeEnabled, state.claheEnabled) {
+    val configSignature = remember(state.ocrMode, state.thinkModeEnabled, state.claheEnabled, state.dbRagEnabled) {
         val modeKey = when (state.ocrMode) {
             OcrAblationMode.DUAL -> "dual-ocr"
             OcrAblationMode.ML_KIT_ONLY -> "mlkit-only"
             OcrAblationMode.PP_OCRV6_ONLY -> "ppocrv6-only"
         }
-        "$modeKey · think=${if (state.thinkModeEnabled) "on" else "off"} · clahe=${if (state.claheEnabled) "on" else "off"}"
+        "$modeKey · db-rag=${if (state.dbRagEnabled) "on" else "off"} · think=${if (state.thinkModeEnabled) "on" else "off"} · clahe=${if (state.claheEnabled) "on" else "off"}"
     }
 
     val incompleteRows = remember(state.datasetRows) {
@@ -252,6 +253,17 @@ fun GraniteWorkflowScreen(
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                         )
                     }
+                }
+                TextButton(
+                    onClick = { onDbRagChange(!state.dbRagEnabled) },
+                    enabled = !state.isRunning,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.testTag("db_rag_toggle_button")
+                ) {
+                    Text(
+                        "DB RAG ${if (state.dbRagEnabled) "ON" else "OFF"}",
+                        fontWeight = if (state.dbRagEnabled) FontWeight.Bold else FontWeight.Normal
+                    )
                 }
                 TextButton(
                     onClick = { onThinkModeChange(!state.thinkModeEnabled) },
@@ -801,7 +813,7 @@ fun GraniteWorkflowScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Model files & storage paths (5)",
+                        "Model files & databases (8)",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
@@ -825,7 +837,10 @@ fun GraniteWorkflowScreen(
                                 state.modelsStatus.mlKitEngine,
                                 state.modelsStatus.ppOcrDetOnnx,
                                 state.modelsStatus.ppOcrRecOnnx,
-                                state.modelsStatus.ppOcrDict
+                                state.modelsStatus.ppOcrDict,
+                                state.modelsStatus.producerGazetteerDb,
+                                state.modelsStatus.linkedWineDb,
+                                state.modelsStatus.appellationCatalogDb
                             ).forEach { slot ->
                                 Text(
                                     "${if (slot.present) "✓" else "✗"} ${slot.slotName} · ${slot.fileName} (${slot.sizeFormatted})",
@@ -1510,6 +1525,7 @@ private fun InspectorSection3GraniteOutputCard(
 ) {
     val result = state.lastResult
     var thinkExpanded by remember { mutableStateOf(false) }
+    var ragExpanded by remember { mutableStateOf(true) }
 
     Card(
         modifier = Modifier
@@ -1534,7 +1550,7 @@ private fun InspectorSection3GraniteOutputCard(
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        "Strict 12-field JSON schema · collapsible <think> trace · per-stage latency & peak RAM",
+                        "Strict 12-field JSON schema · Database RAG candidates · <think> trace · latency & peak RAM",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -1547,11 +1563,12 @@ private fun InspectorSection3GraniteOutputCard(
             if (expanded) {
                 if (result == null) {
                     Text(
-                        "Run the workflow to inspect the Granite 4.2 reconciled JSON output, <think> trace, and stage timings.",
+                        "Run the workflow to inspect the Granite 4.2 reconciled JSON output, Database RAG candidates, <think> trace, and stage timings.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 } else {
                     val t = result.timingAndMemory
+                    val rag = result.ragContext
                     SelectionContainer {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Per-stage latency & peak RAM grid styled like GlinerLabScreen's RunTimers
@@ -1572,6 +1589,7 @@ private fun InspectorSection3GraniteOutputCard(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 listOf(
+                                    "DB RAG ms" to "${t.dbRagMs} ms",
                                     "Granite 4.2 ms" to "${t.graniteMs} ms",
                                     "Total ms" to "${t.totalMs} ms",
                                     "Peak Heap/Native RAM MB" to String.format(
@@ -1582,6 +1600,31 @@ private fun InspectorSection3GraniteOutputCard(
                                     )
                                 ).forEach { (label, value) ->
                                     TimingStatBox(modifier = Modifier.weight(1f), label = label, value = value)
+                                }
+                            }
+
+                            // Collapsible Database RAG Candidates section
+                            TextButton(
+                                onClick = { ragExpanded = !ragExpanded },
+                                contentPadding = PaddingValues(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    "Database RAG Candidates (${rag.producerCandidates.size} producers · ${rag.linkedWineCandidates.size} wines · ${rag.appellationCandidates.size} appellations) " +
+                                        if (ragExpanded) "▲" else "▼"
+                                )
+                            }
+                            AnimatedVisibility(visible = ragExpanded) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                        .padding(8.dp)
+                                ) {
+                                    Text(
+                                        text = rag.toPromptRagSection(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace
+                                    )
                                 }
                             }
 

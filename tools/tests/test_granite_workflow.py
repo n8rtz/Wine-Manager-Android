@@ -26,7 +26,7 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
 
     def test_decoupled_from_production_repositories_and_reuses_existing_ocr_files(self):
         kt_files = sorted(PKG.glob("*.kt"))
-        self.assertGreaterEqual(len(kt_files), 7)
+        self.assertGreaterEqual(len(kt_files), 8)
         forbidden_prefixes = (
             "com.n8rtz.winetracker.data.",
             "com.n8rtz.winetracker.scanner.",
@@ -34,7 +34,6 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
             "com.n8rtz.winetracker.image.",
             "com.n8rtz.winetracker.viewmodels.",
             "com.yourapp.wine.gliner.",
-            "com.yourapp.wine.gazetteer.",
         )
         for path in kt_files:
             source = self.read(path)
@@ -51,6 +50,31 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertIn("PaddleTextDetector.detect", ocr)
         self.assertIn("PaddleTextRecognizer.recognize", ocr)
         self.assertIn("PaddleCandidates", ocr)
+
+    def test_shares_same_databases_as_gliner_via_candidate_retrieval_rag(self):
+        rag = self.read(PKG / "GraniteDatabaseRagRetriever.kt")
+        extractor = self.read(PKG / "GraniteLabelExtractor.kt")
+        storage = self.read(PKG / "GraniteModelStorage.kt")
+        screen = self.read(PKG / "GraniteWorkflowScreen.kt")
+        self.assertIn("ProducerGazetteer.openExpanded", rag)
+        self.assertIn("ProducerResolver.producerDistance", rag)
+        self.assertIn("LinkedWineResolver.eligible", rag)
+        self.assertIn("gazetteer.lookup", rag)
+        self.assertIn("gazetteer.lookupWines", rag)
+        self.assertIn("TextLabWineExtraction.WarmSession", rag)
+        self.assertIn("TextLabSpatialPreview.append", rag)
+        self.assertIn("TextLabFormPreview.append", rag)
+        self.assertIn("ReferenceWineCatalog.origins", rag)
+        self.assertIn("BundledOrigins.terms", rag)
+        self.assertIn("BundledGrapes.terms", rag)
+        self.assertIn("BundledWineStyles.terms", rag)
+        self.assertIn("Retrieved Offline Wine Database Candidates (RAG Context", extractor)
+        self.assertIn("ragContext.toPromptRagSection()", extractor)
+        self.assertIn("Database Candidate Grounding (RAG)", extractor)
+        self.assertIn('PRODUCER_EXPANDED_DB_FILENAME = "producers-expanded.sqlite"', storage)
+        self.assertIn('LINKED_WINES_DB_FILENAME = "wines.sqlite"', storage)
+        self.assertIn("DB RAG ", screen)
+        self.assertIn("Database RAG Candidates (", screen)
 
     def test_shares_gliner_wine_app_labels_dataset(self):
         corpus = self.read(PKG / "GraniteLabCorpus.kt")

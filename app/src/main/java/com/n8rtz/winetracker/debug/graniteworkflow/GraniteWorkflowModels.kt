@@ -152,7 +152,9 @@ data class GraniteWineLabelJson(
     val bottleVolumeMl: Int? = null,
     val isNonVintage: Boolean = false,
     val ocrDiscrepanciesResolved: List<String> = emptyList(),
-    val confidenceNotes: String? = null
+    val confidenceNotes: String? = null,
+    val region: String? = null,
+    val subregion: String? = null
 ) {
     fun toJsonObject(): JSONObject {
         val obj = JSONObject()
@@ -252,7 +254,9 @@ data class GraniteWineLabelJson(
                 bottleVolumeMl = optNullableInt("bottle_volume_ml"),
                 isNonVintage = nonVintageVal,
                 ocrDiscrepanciesResolved = optStringList("ocr_discrepancies_resolved"),
-                confidenceNotes = optNullableString("confidence_notes")
+                confidenceNotes = optNullableString("confidence_notes"),
+                region = optNullableString("region"),
+                subregion = optNullableString("subregion")
             )
         }
 
@@ -273,6 +277,7 @@ data class WorkflowTimingAndMemory(
     val preprocessMs: Long = 0L,
     val mlKitMs: Long = 0L,
     val ppOcrV6Ms: Long = 0L,
+    val dbRagMs: Long = 0L,
     val graniteMs: Long = 0L,
     val totalMs: Long = 0L,
     val peakJvmHeapMb: Double = 0.0,
@@ -304,11 +309,12 @@ data class ModelFileSlotStatus(
 }
 
 /**
- * Overall status of the models used by the workflow.
+ * Overall status of the models and offline databases used by the workflow.
  *
- * ML Kit and PP-OCRv6 reuse the app's existing bundled assets (`MlKitOcrEngine` and
- * `text-lab-paddle-v1` via `PaddleAssets`) so no second copy or extra download is required.
- * Only `granite-4.2-3b-Q4_K_M.gguf` needs to be imported into `models/granite`.
+ * ML Kit, PP-OCRv6, and the Producer/Wine/Appellation databases reuse the app's existing bundled
+ * assets (`MlKitOcrEngine`, `text-lab-paddle-v1`, `producer-gazetteer-expanded-v1`,
+ * `producer-gazetteer-v1`, `ReferenceWineCatalog`, and `SqliteWineKnowledgeBase`) so no second
+ * copy or extra download is required. Only `granite-4.2-3b-Q4_K_M.gguf` needs to be imported.
  */
 data class WorkflowModelsStatus(
     val graniteDirectoryPath: String = "",
@@ -361,6 +367,36 @@ data class WorkflowModelsStatus(
         isBuiltInShared = true,
         notes = "Reuses existing text-lab-paddle-v1"
     ),
+    val producerGazetteerDb: ModelFileSlotStatus = ModelFileSlotStatus(
+        slotName = "Expanded Producer Gazetteer (SQLite)",
+        fileName = "producers-expanded.sqlite",
+        absolutePath = "assets/producer-gazetteer-expanded-v1",
+        present = true,
+        sizeBytes = 0L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Shared with GLiNER lab (LWIN + supplemental)"
+    ),
+    val linkedWineDb: ModelFileSlotStatus = ModelFileSlotStatus(
+        slotName = "Linked Wine Index (SQLite)",
+        fileName = "wines.sqlite",
+        absolutePath = "assets/producer-gazetteer-v1",
+        present = true,
+        sizeBytes = 0L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Shared with GLiNER lab (LWIN7 producer-wine links)"
+    ),
+    val appellationCatalogDb: ModelFileSlotStatus = ModelFileSlotStatus(
+        slotName = "Appellation & Wine Knowledge Base",
+        fileName = "SqliteWineKnowledgeBase + ReferenceWineCatalog + BundledOrigins",
+        absolutePath = "APK bundled",
+        present = true,
+        sizeBytes = 0L,
+        required = true,
+        isBuiltInShared = true,
+        notes = "Shared with GLiNER lab (French AOC, Italian DOC/DOCG, US AVA, Grapes)"
+    ),
     val nativeLlamaJniLoaded: Boolean = false
 ) {
     val isPpOcrReady: Boolean
@@ -377,13 +413,13 @@ data class WorkflowModelsStatus(
         return if (missing.isEmpty()) {
             null
         } else {
-            "Import Model Files to Run: place or import ${missing.joinToString(", ")} (ML Kit & PP-OCRv6 reuse existing bundled app models)"
+            "Import Model Files to Run: place or import ${missing.joinToString(", ")} (ML Kit, PP-OCRv6 & Producer/Wine/Appellation DBs reuse existing app files)"
         }
     }
 }
 
 /**
- * Complete result of a Dual-OCR + Granite 4.2 reconciliation run.
+ * Complete result of a Dual-OCR + Database RAG + Granite 4.2 reconciliation run.
  */
 data class GraniteWorkflowRunResult(
     val preprocessedBitmap: Bitmap,
@@ -402,5 +438,6 @@ data class GraniteWorkflowRunResult(
     val rawThinkingTrace: String?,
     val rawLlmResponse: String,
     val executionBackendNote: String,
-    val ppOcrStatusNote: String
+    val ppOcrStatusNote: String,
+    val ragContext: GraniteDatabaseRagContext = GraniteDatabaseRagContext(enabled = false)
 )

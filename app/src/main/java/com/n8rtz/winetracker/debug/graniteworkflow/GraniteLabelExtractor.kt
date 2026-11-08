@@ -28,9 +28,12 @@ data class GraniteExtractionOutcome(
  *
  * - Default `<think>` mode is `OFF` (`thinkModeEnabled = false`).
  * - Enforces strict JSON output matching the 12-field wine label schema via GBNF grammar.
+ * - Accepts Candidate Retrieval (RAG) context from `GraniteDatabaseRagRetriever` (the exact same
+ *   SQLite Producer Gazetteer, Linked Wine Index, `SqliteWineKnowledgeBase`, `ReferenceWineCatalog`,
+ *   `BundledOrigins`, and `BundledGrapes` databases used by `GLiNER lane lab`).
  * - Reconciles conflicts between Google ML Kit v2 and PP-OCRv6 using normalized spatial `[x, y, w, h]`
- *   coordinates, preserves European diacritics, never guesses missing fields, and enforces the
- *   `"NV"` / `"Non-Vintage"` / sparkling wine non-vintage rule.
+ *   coordinates and database candidates, preserves European diacritics, never guesses missing fields,
+ *   and enforces the `"NV"` / `"Non-Vintage"` / sparkling wine non-vintage rule.
  */
 class GraniteLabelExtractor : AutoCloseable {
 
@@ -39,7 +42,8 @@ class GraniteLabelExtractor : AutoCloseable {
         mlKitBlocks: List<OcrBlock>,
         ppOcrV6Blocks: List<OcrBlock>,
         ablationMode: OcrAblationMode,
-        thinkModeEnabled: Boolean = DEFAULT_THINK_MODE_ENABLED
+        thinkModeEnabled: Boolean = DEFAULT_THINK_MODE_ENABLED,
+        ragContext: GraniteDatabaseRagContext = GraniteDatabaseRagContext(enabled = false)
     ): GraniteExtractionOutcome = withContext(Dispatchers.Default) {
         val started = SystemClock.elapsedRealtime()
         val ggufFile = GraniteModelStorage.resolveGraniteGgufFile(context)
@@ -47,7 +51,8 @@ class GraniteLabelExtractor : AutoCloseable {
             mlKitBlocks = mlKitBlocks,
             ppOcrV6Blocks = ppOcrV6Blocks,
             ablationMode = ablationMode,
-            thinkModeEnabled = thinkModeEnabled
+            thinkModeEnabled = thinkModeEnabled,
+            ragContext = ragContext
         )
         val grammar = if (thinkModeEnabled) {
             WINE_LABEL_THINK_PLUS_JSON_GBNF
@@ -70,30 +75,33 @@ class GraniteLabelExtractor : AutoCloseable {
                 val thinkTrace = extractThinkContent(rawOutput)
                 val parsed = runCatching { GraniteWineLabelJson.fromJsonString(rawOutput) }.getOrNull()
                 if (parsed != null) {
-                    val enforced = enforcePostRules(parsed, mlKitBlocks, ppOcrV6Blocks)
+                    val enforced = enforcePostRules(parsed, mlKitBlocks, ppOcrV6Blocks, ragContext)
                     val elapsed = (SystemClock.elapsedRealtime() - started).coerceAtLeast(1L)
+                    val ragTag = if (ragContext.enabled) " + DB RAG" else ""
                     return@withContext GraniteExtractionOutcome(
                         structuredJson = enforced,
                         prettyJson = enforced.toPrettyJson(2),
                         rawThinkTrace = thinkTrace,
                         rawLlmOutput = rawOutput,
                         elapsedMs = elapsed,
-                        backendUsed = "llama.cpp JNI (${ggufFile.name})"
+                        backendUsed = "llama.cpp JNI (${ggufFile.name})$ragTag"
                     )
                 }
             }
         }
 
-        // Deterministic spatial + diacritic reconciliation following the exact Granite system prompt rules
-        // when the native llama.cpp .so is not compiled into the current APK or before GGUF execution.
+        // Deterministic spatial + diacritic + Database RAG reconciliation following the exact Granite
+        // system prompt rules when the native llama.cpp .so is not compiled into the current APK or before GGUF execution.
         val fallback = reconcileSpatialDeterministic(
             mlKitBlocks = mlKitBlocks,
             ppOcrV6Blocks = ppOcrV6Blocks,
             ablationMode = ablationMode,
             thinkModeEnabled = thinkModeEnabled,
-            ggufFile = ggufFile
+            ggufFile = ggufFile,
+            ragContext = ragContext
         )
         val elapsed = (SystemClock.elapsedRealtime() - started).coerceAtLeast(1L)
+        val ragTag = if (ragContext.enabled) " + DB RAG" else ""
         GraniteExtractionOutcome(
             structuredJson = fallback.first,
             prettyJson = fallback.first.toPrettyJson(2),
@@ -105,22 +113,24 @@ class GraniteLabelExtractor : AutoCloseable {
             },
             elapsedMs = elapsed,
             backendUsed = if (ggufFile.isFile && ggufFile.length() > 0L) {
-                "Spatial Reconciler (${ggufFile.name} staged; build libgranite_llama_jni.so for native GGUF token generation)"
+                "Spatial + DB RAG Reconciler$ragTag (${ggufFile.name} staged; build libgranite_llama_jni.so for native GGUF token generation)"
             } else {
-                "Spatial Reconciler (import granite-4.2-3b-Q4_K_M.gguf into models/granite)"
+                "Spatial + DB RAG Reconciler$ragTag (import granite-4.2-3b-Q4_K_M.gguf into models/granite)"
             }
         )
     }
 
     /**
      * Builds the IBM Granite 4.2 prompt incorporating the System Prompt Rules, `<think>` toggle,
-     * and coordinate-tagged OCR blocks from ML Kit and PP-OCRv6.
+     * coordinate-tagged OCR blocks from ML Kit and PP-OCRv6, and the retrieved offline database
+     * candidates (RAG context).
      */
     fun buildGranitePrompt(
         mlKitBlocks: List<OcrBlock>,
         ppOcrV6Blocks: List<OcrBlock>,
         ablationMode: OcrAblationMode,
-        thinkModeEnabled: Boolean = DEFAULT_THINK_MODE_ENABLED
+        thinkModeEnabled: Boolean = DEFAULT_THINK_MODE_ENABLED,
+        ragContext: GraniteDatabaseRagContext = GraniteDatabaseRagContext(enabled = false)
     ): String {
         val mlKitFormatted = if (!ablationMode.runsMlKit) {
             "(Disabled by ablation mode: ${ablationMode.displayLabel})"
@@ -155,7 +165,7 @@ class GraniteLabelExtractor : AutoCloseable {
         }
 
         val thinkingDirective = if (thinkModeEnabled) {
-            "Thinking mode is ON: first analyze spatial coordinates and OCR conflicts inside <think>...</think>, then output ONLY the valid JSON object."
+            "Thinking mode is ON: first analyze spatial coordinates, OCR conflicts, and database RAG candidates inside <think>...</think>, then output ONLY the valid JSON object."
         } else {
             "Thinking mode is OFF: do NOT emit <think> tags or prose. Output ONLY the valid JSON object immediately."
         }
@@ -178,7 +188,9 @@ class GraniteLabelExtractor : AutoCloseable {
             append(mlKitFormatted)
             append("\n\n=== Engine B: PP-OCRv6 ONNX (sorted top-to-bottom y, left-to-right x) ===\n")
             append(ppOcrFormatted)
-            append("\n\nReconcile the OCR detections above into the exact JSON schema.")
+            append("\n\n=== Retrieved Offline Wine Database Candidates (RAG Context — Same Databases as GLiNER Lab) ===\n")
+            append(ragContext.toPromptRagSection())
+            append("\n\nReconcile the OCR detections and database RAG candidates above into the exact JSON schema.")
             append("<|end_of_text|>\n")
             append(assistantPrefix)
         }
@@ -192,17 +204,20 @@ class GraniteLabelExtractor : AutoCloseable {
     }
 
     /**
-     * Enforces mandatory schema invariants such as the NV / sparkling wine non-vintage rule.
+     * Enforces mandatory schema invariants (such as the NV / sparkling wine non-vintage rule)
+     * and grounds fields against the retrieved database RAG candidates when available.
      */
     internal fun enforcePostRules(
         input: GraniteWineLabelJson,
         mlKitBlocks: List<OcrBlock>,
-        ppOcrV6Blocks: List<OcrBlock>
+        ppOcrV6Blocks: List<OcrBlock>,
+        ragContext: GraniteDatabaseRagContext = GraniteDatabaseRagContext(enabled = false)
     ): GraniteWineLabelJson {
         val allText = (mlKitBlocks.map { it.text } + ppOcrV6Blocks.map { it.text }).joinToString(" ")
         val hasExplicitNv = EXPLICIT_NV_REGEX.containsMatchIn(allText)
         val isSparklingCue = SPARKLING_CUE_REGEX.containsMatchIn(allText)
-        val extractedYear = input.vintage ?: extractVintageYear(allText)
+        val ragVintage = ragContext.spatialContenderFields["vintage"]?.trim()?.toIntOrNull()
+        val extractedYear = input.vintage ?: ragVintage ?: extractVintageYear(allText)
 
         val finalIsNonVintage = when {
             hasExplicitNv -> true
@@ -212,9 +227,40 @@ class GraniteLabelExtractor : AutoCloseable {
         }
         val finalVintage = if (finalIsNonVintage) null else extractedYear
 
+        if (!ragContext.enabled) {
+            return input.copy(
+                vintage = finalVintage,
+                isNonVintage = finalIsNonVintage
+            )
+        }
+
+        val spProducer = ragContext.spatialContenderFields["producer"]?.takeIf { it.isNotBlank() }
+            ?: ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+        val spWineName = ragContext.spatialContenderFields["wine_name"]?.takeIf { it.isNotBlank() }
+            ?: ragContext.linkedWineCandidates.firstOrNull { it.distance <= 1 }?.name
+        val spCountry = ragContext.spatialContenderFields["country"]?.takeIf { it.isNotBlank() }
+            ?: ragContext.appellationCandidates.firstOrNull()?.country?.takeIf { it.isNotBlank() }
+        val spRegion = ragContext.spatialContenderFields["region"]?.takeIf { it.isNotBlank() }
+            ?: ragContext.appellationCandidates.firstOrNull()?.region?.takeIf { it.isNotBlank() }
+        val spSubregion = ragContext.spatialContenderFields["subregion"]?.takeIf { it.isNotBlank() }
+            ?: ragContext.appellationCandidates.firstOrNull()?.appellationOrSubregion?.takeIf { it.isNotBlank() && it != spRegion }
+
+        val finalProducer = spProducer ?: input.producerOrWinery
+        val finalWineName = spWineName ?: input.wineNameOrCuvee
+        val finalCountry = spCountry ?: input.country
+        val finalAppellation = spSubregion ?: spRegion ?: input.appellationOrRegion
+        val finalVarietals = (input.varietals + ragContext.matchedGrapes).distinct()
+
         return input.copy(
+            producerOrWinery = finalProducer,
+            wineNameOrCuvee = finalWineName,
             vintage = finalVintage,
-            isNonVintage = finalIsNonVintage
+            varietals = finalVarietals,
+            appellationOrRegion = finalAppellation,
+            country = finalCountry,
+            isNonVintage = finalIsNonVintage,
+            region = spRegion ?: input.region,
+            subregion = spSubregion ?: input.subregion
         )
     }
 
@@ -223,7 +269,8 @@ class GraniteLabelExtractor : AutoCloseable {
         ppOcrV6Blocks: List<OcrBlock>,
         ablationMode: OcrAblationMode,
         thinkModeEnabled: Boolean,
-        ggufFile: File
+        ggufFile: File,
+        ragContext: GraniteDatabaseRagContext
     ): Pair<GraniteWineLabelJson, String?> {
         val discrepancies = mutableListOf<String>()
         val reasoningSteps = mutableListOf<String>()
@@ -232,10 +279,15 @@ class GraniteLabelExtractor : AutoCloseable {
         val mergedLines = mergeAndReconcileLines(mlKitBlocks, ppOcrV6Blocks, discrepancies, reasoningSteps)
         val fullText = mergedLines.joinToString(" ") { it.text }
 
-        // 1. Vintage & Non-Vintage rule
+        // 1. Vintage & Non-Vintage rule (combining OCR + Database RAG vintage recovery)
         val hasExplicitNv = EXPLICIT_NV_REGEX.containsMatchIn(fullText)
         val isSparkling = SPARKLING_CUE_REGEX.containsMatchIn(fullText)
-        val detectedYear = if (hasExplicitNv) null else extractVintageYear(fullText)
+        val ragVintage = if (ragContext.enabled) {
+            ragContext.spatialContenderFields["vintage"]?.trim()?.toIntOrNull()
+        } else {
+            null
+        }
+        val detectedYear = if (hasExplicitNv) null else (ragVintage ?: extractVintageYear(fullText))
         val isNonVintage = hasExplicitNv || (isSparkling && detectedYear == null)
         val vintage = if (isNonVintage) null else detectedYear
         if (isNonVintage) {
@@ -256,74 +308,134 @@ class GraniteLabelExtractor : AutoCloseable {
             reasoningSteps.add("Extracted bottle volume ${volumeMl}mL.")
         }
 
-        // 4. Varietals
-        val varietals = extractVarietals(mergedLines)
+        // 4. Varietals (combining BundledGrapes database matches + local varietal rules)
+        val varietals = (ragContext.matchedGrapes + extractVarietals(mergedLines)).distinct()
         if (varietals.isNotEmpty()) {
-            reasoningSteps.add("Matched varietals: ${varietals.joinToString(", ")}.")
+            reasoningSteps.add("Matched varietals (BundledGrapes + OCR): ${varietals.joinToString(", ")}.")
         }
 
-        // 5. Classification (AOC, DOCG,Reserva, Grand Cru, Spätlese, etc.)
-        val classification = extractClassification(mergedLines)
+        // 5. Classification (AOC, DOCG, Reserva, Grand Cru, Spätlese, BundledWineStyles, etc.)
+        val classification = extractClassification(mergedLines) ?: ragContext.matchedStyles.firstOrNull()
         if (classification != null) {
-            reasoningSteps.add("Matched wine classification: $classification.")
+            reasoningSteps.add("Matched wine classification/style: $classification.")
         }
 
-        // 6. Appellation / Region & Country
-        val (appellation, inferredCountry) = extractAppellationAndCountry(mergedLines)
+        // 6. Appellation / Region / Subregion / Country (grounding with Database RAG when enabled)
+        val (localAppellation, inferredCountry) = extractAppellationAndCountry(mergedLines)
         val explicitCountry = extractExplicitCountry(mergedLines) ?: inferredCountry
-        if (appellation != null || explicitCountry != null) {
-            reasoningSteps.add("Matched appellation=${appellation ?: "null"}, country=${explicitCountry ?: "null"}.")
+
+        val dbCountry = if (ragContext.enabled) {
+            ragContext.spatialContenderFields["country"]?.takeIf { it.isNotBlank() }
+                ?: ragContext.appellationCandidates.firstOrNull()?.country?.takeIf { it.isNotBlank() }
+        } else {
+            null
+        }
+        val dbRegion = if (ragContext.enabled) {
+            ragContext.spatialContenderFields["region"]?.takeIf { it.isNotBlank() }
+                ?: ragContext.appellationCandidates.firstOrNull()?.region?.takeIf { it.isNotBlank() }
+        } else {
+            null
+        }
+        val dbSubregion = if (ragContext.enabled) {
+            ragContext.spatialContenderFields["subregion"]?.takeIf { it.isNotBlank() }
+                ?: ragContext.appellationCandidates.firstOrNull()
+                    ?.appellationOrSubregion
+                    ?.takeIf { it.isNotBlank() && !it.equals(dbRegion, ignoreCase = true) }
+        } else {
+            null
         }
 
-        // 7. Producer & Wine Name using spatial [x, y] hierarchy (top-center = producer/wine name;
-        //    exclude bottom fine print y > 0.78 containing ABV/volume/importer)
+        val finalCountry = dbCountry ?: explicitCountry
+        val finalAppellation = dbSubregion ?: dbRegion ?: localAppellation
+        if (finalAppellation != null || finalCountry != null) {
+            reasoningSteps.add(
+                "Matched geography: appellation=${finalAppellation ?: "null"}, region=${dbRegion ?: "null"}, subregion=${dbSubregion ?: "null"}, country=${finalCountry ?: "null"}."
+            )
+        }
+
+        // 7. Producer & Wine Name using spatial [x, y] hierarchy + Database RAG (ProducerGazetteer & LinkedWineResolver)
         val candidateIdentityLines = mergedLines.filter { line ->
             val t = line.text
             !isFinePrintOrLegalLine(t) &&
-                !t.equals(appellation, ignoreCase = true) &&
+                !t.equals(finalAppellation, ignoreCase = true) &&
+                !t.equals(dbRegion, ignoreCase = true) &&
                 !t.equals(classification, ignoreCase = true) &&
-                !t.equals(explicitCountry, ignoreCase = true) &&
+                !t.equals(finalCountry, ignoreCase = true) &&
                 varietals.none { v -> t.equals(v, ignoreCase = true) } &&
                 !t.matches(Regex("^\\s*(19|20)\\d{2}\\s*$")) &&
                 !t.matches(Regex("^\\s*N\\.?V\\.?\\s*$", RegexOption.IGNORE_CASE))
         }.sortedWith(compareBy<OcrBlock> { it.yCenter }.thenBy { abs(it.xCenter - 0.5f) })
 
-        val producer = selectProducer(candidateIdentityLines, mergedLines)
-        val wineName = selectWineName(candidateIdentityLines, producer, varietals, appellation, classification)
-        if (producer != null || wineName != null) {
+        val spatialProducer = selectProducer(candidateIdentityLines, mergedLines)
+        val spatialWineName = selectWineName(candidateIdentityLines, spatialProducer, varietals, finalAppellation, classification)
+
+        val dbProducer = if (ragContext.enabled) {
+            ragContext.spatialContenderFields["producer"]?.takeIf { it.isNotBlank() }
+                ?: ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+        } else {
+            null
+        }
+        val dbWineName = if (ragContext.enabled) {
+            ragContext.spatialContenderFields["wine_name"]?.takeIf { it.isNotBlank() }
+                ?: ragContext.linkedWineCandidates.firstOrNull { it.distance <= 1 }?.name
+        } else {
+            null
+        }
+
+        val finalProducer = dbProducer ?: spatialProducer
+        val finalWineName = dbWineName ?: spatialWineName
+
+        if (dbProducer != null && spatialProducer != null && !dbProducer.equals(spatialProducer, ignoreCase = true)) {
+            val note = "Database RAG canonicalized producer '$spatialProducer' -> '$dbProducer' (ProducerGazetteer)"
+            discrepancies.add(note)
+            reasoningSteps.add(note)
+        }
+        if (dbWineName != null && spatialWineName != null && !dbWineName.equals(spatialWineName, ignoreCase = true)) {
+            val note = "Database RAG canonicalized wine_name '$spatialWineName' -> '$dbWineName' (LinkedWineIndex / WineKB)"
+            discrepancies.add(note)
+            reasoningSteps.add(note)
+        }
+        if (finalProducer != null || finalWineName != null) {
             reasoningSteps.add(
-                "Spatial top-center assignment: producer_or_winery=${producer ?: "null"}, wine_name_or_cuvee=${wineName ?: "null"}."
+                "Final identity assignment: producer_or_winery=${finalProducer ?: "null"}, wine_name_or_cuvee=${finalWineName ?: "null"}."
             )
         }
 
         val confidenceNote = buildString {
             append("Mode=${ablationMode.displayLabel}; ")
             append("ML Kit=${mlKitBlocks.size} blocks, PP-OCRv6=${ppOcrV6Blocks.size} blocks; ")
+            if (ragContext.enabled) {
+                append(
+                    "DB RAG=${ragContext.producerCandidates.size} producers, ${ragContext.linkedWineCandidates.size} wines, ${ragContext.appellationCandidates.size} appellations (${ragContext.elapsedMs}ms); "
+                )
+            }
             if (discrepancies.isNotEmpty()) {
-                append("${discrepancies.size} OCR discrepancy(ies) resolved; ")
+                append("${discrepancies.size} discrepancy(ies) resolved; ")
             }
             if (GraniteLlamaBridge.isNativeLibraryLoaded() && ggufFile.isFile) {
                 append("Granite 4.2 3B GGUF active")
             } else if (ggufFile.isFile) {
-                append("GGUF present (${ggufFile.name}); spatial reconciler active")
+                append("GGUF present (${ggufFile.name}); spatial + DB RAG reconciler active")
             } else {
-                append("GGUF not yet imported; spatial reconciler active")
+                append("GGUF not yet imported; spatial + DB RAG reconciler active")
             }
         }
 
         val result = GraniteWineLabelJson(
-            producerOrWinery = producer,
-            wineNameOrCuvee = wineName,
+            producerOrWinery = finalProducer,
+            wineNameOrCuvee = finalWineName,
             vintage = vintage,
             varietals = varietals,
-            appellationOrRegion = appellation,
-            country = explicitCountry,
+            appellationOrRegion = finalAppellation,
+            country = finalCountry,
             classification = classification,
             abvPercentage = abv,
             bottleVolumeMl = volumeMl,
             isNonVintage = isNonVintage,
             ocrDiscrepanciesResolved = discrepancies,
-            confidenceNotes = confidenceNote
+            confidenceNotes = confidenceNote,
+            region = dbRegion ?: finalAppellation,
+            subregion = dbSubregion
         )
 
         val thinkTrace = if (thinkModeEnabled) {
@@ -479,7 +591,6 @@ class GraniteLabelExtractor : AutoCloseable {
     }
 
     private fun extractAbvPercentage(lines: List<OcrBlock>): Double? {
-        // Prefer bottom lines first, then all lines
         val ordered = lines.sortedByDescending { it.yCenter }
         for (line in ordered) {
             val m = ABV_REGEX.find(line.text) ?: continue
@@ -563,14 +674,12 @@ class GraniteLabelExtractor : AutoCloseable {
         identityCandidates: List<OcrBlock>,
         allLines: List<OcrBlock>
     ): String? {
-        // Explicit producer prefixes ("Château ...", "Domaine ...", "Bodegas ...", "Tenuta ...", "Weingut ...")
         for (line in allLines) {
             if (isFinePrintOrLegalLine(line.text)) continue
             if (PRODUCER_PREFIX_REGEX.containsMatchIn(line.text)) {
                 return line.text
             }
         }
-        // Top-most prominent centered identity line in upper 65% of label
         return identityCandidates.firstOrNull { it.yCenter <= 0.65f && it.text.length >= 3 }?.text
     }
 
@@ -611,6 +720,7 @@ You are an expert wine label extraction and OCR reconciliation engine running on
 You receive parallel OCR detections from two engines:
 1. Engine A: Google ML Kit Text Recognition v2 (Latin script)
 2. Engine B: PP-OCRv6 via ONNX Runtime
+And you receive Retrieved Offline Wine Database Candidates (RAG Context) from the app's SQLite Producer Gazetteer (LWIN + supplemental), Producer-Linked Wine Index (LWIN7), SqliteWineKnowledgeBase, ReferenceWineCatalog, BundledOrigins, and BundledGrapes.
 
 Each text block includes normalized [0.0..1.0] spatial coordinates [x=x_center, y=y_center, w=width, h=height] and confidence.
 
@@ -622,7 +732,8 @@ STRICT SYSTEM RULES:
 2. Preserve European Diacritics: Always preserve and prefer proper European diacritics (e.g., "Château", "Côtes du Rhône", "Spätlese", "Ribera del Duero", "Crémant", "Saint-Émilion", "Pessac-Léognan", "Grüner Veltliner").
 3. Zero Hallucination Policy: NEVER guess or hallucinate missing fields. Return null for any scalar field (or [] for "varietals" and "ocr_discrepancies_resolved") when uncertain or absent from the OCR text.
 4. Non-Vintage & Sparkling Rule: If "NV" or "Non-Vintage" appears anywhere on the label, OR if no vintage year is printed on a sparkling wine (e.g., Champagne, Brut, Crémant, Prosecco, Cava, Sekt), set "vintage": null and "is_non_vintage": true.
-5. Output Format: Respond with strict JSON matching this exact schema:
+5. Database Candidate Grounding (RAG): When Retrieved Offline Wine Database Candidates are present and corroborated by the OCR spans, use the canonical database spellings for producer_or_winery, wine_name_or_cuvee, appellation_or_region, and country.
+6. Output Format: Respond with strict JSON matching this exact schema:
 {
   "producer_or_winery": "string | null",
   "wine_name_or_cuvee": "string | null",

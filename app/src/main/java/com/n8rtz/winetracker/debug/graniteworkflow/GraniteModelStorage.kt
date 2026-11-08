@@ -38,6 +38,10 @@ object GraniteModelStorage {
     const val GRANITE_SUBDIR = "models/granite"
     const val SHARED_PADDLE_FOLDER = "text-lab-paddle-v1"
     const val GRANITE_GGUF_FILENAME = "granite-4.2-3b-Q4_K_M.gguf"
+    const val PRODUCER_EXPANDED_ASSET_DIR = "producer-gazetteer-expanded-v1"
+    const val PRODUCER_EXPANDED_DB_FILENAME = "producers-expanded.sqlite"
+    const val PRODUCER_V1_ASSET_DIR = "producer-gazetteer-v1"
+    const val LINKED_WINES_DB_FILENAME = "wines.sqlite"
 
     fun graniteDir(context: Context): File {
         val dir = context.getExternalFilesDir(GRANITE_SUBDIR)
@@ -152,6 +156,36 @@ object GraniteModelStorage {
                 required = true,
                 isBuiltInShared = true,
                 notes = "Reuses existing ppocrv6_dict.utf8"
+            ),
+            producerGazetteerDb = ModelFileSlotStatus(
+                slotName = "Producer Gazetteer SQLite DB (Expanded)",
+                fileName = PRODUCER_EXPANDED_DB_FILENAME,
+                absolutePath = File(context.noBackupFilesDir, "$PRODUCER_EXPANDED_ASSET_DIR/$PRODUCER_EXPANDED_DB_FILENAME").absolutePath,
+                present = true,
+                sizeBytes = 6_471_680L,
+                required = false,
+                isBuiltInShared = true,
+                notes = "Shared LWIN + supplemental producer FTS5 trigram SQLite DB (same as GLiNER)"
+            ),
+            linkedWineDb = ModelFileSlotStatus(
+                slotName = "Linked Wine & Cuvée SQLite DB (LWIN7)",
+                fileName = LINKED_WINES_DB_FILENAME,
+                absolutePath = File(context.noBackupFilesDir, "$PRODUCER_V1_ASSET_DIR/$LINKED_WINES_DB_FILENAME").absolutePath,
+                present = true,
+                sizeBytes = 68_517_888L,
+                required = false,
+                isBuiltInShared = true,
+                notes = "Shared producer-linked LWIN wine FTS5 trigram SQLite DB (same as GLiNER)"
+            ),
+            appellationCatalogDb = ModelFileSlotStatus(
+                slotName = "Appellations, Grapes & Geography KB",
+                fileName = "SqliteWineKnowledgeBase + ReferenceWineCatalog + BundledOrigins",
+                absolutePath = "APK bundled + SQLite KB",
+                present = true,
+                sizeBytes = 0L,
+                required = false,
+                isBuiltInShared = true,
+                notes = "Shared French AOC, Italian DOC/DOCG, US AVA, grapes & styles KB (same as GLiNER)"
             ),
             nativeLlamaJniLoaded = GraniteLlamaBridge.isNativeLibraryLoaded()
         )
