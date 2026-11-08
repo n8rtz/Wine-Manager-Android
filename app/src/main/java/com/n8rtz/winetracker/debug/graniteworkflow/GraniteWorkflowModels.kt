@@ -261,7 +261,16 @@ data class GraniteWineLabelJson(
         }
 
         fun extractJsonObjectSubstring(text: String): String {
-            val withoutThink = text.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
+            val closeTagRegex = Regex("</think>", RegexOption.IGNORE_CASE)
+            val lastCloseMatch = closeTagRegex.findAll(text).lastOrNull()
+            val afterCloseThink = if (lastCloseMatch != null) {
+                text.substring(lastCloseMatch.range.last + 1)
+            } else {
+                text
+            }
+            val withoutThink = afterCloseThink
+                .replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "")
+                .trim()
             val start = withoutThink.indexOf('{')
             val end = withoutThink.lastIndexOf('}')
             require(start >= 0 && end > start) { "No JSON object found in LLM output" }

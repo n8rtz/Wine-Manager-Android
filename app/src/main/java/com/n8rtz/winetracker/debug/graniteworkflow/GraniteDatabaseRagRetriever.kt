@@ -390,9 +390,9 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                 }
 
                 // Also perform direct FTS / exact retrieval on ProducerGazetteer + LinkedWines
-                // for any top OCR spans not yet in the candidate list
-                if (gazetteer != null) {
-                    val directDeadline = SystemClock.elapsedRealtime() + 350L
+                // when TextLabSpatialPreview did not already populate producer candidates
+                if (gazetteer != null && producerCandidates.isEmpty()) {
+                    val directDeadline = SystemClock.elapsedRealtime() + 150L
                     val directBudget = {
                         if (SystemClock.elapsedRealtime() >= directDeadline) {
                             throw ProducerResolver.BudgetExceeded()

@@ -14,13 +14,16 @@ import com.yourapp.wine.textlab.PaddleCandidates
 import com.yourapp.wine.textlab.PaddleTextDetector
 import com.yourapp.wine.textlab.PaddleTextRecognizer
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -42,6 +45,9 @@ data class DualOcrResult(
  * - **Engine A (Google ML Kit Text Recognition v2):** Reuses [MlKitOcrEngine] (`com.google.mlkit:text-recognition`).
  * - **Engine B (PP-OCRv6 via ONNX Runtime Android):** Reuses [PaddleTextDetector], [PaddleTextRecognizer],
  *   and [PaddleCandidates] (`text-lab-paddle-v1/v6-medium-det.onnx`, `v6-medium-rec.onnx`, `ppocrv6_dict.utf8`).
+ *   Both ONNX Runtime sessions (`PaddleTextDetector` and `PaddleTextRecognizer`) are kept warm in memory
+ *   across photos so `v6-medium-det.onnx` (62 MB) and `v6-medium-rec.onnx` (76 MB) are not re-verified
+ *   or re-compiled on every image; they are released only when [close] is called.
  * - Runs both engines concurrently via `async(Dispatchers.Default)` + `awaitAll()`.
  * - Normalizes every text block into `OcrBlock(text, confidence, normBbox)` with `[0.0..1.0]`
  *   normalized `[x_center, y_center, width, height]` coordinates.
@@ -51,6 +57,7 @@ class DualOcrEngine : AutoCloseable {
     private val mlKitGate = NativeEngineGate()
     private val paddleGate = NativeEngineGate()
     private val mlKitEngine by lazy { MlKitOcrEngine(mlKitGate) }
+    private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private sealed interface EngineTaskOutcome {
         data class MlKitOutcome(val blocks: List<OcrBlock>, val elapsedMs: Long) : EngineTaskOutcome
@@ -143,6 +150,7 @@ class DualOcrEngine : AutoCloseable {
     /**
      * Reuses existing [PaddleTextDetector] and [PaddleTextRecognizer] with the shared
      * `text-lab-paddle-v1` (`v6-medium-det.onnx`, `v6-medium-rec.onnx`, `ppocrv6_dict.utf8`) files.
+     * Sessions remain warm across images until [close] is invoked.
      */
     private suspend fun runExistingPpOcrV6(
         context: Context,
@@ -155,75 +163,59 @@ class DualOcrEngine : AutoCloseable {
 
         return try {
             BitmapWorkspace().use { workspace ->
-                try {
-                    val detection = try {
-                        PaddleTextDetector.detect(context, bitmap, workspace, paddleGate, spec)
-                    } finally {
-                        withContext(NonCancellable) {
-                            PaddleTextDetector.release(paddleGate)
-                        }
-                    }
+                val detection = PaddleTextDetector.detect(context, bitmap, workspace, paddleGate, spec)
 
-                    for (region in detection.regions.lines) {
-                        currentCoroutineContext().ensureActive()
-                        if (SystemClock.elapsedRealtime() >= deadlineAtMs) break
-                        var recognizedText = ""
-                        var ctcPosterior = 0f
+                for (region in detection.regions.lines) {
+                    currentCoroutineContext().ensureActive()
+                    if (SystemClock.elapsedRealtime() >= deadlineAtMs) break
+                    var recognizedText = ""
+                    var ctcPosterior = 0f
 
-                        try {
-                            PaddleTextRecognizer.recognize(
-                                context = context,
-                                crop = bitmap,
-                                workspace = workspace,
-                                deadline = ScanDeadline(deadlineAtMs),
-                                gate = paddleGate,
-                                lineQuad = region.quadBase,
-                                spec = spec
-                            ) { values ->
-                                val raw = values["raw_text"].orEmpty()
-                                if (raw.isNotBlank()) {
-                                    recognizedText = raw
-                                    ctcPosterior = values["ctc_posterior"]
-                                        ?.toFloatOrNull()
-                                        ?.takeIf { it.isFinite() && it in 0f..1f }
-                                        ?: 0f
-                                }
-                            }
-                        } catch (cancel: CancellationException) {
-                            throw cancel
-                        } catch (_: CandidateBudgetExpired) {
-                            break
-                        } catch (lineErr: Exception) {
-                            Log.w(TAG, "PP-OCRv6 line failed: ${lineErr.javaClass.simpleName}")
-                        }
-
-                        val clean = scrubText(recognizedText)
-                        if (clean.isNotBlank()) {
-                            val block = polygonToOcrBlock(
-                                text = clean,
-                                confidence = ctcPosterior.takeIf { it > 0f }?.coerceIn(0.01f, 0.99f) ?: 0.5f,
-                                polygon = region.quadBase,
-                                imageWidth = bitmap.width,
-                                imageHeight = bitmap.height,
-                                source = OcrEngineSource.PP_OCRV6
-                            )
-                            if (block != null) {
-                                blocks.add(block)
+                    try {
+                        PaddleTextRecognizer.recognize(
+                            context = context,
+                            crop = bitmap,
+                            workspace = workspace,
+                            deadline = ScanDeadline(deadlineAtMs),
+                            gate = paddleGate,
+                            lineQuad = region.quadBase,
+                            spec = spec
+                        ) { values ->
+                            val raw = values["raw_text"].orEmpty()
+                            if (raw.isNotBlank()) {
+                                recognizedText = raw
+                                ctcPosterior = values["ctc_posterior"]
+                                    ?.toFloatOrNull()
+                                    ?.takeIf { it.isFinite() && it in 0f..1f }
+                                    ?: 0f
                             }
                         }
+                    } catch (cancel: CancellationException) {
+                        throw cancel
+                    } catch (_: CandidateBudgetExpired) {
+                        break
+                    } catch (lineErr: Exception) {
+                        Log.w(TAG, "PP-OCRv6 line failed: ${lineErr.javaClass.simpleName}")
                     }
-                } finally {
-                    withContext(NonCancellable) {
-                        try {
-                            PaddleTextRecognizer.release(paddleGate)
-                        } finally {
-                            PaddleTextDetector.release(paddleGate)
+
+                    val clean = scrubText(recognizedText)
+                    if (clean.isNotBlank()) {
+                        val block = polygonToOcrBlock(
+                            text = clean,
+                            confidence = ctcPosterior.takeIf { it > 0f }?.coerceIn(0.01f, 0.99f) ?: 0.5f,
+                            polygon = region.quadBase,
+                            imageWidth = bitmap.width,
+                            imageHeight = bitmap.height,
+                            source = OcrEngineSource.PP_OCRV6
+                        )
+                        if (block != null) {
+                            blocks.add(block)
                         }
                     }
                 }
             }
             val sorted = sortBlocksTopToBottomLeftToRight(blocks)
-            sorted to "PP-OCRv6 (${spec.detector.asset} + ${spec.recognizer.asset}): ${sorted.size} blocks"
+            sorted to "PP-OCRv6 (${spec.detector.asset} + ${spec.recognizer.asset}, warm): ${sorted.size} blocks"
         } catch (cancel: CancellationException) {
             throw cancel
         } catch (e: Exception) {
@@ -261,6 +253,12 @@ class DualOcrEngine : AutoCloseable {
 
     override fun close() {
         runCatching { mlKitEngine.close() }
+        cleanupScope.launch {
+            withContext(NonCancellable) {
+                runCatching { PaddleTextRecognizer.release(paddleGate) }
+                runCatching { PaddleTextDetector.release(paddleGate) }
+            }
+        }
     }
 
     companion object {

@@ -148,6 +148,16 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertIn("Total ms", screen)
         self.assertIn("Peak Heap/Native RAM MB", screen)
 
+    def test_prebuilt_granite_llama_jni_so_present_and_valid(self):
+        so_path = ROOT / "app/src/main/jniLibs/arm64-v8a/libgranite_llama_jni.so"
+        self.assertTrue(so_path.is_file(), f"Missing {so_path}")
+        data = so_path.read_bytes()
+        self.assertGreater(len(data), 1_000_000)
+        self.assertEqual(data[:4], b"\x7fELF")
+        self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitModel", data)
+        self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComplete", data)
+        self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeFreeModel", data)
+
 
 if __name__ == "__main__":
     unittest.main()

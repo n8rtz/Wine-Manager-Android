@@ -187,11 +187,12 @@ fun GraniteWorkflowScreen(
                         "build ${BuildConfig.BUILD_COMMIT} · $configSignature",
                         style = MaterialTheme.typography.bodySmall
                     )
+                    val jniBadge = if (state.modelsStatus.nativeLlamaJniLoaded) "llama.cpp JNI ✓" else "JNI fallback"
                     Text(
                         text = if (state.modelsStatus.isGraniteReady) {
-                            "model ready (${state.modelsStatus.graniteGguf.fileName} · ${state.modelsStatus.graniteGguf.sizeFormatted}) · Q4_K_M ✓ · PP-OCRv6 ${if (state.modelsStatus.isPpOcrReady) "ready" else "missing"}"
+                            "model ready (${state.modelsStatus.graniteGguf.fileName} · ${state.modelsStatus.graniteGguf.sizeFormatted}) · Q4_K_M ✓ · $jniBadge · PP-OCRv6 ${if (state.modelsStatus.isPpOcrReady) "ready" else "missing"}"
                         } else {
-                            "model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName}) · ML Kit & PP-OCRv6 shared (${if (state.modelsStatus.isPpOcrReady) "ready" else "checking"})"
+                            "model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName}) · $jniBadge · ML Kit & PP-OCRv6 shared (${if (state.modelsStatus.isPpOcrReady) "ready" else "checking"})"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (state.modelsStatus.isGraniteReady) {
@@ -203,7 +204,7 @@ fun GraniteWorkflowScreen(
                     if (result != null) {
                         val t = result.timingAndMemory
                         Text(
-                            "last run: preprocess ${t.preprocessMs} ms + ML Kit ${t.mlKitMs} ms + PP-OCRv6 ${t.ppOcrV6Ms} ms + Granite ${t.graniteMs} ms · total ${t.totalMs} ms",
+                            "last run: preprocess ${t.preprocessMs} ms + ML Kit ${t.mlKitMs} ms + PP-OCRv6 ${t.ppOcrV6Ms} ms + DB RAG ${t.dbRagMs} ms + Granite ${t.graniteMs} ms · total ${t.totalMs} ms",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }

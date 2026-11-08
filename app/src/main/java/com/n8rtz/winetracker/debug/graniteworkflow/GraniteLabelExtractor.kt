@@ -199,8 +199,14 @@ class GraniteLabelExtractor : AutoCloseable {
     internal fun extractThinkContent(rawOutput: String): String? {
         val regex = Regex("<think>([\\s\\S]*?)</think>", RegexOption.IGNORE_CASE)
         val match = regex.find(rawOutput)
-        val content = match?.groupValues?.getOrNull(1)?.trim()
-        return content?.takeIf { it.isNotEmpty() }
+        if (match != null) {
+            return match.groupValues.getOrNull(1)?.trim()?.takeIf { it.isNotEmpty() }
+        }
+        val closeIdx = rawOutput.indexOf("</think>", ignoreCase = true)
+        if (closeIdx > 0) {
+            return rawOutput.substring(0, closeIdx).trim().takeIf { it.isNotEmpty() }
+        }
+        return null
     }
 
     /**
@@ -234,10 +240,43 @@ class GraniteLabelExtractor : AutoCloseable {
             )
         }
 
+        fun normKey(s: String?): String =
+            Normalizer.normalize(s.orEmpty(), Normalizer.Form.NFD)
+                .replace(Regex("\\p{M}+"), "")
+                .lowercase(Locale.ROOT)
+                .replace(Regex("[^a-z0-9]+"), " ")
+                .trim()
+
+        val llmProducerKey = normKey(input.producerOrWinery)
+        val matchedRagProducer = if (llmProducerKey.isNotEmpty()) {
+            ragContext.producerCandidates.firstOrNull { normKey(it.name) == llmProducerKey }?.name
+        } else {
+            null
+        }
         val spProducer = ragContext.spatialContenderFields["producer"]?.takeIf { it.isNotBlank() }
-            ?: ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+        val spProducerGreen = ragContext.spatialContenderStates["producer"] == "GREEN"
+        val finalProducer = when {
+            matchedRagProducer != null -> matchedRagProducer
+            spProducer != null && (spProducerGreen || input.producerOrWinery.isNullOrBlank()) -> spProducer
+            !input.producerOrWinery.isNullOrBlank() -> input.producerOrWinery
+            else -> ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+        }
+
+        val llmWineKey = normKey(input.wineNameOrCuvee)
+        val matchedRagWine = if (llmWineKey.isNotEmpty()) {
+            ragContext.linkedWineCandidates.firstOrNull { normKey(it.name) == llmWineKey }?.name
+        } else {
+            null
+        }
         val spWineName = ragContext.spatialContenderFields["wine_name"]?.takeIf { it.isNotBlank() }
-            ?: ragContext.linkedWineCandidates.firstOrNull { it.distance <= 1 }?.name
+        val spWineGreen = ragContext.spatialContenderStates["wine_name"] == "GREEN"
+        val finalWineName = when {
+            matchedRagWine != null -> matchedRagWine
+            spWineName != null && (spWineGreen || input.wineNameOrCuvee.isNullOrBlank()) -> spWineName
+            !input.wineNameOrCuvee.isNullOrBlank() -> input.wineNameOrCuvee
+            else -> ragContext.linkedWineCandidates.firstOrNull { it.distance <= 1 }?.name
+        }
+
         val spCountry = ragContext.spatialContenderFields["country"]?.takeIf { it.isNotBlank() }
             ?: ragContext.appellationCandidates.firstOrNull()?.country?.takeIf { it.isNotBlank() }
         val spRegion = ragContext.spatialContenderFields["region"]?.takeIf { it.isNotBlank() }
@@ -245,8 +284,6 @@ class GraniteLabelExtractor : AutoCloseable {
         val spSubregion = ragContext.spatialContenderFields["subregion"]?.takeIf { it.isNotBlank() }
             ?: ragContext.appellationCandidates.firstOrNull()?.appellationOrSubregion?.takeIf { it.isNotBlank() && it != spRegion }
 
-        val finalProducer = spProducer ?: input.producerOrWinery
-        val finalWineName = spWineName ?: input.wineNameOrCuvee
         val finalCountry = spCountry ?: input.country
         val finalAppellation = spSubregion ?: spRegion ?: input.appellationOrRegion
         val finalVarietals = (input.varietals + ragContext.matchedGrapes).distinct()
