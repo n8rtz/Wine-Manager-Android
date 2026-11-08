@@ -174,10 +174,16 @@ class GraniteLabelExtractor : AutoCloseable {
             }
         }
 
+        val alignedReadingLines = buildAlignedReadingLinesSection(
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = ppOcrV6Blocks,
+            ablationMode = ablationMode
+        )
+
         val thinkingDirective = if (thinkModeEnabled) {
             "Thinking mode is ON: first analyze spatial coordinates, OCR conflicts, and database RAG candidates inside <think>...</think>, then output ONLY the valid JSON object."
         } else {
-            "Thinking mode is OFF: do NOT emit <think> tags or prose. Output ONLY the valid JSON object immediately."
+            "Thinking mode is OFF: do NOT emit <think> tags or prose. Output ONLY the valid JSON object immediately, starting with \"ocr_discrepancies_resolved\" to record your cross-engine and RAG reconstruction before emitting geography and entity fields."
         }
 
         val assistantPrefix = if (thinkModeEnabled) {
@@ -194,7 +200,9 @@ class GraniteLabelExtractor : AutoCloseable {
             append("<|end_of_text|>\n")
             append("<|start_of_role|>user<|end_of_role|>")
             append("OCR Mode: ${ablationMode.displayLabel}\n\n")
-            append("=== Engine A: Google ML Kit Text Recognition v2 (sorted top-to-bottom y, left-to-right x) ===\n")
+            append("=== Spatially Aligned Cross-Engine Reading Lines (Visual Hierarchy & Anomaly Flags) ===\n")
+            append(alignedReadingLines)
+            append("\n\n=== Engine A: Google ML Kit Text Recognition v2 (sorted top-to-bottom y, left-to-right x) ===\n")
             append(mlKitFormatted)
             append("\n\n=== Engine B: PP-OCRv6 ONNX (sorted top-to-bottom y, left-to-right x) ===\n")
             append(ppOcrFormatted)
@@ -204,6 +212,158 @@ class GraniteLabelExtractor : AutoCloseable {
             append("<|end_of_text|>\n")
             append(assistantPrefix)
         }
+    }
+
+    /**
+     * Pairs spatially overlapping ML Kit and PP-OCRv6 blocks into top-to-bottom reading lines and
+     * annotates each line with relative font height scale, vertical label zone, cross-engine
+     * agreement/conflict status, and clipping/script anomaly warnings.
+     */
+    internal fun buildAlignedReadingLinesSection(
+        mlKitBlocks: List<OcrBlock>,
+        ppOcrV6Blocks: List<OcrBlock>,
+        ablationMode: OcrAblationMode
+    ): String {
+        val mlActive = if (ablationMode.runsMlKit) mlKitBlocks else emptyList()
+        val ppActive = if (ablationMode.runsPpOcrV6) ppOcrV6Blocks else emptyList()
+        val allActive = mlActive + ppActive
+        if (allActive.isEmpty()) {
+            return "(No OCR blocks detected)"
+        }
+
+        val sortedHeights = allActive.map { it.height.coerceAtLeast(0.01f) }.sorted()
+        val medianH = sortedHeights[sortedHeights.size / 2].coerceAtLeast(0.025f)
+
+        data class PairedLine(
+            val yCenter: Float,
+            val xCenter: Float,
+            val maxHeight: Float,
+            val mlBlock: OcrBlock?,
+            val ppBlock: OcrBlock?
+        )
+
+        val usedPp = BooleanArray(ppActive.size)
+        val pairedLines = mutableListOf<PairedLine>()
+
+        for (ml in mlActive) {
+            var bestIdx = -1
+            var bestCost = Float.MAX_VALUE
+            for (i in ppActive.indices) {
+                if (usedPp[i]) continue
+                val pp = ppActive[i]
+                val dy = abs(ml.yCenter - pp.yCenter)
+                val dx = abs(ml.xCenter - pp.xCenter)
+                val maxH = maxOf(ml.height, pp.height, 0.04f)
+                if (dy <= maxOf(0.055f, maxH * 0.85f) && dx <= 0.35f) {
+                    val cost = dy * 2f + dx
+                    if (cost < bestCost) {
+                        bestCost = cost
+                        bestIdx = i
+                    }
+                }
+            }
+            if (bestIdx >= 0) {
+                usedPp[bestIdx] = true
+                val pp = ppActive[bestIdx]
+                pairedLines += PairedLine(
+                    yCenter = (ml.yCenter + pp.yCenter) * 0.5f,
+                    xCenter = (ml.xCenter + pp.xCenter) * 0.5f,
+                    maxHeight = maxOf(ml.height, pp.height),
+                    mlBlock = ml,
+                    ppBlock = pp
+                )
+            } else {
+                pairedLines += PairedLine(
+                    yCenter = ml.yCenter,
+                    xCenter = ml.xCenter,
+                    maxHeight = ml.height,
+                    mlBlock = ml,
+                    ppBlock = null
+                )
+            }
+        }
+
+        for (i in ppActive.indices) {
+            if (!usedPp[i]) {
+                val pp = ppActive[i]
+                pairedLines += PairedLine(
+                    yCenter = pp.yCenter,
+                    xCenter = pp.xCenter,
+                    maxHeight = pp.height,
+                    mlBlock = null,
+                    ppBlock = pp
+                )
+            }
+        }
+
+        val ordered = pairedLines.sortedWith(compareBy<PairedLine> { it.yCenter }.thenBy { it.xCenter })
+        return ordered.mapIndexed { idx, line ->
+            val zone = when {
+                line.yCenter < 0.36f -> "TOP_HEADER"
+                line.yCenter < 0.58f -> "UPPER_MAIN"
+                line.yCenter < 0.78f -> "MID_BODY"
+                else -> "BOTTOM_LEGAL"
+            }
+            val scale = (line.maxHeight / medianH).coerceIn(0.3f, 5.0f)
+            val prominence = when {
+                scale >= 1.55f -> "PRIMARY_DISPLAY"
+                scale >= 1.15f -> "SUBHEADER"
+                scale >= 0.75f -> "BODY"
+                else -> "FINE_PRINT"
+            }
+            val anomalies = mutableListOf<String>()
+            val primaryText = (line.mlBlock?.text ?: line.ppBlock?.text).orEmpty().trim()
+            val firstAlpha = primaryText.firstOrNull { it.isLetter() }
+            if ((zone == "TOP_HEADER" || prominence == "PRIMARY_DISPLAY") &&
+                firstAlpha != null &&
+                firstAlpha.isLowerCase()
+            ) {
+                anomalies += "LOWERCASE_INITIAL_ON_HEADER: possible clipped capital/article or script misread"
+            }
+            if (line.mlBlock != null && line.ppBlock != null) {
+                val minW = minOf(line.mlBlock.width, line.ppBlock.width).coerceAtLeast(0.01f)
+                val maxW = maxOf(line.mlBlock.width, line.ppBlock.width)
+                if (maxW / minW >= 1.25f) {
+                    anomalies += "WIDTH_MISMATCH: one engine clipped outer chars/words"
+                }
+            }
+            val leftEdge = minOf(line.mlBlock?.normBbox?.left ?: 1f, line.ppBlock?.normBbox?.left ?: 1f)
+            val rightEdge = maxOf(line.mlBlock?.normBbox?.right ?: 0f, line.ppBlock?.normBbox?.right ?: 0f)
+            if (leftEdge <= 0.05f || rightEdge >= 0.95f) {
+                anomalies += "BOTTLE_EDGE_MARGIN"
+            }
+
+            val readingsText = when {
+                line.mlBlock != null && line.ppBlock != null -> {
+                    val mlText = line.mlBlock.text.trim()
+                    val ppText = line.ppBlock.text.trim()
+                    if (mlText.equals(ppText, ignoreCase = false)) {
+                        "AGREE: \"$mlText\" (conf=${String.format(Locale.US, "%.2f/%.2f", line.mlBlock.confidence, line.ppBlock.confidence)})"
+                    } else {
+                        "CONFLICT: MLKit=\"$mlText\" (conf=${String.format(Locale.US, "%.2f", line.mlBlock.confidence)}, w=${String.format(Locale.US, "%.2f", line.mlBlock.width)}) vs PP-OCRv6=\"$ppText\" (conf=${String.format(Locale.US, "%.2f", line.ppBlock.confidence)}, w=${String.format(Locale.US, "%.2f", line.ppBlock.width)})"
+                    }
+                }
+                line.mlBlock != null ->
+                    "MLKit-only: \"${line.mlBlock.text.trim()}\" (conf=${String.format(Locale.US, "%.2f", line.mlBlock.confidence)}, w=${String.format(Locale.US, "%.2f", line.mlBlock.width)})"
+                else -> {
+                    val pp = line.ppBlock!!
+                    "PP-OCRv6-only: \"${pp.text.trim()}\" (conf=${String.format(Locale.US, "%.2f", pp.confidence)}, w=${String.format(Locale.US, "%.2f", pp.width)})"
+                }
+            }
+            val anomalySuffix = if (anomalies.isEmpty()) "" else " [${anomalies.joinToString("; ")}]"
+            String.format(
+                Locale.US,
+                "Line %d [y=%.2f, x=%.2f, scale=%.1fx %s, zone=%s]: %s%s",
+                idx + 1,
+                line.yCenter,
+                line.xCenter,
+                scale,
+                prominence,
+                zone,
+                readingsText,
+                anomalySuffix
+            )
+        }.joinToString("\n")
     }
 
     internal fun extractThinkContent(rawOutput: String): String? {
@@ -257,6 +417,12 @@ class GraniteLabelExtractor : AutoCloseable {
                 .replace(Regex("[^a-z0-9]+"), " ")
                 .trim()
 
+        val nonProducerNorms = (
+            ragContext.matchedGrapes +
+                ragContext.matchedStyles +
+                ragContext.appellationCandidates.flatMap { listOf(it.appellationOrSubregion, it.region, it.country) }
+            ).map(::normKey).filter(String::isNotEmpty).toSet()
+
         val llmProducerKey = normKey(input.producerOrWinery)
         val matchedRagProducer = if (llmProducerKey.isNotEmpty()) {
             ragContext.producerCandidates.firstOrNull {
@@ -271,9 +437,14 @@ class GraniteLabelExtractor : AutoCloseable {
             matchedRagProducer != null -> matchedRagProducer
             !input.producerOrWinery.isNullOrBlank() -> input.producerOrWinery
             spProducer != null -> spProducer
-            else -> ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+            else -> ragContext.producerCandidates.firstOrNull {
+                it.distance <= 1 &&
+                    normKey(it.name) !in nonProducerNorms &&
+                    normKey(it.matchedSpan) !in nonProducerNorms
+            }?.name
         }
 
+        val finalProducerKey = normKey(finalProducer)
         val llmWineKey = normKey(input.wineNameOrCuvee)
         val matchedRagWine = if (llmWineKey.isNotEmpty()) {
             ragContext.linkedWineCandidates.firstOrNull {
@@ -288,18 +459,33 @@ class GraniteLabelExtractor : AutoCloseable {
             matchedRagWine != null -> matchedRagWine
             !input.wineNameOrCuvee.isNullOrBlank() -> input.wineNameOrCuvee
             spWineName != null -> spWineName
-            else -> ragContext.linkedWineCandidates.firstOrNull { it.distance <= 1 }?.name
+            else -> ragContext.linkedWineCandidates.firstOrNull {
+                it.distance <= 1 && normKey(it.name) != finalProducerKey
+            }?.name
+        }
+
+        val llmAppellationKey = normKey(input.appellationOrRegion ?: input.subregion ?: input.region)
+        val matchedAppellationCand = if (llmAppellationKey.isNotEmpty()) {
+            ragContext.appellationCandidates.firstOrNull {
+                normKey(it.appellationOrSubregion) == llmAppellationKey ||
+                    normKey(it.region) == llmAppellationKey ||
+                    normKey(it.matchedSpan) == llmAppellationKey
+            }
+        } else {
+            ragContext.appellationCandidates.firstOrNull()
         }
 
         val spCountry = ragContext.spatialContenderFields["country"]?.takeIf { it.isNotBlank() }
-            ?: ragContext.appellationCandidates.firstOrNull()?.country?.takeIf { it.isNotBlank() }
+            ?: matchedAppellationCand?.country?.takeIf { it.isNotBlank() }
         val spRegion = ragContext.spatialContenderFields["region"]?.takeIf { it.isNotBlank() }
-            ?: ragContext.appellationCandidates.firstOrNull()?.region?.takeIf { it.isNotBlank() }
+            ?: matchedAppellationCand?.region?.takeIf { it.isNotBlank() }
         val spSubregion = ragContext.spatialContenderFields["subregion"]?.takeIf { it.isNotBlank() }
-            ?: ragContext.appellationCandidates.firstOrNull()?.appellationOrSubregion?.takeIf { it.isNotBlank() && it != spRegion }
+            ?: matchedAppellationCand?.appellationOrSubregion?.takeIf { it.isNotBlank() && it != spRegion }
 
         val finalCountry = input.country?.takeIf { it.isNotBlank() } ?: spCountry
-        val finalAppellation = input.appellationOrRegion?.takeIf { it.isNotBlank() } ?: spSubregion ?: spRegion
+        val finalRegion = input.region?.takeIf { it.isNotBlank() } ?: spRegion
+        val finalSubregion = input.subregion?.takeIf { it.isNotBlank() } ?: spSubregion
+        val finalAppellation = input.appellationOrRegion?.takeIf { it.isNotBlank() } ?: finalSubregion ?: finalRegion
         val finalVarietals = (input.varietals + ragContext.matchedGrapes).distinct()
         val updatedDiscrepancies = input.ocrDiscrepanciesResolved.toMutableList()
         if (!input.producerOrWinery.isNullOrBlank() &&
@@ -321,8 +507,8 @@ class GraniteLabelExtractor : AutoCloseable {
             country = finalCountry,
             isNonVintage = finalIsNonVintage,
             ocrDiscrepanciesResolved = updatedDiscrepancies,
-            region = input.region?.takeIf { it.isNotBlank() } ?: spRegion,
-            subregion = input.subregion?.takeIf { it.isNotBlank() } ?: spSubregion
+            region = finalRegion,
+            subregion = finalSubregion
         )
     }
 
@@ -444,7 +630,13 @@ class GraniteLabelExtractor : AutoCloseable {
                 spProducer != null && spProducerGreen -> spProducer
                 nearCandidate != null -> nearCandidate
                 spProducer != null -> spProducer
-                else -> ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+                else -> ragContext.producerCandidates.firstOrNull { cand ->
+                    cand.distance <= 1 &&
+                        varietals.none { v ->
+                            v.equals(cand.name, ignoreCase = true) ||
+                                v.equals(cand.matchedSpan, ignoreCase = true)
+                        }
+                }?.name
             }
         } else {
             null
@@ -791,58 +983,62 @@ class GraniteLabelExtractor : AutoCloseable {
 
         val SYSTEM_PROMPT = """
 You are an expert wine label extraction and OCR reconciliation engine running on-device (IBM Granite 4.2 3B).
-You receive parallel OCR detections from two engines:
-1. Engine A: Google ML Kit Text Recognition v2 (Latin script)
-2. Engine B: PP-OCRv6 via ONNX Runtime
-And you receive Retrieved Offline Wine Database Candidates (RAG Context) from the app's SQLite Producer Gazetteer (LWIN + supplemental), Producer-Linked Wine Index (LWIN7), SqliteWineKnowledgeBase, ReferenceWineCatalog, BundledOrigins, and BundledGrapes.
-
-Each text block includes normalized [0.0..1.0] spatial coordinates [x=x_center, y=y_center, w=width, h=height] and confidence.
+You receive:
+1. Spatially Aligned Cross-Engine Reading Lines pairing Google ML Kit Text Recognition v2 (Engine A) and PP-OCRv6 ONNX (Engine B) on each horizontal line with relative font height scale (PRIMARY_DISPLAY, SUBHEADER, BODY, FINE_PRINT), vertical label zone (TOP_HEADER, UPPER_MAIN, MID_BODY, BOTTOM_LEGAL), and anomaly flags (LOWERCASE_INITIAL_ON_HEADER, WIDTH_MISMATCH, BOTTLE_EDGE_MARGIN).
+2. Raw coordinate-tagged detections [x=x_center, y=y_center, w=width, h=height] from Engine A and Engine B.
+3. Retrieved Offline Wine Database Candidates (RAG Context) from the app's SQLite Producer Gazetteer (LWIN + supplemental), Producer-Linked Wine Index (LWIN7), SqliteWineKnowledgeBase, ReferenceWineCatalog, BundledOrigins, and BundledGrapes, including relational corroboration tags ([COUNTRY_MATCHES_LABEL], [CORROBORATED_BY_LINKED_WINE], and producer="..." links).
 
 STRICT SYSTEM RULES:
-1. Spatial Coordinate Reconciliation: Reconcile conflicts between ML Kit and PP-OCRv6 using spatial [x, y] coordinates:
-   - Top-to-upper-center (y in 0.08..0.55, x near 0.50) = producer_or_winery and wine_name_or_cuvee.
-   - Middle section (y in 0.40..0.75) = appellation_or_region, varietals, classification, vintage.
-   - Bottom fine print (y > 0.75) = abv_percentage, bottle_volume_ml, country/importer legal text.
-2. Dynamic Reconstruction of Incomplete or Misread OCR: OCR on curved wine bottles and stylized typography frequently clips outer words/prefixes or misreads ornamental script/calligraphic capitals and ligatures (e.g., F/T/L/C/G/S, rn/m, cl/d, dropped leading/trailing words, or split multi-line titles). Dynamically discern when an OCR reading is incomplete or visually/phonetically corrupted, and reconstruct the true complete entity using cross-engine comparison, wine-domain knowledge, label context (country, region, varietals, bottling text), and the Retrieved Offline Wine Database Candidates.
-3. Preserve European Diacritics: Always preserve and restore proper European diacritics (e.g., "Château", "Côtes du Rhône", "Spätlese", "Ribera del Duero", "Crémant", "Saint-Émilion", "Pessac-Léognan", "Grüner Veltliner").
-4. Zero Hallucination Policy: Never invent fields that have no basis in the label's OCR or corroborated metadata. Return null for any scalar field (or [] for "varietals" and "ocr_discrepancies_resolved") when genuinely absent from the label.
-5. Non-Vintage & Sparkling Rule: If "NV" or "Non-Vintage" appears anywhere on the label, OR if no vintage year is printed on a sparkling wine (e.g., Champagne, Brut, Crémant, Prosecco, Cava, Sekt), set "vintage": null and "is_non_vintage": true.
-6. Database Candidate Grounding (RAG): Treat Retrieved Offline Wine Database Candidates as candidate hypotheses retrieved via character trigrams and sub-span similarity. When a candidate explains a noisy, clipped, or partial OCR reading and is consistent with the label's geography and varietal context, use the canonical database spelling for producer_or_winery, wine_name_or_cuvee, appellation_or_region, and country, and record the reconstruction in "ocr_discrepancies_resolved".
-7. Output Format: Respond with strict JSON matching this exact schema:
+1. Reason-Then-Extract Ordering: In your JSON output, populate "ocr_discrepancies_resolved" and "confidence_notes" FIRST so your cross-engine comparison, OCR error reconstruction, and RAG candidate evaluation directly inform the subsequent geography, varietal, producer, and wine_name fields.
+2. Spatial & Typographic Hierarchy:
+   - TOP_HEADER / UPPER_MAIN lines with PRIMARY_DISPLAY or SUBHEADER scale (y in 0.08..0.55) carry producer_or_winery and wine_name_or_cuvee.
+   - MID_BODY lines (y in 0.40..0.75) carry appellation/region/subregion, varietals, classification, and vintage.
+   - BOTTOM_LEGAL fine print (y > 0.75) carries abv_percentage, bottle_volume_ml, and country/bottler legal text.
+3. Dynamic Reconstruction of Incomplete or Misread OCR: OCR on curved wine bottles and stylized typography frequently clips outer words/prefixes or misreads ornamental script/calligraphic capitals and ligatures (e.g., F/T/L/C/G/S, rn/m, cl/d, dropped leading/trailing words, or split multi-line titles). Pay special attention to lines flagged with [LOWERCASE_INITIAL_ON_HEADER], [WIDTH_MISMATCH], or [BOTTLE_EDGE_MARGIN]. Dynamically discern when an OCR reading is incomplete or visually/phonetically corrupted, and reconstruct the true complete entity using cross-engine comparison, wine-domain knowledge, label context (country, region, varietals, bottling text), and the Retrieved Offline Wine Database Candidates.
+4. Full 3-Level Geographic Hierarchy: Resolve "country", "region" (broad wine region/state, e.g. "Bordeaux", "Burgundy", "California", "Tuscany", "Piedmont", "Rioja"), and "subregion" (specific AOC/DOC/DOCG/AVA/village, e.g. "Margaux", "Pauillac", "Napa Valley", "Barolo"), and set "appellation_or_region" to the most specific printed appellation or region. Use both the RAG catalog matches and your wine-domain knowledge to infer parent region and country when a specific appellation/subregion is present.
+5. Preserve European Diacritics: Always preserve and restore proper European diacritics (e.g., "Château", "Côtes du Rhône", "Spätlese", "Ribera del Duero", "Crémant", "Saint-Émilion", "Pessac-Léognan", "Grüner Veltliner").
+6. Zero Hallucination Policy: Never invent fields that have no basis in the label's OCR or corroborated metadata. Return null for any scalar field (or [] for "varietals" and "ocr_discrepancies_resolved") when genuinely absent from the label.
+7. Non-Vintage & Sparkling Rule: If "NV" or "Non-Vintage" appears anywhere on the label, OR if no vintage year is printed on a sparkling wine (e.g., Champagne, Brut, Crémant, Prosecco, Cava, Sekt), set "vintage": null and "is_non_vintage": true.
+8. Database Candidate Grounding (RAG) & Cuvée vs Varietal Convention: Treat Retrieved Offline Wine Database Candidates as candidate hypotheses retrieved via character trigrams, sub-span similarity, and relational (Producer <-> Wine <-> Country) links. Prefer candidates tagged with [CORROBORATED_BY_LINKED_WINE] or [COUNTRY_MATCHES_LABEL]. When a bottle has a distinct cuvée/château/blend title, set "wine_name_or_cuvee" to that canonical title; when a bottle is varietal-labeled with no separate fanciful cuvée name, set "wine_name_or_cuvee" to the primary varietal designation printed on the label.
+9. Output Format: Respond with strict JSON matching this exact schema and key order:
 {
-  "producer_or_winery": "string | null",
-  "wine_name_or_cuvee": "string | null",
-  "vintage": "integer | null",
-  "varietals": ["string"],
-  "appellation_or_region": "string | null",
+  "ocr_discrepancies_resolved": ["string"],
+  "confidence_notes": "string | null",
   "country": "string | null",
+  "region": "string | null",
+  "subregion": "string | null",
+  "appellation_or_region": "string | null",
+  "varietals": ["string"],
   "classification": "string | null",
+  "vintage": "integer | null",
+  "is_non_vintage": "boolean",
   "abv_percentage": "number | null",
   "bottle_volume_ml": "integer | null",
-  "is_non_vintage": "boolean",
-  "ocr_discrepancies_resolved": ["string"],
-  "confidence_notes": "string | null"
+  "producer_or_winery": "string | null",
+  "wine_name_or_cuvee": "string | null"
 }
 """.trimIndent()
 
         /**
-         * Strict `llama.cpp` GBNF grammar enforcing the exact 12-field JSON schema.
+         * Strict `llama.cpp` GBNF grammar enforcing the Reason-Then-Context-Then-Entity JSON schema.
          */
         val WINE_LABEL_JSON_GBNF = """
 root ::= ws json-object ws
 json-object ::= "{" ws
-  "\"producer_or_winery\"" ws ":" ws nullable-string "," ws
-  "\"wine_name_or_cuvee\"" ws ":" ws nullable-string "," ws
-  "\"vintage\"" ws ":" ws nullable-int "," ws
-  "\"varietals\"" ws ":" ws string-array "," ws
-  "\"appellation_or_region\"" ws ":" ws nullable-string "," ws
+  "\"ocr_discrepancies_resolved\"" ws ":" ws string-array "," ws
+  "\"confidence_notes\"" ws ":" ws nullable-string "," ws
   "\"country\"" ws ":" ws nullable-string "," ws
+  "\"region\"" ws ":" ws nullable-string "," ws
+  "\"subregion\"" ws ":" ws nullable-string "," ws
+  "\"appellation_or_region\"" ws ":" ws nullable-string "," ws
+  "\"varietals\"" ws ":" ws string-array "," ws
   "\"classification\"" ws ":" ws nullable-string "," ws
+  "\"vintage\"" ws ":" ws nullable-int "," ws
+  "\"is_non_vintage\"" ws ":" ws boolean "," ws
   "\"abv_percentage\"" ws ":" ws nullable-number "," ws
   "\"bottle_volume_ml\"" ws ":" ws nullable-int "," ws
-  "\"is_non_vintage\"" ws ":" ws boolean "," ws
-  "\"ocr_discrepancies_resolved\"" ws ":" ws string-array "," ws
-  "\"confidence_notes\"" ws ":" ws nullable-string ws
+  "\"producer_or_winery\"" ws ":" ws nullable-string "," ws
+  "\"wine_name_or_cuvee\"" ws ":" ws nullable-string ws
 "}"
 nullable-string ::= string | "null"
 nullable-int ::= integer | "null"
@@ -863,18 +1059,20 @@ ws ::= [ \t\n\r]*
 root ::= think-body "</think>" ws json-object ws
 think-body ::= ([^<] | "<" [^/] | "</" [^t])*
 json-object ::= "{" ws
-  "\"producer_or_winery\"" ws ":" ws nullable-string "," ws
-  "\"wine_name_or_cuvee\"" ws ":" ws nullable-string "," ws
-  "\"vintage\"" ws ":" ws nullable-int "," ws
-  "\"varietals\"" ws ":" ws string-array "," ws
-  "\"appellation_or_region\"" ws ":" ws nullable-string "," ws
+  "\"ocr_discrepancies_resolved\"" ws ":" ws string-array "," ws
+  "\"confidence_notes\"" ws ":" ws nullable-string "," ws
   "\"country\"" ws ":" ws nullable-string "," ws
+  "\"region\"" ws ":" ws nullable-string "," ws
+  "\"subregion\"" ws ":" ws nullable-string "," ws
+  "\"appellation_or_region\"" ws ":" ws nullable-string "," ws
+  "\"varietals\"" ws ":" ws string-array "," ws
   "\"classification\"" ws ":" ws nullable-string "," ws
+  "\"vintage\"" ws ":" ws nullable-int "," ws
+  "\"is_non_vintage\"" ws ":" ws boolean "," ws
   "\"abv_percentage\"" ws ":" ws nullable-number "," ws
   "\"bottle_volume_ml\"" ws ":" ws nullable-int "," ws
-  "\"is_non_vintage\"" ws ":" ws boolean "," ws
-  "\"ocr_discrepancies_resolved\"" ws ":" ws string-array "," ws
-  "\"confidence_notes\"" ws ":" ws nullable-string ws
+  "\"producer_or_winery\"" ws ":" ws nullable-string "," ws
+  "\"wine_name_or_cuvee\"" ws ":" ws nullable-string ws
 "}"
 nullable-string ::= string | "null"
 nullable-int ::= integer | "null"

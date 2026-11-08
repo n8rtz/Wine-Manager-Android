@@ -1,5 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
+#include <algorithm>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <memory>
@@ -56,8 +58,10 @@ void granite_llama_log_callback(ggml_log_level level, const char * text, void * 
 struct GraniteLlamaSession {
     llama_model * model = nullptr;
     llama_context * ctx = nullptr;
-    int n_ctx = 2048;
+    int n_ctx = 4096;
     int n_threads = 4;
+    std::vector<llama_token> cached_prefix_tokens;
+    std::vector<uint8_t> cached_prefix_state;
 
     ~GraniteLlamaSession() {
         if (ctx) {
@@ -117,7 +121,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         }
 
         llama_context_params cparams = llama_context_default_params();
-        cparams.n_ctx = n_ctx > 512 ? n_ctx : 2048;
+        cparams.n_ctx = n_ctx > 512 ? n_ctx : 4096;
         cparams.n_batch = cparams.n_ctx;
         cparams.n_ubatch = 512;
         cparams.n_threads = n_threads > 0 ? n_threads : 4;
@@ -185,9 +189,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
 
         auto t_start = std::chrono::steady_clock::now();
         const llama_vocab * vocab = llama_model_get_vocab(session->model);
-        if (llama_memory_t mem = llama_get_memory(session->ctx)) {
-            llama_memory_clear(mem, true);
-        }
+        llama_memory_t mem = llama_get_memory(session->ctx);
 
         const int n_prompt_max = static_cast<int>(prompt.size()) + 32;
         std::vector<llama_token> tokens(n_prompt_max);
@@ -215,13 +217,127 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             set_last_error("llama_tokenize failed on prompt");
             return env->NewStringUTF("");
         }
-        if (n_tokens > session->n_ctx - 128) {
-            n_tokens = session->n_ctx - 128;
+        const int gen_reserve = std::max(128, std::min(512, static_cast<int>(max_tokens > 0 ? max_tokens : 512)));
+        if (n_tokens > session->n_ctx - gen_reserve) {
+            n_tokens = session->n_ctx - gen_reserve;
         }
         tokens.resize(n_tokens);
 
-        llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
-        int decode_rc = llama_decode(session->ctx, batch);
+        // Identify the static system-prompt prefix up to "<|start_of_role|>user<|end_of_role|>"
+        // so consecutive bottle scans reuse its KV + Mamba-2 recurrent state instead of re-prefilling.
+        int n_prefix = 0;
+        const std::string user_role_marker = "<|start_of_role|>user<|end_of_role|>";
+        const size_t marker_pos = prompt.find(user_role_marker);
+        if (marker_pos != std::string::npos && n_tokens > 8) {
+            const std::string prefix_str = prompt.substr(0, marker_pos + user_role_marker.size());
+            std::vector<llama_token> prefix_tokens(static_cast<int>(prefix_str.size()) + 16);
+            int np = llama_tokenize(
+                    vocab,
+                    prefix_str.c_str(),
+                    static_cast<int32_t>(prefix_str.size()),
+                    prefix_tokens.data(),
+                    static_cast<int32_t>(prefix_tokens.size()),
+                    true,
+                    true);
+            if (np < 0) {
+                prefix_tokens.resize(-np);
+                np = llama_tokenize(
+                        vocab,
+                        prefix_str.c_str(),
+                        static_cast<int32_t>(prefix_str.size()),
+                        prefix_tokens.data(),
+                        static_cast<int32_t>(prefix_tokens.size()),
+                        true,
+                        true);
+            }
+            if (np > 0) {
+                if (np >= n_tokens) {
+                    np = n_tokens - 1;
+                }
+                while (np > 0 && !std::equal(prefix_tokens.begin(), prefix_tokens.begin() + np, tokens.begin())) {
+                    --np;
+                }
+                n_prefix = np;
+            }
+        }
+
+        bool prefix_reused = false;
+        if (n_prefix > 0 &&
+            session->cached_prefix_tokens.size() == static_cast<size_t>(n_prefix) &&
+            std::equal(session->cached_prefix_tokens.begin(), session->cached_prefix_tokens.end(), tokens.begin())) {
+            // 1) Try zero-copy partial KV cache trim (succeeds on pure Transformer architectures)
+            if (mem &&
+                llama_memory_seq_rm(mem, 0, n_prefix, -1) &&
+                llama_memory_seq_pos_max(mem, 0) == n_prefix - 1) {
+                prefix_reused = true;
+            } else if (!session->cached_prefix_state.empty()) {
+                // 2) Hybrid Mamba-2 + Attention fallback (Granite 4.2): restore cached prefix sequence snapshot
+                if (mem) {
+                    llama_memory_clear(mem, false);
+                }
+                const size_t restored = llama_state_seq_set_data(
+                        session->ctx,
+                        session->cached_prefix_state.data(),
+                        session->cached_prefix_state.size(),
+                        0);
+                if (restored > 0 && mem && llama_memory_seq_pos_max(mem, 0) == n_prefix - 1) {
+                    prefix_reused = true;
+                }
+            }
+        }
+
+        int decode_rc = 0;
+        int prefilled_tokens = n_tokens;
+        if (prefix_reused) {
+            const int n_suffix = n_tokens - n_prefix;
+            llama_batch suffix_batch = llama_batch_get_one(tokens.data() + n_prefix, n_suffix);
+            decode_rc = llama_decode(session->ctx, suffix_batch);
+            prefilled_tokens = n_suffix;
+            if (decode_rc != 0) {
+                LOGW("Suffix prefill failed after prefix restore (rc=%d); falling back to full prefill", decode_rc);
+                prefix_reused = false;
+                session->cached_prefix_tokens.clear();
+                session->cached_prefix_state.clear();
+            }
+        }
+
+        if (!prefix_reused) {
+            if (mem) {
+                llama_memory_clear(mem, false);
+            }
+            session->cached_prefix_tokens.clear();
+            session->cached_prefix_state.clear();
+
+            if (n_prefix > 0 && n_prefix < n_tokens) {
+                llama_batch prefix_batch = llama_batch_get_one(tokens.data(), n_prefix);
+                decode_rc = llama_decode(session->ctx, prefix_batch);
+                if (decode_rc == 0) {
+                    session->cached_prefix_tokens.assign(tokens.begin(), tokens.begin() + n_prefix);
+                    const size_t state_size = llama_state_seq_get_size(session->ctx, 0);
+                    if (state_size > 0 && state_size <= 64ULL * 1024ULL * 1024ULL) {
+                        session->cached_prefix_state.resize(state_size);
+                        const size_t written = llama_state_seq_get_data(
+                                session->ctx,
+                                session->cached_prefix_state.data(),
+                                state_size,
+                                0);
+                        if (written == 0) {
+                            session->cached_prefix_state.clear();
+                        } else {
+                            session->cached_prefix_state.resize(written);
+                        }
+                    }
+                    const int n_suffix = n_tokens - n_prefix;
+                    llama_batch suffix_batch = llama_batch_get_one(tokens.data() + n_prefix, n_suffix);
+                    decode_rc = llama_decode(session->ctx, suffix_batch);
+                }
+            } else {
+                llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
+                decode_rc = llama_decode(session->ctx, batch);
+            }
+            prefilled_tokens = n_tokens;
+        }
+
         if (decode_rc != 0) {
             LOGE("llama_decode failed on prompt prefill (rc=%d, n_tokens=%d)", decode_rc, n_tokens);
             set_last_error("llama_decode failed on prompt prefill (rc=" + std::to_string(decode_rc) + ")");
@@ -302,8 +418,8 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         auto t_end = std::chrono::steady_clock::now();
         auto prefill_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_prefill - t_start).count();
         auto decode_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_prefill).count();
-        LOGI("Granite completion finished: prompt_tokens=%d (prefill=%lld ms), generated_tokens=%d (decode=%lld ms)",
-             n_tokens, static_cast<long long>(prefill_ms), generated, static_cast<long long>(decode_ms));
+        LOGI("Granite completion finished: prompt_tokens=%d, prefilled_tokens=%d, prefix_reused=%d (prefill=%lld ms), generated_tokens=%d (decode=%lld ms)",
+             n_tokens, prefilled_tokens, prefix_reused ? 1 : 0, static_cast<long long>(prefill_ms), generated, static_cast<long long>(decode_ms));
 
         llama_sampler_free(sampler);
         return env->NewStringUTF(output.c_str());

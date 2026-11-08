@@ -158,18 +158,20 @@ data class GraniteWineLabelJson(
 ) {
     fun toJsonObject(): JSONObject {
         val obj = JSONObject()
-        obj.put("producer_or_winery", producerOrWinery ?: JSONObject.NULL)
-        obj.put("wine_name_or_cuvee", wineNameOrCuvee ?: JSONObject.NULL)
-        obj.put("vintage", vintage ?: JSONObject.NULL)
-        obj.put("varietals", JSONArray(varietals))
-        obj.put("appellation_or_region", appellationOrRegion ?: JSONObject.NULL)
-        obj.put("country", country ?: JSONObject.NULL)
-        obj.put("classification", classification ?: JSONObject.NULL)
-        obj.put("abv_percentage", abvPercentage ?: JSONObject.NULL)
-        obj.put("bottle_volume_ml", bottleVolumeMl ?: JSONObject.NULL)
-        obj.put("is_non_vintage", isNonVintage)
         obj.put("ocr_discrepancies_resolved", JSONArray(ocrDiscrepanciesResolved))
         obj.put("confidence_notes", confidenceNotes ?: JSONObject.NULL)
+        obj.put("country", country ?: JSONObject.NULL)
+        obj.put("region", region ?: JSONObject.NULL)
+        obj.put("subregion", subregion ?: JSONObject.NULL)
+        obj.put("appellation_or_region", appellationOrRegion ?: subregion ?: region ?: JSONObject.NULL)
+        obj.put("varietals", JSONArray(varietals))
+        obj.put("classification", classification ?: JSONObject.NULL)
+        obj.put("vintage", vintage ?: JSONObject.NULL)
+        obj.put("is_non_vintage", isNonVintage)
+        obj.put("abv_percentage", abvPercentage ?: JSONObject.NULL)
+        obj.put("bottle_volume_ml", bottleVolumeMl ?: JSONObject.NULL)
+        obj.put("producer_or_winery", producerOrWinery ?: JSONObject.NULL)
+        obj.put("wine_name_or_cuvee", wineNameOrCuvee ?: JSONObject.NULL)
         return obj
     }
 

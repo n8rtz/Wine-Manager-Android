@@ -48,7 +48,7 @@ object GraniteLlamaBridge : AutoCloseable {
         gbnfGrammar: String,
         maxTokens: Int = 512,
         temperature: Float = 0.0f,
-        nCtx: Int = 2048,
+        nCtx: Int = 4096,
         nThreads: Int = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
     ): String = mutex.withLock {
         check(nativeLoaded) { "lib$JNI_LIB_NAME.so is not loaded" }

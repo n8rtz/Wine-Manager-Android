@@ -232,4 +232,61 @@ class GraniteWorkflowTest {
         assertEquals("France", outcome.structuredJson.country)
         retriever.close()
     }
+
+    @Test
+    fun granitePromptUsesReasonThenExtractOrderingAlignedLinesAndBidirectionalRagWithoutAnchoring() = runBlocking {
+        val context = RuntimeEnvironment.getApplication()
+        val retriever = GraniteDatabaseRagRetriever()
+        val extractor = GraniteLabelExtractor()
+
+        val gbnf = GraniteLabelExtractor.WINE_LABEL_JSON_GBNF
+        val discrepanciesIdx = gbnf.indexOf("\"ocr_discrepancies_resolved\"")
+        val regionIdx = gbnf.indexOf("\"region\"")
+        val subregionIdx = gbnf.indexOf("\"subregion\"")
+        val producerIdx = gbnf.indexOf("\"producer_or_winery\"")
+        assertTrue(discrepanciesIdx in 1 until regionIdx)
+        assertTrue(regionIdx < subregionIdx && subregionIdx < producerIdx)
+
+        // Reverse wine -> producer lookup ("PAVILLON ROUGE" without "Margaux" printed cleanly on header)
+        val mlKitBlocks = listOf(
+            OcrBlock("trancette", 0.81f, RectF(0.24f, 0.16f, 0.52f, 0.28f), OcrEngineSource.ML_KIT),
+            OcrBlock("PAVILLON ROUGE 2019", 0.93f, RectF(0.18f, 0.38f, 0.82f, 0.45f), OcrEngineSource.ML_KIT),
+            OcrBlock("750 ml 13.5% vol", 0.90f, RectF(0.22f, 0.88f, 0.78f, 0.92f), OcrEngineSource.ML_KIT)
+        )
+        val ppOcrBlocks = listOf(
+            OcrBlock("La Francette", 0.91f, RectF(0.14f, 0.16f, 0.62f, 0.28f), OcrEngineSource.PP_OCRV6),
+            OcrBlock("PAVILLON ROUGE 2019", 0.94f, RectF(0.18f, 0.38f, 0.82f, 0.45f), OcrEngineSource.PP_OCRV6)
+        )
+
+        val ragContext = retriever.retrieve(
+            context = context,
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = ppOcrBlocks,
+            ablationMode = OcrAblationMode.DUAL,
+            enabled = true
+        )
+
+        val prompt = extractor.buildGranitePrompt(
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = ppOcrBlocks,
+            ablationMode = OcrAblationMode.DUAL,
+            thinkModeEnabled = false,
+            ragContext = ragContext
+        )
+
+        assertTrue(prompt.contains("=== Spatially Aligned Cross-Engine Reading Lines"))
+        assertTrue(prompt.contains("CONFLICT: MLKit=\"trancette\""))
+        assertTrue(prompt.contains("LOWERCASE_INITIAL_ON_HEADER"))
+        assertTrue(prompt.contains("WIDTH_MISMATCH"))
+        assertFalse(prompt.contains("Spatial + KnowledgeBase Contender Hints"))
+        assertTrue(
+            "Expected reverse wine->producer lookup to surface a corroborated producer for Pavillon Rouge, got ${ragContext.producerCandidates}",
+            ragContext.producerCandidates.any { it.corroboratedWines.isNotEmpty() }
+        )
+        assertTrue(
+            "Expected linked wine candidates to include explicit producer name, got ${ragContext.linkedWineCandidates}",
+            ragContext.linkedWineCandidates.any { !it.producerName.isNullOrBlank() }
+        )
+        retriever.close()
+    }
 }

@@ -117,20 +117,35 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertIn("const val DEFAULT_THINK_MODE_ENABLED = false", extractor)
         self.assertIn("WINE_LABEL_JSON_GBNF", extractor)
         for key in (
-            "producer_or_winery",
-            "wine_name_or_cuvee",
-            "vintage",
-            "varietals",
-            "appellation_or_region",
-            "country",
-            "classification",
-            "abv_percentage",
-            "bottle_volume_ml",
-            "is_non_vintage",
             "ocr_discrepancies_resolved",
             "confidence_notes",
+            "country",
+            "region",
+            "subregion",
+            "appellation_or_region",
+            "varietals",
+            "classification",
+            "vintage",
+            "is_non_vintage",
+            "abv_percentage",
+            "bottle_volume_ml",
+            "producer_or_winery",
+            "wine_name_or_cuvee",
         ):
             self.assertIn(f'"{key}"', extractor)
+        # Verify Reason-Then-Context-Then-Entity causal key ordering in GBNF
+        gbnf_start = extractor.index("val WINE_LABEL_JSON_GBNF")
+        gbnf_block = extractor[gbnf_start : extractor.index("val WINE_LABEL_THINK_PLUS_JSON_GBNF")]
+        self.assertLess(
+            gbnf_block.index('\\"ocr_discrepancies_resolved\\"'),
+            gbnf_block.index('\\"country\\"'),
+        )
+        self.assertLess(
+            gbnf_block.index('\\"subregion\\"'),
+            gbnf_block.index('\\"producer_or_winery\\"'),
+        )
+        self.assertIn("Spatially Aligned Cross-Engine Reading Lines", extractor)
+        self.assertIn("buildAlignedReadingLinesSection", extractor)
 
     def test_four_section_results_inspector_and_file_pickers(self):
         screen = self.read(PKG / "GraniteWorkflowScreen.kt")
@@ -163,8 +178,15 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         cpp = self.read(cpp_path)
         self.assertIn("mparams.use_extra_bufts = false;", cpp)
         self.assertIn("mparams.load_mode = LLAMA_LOAD_MODE_MMAP;", cpp)
+        self.assertIn("cached_prefix_tokens", cpp)
+        self.assertIn("cached_prefix_state", cpp)
+        self.assertIn("llama_memory_seq_rm", cpp)
+        self.assertIn("llama_state_seq_set_data", cpp)
         rag = self.read(rag_path)
         self.assertIn("minSubspanEditDistance", rag)
+        self.assertIn("reverseLookupWinesToProducers", rag)
+        self.assertIn("CORROBORATED_BY_LINKED_WINE", rag)
+        self.assertNotIn("5. Spatial + KnowledgeBase Contender Hints", rag)
         self.assertNotIn("leadingProducerArticles", rag)
         extractor = self.read(PKG / "GraniteLabelExtractor.kt")
         self.assertIn("Dynamic Reconstruction of Incomplete or Misread OCR", extractor)

@@ -2,6 +2,7 @@ package com.n8rtz.winetracker.debug.graniteworkflow
 
 import android.content.Context
 import android.os.SystemClock
+import androidx.sqlite.SQLiteConnection
 import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.gazetteer.LinkedWineResolver
 import com.yourapp.wine.gazetteer.ProducerGazetteer
@@ -37,7 +38,9 @@ data class GraniteProducerCandidate(
     val country: String,
     val distance: Int,
     val matchedSpan: String,
-    val sources: String
+    val sources: String,
+    val corroboratedWines: List<String> = emptyList(),
+    val countryCorroborated: Boolean = false
 )
 
 /**
@@ -50,7 +53,8 @@ data class GraniteLinkedWineCandidate(
     val producerId: String,
     val lwin7: String,
     val distance: Int,
-    val matchedSpan: String
+    val matchedSpan: String,
+    val producerName: String = ""
 )
 
 /**
@@ -100,28 +104,35 @@ data class GraniteDatabaseRagContext(
             return "(Database RAG disabled by toggle)"
         }
         return buildString {
-            appendLine("1. LWIN / Expanded Producer Gazetteer Matches (producers-expanded.sqlite):")
+            appendLine("1. LWIN / Expanded Producer Gazetteer Candidates (producers-expanded.sqlite — FTS5 trigram + subspan similarity):")
             if (producerCandidates.isEmpty()) {
                 appendLine("   (No close producer matches in SQLite gazetteer)")
             } else {
-                producerCandidates.take(8).forEach { p ->
+                producerCandidates.take(10).forEach { p ->
                     val countryPart = if (p.country.isNotBlank()) ", country=${p.country}" else ""
                     val srcPart = if (p.sources.isNotBlank()) ", source=${p.sources}" else ""
-                    appendLine("   - \"${p.name}\" (dist=${p.distance}, span=\"${p.matchedSpan}\"$countryPart$srcPart)")
+                    val countryTag = if (p.countryCorroborated) " [COUNTRY_MATCHES_LABEL]" else ""
+                    val wineTag = if (p.corroboratedWines.isNotEmpty()) {
+                        " [CORROBORATED_BY_LINKED_WINE: ${p.corroboratedWines.joinToString(", ") { "\"$it\"" }}]"
+                    } else {
+                        ""
+                    }
+                    appendLine("   - \"${p.name}\" (dist=${p.distance}, span=\"${p.matchedSpan}\"$countryPart$srcPart)$countryTag$wineTag")
                 }
             }
 
-            appendLine("2. Producer-Linked Wine & Cuvée Matches (wines.sqlite / LWIN7):")
+            appendLine("2. Producer-Linked & Reverse-Matched Wine/Cuvée Candidates (wines.sqlite / LWIN7):")
             if (linkedWineCandidates.isEmpty()) {
                 appendLine("   (No linked wine matches in SQLite wine index)")
             } else {
-                linkedWineCandidates.take(8).forEach { w ->
+                linkedWineCandidates.take(10).forEach { w ->
+                    val prodPart = if (w.producerName.isNotBlank()) ", producer=\"${w.producerName}\"" else ""
                     val lwinPart = if (w.lwin7.isNotBlank()) ", lwin7=${w.lwin7}" else ""
-                    appendLine("   - \"${w.name}\" (dist=${w.distance}, span=\"${w.matchedSpan}\"$lwinPart)")
+                    appendLine("   - \"${w.name}\" (dist=${w.distance}, span=\"${w.matchedSpan}\"$prodPart$lwinPart)")
                 }
             }
 
-            appendLine("3. Appellation, Region & Country Catalog Matches (ReferenceWineCatalog / BundledOrigins / SqliteWineKnowledgeBase):")
+            appendLine("3. Appellation, Region & Country Hierarchy Candidates (ReferenceWineCatalog / BundledOrigins / SqliteWineKnowledgeBase):")
             if (appellationCandidates.isEmpty()) {
                 appendLine("   (No catalog appellation matches)")
             } else {
@@ -138,18 +149,6 @@ data class GraniteDatabaseRagContext(
             val stylesText = if (matchedStyles.isEmpty()) "(none)" else matchedStyles.joinToString(", ")
             appendLine("   - Grapes: $grapesText")
             appendLine("   - Styles/Classifications: $stylesText")
-
-            if (spatialContenderFields.values.any { it.isNotBlank() }) {
-                appendLine("5. Spatial + KnowledgeBase Contender Hints (verify against OCR coordinates, context, and candidate lists above):")
-                val p = spatialContenderFields["producer"].orEmpty().ifBlank { "null" }
-                val w = spatialContenderFields["wine_name"].orEmpty().ifBlank { "null" }
-                val c = spatialContenderFields["country"].orEmpty().ifBlank { "null" }
-                val r = spatialContenderFields["region"].orEmpty().ifBlank { "null" }
-                val s = spatialContenderFields["subregion"].orEmpty().ifBlank { "null" }
-                val v = spatialContenderFields["vintage"].orEmpty().ifBlank { "null" }
-                val pState = spatialContenderStates["producer"].orEmpty().ifBlank { "UNVERIFIED" }
-                appendLine("   - producer=\"$p\" (kb_state=$pState), wine_name=\"$w\", country=\"$c\", region=\"$r\", subregion=\"$s\", vintage=\"$v\"")
-            }
         }.trimEnd()
     }
 }
@@ -428,53 +427,51 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
             val matchedGrapes = matchBundledGrapes(records)
             val matchedStyles = matchBundledStyles(records)
 
+            // 4. Cross-reference relational corroboration between Producer Candidates, Linked Wines, and Geography
+            val labelCountries = buildSet {
+                appellationCandidates.mapNotNullTo(this) { it.country.takeIf(String::isNotBlank)?.let(ProducerResolver::normalize) }
+                spatialFields["country"]?.takeIf(String::isNotBlank)?.let { add(ProducerResolver.normalize(it)) }
+            }
+
+            val producerNameById = producerCandidates
+                .filter { it.id.isNotBlank() && it.name.isNotBlank() }
+                .associate { it.id to it.name }
+
+            val enrichedWines = linkedWineCandidates
+                .map { w ->
+                    if (w.producerName.isNotBlank()) w
+                    else w.copy(producerName = producerNameById[w.producerId].orEmpty())
+                }
+                .distinctBy { "${ProducerResolver.normalize(it.producerName)}::${ProducerResolver.normalize(it.name)}" }
+                .sortedBy { it.distance }
+                .take(10)
+
+            val winesByProducerId = enrichedWines
+                .filter { it.producerId.isNotBlank() }
+                .groupBy({ it.producerId }, { it.name })
+
             val dedupedProducers = producerCandidates
                 .distinctBy { ProducerResolver.normalize(it.name) }
+                .map { p ->
+                    val corrWines = winesByProducerId[p.id].orEmpty().distinct()
+                    val ctryNorm = ProducerResolver.normalize(p.country)
+                    val ctryMatch = ctryNorm.isNotBlank() && labelCountries.any { lc ->
+                        lc == ctryNorm ||
+                            (lc == "usa" && ctryNorm == "united states") ||
+                            (lc == "united states" && ctryNorm == "usa")
+                    }
+                    p.copy(
+                        corroboratedWines = corrWines,
+                        countryCorroborated = ctryMatch
+                    )
+                }
                 .sortedWith(
                     compareBy<GraniteProducerCandidate> { it.distance }
+                        .thenByDescending { it.corroboratedWines.isNotEmpty() }
+                        .thenByDescending { it.countryCorroborated }
                         .thenBy { ProducerResolver.producerDistance(ProducerResolver.normalize(it.matchedSpan), ProducerResolver.normalize(it.name)) }
                         .thenByDescending { "lwin" in it.sources }
                 )
-                .take(10)
-
-            // If the spatial contender left producer blank or unverified, and a single unambiguous
-            // subspan/near-edit candidate exists among non-geography, non-grape spans, record it as a hint.
-            val currentSpProducer = spatialFields["producer"].orEmpty().trim()
-            val currentSpState = spatialStates["producer"].orEmpty()
-            if (currentSpState != "GREEN") {
-                val nonProducerTerms = (
-                    matchedGrapes +
-                        matchedStyles +
-                        appellationCandidates.flatMap { listOf(it.appellationOrSubregion, it.region, it.country) }
-                    ).map { ProducerResolver.normalize(it) }.filter(String::isNotBlank).toSet()
-
-                val canonicalProducer = if (currentSpProducer.isNotBlank()) {
-                    val spKey = ProducerResolver.normalize(currentSpProducer)
-                    val matching = dedupedProducers.filter { cand ->
-                        cand.distance <= 1 && (
-                            ProducerResolver.normalize(cand.matchedSpan) == spKey ||
-                                minSubspanEditDistance(spKey, ProducerResolver.normalize(cand.name)) <= 1
-                            )
-                    }
-                    matching.singleOrNull()
-                } else {
-                    val nonExcluded = dedupedProducers.filter { cand ->
-                        cand.distance <= 1 &&
-                            ProducerResolver.normalize(cand.matchedSpan) !in nonProducerTerms &&
-                            ProducerResolver.normalize(cand.name) !in nonProducerTerms
-                    }
-                    nonExcluded.singleOrNull()
-                }
-
-                if (canonicalProducer != null) {
-                    spatialFields["producer"] = canonicalProducer.name
-                    spatialStates["producer"] = "GREEN"
-                }
-            }
-
-            val dedupedWines = linkedWineCandidates
-                .distinctBy { ProducerResolver.normalize(it.name) }
-                .sortedBy { it.distance }
                 .take(10)
 
             val elapsed = (SystemClock.elapsedRealtime() - started).coerceAtLeast(1L)
@@ -482,7 +479,7 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                 enabled = true,
                 elapsedMs = elapsed,
                 producerCandidates = dedupedProducers,
-                linkedWineCandidates = dedupedWines,
+                linkedWineCandidates = enrichedWines,
                 appellationCandidates = appellationCandidates,
                 matchedGrapes = matchedGrapes,
                 matchedStyles = matchedStyles,
@@ -570,6 +567,10 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
         return best
     }
 
+    private val pureAbvVolumeOrYearRegex = Regex(
+        "(?i)^\\s*(\\d{4}|\\d+(?:[.,]\\d+)?\\s*(?:%|ml|cl|l|fl\\.?\\s*oz|alc|vol)\\b.*)\\s*$"
+    )
+
     private fun supplementDirectGazetteerCandidates(
         gazetteer: ProducerGazetteer,
         records: List<TokenRecord>,
@@ -583,33 +584,55 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
         val spProducerRaw = spatialFields["producer"].orEmpty().takeIf {
             it.isNotBlank() && spatialStates["producer"] != "GREEN"
         }
-        val rawPool = buildList {
+        val rawBase = buildList {
             if (spProducerRaw != null) add(spProducerRaw)
             addAll(records.map { it.textRaw })
             addAll(proposals.filter { it.sources.size in 2..3 }.map { it.phrase.mergedText })
         }
+        val rawPool = buildList {
+            for (item in rawBase) {
+                add(item)
+                val yearStripped = item.replace(Regex("\\b(19[4-9]\\d|20[0-2]\\d)\\b"), " ")
+                    .replace(Regex("\\s+"), " ")
+                    .trim()
+                if (yearStripped.isNotEmpty() && yearStripped != item) {
+                    add(yearStripped)
+                }
+            }
+        }
+        // Allow 3+ character spans and alphanumeric producer/cuvée names (e.g. "Krug", "Gaja", "19 Crimes", "689 Cellars"),
+        // excluding only pure vintage years or ABV/volume technical strings.
         val candidateSpans = rawPool
             .map { TextNorm.scrub(it) }
-            .filter { it.length in 5..80 && !it.any(Char::isDigit) && '%' !in it }
+            .filter { it.length in 3..80 && '%' !in it && !pureAbvVolumeOrYearRegex.matches(it) }
             .distinctBy { ProducerResolver.normalize(it) }
-            .take(24)
+            .take(28)
 
         val matchedProducerIds = producerCandidates.map { it.id }.filter(String::isNotBlank).toMutableSet()
+        val producerNameById = producerCandidates
+            .filter { it.id.isNotBlank() && it.name.isNotBlank() }
+            .associate { it.id to it.name }
+            .toMutableMap()
 
         for (span in candidateSpans) {
             checkBudget()
             val q = ProducerResolver.normalize(span)
-            if (q.length < 5) continue
+            if (q.length < 3) continue
             val hits = gazetteer.lookup(q, 48, checkBudget)
             val maxAllowedDist = when {
-                q.length >= 14 -> 2
+                q.length >= 12 -> 3
                 q.length >= 7 -> 2
-                else -> 1
+                q.length >= 5 -> 1
+                else -> 0
             }
-            for (entity in hits) {
+            hits.forEachIndexed { rank, entity ->
                 val dist = minSubspanEditDistance(q, entity.key)
-                if (dist <= maxAllowedDist) {
+                // Also retain top-3 FTS5 trigram hits up to distance 3 for spans >= 6 chars so Granite
+                // can evaluate stylized/script OCR readings with 2-3 character errors.
+                val trigramTopHypothesis = rank < 3 && q.length >= 6 && dist <= 3
+                if (dist <= maxAllowedDist || trigramTopHypothesis) {
                     matchedProducerIds += entity.id
+                    producerNameById[entity.id] = entity.name
                     producerCandidates += GraniteProducerCandidate(
                         id = entity.id,
                         name = entity.name,
@@ -622,25 +645,162 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
             }
         }
 
+        // Forward Producer -> Linked Wine lookup
         val topProducerIds = matchedProducerIds.take(8).toSet()
         if (topProducerIds.isNotEmpty()) {
-            for (span in candidateSpans.take(16)) {
+            for (span in candidateSpans.take(18)) {
                 checkBudget()
                 if (!LinkedWineResolver.eligible(span)) continue
                 val q = ProducerResolver.normalize(span)
                 val wines = gazetteer.lookupWines(q, topProducerIds, 32, checkBudget)
                 for (wine in wines) {
                     val dist = minSubspanEditDistance(q, wine.key)
-                    if (dist <= if (q.length >= 12) 2 else 1) {
+                    if (dist <= if (q.length >= 10) 2 else 1) {
                         linkedWineCandidates += GraniteLinkedWineCandidate(
                             id = wine.id,
                             name = wine.name,
                             producerId = wine.producerId,
                             lwin7 = wine.lwin7,
                             distance = dist,
-                            matchedSpan = span
+                            matchedSpan = span,
+                            producerName = producerNameById[wine.producerId].orEmpty()
                         )
                     }
+                }
+            }
+        }
+
+        // Reverse Wine/Cuvée -> Producer lookup: when a distinctive cuvée/monopole/estate name is
+        // readable on the label even if the producer text was heavily damaged or omitted, query
+        // wines.sqlite directly and surface the linked parent producer into producerCandidates.
+        runCatching {
+            reverseLookupWinesToProducers(
+                gazetteer = gazetteer,
+                candidateSpans = candidateSpans,
+                matchedProducerIds = matchedProducerIds,
+                producerNameById = producerNameById,
+                producerCandidates = producerCandidates,
+                linkedWineCandidates = linkedWineCandidates,
+                checkBudget = checkBudget
+            )
+        }
+    }
+
+    private fun reverseLookupWinesToProducers(
+        gazetteer: ProducerGazetteer,
+        candidateSpans: List<String>,
+        matchedProducerIds: MutableSet<String>,
+        producerNameById: MutableMap<String, String>,
+        producerCandidates: MutableList<GraniteProducerCandidate>,
+        linkedWineCandidates: MutableList<GraniteLinkedWineCandidate>,
+        checkBudget: () -> Unit
+    ) {
+        val winesField = ProducerGazetteer::class.java.getDeclaredField("wines").apply { isAccessible = true }
+        val dbField = ProducerGazetteer::class.java.getDeclaredField("db").apply { isAccessible = true }
+        val winesConn = winesField.get(gazetteer) as? SQLiteConnection ?: return
+        val prodConn = dbField.get(gazetteer) as? SQLiteConnection ?: return
+
+        val grapeNorms = BundledGrapes.terms
+            .flatMap { listOf(it.name) + it.aliases }
+            .map { ProducerResolver.normalize(it) }
+            .toSet()
+
+        for (span in candidateSpans.take(12)) {
+            checkBudget()
+            if (!LinkedWineResolver.eligible(span)) continue
+            val q = ProducerResolver.normalize(span)
+            // Only reverse-lookup distinctive cuvée/wine spans (skip bare grape names or short generic words)
+            if (q.length < 6 || q in grapeNorms || q in originsByNormalizedForm) continue
+
+            val matchedWines = mutableListOf<Pair<LinkedWineResolver.Wine, Int>>()
+            val exactSql = "SELECT n.id, n.name, n.key, p.producer_id, l.lwin7 " +
+                "FROM wine_names n " +
+                "JOIN wine_links l ON l.wine_id = n.id " +
+                "JOIN wine_producers p ON p.id = l.producer_id " +
+                "WHERE n.key = ? ORDER BY n.id LIMIT 6"
+            winesConn.prepare(exactSql).use { stmt ->
+                stmt.bindText(1, q)
+                while (stmt.step()) {
+                    checkBudget()
+                    val wine = LinkedWineResolver.Wine(
+                        stmt.getLong(0).toString(),
+                        TextNorm.scrub(stmt.getText(1)),
+                        ProducerResolver.normalize(stmt.getText(2)),
+                        stmt.getText(3),
+                        stmt.getText(4)
+                    )
+                    matchedWines += wine to 0
+                }
+            }
+
+            if (q.length >= 7) {
+                val trigrams = q.windowed(3).filter { it.none(Char::isWhitespace) }.distinct().take(12)
+                if (trigrams.size >= 3) {
+                    val ftsQuery = trigrams.joinToString(" AND ") { "\"$it\"" }
+                    val ftsSql = "SELECT n.id, n.name, n.key, p.producer_id, l.lwin7 " +
+                        "FROM wine_fts JOIN wine_names n ON wine_fts.rowid = n.id " +
+                        "JOIN wine_links l ON l.wine_id = n.id " +
+                        "JOIN wine_producers p ON p.id = l.producer_id " +
+                        "WHERE wine_fts MATCH ? ORDER BY bm25(wine_fts), n.id LIMIT 8"
+                    winesConn.prepare(ftsSql).use { stmt ->
+                        stmt.bindText(1, ftsQuery)
+                        while (stmt.step()) {
+                            checkBudget()
+                            val wineKey = ProducerResolver.normalize(stmt.getText(2))
+                            val dist = minSubspanEditDistance(q, wineKey)
+                            if (dist <= 1) {
+                                val wine = LinkedWineResolver.Wine(
+                                    stmt.getLong(0).toString(),
+                                    TextNorm.scrub(stmt.getText(1)),
+                                    wineKey,
+                                    stmt.getText(3),
+                                    stmt.getText(4)
+                                )
+                                if (matchedWines.none { it.first.id == wine.id && it.first.producerId == wine.producerId }) {
+                                    matchedWines += wine to dist
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Only use reverse lookup when the cuvée name maps to a small, specific set of producers (<= 4)
+            val distinctProdIds = matchedWines.map { it.first.producerId }.distinct()
+            if (distinctProdIds.size in 1..4) {
+                for ((wine, dist) in matchedWines) {
+                    var prodName = producerNameById[wine.producerId].orEmpty()
+                    if (prodName.isBlank()) {
+                        prodConn.prepare("SELECT id, name, COALESCE(country_group, '') FROM producers WHERE id = ? LIMIT 1").use { pStmt ->
+                            pStmt.bindText(1, wine.producerId)
+                            if (pStmt.step()) {
+                                val pId = pStmt.getText(0)
+                                prodName = TextNorm.scrub(pStmt.getText(1))
+                                val pCountry = TextNorm.scrub(pStmt.getText(2))
+                                producerNameById[pId] = prodName
+                                if (pId !in matchedProducerIds && prodName.isNotBlank()) {
+                                    matchedProducerIds += pId
+                                    producerCandidates += GraniteProducerCandidate(
+                                        id = pId,
+                                        name = prodName,
+                                        country = pCountry,
+                                        distance = dist,
+                                        matchedSpan = "$span (linked cuvée)",
+                                        sources = "lwin_linked_wine"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    linkedWineCandidates += GraniteLinkedWineCandidate(
+                        id = wine.id,
+                        name = wine.name,
+                        producerId = wine.producerId,
+                        lwin7 = wine.lwin7,
+                        distance = dist,
+                        matchedSpan = span,
+                        producerName = prodName
+                    )
                 }
             }
         }
