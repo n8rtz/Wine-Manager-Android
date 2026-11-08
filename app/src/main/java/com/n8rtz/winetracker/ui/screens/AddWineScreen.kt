@@ -236,7 +236,10 @@ fun AddWineScreen(
         drawerPeekHeight = if (showDrawerProgress) PROGRESS_PEEK_HEIGHT else IDLE_PEEK_HEIGHT
         withFrameNanos {}; withFrameNanos {}
         val sheet = scaffoldState.bottomSheetState
-        if (sheet.currentValue == SheetValue.PartiallyExpanded) sheet.partialExpand()
+        // Never yank a drawer that's on its way to full: the completion expand runs
+        // concurrently with this reset, and retargeting it to peek kills the slide-up.
+        if (sheet.currentValue == SheetValue.PartiallyExpanded &&
+            sheet.targetValue == SheetValue.PartiallyExpanded) sheet.partialExpand()
     }
     LaunchedEffect((labelScanState as? LabelScanState.Review)?.requestId) {
         val review = labelScanState as? LabelScanState.Review ?: return@LaunchedEffect
