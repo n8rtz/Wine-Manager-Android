@@ -1,11 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  W-057 Phase 0: explicit Auto Backup decision for API 30 and lower.
+  With no <include> elements Android keeps its default set (the Room database and every
+  SharedPreferences file). Adding an <include> would restrict the set, so this file only excludes:
+    - file/wine-images/        app-private image bytes; provenance is stored in Room instead
+    - sharedpref/backup_credentials.xml   Keystore-wrapped GitHub/WebDAV secrets and the Drive grant
+  Android Keystore keys never transfer to another phone, so a restored install reconnects anyway.
+  Backup settings (backup_settings.xml), the reviewer list and the image-storage budget stay in
+  Auto Backup. No credential ever enters BackupData or the JSON export.
 -->
 <full-backup-content>
-    <!-- Keep app-private image bytes out of cloud/device backups. Provenance lives in Room. -->
     <exclude domain="file" path="wine-images/" />
+    <exclude domain="sharedpref" path="backup_credentials.xml" />
 </full-backup-content>

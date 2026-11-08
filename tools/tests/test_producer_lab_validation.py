@@ -10,7 +10,7 @@ class ProducerLabValidationTests(unittest.TestCase):
             for i in items:self.assertEqual(set(i),{'image','rows','anchor_fields','preceding_producer_output'})
     def test_default_off_and_producer_only_lab_update(self):
         lab=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
-        for name in ['TextLabViewModel.kt','TextLabBatch.kt']:
+        for name in ['TextLabBatch.kt']:
             self.assertIn('repairProducer:Boolean=false',(lab/name).read_text())
         preview=(lab/'TextLabEvidencePreview.kt').read_text()
         self.assertIn('useProducerRepair:Boolean=false',preview)

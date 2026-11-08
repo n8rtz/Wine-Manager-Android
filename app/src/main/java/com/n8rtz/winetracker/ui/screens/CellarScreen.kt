@@ -2,9 +2,10 @@
 package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.AnalyticsCard
 import com.n8rtz.winetracker.ui.components.WineCard
+import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
@@ -32,21 +34,44 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
+fun CellarScreen(
+    viewModel: WineViewModel,
+    onAddNote: (Long, String) -> Unit,
+    onEditWine: (Long) -> Unit,
+    onNoteClick: (Long) -> Unit,
+    onConsumed: (String, Long) -> Unit
+) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
     val cellarLocationData by viewModel.cellarLocationData.collectAsState()
     val cellarResetKey by viewModel.cellarResetKey.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var searchExpanded by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
-    val cellarListState = rememberLazyListState()
+    var showStatsDialog by remember { mutableStateOf(false) }
+    var expandedBottleId by remember { mutableStateOf<Long?>(null) }
+    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
+    // screen where it was scrolled to instead of at the top.
+    val cellarListState = remember { LazyListState() }
+    LaunchedEffect(Unit) { cellarListState.scrollToItem(0) }
+    // The restored top search row scrolls away with the list; the compact controls appear once
+    // that row is out of view, and stay visible while scrolling.
+    val showCompactControls by remember {
+        derivedStateOf { cellarListState.firstVisibleItemIndex > 0 }
+    }
+    // Back at the top the full search row is visible again, so the pop-up is no longer needed.
+    LaunchedEffect(showCompactControls) {
+        if (!showCompactControls) searchExpanded = false
+    }
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
 
     LaunchedEffect(cellarResetKey) {
         searchQuery = ""
+        searchExpanded = false
         showFilterSheet = false
+        expandedBottleId = null
     }
 
     val ratingsMap = remember(tastingHistory) {
@@ -150,9 +175,13 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         }
     }
 
-    LaunchedEffect(filterState, searchQuery) {
-        cellarListState.scrollToItem(0)
-    }
+    // Opening search or changing a filter keeps the list exactly where it is.
+    val isFilterActive = filterState.types.isNotEmpty() ||
+            filterState.country != null || filterState.region != null || filterState.subregion != null ||
+            filterState.priceRange != null || filterState.vintageRange != null || filterState.ratingRange != null ||
+            filterState.sortField != CellarSortField.DATE_ADDED || filterState.sortAscending ||
+            filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
+    val displayedBottleCount = remember(filteredInventory) { filteredInventory.sumOf { it.bottle.quantity } }
 
     val formattedDatesMap = remember(filteredInventory, dateFormat, parseFormat) {
         filteredInventory.associate { item ->
@@ -168,67 +197,64 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            val (totalBottles, uniqueWines, estimatedValue) = analytics
-            AnalyticsCard("Total Bottles", totalBottles.toString(), Modifier.weight(1f))
-            AnalyticsCard("Unique Wines", uniqueWines.toString(), Modifier.weight(1f))
-            AnalyticsCard("Est. Value", "$${"%.0f".format(estimatedValue)}", Modifier.weight(1f))
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search producer or name...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-                singleLine = true
-            )
-            Spacer(Modifier.width(8.dp))
-            IconButton(
-                onClick = { showFilterSheet = true },
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                val isFilterActive = filterState.types.isNotEmpty() ||
-                        filterState.country != null || filterState.region != null || filterState.subregion != null ||
-                        filterState.priceRange != null || filterState.vintageRange != null || filterState.ratingRange != null ||
-                        filterState.sortField != CellarSortField.DATE_ADDED || filterState.sortAscending ||
-                        filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
-                Icon(
-                    Icons.Default.Tune, 
-                    "Filter & Sort",
-                    tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        val displayedBottleCount = remember(filteredInventory) { filteredInventory.sumOf { it.bottle.quantity } }
-        Text(
-            text = "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)
-        )
-
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = cellarListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item(key = "cellar_search") {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { showStatsDialog = true },
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Icon(Icons.Default.QueryStats, "Stats")
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search", maxLines = 1) },
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            singleLine = true
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { showFilterSheet = true },
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Icon(
+                                Icons.Default.Tune,
+                                "Filter & Sort",
+                                tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Text(
+                        text = "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
+            }
+
             items(filteredInventory, key = { it.bottle.bottleId }) { item ->
                 val displayVintage = com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)
                 val ratingStr = ratingsMap[item.definition.definitionId to displayVintage]
                 val itemNotes = notesMap[item.definition.definitionId to displayVintage] ?: emptyList()
                 val formattedAddedDate = formattedDatesMap[item.bottle.bottleId]
+                val toggleExpanded = {
+                    expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId
+                }
 
                 WineCard(
                     title = "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)})",
@@ -239,13 +265,59 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                         listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
                     },
                     type = item.definition.type,
-                    metadata = "Qty: ${item.bottle.quantity}",
+                    metadata = "Stock: ${item.bottle.quantity}",
                     imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
                     imageLocalPath = item.imageAsset?.relativePath,
                     rating = ratingStr,
-                    expansionResetKey = cellarResetKey,
+                    isExpanded = expandedBottleId == item.bottle.bottleId,
+                    onExpandToggle = toggleExpanded,
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        viewModel.consumeBottle(
+                                            bottleId = item.bottle.bottleId,
+                                            rating = null,
+                                            notes = null,
+                                            rebuy = false,
+                                            consumptionDate = System.currentTimeMillis(),
+                                            quantity = 1
+                                        ) { eventId ->
+                                            onConsumed("Consumed 1 bottle of ${item.definition.name}", eventId)
+                                        }
+                                    },
+                                    enabled = item.bottle.quantity > 0
+                                ) {
+                                    Icon(Icons.Default.Remove, contentDescription = "Consume one bottle")
+                                }
+                                Text(
+                                    text = "Stock: ${item.bottle.quantity}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                IconButton(onClick = { viewModel.addBottleToStock(item.bottle.bottleId) }) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add one bottle")
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                IconButton(onClick = { onEditWine(item.bottle.bottleId) }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit wine")
+                                }
+                                IconButton(
+                                    onClick = {
+                                        onAddNote(item.definition.definitionId, item.bottle.vintage)
+                                    }
+                                ) {
+                                    Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
+                                }
+                            }
                             if (formattedAddedDate != null) {
                                 Text(
                                     text = "Added on: $formattedAddedDate",
@@ -270,6 +342,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                                     val noteDate = dateFormat.format(Date(noteWithDef.note.dateTasted))
                                     Text(
                                         text = "$noteDate: ${noteWithDef.note.notes ?: ""}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { onNoteClick(noteWithDef.note.noteId) }
+                                            .padding(vertical = 2.dp),
                                         style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
@@ -279,7 +355,7 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                             }
                         }
                     },
-                    onClick = { onWineClick(item.bottle.bottleId) }
+                    onClick = toggleExpanded
                 )
             }
             
@@ -293,6 +369,37 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                 }
             }
         }
+
+        if (showCompactControls || searchExpanded) {
+            FloatingSearchFilterControls(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                searchExpanded = searchExpanded,
+                onOpenSearch = { searchExpanded = true },
+                onCloseSearch = { searchExpanded = false },
+                onOpenFilters = { showFilterSheet = true },
+                filterActive = isFilterActive,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
+    }
+
+    if (showStatsDialog) {
+        val (totalBottles, uniqueWines, estimatedValue) = analytics
+        AlertDialog(
+            onDismissRequest = { showStatsDialog = false },
+            title = { Text("Cellar Stats") },
+            text = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AnalyticsCard("Total Bottles", totalBottles.toString(), Modifier.weight(1f))
+                    AnalyticsCard("Unique Wines", uniqueWines.toString(), Modifier.weight(1f))
+                    AnalyticsCard("Est. Value", "$${"%.0f".format(estimatedValue)}", Modifier.weight(1f))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showStatsDialog = false }) { Text("Close") }
+            }
+        )
     }
 
     if (showFilterSheet) {

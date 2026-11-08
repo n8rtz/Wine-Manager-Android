@@ -64,14 +64,6 @@ sources+=("$root/ocr/Tokens.kt" "$root/geom/Matrix3.kt" "$root/geom/CoordMapper.
     app/src/testDebug/java/com/yourapp/wine/textlab/PaddleCtcChecks.kt
     app/src/main/java/com/yourapp/wine/textlab/TextCropGeometry.kt
     app/src/testDebug/java/com/yourapp/wine/textlab/TextCropChecks.kt
-    app/src/debug/java/com/yourapp/wine/benchmark/CellarWineChoice.kt
-    app/src/testDebug/java/com/yourapp/wine/benchmark/CellarWineChoiceChecks.kt
-    app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkCsv.kt
-    app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkHistory.kt
-    app/src/testDebug/java/com/yourapp/wine/benchmark/BenchmarkCsvChecks.kt
-    app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkPlan.kt
-    app/src/debug/java/com/yourapp/wine/benchmark/BenchmarkScoring.kt
-    app/src/testDebug/java/com/yourapp/wine/benchmark/BenchmarkChecks.kt
     .ocr-harness/checks/GeneratedFixtureChecks.kt .ocr-harness/checks/PostProcessingReplay.kt .ocr-harness/checks/FormBatchReplay.kt .ocr-harness/checks/LayoutBatchReplay.kt .ocr-harness/checks/EvidenceBatchReplay.kt .ocr-harness/checks/BrandBatchReplay.kt .ocr-harness/checks/ArchitectureBatchReplay.kt)
 coroutines="$KOTLIN_HOME/lib/kotlinx-coroutines-core-jvm.jar"
 "$KOTLIN_HOME/bin/kotlinc" -classpath "$coroutines:$ANDROID_JAR" "${sources[@]}" -d .ocr-harness/checks/logic.jar

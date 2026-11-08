@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +26,7 @@ import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.WineCard
+import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import kotlinx.coroutines.launch
@@ -42,84 +42,86 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
     val rankingsPrices by viewModel.rankingsPrices.collectAsState()
     val searchQuery by viewModel.rankingsSearchQuery.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
-    val rankingsListState = rememberLazyListState()
-
-    // Back to the top whenever the ranked list changes (new sort, filter or search). The list is built
-    // asynchronously in the ViewModel, so this keys on the list itself: scrolling when the filter state
-    // changes would run before the re-sorted list arrives, and the keyed rows would keep the old row in view.
-    // The saved hash means coming back to this tab with the same list does not reset the scroll.
-    var lastRankedHash by rememberSaveable { mutableIntStateOf(rankedWines.hashCode()) }
-    LaunchedEffect(rankedWines) {
-        val hash = rankedWines.hashCode()
-        if (hash != lastRankedHash) {
-            lastRankedHash = hash
-            rankingsListState.scrollToItem(0)
-        }
+    var searchExpanded by remember { mutableStateOf(false) }
+    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
+    // screen where it was scrolled to instead of at the top.
+    val rankingsListState = remember { LazyListState() }
+    LaunchedEffect(Unit) { rankingsListState.scrollToItem(0) }
+    // The restored top search row scrolls away with the list; the compact controls appear once
+    // both the title and the search row are out of view, and stay visible while scrolling.
+    val showCompactControls by remember {
+        derivedStateOf { rankingsListState.firstVisibleItemIndex > 1 }
+    }
+    // Back at the top the full search row is visible again, so the pop-up is no longer needed.
+    LaunchedEffect(showCompactControls) {
+        if (!showCompactControls) searchExpanded = false
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
-        Text(
-            "Rankings",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Spacer(Modifier.height(8.dp))
+    // Opening search or changing a filter keeps the list exactly where it is.
+    val isFilterActive = rankingsFilterState.types.isNotEmpty() ||
+            rankingsFilterState.priceRange != null ||
+            rankingsFilterState.ratingRange != null ||
+            rankingsFilterState.country != null
 
-        // Search bar + filter button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = rankingsListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateRankingsSearchQuery(it) },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Search Producer, Name, or Vintage") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.updateRankingsSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
-                        }
-                    }
-                },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-            Spacer(Modifier.width(8.dp))
-            IconButton(
-                onClick = { showFilterSheet = true },
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                val isFilterActive = rankingsFilterState.types.isNotEmpty() ||
-                        rankingsFilterState.priceRange != null ||
-                        rankingsFilterState.ratingRange != null ||
-                        rankingsFilterState.country != null
-                Icon(
-                    Icons.Default.Tune,
-                    "Filter & Sort",
-                    tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+            item(key = "rankings_header") {
+                Text(
+                    "Rankings",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
-        }
-
-        if (rankedWines.isEmpty()) {
-            EmptyState(Icons.Default.EmojiEvents, "No Ranked Wines", "Rate a wine to see it here")
-        } else {
-            LazyColumn(
-                state = rankingsListState,
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            item(key = "rankings_search") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.updateRankingsSearchQuery(it) },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Search", maxLines = 1) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.updateRankingsSearchQuery("") }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { showFilterSheet = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            "Filter & Sort",
+                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            if (rankedWines.isEmpty()) {
+                item(key = "rankings_empty") {
+                    EmptyState(Icons.Default.EmojiEvents, "No Ranked Wines", "Rate a wine to see it here")
+                }
+            } else {
                 items(rankedWines, key = { it.item.note.noteId }) { displayItem ->
                     val item = displayItem.item
                     WineCard(
@@ -150,6 +152,19 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                     )
                 }
             }
+        }
+
+        if (showCompactControls || searchExpanded) {
+            FloatingSearchFilterControls(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { viewModel.updateRankingsSearchQuery(it) },
+                searchExpanded = searchExpanded,
+                onOpenSearch = { searchExpanded = true },
+                onCloseSearch = { searchExpanded = false },
+                onOpenFilters = { showFilterSheet = true },
+                filterActive = isFilterActive,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 

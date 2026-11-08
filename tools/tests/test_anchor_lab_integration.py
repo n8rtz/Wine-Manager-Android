@@ -5,8 +5,7 @@ ROOT=Path(__file__).resolve().parents[2]
 LAB=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
 class AnchorLabIntegrationTests(unittest.TestCase):
     def test_default_off_explicit_mode_and_no_second_baseline(self):
-        state=(LAB/'TextLabViewModel.kt').read_text();batch=(LAB/'TextLabBatch.kt').read_text()
-        self.assertIn('anchorHybrid:Boolean=false',state)
+        batch=(LAB/'TextLabBatch.kt').read_text()
         self.assertIn('anchorHybrid:Boolean=false',batch)
         self.assertIn('compareEvidence && anchorHybrid',batch)
         preview=(LAB/'TextLabEvidencePreview.kt').read_text()

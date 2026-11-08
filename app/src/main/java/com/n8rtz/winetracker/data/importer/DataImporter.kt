@@ -131,6 +131,22 @@ class DataImporter(
             "The backup contains a consumption event with invalid wine or quantity data."
         }
 
+        // W-057 Phase 2: optional preferences are validated BEFORE anything is written. A backup
+        // that omits them leaves the current values alone; an invalid value is a visible error,
+        // never a silently invented default (agent rule 15).
+        val restoredReviewers = source.reviewerNames?.let { names ->
+            require(names.all { it.isNotBlank() }) {
+                "The backup contains an empty reviewer name."
+            }
+            names.map { it.trim() }.distinctBy { it.lowercase(Locale.ROOT) }
+        }
+        val restoredBudget = source.imageStorageBudgetBytes?.let { bytes ->
+            require(bytes in BackupPreferences.MIN_BUDGET_BYTES..BackupPreferences.MAX_BUDGET_BYTES) {
+                "The backup contains an out-of-range offline image storage budget."
+            }
+            bytes
+        }
+
         // A pre-event backup can contain multiple archived rows for the same wine/vintage.
         // Convert each archived row into a history event instead of violating the inventory
         // uniqueness index or dropping additional consumption records.
@@ -164,7 +180,8 @@ class DataImporter(
             }
             oldNote.copy(
                 vintage = normalizeVintage(oldNote.vintage?.takeIf { it.isNotBlank() } ?: directBottleVintage),
-                valueScore = oldNote.valueScore?.takeIf { it in 1..10 }
+                valueScore = oldNote.valueScore?.takeIf { it in 1..10 },
+                sensoryData = com.n8rtz.winetracker.data.local.normalizeSensoryData(oldNote.sensoryData)
             )
         }
         val restoredEvents = (eventsFromBackup + legacyArchiveEvents).map { event ->
@@ -192,6 +209,12 @@ class DataImporter(
         }
         // Backups carry provenance and source URLs, not app-private bytes or paths.
         runCatching { WineImageFileStore(context).clearStoredImages() }
+        if (restoredReviewers != null) {
+            BackupPreferences.writeReviewers(context, restoredReviewers)
+        }
+        if (restoredBudget != null) {
+            BackupPreferences.writeBudgetBytes(context, restoredBudget)
+        }
     }
 
     private fun isOpenFoodFactsUrl(value: String): Boolean = runCatching {

@@ -78,7 +78,24 @@ Key project documents (all in `_refs/`): `BACKLOG.md` (open work), `ARCHIVE.md` 
     - The packaged-asset byte caps in the loaders (`ProducerCatalogDatabaseLookup.MAX_DATABASE_BYTES`, `ProducerGazetteer.load`) are self-imposed sanity bounds, NOT Android/SQLite limits. Raise them deliberately, in step with each other, when a catalog legitimately grows. The practical constraints are APK size, ~2× on-device storage (compressed asset + cache copy), and cold-install copy+hash time — the benchmark loader's per-contender time budget (`checkBudget`) is the binding one, so a much larger catalog needs its install decoupled from the per-photo budget, not just a higher cap.
     - **Rationale:** The Lab expanded producer index (X-Wines/TTB/OSM) was packaged for Lab v4 without any way for the owner to inspect it; the owner required lookup-page parity for this and all future databases (2026-10-26).
 
-18. **MINIMAL UI LABELS (OWNER RULE, 2026-11-07)**
+18. **NO UNREQUESTED IN-APP TEXT (OWNER RULE, 2026-11-05)**
+    - Never add explanatory paragraphs, helper text, captions, descriptions, "how it works" notes or status sentences to the app unless the owner explicitly asks for that exact text. A layout, formatting or refactor task is **not** permission to write new prose.
+    - Keep UI strings to short labels, values and action names. Do not expand an existing label into a sentence, and do not add a second line of explanation.
+    - Apply this to edits of existing screens too: do not introduce a longer reworded version of copy that was already there. Prefer removing prose over adding it.
+    - Required safety warnings, confirmation dialogs and error messages are the exception, but keep them short.
+    - If behaviour genuinely needs explaining, suggest it under rule 6 (the Hold Rule) and wait for permission.
+    - **Rationale:** the Destinations intro paragraph, schedule notes and footer prose added to Backup & Restore during a formatting fix were called unacceptable by the owner (screenshot, 2026-11-05). Long in-app text is not acceptable by default.
+
+19. **CONSERVE GITHUB-HOSTED COMPUTE AND ACTIONS STORAGE (OWNER RULE, 2026-11-06)**
+    - When the owner's GitHub account is connected, treat its included **$4/month allowance for compute minutes and Actions storage** as a limited monthly budget that refreshes each month. Use it strategically; do not spend it on unnecessary tasks or redundant verifications.
+    - Prefer local/offline checks when they are sufficient. Avoid unnecessary hosted builds, workflow dispatches or reruns, broad CI matrices, benchmarks, and artifact/cache uploads. Do not skip a verification that is genuinely required; instead, determine whether it needs hosted resources.
+    - Before any action that is expected to consume this allowance (including GitHub-hosted workflow runs, cloud compute, or Actions artifact/cache storage), first explain in a response what resource would be used, why it is necessary, and whether a lower-cost alternative exists. Then ask the owner to approve or deny it, and wait for explicit approval before starting. Routine GitHub reads or git operations that do not consume the allowance do not require this approval.
+
+20. **CODE ON THE GO: DISCARD CHANGES BEFORE CHECKOUT (OWNER TIP, 2026-11-06)**
+    - When branch checkout is blocked by local changes and Code on the Go's Git pane has no discard/stash action, use the left-pane menu → **Close Project** (second item from the bottom, above **Help**) → **Discard changes**. Reopen the project, then pull from GitHub.
+    - This permanently discards uncommitted edits. Use this route only when the owner has decided those local changes can be discarded; do not commit them merely to get past the checkout conflict.
+
+21. **MINIMAL UI LABELS (OWNER RULE, 2026-11-07)**
     - Every user-visible button, tab, menu item and heading must use the shortest label that is still unambiguous — one to three words. Drop nouns the surrounding context already supplies ("Scan label", not "Scan label with camera"; "Choose label", not "Choose label photo").
-    - When adding or touching any UI text, shorten any overlong label in the same surface; never add a new verbose label the owner will have to rename later. The standard is recorded in `_refs/ARCHIVE.md` W-062.
+    - When adding or touching any UI text, shorten any overlong label in the same surface; never add a new verbose label the owner will have to rename later. The standard is recorded in `_refs/ARCHIVE.md` W-064.
     - **Rationale:** The owner repeatedly had to rename verbose agent-written labels after the fact; minimal labels are now the default (2026-11-07).

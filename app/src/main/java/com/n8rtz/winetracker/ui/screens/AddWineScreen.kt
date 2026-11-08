@@ -45,6 +45,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.data.local.HsvColor
+import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.AddWineDraft
 import com.n8rtz.winetracker.scanner.AddWineDraftStore
@@ -72,9 +74,9 @@ fun AddWineScreen(
     onWineAdded: () -> Unit,
     onClose: () -> Unit
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
@@ -145,6 +147,7 @@ fun AddWineScreen(
     var price by remember { mutableStateOf(initialDraft.price) }
     var drinkingWindowStart by remember { mutableStateOf(initialDraft.windowStart) }
     var drinkingWindowEnd by remember { mutableStateOf(initialDraft.windowEnd) }
+    var defaultColorHsv by remember { mutableStateOf<HsvColor?>(null) }
 
     var selectedCountry by remember { mutableStateOf(initialDraft.country) }
     var selectedRegion by remember { mutableStateOf(initialDraft.region) }
@@ -372,6 +375,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         producerSearchExpanded = false
                                     }
                                 )
@@ -433,6 +437,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         nameSearchExpanded = false
                                     }
                                 )
@@ -675,6 +680,10 @@ fun AddWineScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                DefaultColorField(
+                    color = defaultColorHsv,
+                    onColorChange = { defaultColorHsv = it }
+                )
                 saveError?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 Button(
                     enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !labelScanState.isBusy && !saving,
@@ -693,6 +702,7 @@ fun AddWineScreen(
                             price = price.toDoubleOrNull(),
                             drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
                             drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                            defaultColorHsv = defaultColorHsv,
                             onComplete = { success ->
                                 saving = false
                                 if (success) {

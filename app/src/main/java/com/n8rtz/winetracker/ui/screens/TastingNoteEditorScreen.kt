@@ -39,6 +39,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -61,16 +64,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.n8rtz.winetracker.aromawheel.AromaSelection
+import com.n8rtz.winetracker.data.local.AromaObservation
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingNote
+import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
+import com.n8rtz.winetracker.data.local.normalizeSensoryData
+import com.n8rtz.winetracker.data.local.validateForSave
+import com.n8rtz.winetracker.data.local.withDerivedAromas
 import com.n8rtz.winetracker.data.repository.WineRepository
-import com.n8rtz.winetracker.ui.components.AromaWheelDialog
-import com.n8rtz.winetracker.ui.components.AromaWheelLauncherCard
+import com.n8rtz.winetracker.ui.components.CommonFaultsFields
+import com.n8rtz.winetracker.ui.components.LegacyAromaPhaseSheet
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
-import com.n8rtz.winetracker.ui.components.SensoryEvaluationFields
+import com.n8rtz.winetracker.ui.components.PhaseAromaWheelDialog
+import com.n8rtz.winetracker.ui.components.SectionedSensoryFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
 import com.n8rtz.winetracker.ui.components.datePickerMillisToTimestamp
 import com.n8rtz.winetracker.ui.components.timestampToDatePickerMillis
@@ -125,6 +133,8 @@ fun TastingNoteEditorScreen(
     var sensoryData by remember { mutableStateOf(SensoryData()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showAromaWheel by remember { mutableStateOf(false) }
+    var activePhase by remember { mutableStateOf(TastingPhase.AROMA_BEFORE_TASTING) }
+    var showLegacyPhaseSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
@@ -146,11 +156,10 @@ fun TastingNoteEditorScreen(
                 valueScore = note.valueScore?.coerceIn(1, 10) ?: 5
                 valueScoreSelected = note.valueScore != null
                 manualPrice = note.price?.toString().orEmpty()
-                // Normalize the stored selection so retired/unknown ids never render as chips.
-                val loadedSensory = note.sensoryData ?: SensoryData()
-                sensoryData = loadedSensory.copy(
-                    aromas = AromaSelection.normalize(loadedSensory.aromas).ids
-                )
+                val loadedSensory = normalizeSensoryData(note.sensoryData ?: SensoryData())
+                sensoryData = loadedSensory
+                showLegacyPhaseSheet = loadedSensory.aromaObservations.isEmpty() && loadedSensory.aromas.isNotEmpty()
+                activePhase = TastingPhase.AROMA_BEFORE_TASTING
             }
             loaded = true
         }
@@ -263,7 +272,9 @@ fun TastingNoteEditorScreen(
         TastingNoteEntryMode.MANUAL -> manualMaker.isNotBlank() &&
             manualWineName.isNotBlank() && manualVintage.isNotBlank()
     }
-    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected && manualPriceIsValid
+    val legacyAromasUnresolved = sensoryData.aromaObservations.isEmpty() && sensoryData.aromas.isNotEmpty()
+    val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected && manualPriceIsValid &&
+        !legacyAromasUnresolved && !showLegacyPhaseSheet && validateForSave(sensoryData).isEmpty()
 
     if (!loaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -281,7 +292,11 @@ fun TastingNoteEditorScreen(
         return
     }
 
+    // Keep the title, but let the header scroll away with the content.
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             CenterAlignedTopAppBar(
@@ -298,7 +313,8 @@ fun TastingNoteEditorScreen(
                         }
                     }
                 },
-                windowInsets = WindowInsets(0.dp)
+                windowInsets = WindowInsets(0.dp),
+                scrollBehavior = scrollBehavior
             )
         }
     ) { padding ->
@@ -388,7 +404,7 @@ fun TastingNoteEditorScreen(
                             wineMenuExpanded = true
                         },
                         label = { Text("Wine") },
-                        placeholder = { Text("Search producer or wine") },
+                        placeholder = { Text("Search", maxLines = 1) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -589,19 +605,16 @@ fun TastingNoteEditorScreen(
                 )
             }
 
-            AromaWheelLauncherCard(
-                selectedIds = sensoryData.aromas,
-                onClick = { showAromaWheel = true },
-                onReorder = { ordered ->
-                    sensoryData = sensoryData.copy(aromas = ordered)
-                },
-                onRemove = { id ->
-                    sensoryData = sensoryData.copy(aromas = sensoryData.aromas - id)
-                },
-                modifier = Modifier.fillMaxWidth()
+            SectionedSensoryFields(
+                data = sensoryData,
+                definitionColor = selectedDefinition?.defaultColorHsv,
+                legacyAromasUnresolved = legacyAromasUnresolved,
+                onDataChange = { sensoryData = it },
+                onOpenWheel = { showAromaWheel = true },
+                onAssignLegacy = { showLegacyPhaseSheet = true }
             )
 
-            SensoryEvaluationFields(
+            CommonFaultsFields(
                 data = sensoryData,
                 onChange = { sensoryData = it }
             )
@@ -770,7 +783,9 @@ fun TastingNoteEditorScreen(
                         },
                         initialRating = existingNote?.initialRating,
                         bottleId = if (entryMode == TastingNoteEntryMode.CELLAR) existingNote?.bottleId else null,
-                        sensoryData = sensoryData.copy(overallScore = rating.roundToInt().coerceIn(50, 100)),
+                        sensoryData = withDerivedAromas(
+                            sensoryData.copy(overallScore = rating.roundToInt().coerceIn(50, 100))
+                        ),
                         importKey = existingNote?.importKey
                     )
                     if (entryMode == TastingNoteEntryMode.CELLAR) {
@@ -820,13 +835,41 @@ fun TastingNoteEditorScreen(
     }
 
     if (showAromaWheel) {
-        AromaWheelDialog(
-            initiallySelectedIds = sensoryData.aromas,
-            onConfirm = { selected ->
-                sensoryData = sensoryData.copy(aromas = selected)
+        PhaseAromaWheelDialog(
+            initialObservations = sensoryData.aromaObservations,
+            initialPhase = activePhase,
+            onConfirm = { phase, observations ->
+                activePhase = phase
+                sensoryData = withDerivedAromas(sensoryData.copy(aromaObservations = observations))
                 showAromaWheel = false
             },
             onDismiss = { showAromaWheel = false }
+        )
+    }
+
+    if (showLegacyPhaseSheet) {
+        LegacyAromaPhaseSheet(
+            aromaIds = sensoryData.aromas,
+            onApply = { assignments, removedIds ->
+                val remainingIds = sensoryData.aromas.filterNot { it in removedIds }
+                val observations = remainingIds.flatMap { id ->
+                    TastingPhase.values()
+                        .filter { it in assignments.getValue(id) }
+                        .map { phase -> id to phase }
+                }.mapIndexed { index, (id, phase) ->
+                    AromaObservation(
+                        descriptorId = id,
+                        phase = phase,
+                        intensity = null,
+                        displayOrder = index
+                    )
+                }
+                sensoryData = withDerivedAromas(
+                    sensoryData.copy(aromas = remainingIds, aromaObservations = observations)
+                )
+                showLegacyPhaseSheet = false
+            },
+            onDismiss = { showLegacyPhaseSheet = false }
         )
     }
 

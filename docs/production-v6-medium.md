@@ -25,5 +25,5 @@ in service initialization. Wine extraction/knowledge/field-validation logic rema
   it now includes model assets. New release sizes have not been measured.
 
 The alternative-model experiment has concluded. Only ML Kit and v6 Medium remain.
-See [Text Lab](text-lab-candidates.md) and the [post-processing review](ocr-postprocessing-review.md).
+See the [post-processing review](ocr-postprocessing-review.md).
 The production shared 15-second deadline, coordinate mappings and confidence gates are unchanged.

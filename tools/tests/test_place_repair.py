@@ -16,7 +16,6 @@ EVIDENCE = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceE
 REPAIR = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt'
 BATCH = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabBatch.kt'
 RUNNER = ROOT / 'app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt'
-LAB_SCREEN = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt'
 
 
 def normalize(text):
@@ -268,7 +267,6 @@ class PlaceRepairWiringTests(unittest.TestCase):
                          'repairPlaces=REPAIR_PLACES_IN_BENCHMARK'):
             self.assertTrue(fragment in runner, fragment)
         self.assertTrue('"place_repair_enabled" to repairPlaces.toString()' in BATCH.read_text())
-        self.assertTrue('Repair appellations with bounded spelling (experimental)' in LAB_SCREEN.read_text())
         self.assertTrue('Lab-only' in REPAIR.read_text())
 
 

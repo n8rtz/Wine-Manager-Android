@@ -14,7 +14,6 @@ SPATIAL = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPrevi
 EXTRACTION = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabWineExtraction.kt'
 BATCH = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabBatch.kt'
 RUNNER = ROOT / 'app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt'
-LAB_SCREEN = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt'
 FUNNEL = ROOT / 'app/src/main/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt'
 
 
@@ -58,8 +57,7 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertIn('"independent producer and wine OCR agree with primary LWIN relationship; confirm manually"',
                       LINKED.read_text())
         self.assertIn('"resolver_single_reading_enabled" to resolverSingleReading.toString()', BATCH.read_text())
-        self.assertIn('Accept one engine reading for producer and linked wine (experimental)', LAB_SCREEN.read_text())
-        self.assertIn('Lab v5 only; Prod v4.0 keeps the two-engine rule.', LAB_SCREEN.read_text())
+
         # The table must not keep claiming a two-engine quorum the lab run may not have used.
         funnel = FUNNEL.read_text()
         self.assertIn('"Independent-support agreement"', funnel)

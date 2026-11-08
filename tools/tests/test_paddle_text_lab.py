@@ -65,15 +65,6 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('error.message.orEmpty().take(2000)',runner)
         self.assertNotIn('Check model assets or use a shorter single-line crop',runner)
 
-    def test_comparison_preserves_partial_readings(self):
-        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        vm=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
-        self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
-        self.assertIn('batch.finishPending(',vm)
-        self.assertIn('csv=batch.save(csvFolder)',vm)
-        self.assertNotIn('BenchmarkScoring',runner)
-        self.assertNotIn('FieldExtractor',runner)
-
     def test_detector_is_genuine_and_build_time_only(self):
         meta=json.loads((DATA/'production-models.json').read_text())
         det=meta['v6_models'][0]
@@ -104,13 +95,6 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('PaddleDetectionGeometry.MAX_LINES',decoder)
         self.assertIn('finally { binary.release()',decoder)
 
-    def test_incremental_reports_survive_timeout(self):
-        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        self.assertIn('journal.add(spec.id,"candidate_summary",status',runner)
-        self.assertIn('status=if(done==null) "timed_out"',runner)
-        state=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabViewModel.kt').read_text()
-        self.assertIn('detectLines:Boolean=true',state)
-
     def test_v6_dictionary_and_profiles(self):
         import subprocess
         raw=(MAIN_DATA/'ppocrv6_dict.utf8').read_bytes()
@@ -129,30 +113,6 @@ class PaddleTextLabTests(unittest.TestCase):
             self.assertIn(model['url'],gradle)
         self.assertEqual(manifest['asset_budget_enforced'],False)
 
-    def test_sessions_are_released_and_all_candidates_export_together(self):
-        runner=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/TextLabRunner.kt').read_text()
-        pipeline=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
-        ui=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt').read_text()
-        self.assertIn('for(spec in PaddleCandidates.selected(journal.selected))',runner)
-        self.assertIn('PaddleTextRecognizer.release(gate)',runner)
-        self.assertIn('withContext(NonCancellable) { PaddleTextDetector.release(gate) }',pipeline)
-        self.assertIn('TextLabChoices.all.forEach',ui)
-        self.assertIn('ActivityResultContracts.CreateDocument("text/csv")',ui)
-        self.assertNotIn('80*1024*1024',runner)
-
-    def test_lab_60_seconds_and_production_15_seconds(self):
-        root=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
-        journal=(root/'TextLabJournal.kt').read_text()
-        runner=(root/'TextLabRunner.kt').read_text()
-        ui=(root/'OcrTextLabActivity.kt').read_text()
-        self.assertIn('const val OCR_MS = 60_000L',journal)
-        self.assertIn('"candidate_budget_ms" to TextLabBudgets.OCR_MS.toString()',journal)
-        self.assertIn('"mlkit_budget_ms" to TextLabBudgets.OCR_MS.toString()',journal)
-        self.assertIn('ScanDeadline(mlStarted+TextLabBudgets.OCR_MS)',runner)
-        self.assertIn('ScanDeadline(caseStart+TextLabBudgets.OCR_MS)',runner)
-        self.assertIn('${TextLabBudgets.OCR_MS / 1000}',ui)
-        self.assertIn('const val BUDGET_MS = 15_000L',(ROOT/'app/src/main/java/com/yourapp/wine/ocr/ScanDeadline.kt').read_text())
-
     def test_probability_diagnostics_precede_db_failure(self):
         engine=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleTextDetector.kt').read_text()
         self.assertLess(engine.index('"diagnostic_stage" to "detector_output"'),engine.index('PaddleProbabilityMap.validateAndClamp'))
@@ -160,24 +120,6 @@ class PaddleTextLabTests(unittest.TestCase):
         self.assertIn('buffer.remaining()==values.size',engine)
         pipeline=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleLabelPipeline.kt').read_text()
         self.assertIn('values["diagnostic_stage"] ?: "detection"',pipeline)
-
-    def test_multi_image_picker_and_per_image_metadata(self):
-        root=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
-        ui=(root/'OcrTextLabActivity.kt').read_text()
-        vm=(root/'TextLabViewModel.kt').read_text()
-        batch=(root/'TextLabBatch.kt').read_text()
-        self.assertIn('ActivityResultContracts.OpenMultipleDocuments()',ui)
-        self.assertIn('Run all ${state.images.size} images',ui)
-        self.assertIn('for((index,image) in snapshot.images.withIndex())',vm)
-        self.assertIn('val journal=batch.journals[index]',vm)
-        self.assertIn('requireNotNull(image.selection)',vm)
-        self.assertIn('batch.save(csvFolder)',vm)
-        self.assertIn('imageStatus="import_failed"',vm)
-        self.assertIn('imageStatus="cancelled"',vm)
-        self.assertIn('journal.metadata+it',batch)
-        for field in ('batch_id','image_id','image_name','image_index','image_count'):
-            self.assertIn('"'+field+'"',batch)
-        self.assertNotIn('async(',vm)
 
     def test_only_production_model_profiles_and_recipes_remain(self):
         config=(ROOT/'app/src/main/java/com/yourapp/wine/textlab/PaddleCandidates.kt').read_text()

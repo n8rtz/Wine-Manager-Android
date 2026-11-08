@@ -574,9 +574,9 @@ The `BottomNavigationBar` must have 4 distinct tabs. Do not combine History and 
 
 </details>
 
-### W-062 — Minimal UI Labels
+### W-064 — Minimal UI Labels
 **Status:** Implemented 2026-11-07 (Add Wine scan actions renamed; standard recorded here).
-**Notes:** Buttons, tabs, menu items and headings use the shortest unambiguous label — one to three words. Nouns already supplied by context are dropped: "Scan label" (was "Scan label with camera"), "Choose label" (was "Choose label photo"). Applies to all new UI text; overlong labels found while touching a surface are shortened in the same change. Enforced by agent operating rule 18.
+**Notes:** Buttons, tabs, menu items and headings use the shortest unambiguous label — one to three words. Nouns already supplied by context are dropped: "Scan label" (was "Scan label with camera"), "Choose label" (was "Choose label photo"). Applies to all new UI text; overlong labels found while touching a surface are shortened in the same change. Enforced by agent operating rule 21.
 
 ---
 
