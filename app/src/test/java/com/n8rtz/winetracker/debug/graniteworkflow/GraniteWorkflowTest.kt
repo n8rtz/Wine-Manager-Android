@@ -30,7 +30,7 @@ class GraniteWorkflowTest {
     fun screenOpensWithoutModelFilesAndShowsFriendlyImportPrompt() {
         composeRule.onNodeWithText("Dual OCR + Granite 4.2 4B Workflow").assertIsDisplayed()
         composeRule.onNodeWithTag("import_models_prompt_card").assertIsDisplayed()
-        composeRule.onNodeWithText("Import Model Files to Run").assertIsDisplayed()
+        composeRule.onNodeWithText("Import Model Files to Run", substring = true).assertIsDisplayed()
     }
 
     @Test

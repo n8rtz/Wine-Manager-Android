@@ -215,6 +215,19 @@ object GraniteModelStorage {
         }
     }
 
+    /**
+     * Removes any imported Granite `.gguf` file from `models/granite`.
+     * Shared PP-OCRv6 and ML Kit models are preserved.
+     */
+    fun clearGraniteModelCache(context: Context): Result<Unit> = runCatching {
+        val dir = graniteDir(context)
+        dir.listFiles()?.forEach { file ->
+            if (file.isFile && (file.name.endsWith(".gguf", ignoreCase = true) || file.name.endsWith(".tmp"))) {
+                file.delete()
+            }
+        }
+    }
+
     private fun queryDisplayName(context: Context, uri: Uri): String? = runCatching {
         val cursor: Cursor? = context.contentResolver.query(
             uri,

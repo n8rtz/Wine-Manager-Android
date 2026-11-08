@@ -107,6 +107,52 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         _uiState.update { it.copy(showPpOcrBoxes = show) }
     }
 
+    fun resetModelCache() {
+        val app = getApplication<Application>()
+        viewModelScope.launch(Dispatchers.IO) {
+            GraniteModelStorage.clearGraniteModelCache(app)
+            val status = GraniteModelStorage.inspectModels(app)
+            _uiState.update {
+                it.copy(
+                    modelsStatus = status,
+                    statusBannerMessage = "Cleared imported Granite GGUF cache (shared PP-OCRv6 & ML Kit preserved).",
+                    errorBannerMessage = null
+                )
+            }
+        }
+    }
+
+    fun stopWorkflow() {
+        activeRunJob?.cancel()
+        activeRunJob = null
+        _uiState.update {
+            it.copy(
+                isRunning = false,
+                activeStageMessage = "",
+                statusBannerMessage = "Stopped."
+            )
+        }
+    }
+
+    fun clearSelectedImage() {
+        activeRunJob?.cancel()
+        activeRunJob = null
+        currentSourceUri = null
+        currentSourceFile = null
+        currentMemoryBitmap = null
+        _uiState.update {
+            it.copy(
+                imageSourceLabel = "No image selected",
+                previewBitmap = null,
+                lastResult = null,
+                isRunning = false,
+                activeStageMessage = "",
+                statusBannerMessage = "Removed selected image.",
+                errorBannerMessage = null
+            )
+        }
+    }
+
     /**
      * Imports `granite-4.2-3b-Q4_K_M.gguf` selected via `ActivityResultContracts.OpenDocument`.
      */

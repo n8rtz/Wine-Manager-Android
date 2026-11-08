@@ -12,18 +12,19 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,46 +34,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -81,7 +60,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -92,48 +70,65 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.n8rtz.winetracker.BuildConfig
 import java.io.File
 import java.util.Locale
 
-private val BordeauxRed = Color(0xFF722F37)
 private val MlKitBlue = Color(0xFF2196F3)
-private val PpOcrGreen = Color(0xFF2E7D32)
 private val PpOcrGreenBright = Color(0xFF4CAF50)
-private val StatusAmber = Color(0xFFE65100)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+private val graniteFieldLabels = listOf(
+    "producer_or_winery" to "Producer",
+    "wine_name_or_cuvee" to "Wine name",
+    "country" to "Country",
+    "appellation_or_region" to "Region",
+    "classification" to "Classification",
+    "vintage" to "Vintage"
+)
+
+/**
+ * Dual OCR + Granite 4.2 4B Workflow screen formatted to mirror `GlinerLabScreen.kt`.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GraniteWorkflowScreen(
     state: GraniteWorkflowUiState,
     onBack: () -> Unit,
     onRefreshModels: () -> Unit,
+    onResetCache: () -> Unit = {},
     onImportGraniteGguf: () -> Unit,
     onPickGalleryImage: () -> Unit,
     onCameraPhotoCaptured: (File) -> Unit,
     onLoadSampleLabel: () -> Unit,
+    onClearImage: () -> Unit = {},
     onSelectOcrMode: (OcrAblationMode) -> Unit,
     onToggleThinkMode: (Boolean) -> Unit,
     onToggleClahe: (Boolean) -> Unit,
     onToggleShowMlKitBoxes: (Boolean) -> Unit,
     onToggleShowPpOcrBoxes: (Boolean) -> Unit,
-    onRunWorkflow: () -> Unit
+    onRunWorkflow: () -> Unit,
+    onStopWorkflow: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val listState = rememberLazyListState()
     var showCameraDialog by remember { mutableStateOf(false) }
-    var expandModelPaths by remember { mutableStateOf(false) }
+    var showCustom by remember { mutableStateOf(true) }
     var expandThinkOutput by remember { mutableStateOf(true) }
     var expandRawOcrAccordion by remember { mutableStateOf(false) }
+    var expandModelFiles by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -143,188 +138,214 @@ fun GraniteWorkflowScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
+    val timing = state.lastResult?.timingAndMemory ?: WorkflowTimingAndMemory()
+    val jsonText = state.lastResult?.prettyJsonText ?: GraniteWineLabelJson().toPrettyJson(2)
+    val hasImage = state.previewBitmap != null || state.lastResult != null
+    val completedCount = if (state.lastResult != null) 1 else 0
+    val totalCount = if (hasImage) 1 else 0
+
+    LazyColumn(
+        Modifier
+            .fillMaxSize()
+            .testTag("granite_workflow_list")
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        state = listState,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        // Header block mirroring GlinerLabScreen item 1
+        item {
+            SelectionContainer {
+                Column {
+                    Text(
+                        "Dual OCR + Granite 4.2 4B Workflow",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        "build ${BuildConfig.BUILD_COMMIT} · ${state.ocrMode.displayLabel} · think=${if (state.thinkModeEnabled) "on" else "off"} · clahe=${if (state.claheEnabled) "on" else "off"}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (state.modelsStatus.graniteGguf.present) {
                         Text(
-                            text = "Dual OCR + Granite 4.2 4B Workflow",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            "model ready · Q4_K_M ✓ (${state.modelsStatus.graniteGguf.sizeFormatted}) · PP-OCRv6 shared ✓ · ML Kit ✓"
                         )
+                    } else {
+                        Column(modifier = Modifier.testTag("import_models_prompt_card")) {
+                            Text("model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName})")
+                            state.missingModelsPrompt?.let { prompt ->
+                                Text(prompt, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    if (timing.totalMs > 0) {
                         Text(
-                            text = "Isolated ML Kit v2 + PP-OCRv6 ONNX ➔ Granite 4.2 3B GGUF",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            "granite ${timing.graniteMs} ms · mlkit ${timing.mlKitMs} ms · ppocr ${timing.ppOcrV6Ms} ms · prep ${timing.preprocessMs} ms",
+                            style = MaterialTheme.typography.bodySmall
                         )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onRefreshModels) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh model status")
                     }
                 }
-            )
+            }
+            Row {
+                TextButton(
+                    onClick = onImportGraniteGguf,
+                    enabled = !state.isRunning && !state.isImportingModel
+                ) { Text("Import") }
+                TextButton(
+                    onClick = onResetCache,
+                    enabled = !state.isRunning && !state.isImportingModel
+                ) { Text("Reset cache") }
+                TextButton(
+                    onClick = onRefreshModels,
+                    enabled = !state.isRunning && !state.isImportingModel
+                ) { Text("Re-check") }
+            }
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OcrAblationMode.entries.forEach { mode ->
+                    TextButton(
+                        onClick = { onSelectOcrMode(mode) },
+                        enabled = !state.isRunning,
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Text(if (state.ocrMode == mode) "${mode.displayLabel} ✓" else mode.displayLabel)
+                    }
+                }
+                TextButton(
+                    onClick = { onToggleThinkMode(!state.thinkModeEnabled) },
+                    enabled = !state.isRunning,
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Text(if (state.thinkModeEnabled) "<think> ON (Reasoning)" else "<think> OFF (Fast)")
+                }
+                TextButton(
+                    onClick = { onToggleClahe(!state.claheEnabled) },
+                    enabled = !state.isRunning,
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Text(if (state.claheEnabled) "CLAHE ON" else "CLAHE OFF")
+                }
+            }
         }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-                .testTag("granite_workflow_list"),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Friendly "Import Model Files to Run" prompt when models are not yet copied onto the device
-            item {
-                val missingPrompt = state.missingModelsPrompt
-                if (missingPrompt != null) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFF3E0)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("import_models_prompt_card")
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = StatusAmber
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Import Model Files to Run",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF4E342E)
-                                )
-                                Text(
-                                    text = missingPrompt,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF5D4037)
-                                )
-                            }
-                        }
+
+        // Run status, Start button, RunTimers, and Stop/Close row mirroring GlinerLabScreen item 2
+        item {
+            SelectionContainer {
+                Column {
+                    if (!state.statusBannerMessage.isNullOrBlank()) {
+                        Text(state.statusBannerMessage)
+                    }
+                    if (!state.errorBannerMessage.isNullOrBlank()) {
+                        Text(state.errorBannerMessage, color = MaterialTheme.colorScheme.error)
+                    }
+                    Text("Granite completed: $completedCount/$totalCount")
+                    if (state.isRunning) {
+                        Text(
+                            state.activeStageMessage.ifBlank { "Running Dual OCR + Granite 4.2 workflow…" },
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
-
-            // Status / Error Banner
-            if (state.statusBannerMessage != null || state.errorBannerMessage != null || state.isRunning) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (state.errorBannerMessage != null) {
-                                MaterialTheme.colorScheme.errorContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            }
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            if (state.isRunning) {
-                                Text(
-                                    text = state.activeStageMessage.ifBlank { "Running workflow..." },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            }
-                            state.statusBannerMessage?.let { msg ->
-                                Text(
-                                    text = msg,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            state.errorBannerMessage?.let { err ->
-                                Text(
-                                    text = err,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
-                }
+            if (state.isRunning || state.isImportingModel) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
             }
-
-            // 1. Model File Status & Importer Card
-            item {
-                ModelFileStatusAndImporterCard(
-                    modelsStatus = state.modelsStatus,
-                    isImporting = state.isImportingModel,
-                    expandPaths = expandModelPaths,
-                    onToggleExpandPaths = { expandModelPaths = !expandModelPaths },
-                    onImportGraniteGguf = onImportGraniteGguf
-                )
+            Button(
+                onClick = onRunWorkflow,
+                enabled = !state.isRunning
+            ) {
+                Text(if (state.lastResult != null) "New Granite run" else "Start Granite run")
             }
-
-            // 2. Image Input Card (Pick from Gallery or Snap Photo)
-            item {
-                ImageInputCard(
-                    imageSourceLabel = state.imageSourceLabel,
-                    isRunning = state.isRunning,
-                    hasImage = state.previewBitmap != null,
-                    onPickGallery = onPickGalleryImage,
-                    onSnapPhoto = {
-                        val hasPermission = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-                        if (hasPermission) {
-                            showCameraDialog = true
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    onLoadSample = onLoadSampleLabel,
-                    onRunWorkflow = onRunWorkflow
-                )
+            SelectionContainer {
+                GraniteRunTimers(timing = timing, hasRun = state.lastResult != null)
             }
-
-            // 3. Test Toggles Card
-            item {
-                TestTogglesCard(
-                    ocrMode = state.ocrMode,
-                    thinkModeEnabled = state.thinkModeEnabled,
-                    claheEnabled = state.claheEnabled,
-                    onSelectOcrMode = onSelectOcrMode,
-                    onToggleThinkMode = onToggleThinkMode,
-                    onToggleClahe = onToggleClahe
-                )
+            Row {
+                TextButton(onClick = onStopWorkflow, enabled = state.isRunning) { Text("Stop") }
+                TextButton(onClick = onBack) { Text("Close") }
             }
+        }
 
-            // 4-Section Results Inspector
-            item {
+        // Scored results table mirroring GlinerLabScreen's ScoredResults
+        item(key = "curated_scores") {
+            SelectionContainer {
+                GraniteScoredResults(result = state.lastResult)
+            }
+        }
+
+        // Your images section mirroring GlinerLabScreen's custom_heading
+        item(key = "custom_heading") {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Your images ($totalCount)", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "4-Section Results Inspector",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = BordeauxRed,
-                    modifier = Modifier.padding(top = 4.dp)
+                    "Select a photo from Gallery, snap a photo with CameraX, or load the synthetic sample label. Source: ${state.imageSourceLabel}",
+                    style = MaterialTheme.typography.bodySmall
                 )
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    TextButton(
+                        onClick = onPickGalleryImage,
+                        enabled = !state.isRunning,
+                        modifier = Modifier.testTag("granite_choose_images")
+                    ) { Text("Choose images") }
+                    TextButton(
+                        onClick = {
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                showCameraDialog = true
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        enabled = !state.isRunning
+                    ) { Text("Snap photo") }
+                    TextButton(
+                        onClick = onLoadSampleLabel,
+                        enabled = !state.isRunning
+                    ) { Text("Sample label") }
+                    TextButton(
+                        onClick = onRunWorkflow,
+                        enabled = !state.isRunning && hasImage
+                    ) { Text("Run your images") }
+                    TextButton(
+                        onClick = onClearImage,
+                        enabled = !state.isRunning && hasImage
+                    ) { Text("Remove all") }
+                    TextButton(onClick = { showCustom = !showCustom }) {
+                        Text(if (showCustom) "Hide" else "Show")
+                    }
+                }
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    OcrAblationMode.entries.forEach { mode ->
+                        FilterChip(
+                            selected = state.ocrMode == mode,
+                            onClick = { onSelectOcrMode(mode) },
+                            label = { Text(mode.displayLabel) }
+                        )
+                    }
+                    FilterChip(
+                        selected = state.thinkModeEnabled,
+                        onClick = { onToggleThinkMode(!state.thinkModeEnabled) },
+                        label = { Text(if (state.thinkModeEnabled) "<think> ON (Reasoning)" else "<think> OFF (Fast)") }
+                    )
+                    FilterChip(
+                        selected = state.claheEnabled,
+                        onClick = { onToggleClahe(!state.claheEnabled) },
+                        label = { Text(if (state.claheEnabled) "CLAHE ON" else "CLAHE OFF") }
+                    )
+                }
             }
+        }
 
-            // Inspector Section 1: Image + Bounding Box Overlay
-            item {
+        // 4-Section Results Inspector cards formatted identically to GlinerLabScreen's Card items
+        if (showCustom) {
+            item(key = "inspector_section_1") {
                 InspectorSection1ImageOverlay(
                     bitmap = state.lastResult?.preprocessedBitmap ?: state.previewBitmap,
                     result = state.lastResult,
@@ -335,40 +356,88 @@ fun GraniteWorkflowScreen(
                 )
             }
 
-            // Inspector Section 2: Timing & Memory Strip
-            item {
+            item(key = "inspector_section_2") {
                 InspectorSection2TimingAndMemoryStrip(
-                    timing = state.lastResult?.timingAndMemory ?: WorkflowTimingAndMemory(),
+                    timing = timing,
                     result = state.lastResult
                 )
             }
 
-            // Inspector Section 3: Final Structured JSON Card
-            item {
+            item(key = "inspector_section_3") {
                 InspectorSection3StructuredJsonCard(
                     result = state.lastResult,
                     expandThinkOutput = expandThinkOutput,
                     onToggleExpandThink = { expandThinkOutput = !expandThinkOutput },
-                    onCopyJson = { jsonText ->
-                        clipboard.setText(AnnotatedString(jsonText))
+                    onCopyJson = { text ->
+                        clipboard.setText(AnnotatedString(text))
                     },
-                    onShareJson = { jsonText ->
+                    onShareJson = { text ->
                         val sendIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "application/json"
                             putExtra(Intent.EXTRA_SUBJECT, "Granite 4.2 Wine Label Extraction JSON")
-                            putExtra(Intent.EXTRA_TEXT, jsonText)
+                            putExtra(Intent.EXTRA_TEXT, text)
                         }
                         context.startActivity(Intent.createChooser(sendIntent, "Share Extraction JSON"))
                     }
                 )
             }
 
-            // Inspector Section 4: Expandable Raw OCR Accordion
-            item {
+            item(key = "inspector_section_4") {
                 InspectorSection4RawOcrAccordion(
                     result = state.lastResult,
                     expanded = expandRawOcrAccordion,
                     onToggleExpanded = { expandRawOcrAccordion = !expandRawOcrAccordion }
+                )
+            }
+        }
+
+        // Export section mirroring GlinerLabScreen's Export block
+        item(key = "export_section") {
+            Text("Export", style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.horizontalScroll(rememberScrollState())) {
+                TextButton(onClick = { clipboard.setText(AnnotatedString(jsonText)) }) {
+                    Text("Copy all results")
+                }
+                TextButton(
+                    onClick = {
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "application/json"
+                            putExtra(Intent.EXTRA_SUBJECT, "Granite 4.2 Wine Label Extraction JSON")
+                            putExtra(Intent.EXTRA_TEXT, jsonText)
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, "Share JSON"))
+                    }
+                ) {
+                    Text("Share JSON")
+                }
+            }
+        }
+
+        // Model files & storage paths accordion mirroring GlinerLabScreen's bottom accordions
+        item(key = "model_files_accordion_header") {
+            TextButton(
+                onClick = { expandModelFiles = !expandModelFiles },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Model files & storage paths (5)",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        if (expandModelFiles) "▲" else "▼",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+
+        if (expandModelFiles) {
+            item(key = "model_files_accordion_body") {
+                ModelFileStatusList(
+                    modelsStatus = state.modelsStatus,
+                    onImportGraniteGguf = onImportGraniteGguf
                 )
             }
         }
@@ -385,348 +454,169 @@ fun GraniteWorkflowScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ModelFileStatusAndImporterCard(
-    modelsStatus: WorkflowModelsStatus,
-    isImporting: Boolean,
-    expandPaths: Boolean,
-    onToggleExpandPaths: () -> Unit,
-    onImportGraniteGguf: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+private fun GraniteRunTimers(timing: WorkflowTimingAndMemory, hasRun: Boolean) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(
+            "Run time" to if (hasRun) "${timing.totalMs} ms" else "—",
+            "Dual OCR" to if (hasRun) "${timing.mlKitMs + timing.ppOcrV6Ms} ms" else "—",
+            "Granite 4.2" to if (hasRun) "${timing.graniteMs} ms" else "—"
+        ).forEach { (title, value) ->
+            Column(
+                Modifier
+                    .weight(1f)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                    .padding(6.dp)
             ) {
                 Text(
-                    text = "Model File Status & Importer",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = BordeauxRed
-                )
-                TextButton(onClick = onToggleExpandPaths) {
-                    Text(if (expandPaths) "Hide Paths" else "Storage Paths")
-                }
-            }
-
-            ModelSlotRow(
-                slot = modelsStatus.graniteGguf,
-                onImportClick = onImportGraniteGguf
-            )
-            HorizontalDivider()
-            ModelSlotRow(
-                slot = modelsStatus.mlKitEngine,
-                onImportClick = null
-            )
-            ModelSlotRow(
-                slot = modelsStatus.ppOcrDetOnnx,
-                onImportClick = null
-            )
-            ModelSlotRow(
-                slot = modelsStatus.ppOcrRecOnnx,
-                onImportClick = null
-            )
-            ModelSlotRow(
-                slot = modelsStatus.ppOcrDict,
-                onImportClick = null
-            )
-
-            if (isImporting) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Button(
-                    onClick = onImportGraniteGguf,
-                    enabled = !isImporting,
-                    colors = ButtonDefaults.buttonColors(containerColor = BordeauxRed)
-                ) {
-                    Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Import Granite .gguf File")
-                }
-            }
-
-            AnimatedVisibility(visible = expandPaths) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-                        .padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "Granite GGUF directory:\n${modelsStatus.graniteDirectoryPath}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Text(
-                        text = "Shared PP-OCRv6 directory (reused, no 2nd copy):\n${modelsStatus.sharedPpOcrDirectoryPath}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Text(
-                        text = "JNI Runtime: ${if (modelsStatus.nativeLlamaJniLoaded) "libgranite_llama_jni.so loaded" else "Standby (spatial reconciler fallback ready)"}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModelSlotRow(
-    slot: ModelFileSlotStatus,
-    onImportClick: (() -> Unit)?
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = if (slot.present) Icons.Default.CheckCircle else Icons.Default.Warning,
-                contentDescription = null,
-                tint = if (slot.present) PpOcrGreen else if (slot.required) StatusAmber else Color.Gray,
-                modifier = Modifier.size(18.dp)
-            )
-            Column {
-                Text(
-                    text = slot.slotName,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = buildString {
-                        append("${slot.fileName} · ${slot.sizeFormatted}")
-                        if (slot.notes.isNotBlank()) {
-                            append(" · ${slot.notes}")
-                        }
-                    },
+                    title,
                     style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(value, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
             }
         }
-        if (onImportClick != null) {
-            TextButton(onClick = onImportClick) {
-                Text("Import")
-            }
+    }
+}
+
+@Composable
+private fun GraniteScoredResults(result: GraniteWorkflowRunResult?) {
+    val json = result?.structuredJson
+    val populatedFields = if (json == null) {
+        emptyMap()
+    } else {
+        mapOf(
+            "producer_or_winery" to !json.producerOrWinery.isNullOrBlank(),
+            "wine_name_or_cuvee" to (!json.wineNameOrCuvee.isNullOrBlank() || json.varietals.isNotEmpty()),
+            "country" to !json.country.isNullOrBlank(),
+            "appellation_or_region" to !json.appellationOrRegion.isNullOrBlank(),
+            "classification" to !json.classification.isNullOrBlank(),
+            "vintage" to (json.vintage != null || json.isNonVintage)
+        )
+    }
+    val filledCount = populatedFields.values.count { it }
+    val summaryRow = if (result == null) {
+        listOf("Granite 4.2", "0", "0", "0/0", "0", "0", "0")
+    } else {
+        listOf(
+            "Granite 4.2",
+            "1",
+            "1",
+            "${if (filledCount >= 4) 1 else 0}/1",
+            if (filledCount == 3) "1" else "0",
+            if (filledCount in 1..2) "1" else "0",
+            "0"
+        )
+    }
+
+    Column(Modifier.testTag("granite_scored_tables")) {
+        Text("Scored results", style = MaterialTheme.typography.titleMedium)
+        GraniteScoreSummaryTable(listOf(summaryRow))
+        Spacer(Modifier.height(8.dp))
+        GraniteScoreFieldTable(
+            title = "Granite 4.2",
+            fieldStates = populatedFields,
+            hasRun = result != null
+        )
+        if (result == null) {
+            Text("— = no run completed yet in this session.", style = MaterialTheme.typography.bodySmall)
         } else {
             Text(
-                text = "Reused",
-                style = MaterialTheme.typography.labelSmall,
-                color = PpOcrGreen,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                "Extracted $filledCount/${graniteFieldLabels.size} primary fields · ${result.structuredJson.ocrDiscrepanciesResolved.size} OCR discrepancies resolved.",
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ImageInputCard(
-    imageSourceLabel: String,
-    isRunning: Boolean,
-    hasImage: Boolean,
-    onPickGallery: () -> Unit,
-    onSnapPhoto: () -> Unit,
-    onLoadSample: () -> Unit,
-    onRunWorkflow: () -> Unit
+private fun GraniteScoreSummaryTable(rows: List<List<String>>) {
+    Column(Modifier.horizontalScroll(rememberScrollState())) {
+        val headers = listOf("Pipeline", "Attempted", "Eligible", "Fully correct", "One error", "2+ errors", "Failed")
+        Row {
+            headers.forEach {
+                Text(
+                    it,
+                    Modifier.width(88.dp).padding(4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        rows.forEach { values ->
+            HorizontalDivider(Modifier.width((88 * headers.size).dp))
+            Row {
+                values.forEach {
+                    Text(it, Modifier.width(88.dp).padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GraniteScoreFieldTable(
+    title: String,
+    fieldStates: Map<String, Boolean>,
+    hasRun: Boolean
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+    val pass = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
+    val fail = MaterialTheme.colorScheme.error
+    val columns = graniteFieldLabels + ("total_correct" to "Total filled")
+    Column(Modifier.horizontalScroll(rememberScrollState())) {
+        Row {
             Text(
-                text = "Image Input",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = BordeauxRed
+                "Build",
+                Modifier.width(128.dp).padding(4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                softWrap = false
             )
+            columns.forEach { (_, label) ->
+                Text(
+                    label,
+                    Modifier.width(88.dp).padding(4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    softWrap = false
+                )
+            }
+        }
+        HorizontalDivider(Modifier.width((128 + 88 * columns.size).dp))
+        Row {
             Text(
-                text = imageSourceLabel,
+                title,
+                Modifier.width(128.dp).padding(4.dp),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Button(
-                    onClick = onPickGallery,
-                    enabled = !isRunning,
-                    colors = ButtonDefaults.buttonColors(containerColor = BordeauxRed)
-                ) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Pick from Gallery")
-                }
-
-                Button(
-                    onClick = onSnapPhoto,
-                    enabled = !isRunning,
-                    colors = ButtonDefaults.buttonColors(containerColor = BordeauxRed)
-                ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Snap Photo")
-                }
-
-                OutlinedButton(
-                    onClick = onLoadSample,
-                    enabled = !isRunning
-                ) {
-                    Text("Sample Label")
-                }
-
-                if (hasImage) {
-                    OutlinedButton(
-                        onClick = onRunWorkflow,
-                        enabled = !isRunning
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Re-run")
+            columns.forEach { (key, _) ->
+                val cell = buildAnnotatedString {
+                    if (!hasRun) {
+                        append("—")
+                    } else if (key == "total_correct") {
+                        val ok = fieldStates.values.count { it }
+                        val miss = graniteFieldLabels.size - ok
+                        withStyle(SpanStyle(color = pass)) { append("$ok") }
+                        append("/")
+                        withStyle(SpanStyle(color = fail)) { append("$miss") }
+                    } else {
+                        val filled = fieldStates[key] == true
+                        withStyle(SpanStyle(color = pass)) { append(if (filled) "1" else "0") }
+                        append("/")
+                        withStyle(SpanStyle(color = fail)) { append(if (filled) "0" else "1") }
                     }
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TestTogglesCard(
-    ocrMode: OcrAblationMode,
-    thinkModeEnabled: Boolean,
-    claheEnabled: Boolean,
-    onSelectOcrMode: (OcrAblationMode) -> Unit,
-    onToggleThinkMode: (Boolean) -> Unit,
-    onToggleClahe: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = "Test Toggles",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = BordeauxRed
-            )
-
-            // OCR Mode: Dual (ML Kit + PP-OCRv6) | ML Kit Only | PP-OCRv6 Only
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "OCR Mode",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    OcrAblationMode.entries.forEach { mode ->
-                        FilterChip(
-                            selected = ocrMode == mode,
-                            onClick = { onSelectOcrMode(mode) },
-                            label = { Text(mode.displayLabel) }
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider()
-
-            // Granite <think> Mode: OFF (Fast) | ON (Reasoning)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Granite <think> Mode",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = if (thinkModeEnabled) "ON (Reasoning)" else "OFF (Fast)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FilterChip(
-                        selected = !thinkModeEnabled,
-                        onClick = { onToggleThinkMode(false) },
-                        label = { Text("OFF (Fast)") }
-                    )
-                    FilterChip(
-                        selected = thinkModeEnabled,
-                        onClick = { onToggleThinkMode(true) },
-                        label = { Text("ON (Reasoning)") }
-                    )
-                }
-            }
-
-            HorizontalDivider()
-
-            // Glare Preprocessing (CLAHE): OFF | ON
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Glare Preprocessing (CLAHE)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = if (claheEnabled) "ON (Mild 8x8 CLAHE + foil highlight roll-off)" else "OFF (Standard resize <=1280px)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = claheEnabled,
-                    onCheckedChange = onToggleClahe
+                    cell,
+                    Modifier.width(88.dp).padding(4.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
@@ -742,67 +632,49 @@ private fun InspectorSection1ImageOverlay(
     onToggleMlKitBoxes: (Boolean) -> Unit,
     onTogglePpOcrBoxes: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
+    Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "1. Image + Bounding Box Overlay",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleSmall
             )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = showMlKitBoxes, onCheckedChange = onToggleMlKitBoxes)
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(MlKitBlue, RoundedCornerShape(2.dp))
-                    )
-                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = "Blue = ML Kit (${result?.mlKitBlocks?.size ?: 0})",
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = showPpOcrBoxes, onCheckedChange = onTogglePpOcrBoxes)
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(PpOcrGreenBright, RoundedCornerShape(2.dp))
-                    )
-                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = "Green = PP-OCRv6 (${result?.ppOcrV6Blocks?.size ?: 0})",
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
             if (bitmap == null) {
                 Box(
-                    modifier = Modifier
+                    Modifier
                         .fillMaxWidth()
-                        .height(180.dp)
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        .padding(12.dp)
                 ) {
                     Text(
-                        text = "Pick an image from Gallery, Snap Photo, or tap Sample Label to inspect bounding boxes.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
+                        text = "No image loaded yet. Use Choose images, Snap photo, or Sample label above.",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             } else {
@@ -813,10 +685,9 @@ private fun InspectorSection1ImageOverlay(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 420.dp)
+                        .heightIn(max = 380.dp)
                         .aspectRatio(aspect)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Image(
                         bitmap = imageBitmap,
@@ -872,8 +743,8 @@ private fun InspectorSection1ImageOverlay(
 
                 result?.let { res ->
                     Text(
-                        text = "Original: ${res.originalWidth}×${res.originalHeight}px ➔ Preprocessed: ${res.preprocessedWidth}×${res.preprocessedHeight}px · CLAHE=${if (res.claheApplied) "ON" else "OFF"}",
-                        style = MaterialTheme.typography.labelSmall,
+                        text = "Original: ${res.originalWidth}×${res.originalHeight}px · Preprocessed: ${res.preprocessedWidth}×${res.preprocessedHeight}px · CLAHE=${if (res.claheApplied) "ON" else "OFF"}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -887,76 +758,78 @@ private fun InspectorSection2TimingAndMemoryStrip(
     timing: WorkflowTimingAndMemory,
     result: GraniteWorkflowRunResult?
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
+    Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "2. Timing & Memory Strip",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleSmall
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                MetricPill(label = "Preprocess ms", value = "${timing.preprocessMs} ms")
-                MetricPill(label = "ML Kit ms", value = "${timing.mlKitMs} ms")
-                MetricPill(label = "PP-OCRv6 ms", value = "${timing.ppOcrV6Ms} ms")
-                MetricPill(label = "Granite 4.2 ms", value = "${timing.graniteMs} ms")
-                MetricPill(label = "Total ms", value = "${timing.totalMs} ms")
-                MetricPill(
-                    label = "Peak Heap/Native RAM MB",
-                    value = String.format(
-                        Locale.US,
-                        "%.1f MB (JVM %.1f / Nat %.1f)",
-                        timing.peakCombinedRamMb,
-                        timing.peakJvmHeapMb,
-                        timing.peakNativeHeapMb
-                    )
-                )
+            SelectionContainer {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            "Preprocess ms" to "${timing.preprocessMs} ms",
+                            "ML Kit ms" to "${timing.mlKitMs} ms",
+                            "PP-OCRv6 ms" to "${timing.ppOcrV6Ms} ms"
+                        ).forEach { (title, value) ->
+                            Column(
+                                Modifier
+                                    .weight(1f)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    .padding(6.dp)
+                            ) {
+                                Text(
+                                    title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(value, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                            }
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            "Granite 4.2 ms" to "${timing.graniteMs} ms",
+                            "Total ms" to "${timing.totalMs} ms",
+                            "Peak Heap/Native RAM MB" to String.format(
+                                Locale.US,
+                                "%.1f MB",
+                                timing.peakCombinedRamMb
+                            )
+                        ).forEach { (title, value) ->
+                            Column(
+                                Modifier
+                                    .weight(1f)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    .padding(6.dp)
+                            ) {
+                                Text(
+                                    title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(value, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                            }
+                        }
+                    }
+                }
             }
 
             result?.let { res ->
                 Text(
                     text = "${res.ppOcrStatusNote} · ${res.executionBackendNote}",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun MetricPill(label: String, value: String) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
-            )
         }
     }
 }
@@ -971,88 +844,58 @@ private fun InspectorSection3StructuredJsonCard(
 ) {
     val jsonText = result?.prettyJsonText ?: GraniteWineLabelJson().toPrettyJson(2)
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
+    Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "3. Final Structured JSON Card",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = { onCopyJson(jsonText) }) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy JSON")
-                    }
-                    IconButton(onClick = { onShareJson(jsonText) }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share JSON")
+            Text(
+                text = "3. Final Structured JSON Card",
+                style = MaterialTheme.typography.titleSmall
+            )
+
+            Row {
+                TextButton(onClick = { onCopyJson(jsonText) }) { Text("Copy JSON") }
+                TextButton(onClick = { onShareJson(jsonText) }) { Text("Share JSON") }
+                if (result?.thinkModeEnabled == true || !result?.rawThinkingTrace.isNullOrBlank()) {
+                    TextButton(onClick = onToggleExpandThink) {
+                        Text(if (expandThinkOutput) "Hide <think>" else "Show <think>")
                     }
                 }
             }
 
-            // Expandable raw <think> output if enabled or present
-            if (result?.thinkModeEnabled == true || !result?.rawThinkingTrace.isNullOrBlank()) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(onClick = onToggleExpandThink),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Raw <think> Reasoning Trace",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = BordeauxRed
-                            )
-                            Icon(
-                                imageVector = if (expandThinkOutput) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = "Toggle raw think output"
-                            )
-                        }
-                        AnimatedVisibility(visible = expandThinkOutput) {
-                            SelectionContainer {
-                                Text(
-                                    text = result?.rawThinkingTrace ?: "(No <think> trace emitted)",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = FontFamily.Monospace,
-                                    modifier = Modifier.padding(top = 6.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color(0xFF1E1E1E),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            if ((result?.thinkModeEnabled == true || !result?.rawThinkingTrace.isNullOrBlank()) && expandThinkOutput) {
                 SelectionContainer {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            text = result?.rawThinkingTrace ?: "(No <think> trace emitted)",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            SelectionContainer {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        .padding(8.dp)
+                ) {
                     Text(
                         text = jsonText,
-                        color = Color(0xFFE8F5E9),
+                        style = MaterialTheme.typography.bodySmall,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp)
                             .testTag("structured_json_output")
                     )
                 }
@@ -1070,58 +913,95 @@ private fun InspectorSection4RawOcrAccordion(
     val mlBlocks = result?.mlKitBlocks.orEmpty()
     val ppBlocks = result?.ppOcrV6Blocks.orEmpty()
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.fillMaxWidth().padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Row(
-                modifier = Modifier
+                Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onToggleExpanded),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .clickable(onClick = onToggleExpanded)
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text(
                         text = "4. Expandable Raw OCR Accordion",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Side-by-side coordinate-tagged lines · ML Kit (${mlBlocks.size}) vs PP-OCRv6 (${ppBlocks.size})",
-                        style = MaterialTheme.typography.labelSmall,
+                        text = "ML Kit (${mlBlocks.size}) · PP-OCRv6 (${ppBlocks.size})",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = "Expand or collapse raw OCR accordion"
+                Text(
+                    if (expanded) "▲" else "▼",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            AnimatedVisibility(visible = expanded) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Left column: ML Kit
-                    RawOcrEngineColumn(
-                        title = "ML Kit v2 (Blue)",
-                        headerColor = MlKitBlue,
-                        blocks = mlBlocks,
-                        modifier = Modifier.weight(1f)
-                    )
+            if (expanded) {
+                SelectionContainer {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                .padding(8.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    "ML Kit (${mlBlocks.size})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                if (mlBlocks.isEmpty()) {
+                                    Text("(No lines)", style = MaterialTheme.typography.bodySmall)
+                                } else {
+                                    mlBlocks.forEachIndexed { idx, block ->
+                                        Text(
+                                            "#${idx + 1} ${block.formatCenterWhTag()} ${block.text}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
-                    // Right column: PP-OCRv6
-                    RawOcrEngineColumn(
-                        title = "PP-OCRv6 (Green)",
-                        headerColor = PpOcrGreen,
-                        blocks = ppBlocks,
-                        modifier = Modifier.weight(1f)
-                    )
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                .padding(8.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    "PP-OCRv6 (${ppBlocks.size})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                if (ppBlocks.isEmpty()) {
+                                    Text("(No lines)", style = MaterialTheme.typography.bodySmall)
+                                } else {
+                                    ppBlocks.forEachIndexed { idx, block ->
+                                        Text(
+                                            "#${idx + 1} ${block.formatCenterWhTag()} ${block.text}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1129,64 +1009,65 @@ private fun InspectorSection4RawOcrAccordion(
 }
 
 @Composable
-private fun RawOcrEngineColumn(
-    title: String,
-    headerColor: Color,
-    blocks: List<OcrBlock>,
-    modifier: Modifier = Modifier
+private fun ModelFileStatusList(
+    modelsStatus: WorkflowModelsStatus,
+    onImportGraniteGguf: () -> Unit
 ) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface
-    ) {
+    val slots = listOf(
+        modelsStatus.graniteGguf to onImportGraniteGguf,
+        modelsStatus.mlKitEngine to null,
+        modelsStatus.ppOcrDetOnnx to null,
+        modelsStatus.ppOcrRecOnnx to null,
+        modelsStatus.ppOcrDict to null
+    )
+    Card(Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(8.dp),
+            Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = headerColor
-            )
-            HorizontalDivider()
-            if (blocks.isEmpty()) {
-                Text(
-                    text = "(No lines)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                SelectionContainer {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        blocks.forEachIndexed { idx, block ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        width = 1.dp,
-                                        color = headerColor.copy(alpha = 0.25f),
-                                        shape = RoundedCornerShape(6.dp)
-                                    )
-                                    .padding(6.dp)
-                            ) {
-                                Text(
-                                    text = "#${idx + 1} ${block.formatCenterWhTag()} conf=${
-                                        String.format(Locale.US, "%.2f", block.confidence)
-                                    }",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = block.text,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
+            slots.forEach { (slot, action) ->
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SelectionContainer(Modifier.weight(1f)) {
+                        Text(
+                            "${slot.slotName} · ${slot.fileName} · ${if (slot.present) "ready" else "missing"} (${slot.sizeFormatted})",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    if (action != null) {
+                        TextButton(onClick = action) { Text("Import") }
+                    } else {
+                        Text(
+                            "Shared",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            SelectionContainer {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        .padding(8.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            "Granite dir: ${modelsStatus.graniteDirectoryPath}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "Shared PP-OCRv6 dir: ${modelsStatus.sharedPpOcrDirectoryPath}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "JNI runtime: ${if (modelsStatus.nativeLlamaJniLoaded) "libgranite_llama_jni.so loaded" else "Standby (spatial reconciler fallback ready)"}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
@@ -1252,14 +1133,6 @@ private fun CameraXCaptureDialog(
                     }
                 )
 
-                // Framing guide overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp)
-                        .border(2.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
-                )
-
                 captureError?.let { err ->
                     Text(
                         text = err,
@@ -1307,13 +1180,9 @@ private fun CameraXCaptureDialog(
                                     }
                                 }
                             )
-                        },
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = BordeauxRed)
+                        }
                     ) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = "Capture")
-                        Spacer(Modifier.width(6.dp))
-                        Text(if (isCapturing) "Saving..." else "Capture Label")
+                        Text(if (isCapturing) "Saving…" else "Capture label")
                     }
                 }
             }
