@@ -451,12 +451,14 @@ fun GraniteWorkflowScreen(
         }
 
         // 3. Scored Results Table (mirrors GlinerLabScreen ScoredResults: ScoreSummaryTable + ScoreFieldTable)
-        if (state.datasetAggregate != null) {
-            item {
-                GraniteDatasetScoredResults(aggregate = state.datasetAggregate)
+        if (state.isDatasetBatchRunning || state.datasetAggregate != null || state.useGlinerDatasetMode) {
+            item(key = "granite_curated_scores") {
+                val liveAggregate = state.datasetAggregate
+                    ?: GraniteLabCorpus.aggregate(state.datasetRows, stopped = false)
+                GraniteDatasetScoredResults(aggregate = liveAggregate)
             }
         } else if (result != null) {
-            item {
+            item(key = "granite_single_scores") {
                 GraniteSingleImageScoredResults(result = result)
             }
         }
@@ -1118,8 +1120,8 @@ private fun GraniteSingleImageScoredResults(result: GraniteWorkflowRunResult) {
         "producer" to !s.producerOrWinery.isNullOrBlank(),
         "wine_name" to (!s.wineNameOrCuvee.isNullOrBlank() || s.varietals.isNotEmpty()),
         "country" to !s.country.isNullOrBlank(),
-        "region" to !s.appellationOrRegion.isNullOrBlank(),
-        "subregion" to (!s.classification.isNullOrBlank() || !s.appellationOrRegion.isNullOrBlank()),
+        "region" to (!s.region.isNullOrBlank() || !s.appellationOrRegion.isNullOrBlank()),
+        "subregion" to (!s.subregion.isNullOrBlank() || !s.appellationOrRegion.isNullOrBlank()),
         "vintage" to (s.vintage != null || s.isNonVintage)
     )
     val populatedCount = fieldStatuses.values.count { it }
