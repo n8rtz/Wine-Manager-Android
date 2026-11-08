@@ -48,8 +48,12 @@ object GraniteLlamaBridge : AutoCloseable {
         gbnfGrammar: String,
         maxTokens: Int = 512,
         temperature: Float = 0.0f,
-        nCtx: Int = 4096,
-        nThreads: Int = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
+        nCtx: Int = 2048,
+        nThreads: Int = Runtime.getRuntime().availableProcessors().let { cores ->
+            // Target performance (Big/Prime) cores on Android big.LITTLE SoCs so ggml barriers
+            // do not stall waiting on slow in-order efficiency cores.
+            if (cores >= 8) 4 else (cores / 2).coerceIn(2, 4)
+        }
     ): String = mutex.withLock {
         check(nativeLoaded) { "lib$JNI_LIB_NAME.so is not loaded" }
         check(ggufFile.isFile && ggufFile.length() > 0L) {

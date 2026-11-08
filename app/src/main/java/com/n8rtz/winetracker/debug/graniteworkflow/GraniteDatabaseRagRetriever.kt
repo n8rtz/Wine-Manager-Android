@@ -108,16 +108,15 @@ data class GraniteDatabaseRagContext(
             if (producerCandidates.isEmpty()) {
                 appendLine("   (No close producer matches in SQLite gazetteer)")
             } else {
-                producerCandidates.take(10).forEach { p ->
+                producerCandidates.take(6).forEach { p ->
                     val countryPart = if (p.country.isNotBlank()) ", country=${p.country}" else ""
-                    val srcPart = if (p.sources.isNotBlank()) ", source=${p.sources}" else ""
                     val countryTag = if (p.countryCorroborated) " [COUNTRY_MATCHES_LABEL]" else ""
                     val wineTag = if (p.corroboratedWines.isNotEmpty()) {
-                        " [CORROBORATED_BY_LINKED_WINE: ${p.corroboratedWines.joinToString(", ") { "\"$it\"" }}]"
+                        " [CORROBORATED_BY_LINKED_WINE: ${p.corroboratedWines.take(2).joinToString(", ") { "\"$it\"" }}]"
                     } else {
                         ""
                     }
-                    appendLine("   - \"${p.name}\" (dist=${p.distance}, span=\"${p.matchedSpan}\"$countryPart$srcPart)$countryTag$wineTag")
+                    appendLine("   - \"${p.name}\" (dist=${p.distance}, span=\"${p.matchedSpan}\"$countryPart)$countryTag$wineTag")
                 }
             }
 
@@ -125,10 +124,9 @@ data class GraniteDatabaseRagContext(
             if (linkedWineCandidates.isEmpty()) {
                 appendLine("   (No linked wine matches in SQLite wine index)")
             } else {
-                linkedWineCandidates.take(10).forEach { w ->
+                linkedWineCandidates.take(6).forEach { w ->
                     val prodPart = if (w.producerName.isNotBlank()) ", producer=\"${w.producerName}\"" else ""
-                    val lwinPart = if (w.lwin7.isNotBlank()) ", lwin7=${w.lwin7}" else ""
-                    appendLine("   - \"${w.name}\" (dist=${w.distance}, span=\"${w.matchedSpan}\"$prodPart$lwinPart)")
+                    appendLine("   - \"${w.name}\" (dist=${w.distance}, span=\"${w.matchedSpan}\"$prodPart)")
                 }
             }
 
@@ -136,11 +134,11 @@ data class GraniteDatabaseRagContext(
             if (appellationCandidates.isEmpty()) {
                 appendLine("   (No catalog appellation matches)")
             } else {
-                appellationCandidates.take(8).forEach { a ->
+                appellationCandidates.take(5).forEach { a ->
                     val sub = a.appellationOrSubregion.ifBlank { "(none)" }
                     val reg = a.region.ifBlank { "(none)" }
                     val ctry = a.country.ifBlank { "(none)" }
-                    appendLine("   - Subregion/Appellation=\"$sub\" -> Region=\"$reg\", Country=\"$ctry\" (dist=${a.distance}, span=\"${a.matchedSpan}\", src=${a.source})")
+                    appendLine("   - Subregion/Appellation=\"$sub\" -> Region=\"$reg\", Country=\"$ctry\" (dist=${a.distance}, span=\"${a.matchedSpan}\")")
                 }
             }
 

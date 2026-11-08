@@ -274,9 +274,77 @@ data class GraniteWineLabelJson(
                 .replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "")
                 .trim()
             val start = withoutThink.indexOf('{')
+            require(start >= 0) { "No JSON object found in LLM output" }
             val end = withoutThink.lastIndexOf('}')
-            require(start >= 0 && end > start) { "No JSON object found in LLM output" }
-            return withoutThink.substring(start, end + 1)
+            if (end > start) {
+                val candidate = withoutThink.substring(start, end + 1)
+                if (runCatching { JSONObject(candidate) }.isSuccess) {
+                    return candidate
+                }
+            }
+            return salvageTruncatedJsonObject(withoutThink.substring(start))
+        }
+
+        /**
+         * Repairs a JSON object that was truncated mid-stream (e.g. if `max_tokens` was reached)
+         * by trimming any incomplete trailing key/colon fragment and closing open quotes, arrays,
+         * and braces so all completed fields still parse cleanly.
+         */
+        private fun salvageTruncatedJsonObject(fragment: String): String {
+            var s = fragment.trimEnd()
+            if (s.endsWith("\\")) {
+                s = s.dropLast(1)
+            }
+            var inString = false
+            var escape = false
+            val stack = ArrayDeque<Char>()
+            for (ch in s) {
+                if (inString) {
+                    if (escape) {
+                        escape = false
+                    } else if (ch == '\\') {
+                        escape = true
+                    } else if (ch == '"') {
+                        inString = false
+                    }
+                } else {
+                    when (ch) {
+                        '"' -> inString = true
+                        '{', '[' -> stack.addLast(ch)
+                        '}' -> if (stack.lastOrNull() == '{') stack.removeLast()
+                        ']' -> if (stack.lastOrNull() == '[') stack.removeLast()
+                    }
+                }
+            }
+            val repaired = buildString {
+                append(s)
+                if (inString) append('"')
+                var trimmed = toString().trimEnd()
+                // If truncated right after a colon ("key":) or partial boolean/null, supply null
+                if (trimmed.endsWith(":")) {
+                    append(" null")
+                } else if (trimmed.endsWith(",")) {
+                    deleteCharAt(lastIndexOf(','))
+                }
+                while (stack.isNotEmpty()) {
+                    when (stack.removeLast()) {
+                        '[' -> append(']')
+                        '{' -> append('}')
+                    }
+                }
+            }
+            if (runCatching { JSONObject(repaired) }.isSuccess) {
+                return repaired
+            }
+            // Last-resort: cut back to the last top-level comma and close "}"
+            val lastComma = s.lastIndexOf(',')
+            if (lastComma > 1) {
+                val head = s.substring(0, lastComma).trimEnd() + "}"
+                if (runCatching { JSONObject(head) }.isSuccess) {
+                    return head
+                }
+            }
+            return repaired
         }
     }
 }
@@ -433,7 +501,7 @@ data class WorkflowModelsStatus(
  * Complete result of a Dual-OCR + Database RAG + Granite 4.2 reconciliation run.
  */
 data class GraniteWorkflowRunResult(
-    val preprocessedBitmap: Bitmap,
+    val preprocessedBitmap: Bitmap? = null,
     val originalWidth: Int,
     val originalHeight: Int,
     val preprocessedWidth: Int,

@@ -44,6 +44,14 @@ object GraniteModelStorage {
     const val PRODUCER_V1_ASSET_DIR = "producer-gazetteer-v1"
     const val LINKED_WINES_DB_FILENAME = "wines.sqlite"
 
+    fun internalGraniteDir(context: Context): File {
+        val dir = File(context.noBackupFilesDir, GRANITE_SUBDIR)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        return dir
+    }
+
     fun graniteDir(context: Context): File {
         val dir = context.getExternalFilesDir(GRANITE_SUBDIR)
             ?: File(context.filesDir, GRANITE_SUBDIR)
@@ -57,17 +65,69 @@ object GraniteModelStorage {
         File(context.noBackupFilesDir, SHARED_PADDLE_FOLDER)
 
     /**
-     * Resolves the Granite GGUF file in `models/granite`.
-     * Prefers `granite-4.2-3b-Q4_K_M.gguf`, or falls back to any `.gguf` file in the directory.
+     * Resolves the Granite GGUF file, preferring `noBackupFilesDir/models/granite` (direct ext4/f2fs
+     * without Android `/storage/emulated/0` FUSE mmap overhead) and falling back to `getExternalFilesDir("models/granite")`.
      */
     fun resolveGraniteGgufFile(context: Context): File {
+        val internalDir = internalGraniteDir(context)
+        val internalCanonical = File(internalDir, GRANITE_GGUF_FILENAME)
+        if (internalCanonical.isFile && internalCanonical.length() >= MIN_VALID_GGUF_BYTES) {
+            return internalCanonical
+        }
+        val internalAny = internalDir.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".gguf", ignoreCase = true) && it.length() >= MIN_VALID_GGUF_BYTES }
+            ?.maxByOrNull { it.length() }
+        if (internalAny != null) return internalAny
+
         val dir = graniteDir(context)
         val canonical = File(dir, GRANITE_GGUF_FILENAME)
         if (canonical.isFile && canonical.length() > 0L) return canonical
         val fallback = dir.listFiles()
             ?.filter { it.isFile && it.name.endsWith(".gguf", ignoreCase = true) && it.length() > 0L }
             ?.maxByOrNull { it.length() }
-        return fallback ?: canonical
+        return fallback ?: internalCanonical
+    }
+
+    /**
+     * If the resolved GGUF file currently sits on `/storage/emulated/` (Android FUSE daemon, which
+     * severely penalizes 4 KB mmap page faults on 2 GB models), copies it once into
+     * `noBackupFilesDir/models/granite` (direct kernel ext4/f2fs) when space permits.
+     */
+    fun ensureDirectFilesystemGguf(context: Context, currentFile: File): File {
+        if (!currentFile.isFile || currentFile.length() < MIN_VALID_GGUF_BYTES) return currentFile
+        val internalDir = internalGraniteDir(context)
+        if (currentFile.absolutePath.startsWith(internalDir.absolutePath)) return currentFile
+        val target = File(internalDir, GRANITE_GGUF_FILENAME)
+        if (target.isFile && target.length() == currentFile.length() && hasGgufMagic(target)) {
+            return target
+        }
+        val requiredFree = currentFile.length() + 384L * 1024L * 1024L
+        if (internalDir.usableSpace < requiredFree) {
+            return currentFile
+        }
+        return runCatching {
+            val tmp = File(internalDir, "$GRANITE_GGUF_FILENAME.stage.tmp")
+            currentFile.inputStream().use { input ->
+                FileOutputStream(tmp).use { output ->
+                    val buf = ByteArray(512 * 1024)
+                    while (true) {
+                        val n = input.read(buf)
+                        if (n < 0) break
+                        output.write(buf, 0, n)
+                    }
+                    output.flush()
+                }
+            }
+            if (target.exists()) target.delete()
+            if (tmp.renameTo(target)) {
+                // Remove duplicate FUSE copy once safely staged on internal ext4/f2fs
+                runCatching { currentFile.delete() }
+                target
+            } else {
+                tmp.delete()
+                currentFile
+            }
+        }.getOrDefault(currentFile)
     }
 
     /**
@@ -219,7 +279,12 @@ object GraniteModelStorage {
         uri: Uri
     ): Result<File> = runCatching {
         val displayName = queryDisplayName(context, uri)?.trim().orEmpty()
-        val destDir = graniteDir(context)
+        val internalDir = internalGraniteDir(context)
+        val destDir = if (internalDir.usableSpace >= 3L * 1024L * 1024L * 1024L) {
+            internalDir
+        } else {
+            graniteDir(context)
+        }
         val destFile = File(destDir, GRANITE_GGUF_FILENAME)
         val tempFile = File(destDir, "$GRANITE_GGUF_FILENAME.import.tmp")
         try {
@@ -266,10 +331,11 @@ object GraniteModelStorage {
      * Shared PP-OCRv6 and ML Kit models are preserved.
      */
     fun clearGraniteModelCache(context: Context): Result<Unit> = runCatching {
-        val dir = graniteDir(context)
-        dir.listFiles()?.forEach { file ->
-            if (file.isFile && (file.name.endsWith(".gguf", ignoreCase = true) || file.name.endsWith(".tmp"))) {
-                file.delete()
+        listOf(internalGraniteDir(context), graniteDir(context)).forEach { dir ->
+            dir.listFiles()?.forEach { file ->
+                if (file.isFile && (file.name.endsWith(".gguf", ignoreCase = true) || file.name.endsWith(".tmp"))) {
+                    file.delete()
+                }
             }
         }
     }

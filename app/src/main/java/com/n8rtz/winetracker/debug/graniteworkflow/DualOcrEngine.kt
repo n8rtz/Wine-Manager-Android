@@ -251,6 +251,13 @@ class DualOcrEngine : AutoCloseable {
         )
     }
 
+    suspend fun releaseWarmPaddleSessions() {
+        withContext(NonCancellable) {
+            runCatching { PaddleTextRecognizer.release(paddleGate) }
+            runCatching { PaddleTextDetector.release(paddleGate) }
+        }
+    }
+
     override fun close() {
         runCatching { mlKitEngine.close() }
         cleanupScope.launch {

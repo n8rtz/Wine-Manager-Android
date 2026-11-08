@@ -48,7 +48,14 @@ class GraniteLabelExtractor : AutoCloseable {
         ragContext: GraniteDatabaseRagContext = GraniteDatabaseRagContext(enabled = false)
     ): GraniteExtractionOutcome = withContext(Dispatchers.Default) {
         val started = SystemClock.elapsedRealtime()
-        val ggufFile = GraniteModelStorage.resolveGraniteGgufFile(context)
+        val resolvedGguf = GraniteModelStorage.resolveGraniteGgufFile(context)
+        val ggufFile = if (resolvedGguf.isFile && resolvedGguf.length() >= GraniteModelStorage.MIN_VALID_GGUF_BYTES) {
+            withContext(Dispatchers.IO) {
+                GraniteModelStorage.ensureDirectFilesystemGguf(context, resolvedGguf)
+            }
+        } else {
+            resolvedGguf
+        }
         val prompt = buildGranitePrompt(
             mlKitBlocks = mlKitBlocks,
             ppOcrV6Blocks = ppOcrV6Blocks,
@@ -72,7 +79,7 @@ class GraniteLabelExtractor : AutoCloseable {
                     ggufFile = ggufFile,
                     prompt = prompt,
                     gbnfGrammar = grammar,
-                    maxTokens = if (thinkModeEnabled) 768 else 384,
+                    maxTokens = if (thinkModeEnabled) 640 else 512,
                     temperature = 0.0f
                 )
             }.onFailure { err ->
@@ -190,9 +197,9 @@ class GraniteLabelExtractor : AutoCloseable {
         )
 
         val thinkingDirective = if (thinkModeEnabled) {
-            "Thinking mode is ON: first analyze spatial coordinates, OCR conflicts, and database RAG candidates inside <think>...</think>, then output ONLY the valid JSON object."
+            "Thinking mode is ON: write AT MOST 3 short bullet lines (under 40 words total) inside <think>...</think>, then output ONLY the JSON object."
         } else {
-            "Thinking mode is OFF: do NOT emit <think> tags or prose. Output ONLY the valid JSON object immediately, starting with \"ocr_discrepancies_resolved\" to record your cross-engine and RAG reconstruction before emitting geography and entity fields."
+            "Thinking mode is OFF: output ONLY the JSON object immediately. Keep \"ocr_discrepancies_resolved\" to [] or at most 2 terse items (<= 8 words each, ONLY real misreads/clippings, NEVER routine spacing/punctuation), and \"confidence_notes\" to null or <= 10 words."
         }
 
         val assistantPrefix = if (thinkModeEnabled) {
@@ -211,13 +218,13 @@ class GraniteLabelExtractor : AutoCloseable {
             append("OCR Mode: ${ablationMode.displayLabel}\n\n")
             append("=== Spatially Aligned Cross-Engine Reading Lines (Visual Hierarchy & Anomaly Flags) ===\n")
             append(alignedReadingLines)
-            append("\n\n=== Engine A: Google ML Kit Text Recognition v2 (sorted top-to-bottom y, left-to-right x) ===\n")
-            append(mlKitFormatted)
-            append("\n\n=== Engine B: PP-OCRv6 ONNX (sorted top-to-bottom y, left-to-right x) ===\n")
-            append(ppOcrFormatted)
+            if (ablationMode != OcrAblationMode.DUAL) {
+                append("\n\n=== Active Single-Engine Raw Coordinates ===\n")
+                append(if (ablationMode.runsMlKit) mlKitFormatted else ppOcrFormatted)
+            }
             append("\n\n=== Retrieved Offline Wine Database Candidates (RAG Context — Same Databases as GLiNER Lab) ===\n")
             append(ragContext.toPromptRagSection())
-            append("\n\nReconcile the OCR detections and database RAG candidates above into the exact JSON schema.")
+            append("\n\nExtract the JSON object concisely.")
             append("<|end_of_text|>\n")
             append(assistantPrefix)
         }
@@ -991,41 +998,21 @@ class GraniteLabelExtractor : AutoCloseable {
         const val DEFAULT_THINK_MODE_ENABLED = false
 
         val SYSTEM_PROMPT = """
-You are an expert wine label extraction and OCR reconciliation engine running on-device (IBM Granite 4.2 3B).
-You receive:
-1. Spatially Aligned Cross-Engine Reading Lines pairing Google ML Kit Text Recognition v2 (Engine A) and PP-OCRv6 ONNX (Engine B) on each horizontal line with relative font height scale (PRIMARY_DISPLAY, SUBHEADER, BODY, FINE_PRINT), vertical label zone (TOP_HEADER, UPPER_MAIN, MID_BODY, BOTTOM_LEGAL), and anomaly flags (LOWERCASE_INITIAL_ON_HEADER, WIDTH_MISMATCH, BOTTLE_EDGE_MARGIN).
-2. Raw coordinate-tagged detections [x=x_center, y=y_center, w=width, h=height] from Engine A and Engine B.
-3. Retrieved Offline Wine Database Candidates (RAG Context) from the app's SQLite Producer Gazetteer (LWIN + supplemental), Producer-Linked Wine Index (LWIN7), SqliteWineKnowledgeBase, ReferenceWineCatalog, BundledOrigins, and BundledGrapes, including relational corroboration tags ([COUNTRY_MATCHES_LABEL], [CORROBORATED_BY_LINKED_WINE], and producer="..." links).
+You are an expert on-device wine label extraction and OCR reconciliation engine (IBM Granite 4.2 3B).
+Inputs:
+1. Spatially Aligned Cross-Engine Reading Lines pairing ML Kit v2 and PP-OCRv6 with scale (PRIMARY_DISPLAY, SUBHEADER, BODY, FINE_PRINT), zone (TOP_HEADER, UPPER_MAIN, MID_BODY, BOTTOM_LEGAL), and anomaly flags (LOWERCASE_INITIAL_ON_HEADER, WIDTH_MISMATCH, BOTTLE_EDGE_MARGIN).
+2. Retrieved Offline Wine Database Candidates (RAG) from SQLite Producer Gazetteer, Producer-Linked Wine Index (LWIN7), Origins, and Grapes ([COUNTRY_MATCHES_LABEL], [CORROBORATED_BY_LINKED_WINE], producer="...").
 
-STRICT SYSTEM RULES:
-1. Reason-Then-Extract Ordering: In your JSON output, populate "ocr_discrepancies_resolved" and "confidence_notes" FIRST so your cross-engine comparison, OCR error reconstruction, and RAG candidate evaluation directly inform the subsequent geography, varietal, producer, and wine_name fields.
-2. Spatial & Typographic Hierarchy:
-   - TOP_HEADER / UPPER_MAIN lines with PRIMARY_DISPLAY or SUBHEADER scale (y in 0.08..0.55) carry producer_or_winery and wine_name_or_cuvee.
-   - MID_BODY lines (y in 0.40..0.75) carry appellation/region/subregion, varietals, classification, and vintage.
-   - BOTTOM_LEGAL fine print (y > 0.75) carries abv_percentage, bottle_volume_ml, and country/bottler legal text.
-3. Dynamic Reconstruction of Incomplete or Misread OCR: OCR on curved wine bottles and stylized typography frequently clips outer words/prefixes or misreads ornamental script/calligraphic capitals and ligatures (e.g., F/T/L/C/G/S, rn/m, cl/d, dropped leading/trailing words, or split multi-line titles). Pay special attention to lines flagged with [LOWERCASE_INITIAL_ON_HEADER], [WIDTH_MISMATCH], or [BOTTLE_EDGE_MARGIN]. Dynamically discern when an OCR reading is incomplete or visually/phonetically corrupted, and reconstruct the true complete entity using cross-engine comparison, wine-domain knowledge, label context (country, region, varietals, bottling text), and the Retrieved Offline Wine Database Candidates.
-4. Full 3-Level Geographic Hierarchy: Resolve "country", "region" (broad wine region/state, e.g. "Bordeaux", "Burgundy", "California", "Tuscany", "Piedmont", "Rioja"), and "subregion" (specific AOC/DOC/DOCG/AVA/village, e.g. "Margaux", "Pauillac", "Napa Valley", "Barolo"), and set "appellation_or_region" to the most specific printed appellation or region. Use both the RAG catalog matches and your wine-domain knowledge to infer parent region and country when a specific appellation/subregion is present.
-5. Preserve European Diacritics: Always preserve and restore proper European diacritics (e.g., "Château", "Côtes du Rhône", "Spätlese", "Ribera del Duero", "Crémant", "Saint-Émilion", "Pessac-Léognan", "Grüner Veltliner").
-6. Zero Hallucination Policy: Never invent fields that have no basis in the label's OCR or corroborated metadata. Return null for any scalar field (or [] for "varietals" and "ocr_discrepancies_resolved") when genuinely absent from the label.
-7. Non-Vintage & Sparkling Rule: If "NV" or "Non-Vintage" appears anywhere on the label, OR if no vintage year is printed on a sparkling wine (e.g., Champagne, Brut, Crémant, Prosecco, Cava, Sekt), set "vintage": null and "is_non_vintage": true.
-8. Database Candidate Grounding (RAG) & Cuvée vs Varietal Convention: Treat Retrieved Offline Wine Database Candidates as candidate hypotheses retrieved via character trigrams, sub-span similarity, and relational (Producer <-> Wine <-> Country) links. Prefer candidates tagged with [CORROBORATED_BY_LINKED_WINE] or [COUNTRY_MATCHES_LABEL]. When a bottle has a distinct cuvée/château/blend title, set "wine_name_or_cuvee" to that canonical title; when a bottle is varietal-labeled with no separate fanciful cuvée name, set "wine_name_or_cuvee" to the primary varietal designation printed on the label.
-9. Output Format: Respond with strict JSON matching this exact schema and key order:
-{
-  "ocr_discrepancies_resolved": ["string"],
-  "confidence_notes": "string | null",
-  "country": "string | null",
-  "region": "string | null",
-  "subregion": "string | null",
-  "appellation_or_region": "string | null",
-  "varietals": ["string"],
-  "classification": "string | null",
-  "vintage": "integer | null",
-  "is_non_vintage": "boolean",
-  "abv_percentage": "number | null",
-  "bottle_volume_ml": "integer | null",
-  "producer_or_winery": "string | null",
-  "wine_name_or_cuvee": "string | null"
-}
+STRICT RULES:
+1. Concise Reason-Then-Extract: Populate "ocr_discrepancies_resolved" ([] or AT MOST 2 terse items <= 8 words each ONLY when reconstructing a real misread/clipped entity, NEVER routine spacing/punctuation) and "confidence_notes" (null or <= 10 words) FIRST, then geography, varietals, producer, and wine_name.
+2. Spatial Hierarchy: TOP_HEADER/UPPER_MAIN (y 0.08..0.55, PRIMARY_DISPLAY/SUBHEADER) -> producer_or_winery & wine_name_or_cuvee; MID_BODY (y 0.40..0.75) -> appellation/region/subregion, varietals, classification, vintage; BOTTOM_LEGAL (y > 0.75) -> abv_percentage, bottle_volume_ml, country/legal.
+3. Dynamic Reconstruction of Incomplete or Misread OCR: Reconstruct clipped prefixes/words or misread script capitals/ligatures (flagged with [LOWERCASE_INITIAL_ON_HEADER], [WIDTH_MISMATCH], [BOTTLE_EDGE_MARGIN]) using cross-engine comparison, wine knowledge, and RAG candidates.
+4. 3-Level Geography: Resolve "country", "region" (broad state/wine region, e.g. "Bordeaux", "California", "Tuscany"), "subregion" (specific AOC/DOC/DOCG/AVA/village, e.g. "Margaux", "Napa Valley"), and "appellation_or_region" (most specific printed appellation/region).
+5. Diacritics & Zero Hallucination: Restore proper European diacritics ("Château", "Côtes du Rhône", "Saint-Émilion", "Spätlese", "Crémant"). Return null (or []) when absent.
+6. Non-Vintage & Sparkling: If "NV"/"Non-Vintage" appears OR a sparkling wine (Champagne, Brut, Crémant, Prosecco, Cava, Sekt) has no printed year, set "vintage": null and "is_non_vintage": true.
+7. Database Candidate Grounding (RAG) & Cuvée vs Varietal: Prefer [CORROBORATED_BY_LINKED_WINE] and [COUNTRY_MATCHES_LABEL] candidates. Use the cuvée/château/blend title for "wine_name_or_cuvee", or the primary varietal when varietal-labeled without a fanciful cuvée.
+8. Output ONLY strict JSON in this exact key order:
+{"ocr_discrepancies_resolved":[],"confidence_notes":null,"country":null,"region":null,"subregion":null,"appellation_or_region":null,"varietals":[],"classification":null,"vintage":null,"is_non_vintage":false,"abv_percentage":null,"bottle_volume_ml":null,"producer_or_winery":null,"wine_name_or_cuvee":null}
 """.trimIndent()
 
         /**

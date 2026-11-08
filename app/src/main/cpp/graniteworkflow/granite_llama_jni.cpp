@@ -58,7 +58,7 @@ void granite_llama_log_callback(ggml_log_level level, const char * text, void * 
 struct GraniteLlamaSession {
     llama_model * model = nullptr;
     llama_context * ctx = nullptr;
-    int n_ctx = 4096;
+    int n_ctx = 2048;
     int n_threads = 4;
     std::vector<llama_token> cached_prefix_tokens;
     std::vector<uint8_t> cached_prefix_state;
@@ -121,9 +121,13 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         }
 
         llama_context_params cparams = llama_context_default_params();
-        cparams.n_ctx = n_ctx > 512 ? n_ctx : 4096;
-        cparams.n_batch = cparams.n_ctx;
+        cparams.n_ctx = (n_ctx >= 1024 && n_ctx <= 4096) ? n_ctx : 2048;
+        cparams.n_batch = std::min<uint32_t>(cparams.n_ctx, 1024);
         cparams.n_ubatch = 512;
+        // Critical RAM optimization: we only ever sample logits on the single final prompt/step token.
+        // Leaving n_outputs_max == 0 allocates n_batch * n_vocab * 4 bytes (~1.64 GB for 4096 * 100,352)!
+        cparams.n_outputs_max = 1;
+        cparams.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
         cparams.n_threads = n_threads > 0 ? n_threads : 4;
         cparams.n_threads_batch = cparams.n_threads;
 
@@ -309,7 +313,9 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             session->cached_prefix_state.clear();
 
             if (n_prefix > 0 && n_prefix < n_tokens) {
+                std::vector<int8_t> zero_logits(n_prefix, 0);
                 llama_batch prefix_batch = llama_batch_get_one(tokens.data(), n_prefix);
+                prefix_batch.logits = zero_logits.data();
                 decode_rc = llama_decode(session->ctx, prefix_batch);
                 if (decode_rc == 0) {
                     session->cached_prefix_tokens.assign(tokens.begin(), tokens.begin() + n_prefix);
@@ -368,6 +374,29 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         bool json_escape = false;
 
         for (int i = 0; i < limit; ++i) {
+            // Guardrail for <think> mode: if the model hasn't closed </think> after 80 tokens,
+            // inject "\n</think>\n" so it immediately emits the JSON object instead of exhausting max_tokens.
+            if (expect_closing_think && i == 80 && output.find("</think>") == std::string::npos) {
+                const std::string close_tag = "\n</think>\n";
+                std::vector<llama_token> close_toks(16);
+                int n_close = llama_tokenize(
+                        vocab,
+                        close_tag.c_str(),
+                        static_cast<int32_t>(close_tag.size()),
+                        close_toks.data(),
+                        static_cast<int32_t>(close_toks.size()),
+                        false,
+                        true);
+                if (n_close > 0) {
+                    close_toks.resize(n_close);
+                    output.append(close_tag);
+                    llama_batch close_batch = llama_batch_get_one(close_toks.data(), n_close);
+                    if (llama_decode(session->ctx, close_batch) != 0) {
+                        break;
+                    }
+                }
+            }
+
             // Note: llama_sampler_sample internally calls llama_sampler_accept(sampler, next)
             llama_token next = llama_sampler_sample(sampler, session->ctx, -1);
             if (llama_vocab_is_eog(vocab, next)) {
