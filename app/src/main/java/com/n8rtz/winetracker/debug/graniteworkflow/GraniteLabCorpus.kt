@@ -8,6 +8,16 @@ import com.yourapp.wine.phonecorpus.PhoneCorpusMath
 import org.json.JSONObject
 
 /**
+ * Frozen reference target for a single benchmark field (`producer`, `wine_name`, `country`,
+ * `region`, `subregion`, `vintage`) from `assets/wine-app-labels-v1/scoring.json`.
+ */
+data class GraniteFieldTarget(
+    val status: String,
+    val accepted: Set<String>,
+    val display: String = ""
+)
+
+/**
  * One packaged workbook wine label from `assets/wine-app-labels-v1` — the exact same 124-image
  * dataset that the GLiNER lane lab (`GlinerLabCorpus`) and Lab v7 are measured on.
  */
@@ -17,13 +27,13 @@ data class GraniteDatasetSample(
     val sourceFilename: String,
     val sha256: String,
     val included: Boolean,
-    internal val targets: Map<String, PhoneCorpusMath.Target>
+    val targets: Map<String, GraniteFieldTarget>
 ) {
     val displayName: String
         get() = "#$reviewNumber · $sourceFilename"
 
-    internal fun target(field: String): PhoneCorpusMath.Target =
-        targets[field] ?: PhoneCorpusMath.Target("unresolved", emptySet(), "")
+    fun target(field: String): GraniteFieldTarget =
+        targets[field] ?: GraniteFieldTarget("unresolved", emptySet(), "")
 }
 
 /**
@@ -101,6 +111,9 @@ object GraniteLabCorpus {
         "vintage" to "Vintage"
     )
 
+    private fun GraniteFieldTarget.toCorpusTarget(): PhoneCorpusMath.Target =
+        PhoneCorpusMath.Target(status = status, accepted = accepted, display = display)
+
     fun load(context: Context): List<GraniteDatasetSample> {
         val inputs = JSONObject(
             context.assets.open("$ASSET_ROOT/inputs.json").bufferedReader().use { it.readText() }
@@ -134,11 +147,11 @@ object GraniteLabCorpus {
         return selected.mapIndexed { index, entry ->
             val image = entry.getString("image")
             val fieldsObj = targetsByImage[image]?.optJSONObject("fields") ?: JSONObject()
-            val parsedTargets = linkedMapOf<String, PhoneCorpusMath.Target>()
+            val parsedTargets = linkedMapOf<String, GraniteFieldTarget>()
             fieldsObj.keys().forEach { field ->
                 val targetObj = fieldsObj.optJSONObject(field) ?: return@forEach
                 val acceptedArray = targetObj.optJSONArray("accepted")
-                parsedTargets[field] = PhoneCorpusMath.Target(
+                parsedTargets[field] = GraniteFieldTarget(
                     status = targetObj.optString("status", "unresolved"),
                     accepted = (0 until (acceptedArray?.length() ?: 0))
                         .mapNotNull { acceptedArray?.optString(it) }
@@ -235,12 +248,12 @@ object GraniteLabCorpus {
         runResult: GraniteWorkflowRunResult
     ): GraniteDatasetRow {
         val observed = mapToBenchmarkFields(runResult.structuredJson)
-        val targetMap = fields.associateWith { sample.target(it) }
+        val targetMap = fields.associateWith { sample.target(it).toCorpusTarget() }
         val eligible = PhoneCorpusMath.eligible(targetMap)
         val fieldResults = fields.map { field ->
             val target = sample.target(field)
             val value = observed[field].orEmpty()
-            val outcome = PhoneCorpusMath.outcome(target, value, failed = false)
+            val outcome = PhoneCorpusMath.outcome(target.toCorpusTarget(), value, failed = false)
             GraniteFieldScoreResult(
                 field = field,
                 label = fieldLabels.getValue(field),
@@ -272,7 +285,7 @@ object GraniteLabCorpus {
         sample: GraniteDatasetSample,
         errorMessage: String
     ): GraniteDatasetRow {
-        val targetMap = fields.associateWith { sample.target(it) }
+        val targetMap = fields.associateWith { sample.target(it).toCorpusTarget() }
         val eligible = PhoneCorpusMath.eligible(targetMap)
         val fieldResults = fields.map { field ->
             GraniteFieldScoreResult(
