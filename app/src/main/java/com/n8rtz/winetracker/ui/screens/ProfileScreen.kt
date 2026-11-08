@@ -30,6 +30,7 @@ import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.viewmodels.RestoreImportState
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import com.yourapp.wine.gliner.GlinerLabActivity
 import kotlinx.coroutines.launch
 
 /** Which of the two Profile-tab screens [ProfileScreen] shows. They share one state/dialog host. */
@@ -294,7 +295,7 @@ fun ProfileScreen(
                                 Text("Large image dataset test")
                             },
                             supportingContent = {
-                                Text("Fresh OCR over all 125 retained workbook labels — on-device comparison")
+                                Text("Fresh OCR over all 124 retained workbook labels — on-device comparison")
                             },
                             modifier = Modifier.fillMaxWidth().clickable {
                                 context.startActivity(
@@ -303,6 +304,18 @@ fun ProfileScreen(
                                         "com.yourapp.wine.phonecorpus.WineAppLabelsActivity"
                                     )
                                 )
+                            }
+                        )
+
+                        ListItem(
+                            headlineContent = {
+                                Text("GLiNER lane lab — ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4")
+                            },
+                            supportingContent = {
+                                Text("New structure: both OCR engines read the label, GLiNER groups it into producer / wine name / appellation, then the existing Lab v7 post-processing")
+                            },
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                context.startActivity(android.content.Intent(context, GlinerLabActivity::class.java))
                             }
                         )
 

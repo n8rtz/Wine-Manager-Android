@@ -10,6 +10,25 @@ ASSETS = ROOT / "app/src/main/assets/wine-app-labels-v1"
 
 
 class WineAppLabelsCorpusTests(unittest.TestCase):
+    def test_shared_lab_startup_initializes_selection_before_loading_and_reports_asset_errors(self):
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        screen = (ROOT / "gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt").read_text()
+        self.assertLess(viewmodel.index("private val includedSelection: Set<String> by lazy"),
+                        viewmodel.index("init { load(PhoneCorpusRunner.Mode.LAB) }"))
+        load = viewmodel.split("fun load(mode: PhoneCorpusRunner.Mode, fresh: Boolean = false)", 1)[1]
+        before_background, background = load.split("bgScope.launch {", 1)
+        self.assertNotIn("expectedCount", before_background)
+        self.assertLess(background.index("try {"), background.index("val count = expectedCount"))
+        self.assertIn('message = "Cannot load the curated-label test: ${e.message}"', background)
+        self.assertIn('labState.message.startsWith("Cannot load the curated-label test:")', screen)
+
+    def test_owner_corrected_154_subregion_is_porto(self):
+        scoring = json.loads((ASSETS / "scoring.json").read_text())
+        photo = next(row for row in scoring["images"] if row["review_number"] == 154)
+        self.assertEqual(photo["fields"]["subregion"], {
+            "status": "expected_value", "accepted": ["porto"], "target": "Porto",
+        })
+
     def test_packaged_photos_and_target_metadata_are_complete_and_frozen(self):
         labels = json.loads((REVIEW / "candidate-labels.json").read_text())
         manifest = json.loads((ASSETS / "manifest.json").read_text())
@@ -18,14 +37,16 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         scoring = json.loads((ASSETS / "scoring.json").read_text())
         inputs = inputs_doc["images"]
         targets = scoring["images"]
-        self.assertEqual((len(labels["records"]), len(inputs), len(targets)), (125, 125, 125))
-        self.assertEqual((selection["included_count"], selection["excluded_count"]), (125, 10))
+        extra = json.loads((REVIEW / "internet-labels-v1.json").read_text())["records"]
+        self.assertEqual((len(labels["records"]), len(extra), len(inputs), len(targets)), (124, 69, 193, 193))
+        self.assertEqual((selection["included_count"], selection["excluded_count"]), (193, 11))
+        self.assertIn(67, selection["excluded_review_numbers"])
         self.assertEqual({row["image"] for row in inputs}, {row["image"] for row in targets})
         self.assertEqual({row["image"] for row in selection["included_images"]}, {row["image"] for row in inputs})
         self.assertEqual({p.name for p in (ASSETS / "images").glob("*.jpg")}, {row["image"] for row in inputs})
         self.assertNotIn("IMG_2732.jpeg", {p.name for p in (ASSETS / "images").iterdir()})
-        self.assertEqual(manifest["count"], 125)
-        self.assertEqual(sum(row["source_repo"] == "AntoninLeroy/wine_label_reader_toolkit" for row in inputs), 103)
+        self.assertEqual(manifest["count"], 193)
+        self.assertEqual(sum(row["source_repo"] == "AntoninLeroy/wine_label_reader_toolkit" for row in inputs), 102)
         self.assertEqual(sum(row["source_repo"] == "n8rtz/Wine-Reference-Drop" for row in inputs), 22)
         self.assertEqual(manifest["bytes"], sum((ASSETS / "images" / row["image"]).stat().st_size for row in inputs))
         self.assertEqual(hashlib.sha256((ASSETS / "inputs.json").read_bytes()).hexdigest(), manifest["inputs_sha256"])
@@ -39,9 +60,74 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             # bytes are packaged under wine-app-labels-v1, so verify provenance there.
             packaged = ASSETS / "images" / by_sha[row["source_sha256"]]
             self.assertEqual(hashlib.sha256(packaged.read_bytes()).hexdigest(), row["source_sha256"], row["source_path"])
-        self.assertEqual({row["review_number"] for row in targets}, {row["review_number"] for row in labels["records"]})
-        self.assertFalse({14, 49, 52, 55, 64, 73, 133, 159, 168} & {row["review_number"] for row in targets})
+        self.assertEqual({row["review_number"] for row in targets}, {row["review_number"] for row in labels["records"] + extra})
+        self.assertFalse({14, 49, 52, 55, 64, 67, 73, 133, 159, 168} & {row["review_number"] for row in targets})
         self.assertTrue(all(set(row["fields"]) == {"producer", "wine_name", "country", "region", "subregion", "vintage"} for row in targets))
+
+    def test_internet_front_labels_share_the_existing_corpus_and_keep_unresolved_fields(self):
+        additions = json.loads((REVIEW / "internet-labels-v1.json").read_text())["records"]
+        inputs = {row["review_number"]: row for row in json.loads((ASSETS / "inputs.json").read_text())["images"]}
+        targets = {row["review_number"]: row for row in json.loads((ASSETS / "scoring.json").read_text())["images"]}
+        self.assertEqual([row["review_number"] for row in additions], list(range(191, 260)))
+        for row in additions:
+            number = row["review_number"]
+            self.assertIs(row["single_wine_bottle_reviewed"], True)  # manual visual review, not an object detector
+            self.assertEqual(row["image"], inputs[number]["image"])
+            self.assertEqual(row["image"], targets[number]["image"])
+            if row["source_repo"] == "CostcoWineBlog.com":
+                self.assertTrue(row["source_page"].startswith("https://costcowineblog.com/"))
+                self.assertTrue(row["source_url"].startswith("https://costcowineblog.com/wp-content/uploads/"))
+            else:
+                self.assertEqual(row["source_repo"], "rogerioxavier/X-Wines")
+                self.assertIn("/Dataset/last/XWines_Test_100_labels.zip", row["source_url"])
+                self.assertEqual(row["source_image_member"], "XWines_Test_100_labels/" + row["catalog_wine_id"] + ".jpeg")
+                self.assertEqual(row["source_filename"], "X-Wines label " + row["catalog_wine_id"] + ".jpeg")
+            self.assertEqual(hashlib.sha256((ASSETS / "images" / row["image"]).read_bytes()).hexdigest(), row["sha256"])
+            for field in ("producer", "wine_name", "country", "region", "subregion", "vintage"):
+                self.assertEqual(targets[number]["fields"][field]["status"], row[field + "_status"])
+        xwines = [row for row in additions if row["source_repo"] == "rogerioxavier/X-Wines"]
+        self.assertEqual(len(xwines), 63)
+        self.assertEqual(len({row["catalog_wine_id"] for row in xwines}), 63)
+        self.assertEqual(sum(row["vintage_status"] == "unresolved" for row in xwines), 1)
+        self.assertEqual(sum(row["vintage_status"] == "expected_blank" for row in xwines), 61)
+        self.assertEqual(sum(all(row[f + "_status"] != "unresolved" for f in
+                                 ("producer", "wine_name", "country", "region", "subregion", "vintage"))
+                             for row in xwines), 61)
+        self.assertEqual(sum(all(field["status"] != "unresolved" for field in row["fields"].values())
+                             for row in targets.values()), 188)
+        # Blank is about the photographed front, not proof the wine is non-vintage.
+        for number in (198, 209, 226, 247):
+            self.assertEqual(targets[number]["fields"]["vintage"]["status"], "expected_blank")
+        self.assertEqual(targets[238]["fields"]["vintage"]["status"], "unresolved")
+        self.assertEqual(targets[259]["fields"]["vintage"]["target"], "2019")
+        for number, region, subregion in (
+            (197, "Rio Grande do Sul", "Vale dos Vinhedos"),
+            (198, "Rio Grande do Sul", "Serra Gaúcha"),
+            (241, "Central Valley", "Colchagua Valley"),
+            (243, "Central Valley", "Cachapoal Valley"),
+            (244, "Central Valley", "Maule Valley"),
+            (249, "South Australia", "Clare Valley"),
+        ):
+            self.assertEqual(targets[number]["fields"]["region"]["target"], region)
+            self.assertEqual(targets[number]["fields"]["subregion"]["target"], subregion)
+        self.assertEqual(targets[226]["fields"]["subregion"]["target"], "Delle Venezie")
+        self.assertEqual(targets[226]["fields"]["region"]["status"], "unresolved")
+        self.assertEqual(targets[225]["fields"]["subregion"]["status"], "expected_blank")
+        self.assertEqual(targets[240]["fields"]["subregion"]["status"], "expected_blank")
+        self.assertEqual(targets[239]["fields"]["subregion"]["target"], "Jerez")
+        self.assertEqual(targets[228]["fields"]["region"]["target"], "Trentino-Alto Adige")
+        self.assertEqual(targets[228]["fields"]["subregion"]["target"], "Alto Adige")
+        self.assertIn("weingutaldinger", targets[208]["fields"]["producer"]["accepted"])
+        self.assertIn("loire", targets[213]["fields"]["region"]["accepted"])
+        self.assertIn("rhone", targets[218]["fields"]["region"]["accepted"])
+        self.assertIn("chablispremiercru", targets[221]["fields"]["subregion"]["accepted"])
+        self.assertEqual(targets[196]["fields"]["region"]["status"], "unresolved")
+        self.assertEqual(targets[196]["fields"]["subregion"]["status"], "unresolved")
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        self.assertIn("private val expectedCount: Int get() = includedIds().size", viewmodel)
+        self.assertIn("captures.values.all { it.count == expectedCount }", viewmodel)
+        self.assertIn("store.migrateRetainedBaselines(BASELINE_MODES, hashes)", viewmodel)
+        self.assertIn("val neededBaselines = BASELINE_MODES.filter", viewmodel)
 
     def test_legacy_saved_photo_map_uses_exact_bytes(self):
         # The 168-photo debug corpus is retired, so the map is checked for internal consistency
@@ -50,10 +136,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         new_inputs = json.loads((ASSETS / "inputs.json").read_text())["images"]
         by_image = {row["image"]: row["sha256"] for row in new_inputs}
         rows = mapping["images"]
-        self.assertEqual(mapping["mapping_count"], 103)
-        self.assertEqual(len(rows), 103)
-        self.assertEqual(len({row["legacy_image"] for row in rows}), 103)
-        self.assertEqual(len({row["image"] for row in rows}), 103)
+        self.assertEqual(mapping["mapping_count"], 102)
+        self.assertEqual(len(rows), 102)
+        self.assertEqual(len({row["legacy_image"] for row in rows}), 102)
+        self.assertEqual(len({row["image"] for row in rows}), 102)
         for row in rows:
             self.assertRegex(row["legacy_image"], r"^[0-9a-f]{40}\.jpg$")
             self.assertEqual(by_image[row["image"]], row["sha256"], row["legacy_image"])
@@ -61,7 +147,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
 
     def test_gazetteer_coverage_counts_unique_known_labels_on_scoring_side(self):
         coverage = json.loads((ASSETS / "gazetteer-coverage.json").read_text())
-        self.assertEqual(coverage["dataset_count"], 125)
+        self.assertEqual(coverage["dataset_count"], 193)
         self.assertIn("never provided to the OCR runner", coverage["method"])
         # Per-parameter total coverage across all consulted databases (rendered on screen).
         params = coverage["parameters"]
@@ -76,33 +162,33 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             ],
         )
         by_param = {row["id"]: row for row in params}
-        self.assertEqual((by_param["producer"]["matched_labels"], by_param["producer"]["total_labels"]), (101, 125))
-        self.assertEqual((by_param["wine_name"]["matched_labels"], by_param["wine_name"]["total_labels"]), (106, 123))
-        self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 42)
-        self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 64)
-        self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (124, 124))
-        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (120, 120))
-        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (77, 77))
-        self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 125 for row in params))
+        self.assertEqual((by_param["producer"]["matched_labels"], by_param["producer"]["total_labels"]), (167, 193))
+        self.assertEqual((by_param["wine_name"]["matched_labels"], by_param["wine_name"]["total_labels"]), (153, 192))
+        self.assertEqual(by_param["wine_name"]["wine_index_matched_labels"], 85)
+        self.assertEqual(by_param["wine_name"]["appellation_or_varietal_matched_labels"], 68)
+        self.assertEqual((by_param["country"]["matched_labels"], by_param["country"]["total_labels"]), (193, 193))
+        self.assertEqual((by_param["region"]["matched_labels"], by_param["region"]["total_labels"]), (187, 187))
+        self.assertEqual((by_param["subregion"]["matched_labels"], by_param["subregion"]["total_labels"]), (126, 126))
+        self.assertTrue(all(0 <= row["matched_labels"] <= row["total_labels"] <= 193 for row in params))
         # Source-level databases remain in the asset for provenance auditing.
         rows = {row["id"]: row for row in coverage["databases"]}
-        self.assertEqual(set(rows), {"lwin_producers", "expanded_producers", "lwin_wines", "appellations", "wine_geography",
+        self.assertEqual(set(rows), {"lwin_producers", "expanded_producers", "approved_brands", "lwin_wines", "appellations", "wine_geography",
                                      "kb_producers", "kb_wine_names", "kb_appellations", "kb_geography"})
-        self.assertEqual(rows["lwin_producers"]["matched_labels"], 86)
+        self.assertEqual(rows["lwin_producers"]["matched_labels"], 135)
         # The Lab expanded producer index (LWIN + X-Wines/TTB/OSM candidates) is a
         # strict superset of the LWIN-only producer coverage.
-        self.assertEqual(rows["expanded_producers"]["matched_labels"], 101)
+        self.assertEqual(rows["expanded_producers"]["matched_labels"], 167)
         self.assertGreater(rows["expanded_producers"]["matched_labels"], rows["lwin_producers"]["matched_labels"])
-        self.assertEqual(rows["lwin_wines"]["matched_labels"], 42)
-        self.assertEqual(rows["appellations"]["matched_labels"], 89)
+        self.assertEqual(rows["lwin_wines"]["matched_labels"], 85)
+        self.assertEqual(rows["appellations"]["matched_labels"], 141)
         # Scanner KB rows include the bundled wine-knowledge origins catalog
         # (editorial + UC Davis AVA) folded into the knowledge-base place list.
         # The nested catalog adds the Bordeaux, Portuguese, Georgian and Italian names the
         # workbook prints; geography-role rows are counted as regions, not appellations.
-        self.assertEqual(rows["kb_appellations"]["matched_labels"], 77)
-        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 42)
-        self.assertEqual(rows["kb_producers"]["matched_labels"], 13)
-        self.assertTrue(all(0 <= row["matched_labels"] <= 125 for row in rows.values()))
+        self.assertEqual(rows["kb_appellations"]["matched_labels"], 107)
+        self.assertEqual(rows["kb_appellations"]["database_records_matched"], 62)
+        self.assertEqual(rows["kb_producers"]["matched_labels"], 18)
+        self.assertTrue(all(0 <= row["matched_labels"] <= 193 for row in rows.values()))
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         self.assertIn('Text("Database coverage"', activity)
         self.assertNotIn("Gazetteer database coverage", activity)
@@ -115,11 +201,20 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
     def test_user_adjudications_are_applied_to_workbook_and_phone_targets(self):
         labels = json.loads((REVIEW / "candidate-labels.json").read_text())
         by_review = {row["review_number"]: row for row in labels["records"]}
+        self.assertNotIn(67, by_review)
+        self.assertEqual((by_review[90]["wine_name"], by_review[90]["country"], by_review[90]["region"], by_review[90]["subregion"]),
+                         ("Premier Grand Cru Classé", "France", "Bordeaux", "Margaux"))
+        self.assertEqual((by_review[92]["country"], by_review[92]["region"], by_review[92]["subregion"]),
+                         ("France", "Bordeaux", "Pessac-Léognan"))
         self.assertEqual(by_review[169]["wine_name"], "Gran Reserva 904")
         self.assertEqual(by_review[171]["wine_name"], "Triton")
+        self.assertEqual((by_review[171]["region"], by_review[171]["subregion"]), ("Castilla y Leon", "Toro"))
         self.assertEqual((by_review[172]["producer"], by_review[172]["wine_name"]), ("Kirkland Signature", "Pauillac"))
         self.assertEqual((by_review[173]["producer"], by_review[173]["wine_name"], by_review[173]["subregion"]), ("Ciabot", "Baronetto", "Barbaresco"))
-        self.assertEqual(by_review[179]["wine_name"], "Campo Eliseo")
+        self.assertEqual((by_review[179]["producer"], by_review[179]["wine_name"], by_review[179]["region"], by_review[179]["subregion"]),
+                         ("Campo Eliseo", "Cuvée Alegre", "Castilla y Leon", "Toro"))
+        self.assertEqual((by_review[181]["region"], by_review[181]["subregion"]), ("Maipo Valley", "Puente Alto"))
+        self.assertEqual((by_review[184]["region"], by_review[184]["subregion"]), ("Willamette Valley", "Dundee Hills"))
         self.assertEqual(by_review[180]["wine_name_alternates"], ["Peppoli"])
         self.assertEqual(by_review[182]["country"], "California")
         self.assertEqual(by_review[182]["subregion_alternates"], ["Stags Leap"])
@@ -129,7 +224,22 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(by_review[190]["notes"].find("bottler, not substituted for producer") >= 0, True)
         scoring = json.loads((ASSETS / "scoring.json").read_text())
         cases = {row["review_number"]: row for row in scoring["images"]}
+        self.assertNotIn(67, cases)
+        self.assertEqual((cases[90]["fields"]["wine_name"]["target"], cases[90]["fields"]["country"]["target"],
+                          cases[90]["fields"]["region"]["target"], cases[90]["fields"]["subregion"]["target"]),
+                         ("Premier Grand Cru Classé", "France", "Bordeaux", "Margaux"))
+        self.assertEqual((cases[92]["fields"]["region"]["target"], cases[92]["fields"]["subregion"]["target"]),
+                         ("Bordeaux", "Pessac-Léognan"))
         self.assertEqual(cases[169]["fields"]["wine_name"]["target"], "Gran Reserva 904")
+        self.assertEqual((cases[171]["fields"]["region"]["target"],cases[171]["fields"]["subregion"]["target"]),
+                         ("Castilla y Leon","Toro"))
+        self.assertEqual((cases[179]["fields"]["producer"]["target"],cases[179]["fields"]["wine_name"]["target"],
+                          cases[179]["fields"]["region"]["target"],cases[179]["fields"]["subregion"]["target"]),
+                         ("Campo Eliseo","Cuvée Alegre","Castilla y Leon","Toro"))
+        self.assertEqual((cases[181]["fields"]["region"]["target"],cases[181]["fields"]["subregion"]["target"]),
+                         ("Maipo Valley","Puente Alto"))
+        self.assertEqual((cases[184]["fields"]["region"]["target"],cases[184]["fields"]["subregion"]["target"]),
+                         ("Willamette Valley","Dundee Hills"))
         self.assertEqual(cases[180]["fields"]["wine_name"]["accepted"], ["peppolichianticlassico", "peppoli"])
         self.assertIn("stagsleap", cases[182]["fields"]["subregion"]["accepted"])
         self.assertEqual(cases[176]["fields"]["vintage"]["status"], "unresolved")
@@ -141,11 +251,20 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         red_ids = [49, 52, 55, 64, 73, 133, 159, 168]
         self.assertEqual(audit["red_rows_removed_from_both_tabs"], red_ids)
         self.assertEqual(audit["owner_removed_club_des_sommeliers_review_ids"], [14])
-        self.assertEqual(audit["all_removed_review_ids"], sorted(red_ids + [14]))
+        self.assertEqual(audit["owner_removed_dataset_review_ids"], [67])
+        self.assertEqual({row["sheet"] for row in audit["owner_removed_dataset_row_detail"]}, {"reference-data-168", "Condensed Table"})
+        self.assertEqual(audit["all_removed_review_ids"], sorted(red_ids + [14, 67]))
+        corrections = {row["review_number"]: row["fields"] for row in audit["owner_adjudicated_field_corrections"]}
+        self.assertEqual(corrections[90], {"wine_name": "Premier Grand Cru Classé", "country": "France", "region": "Bordeaux", "subregion": "Margaux"})
+        self.assertEqual(corrections[92], {"region": "Bordeaux", "subregion": "Pessac-Léognan"})
+        self.assertEqual(corrections[171], {"region": "Castilla y Leon", "subregion": "Toro"})
+        self.assertEqual(corrections[179], {"producer": "Campo Eliseo", "wine_name": "Cuvée Alegre", "region": "Castilla y Leon", "subregion": "Toro"})
+        self.assertEqual(corrections[181], {"region": "Maipo Valley", "subregion": "Puente Alto"})
+        self.assertEqual(corrections[184], {"region": "Willamette Valley", "subregion": "Dundee Hills"})
         self.assertTrue((REVIEW / "reference-data-scrubbed-updated.xlsx").is_file())
-        self.assertEqual(len(json.loads((ASSETS / "inputs.json").read_text())["images"]), 125)
+        self.assertEqual(len(json.loads((ASSETS / "inputs.json").read_text())["images"]), 193)
 
-    def test_main_profile_routes_to_the_125_label_test(self):
+    def test_main_profile_routes_to_the_124_label_test(self):
         profile = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/ProfileScreen.kt").read_text()
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
@@ -157,7 +276,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('PhoneCorpusRunner.runImageAllModes(', viewmodel)
         self.assertNotIn('PhoneCorpusRunner.runImage(', viewmodel)
         self.assertIn('"wine-app-labels-v1"', viewmodel)
-        self.assertIn("125 retained workbook-linked wine labels", activity)
+        self.assertNotIn("124 retained workbook-linked wine labels", activity)
         producer_manifest = json.loads((ROOT / "app/src/main/assets/producer-gazetteer-v1/manifest.json").read_text())
         self.assertNotIn("support", producer_manifest)
         self.assertNotIn("support_attribution", producer_manifest)
@@ -170,9 +289,11 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("the expanded producer index (LWIN plus X-Wines/TTB/OpenStreetMap candidates)", viewmodel)
         self.assertIn("LAB ONLY expanded producer index", (ROOT / "_refs/ARCH.md").read_text())
         self.assertIn("Pipeline bottleneck matrix", activity)
-        # Frozen state is shown per mode (short captions), not explained in a paragraph.
-        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
-        self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
+        # Top model section shows only Lab v5 + Cached OCR (retired Prod model rows removed from top).
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
+        self.assertNotIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", activity)
+        self.assertNotIn("RadioButton(", activity)
         self.assertNotIn("Every photo runs through all four versions", activity)
         self.assertIn("Mode.entries.map { comparedMode ->", viewmodel)
         self.assertNotIn("savedPredictions", viewmodel)
@@ -185,15 +306,17 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('BASELINE_MODES = listOf(', viewmodel)
         # Only Lab is offered as a runnable mode; Prod versions are frozen comparators.
         self.assertIn("private val BASELINE_MODES = listOf(", viewmodel)
-        self.assertIn("RadioButton(", activity)
+        self.assertGreaterEqual(activity.count("SelectionContainer {"), 8)
+        self.assertIn("DisableSelection {", activity)
+        self.assertNotIn("SelectionContainer {\n            LazyColumn(", activity)
         self.assertNotIn("RUNNABLE_MODES", viewmodel)
         self.assertNotIn("Fully correct = all six scorable", activity)
         # The plain "Ready…" line was removed; the counts say the same thing.
-        self.assertNotIn("Only the 125 retained workbook labels are eligible", viewmodel)
+        self.assertNotIn("Only the 124 retained workbook labels are eligible", viewmodel)
         self.assertIn("if (state.message.isNotBlank()) Text(state.message)", activity)
-        self.assertIn('"Lab v4 checkpointed: ${state.labCompleted}/${state.total}"', activity)
+        self.assertIn('"Lab v5 checkpointed: ${state.labCompleted}/${state.total}"', activity)
         self.assertIn("Prod baselines captured: $frozen/${state.total} photos", activity)
-        start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
+        start_body = viewmodel.split("fun start(retryFailures: Boolean = false, automated: Boolean = false)", 1)[1]
         self.assertEqual(start_body.count("PhoneCorpusRunner.runImageAllModes("), 1)
         self.assertIn('app, image, input.getString("sha256"), needed, File(root, "work"),', start_body)
         # Only photos without a frozen record enter a Prod version; Lab is always eligible.
@@ -211,43 +334,76 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("vm.onForeground()", activity)
         self.assertIn("Reuse this version's saved per-photo results", viewmodel)
         self.assertIn('"evaluation_set_sha256", "scoring_sha256"', viewmodel)
-        self.assertIn('metadata.optString("pipeline") != mode.pipelineId', viewmodel)
+        self.assertIn('val isCurrentRun = savedMode == mode.name && savedPipeline == mode.pipelineId', viewmodel)
+        self.assertIn('val isLegacyProdV3Run = mode == PhoneCorpusRunner.Mode.PRODUCTION_V4', viewmodel)
         self.assertNotIn('dir.name.startsWith(folderPrefix(mode))', viewmodel)
         runner = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt").read_text()
-        for label in ("Lab v4", "Prod v3.0", "Prod v2.0", "Prod v1.0"):
+        for label in ("Lab v5", "Prod v4.0", "Prod v2.0", "Prod v1.0"):
             self.assertIn(f'("{label}"', runner)
+
+    def test_recent_build_export_is_scalar_only_and_covers_the_dataset(self):
+        vm = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        body = vm.split("private fun writeRecentBuildsCsv(", 1)[1].split("fun prepareRecentBuildsExport", 1)[0]
+        for required in ('"run_summary"', '"parameter_summary"', '"wine_field"',
+                         '"lab_modules" to run.labModules', '"recognized"', '"outcome"',
+                         '0 until images.length()', '"results_unavailable"', '"not_attempted"'):
+            self.assertIn(required, body)
+        # Decision/OCR records are opt-in for archived suite exports, never ordinary recent rows.
+        self.assertIn("suite:File? = null", body)
+        self.assertIn("if(suite!=null)", body)
+        self.assertNotIn('"tokens"', body)
+        self.assertNotIn('"fallback_choices"', body)
+        self.assertIn('vm.prepareRecentBuildsExport()', activity)
+        self.assertIn('val recentRuns = mutable.value.recentLabRuns.toList()', vm)
+
+    def test_suite_diagnostics_are_durable_and_ocr_is_shared(self):
+        vm = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        for required in ('"run_ids"', '"run_summaries"', '"shared_ocr"', '"run_decision"',
+                         '"field_decision"', '"diagnostic_status"', '"ocr_ref"', '"shared_ocr_row_ids"',
+                         'snapshotSuiteOcr(suite)', 'prepareSavedSuiteExport', 'savedSuiteIds()',
+                         'row.remove("raw_text")', 'result.remove("tokens")', '"scoring.json"', '"evaluation-set.json"'):
+            self.assertIn(required, vm)
+        self.assertIn('vm.prepareSavedSuiteExport(suiteId)', activity)
+        self.assertLess(vm.index('snapshotSuiteOcr(suite)'), vm.index('for ((index, modules) in plan.withIndex())'))
+        trace = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceTrace.kt").read_text()
+        self.assertIn('droppedRows++', trace)
+        preview = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt").read_text()
+        for key in ('"base_rank"', '"adjusted_rank"', '"rank_delta"', '"trace_rows_dropped"'):
+            self.assertIn(key, preview)
 
     def test_large_image_dataset_screen_prepares_and_saves_csv_exports(self):
         # The main-branch Large image dataset test page prepared CSVs, then saved each part via
-        # the system document picker. The 125-label replacement screen lost that flow.
+        # the system document picker. The 124-label replacement screen lost that flow.
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         self.assertIn('ActivityResultContracts.CreateDocument("text/csv")', activity)
         self.assertIn("vm.saveExportPart(it, exportIndex)", activity)
         self.assertIn('Text("Prepare scored CSV export")', activity)
-        self.assertIn('Text("Prepare raw diagnostics CSV export")', activity)
+        self.assertIn('Text("Prepare raw diagnostics JSON export")', activity)
         self.assertIn("vm.prepareExport(raw = false)", activity)
         self.assertIn("vm.prepareExport(raw = true)", activity)
         self.assertIn("export.launch(file.name)", activity)
-        self.assertIn('Text("Save ${if (state.exportParts.size > 1) "part ${index + 1}/${state.exportParts.size}" else "CSV"}', activity)
+        self.assertIn('CreateDocument("application/json")', activity)
         self.assertIn('Text("Split an existing CSV for upload")', activity)
         self.assertIn("vm::splitExistingCsv", activity)
         self.assertIn("val exportParts: List<File> = emptyList()", viewmodel)
-        self.assertIn("fun prepareExport(raw: Boolean)", viewmodel)
+        self.assertIn("fun prepareExport(raw: Boolean, recentBuilds: Boolean = false)", viewmodel)
         self.assertIn("fun saveExportPart(uri: Uri, index: Int)", viewmodel)
         self.assertIn("fun splitExistingCsv(uri: Uri)", viewmodel)
-        # Both exports cover every version (frozen Prod + live Lab) and use the shared splitter.
+        # Both exports cover every version; only the ordinary CSV paths use the CSV splitter.
         self.assertIn("for ((mode, records) in predictionsByMode())", viewmodel)
         self.assertIn("private fun writeScoredCsv(target: File)", viewmodel)
-        self.assertIn("private fun writeRawCsv(target: File)", viewmodel)
+        self.assertIn("private fun rawExportRows(): Sequence<Map<String, String>>", viewmodel)
         self.assertIn('"result_origin" to "frozen_baseline"', viewmodel)
         self.assertIn("CsvUploadParts.split(target, exportDir)", viewmodel)
         # Saving a CSV opens the document picker, which must not be treated as pausing a run.
         self.assertIn("if (mutable.value.busy && !exporting) {", viewmodel)
 
     def test_prod_versions_are_captured_once_and_then_read_from_the_frozen_store(self):
-        # Owner rule: Prod v1.0/v2.0/v3.0 are benchmarks, not contenders. Each photo runs through
-        # them once, the outcome is saved, and later passes score the saved outcome. Only Lab v4
+        # Owner rule: Prod v1.0/v2.0/v4.0 are benchmarks, not contenders. Each photo runs through
+        # them once, the outcome is saved, and later passes score the saved outcome. Only Lab v5
         # re-runs, so the comparison rows stay meaningful across builds.
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
@@ -275,7 +431,8 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn('if (previous.optString("status") != "complete") continue', promote_body)
         self.assertIn("if (image.isBlank() || record(mode, image) != null) continue", promote_body)
         self.assertIn("save(mode, image, previous)", promote_body)
-        self.assertIn("runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf { it.optBoolean(\"frozen\") }", store)
+        self.assertIn('.firstOrNull { it.optBoolean("frozen") }', store)
+        self.assertIn('.filter { it.isFile }', store)
 
         # 4. Selection rule, mirrored from start(); the source must encode the same predicate.
         def needed(has_lab, lab_failed, frozen, frozen_failed, retry):
@@ -283,14 +440,14 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
             def prod(version):
                 record = frozen.get(version)
                 return (record is not None and frozen_failed.get(version, False)) if retry else record is None
-            return (["LAB"] if (lab_failed if has_lab else True) else []) + [v for v in ("V1", "V2", "V3") if prod(v)]
-        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1, "V3": 1}, {}, False), [])
-        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1}, {}, False), ["V3"])
-        self.assertEqual(needed(False, False, {"V1": 1, "V2": 1, "V3": 1}, {}, False), ["LAB"])
-        self.assertEqual(needed(True, False, {}, {}, False), ["V1", "V2", "V3"])
-        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1, "V3": 1}, {"V2": True}, True), ["V2"])
-        self.assertEqual(needed(True, True, {"V1": 1, "V2": 1, "V3": 1}, {}, True), ["LAB"])
-        start_body = viewmodel.split("fun start(retryFailures: Boolean = false)", 1)[1]
+            return (["LAB"] if (lab_failed if has_lab else True) else []) + [v for v in ("V1", "V2", "V4") if prod(v)]
+        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1, "V4": 1}, {}, False), [])
+        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1}, {}, False), ["V4"])
+        self.assertEqual(needed(False, False, {"V1": 1, "V2": 1, "V4": 1}, {}, False), ["LAB"])
+        self.assertEqual(needed(True, False, {}, {}, False), ["V1", "V2", "V4"])
+        self.assertEqual(needed(True, False, {"V1": 1, "V2": 1, "V4": 1}, {"V2": True}, True), ["V2"])
+        self.assertEqual(needed(True, True, {"V1": 1, "V2": 1, "V4": 1}, {}, True), ["LAB"])
+        start_body = viewmodel.split("fun start(retryFailures: Boolean = false, automated: Boolean = false)", 1)[1]
         self.assertIn("val runLab = if (retryFailures) labPrevious == null || isFailed(labPrevious) else labPrevious == null", start_body)
         self.assertIn("if (retryFailures) frozen != null && isFailed(frozen) else frozen == null", start_body)
         self.assertIn("if (!runLab && neededBaselines.isEmpty()) continue", start_body)
@@ -305,11 +462,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertEqual(viewmodel.count('"run_id" to "frozen-baseline"'), 2)  # scored + raw exports
         self.assertIn('"captured_build" to baselines?.capture(mode)?.build.orEmpty()', viewmodel)
 
-        # 6. The screen never offers a Prod version as a live run and says the rows are frozen.
-        self.assertIn("enabled = !state.busy && mode == PhoneCorpusRunner.Mode.LAB,", activity)
-        self.assertIn('"Baseline not captured yet · will run once for each remaining photo"', activity)
-        self.assertIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
-        self.assertIn('"Frozen ${capture.count}/${state.total} photos · captured by ${capture.build}"', activity)
+        # 6. The screen never offers a Prod version as a live run at the top; only Lab v5 + Cached OCR appear.
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
+        self.assertNotIn("PhoneCorpusRunner.Mode.entries.forEach", activity)
+        self.assertNotIn('"Runs fresh OCR on every pass · ${state.labCompleted}/${state.total} checkpointed"', activity)
         self.assertIn('Text("New Lab run (keeps old results and frozen Prod)")', activity)
 
 
@@ -321,10 +477,10 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         long_literals = [literal for literal in re.findall(r'"([^"\n]{121,})"', activity)]
         self.assertEqual(long_literals, [], "on-screen copy over 120 characters")
         for removed in (
-            "This normal-app benchmark uses all 125 retained rows",
+            "This normal-app benchmark uses all 124 retained rows",
             "Private on-device benchmark",
-            "Prod v3.0 uses verified LWIN producer data only",
-            "Prod v1.0, Prod v2.0 and Prod v3.0 are frozen benchmarks",
+            "Prod v4.0 uses verified LWIN producer data only",
+            "Prod v1.0, Prod v2.0 and Prod v4.0 are frozen benchmarks",
             "Attempted is the saved-photo tally",
             "The scored CSV holds one result set per version",
             "Step-level diagnostics for the selected version only",
@@ -332,9 +488,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         ):
             self.assertNotIn(removed, activity)
         # What must survive: the title, the subtitle, per-mode state and every control.
-        for kept in ('Text("Large image dataset test"', '"125 retained workbook-linked wine labels', 'Text(mode.title)',
+        for kept in ('Text("Large image dataset test"', 'Text(mode.title)',
                      'Text(state.message)', 'Copy scored stats', 'Prepare scored CSV export',
-                     'Prepare raw diagnostics CSV export', 'Split an existing CSV for upload',
+                     'Prepare raw diagnostics JSON export', 'Split an existing CSV for upload',
                      'Pipeline bottleneck matrix', 'Database coverage', 'Incomplete labels ('):
             self.assertIn(kept, activity)
         self.assertNotIn('Gazetteer database coverage', activity)
@@ -377,7 +533,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("if (!wasCanceled && !movedPastSlop && !multiTouch)", activity)
         self.assertIn("currentOnDismiss()", activity)
 
-    def test_lab_v4_best_build_row_and_scalar_results_log_contracts(self):
+    def test_lab_v5_best_build_row_and_scalar_results_log_contracts(self):
         activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
         viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
         build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
@@ -385,9 +541,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         # Separate scalar log file (never mixed into scored/raw export CSVs, zero raw OCR/image data)
         # logs both per-run scalar metrics and the composite best_build row with source build numbers.
         self.assertIn('const val FILE_NAME = "benchmark-results-log.csv"', build_log)
-        self.assertIn('const val BEST_BUILD_ROW_TITLE = "Lab v4 Best build"', build_log)
+        self.assertIn('const val BEST_BUILD_ROW_TITLE = "Lab v5 Best build"', build_log)
         self.assertIn('const val BEST_BUILD_ROW_TYPE = "best_build"', build_log)
-        self.assertNotIn("Lab v4 Last build", build_log)
+        self.assertNotIn("Lab v5 Last build", build_log)
         self.assertNotIn('"Last build"', activity)
         self.assertNotIn('"Last build"', viewmodel)
         for field in (
@@ -439,7 +595,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         for forbidden in ('"raw_text"', '"tokens"', '"trace"', "BitmapFactory", "images/"):
             self.assertNotIn(forbidden, build_log)
 
-        # Score table places "Lab v4 Best build" directly below "Lab v4" and above Prod v3.0/v2.0/v1.0,
+        # Score table places "Lab v5 Best build" directly below "Lab v5" and above Prod v4.0/v2.0/v1.0,
         # backfills existing saved Lab runs on load, and syncs the persisted best_build log row.
         self.assertIn("val comparisonRows = listOf(modeRows.first(), bestBuildRow) + modeRows.drop(1)", viewmodel)
         self.assertIn("val bestBuild = buildLog?.bestBuildSummary()", viewmodel)
@@ -447,14 +603,14 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("log.syncBestBuildSummary(PhoneCorpusRunner.Mode.LAB)", viewmodel)
         self.assertIn('WineAppLabelsBuildLog(File(root, WineAppLabelsBuildLog.FILE_NAME))', viewmodel)
 
-        # Granular per-field Current build / Best build / Prod v3.0 table sits at the bottom of
+        # Granular per-field Current build / Best build / Prod v4.0 table sits at the bottom of
         # Scored results (above CSV export) using green/red "correct/incorrect" passFailLabel formatting.
         scored_section = activity.split('Text("Scored results"', 1)[1].split('Text("CSV export"', 1)[0]
         self.assertIn("BuildFieldComparisonTable(", scored_section)
         self.assertIn('"Current build" to currentScores', activity)
         self.assertIn('"Best build" to bestBuildScores', activity)
-        self.assertIn("PhoneCorpusRunner.Mode.PRODUCTION_V3.title to prodV3Scores", activity)
-        self.assertIn("val prodV3Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V3)", viewmodel)
+        self.assertIn("PhoneCorpusRunner.Mode.PRODUCTION_V4.title to prodV4Scores", activity)
+        self.assertIn("val prodV4Preds = byMode.getValue(PhoneCorpusRunner.Mode.PRODUCTION_V4)", viewmodel)
         self.assertIn("passFailLabel(score.correct, score.incorrect, passColor, failColor)", activity)
 
     def test_background_execution_and_lab_ocr_cache_contracts(self):
@@ -479,9 +635,9 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE", service)
         self.assertIn("PowerManager.PARTIAL_WAKE_LOCK", service)
 
-        # 2. Cached OCR checkbox sits next to Lab v4 only and reuses verified OCR outputs without
+        # 2. Cached OCR checkbox sits next to Lab v5 only and reuses verified OCR outputs without
         #    ever replaying cached OCR into Prod baselines.
-        self.assertIn("if (mode == PhoneCorpusRunner.Mode.LAB) {", activity)
+        self.assertIn("val mode = PhoneCorpusRunner.Mode.LAB", activity)
         self.assertIn("Checkbox(", activity)
         self.assertIn("checked = state.useCachedOcr", activity)
         self.assertIn("onCheckedChange = vm::setUseCachedOcr", activity)
@@ -500,7 +656,7 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         timers = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsTimers.kt").read_text()
 
         # Placement: directly below the Start button and above the Scored results table.
-        start_idx = activity.index('"Start / resume Lab v4 only"')
+        start_idx = activity.index('"Start / resume Lab v5 only"')
         timer_idx = activity.index("BenchmarkTimersRow(state = state, nowRealtimeMs = nowRealtimeMs)")
         table_idx = activity.index('Text("Scored results"')
         self.assertLess(start_idx, timer_idx)
@@ -564,6 +720,134 @@ class WineAppLabelsCorpusTests(unittest.TestCase):
         self.assertIn("finally { if(ownsKb) kb?.close() }", extraction)
         self.assertIn("finally { if(ownsProducers) producers?.close() }", extraction)
         self.assertIn("if(fillEngine!=null) TextLabFormPreview.append(work,fillEngine,year,recordsOverride=readings)", spatial)
+
+    def test_cached_ocr_defaults_on_carries_across_versions_and_bundles_verified_124_label_seed(self):
+        import gzip
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        ocr_cache = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsOcrCache.kt").read_text()
+        baselines = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBaselines.kt").read_text()
+
+        # 1. Cached OCR defaults to true for Lab runs while remaining toggleable via the UI checkbox.
+        self.assertIn("val useCachedOcr: Boolean = true,", viewmodel)
+        self.assertIn('optBoolean("use_cached_ocr_v2", true) else true', viewmodel)
+        self.assertIn("ocrStore.promote(matchingRunFolders(signature) + allRunFolders(), hashes)", viewmodel)
+
+        # 2. OCR cache signature depends only on OCR model + threshold signature (never corpus scoring signature),
+        #    migrates across sibling ocr-cache-v1/* dirs and prior run folders, and seeds from packaged asset.
+        self.assertIn('private val signature = anchor("ocr-cache-v2|$modelSig")', ocr_cache)
+        self.assertNotIn('$corpusSignature|ocr-cache-v1', ocr_cache)
+        self.assertIn('const val PACKAGED_SEED_ASSET = "wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"', ocr_cache)
+        self.assertIn("GZIPInputStream(rawStream)", ocr_cache)
+
+        # 3. Frozen Prod baselines migrate verified retained photos across scoring/reference updates.
+        self.assertIn("fun migrateRetainedBaselines(", baselines)
+        self.assertIn("val migratedBaselines = store.migrateRetainedBaselines(BASELINE_MODES, hashes)", viewmodel)
+
+        # 4. Packaged 124-label raw OCR seed asset is complete, SHA-256 aligned with inputs.json, and compact.
+        seed_path = ROOT / "app/src/main/assets/wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"
+        self.assertTrue(seed_path.is_file(), "Missing packaged raw OCR seed asset")
+        self.assertLess(seed_path.stat().st_size, 2 * 1024 * 1024, "Seed asset should stay compact (< 2 MiB)")
+        inputs = {
+            row["image"]: row["sha256"]
+            for row in json.loads((ROOT / "app/src/main/assets/wine-app-labels-v1/inputs.json").read_text())["images"]
+        }
+        seen = {}
+        with gzip.open(seed_path, "rt", encoding="utf-8") as gz:
+            for line in gz:
+                if not line.strip():
+                    continue
+                rec = json.loads(line)
+                img = rec["image"]
+                self.assertEqual(rec["image_sha256"], inputs[img], img)
+                self.assertEqual(rec["metadata"].get("input_sha256"), inputs[img], img)
+                rows = rec["rows"]
+                cands = {r.get("candidate") for r in rows}
+                self.assertIn("mlkit_reference", cands, img)
+                self.assertIn("candidate_3", cands, img)
+                seen[img] = rec["model_signature"]
+        extra = json.loads((REVIEW / "internet-labels-v1.json").read_text())["records"]
+        self.assertEqual(set(seen), set(inputs) - {row["image"] for row in extra})
+        self.assertEqual(len(set(seen.values())), 1)
+
+    def test_post_ocr_modules_are_individually_selectable_and_auto_isolated(self):
+        activity = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
+        viewmodel = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsViewModel.kt").read_text()
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+        modules = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/evidence/LabPostOcrModules.kt").read_text()
+
+        # 1. All 7 post-Best-V5 modules exist and default to false (reproducing Best V5 when unchecked).
+        self.assertIn("val none = LabPostOcrModules()", modules)
+        for key in (
+            "blank_subregion_fuzzy",
+            "vintage_recovery",
+            "stacked_appellations",
+            "final_producer_near_match",
+            "producer_role_particle",
+            "spatial_semantic_guards",
+            "vertical_wine_title_pairs",
+        ):
+            self.assertIn(f'"{key}"', modules)
+
+        # 2. Checkboxes appear near the top of Large image dataset test before Start / resume, with a
+        #    one-tap "Best build" preset because all-off is the pre-improvement control, not the best build.
+        self.assertIn('Text("Post-OCR test modules"', activity)
+        self.assertIn('Text("All off")', activity)
+        self.assertIn('Text("Best build")', activity)
+        self.assertIn('Text("All on")', activity)
+        self.assertIn("vm.setBestBuildLabModules()", activity)
+        self.assertIn("fun setBestBuildLabModules()", viewmodel)
+        self.assertIn("LabPostOcrModules.bestBuild", viewmodel)
+        self.assertIn("LabPostOcrModules.selectableModuleIds.forEach", activity)
+        self.assertLess(
+            activity.index('Text("Post-OCR test modules"'),
+            activity.index("Start / resume Lab v5 only"),
+        )
+
+        # 2b. The Best build preset holds only modules measured as net wins on the 124-label corpus.
+        #     Vertical wine-title pairs lost 10 wine names in run 187a01ae7732 (one label won), so it
+        #     is deliberately off in the preset and still selectable on its own.
+        self.assertIn("val bestBuild = LabPostOcrModules(", modules)
+        preset = modules[modules.index("val bestBuild = LabPostOcrModules("):]
+        preset = preset[:preset.index("val all = LabPostOcrModules(")]
+        self.assertIn("blankSubregionFuzzy = false", preset)
+        self.assertIn("stackedAppellations = false", preset)
+        self.assertIn("verticalWineTitlePairs = false", preset)
+        for flag in ("vintageRecovery", "finalProducerNearMatch", "producerRoleAndParticle",
+                     "spatialSemanticGuards"):
+            self.assertIn(f"{flag} = true", preset)
+
+        # 2c. Frozen Prod comparators never follow a Lab module flag: the hybrid vintage fill that
+        #     Prod v2.0 and Prod v4.0 always had stays on regardless of the Lab vintage module.
+        spatial = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt").read_text()
+        extraction = (ROOT / "app/src/main/java/com/yourapp/wine/textlab/TextLabWineExtraction.kt").read_text()
+        self.assertIn("val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true", spatial)
+        self.assertIn(
+            "val evVintageFallback=if(batch.benchmarkAllPipelines) true else batch.labModules.vintageRecovery",
+            extraction,
+        )
+
+        # 2d. The "Best build" high-water-mark row is measured on one corpus only. A 125-label-era row
+        #     (123 eligible) can never be the target of a 124-label run (122 eligible), so the composite
+        #     cohorts by the corpus key of the newest logged run and records that key in the CSV.
+        build_log = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsBuildLog.kt").read_text()
+        self.assertIn("val corpusKey = candidates.maxByOrNull { it.timestampMs }?.corpusKey.orEmpty()", build_log)
+        self.assertIn("val cohort = if (corpusKey.isBlank()) candidates else candidates.filter { it.corpusKey == corpusKey }", build_log)
+        self.assertIn('"corpus_key" to corpusKey', build_log)
+        self.assertIn("corpusKey: String = \"\",", build_log)
+        self.assertIn("corpusKey = corpusLogKey(expectedCorpus)", viewmodel)
+        self.assertIn("loadedCorpusLogKey()", viewmodel)
+        #     Runs scored before the column existed are tagged from their (already corpus-checked)
+        #     saved run folder, so one corpus reruns keep their high-water marks.
+        self.assertIn("fun stampCorpusKeys(", build_log)
+        self.assertIn("log.stampCorpusKeys(unstamped, corpusKey, PhoneCorpusRunner.Mode.LAB)", viewmodel)
+
+        # 3. ViewModel defaults to LabPostOcrModules.none, isolates Lab checkpoint folders by lab_modules_key,
+        #    and logs active module keys to copied stats, CSV exports, and benchmark-results-log.csv.
+        self.assertIn("val labModules: LabPostOcrModules = LabPostOcrModules.none,", viewmodel)
+        self.assertIn('metadata.optString("lab_modules_key") != mutable.value.labModules.signatureKey()', viewmodel)
+        self.assertIn("labModules = activeModules,", viewmodel)
+        self.assertIn("Lab v5 post-OCR modules:", viewmodel)
+        self.assertIn('"lab_modules" to labModules', build_log)
 
 
 if __name__ == "__main__":

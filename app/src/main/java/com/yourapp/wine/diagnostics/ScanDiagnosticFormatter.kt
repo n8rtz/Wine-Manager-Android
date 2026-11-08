@@ -28,7 +28,7 @@ object ScanDiagnosticFormatter {
         com.yourapp.wine.ui.ScanStats.text(report.fill,report.elapsedMs).lineSequence().forEach { out.line(it) }
         out.line()
         out.line("[Pipeline]")
-        out.line("elapsed_ms=${report.elapsedMs} budget_ms=${com.yourapp.wine.ocr.ScanDeadline.BUDGET_MS} deadline_cancelled=${report.deadlineCancelled} deadline_stage=${trace.deadlineStage} last_stage=${trace.lastStage}")
+        out.line("pipeline=${safe(trace.pipeline)} elapsed_ms=${report.elapsedMs} budget_ms=${trace.budgetMs} deadline_cancelled=${report.deadlineCancelled} deadline_stage=${trace.deadlineStage} last_stage=${trace.lastStage}")
         out.line("input_bytes=${trace.inputBytes} import_ms=${trace.importMs}")
         out.line("original_upright=${report.origW}x${report.origH} working=${trace.workW}x${trace.workH} rectified=${report.rectW}x${report.rectH}")
         out.line("native_ready=${trace.nativeReady ?: "not_attempted"} opencv=${safe(trace.nativeVersion)} kb=${safe(trace.kbImplementation)}")
@@ -46,7 +46,11 @@ object ScanDiagnosticFormatter {
         out.line()
         out.line("[Engines and passes]")
         out.line("Each recorded pass lists its actual image treatment in detail; ms measures the recognizer call (including input conversion/wait), not variant preparation.")
-        out.line("V0 = base image (or explicitly reused probe); V1 = luminance contrast enhancement; V2 = conditional rescue, not always run.")
+        if (trace.pipeline == "gliner") {
+            out.line("Full decoded photo: ML Kit + PP-OCRv6 readings fused only for GLiNER; independent originals feed field extraction.")
+        } else {
+            out.line("V0 = base image (or explicitly reused probe); V1 = luminance contrast enhancement; V2 = conditional rescue, not always run.")
+        }
         out.line("Absent passes were not recorded as attempted; this can reflect scheduling, deadline, failure or unavailable engines.")
         out.line("Current ML Kit adapter converts every prepared image to grayscale NV21 (neutral chroma); color above describes preprocessing, not color OCR input.")
         if (trace.engines.isEmpty()) out.line("No engine inventory: initialization/capture may not have completed.")

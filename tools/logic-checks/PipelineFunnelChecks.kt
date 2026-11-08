@@ -122,6 +122,19 @@ fun main(args: Array<String>) {
     verify(csv["row_type"] == "pipeline_step" && csv["labels_blocked"] == "1" && csv["labels_reached"] == "1")
     verify(count(listOf(partial), "paddle.completed").cells().size == F.headers.size)
 
+    // A pre-refresh nested pipeline must still restore its final-field and funnel diagnostics
+    // when loaded into the newly named Lab v5 / Prod v4.0 modes.
+    val legacyLab = JSONObject().put("image", "legacy-lab").put("status", "complete")
+        .put("pipelines", org.json.JSONArray().put(JSONObject().put("pipeline", "lab-v4-expanded-producers")
+            .put("status", "complete").put("fields", JSONObject().put("producer", "Legacy Cellars"))))
+    val legacyLabLabel = PhoneCorpusFunnelJson.read(legacyLab, "LAB", "lab-v5-expanded-producers")
+    verify(state(legacyLabLabel, "final.producer") == F.State.PASSED)
+    val legacyProd = JSONObject().put("image", "legacy-prod").put("status", "complete")
+        .put("pipelines", org.json.JSONArray().put(JSONObject().put("pipeline", "production-v3.0-lwin-only")
+            .put("status", "complete").put("fields", JSONObject().put("region", "Maipo Valley"))))
+    val legacyProdLabel = PhoneCorpusFunnelJson.read(legacyProd, "PRODUCTION_V4", "production-v4.0-lwin-only")
+    verify(state(legacyProdLabel, "final.region") == F.State.PASSED)
+
     val root = File(args.first())
     val context = android.content.Context(File(root, "app/src/debug/assets"))
     val fixture = JSONObject(File(args[1]).readText())
@@ -129,6 +142,8 @@ fun main(args: Array<String>) {
     val array = fixture.getJSONArray("predictions")
     val predictions = (0 until array.length()).map { array.getJSONObject(it) }
     val board = PhoneCorpusScoreboard(context).build(predictions, PhoneCorpusRunner.Mode.LAB)
+    verify(board.rows.first()[0] == "Lab v5")
+    verify(board.csv.firstOrNull { it["row_type"] == "field" }?.get("pipeline") == "lab-v5-expanded-producers")
     verify(board.rows.first().let { it[1] == "168" && it[2] == "160" && it[3] == expected.getString("complete") && it[4] == expected.getString("one_error") && it[5] == expected.getString("multi_error") })
     verify(board.funnel.single { it.step.id == "producer.changed" }.passed == expected.getInt("producer_changed"))
     verify(board.funnel.single { it.step.id == "wine.changed" }.passed == expected.getInt("wine_changed"))

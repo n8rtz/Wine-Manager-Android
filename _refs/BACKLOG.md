@@ -6,8 +6,8 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-063**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
-3. **Bugs:** `Bug-nnn`, next free number **Bug-028**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
+2. **Wishes:** `W-nnn`, next free number **W-065**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
 6. **Status words:** `Open` · `Partial` · `Needs decision` · `Planned (brief only)` · `Fixed – awaiting device check`.
@@ -41,6 +41,19 @@
 ---
 
 ## 1. Active bugs
+
+### **[Bug-030]**: Device wine label audit/test closes when scrolling to the bottom (cannot save results)
+* **Date Logged:** 2026-10-30
+* **Component/File:** `ui/screens/DevicePhotoLabScreen.kt`
+* **Severity:** Minor UI (blocks saving audit results)
+* **Description:** Owner report: the audit screen auto-closes when scrolling to the bottom, where the Save buttons live. Probable root cause: each photo card is a single LazyColumn item, so scrolling it into view composes the photo plus every raw-OCR Text line at once (hundreds of nodes per card, added with the raw-OCR feature); composing several heavy cards while scrolling can kill the screen/process before the bottom Save controls are reachable. Only onClose/system-back can finish the activity in code, so this presents as a crash/process death, not a navigation.
+* **Steps to Reproduce:**
+    1. Run the audit on ~20 photos.
+    2. Scroll toward the bottom to reach Save — screen closes.
+* **Status:** Fixed – awaiting device check (2026-10-30). Root cause proven by the shipped crash capture: `Key "1" was already used` — photo cards and export buttons were both keyed by bare index in the same LazyColumn; the collision fires when the export items compose at the bottom. Keys namespaced `photo-`/`export-`.
+* **Known Workaround / Notes:** Earlier mitigations (OCR capped at 40 lines per card, top "Save results" block, lighter cards) remain as improvements but were not the cause. The crash-capture handler stays as a safety net. If it still closes, note whether it returns to the dataset screen or the launcher (distinguishes finish() vs process death) and report.
+* **Update 2026-10-30 (later):** owner confirms the exit persists after the cap/top-save fix. Code inspection: the only `finish()` is the top Back button, so the exit is a crash or process death, not navigation. Shipped crash capture (uncaught-exception handler in `DevicePhotoLabActivity` writes `device-wine-label-audit-crash.txt`; the next session shows "Previous session ended unexpectedly" and appends the report to Copy-all) plus lighter cards (OCR text moved out of SelectionContainer, image decode 1000->800px). Awaiting the captured report or the owner's landing-spot observation.
+
 
 ### **[Bug-027]**: Duplicate merged Gradle build-commit declaration
 * **Date Logged:** 2026-10-24
@@ -79,11 +92,12 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 8 | W-060 | Cellar page selector — Bottles / Racks views, rack tiles + text-free plus tile, rack tags | L (Room migration + new subsystem; needs a brief) | Needs decision | TBD (owner to rank) |
 | 9 | W-061 | Structured tasting notes — color picker, phase-aware aromas, aroma intensity, four sections | L (implemented; Android verification pending) | Fixed – awaiting device check | TBD (owner to rank) |
 | 10 | W-062 | Wine wishlist — wines to buy later, not yet owned | L (persistent list + UI; brief needed) | Open — placement and scope TBD | TBD (owner to rank) |
+| 11 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
-*(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; ranks 8–10 are placeholders until the owner re-ranks them.)*
+*(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
 
-**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060, W-061 and W-062 were logged afterwards with no priority given, so ranks 8–10 are placeholders until the owner re-ranks them.
+**Why this order.** `THINGS_TO_CHECK.md` records no build or device run for the large unreleased batch, and the 2026-10-15 cleanup was never compiled, so protecting the build comes first (W-056). The next priority is protecting the data itself (W-057): every wine, note and consumption record exists only on one phone, so a loss or failure would be unrecoverable. Then come the features that fix daily-use gaps in screens that already exist (filters), then the feature that delivers the original brief's “is it ready to drink?” promise (W-050: the owner ordered it directly after the backup work, and its Phase 1 estimator is already written in the current branch). Flags are cheap but cosmetic, so they ride along with the filter release as a low-risk addition. Aroma filtering builds on the shipped wheel. The Resources page is the biggest and most speculative, so it is last and phased. W-060, W-061 and W-062 were logged afterwards with no priority given and W-063 is parked, so ranks 8–11 are placeholders until the owner re-ranks them.
 
 ---
 
@@ -100,7 +114,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Goal:** widen lab-only appellation repair beyond the bounded edit distance shipped in `PlaceRepair` (one to two edits, at most 20 % length change, so a dropped or reordered word in a long name never resolves).
 * **Shape:** a `debug`-only FTS5 trigram asset built deterministically from `data/wine-knowledge/origins.csv` (licensing is clean: project-authored plus pinned CC0 UC Davis metadata), with manifest + SHA-256 + record count, a `--check` freshness test, and the existing `TrigramGazetteer` shortlist→rerank policy (≤64 candidates, similarity ≥0.82, ≥0.06 margin, abstain on ambiguity).
 * **Why parked:** a second copy of the catalog in another format is a new source of truth to keep honest, and the owner's rule is that Lab v4 should stay comparable to Prod, which repairs with bounded spelling. Wiring `PlaceRepair` first keeps the Prod/Lab delta about the producer index and solver, not about a third matching engine.
-* **Revisit when:** measurement over the 125 labels shows anchor-gated near-misses failing on a meaningful share, those failures are mainly word-order/dropped-word cases, or the catalog passes roughly 4,000 names and the in-memory scan starts to matter.
+* **Revisit when:** measurement over the 124 labels shows anchor-gated near-misses failing on a meaningful share, those failures are mainly word-order/dropped-word cases, or the catalog passes roughly 4,000 names and the in-memory scan starts to matter.
 
 ### 1. W-056 — Automated build-and-test (CI) and tag-based releases *(new)*
 **Complexity:** S · **Status:** Open
@@ -334,6 +348,14 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **UI-Trigger / Location:** Wishlist screen/destination and the entry point for adding a wine are TBD.
 * **Design needed before implementation:** choose the wine details to store, how a wanted wine is selected/entered, and how an item is handled when it is purchased. Do not count wishlist wines as owned stock. No implementation has been requested yet.
 
+### 11. W-063 — Smart label-edge auto-crop for the scan photo *(parked, owner decision 2026-11-07)*
+**Complexity:** M, possibly L (needs a brief) · **Status:** Open — revisit when the owner asks
+* **Goal:** Crop the scan photo to the wine label using detected *label edges*, not the text bounding box, so no part of the label is ever cut off — even regions without text. Display first; feeding the crop to the OCR pipeline is a separate, later decision.
+* **UI-Trigger / Location:** Add Wine camera layer (frozen scan-photo display; the form's `LabelScanActions` photo display was removed in the camera-first rework, but the retained `Review.photoPath` pipeline still exists for this); later, the OCR input in `GlinerOcr` / `ProductionLabelScanner`.
+* **Current state (verified in source 2026-11-07):** the production pipeline does not crop at all — it reads the full photo (decode is downsample + EXIF only; `LOCALIZE`/`WARP` exist only in the legacy `OfflineWineScanner` and the `PhoneCorpusRunner` benchmark paths). The photo kept on Add Wine therefore already shows exactly what the pipeline reads, so there is no display/pipeline mismatch to fix today.
+* **Constraints for the brief:** edge detection must be conservative — an uncertain crop falls back to the full photo (cutting the label is worse than showing background); must run on-device with no new paid provider; any pipeline-input change needs a before/after benchmark comparison (recognition behaviour change, cf. W-058).
+* **Revisit when:** the owner asks, or measurement shows cropping would help OCR accuracy.
+
 ---
 
 ### Decisions closed (2026-10-16, owner)
@@ -371,6 +393,10 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 ## 4. Cleanup and technical debt
 
+* [ ] **Existing resolver-policy source contracts (2026-10-29).** Full host discovery has failures in `test_exact_geography_fast_path_is_lab_only_and_feeds_context` and `test_span_fuzzy_supplemental_guard_and_final_value_pass_are_separate`. Both reproduce using unmodified `497ad55` source/tests; not changed by device-photo work. Reconcile the tests with the actual resolver contracts in a separately authorized task.
+
+* [ ] **Compile/device-verify device-photo Lab v5 sanity checks (2026-10-29).** Host wiring checks pass; this sandbox has no JDK/Android SDK. Run `:app:assembleDebug`, `:app:testDebugUnitTest` (including `DevicePhotoLabTest`) and the multi-photo checklist for `arena/0a282176-wine-manager-android` before declaring device behavior verified.
+
 * [ ] **Compile and test the 2026-10-15 cleanup.** Dead code was removed without a build (no JDK in the authoring sandbox). Run `:app:assembleDebug`, `:app:testDebugUnitTest` and `:app:connectedDebugAndroidTest`, and fix any leftover reference.
 * [ ] **Compile and test W-057 (Backup & Restore, all phases).** Written on `arena/fff57f7b-wine-manager-android` with no JDK/Android SDK in the authoring sandbox: `:app:assembleDebug`, `:app:testDebugUnitTest` (`BackupScheduleTest`, `BackupConfigRulesTest`) and the branch's device checklist have not been run. A host Kotlin compiler plus host stubs verified the pure logic (25 runtime assertions), the JVM test sources, and the syntax/signatures of every new Kotlin file; `tools/tests/test_backup_preferences.py` passes. None of that is an Android/Compose build or a device run.
 * [ ] **W-057 credential/Keystore verification on a device.** Confirm `BackupCredentialStore` survives process restart, that a restore onto a different install asks to reconnect (Keystore keys do not transfer), and that `backup_credentials.xml` is absent from an `adb shell bmgr` Auto Backup payload.
@@ -384,3 +410,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 * [ ] **`AGENTS.md`:** revisit after W-050 is decided.
 * [ ] **`CHANGELOG.md`:** compare links assume `v*` Git tags, and the repo has none. Fixed by creating `v*` tags (W-056 / first release); otherwise drop the links.
+
+### Span-safety verification follow-up (2026-10-29)
+- [ ] Build Android and run the focused suite plus unseen device-photo sanity checks after the span-provenance/terminal-support fixes. Actual Kotlin host safety checks pass using a local JDK/Kotlin toolchain; this is not an Android build or native OCR run.
+- [ ] Reconcile broader host harness debt separately: `run-logic-checks.sh` has unresolved existing source/test references (ScanStats, TextLabStats/TextLabResidualPreview, obsolete architecture test helpers). The spatial suite's check 29 also fails on pre-change `1f55994` after only correcting its two budget-callback argument spellings. The dedicated `--span-safety-only` mode is explicit and does not report those broader suites as passed.

@@ -38,7 +38,7 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
         val observed:String,
         val matchedForm:String,
         val editDistance:Int,
-        /** Engine families whose own reading was within budget of the repaired form; telemetry only, never a gate. */
+        /** Engine families whose supplied reading variant was within budget of the repaired form; telemetry only, never a gate. */
         val engines:List<String>,
         val penalty:Double=8.0,
         val anchorKind:String="separate origin anchor",
@@ -86,8 +86,9 @@ internal class PlaceRepair(private val kb:WineKnowledgeBase,private val hierarch
      * Three progressively stricter gates apply:
      * 1. Explicit country/region [anchors] on another line (must agree on one country and be hierarchy-compatible).
      * 2. Label-wide [countryHints] from legal classifications (`DOCG`, `AVA`, framed `AOC`) or an unambiguous KB producer.
-     * 3. Unanchored distinctive appellation repair ([Config.allowUnanchored]): `>= 8`-letter globally unique
-     *    non-`context_required` names separated from every rival place worldwide by at least `best + 2` edits.
+     * 3. Unanchored distinctive appellation repair ([Config.allowUnanchored]): at least ten letters, a
+     *    globally unique non-`context_required` name separated from every rival place worldwide by at least
+     *    `best + 2` edits.
      */
     fun resolve(
         observed:String,

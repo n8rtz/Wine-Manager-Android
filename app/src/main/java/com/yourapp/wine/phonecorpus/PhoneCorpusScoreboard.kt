@@ -9,13 +9,15 @@ import com.yourapp.wine.diagnostics.PipelineFunnel as F
 /** Scores only committed predictions. Targets are never supplied to the runner. */
 internal class PhoneCorpusScoreboard(
     context:Context,
-    private val assetRoot:String="wine-app-labels-v1"
+    private val assetRoot:String="wine-app-labels-v1",
+    savedReference:JSONObject?=null,
+    savedSelection:JSONObject?=null,
 ) {
-    private val reference=JSONObject(context.assets.open("$assetRoot/scoring.json").bufferedReader().use { it.readText() })
+    private val reference=savedReference ?: JSONObject(context.assets.open("$assetRoot/scoring.json").bufferedReader().use { it.readText() })
     private val images=reference.getJSONArray("images")
     private val targets=(0 until images.length()).associate { i -> val im=images.getJSONObject(i);im.getString("image") to im }
     private val includedImages=run {
-        val selection=JSONObject(context.assets.open("$assetRoot/evaluation-set.json").bufferedReader().use { it.readText() })
+        val selection=savedSelection ?: JSONObject(context.assets.open("$assetRoot/evaluation-set.json").bufferedReader().use { it.readText() })
         val list=selection.getJSONArray("included_images")
         (0 until list.length()).map { list.getJSONObject(it).getString("image") }.toSet().also {
             check(it.size==selection.optInt("included_count",list.length()) && it.all { id -> id in targets }) { "Curated evaluation set does not match packaged references" }
@@ -32,6 +34,7 @@ internal class PhoneCorpusScoreboard(
         val funnelLabels=mutableListOf<F.Label>()
         val currentByImage=predictions.associateBy { it.getString("image") }
         val names=listOf(mode.pipelineId)
+        val acceptedPipelineIds=mode.acceptedPipelineIds
         val rows=mutableListOf<List<String>>()
         val headers=listOf("Pipeline","Attempted","Eligible","Complete","One error","2+ errors","Failed","Correct values","Wrong","Missing","Correct blanks","Unsupported","Unresolved","Deadline / partial")
         fun score(name:String,items:List<Pair<String,JSONObject>>,provenance:Map<String,String> = emptyMap(),displayName:String=name) {
@@ -82,7 +85,7 @@ internal class PhoneCorpusScoreboard(
         for(name in names) {
             val items=predictions.map { p ->
                 val ps=p.optJSONArray("pipelines")
-                val current=ps?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.getString("pipeline")==name } }
+                val current=ps?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.optString("pipeline") in acceptedPipelineIds } }
                     ?: JSONObject().put("status","failed").put("fields",JSONObject())
                 current.put("engine_incomplete",p.optBoolean("engine_incomplete")).put("attempt",p.optInt("attempt")).put("total_image_elapsed_ms",p.optString("total_elapsed_ms"))
                 if(p.optString("status")!="complete") current.put("status","failed")
@@ -189,12 +192,12 @@ internal class PhoneCorpusScoreboard(
         csv.addAll(funnel.map { it.csv(mode.pipelineId) })
         val text=buildString {
             appendLine("WINE APP LABELS · ${predictions.size}/${includedImages.size} included photos attempted · $mode")
-            appendLine("This test uses all 125 retained rows in the updated, owner-reviewed workbook. Club des Sommeliers #14 and the marked-red rows were removed from both tabs; IMG_2732.jpeg remains excluded.")
-            appendLine("Unresolved workbook references remain unscorable; other unknown locations/vintages are expected blank. These development references are not held-out accuracy.")
+            appendLine("This test uses the retained owner-reviewed workbook photos and selected internet front-label photos. Club des Sommeliers #14, review #67 and the marked-red workbook rows remain excluded; IMG_2732.jpeg remains excluded.")
+            appendLine("Unresolved references remain unscorable; explicitly expected blanks are scored as blanks. These development references are not held-out accuracy.")
             appendLine(headers.joinToString(" | "));rows.forEach { appendLine(it.joinToString(" | ")) }
             appendLine("Complete means all six scorable fields correct, including expected blanks. Failures receive no correct-blank credit and count as multi-error on eligible forms.")
-            appendLine("This screen scores the 125 retained workbook rows.")
-            appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v3.0 and Lab v4 use the same current spatial pipeline (original readings plus producer and linked-wine resolution over spatial spans) and differ only in producer data: Prod v3.0 uses the verified LWIN producer index only, Lab v4 uses the Lab expanded producer index (the same LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates). Each mode runs and scores only its selected implementation.")
+            appendLine("This screen scores the selected ${includedImages.size} curated photos.")
+            appendLine("Prod v1.0 uses the Add Wine scanner's shared budget; Prod v2.0 uses the guarded evidence path; Prod v4.0 and Lab v5 use the same current spatial pipeline (original readings plus producer and linked-wine resolution over spatial spans) and differ only in producer data: Prod v4.0 uses the verified LWIN producer index only, Lab v5 uses the Lab expanded producer index (the same LWIN subset plus source-tagged X-Wines, TTB and OpenStreetMap winery candidates). Each mode runs and scores only its selected implementation.")
             appendLine()
             appendLine("PIPELINE BOTTLENECK MATRIX · current selected pipeline only")
             appendLine("Three tables: ML Kit OCR, Paddle OCR (sequential in runner), and post-OCR. Post-OCR evidence hypotheses use joint field assignment; only genuine dependencies are conditional. NR, unrecorded, and N/A remain distinct. Scores are correctness gates, including correct expected blanks.")

@@ -10,7 +10,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /** Producer/linked-wine index over packaged SQLite assets. [open] is the verified primary
- * LWIN export; [openExpanded] is the Lab v4 benchmark's expanded index (same primary subset
+ * LWIN export; [openExpanded] is the Lab v5 benchmark's expanded index (same primary subset
  * plus source-tagged supplemental candidates) and is never used by production or Prod paths. */
 internal class ProducerGazetteer private constructor(
     private val db: SQLiteConnection,
@@ -22,7 +22,7 @@ internal class ProducerGazetteer private constructor(
 ) : LinkedWineResolver.Index, AutoCloseable {
 
     override fun lookup(key: String, limit: Int, checkBudget: () -> Unit): List<ProducerResolver.Entity> {
-        require(limit in 1..ProducerResolver.MAX_FUZZY_CANDIDATES)
+        require(limit in 1..ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES)
         checkBudget()
         fun read(sql: String, arg: String): List<ProducerResolver.Entity> {
             val rows = mutableListOf<ProducerResolver.Entity>()
@@ -250,7 +250,7 @@ internal class ProducerGazetteer private constructor(
 
         const val EXPANDED_ASSET = "producer-gazetteer-expanded-v1"
 
-        /** Lab v4 benchmark only. Loads the expanded producer index (verified LWIN subset plus
+        /** Lab v5 benchmark only. Loads the expanded producer index (verified LWIN subset plus
          * source-tagged X-Wines/TTB/OSM supplemental candidates) with the primary wine index.
          * Production and Prod pipelines must use [open]; the primary manifest's ban on packaged
          * supplemental sources is unchanged. */

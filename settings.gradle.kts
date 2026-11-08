@@ -45,4 +45,4 @@ gradle.settingsEvaluated {
 }
 
 rootProject.name = "Wine Tracker"
-include(":app", ":opencv-minimal")
+include(":app", ":opencv-minimal", ":gliner-workflow")

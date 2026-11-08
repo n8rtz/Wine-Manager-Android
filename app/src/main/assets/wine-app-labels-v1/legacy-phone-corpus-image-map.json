@@ -2,7 +2,7 @@
   "version": 1,
   "source_corpus": "phone-corpus-v1",
   "source_inputs_sha256": "ec065596c236a768b8f53e3b005ee4b3a623caf6fb6c509ebb9d6a719a73f804",
-  "mapping_count": 103,
+  "mapping_count": 102,
   "images": [
     {
       "legacy_image": "03110ad18731d0f11fadf9b86725d69202f08cff.jpg",
@@ -183,11 +183,6 @@
       "legacy_image": "645b894ff7240c2defda4b99137192b003f0cebc.jpg",
       "image": "274621fc56a805f64d0cc0a2e3902db10b88a275.jpg",
       "sha256": "761388bda3000974a35ab802f4a3e7ccadc4808e3400403bd353d42cf6d890d1"
-    },
-    {
-      "legacy_image": "6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg",
-      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
-      "sha256": "84982e263302dcba533da989992e317e081a808421c036c48dd2cbad52760497"
     },
     {
       "legacy_image": "659b2c33ce76b4fefb8a3a58e607cdea49e2916a.jpg",

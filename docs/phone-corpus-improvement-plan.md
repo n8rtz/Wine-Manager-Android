@@ -1,6 +1,6 @@
 # Plan to exceed 80% complete forms on the curated phone corpus
 
-> **Historical analysis (superseded screen):** The 168-photo `phone-corpus-v1` debug page these measurements came from was retired on 2026-10-26 (see `docs/phone-corpus-benchmark.md`). The live benchmark is the 125-label **Large image dataset test**, where Prod v1.0/v2.0/v3.0 are captured once and frozen and only Lab v4 re-runs, so a "production-v2 comparator" on that screen is a frozen record, not a fresh run.
+> **Historical analysis (superseded screen):** The 168-photo `phone-corpus-v1` debug page these measurements came from was retired on 2026-10-26 (see `docs/phone-corpus-benchmark.md`). The live benchmark is the 124-label **Large image dataset test**, where Prod v1.0/v2.0/v4.0 are captured once and frozen and only Lab v5 re-runs, so a "production-v2 comparator" on that screen is a frozen record, not a fresh run.
 >
 > This plan and its OCR metrics refer to the previous 107-photo selection. At the owner’s request, review #14 is now excluded because Club des Sommeliers is branding rather than an established producer; the active set is 106 images (105 eligible, one partly unresolved). Re-run OCR before using the historical counts below as a current baseline.
 

@@ -1,6 +1,7 @@
 package com.n8rtz.winetracker.ui.components
 
 import android.content.Context
+import android.util.Log
 import android.view.View
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -22,12 +23,16 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import java.io.File
 
 /** CameraX preview used only in the explicit, full-screen label scanner. */
@@ -36,31 +41,45 @@ fun LabelScanCameraPreview(
     scannerViewModel: ScannerViewModel,
     onCameraError: (String) -> Unit,
     onCameraReadyChanged: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** When set, captured photos go here (e.g. confirm/retake hold) instead of starting a scan. */
+    onPhotoCaptured: ((Long, File) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val latestOnCameraError = rememberUpdatedState(onCameraError)
     val latestOnCameraReadyChanged = rememberUpdatedState(onCameraReadyChanged)
+    val latestOnPhotoCaptured = rememberUpdatedState(onPhotoCaptured)
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val bindingState = remember { mutableStateOf<CameraUseCaseBinding?>(null) }
     var cameraReady by remember { mutableStateOf(false) }
+    // A delivered capture transfers pending-request ownership downstream (confirm hold or scan),
+    // so unmounting for the still must not cancel it. Reset with each mount; retakes remount.
+    // Read directly in onDispose: this subtree is removed (not recomposed) the same frame the
+    // flag is set, so a rememberUpdatedState wrapper would still hold null at disposal time.
+    var deliveredRequestId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(bindingState.value, cameraReady, labelScanState) {
         val captureRequest = labelScanState as? LabelScanState.CapturingPhoto
-        if (cameraReady && captureRequest != null) {
-            bindingState.value?.takePicture(captureRequest.requestId)
+        if (captureRequest != null) {
+            val binding = bindingState.value
+            Log.d("LabelScanCamera", "Capture " + captureRequest.requestId + " observed: ready=" + cameraReady +
+                " bindingNull=" + (binding == null))
+            if (cameraReady) {
+                if (binding != null) binding.takePicture(captureRequest.requestId)
+                else Log.d("LabelScanCamera", "Capture " + captureRequest.requestId + " deferred: binding not yet created")
+            }
         }
     }
 
     DisposableEffect(lifecycleOwner, scannerViewModel) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelPendingLabelCapture()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            scannerViewModel.cancelActiveLabelScan()
+            if (deliveredRequestId == null) scannerViewModel.cancelPendingLabelCapture()
             bindingState.value?.close()
             cameraReady = false
             latestOnCameraReadyChanged.value(false)
@@ -68,12 +87,19 @@ fun LabelScanCameraPreview(
     }
 
     val capturedPhotoPath = (labelScanState as? LabelScanState.Processing)?.photoPath
+    // Keep the camera visible until the still actually loads; otherwise a slow decode flashes black.
+    var frameLoaded by remember(capturedPhotoPath) { mutableStateOf(false) }
+    val frozenPhoto = remember(context, capturedPhotoPath) {
+        capturedPhotoPath?.let { capturedLabelImageRequest(context, it) }
+    }
 
     Box(modifier = modifier.background(Color.Black)) {
         AndroidView(
             factory = { viewContext ->
                 val previewView = PreviewView(viewContext).apply {
                     scaleType = PreviewView.ScaleType.FILL_CENTER
+                    // TextureView permits the captured still to be composited above the camera.
+                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 }
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
@@ -86,7 +112,13 @@ fun LabelScanCameraPreview(
                     context = viewContext.applicationContext,
                     preview = preview,
                     imageCapture = imageCapture,
-                    onPhotoCaptured = scannerViewModel::onLabelPhotoCaptured,
+                    onPhotoCaptured = { requestId, photoFile ->
+                        deliveredRequestId = requestId
+                        Log.d("LabelScanCamera", "Capture $requestId delivered " + photoFile.length() + "b to " +
+                            if (latestOnPhotoCaptured.value != null) "hold" else "session")
+                        latestOnPhotoCaptured.value?.invoke(requestId, photoFile)
+                            ?: scannerViewModel.onLabelPhotoCaptured(requestId, photoFile)
+                    },
                     onCaptureFailed = scannerViewModel::onLabelCaptureFailed,
                     onCameraError = { latestOnCameraError.value(it) },
                     onCameraReadyChanged = { ready ->
@@ -101,13 +133,21 @@ fun LabelScanCameraPreview(
             },
             update = { previewView ->
                 previewView.visibility =
-                    if (capturedPhotoPath == null) View.VISIBLE else View.INVISIBLE
+                    if (capturedPhotoPath != null && frameLoaded) View.INVISIBLE else View.VISIBLE
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Do not decode the JPEG again with Coil while OCR owns its two working bitmaps.
-        // The live preview is a CameraX surface, not a working Bitmap.
+        if (frozenPhoto != null) {
+            AsyncImage(
+                model = frozenPhoto,
+                contentDescription = "Captured wine label photo",
+                contentScale = ContentScale.Crop,
+                onSuccess = { frameLoaded = true },
+                onError = { frameLoaded = false },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
@@ -142,9 +182,11 @@ private class CameraUseCaseBinding(
                 )
                 cameraProvider = provider
                 cameraReady = true
+                Log.d("LabelScanCamera", "Camera bound")
                 onCameraReadyChanged(true)
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 if (!closed) {
+                    Log.w("LabelScanCamera", "Camera bind failed", error)
                     onCameraReadyChanged(false)
                     onCameraError("Camera could not be started. You can still enter the wine manually.")
                 }
@@ -153,11 +195,16 @@ private class CameraUseCaseBinding(
     }
 
     fun takePicture(requestId: Long) {
-        if (closed || lastCaptureRequestId == requestId) return
+        if (closed || lastCaptureRequestId == requestId) {
+            Log.d("LabelScanCamera", "takePicture($requestId) skipped: closed=$closed dup=${lastCaptureRequestId == requestId}")
+            return
+        }
         if (!cameraReady || captureInProgress) {
+            Log.d("LabelScanCamera", "takePicture($requestId) not ready: cameraReady=$cameraReady inProgress=$captureInProgress")
             onCaptureFailed(requestId, IllegalStateException("Camera is not ready to take a photo"))
             return
         }
+        Log.d("LabelScanCamera", "takePicture($requestId) starting")
 
         lastCaptureRequestId = requestId
         captureInProgress = true
@@ -177,12 +224,14 @@ private class CameraUseCaseBinding(
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                         captureInProgress = false
+                        Log.d("LabelScanCamera", "takePicture($requestId) saved " + photoFile.length() + "b closed=" + closed)
                         if (closed) photoFile.delete() else onPhotoCaptured(requestId, photoFile)
                     }
 
                     override fun onError(exception: ImageCaptureException) {
                         captureInProgress = false
                         photoFile.delete()
+                        Log.w("LabelScanCamera", "takePicture($requestId) failed", exception)
                         onCaptureFailed(requestId, exception)
                     }
                 }
@@ -195,6 +244,7 @@ private class CameraUseCaseBinding(
     }
 
     fun close() {
+        Log.d("LabelScanCamera", "Camera unbound")
         closed = true
         cameraReady = false
         onCameraReadyChanged(false)
@@ -204,3 +254,13 @@ private class CameraUseCaseBinding(
         cameraProvider = null
     }
 }
+
+/** A display-only, bounded thumbnail; neither image cache retains a private label photo. */
+internal fun capturedLabelImageRequest(context: Context, photoPath: String): ImageRequest =
+    ImageRequest.Builder(context)
+        .data(File(photoPath))
+        .size(1024)
+        .memoryCachePolicy(CachePolicy.DISABLED)
+        .diskCachePolicy(CachePolicy.DISABLED)
+        .networkCachePolicy(CachePolicy.DISABLED)
+        .build()

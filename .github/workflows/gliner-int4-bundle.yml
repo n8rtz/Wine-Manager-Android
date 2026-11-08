@@ -1,0 +1,85 @@
+name: GLiNER INT4 bundle
+
+# Builds the GLiNER-Small INT4 bundle in the cloud, so neither a desktop nor the phone needs
+# torch or a 660 MB download. Only the quantized INT4 graph is published (~80-100 MB).
+# The build log is committed back to this branch because the log download endpoint is not
+# reachable from the agent sandbox.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/gliner-int4-bundle.yml
+      - tools/fetch-gliner-small-int4.py
+      - tools/inspect-gliner-bundle.py
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build
+        run: |
+          exec > >(tee "$RUNNER_TEMP/report.txt") 2>&1
+          set -o pipefail
+          echo "== runtime =="
+          python -V
+          echo "== pip =="
+          python -m pip install -U pip wheel
+          echo "== torch (cpu wheel, fall back to pypi) =="
+          pip install torch --index-url https://download.pytorch.org/whl/cpu || pip install torch
+          echo "== toolchain =="
+          pip install "gliner==0.2.29" "onnxruntime==1.20.1" "onnx==1.17.0" "transformers<5.17" tokenizers sentencepiece numpy
+          python -c "import torch, transformers, onnx, onnxruntime, gliner; print('torch', torch.__version__, 'transformers', transformers.__version__, 'onnx', onnx.__version__, 'ort', onnxruntime.__version__, 'gliner', gliner.__version__)"
+          echo "== bundle =="
+          python tools/fetch-gliner-small-int4.py --out bundle --work /tmp/export --pin
+          echo "== inspect =="
+          python tools/inspect-gliner-bundle.py bundle
+          echo "== compare with the library feeds =="
+          python tools/compare-gliner-onnx.py --onnx /tmp/export/gliner_small_fp32.onnx --bundle bundle || true
+          echo "== files =="
+          ls -l bundle
+          (cd bundle && sha256sum -- * 2>/dev/null || true)
+
+      - name: Publish build report to the branch
+        if: always()
+        run: |
+          mkdir -p _refs
+          { echo "# GLiNER INT4 bundle build report"; echo;
+            echo '```'; tail -n 250 "$RUNNER_TEMP/report.txt" 2>/dev/null || echo "no report captured"; echo '```'; } \
+            > _refs/gliner-bundle-report.txt
+          git config user.name "gliner-bundle-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add _refs/gliner-bundle-report.txt
+          git commit -m "GLiNER bundle build report [skip ci]" || echo "nothing to commit"
+          git pull --rebase --autostash origin "$GITHUB_REF_NAME" || true
+          git push origin "HEAD:$GITHUB_REF_NAME" || echo "report push failed"
+
+      - name: Publish the bundle as a release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete gliner-small-int4-v1 --yes 2>/dev/null || true
+          gh release create gliner-small-int4-v1 bundle/gliner_small_int4.onnx bundle/tokenizer.json bundle/gliner_config.json bundle/model-manifest.json \
+            --title "GLiNER small v2.1 INT4 bundle" \
+            --notes "INT4 weight-only (MatMulNBits + GatherBlockQuantized, block 32) export of urchade/gliner_small-v2.1 with the three lanes PRODUCER, WINE_NAME, APPELLATION. Import these four files with Settings > Scanner testing > GLiNER lane lab > Import model files, or bake them in with -PglinerLabAssets=true."
+
+      - uses: actions/upload-artifact@v4
+        if: always() && vars.WINE_UPLOAD_ACTIONS_ARTIFACTS == 'true'
+        with:
+          name: gliner-bundle
+          path: bundle/
+          if-no-files-found: error
+          retention-days: 1
+          retention-days: 14

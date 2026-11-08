@@ -49,7 +49,7 @@ class PipelineFunnelChecks(unittest.TestCase):
         self.assertNotIn('record.remove("pipeline_funnel")', baselines)
 
     def test_field_matrix_keeps_six_columns_and_each_step_description_collapsed_by_default(self):
-        # The 168-photo debug page that used to carry this table is retired; the live 125-label
+        # The 168-photo debug page that used to carry this table is retired; the live 124-label
         # page is the only bench, so this contract is asserted against it (and its condensed
         # step column) instead of the deleted file.
         source = (ROOT / "app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt").read_text()
@@ -148,7 +148,9 @@ class PipelineFunnelChecks(unittest.TestCase):
         for path in (ROOT / "app/src/main/java/com/yourapp/wine/capture").rglob("*.kt"):
             self.assertNotIn("PipelineFunnel", path.read_text())
         resolver = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer/ProducerResolver.kt").read_text()
-        self.assertIn("MAX_FUZZY_CANDIDATES=200", resolver)
+        self.assertIn("MAX_FUZZY_CANDIDATES=200", resolver)  # wine lookup cost bound remains unchanged
+        self.assertIn("MAX_PRODUCER_FUZZY_CANDIDATES=256", resolver)
+        self.assertIn("single-engine fuzzy supplemental candidate needs LWIN or independent engines", resolver)
         for name in ("ProducerResolver.kt", "LinkedWineResolver.kt"):
             source = (ROOT / "app/src/main/java/com/yourapp/wine/gazetteer" / name).read_text()
             self.assertNotIn("scoring.json", source)

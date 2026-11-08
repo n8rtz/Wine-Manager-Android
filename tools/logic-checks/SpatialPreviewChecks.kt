@@ -89,7 +89,7 @@ fun main() {
     verify(v2.rows.none { it["stage"].orEmpty().startsWith("spatial_") })
     verify(v2.rows.single { it["stage"]=="evidence_summary" }["status"]!="failed")
 
-    // Lab v4 bottle-column & medal-sticker filter + Prod v3.0 isolation + tiny-footprint zoom-crop checks.
+    // Lab v5 bottle-column & medal-sticker filter + Prod v4.0 isolation + tiny-footprint zoom-crop checks.
     val noisy=TextLabJournal(setOf("candidate_3"),"bottle-filter-check",true)
     val noisyRows=listOf(
         Triple("candidate_3","2019","0.45 0.08 0.55 0.12"), // neck-band vintage (must survive)
@@ -112,7 +112,7 @@ fun main() {
     noisy.add("mlkit_reference","summary","complete")
     noisy.add("candidate_3","candidate_summary","complete")
     TextLabFormPreview.append(noisy,FillEngine(kb),2026)
-    // Prod v3.0 keeps all 12 readings untouched; Lab v4 drops the 6 noise boxes and keeps all 6 bottle readings.
+    // Prod v4.0 keeps all 12 readings untouched; Lab v5 drops the 6 noise boxes and keeps all 6 bottle readings.
     TextLabSpatialPreview.append(noisy,extractor,hybrid,repair,2026,candidate="spatial_lwin_lab",stagePrefix="spatial_lwin_",
         policy=com.yourapp.wine.gazetteer.ProducerResolver.Policy.prod)
     TextLabSpatialPreview.append(noisy,extractor,hybrid,repair,2026,candidate="spatial_lab",stagePrefix="spatial_",
@@ -141,7 +141,7 @@ fun main() {
     val zoomCrop=TextLabBottleFilter.proposeZoomCrop(tiny)
     verify(zoomCrop!=null && zoomCrop.top<=0.25f && zoomCrop.bottom>=0.75f && (zoomCrop.right-zoomCrop.left)*(zoomCrop.bottom-zoomCrop.top)<=0.40f)
 
-    // Lab v4 d=0 geography fast-path + ancestral chain + country-context feed into ProducerResolver (Prod v3.0 untouched).
+    // Lab v5 d=0 geography fast-path + ancestral chain + country-context feed into ProducerResolver (Prod v4.0 untouched).
     val d0Geo=TextLabJournal(setOf("candidate_3"),"d0-geo-context-check",true)
     for((cand,txt,box,score) in listOf(
         listOf("mlkit_reference","Domaine Allary","0.25 0.20 0.75 0.27","0.9"),

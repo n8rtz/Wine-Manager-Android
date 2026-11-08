@@ -206,6 +206,7 @@ object BundledGrapes {
         Muscat|Moscato;Moscatel;Muscat Blanc
         Muscat Blanc à Petits Grains|Muscat à petits grains
         Muscat Ottonel
+        Orange Muscat
         Palomino
         Parellada
         Pedro Ximénez|Pedro Jimenez;PX

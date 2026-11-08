@@ -94,3 +94,8 @@ Key project documents (all in `_refs/`): `BACKLOG.md` (open work), `ARCHIVE.md` 
 20. **CODE ON THE GO: DISCARD CHANGES BEFORE CHECKOUT (OWNER TIP, 2026-11-06)**
     - When branch checkout is blocked by local changes and Code on the Go's Git pane has no discard/stash action, use the left-pane menu → **Close Project** (second item from the bottom, above **Help**) → **Discard changes**. Reopen the project, then pull from GitHub.
     - This permanently discards uncommitted edits. Use this route only when the owner has decided those local changes can be discarded; do not commit them merely to get past the checkout conflict.
+
+21. **MINIMAL UI LABELS (OWNER RULE, 2026-11-07)**
+    - Every user-visible button, tab, menu item and heading must use the shortest label that is still unambiguous — one to three words. Drop nouns the surrounding context already supplies ("Scan label", not "Scan label with camera"; "Choose label", not "Choose label photo").
+    - When adding or touching any UI text, shorten any overlong label in the same surface; never add a new verbose label the owner will have to rename later. The standard is recorded in `_refs/ARCHIVE.md` W-064.
+    - **Rationale:** The owner repeatedly had to rename verbose agent-written labels after the fact; minimal labels are now the default (2026-11-07).

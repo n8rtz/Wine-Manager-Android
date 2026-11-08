@@ -1,14 +1,28 @@
 {
   "source_archive_image_count": 23,
   "added_source_images_included": 22,
-  "workbook_linked_images_included": 103,
-  "included_test_candidate_count": 125,
-  "owner_removed_workbook_rows": [14, 49, 52, 55, 64, 73, 133, 159, 168],
+  "workbook_linked_images_included": 102,
+  "included_test_candidate_count": 124,
+  "owner_removed_workbook_rows": [
+    14,
+    49,
+    52,
+    55,
+    64,
+    67,
+    73,
+    133,
+    159,
+    168
+  ],
   "excluded_added_photo": {
     "filename": "IMG_2732.jpeg",
     "reason": "Owner-directed removal from the candidate dataset"
   },
-  "all_125_workbook_image_hashes_verified": true,
   "duplicate_image_hash_count": 0,
-  "legacy_full_168_photo_run_reactivated": false
+  "legacy_full_168_photo_run_reactivated": false,
+  "owner_removed_dataset_review_numbers": [
+    67
+  ],
+  "all_124_workbook_image_hashes_verified": true
 }

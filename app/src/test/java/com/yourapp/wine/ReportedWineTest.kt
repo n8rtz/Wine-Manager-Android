@@ -7,7 +7,7 @@ import org.robolectric.annotation.Config
 
 /** Device-report text/geometry regressions; no emulator or native OCR accuracy claim. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [26], manifest = Config.NONE)
+@Config(sdk = [35], manifest = Config.NONE)
 class ReportedWineTest {
     @Test fun referenceCatalogProvenance() = ReferenceCatalogChecks.catalogAndProvenance()
     @Test fun ambiguousAndMultistateOrigins() = ReferenceCatalogChecks.ambiguousAndMultiregionOrigins()

@@ -196,13 +196,22 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         price: Double?,
         drinkingWindowStart: Int? = null,
         drinkingWindowEnd: Int? = null,
-        defaultColorHsv: HsvColor? = null
+        defaultColorHsv: HsvColor? = null,
+        onComplete: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
-            repository.addWine(
-                maker, name, vintage, type, country, region, subregion, quantity, price,
-                drinkingWindowStart, drinkingWindowEnd, defaultColorHsv
-            )
+            try {
+                repository.addWine(
+                    maker, name, vintage, type, country, region, subregion, quantity, price,
+                    drinkingWindowStart, drinkingWindowEnd, defaultColorHsv
+                )
+                onComplete(true)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Log.e("WineViewModel", "Unable to save wine", error)
+                onComplete(false)
+            }
         }
     }
     fun updateWineDefinition(definition: WineDefinition) { viewModelScope.launch { repository.updateWineDefinition(definition) } }

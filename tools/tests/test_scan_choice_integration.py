@@ -24,11 +24,14 @@ class ScanChoiceIntegrationTests(unittest.TestCase):
         self.assertIn('field.clearedByUser',choices)
         self.assertIn('None — leave blank / type below',choices)
         screen=(MAIN/'com/n8rtz/winetracker/ui/screens/AddWineScreen.kt').read_text()
-        self.assertIn('scanForm.selectChoice(field, value)',screen)
-        self.assertIn('scanForm.dismissChoices(field)',screen)
+        # The choice policy remains available to testing/legacy flows, but production Add Wine
+        # uses ordinary editable fields without the diagnostic review UI or confirmation gate.
+        self.assertNotIn('ScanReviewHeader(',screen)
+        self.assertNotIn('ScanFieldStatus(',screen)
+        self.assertNotIn('ScanFieldChoices(',screen)
+        self.assertNotIn('scanForm.hasPendingConfirmation',screen)
         self.assertIn('scanForm.clearSuggestion(field, lastScanReport?.fill',screen)
         self.assertEqual(screen.count('clearIcon(FieldId.'),6)
-        self.assertEqual(screen.count('fieldChoices(FieldId.'),6)
         self.assertIn('enabled = !labelScanState.isBusy',screen)
         model=(MAIN/'com/yourapp/wine/ui/ScanFormState.kt').read_text()
         self.assertIn('User selected OCR alternative',model)

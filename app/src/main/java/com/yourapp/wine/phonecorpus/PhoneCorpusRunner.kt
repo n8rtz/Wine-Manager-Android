@@ -27,35 +27,44 @@ internal object PhoneCorpusRunner {
     }
     /**
      * Lab-only measurement switch for bounded appellation repair. Off by default so the frozen Prod
-     * comparators and every stored Lab v4 checkpoint keep their current meaning. To measure the
+     * comparators and every stored Lab v5 checkpoint keep their current meaning. To measure the
      * difference, set this to true, rebuild, and tap **New Lab run** so no photo mixes both settings
      * (the flag is written to each CSV's `place_repair_enabled` metadata column).
      */
     internal const val REPAIR_PLACES_IN_BENCHMARK=true
     /**
      * Lab-only measurement switch for the resolver engine quorum. False keeps Prod's two-engine rule in
-     * both spatial contenders. True lowers it to one engine for **Lab v4 only** (Prod v3.0 is untouched),
+     * both spatial contenders. True lowers it to one engine for **Lab v5 only** (Prod v4.0 is untouched),
      * so the delta is the quorum itself; exported per CSV as `resolver_single_reading_enabled`, and
      * flipping it requires a **New Lab run** so one corpus never mixes both settings.
      */
     internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true
     enum class Mode(val title:String,val pipelineId:String,val summaryStage:String?) {
-        LAB("Lab v4", "lab-v4-expanded-producers", "spatial_evidence_summary"),
-        PRODUCTION_V3("Prod v3.0", "production-v3.0-lwin-only", "spatial_lwin_evidence_summary"),
+        LAB("Lab v7", "lab-v7-expanded-producers", "spatial_evidence_summary"),
+        PRODUCTION_V6("Prod v6.0", "production-v6.0-expanded-producers", "spatial_prod_v6_evidence_summary"),
+        PRODUCTION_V5("Prod v5.0", "production-v5.0-expanded-producers", "spatial_prod_v5_evidence_summary"),
+        PRODUCTION_V4("Prod v4.0", "production-v4.0-lwin-only", "spatial_lwin_evidence_summary"),
         PRODUCTION_V2("Prod v2.0", "production-v2.0-guarded", "evidence_summary"),
         PRODUCTION_V1("Prod v1.0", "production-v1.0-15s", null);
+        /** Current and retired pipeline IDs that identify this mode in saved output. */
+        val acceptedPipelineIds:Set<String> get() = setOf(pipelineId) + Mode.legacyPipelineIds.filterValues { it == this }.keys
         /** Both spatial contenders run the producer/linked-wine resolvers; only the producer
-         * index differs (Prod v3.0 verified LWIN only, Lab v4 the Lab expanded index). */
-        val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V3 || this==LAB
+         * index differs (Prod v4.0 verified LWIN only, Lab v5 the Lab expanded index). */
+        val usesSpatialEvidence:Boolean get()=this==PRODUCTION_V4 || this==PRODUCTION_V5 || this==PRODUCTION_V6 || this==LAB
         companion object {
             /** Pipeline IDs written by earlier builds, mapped to the mode that owned them.
              * Saved scored CSVs keep the producing build's ID forever; without these aliases
-             * the expanded-producers rename made every saved Lab v4 table unreadable, which
-             * hid the restored results and their export options (owner report, 2026-10-26).
+             * the prior expanded-producers rename made saved tables unreadable until explicit pipeline
+             * aliases were added (owner report, 2026-10-26).
              * Never reuse a retired ID for a different pipeline; append future renames here. */
             val legacyPipelineIds:Map<String,Mode> = mapOf(
+                // The just-before-refresh capture is now labeled Lab v5 / Prod v4.0.
+                "lab-v6-expanded-producers" to Mode.LAB,
+                "lab-v5-expanded-producers" to Mode.LAB,
+                "lab-v4-expanded-producers" to Mode.LAB,
                 "lab-v4-lwin-only" to Mode.LAB,
-                "production-v3.0-spatial-merged" to Mode.PRODUCTION_V3,
+                "production-v3.0-lwin-only" to Mode.PRODUCTION_V4,
+                "production-v3.0-spatial-merged" to Mode.PRODUCTION_V4,
             )
             /** Mode that owns a pipeline ID exactly as written in a saved CSV (current or legacy). */
             fun fromPipelineId(id:String):Mode? =
@@ -71,11 +80,11 @@ internal object PhoneCorpusRunner {
      * Runs every requested version against one verified copy of the photo, so the versions'
      * Attempted counts advance together instead of depending on separate per-version runs.
      * Prod v1.0 keeps its own production scan and runs first (its shared 15-second budget is
-     * anchored at photo start). Prod v2.0, Prod v3.0 and Lab v4 share one fresh Text Lab OCR
+     * anchored at photo start). Prod v2.0, Prod v4.0 and Lab v5 share one fresh Text Lab OCR
      * pass and differ only in post-OCR extraction, exactly as their standalone runs did:
-     * v2.0 guarded evidence only; v3.0 and Lab v4 run the same current spatial pipeline
+     * v2.0 guarded evidence only; Prod v4.0 and Lab v5 run the same current spatial pipeline
      * (original readings plus producer/linked-wine resolution over spatial spans) and differ
-     * only in producer data — v3.0 verified LWIN only, Lab v4 the Lab expanded producer index.
+     * only in producer data — Prod v4.0 verified LWIN only, Lab v5 the Lab expanded producer index.
      * Every requested version returns a result; one that could not run is failed, never missing.
      */
     suspend fun runImageAllModes(context:Context,image:String,hash:String,modes:Set<Mode>,work:File,traceParents:List<File>,
@@ -83,9 +92,14 @@ internal object PhoneCorpusRunner {
         cachedOcr:WineAppLabelsOcrCache.Entry?=null,
         onFreshOcr:(Map<String,String>,List<Map<String,String>>) -> Unit = { _,_ -> },
         warmSession:WarmSession?=null,
+        labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.none,
+        sourceFile:File?=null,
     ):Map<Mode,JSONObject> {
         require(image.matches(Regex("[0-9a-f]{40}\\.jpg")))
         require(modes.isNotEmpty()) { "At least one pipeline version is required" }
+        require(sourceFile==null || (modes==setOf(Mode.LAB) && cachedOcr==null)) {
+            "Device photos require Lab v5 and fresh OCR"
+        }
         val replayOcr=cachedOcr?.takeIf {
             Mode.PRODUCTION_V1 !in modes && modes==setOf(Mode.LAB) && it.image==image && it.imageSha256==hash
         }
@@ -98,8 +112,15 @@ internal object PhoneCorpusRunner {
             outputs[mode]=JSONObject().put("image",image).put("image_sha256",hash).put("build",BuildConfig.BUILD_COMMIT).put("mode",mode.name)
                 .put("pipeline",mode.pipelineId).put("spatial_merging",mode.usesSpatialEvidence)
                 .put("device",android.os.Build.MODEL).put("android_sdk",android.os.Build.VERSION.SDK_INT)
+                .put("input_source",if(sourceFile==null) "packaged_corpus" else "device_photo")
                 .put("ocr_source",if(usedCache) "cached_ocr" else "fresh_ocr")
-                .put("runtime",if(usedCache) "on-device benchmark; cached OCR outputs; live Lab v4 extraction" else "on-device benchmark; fresh OCR; no saved-text replay")
+                .put("lab_modules",when(mode) {
+                    Mode.LAB -> labModules.signatureKey()
+                    Mode.PRODUCTION_V5 -> com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV5Checkpoint.signatureKey()
+                    Mode.PRODUCTION_V6 -> com.yourapp.wine.textlab.evidence.LabPostOcrModules.prodV6Checkpoint.signatureKey()
+                    else -> ""
+                })
+                .put("runtime",if(usedCache) "on-device benchmark; cached OCR outputs; live Lab v5 extraction" else "on-device benchmark; fresh OCR; no saved-text replay")
             recordedByMode[mode]=linkedMapOf()
         }
         fun mark(mode:Mode,id:String,passed:Boolean,reason:String="") {
@@ -120,8 +141,10 @@ internal object PhoneCorpusRunner {
         var memoryStopped=false
         try {
             markAll("input.verified",false,"input copy / checksum did not complete")
-            context.assets.open("$assetRoot/images/$image").use { stream -> input.outputStream().use { stream.copyTo(it) } }
-            check(sha(input)==hash) { "Packaged photo checksum mismatch" }
+            // Only the source changes for out-of-corpus device-photo audits; identical decoding/OCR/extraction follows.
+            val source=sourceFile?.inputStream() ?: context.assets.open("$assetRoot/images/$image")
+            source.use { stream -> input.outputStream().use { stream.copyTo(it) } }
+            check(sha(input)==hash) { "Photo checksum mismatch" }
             markAll("input.verified",true)
             var aborted=false
             if(Mode.PRODUCTION_V1 in modes) {
@@ -187,13 +210,16 @@ internal object PhoneCorpusRunner {
                 if(aborted) labModes.forEach { fail(it,"Not run: an earlier version aborted this photo",abort=true) }
                 else try {
                     val needEvidence=Mode.PRODUCTION_V2 in labModes
-                    val needLwin=Mode.PRODUCTION_V3 in labModes
+                    val needLwin=Mode.PRODUCTION_V4 in labModes
                     val needSpatial=Mode.LAB in labModes
+                    val needProdV5=Mode.PRODUCTION_V5 in labModes
+                    val needProdV6=Mode.PRODUCTION_V6 in labModes
                     val batch=TextLabBatch(listOf(TextLabImageKey(image,image)),setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true,
                         compareEvidence=true,anchorHybrid=true,repairProducer=true,
                         spatialPhrases=needSpatial,benchmarkOnly=true,benchmarkAllPipelines=true,
-                        benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,repairPlaces=REPAIR_PLACES_IN_BENCHMARK,
-                        resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK)
+                        benchmarkEvidence=needEvidence,benchmarkLwinSpatial=needLwin,benchmarkProdV5Spatial=needProdV5,benchmarkProdV6Spatial=needProdV6,repairPlaces=REPAIR_PLACES_IN_BENCHMARK,
+                        resolverSingleReading=SINGLE_READING_RESOLVERS_IN_BENCHMARK,
+                        labModules=labModules)
                     val journal=batch.journals.single()
                     diagnosticJournal=journal
                     if(replayOcr!=null) {
@@ -257,10 +283,12 @@ internal object PhoneCorpusRunner {
                     val trace=if(mode==Mode.PRODUCTION_V1) emptyList() else diagnosticJournal?.let { journal ->
                         val ownCandidate=when(mode) {
                             Mode.LAB -> "spatial_lab"
-                            Mode.PRODUCTION_V3 -> "spatial_lwin_lab"
+                            Mode.PRODUCTION_V5 -> "spatial_prod_v5"
+                            Mode.PRODUCTION_V6 -> "spatial_prod_v6"
+                            Mode.PRODUCTION_V4 -> "spatial_lwin_lab"
                             Mode.PRODUCTION_V2,Mode.PRODUCTION_V1 -> "experimental_evidence"
                         }
-                        val contenderCandidates=setOf("experimental_evidence","spatial_lwin_lab","spatial_lab")
+                        val contenderCandidates=setOf("experimental_evidence","spatial_lwin_lab","spatial_lab","spatial_prod_v5","spatial_prod_v6")
                         journal.rows.filter { it["candidate"] !in contenderCandidates || it["candidate"]==ownCandidate }
                     }.orEmpty()
                     if(diagnosticJournal!=null && mode!=Mode.PRODUCTION_V1) output.put("trace",JSONArray(trace.map { JSONObject(it) }))

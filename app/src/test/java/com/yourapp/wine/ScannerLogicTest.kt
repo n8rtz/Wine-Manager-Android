@@ -6,7 +6,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [26], manifest = Config.NONE)
+@Config(sdk = [35], manifest = Config.NONE)
 class ScannerLogicTest {
     @Test fun nfkdAndDiacritics() = LogicChecks.normalization()
     @Test fun unionFindIndependentVotesAndSingletons() = LogicChecks.merger()

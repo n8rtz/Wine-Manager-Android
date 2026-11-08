@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "reference_sha256": "6c066495b5f48207cb41cbbb2be8e2fad02cdc6f61293629ea44cd378d513102",
-  "note": "Frozen owner-corrected values from the 125 retained rows of the updated workbook. Unresolved references remain unscorable; expected blanks are scored as blanks. Targets are scorer-only and never provided to OCR.",
+  "reference_sha256": "7c83821a179e89ed91334fe46f4cc23de988d5a1d75f3233a7b6e840d6bfb623",
+  "note": "Owner-corrected workbook references and internet front-label candidate references; unresolved fields are unscored. Targets are scorer-only and never provided to OCR.",
   "images": [
     {
       "image": "fa02ff37350880d8b127ba9e8a98b6b1396fa3fd.jpg",
@@ -1756,60 +1756,11 @@
           "target": "Alsace"
         },
         "subregion": {
-          "status": "expected_blank",
-          "accepted": []
-        },
-        "vintage": {
-          "status": "expected_blank",
-          "accepted": []
-        }
-      }
-    },
-    {
-      "image": "f614689f02e64b6af015af20aea6775ed006a22b.jpg",
-      "review_number": 67,
-      "source_filename": "000.jpg",
-      "fields": {
-        "producer": {
           "status": "expected_value",
           "accepted": [
-            "jeanchristopheicard"
+            "cremantdalsace"
           ],
-          "target": "Jean-Christophe Icard"
-        },
-        "wine_name": {
-          "status": "expected_value",
-          "accepted": [
-            "sauvignonblanc",
-            "sauvignonblancpremium",
-            "premiumsauvignonblanc"
-          ],
-          "target": "Sauvignon Blanc"
-        },
-        "country": {
-          "status": "expected_value",
-          "accepted": [
-            "france"
-          ],
-          "target": "France"
-        },
-        "region": {
-          "status": "expected_value",
-          "accepted": [
-            "southwestfrance",
-            "sudouest",
-            "southwest",
-            "sudouestfrance"
-          ],
-          "target": "South West France"
-        },
-        "subregion": {
-          "status": "expected_value",
-          "accepted": [
-            "gascogne",
-            "cotesdegascogne"
-          ],
-          "target": "Gascogne"
+          "target": "Cremant d'Alsace"
         },
         "vintage": {
           "status": "expected_blank",
@@ -2568,20 +2519,32 @@
           "target": "Château Margaux"
         },
         "wine_name": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "premiergrandcruclasse"
+          ],
+          "target": "Premier Grand Cru Classé"
         },
         "country": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
         },
         "region": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
         },
         "subregion": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "margaux"
+          ],
+          "target": "Margaux"
         },
         "vintage": {
           "status": "expected_value",
@@ -4674,8 +4637,11 @@
           "target": "Douro"
         },
         "subregion": {
-          "status": "expected_blank",
-          "accepted": []
+          "status": "expected_value",
+          "accepted": [
+            "porto"
+          ],
+          "target": "Porto"
         },
         "vintage": {
           "status": "expected_value",
@@ -5214,13 +5180,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "castillayleon"
+          ],
+          "target": "Castilla y Leon"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "toro"
           ],
           "target": "Toro"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_value",
@@ -5564,16 +5533,16 @@
         "producer": {
           "status": "expected_value",
           "accepted": [
-            "francoislurton"
+            "campoeliseo"
           ],
-          "target": "François Lurton"
+          "target": "Campo Eliseo"
         },
         "wine_name": {
           "status": "expected_value",
           "accepted": [
-            "campoeliseo"
+            "cuveealegre"
           ],
-          "target": "Campo Eliseo"
+          "target": "Cuvée Alegre"
         },
         "country": {
           "status": "expected_value",
@@ -5585,13 +5554,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "castillayleon"
+          ],
+          "target": "Castilla y Leon"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "toro"
           ],
           "target": "Toro"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_blank",
@@ -5678,13 +5650,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "maipovalley"
+          ],
+          "target": "Maipo Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "puentealto"
           ],
           "target": "Puente Alto"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_value",
@@ -5823,13 +5798,16 @@
         "region": {
           "status": "expected_value",
           "accepted": [
+            "willamettevalley"
+          ],
+          "target": "Willamette Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
             "dundeehills"
           ],
           "target": "Dundee Hills"
-        },
-        "subregion": {
-          "status": "expected_blank",
-          "accepted": []
         },
         "vintage": {
           "status": "expected_value",
@@ -6118,6 +6096,3261 @@
             "2021"
           ],
           "target": "2021"
+        }
+      }
+    },
+    {
+      "image": "9fe8c7bf7549df2f8234a7bfe2ab69b98ff1f32f.jpg",
+      "review_number": 191,
+      "source_filename": "2023 Groth Sauvignon Blanc",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "groth"
+          ],
+          "target": "Groth"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "sauvignonblanc"
+          ],
+          "target": "Sauvignon Blanc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "napavalley"
+          ],
+          "target": "Napa Valley"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2023"
+          ],
+          "target": "2023"
+        }
+      }
+    },
+    {
+      "image": "5383af32f2f23a83880aa4b7e353eeee05449415.jpg",
+      "review_number": 192,
+      "source_filename": "2024 Stag's Leap Wine Cellars Karia Chardonnay",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "stagsleapwinecellars"
+          ],
+          "target": "Stag's Leap Wine Cellars"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "karia",
+            "kariachardonnay"
+          ],
+          "target": "Karia Chardonnay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "napavalley"
+          ],
+          "target": "Napa Valley"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2024"
+          ],
+          "target": "2024"
+        }
+      }
+    },
+    {
+      "image": "3ecad8b5a87f775a8e848e65655109b08ee65e35.jpg",
+      "review_number": 193,
+      "source_filename": "2022 Kirkland Signature Sancerre",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kirklandsignature"
+          ],
+          "target": "Kirkland Signature"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "sancerre"
+          ],
+          "target": "Sancerre"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "loire",
+            "loirevalley"
+          ],
+          "target": "Loire Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "sancerre"
+          ],
+          "target": "Sancerre"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2022"
+          ],
+          "target": "2022"
+        }
+      }
+    },
+    {
+      "image": "dfa1ad1c22d4419113db17ac81b6a63226be1470.jpg",
+      "review_number": 194,
+      "source_filename": "2024 Gérard Bertrand Côte des Roses Rosé",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "gerardbertrand"
+          ],
+          "target": "Gérard Bertrand"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cotedesroses",
+            "cotedesrosesrose"
+          ],
+          "target": "Côte des Roses Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2024"
+          ],
+          "target": "2024"
+        }
+      }
+    },
+    {
+      "image": "5db4f4b3d4d2944e90a4a29eb07cb85ea47e8a5d.jpg",
+      "review_number": 195,
+      "source_filename": "Kirkland Signature Asolo Prosecco Superiore",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kirklandsignature"
+          ],
+          "target": "Kirkland Signature"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "asoloproseccosuperiore",
+            "proseccosuperiore"
+          ],
+          "target": "Asolo Prosecco Superiore"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "veneto"
+          ],
+          "target": "Veneto"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "asolo"
+          ],
+          "target": "Asolo"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "a028d305e55bd34350cbc9164b9e4192e7e82a55.jpg",
+      "review_number": 196,
+      "source_filename": "2022 My Favorite Neighbor Cabernet Sauvignon",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "myfavoriteneighbor"
+          ],
+          "target": "My Favorite Neighbor"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignon"
+          ],
+          "target": "Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "unresolved",
+          "accepted": [],
+          "target": ""
+        },
+        "subregion": {
+          "status": "unresolved",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2022"
+          ],
+          "target": "2022"
+        }
+      }
+    },
+    {
+      "image": "e3557b2d5cee8bc81abf6a48da340d3911a66911.jpg",
+      "review_number": 197,
+      "source_filename": "X-Wines label 100062.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "casavalduga"
+          ],
+          "target": "Casa Valduga"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "origem",
+            "origemmerlot"
+          ],
+          "target": "Origem Merlot"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "brazil"
+          ],
+          "target": "Brazil"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "riograndedosul"
+          ],
+          "target": "Rio Grande do Sul"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "valedosvinhedos"
+          ],
+          "target": "Vale dos Vinhedos"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "d4d98a63dd5a26ed33e7e3d39c893b31873ac764.jpg",
+      "review_number": 198,
+      "source_filename": "X-Wines label 100191.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "aurora"
+          ],
+          "target": "Aurora"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "chardonnay",
+            "reservachardonnay"
+          ],
+          "target": "Reserva Chardonnay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "brazil"
+          ],
+          "target": "Brazil"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "riograndedosul"
+          ],
+          "target": "Rio Grande do Sul"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "serragaucha"
+          ],
+          "target": "Serra Gaúcha"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "b2fd7f0b1c3cd50393b8cc52e71311ec27be268c.jpg",
+      "review_number": 199,
+      "source_filename": "X-Wines label 101847.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "ferreira"
+          ],
+          "target": "Ferreira"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "donaantonia",
+            "donaantoniareservatawny"
+          ],
+          "target": "Dona Antonia Reserva Tawny"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "douro"
+          ],
+          "target": "Douro"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "porto"
+          ],
+          "target": "Porto"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "6c1fd0459fcdbdd3c0c597456776317aa2ad55da.jpg",
+      "review_number": 200,
+      "source_filename": "X-Wines label 102055.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "sandeman"
+          ],
+          "target": "Sandeman"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "finerubyport",
+            "finerubyporto"
+          ],
+          "target": "Fine Ruby Porto"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "douro"
+          ],
+          "target": "Douro"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "porto"
+          ],
+          "target": "Porto"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "0f9b50a862e45ae4e4461c7fc4120eba4a93049c.jpg",
+      "review_number": 201,
+      "source_filename": "X-Wines label 102079.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "casadafontepequena",
+            "fontepequena"
+          ],
+          "target": "Casa da Fonte Pequena"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "marealta",
+            "marealtavinhoverdebranco"
+          ],
+          "target": "Maré Alta"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "vinhoverde"
+          ],
+          "target": "Vinho Verde"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "e6438f5ba4a52f06566f0273fd781b3d6fcad276.jpg",
+      "review_number": 202,
+      "source_filename": "X-Wines label 103003.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "azueira"
+          ],
+          "target": "Azueira"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "alemdorio",
+            "alemdoriobranco"
+          ],
+          "target": "Além do Rio Branco"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "lisboa"
+          ],
+          "target": "Lisboa"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "1c25fa9486edd62b229274195c4d0e1a91d80976.jpg",
+      "review_number": 203,
+      "source_filename": "X-Wines label 103070.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "campolargo"
+          ],
+          "target": "Campolargo"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "caldabordaleza"
+          ],
+          "target": "Calda Bordaleza"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bairrada"
+          ],
+          "target": "Bairrada"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "3ed37ec010cfed8c28271f7f3a87b60fd8703bbc.jpg",
+      "review_number": 204,
+      "source_filename": "X-Wines label 103435.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "secretspotwines"
+          ],
+          "target": "Secret Spot Wines"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lacrau",
+            "lacraufieldblend"
+          ],
+          "target": "Lacrau Field Blend"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "douro"
+          ],
+          "target": "Douro"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "bdd16e40d7c8ce7356fef37c961a8f1819a1227e.jpg",
+      "review_number": 205,
+      "source_filename": "X-Wines label 103667.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "mariaizabel"
+          ],
+          "target": "Maria Izabel"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "mariaizabelrose",
+            "rose"
+          ],
+          "target": "Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "portugal"
+          ],
+          "target": "Portugal"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "douro"
+          ],
+          "target": "Douro"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "0e2606e4f055552415571cf0f6af4c92376e99a5.jpg",
+      "review_number": 206,
+      "source_filename": "X-Wines label 107214.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "nikweissturbanshof"
+          ],
+          "target": "Nik Weis St. Urbans-Hof"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "riesling",
+            "saarriesling"
+          ],
+          "target": "Saar Riesling"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "germany"
+          ],
+          "target": "Germany"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "mosel"
+          ],
+          "target": "Mosel"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "saar"
+          ],
+          "target": "Saar"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "613db1eb619acc2d06678df257cc4832feb1a45e.jpg",
+      "review_number": 207,
+      "source_filename": "X-Wines label 108974.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "wachtstetter"
+          ],
+          "target": "Wachtstetter"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "felix",
+            "felixlembergertrocken"
+          ],
+          "target": "Felix Lemberger Trocken"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "germany"
+          ],
+          "target": "Germany"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "wurttemberg"
+          ],
+          "target": "Württemberg"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "b3f5ec0613a02f85688e601bf0cd3d220f3a568b.jpg",
+      "review_number": 208,
+      "source_filename": "X-Wines label 109954.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "aldinger",
+            "weingutaldinger"
+          ],
+          "target": "Aldinger"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "merlotreserve",
+            "merlotreservetrocken"
+          ],
+          "target": "Merlot Reserve Trocken"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "germany"
+          ],
+          "target": "Germany"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "wurttemberg"
+          ],
+          "target": "Württemberg"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "3d4be7874e553f32dabbb410fe16a59da0c70bda.jpg",
+      "review_number": 209,
+      "source_filename": "X-Wines label 111478.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateausuduiraut"
+          ],
+          "target": "Château Suduiraut"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "sauternes"
+          ],
+          "target": "Sauternes"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "sauternes"
+          ],
+          "target": "Sauternes"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "cd772b19b3f69b4602c57628a44ca2d12b2b1379.jpg",
+      "review_number": 210,
+      "source_filename": "X-Wines label 112875.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainefourrier"
+          ],
+          "target": "Domaine Fourrier"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "gevreychambertin",
+            "gevreychambertinvieillevigne"
+          ],
+          "target": "Gevrey-Chambertin Vieille Vigne"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "gevreychambertin"
+          ],
+          "target": "Gevrey-Chambertin"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "14cd780fd2c85c02bfff102e411b0f6b1ffefb2e.jpg",
+      "review_number": 211,
+      "source_filename": "X-Wines label 113730.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainedecourcel"
+          ],
+          "target": "Domaine de Courcel"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "grandclosdesepenots",
+            "pommardgrandclosdesepenotspremiercru"
+          ],
+          "target": "Pommard Grand Clos des Épenots Premier Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "pommard"
+          ],
+          "target": "Pommard"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "7a0a23f28a1518225d2d9769dcfe3ba5d185b1e0.jpg",
+      "review_number": 212,
+      "source_filename": "X-Wines label 114717.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "moonlightetroses"
+          ],
+          "target": "Moonlight & Roses"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "coteauxdaixenprovencerose",
+            "moonlightetroses"
+          ],
+          "target": "Coteaux d'Aix-en-Provence Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "provence"
+          ],
+          "target": "Provence"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "coteauxdaixenprovence"
+          ],
+          "target": "Coteaux d'Aix-en-Provence"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "82e45db886ac62bd45fbda99010be20929ab8554.jpg",
+      "review_number": 213,
+      "source_filename": "X-Wines label 114973.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "henribourgeois"
+          ],
+          "target": "Henri Bourgeois"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lesbaronnes",
+            "sancerrelesbaronnesrose"
+          ],
+          "target": "Sancerre Les Baronnes Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "loire",
+            "loirevalley"
+          ],
+          "target": "Loire Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "sancerre"
+          ],
+          "target": "Sancerre"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "6c0a6ff2e121b5a2a2ca959cc6ee3087e26a2d3e.jpg",
+      "review_number": 214,
+      "source_filename": "X-Wines label 116418.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaucheminroyal"
+          ],
+          "target": "Château Chemin Royal"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "moulisenmedoc"
+          ],
+          "target": "Moulis-en-Médoc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "bordeaux"
+          ],
+          "target": "Bordeaux"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "moulisenmedoc"
+          ],
+          "target": "Moulis-en-Médoc"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "3812ac89787f81c8978798732c60b4fa72be84ad.jpg",
+      "review_number": 215,
+      "source_filename": "X-Wines label 117009.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "louislatour"
+          ],
+          "target": "Louis Latour"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "santenay"
+          ],
+          "target": "Santenay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "santenay"
+          ],
+          "target": "Santenay"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "91de944f2a3b921bea4dc4ca9737a88bd98164fa.jpg",
+      "review_number": 216,
+      "source_filename": "X-Wines label 118457.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "albertbichot"
+          ],
+          "target": "Albert Bichot"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "fleurielamadone",
+            "lamadone"
+          ],
+          "target": "Fleurie La Madone"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "beaujolais"
+          ],
+          "target": "Beaujolais"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "fleurie"
+          ],
+          "target": "Fleurie"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "9029a1691e64399f1ef5757fd536316391e02f0c.jpg",
+      "review_number": 217,
+      "source_filename": "X-Wines label 118927.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "mongeardmugneret"
+          ],
+          "target": "Mongeard-Mugneret"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lesplateaux",
+            "nuitssaintgeorgeslesplateaux"
+          ],
+          "target": "Nuits-Saint-Georges Les Plateaux"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "nuitssaintgeorges"
+          ],
+          "target": "Nuits-Saint-Georges"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "c3feeea95a9bddf5a17a95ea95749be279a17b93.jpg",
+      "review_number": 218,
+      "source_filename": "X-Wines label 120737.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulacroixdespins"
+          ],
+          "target": "Château La Croix des Pins"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lesdessousdesdentelles"
+          ],
+          "target": "Les Dessous des Dentelles"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "rhone",
+            "rhonevalley"
+          ],
+          "target": "Rhône Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "gigondas"
+          ],
+          "target": "Gigondas"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "b995d1fb7630a398bee64c7e13e586b83d47036e.jpg",
+      "review_number": 219,
+      "source_filename": "X-Wines label 125678.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "domainefaiveley"
+          ],
+          "target": "Domaine Faiveley"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "chambollemusignylesfueespremiercru",
+            "lesfuees"
+          ],
+          "target": "Chambolle-Musigny Les Fuées Premier Cru"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "chambollemusigny"
+          ],
+          "target": "Chambolle-Musigny"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "9ee83cd9a5aa923aad8d15da57eb081fa770ae7f.jpg",
+      "review_number": 220,
+      "source_filename": "X-Wines label 126510.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaujouclary"
+          ],
+          "target": "Château Jouclary"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabardesrose"
+          ],
+          "target": "Cabardès Rosé"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "languedoc"
+          ],
+          "target": "Languedoc"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cabardes"
+          ],
+          "target": "Cabardès"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "a44792d5468d8f3d07fe203688f208eafedbb60e.jpg",
+      "review_number": 221,
+      "source_filename": "X-Wines label 128544.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "jmoreauetfils"
+          ],
+          "target": "J. Moreau & Fils"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "chablispremiercrumontmains",
+            "montmains"
+          ],
+          "target": "Chablis Premier Cru Montmains"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "france"
+          ],
+          "target": "France"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "burgundy"
+          ],
+          "target": "Burgundy"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "chablis",
+            "chablispremiercru"
+          ],
+          "target": "Chablis"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "1e8fec781efb5445f6b72c5042a2e69ddecca57f.jpg",
+      "review_number": 222,
+      "source_filename": "X-Wines label 138299.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "enzobartoli"
+          ],
+          "target": "Enzo Bartoli"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "piemonterosato",
+            "rosato"
+          ],
+          "target": "Piemonte Rosato"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "aecf67810abb7e9ebbad3d6278e04ccaa34908ad.jpg",
+      "review_number": 223,
+      "source_filename": "X-Wines label 138625.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "angelonegro"
+          ],
+          "target": "Angelo Negro"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "nicolon",
+            "nicolonbarberadalba"
+          ],
+          "target": "Nicolon Barbera d'Alba"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "barberadalba"
+          ],
+          "target": "Barbera d'Alba"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "d94d32e7f694d3ad9d12f1442025df202fafecef.jpg",
+      "review_number": 224,
+      "source_filename": "X-Wines label 138765.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "cascinaballarin"
+          ],
+          "target": "Cascina Ballarin"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "langhenebbiolo"
+          ],
+          "target": "Langhe Nebbiolo"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "langhe"
+          ],
+          "target": "Langhe"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "f4a18a6f7362cc4e8718535088d04712acfa2ce5.jpg",
+      "review_number": 225,
+      "source_filename": "X-Wines label 139210.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "castellodiama"
+          ],
+          "target": "Castello di Ama"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "alpoggio",
+            "alpoggiochardonnay"
+          ],
+          "target": "Al Poggio Chardonnay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "tuscany"
+          ],
+          "target": "Tuscany"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "eefcf66a5279cff4c76da608b1559a0ad2b147c3.jpg",
+      "review_number": 226,
+      "source_filename": "X-Wines label 139388.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "cavalieredoro"
+          ],
+          "target": "Cavaliere d'Oro"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "gabbianopinotgrigio",
+            "pinotgrigio"
+          ],
+          "target": "Gabbiano Pinot Grigio"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "unresolved",
+          "accepted": [],
+          "target": ""
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "dellevenezie"
+          ],
+          "target": "Delle Venezie"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "a1585fb6d2775efc5ab6f32b2fe03cadf15d7a7a.jpg",
+      "review_number": 227,
+      "source_filename": "X-Wines label 139693.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "masseriatrajone"
+          ],
+          "target": "Masseria Trajone"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "zinfandel"
+          ],
+          "target": "Zinfandel"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "puglia"
+          ],
+          "target": "Puglia"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "861fbf6cc4e000f4be4e0dadeda049dcb1e71106.jpg",
+      "review_number": 228,
+      "source_filename": "X-Wines label 140262.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kettmeir"
+          ],
+          "target": "Kettmeir"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "mullerthurgau"
+          ],
+          "target": "Müller Thurgau"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "trentinoaltoadige"
+          ],
+          "target": "Trentino-Alto Adige"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "altoadige",
+            "sudtirol"
+          ],
+          "target": "Alto Adige"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "ee4402a75bc44771dba9006e41997f48e5610429.jpg",
+      "review_number": 229,
+      "source_filename": "X-Wines label 141193.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "ilfalchetto"
+          ],
+          "target": "Il Falchetto"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "brachettodacqui"
+          ],
+          "target": "Brachetto d'Acqui"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "brachettodacqui"
+          ],
+          "target": "Brachetto d'Acqui"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "7820490dc99b3991958990045bee478e6f711116.jpg",
+      "review_number": 230,
+      "source_filename": "X-Wines label 142170.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "ruffino"
+          ],
+          "target": "Ruffino"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "torgaio"
+          ],
+          "target": "Torgaio"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "tuscany"
+          ],
+          "target": "Tuscany"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "df303b456b6d729cce16990437763f65ae587f12.jpg",
+      "review_number": 231,
+      "source_filename": "X-Wines label 143222.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "sansilvestro"
+          ],
+          "target": "San Silvestro"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "dulcis",
+            "dulcismoscatodasti"
+          ],
+          "target": "Dulcis Moscato d'Asti"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "moscatodasti"
+          ],
+          "target": "Moscato d'Asti"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "c122696f1d0a46544d3a2a3c9f06151e609c5d5c.jpg",
+      "review_number": 232,
+      "source_filename": "X-Wines label 143800.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "carlogiacosa"
+          ],
+          "target": "Carlo Giacosa"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "narin",
+            "narinbarbaresco"
+          ],
+          "target": "Narin Barbaresco"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "barbaresco"
+          ],
+          "target": "Barbaresco"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "5b333011147e4737b58f6fbbfcc06622a4f207b9.jpg",
+      "review_number": 233,
+      "source_filename": "X-Wines label 143806.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "robertosarotto"
+          ],
+          "target": "Roberto Sarotto"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "solatio",
+            "solatiomoscatodasti"
+          ],
+          "target": "Solatio Moscato d'Asti"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "moscatodasti"
+          ],
+          "target": "Moscato d'Asti"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "9589f741e499a9e747ffadfba7c6bbedc6de878a.jpg",
+      "review_number": 234,
+      "source_filename": "X-Wines label 147123.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "sanfelice"
+          ],
+          "target": "San Felice"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "belcaro",
+            "belcarovinsantodelchianticlassico"
+          ],
+          "target": "Belcaro Vin Santo del Chianti Classico"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "tuscany"
+          ],
+          "target": "Tuscany"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "chianticlassico"
+          ],
+          "target": "Chianti Classico"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "c57e4ddb935fa23c3ddcd5a2d8bf9178f216177f.jpg",
+      "review_number": 235,
+      "source_filename": "X-Wines label 149407.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "mustela"
+          ],
+          "target": "Mustela"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "langhechardonnay"
+          ],
+          "target": "Langhe Chardonnay"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "langhe"
+          ],
+          "target": "Langhe"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "c90c90d0f1afb834f3d79530ebbf8dc25d848fa8.jpg",
+      "review_number": 236,
+      "source_filename": "X-Wines label 149550.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "cascinaghercina"
+          ],
+          "target": "Cascina Ghercina"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "baroloriserva"
+          ],
+          "target": "Barolo Riserva"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "barolo"
+          ],
+          "target": "Barolo"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "13ba9b1b74a7bae2c650468c24bc7c9929e94f19.jpg",
+      "review_number": 237,
+      "source_filename": "X-Wines label 150384.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "sagliettiflavio"
+          ],
+          "target": "Saglietti Flavio"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cerequio",
+            "cerequiobarolo"
+          ],
+          "target": "Cerequio Barolo"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "piedmont"
+          ],
+          "target": "Piedmont"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "barolo"
+          ],
+          "target": "Barolo"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "a7fb544c5b1e59da4e834a79a1d3dd276a145412.jpg",
+      "review_number": 238,
+      "source_filename": "X-Wines label 150820.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "mottura"
+          ],
+          "target": "Mottura"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "fianodelsalento"
+          ],
+          "target": "Fiano del Salento"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "italy"
+          ],
+          "target": "Italy"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "puglia"
+          ],
+          "target": "Puglia"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "salento"
+          ],
+          "target": "Salento"
+        },
+        "vintage": {
+          "status": "unresolved",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "db7301f7548cf33c25dfb74d16629e245f84021a.jpg",
+      "review_number": 239,
+      "source_filename": "X-Wines label 160271.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lustau"
+          ],
+          "target": "Lustau"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "rarecream",
+            "rarecreamsolerareserva"
+          ],
+          "target": "Rare Cream Solera Reserva"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "andalusia"
+          ],
+          "target": "Andalusia"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "jerez"
+          ],
+          "target": "Jerez"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "aafe8c19f13995958c0a4f4f1e79c713f09133ac.jpg",
+      "review_number": 240,
+      "source_filename": "X-Wines label 160277.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "toroalbala"
+          ],
+          "target": "Toro Albalá"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "electrico",
+            "electricofino3fases"
+          ],
+          "target": "Eléctrico Fino 3 Fases"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "spain"
+          ],
+          "target": "Spain"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "andalusia"
+          ],
+          "target": "Andalusia"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "262b0951792d7329afd655b8a51d49f73188a697.jpg",
+      "review_number": 241,
+      "source_filename": "X-Wines label 162507.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "emiliana"
+          ],
+          "target": "Emiliana"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "coyam"
+          ],
+          "target": "Coyam"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "chile"
+          ],
+          "target": "Chile"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "colchaguavalley",
+            "valledecolchagua"
+          ],
+          "target": "Colchagua Valley"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "ee5a71871baf09b2d4f47caf9254caa8c66cb541.jpg",
+      "review_number": 242,
+      "source_filename": "X-Wines label 163101.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "migueltorres"
+          ],
+          "target": "Miguel Torres"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "lasmulasreservasauvignonblanc",
+            "lasmulassauvignonblanc"
+          ],
+          "target": "Las Mulas Reserva Sauvignon Blanc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "chile"
+          ],
+          "target": "Chile"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "74e946ebf2e40bc66aba79c65464bd973ed5c4ca.jpg",
+      "review_number": 243,
+      "source_filename": "X-Wines label 163876.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "chateaulosboldos"
+          ],
+          "target": "Château Los Boldos"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "espiritudecachapoal",
+            "espiritudecachapoalbrut"
+          ],
+          "target": "Espíritu de Cachapoal Brut"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "chile"
+          ],
+          "target": "Chile"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "cachapoal",
+            "cachapoalvalley",
+            "valledecachapoal"
+          ],
+          "target": "Cachapoal Valley"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "95a3f46c0f0db8efa8ef79f901e6168648237cda.jpg",
+      "review_number": 244,
+      "source_filename": "X-Wines label 165143.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "erasmo"
+          ],
+          "target": "Erasmo"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetfranc"
+          ],
+          "target": "Cabernet Franc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "chile"
+          ],
+          "target": "Chile"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "centralvalley"
+          ],
+          "target": "Central Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "maulevalley",
+            "valledelmaule"
+          ],
+          "target": "Maule Valley"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "d59836882ecbb248cd7c04e31ff0bf183e9fab62.jpg",
+      "review_number": 245,
+      "source_filename": "X-Wines label 167079.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "garzon"
+          ],
+          "target": "Garzón"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetfranc",
+            "reservacabernetfranc"
+          ],
+          "target": "Reserva Cabernet Franc"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "uruguay"
+          ],
+          "target": "Uruguay"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "maldonado"
+          ],
+          "target": "Maldonado"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "025536553f37b11cfe4710473e9703c69f612491.jpg",
+      "review_number": 246,
+      "source_filename": "X-Wines label 167464.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "donapaula"
+          ],
+          "target": "Doña Paula"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "loscardos",
+            "loscardosmalbec"
+          ],
+          "target": "Los Cardos Malbec"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "argentina"
+          ],
+          "target": "Argentina"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "mendoza"
+          ],
+          "target": "Mendoza"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "a601263f2caad4fc1765b7be14b76243f8641cb5.jpg",
+      "review_number": 247,
+      "source_filename": "X-Wines label 168182.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "deangelesvina1924"
+          ],
+          "target": "De Angeles Viña 1924"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "granmalbec"
+          ],
+          "target": "Gran Malbec"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "argentina"
+          ],
+          "target": "Argentina"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "mendoza"
+          ],
+          "target": "Mendoza"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "lujandecuyo"
+          ],
+          "target": "Luján de Cuyo"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "ecf6effdf677cc33479ae65fb0faaf6dc4ebdb66.jpg",
+      "review_number": 248,
+      "source_filename": "X-Wines label 174274.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "oxfordlanding"
+          ],
+          "target": "Oxford Landing"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "cabernetsauvignonshiraz"
+          ],
+          "target": "Cabernet Sauvignon Shiraz"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "australia"
+          ],
+          "target": "Australia"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "southaustralia"
+          ],
+          "target": "South Australia"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "73cb85818c9f95232ba192124c4d71917e9acfe8.jpg",
+      "review_number": 249,
+      "source_filename": "X-Wines label 175454.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "taylors"
+          ],
+          "target": "Taylors"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "thevisionary",
+            "thevisionarycabernetsauvignon"
+          ],
+          "target": "The Visionary Cabernet Sauvignon"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "australia"
+          ],
+          "target": "Australia"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "southaustralia"
+          ],
+          "target": "South Australia"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "clarevalley"
+          ],
+          "target": "Clare Valley"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "461a3720defae4335f95479fe149fba01c18b045.jpg",
+      "review_number": 250,
+      "source_filename": "X-Wines label 175754.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "franklandestate"
+          ],
+          "target": "Frankland Estate"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "rockygully",
+            "rockygullycabernets"
+          ],
+          "target": "Rocky Gully Cabernets"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "australia"
+          ],
+          "target": "Australia"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "westernaustralia"
+          ],
+          "target": "Western Australia"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "franklandriver"
+          ],
+          "target": "Frankland River"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "21905d7c5e672a81d8088eebe915e060dfceed47.jpg",
+      "review_number": 251,
+      "source_filename": "X-Wines label 175908.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "kooyong"
+          ],
+          "target": "Kooyong"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "haven",
+            "havenpinotnoir"
+          ],
+          "target": "Haven Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "australia"
+          ],
+          "target": "Australia"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "victoria"
+          ],
+          "target": "Victoria"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "morningtonpeninsula"
+          ],
+          "target": "Mornington Peninsula"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "adb8c66f1980f31f169f0261aca646c168cc7cdd.jpg",
+      "review_number": 252,
+      "source_filename": "X-Wines label 179958.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "illahe"
+          ],
+          "target": "Illahe"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "estatepinotnoir",
+            "pinotnoir"
+          ],
+          "target": "Estate Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "oregon"
+          ],
+          "target": "Oregon"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "willamettevalley"
+          ],
+          "target": "Willamette Valley"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "50be6a1367f8911e7c036518f0279dac8a044857.jpg",
+      "review_number": 253,
+      "source_filename": "X-Wines label 180268.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "maggiofamilyvineyards"
+          ],
+          "target": "Maggio Family Vineyards"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "oldvinezinfandel"
+          ],
+          "target": "Old Vine Zinfandel"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "lodi"
+          ],
+          "target": "Lodi"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "fd58f35b02afa27f15ac5626dd30f483b280c13c.jpg",
+      "review_number": 254,
+      "source_filename": "X-Wines label 180712.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "dashe"
+          ],
+          "target": "Dashe"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "zinfandel"
+          ],
+          "target": "Zinfandel"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "california"
+          ],
+          "target": "California"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "sonomacounty"
+          ],
+          "target": "Sonoma County"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "drycreekvalley"
+          ],
+          "target": "Dry Creek Valley"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "44506dcf522c0e801bfee60ef4a9cab3cca59e09.jpg",
+      "review_number": 255,
+      "source_filename": "X-Wines label 185481.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "columbiacrest"
+          ],
+          "target": "Columbia Crest"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "coyotecanyonreservesyrah",
+            "reservesyrah"
+          ],
+          "target": "Coyote Canyon Reserve Syrah"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "washington"
+          ],
+          "target": "Washington"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "columbiavalley"
+          ],
+          "target": "Columbia Valley"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "horseheavenhills"
+          ],
+          "target": "Horse Heaven Hills"
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "c91cd2262bbf502bec394ad21c0e44af30225d46.jpg",
+      "review_number": 256,
+      "source_filename": "X-Wines label 193488.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "matua"
+          ],
+          "target": "Matua"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pinotnoir"
+          ],
+          "target": "Pinot Noir"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "newzealand"
+          ],
+          "target": "New Zealand"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "marlborough"
+          ],
+          "target": "Marlborough"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "e311924fd740df4f0e083db8b67dd8a566ce305b.jpg",
+      "review_number": 257,
+      "source_filename": "X-Wines label 195300.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "schlosskellereigobelsburg"
+          ],
+          "target": "Schlosskellerei Gobelsburg"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "zweigelt"
+          ],
+          "target": "Zweigelt"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "austria"
+          ],
+          "target": "Austria"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "niederosterreich"
+          ],
+          "target": "Niederösterreich"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "b8e938609ee6b676a74ffbd0fd8392b245fc2331.jpg",
+      "review_number": 258,
+      "source_filename": "X-Wines label 198580.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "lakechalice"
+          ],
+          "target": "Lake Chalice"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "pinotgris",
+            "thefalconpinotgris"
+          ],
+          "target": "The Falcon Pinot Gris"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "newzealand"
+          ],
+          "target": "New Zealand"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "marlborough"
+          ],
+          "target": "Marlborough"
+        },
+        "subregion": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        },
+        "vintage": {
+          "status": "expected_blank",
+          "accepted": [],
+          "target": ""
+        }
+      }
+    },
+    {
+      "image": "32008b5372b06c513543e531032fc4ed6f916961.jpg",
+      "review_number": 259,
+      "source_filename": "X-Wines label 192515.jpeg",
+      "fields": {
+        "producer": {
+          "status": "expected_value",
+          "accepted": [
+            "pellerestates"
+          ],
+          "target": "Peller Estates"
+        },
+        "wine_name": {
+          "status": "expected_value",
+          "accepted": [
+            "privatereserveriesling"
+          ],
+          "target": "Private Reserve Riesling"
+        },
+        "country": {
+          "status": "expected_value",
+          "accepted": [
+            "canada"
+          ],
+          "target": "Canada"
+        },
+        "region": {
+          "status": "expected_value",
+          "accepted": [
+            "ontario"
+          ],
+          "target": "Ontario"
+        },
+        "subregion": {
+          "status": "expected_value",
+          "accepted": [
+            "niagarapeninsula"
+          ],
+          "target": "Niagara Peninsula"
+        },
+        "vintage": {
+          "status": "expected_value",
+          "accepted": [
+            "2019"
+          ],
+          "target": "2019"
         }
       }
     }

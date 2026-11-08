@@ -174,19 +174,64 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Startup gate: the cellar UI (and its ViewModels, which touch the database on creation)
+     * only composes after the database has opened cleanly. A failed open used to crash the
+     * app silently during composition; it now shows what went wrong instead.
+     */
+    private val startupDbState = mutableStateOf<StartupDbState>(StartupDbState.Checking)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("WineTracker", "MainActivity: onCreate started")
         enableEdgeToEdge()
-        
-        // Trigger migrations in background to avoid blocking initial UI render
+
+        startDatabaseProbe()
+
+        setContent {
+            WineTrackerTheme {
+                when (val state = startupDbState.value) {
+                    StartupDbState.Checking -> StartupCheckingScreen()
+                    StartupDbState.Ready -> {
+                        val navController = rememberNavController()
+                        MainAppScaffold(
+                            navController,
+                            wineViewModel,
+                            tastingNoteViewModel,
+                            rankingsViewModel,
+                            scannerViewModel,
+                            backupViewModel
+                        )
+                    }
+                    is StartupDbState.Failed -> StartupDbErrorScreen(state.detail) {
+                        startupDbState.value = StartupDbState.Checking
+                        startDatabaseProbe()
+                    }
+                }
+            }
+        }
+    }
+
+    /** Opens the database (running pending migrations) off the main thread, then gates the UI. */
+    private fun startDatabaseProbe() {
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             Log.d("WineTracker", "MainActivity: Triggering background migration check")
-            try {
-                database.query(androidx.sqlite.db.SimpleSQLiteQuery("SELECT 1"))
+            val openError = try {
+                database.query(androidx.sqlite.db.SimpleSQLiteQuery("SELECT 1")).use { }
                 Log.d("WineTracker", "MainActivity: Background migration check complete")
+                null
             } catch (e: Exception) {
                 Log.e("WineTracker", "MainActivity: Error during background migration", e)
+                e
+            }
+            if (openError != null) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    startupDbState.value = StartupDbState.Failed(
+                        openError.message?.takeIf { it.isNotBlank() }
+                            ?: openError.javaClass.simpleName
+                    )
+                }
+                return@launch
             }
 
             // Debug builds only: restore the developer's bundled backup into an empty database (see DevSeedRestorer).
@@ -200,19 +245,8 @@ class MainActivity : ComponentActivity() {
                     android.widget.Toast.makeText(applicationContext, seedMessage, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
-        }
-
-        setContent {
-            WineTrackerTheme {
-                val navController = rememberNavController()
-                MainAppScaffold(
-                    navController,
-                    wineViewModel,
-                    tastingNoteViewModel,
-                    rankingsViewModel,
-                    scannerViewModel,
-                    backupViewModel
-                )
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                startupDbState.value = StartupDbState.Ready
             }
         }
     }
@@ -333,7 +367,7 @@ fun MainAppScaffold(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
-                if (showAddMenu) {
+                if (showAddMenu && currentRoute != "add_wine") {
                     Surface(
                         onClick = {
                             if (currentRoute == "notes") {
@@ -365,6 +399,8 @@ fun MainAppScaffold(
             },
             floatingActionButtonPosition = FabPosition.End,
             bottomBar = {
+            // The camera-first Add Wine screen is full-bleed: no nav bar or FAB over it.
+            if (currentRoute != "add_wine") {
             // Every item is given an equal share of the bar, so one item's width is every item's
             // width: measuring the first one is enough to size the whole row's labels.
             var bottomBarItemWidthPx by remember { mutableIntStateOf(0) }
@@ -436,6 +472,7 @@ fun MainAppScaffold(
                     icon = { Icon(Icons.Default.Person, "Profile") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_PROFILE, bottomBarLabelSize) }
                 )
+            }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -530,9 +567,9 @@ fun MainAppScaffold(
                 )
             }
             composable("add_wine") {
-                AddWineScreen(viewModel, scannerViewModel) {
-                    navController.popBackStack("cellar", inclusive = false)
-                }
+                AddWineScreen(viewModel, scannerViewModel,
+                    onWineAdded = { navController.popBackStack("cellar", inclusive = false) },
+                    onClose = { navController.popBackStack() })
             }
             composable(
                 route = "note_detail/{noteId}",
@@ -735,6 +772,76 @@ fun PopupMenuItem(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+/** Result of the startup database probe that gates the cellar UI. */
+private sealed interface StartupDbState {
+    data object Checking : StartupDbState
+    data object Ready : StartupDbState
+    data class Failed(val detail: String) : StartupDbState
+}
+
+/** Shown while the startup database probe (and any pending migration) runs. */
+@Composable
+private fun StartupCheckingScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CircularProgressIndicator()
+            Text("Opening cellar…", style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+/**
+ * Shown when the database cannot be opened at startup. Only the open failed, so the stored
+ * data is untouched; the screen says so, shows the technical detail, and names this build so
+ * a build/data mismatch can be matched to the right build.
+ */
+@Composable
+private fun StartupDbErrorScreen(detail: String, onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                "Couldn't open the cellar",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                "The database couldn't be opened, so the cellar is not shown. " +
+                    "Your data has not been changed or deleted. This usually means the " +
+                    "installed build is older than the data on the device — install the " +
+                    "newest build and try again.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                "Build: ${BuildConfig.BUILD_BRANCH} @ ${BuildConfig.BUILD_COMMIT} " +
+                    "(${BuildConfig.BUILD_WORKING_TREE})",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Button(onClick = onRetry) {
+                Text("Try again")
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-"""Lab v4 single-reading resolver policy: Prod untouched, Lab v4 opt-in, every other gate kept.
+"""Lab v5 single-reading resolver policy: Prod untouched, Lab v5 opt-in, every other gate kept.
 
 The resolvers are Kotlin, so this asserts the wiring contract and the exact Prod wording that
 host replays and stored CSVs already depend on. The behaviour itself is exercised by the Kotlin
@@ -27,7 +27,7 @@ class ResolverPolicyWiringTests(unittest.TestCase):
             self.assertTrue(fragment in producer, fragment)
         self.assertTrue('policy:ProducerResolver.Policy=ProducerResolver.Policy.prod' in LINKED.read_text())
         # The Lab switch (on for the 2026-10-27 measurement run) is the only path to the lab policy;
-        # the Prod v3.0 contender still never receives it.
+        # the Prod v4.0 contender still never receives it.
         self.assertTrue('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true' in RUNNER.read_text())
 
     def test_every_independence_check_follows_the_policy(self):
@@ -40,12 +40,12 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertNotIn('a.engine!=b.engine && a.observationIds.intersect(b.observationIds).isEmpty() }\n        trace.visit("independent"',
                          PRODUCER.read_text())
 
-    def test_the_lab_policy_reaches_lab_v4_only(self):
+    def test_the_lab_policy_reaches_lab_v5_only(self):
         extraction = EXTRACTION.read_text()
         self.assertIn('val policy=if(expanded && singleReading)', extraction)
         self.assertIn('Policy.singleReading', extraction)
         self.assertIn('expanded=true,singleReading=batch.resolverSingleReading', extraction)
-        # The Prod v3.0 contender must never receive the flag.
+        # The Prod v4.0 contender must never receive the flag.
         self.assertIn('appendSpatialContender(context,it,experimental,hybrid,repair,skip,expanded=false) }', extraction)
         self.assertNotIn('expanded=false,singleReading', extraction)
         self.assertIn(',policy=policy)', extraction)
@@ -57,10 +57,35 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         self.assertIn('"independent producer and wine OCR agree with primary LWIN relationship; confirm manually"',
                       LINKED.read_text())
         self.assertIn('"resolver_single_reading_enabled" to resolverSingleReading.toString()', BATCH.read_text())
+
         # The table must not keep claiming a two-engine quorum the lab run may not have used.
         funnel = FUNNEL.read_text()
         self.assertIn('"Independent-support agreement"', funnel)
         self.assertNotIn('"Two-engine + disjoint agreement"', funnel)
+
+    def test_span_fuzzy_supplemental_guard_and_final_value_pass_are_separate(self):
+        producer = PRODUCER.read_text()
+        self.assertIn('MAX_PRODUCER_FUZZY_CANDIDATES=256', producer)
+        self.assertIn('MAX_FINAL_NEAR_MATCH_DISTANCE=1', producer)
+        self.assertIn('private val allowWineTitlePairs:Boolean=false', (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text())
+        self.assertIn('policy.producerPenalty(cleanExisting).coerceAtLeast(0)', producer)
+        self.assertIn('existingRolePenalty<3', producer)
+        self.assertIn('strong grape-variety cue', producer)
+        self.assertIn('fun finalNearMatch(value:String', producer)
+        self.assertIn('finalNearMatch(finalProducer,checkProducerBudget)', SPATIAL.read_text())
+        self.assertIn('rows.none { it.distance==0 }', producer)
+        self.assertIn('rows.none { "lwin" in it.entity.support }', producer)
+        self.assertIn('!independent(rows)', producer)
+        self.assertIn('single-engine fuzzy supplemental candidate needs LWIN or independent engines', producer)
+        final_start=producer.index('fun finalNearMatch(')
+        resolve_start=producer.index('fun resolve(',final_start)
+        final_pass=producer[final_start:resolve_start]
+        self.assertIn('index.lookup(query,MAX_PRODUCER_FUZZY_CANDIDATES',final_pass)
+        self.assertNotIn('policy.',final_pass)  # terminal pass is independent of span acceptance
+        self.assertGreater(SPATIAL.read_text().index('val finalProducer='),SPATIAL.read_text().index('if(backfilled)'))
+        replay=(ROOT/'tools/host-checks/producer_resolver_replay.py').read_text()
+        self.assertIn('MAX_PRODUCER_FUZZY_CANDIDATES = 256',replay)
+        self.assertIn('candidate_limit=MAX_PRODUCER_FUZZY_CANDIDATES',replay)
 
     def test_exact_match_fast_path_is_lab_only(self):
         producer = PRODUCER.read_text()
@@ -77,7 +102,7 @@ class ResolverPolicyWiringTests(unittest.TestCase):
         label_ctx = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt').read_text()
         preview = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
         spatial = SPATIAL.read_text()
-        # Default stays false so Prod v3.0 and SavedEvidenceReplayTest stay untouched.
+        # Default stays false so Prod v4.0 and SavedEvidenceReplayTest stay untouched.
         self.assertIn('fun extract(records:List<TokenRecord>,year:Int,budgetMs:Long=DEFAULT_BUDGET_MS,exactGeographyFastPath:Boolean=false):EvidenceResult', evidence)
         self.assertIn('exactGeographyFastPath: Boolean = false,', label_ctx)
         self.assertIn('exactGeographyFastPath:Boolean=false', preview)

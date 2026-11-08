@@ -42,6 +42,9 @@ See:
 - [Offline scanner architecture, build and tests](docs/offline-scanner.md)
 - [Knowledge-base import formats](docs/offline-scanner-data.md)
 - [Production PP-OCRv6 Medium integration](docs/production-v6-medium.md)
+- [GLiNER lane lab (ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4 ➔ Lab v7 post-processing)](_refs/GLINER_LAB.md)
+- [GLiNER lane lab: first host measurement against Lab v7](_refs/GLINER_LAB_HOST_RUN.md)
+- [GLiNER lane lab: how to produce and upload the INT4 model bundle](_refs/GLINER_MODEL_UPLOAD.md)
 - [Phone-hosted prebuilt OpenCV](docs/opencv-prebuilt.md)
 - [OCR post-processing investigation](docs/ocr-postprocessing-review.md)
 

@@ -13,6 +13,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
+        android:name=".WineTrackerApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -43,6 +44,25 @@
         </activity>
 
         <activity android:name="com.yourapp.wine.phonecorpus.WineAppLabelsActivity" android:exported="false" android:launchMode="singleTop" />
+        <activity android:name="com.yourapp.wine.phonecorpus.DevicePhotoLabActivity" android:exported="false" />
+        <activity android:name="com.yourapp.wine.gliner.GlinerLabActivity" android:exported="false" />
+
+        <service
+            android:name="com.n8rtz.winetracker.scanner.LabelScanService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-requested offline wine label scan while the app is backgrounded" />
+        </service>
+
+        <service
+            android:name="com.yourapp.wine.gliner.GlinerLabRunService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Offline on-device wine-label GLiNER lane benchmark execution" />
+        </service>
 
         <service
             android:name="com.yourapp.wine.phonecorpus.WineAppLabelsRunService"

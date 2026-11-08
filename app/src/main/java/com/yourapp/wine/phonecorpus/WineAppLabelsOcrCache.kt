@@ -13,19 +13,20 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.GZIPInputStream
 
 /**
- * Per-photo cache of verified OCR model outputs (ML Kit + Paddle v6 Medium) for the 125-label
- * benchmark so Lab v4 extraction rules can be iterated without re-running both OCR models on every
- * pass when the user checks "Cached OCR" next to Lab v4.
+ * Per-photo cache of verified OCR model outputs (ML Kit + Paddle v6 Medium) for the 124-label
+ * benchmark so Lab v5 and future Lab versions carry over raw OCR readings across builds, version
+ * bumps, and reference-set updates without re-running both OCR models on every pass.
  *
- * Keyed by corpus signature + OCR model/threshold signature (never by build SHA or install time),
- * so cached OCR outputs survive app updates while invalidating automatically if any corpus image
- * or packaged OCR model changes. Prod baselines never read from this cache.
+ * Keyed strictly by OCR model/threshold signature + per-image SHA-256 (never by corpus scoring
+ * signature, build SHA, or install time), and backed by a packaged verified OCR seed asset for
+ * fresh installs. Prod baselines never read from this cache.
  */
 internal class WineAppLabelsOcrCache(
-    app: Application,
-    corpusSignature: String,
+    private val app: Application,
+    @Suppress("UNUSED_PARAMETER") corpusSignature: String = "",
 ) {
     data class Entry(
         val image: String,
@@ -36,7 +37,9 @@ internal class WineAppLabelsOcrCache(
         val capturedMs: Long,
     )
 
-    private val signature = anchor("$corpusSignature|ocr-cache-v1|${modelSignature()}")
+    private val modelSig = modelSignature()
+    private val signature = anchor("ocr-cache-v2|$modelSig")
+    private val cacheRoot = File(app.noBackupFilesDir, "wine-app-labels-v1/ocr-cache-v1")
     private val dir = File(app.noBackupFilesDir, "wine-app-labels-v1/ocr-cache-v1/$signature")
     private val verifiedShas = ConcurrentHashMap<String, String>()
 
@@ -100,6 +103,14 @@ internal class WineAppLabelsOcrCache(
         capturedBuild: String = BuildConfig.BUILD_COMMIT,
     ): Boolean {
         val validRows = extractValidOcrRows(rows) ?: return false
+        val incomingHasZoomState = !metadata["auto_zoom_crop"].isNullOrBlank() ||
+            !metadata["auto_zoom_crop_skipped"].isNullOrBlank()
+        if (!incomingHasZoomState) {
+            val existing = entry(image, imageSha256)
+            if (existing != null && !existing.metadata["auto_zoom_crop"].isNullOrBlank()) {
+                return true
+            }
+        }
         dir.mkdirs()
         val filteredMeta = linkedMapOf<String, String>()
         for (key in PRESERVED_METADATA_KEYS) {
@@ -124,9 +135,12 @@ internal class WineAppLabelsOcrCache(
     }
 
     /**
-     * Seeds missing OCR cache entries from completed attempts already stored on this device under
-     * the same verified corpus signature, so upgrading immediately makes prior 125-label OCR runs
-     * reusable without requiring another cold OCR pass first.
+     * Carries over verified OCR cache entries across Lab versions and reference-set updates:
+     * 1. Sibling `ocr-cache-v1/<sig>` folders on this device (preferring captures that evaluated
+     *    tiny-label zoom-crop when multiple exist for the same image SHA-256).
+     * 2. Completed attempts in any saved run folder on this device matching [expectedHashes].
+     * 3. Packaged verified raw OCR fallback asset (`wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz`)
+     *    matching both [modelSignature] and [expectedHashes], so fresh installs also skip cold OCR.
      */
     fun promote(runFolders: List<File>, expectedHashes: Map<String, String>): Int {
         var promoted = 0
@@ -135,6 +149,49 @@ internal class WineAppLabelsOcrCache(
             !hasValidFile(image, sha)
         }.toMutableMap()
         if (missing.isEmpty()) return 0
+
+        val siblingDirs = cacheRoot.listFiles().orEmpty()
+            .filter { it.isDirectory && it.absolutePath != dir.absolutePath }
+        if (siblingDirs.isNotEmpty()) {
+            for ((image, expectedSha) in missing.toMap()) {
+                val candidates = siblingDirs.mapNotNull { sibling ->
+                    val file = File(sibling, "$image.json")
+                    if (!file.isFile) return@mapNotNull null
+                    runCatching {
+                        val obj = JSONObject(file.readText())
+                        if (!obj.optBoolean("ocr_cached")) return@runCatching null
+                        if (obj.optString("image") != image) return@runCatching null
+                        if (obj.optString("image_sha256") != expectedSha) return@runCatching null
+                        val metaObj = obj.optJSONObject("metadata") ?: JSONObject()
+                        val meta = linkedMapOf<String, String>()
+                        for (k in metaObj.keys()) meta[k] = metaObj.optString(k)
+                        val rowsArr = obj.optJSONArray("rows") ?: return@runCatching null
+                        val rawRows = (0 until rowsArr.length()).map { idx ->
+                            val rowObj = rowsArr.getJSONObject(idx)
+                            val map = linkedMapOf<String, String>()
+                            for (k in rowObj.keys()) map[k] = rowObj.optString(k)
+                            map as Map<String, String>
+                        }
+                        if (extractValidOcrRows(rawRows) == null) return@runCatching null
+                        val hasZoom = !meta["auto_zoom_crop"].isNullOrBlank() ||
+                            !meta["auto_zoom_crop_skipped"].isNullOrBlank()
+                        Triple(
+                            (if (hasZoom) 1 else 0) to obj.optLong("captured_ms"),
+                            meta to rawRows,
+                            obj.optString("captured_build").ifBlank { BuildConfig.BUILD_COMMIT },
+                        )
+                    }.getOrNull()
+                }
+                val best = candidates.maxWithOrNull(
+                    compareBy<Triple<Pair<Int, Long>, Pair<Map<String, String>, List<Map<String, String>>>, String>> { it.first.first }
+                        .thenBy { it.first.second }
+                ) ?: continue
+                if (save(image, expectedSha, best.second.first, best.second.second, best.third)) {
+                    missing.remove(image)
+                    promoted++
+                }
+            }
+        }
 
         for (folder in runFolders) {
             if (missing.isEmpty()) break
@@ -173,13 +230,48 @@ internal class WineAppLabelsOcrCache(
                 }
             }
         }
+
+        if (missing.isNotEmpty()) {
+            runCatching {
+                app.assets.open(PACKAGED_SEED_ASSET).use { rawStream ->
+                    GZIPInputStream(rawStream).bufferedReader(Charsets.UTF_8).useLines { lines ->
+                        for (line in lines) {
+                            if (missing.isEmpty()) break
+                            if (line.isBlank()) continue
+                            val obj = runCatching { JSONObject(line) }.getOrNull() ?: continue
+                            if (obj.optString("model_signature") != modelSig) continue
+                            val image = obj.optString("image")
+                            val expectedSha = missing[image] ?: continue
+                            if (obj.optString("image_sha256") != expectedSha) continue
+                            val metaObj = obj.optJSONObject("metadata") ?: JSONObject()
+                            val meta = linkedMapOf<String, String>()
+                            for (k in metaObj.keys()) meta[k] = metaObj.optString(k)
+                            val rowsArr = obj.optJSONArray("rows") ?: continue
+                            val rawRows = (0 until rowsArr.length()).map { idx ->
+                                val rowObj = rowsArr.getJSONObject(idx)
+                                val map = linkedMapOf<String, String>()
+                                for (k in rowObj.keys()) map[k] = rowObj.optString(k)
+                                map as Map<String, String>
+                            }
+                            val build = obj.optString("captured_build").ifBlank { "packaged-ocr-seed" }
+                            if (save(image, expectedSha, meta, rawRows, build)) {
+                                missing.remove(image)
+                                promoted++
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (promoted > 0) {
-            Log.d("WineTracker", "Promoted $promoted cached OCR label(s) from prior run attempts")
+            Log.d("WineTracker", "Promoted $promoted cached OCR label(s) from prior/packaged OCR cache")
         }
         return promoted
     }
 
     companion object {
+        const val PACKAGED_SEED_ASSET = "wine-app-labels-v1/ocr-raw-cache-v1.jsonl.gz"
         private val OCR_CANDIDATES = setOf("shared", "mlkit_reference", "candidate_3")
         private val POST_OCR_STAGES = setOf("knowledge_setup", "field_summary")
         private val MLKIT_DONE = setOf("complete", "no_text")

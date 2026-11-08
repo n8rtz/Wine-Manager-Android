@@ -48,7 +48,7 @@ class PipelineFunnelDeviceTest {
             assertEquals("supported_pair", summary["wine_gazetteer_status"])
             assertEquals("PASSED", summary["funnel.wine.independent.status"])
             assertEquals(4, journal.rows.count { it["stage"] == "recognition" })
-            // The retired 168-photo debug corpus is gone; use the live 125-label corpus.
+            // The retired 168-photo debug corpus is gone; use the live 124-label corpus.
             val inputs = JSONObject(context.assets.open("wine-app-labels-v1/inputs.json").bufferedReader().use { it.readText() })
             val image = inputs.getJSONArray("images").getJSONObject(0).getString("image")
             val names = listOf("producer", "wine_name", "country", "region", "subregion", "vintage")

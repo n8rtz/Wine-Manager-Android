@@ -7,7 +7,7 @@ import org.robolectric.annotation.Config
 
 /** Geometry/scheduling regressions from the supplied device log, not an assertion of native ML Kit accuracy. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [26], manifest = Config.NONE)
+@Config(sdk = [35], manifest = Config.NONE)
 class LabelLocalizationTest {
     @Test fun footerCropDoesNotDiscardUpperName() = LocalizationChecks.footerCropDeclinesInsteadOfLosingTheTitle()
     @Test fun weakBoxesMayLocateButNeverBecomeAcceptedFields() = LocalizationChecks.weakBoxesLocalizeWithoutBecomingAcceptedText()

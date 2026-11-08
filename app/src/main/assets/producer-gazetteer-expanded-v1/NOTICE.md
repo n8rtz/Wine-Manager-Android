@@ -1,7 +1,8 @@
 # Lab expanded producer index — sources and attribution
 
-`producers-expanded.sqlite` is opened ONLY by the benchmark's Lab v4 pipeline.
-Production and Prod v1.0/v2.0/v3.0 never read it. Every suggestion it supports is
+`producers-expanded.sqlite` is used by Lab benchmark and GLiNER post-processing,
+and is searchable on Database Lookup. Production/Prod pipelines do not read it.
+Every suggestion it supports is
 YELLOW / confirm manually; membership is lexical support, not proof of identity.
 
 ## Primary LWIN subset (verbatim)
@@ -23,6 +24,11 @@ their attested provenance.
   (https://www.ttb.gov/public-information/foia/list-of-permittees), via the
   user-supplied pinned cache recorded in `manifest.json`. Authenticity/freshness
   of the supplied cache were not independently validated against a fresh export.
+- **Owner-approved wine brands** (`source = 'approved_brand'`). Individually
+  researched marketed names approved by the owner; source URLs and product
+  examples are recorded in `tools/producer-sources/approved-wine-brands.json`.
+  Brand names do not necessarily identify a legal winery. Source text and
+  images are not included, and their reuse rights have not been established.
 - **OpenStreetMap wineries** (`source = 'osm'`). © OpenStreetMap contributors,
   ODbL-1.0; derivative snapshot by OpenHistoryMap/openwinemap at the pinned
   commit in `manifest.json`. Named explicit craft/industrial wineries only.

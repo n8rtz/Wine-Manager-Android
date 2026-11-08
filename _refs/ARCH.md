@@ -29,6 +29,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │
 ├── MainActivity.kt                    # Entry point, nav host (routes: cellar, notes, rankings, history, profile, settings,
 │                                      #   app_info, pareto, backup_restore, add_wine, wine/note editors), bottom bar, Add FAB menu
+├── WineTrackerApp.kt                  # Application: schedules the delayed GLINER model pre-warm; nothing blocking
 │
 ├── ui/
 │   ├── theme/
@@ -81,7 +82,7 @@ app/src/main/java/com/n8rtz/winetracker/
 │
 ├── data/
 │   ├── local/
-│   │   ├── WineDatabase.kt            # Room DB (v22): entities WineDefinition, WineImageAsset, WineBottle,
+│   │   ├── WineDatabase.kt            # Room DB (v22): entities WineDefinition (+defaultColorHsv), WineImageAsset, WineBottle,
 │   │   │                              #   TastingNote, Rating, ConsumptionEvent; BottleStatus; SensoryData;
 │   │   │                              #   Converters; vintage helpers; all migrations
 │   │   ├── WineDaos.kt                # DAOs: Wine, WineImageAsset, Inventory, TastingNote, Rating, ConsumptionEvent
@@ -152,11 +153,15 @@ app/src/main/res/xml/                  # backup_rules.xml / data_extraction_rule
 app/src/test/java/...                  # JVM tests: aromawheel, backup (schedule/naming/retention/config rules), drinkingwindow, scanner (parser, ladder, session, consensus, barcode...),
                                        #   vintage/date utils, sensory JSON, bottom-bar sizing, aroma drag
 app/src/androidTest/java/...           # Instrumented: LabelOcrImageRegressionTest, scanner/evidence device tests
+gliner-workflow/src/main/java/com/yourapp/wine/gliner/GlinerModelPrewarm.kt # Delayed low-priority GLINER bundle install/verify after app start (best-effort; scan-time install unchanged)
+gliner-workflow/src/test/java/com/yourapp/wine/gliner/GlinerFieldDecisionV5Test.kt # Synthetic paired-OCR decision-policy positive and abstention regressions
 app/src/test/resources/scanner/labels/ # Label OCR image fixtures (see its README)
 app/src/debug/assets/dev-seed/         # DEBUG ONLY: WineTracker_Backup.json test cellar (192 bottles, 139 wines, 116 notes), not in release builds
+tools/evaluation/wine-app-labels-review-v1/internet-labels-v1.json # Temporary front-label test photos: provenance, checksums and scorer-only candidate references
 app/src/main/assets/producer-gazetteer-v1/ # Verified primary LWIN producer/wine indexes (producers.sqlite 33,160, wines.sqlite) + manifest/NOTICE; primary_verified gate
-app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OSM, 78,615); opened only by Lab v4 benchmark + Database Lookup
-tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report
+app/src/main/assets/producer-gazetteer-expanded-v1/ # LAB ONLY expanded producer index (verbatim LWIN subset + source-tagged X-Wines/TTB/OSM and 17 owner-approved brands, 78,632); used by GLiNER post-processing + Database Lookup
+tools/producer-sources/build_expanded.py # Deterministic builder for the Lab expanded producer index from the pinned refresh report and approved brands
+tools/producer-sources/approved-wine-brands.json # Owner-approved marketed names with source URLs and example wine evidence; not legal-producer assertions
 app/src/main/java/com/yourapp/wine/kb/WineIndexDatabaseLookup.kt # Read-only Database Lookup access to the packaged LWIN wine index (wines.sqlite); cache shared with ProducerGazetteer
 app/src/debug/java/com/yourapp/wine/diagnostics/PipelineFunnel.kt # Debug-only per-label pipeline gates, definitions and latest-attempt aggregation
 app/src/main/java/com/yourapp/wine/phonecorpus/WineAppLabelsActivity.kt # The only benchmark screen: 125-label run, frozen Prod rows, Cached OCR checkbox next to Lab v4, matrix, CSV save
@@ -178,11 +183,12 @@ app/src/androidTest/java/com/yourapp/wine/textlab/PipelineFunnelDeviceTest.kt # 
 tools/tests/test_pipeline_funnel.py      # Host fixture, compact-mobile layout contract, export wiring and build metadata checks
 tools/tests/test_wine_app_labels_corpus.py # 125-label asset/route contract + frozen-baseline capture and CSV-save wiring
 app/src/main/java/com/yourapp/wine/textlab/TextLabBottleFilter.kt # LAB ONLY: post-OCR spatial bottle-column & medal/critic sticker filter (works with Cached OCR) + conditional padded tiny-footprint zoom-crop
+app/src/main/java/com/yourapp/wine/textlab/evidence/LabPostOcrModules.kt # LAB ONLY: mix-and-match post-OCR module toggles isolating each improvement over the Best V5 baseline
 app/src/main/java/com/yourapp/wine/textlab/TextLabState.kt # Default-off Lab engine switches asserted by the instrumented engine tests
 app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt # LAB ONLY, off by default: bounded appellation repair (explicit origin anchor, LabelContext country cue, or >=10-letter globally unique unanchored appellation)
 app/src/main/java/com/yourapp/wine/textlab/evidence/LabelContext.kt # LAB ONLY: per-label collector of explicit origin anchors, legal classification cues and unambiguous KB producer countries for cross-line disambiguation and PlaceRepair
-tools/tests/test_bottle_filter_and_zoom_crop.py # Host wiring & generality checks for Lab v4 bottle-column/sticker filter and conditional zoom-crop
-tools/tests/test_label_context_and_accent_scrubbing.py # Host checks for TextNorm.scrub, framed appellations, LabelContext, Lab v4 geography backfill and frozen Prod subset scoping
+tools/tests/test_bottle_filter_and_zoom_crop.py # Host wiring & generality checks for Lab v5 bottle-column/sticker filter and conditional zoom-crop
+tools/tests/test_label_context_and_accent_scrubbing.py # Host checks for TextNorm.scrub, framed appellations, LabelContext, Lab v5 geography backfill and frozen Prod subset scoping
 tools/tests/test_backup_preferences.py  # W-057 host contract: preference key parity, Auto Backup rules, secrets, failure popup wiring
 tools/tests/test_consume_quantity.py # Host wiring checks for the multi-bottle Mark as Consumed selector and one-event/quantity-undo integrity
 tools/tests/test_settings_cleanup.py # Host contract: the five retired Settings entries and their code/routes are gone, benchmark entry stays
@@ -195,7 +201,13 @@ tools/generate-wine-knowledge.py    # Deterministic compiler: authored paths -> 
 docs/evidence-designation-levels.md # Why the Lab v4 designation/level/fragment rules changed, with the measured 125-label basis and the rejected flatten convention
 tools/tests/test_evidence_selection.py # Host checks for the classification-base mirror over the real catalog + wiring of the designation, fragment and level rules
 docs/scanner-accuracy-plan.md          # Audited phone evidence, strict goals and proposed staged accuracy plan (not recognition changes)
-docs/lab-v4-accuracy-roadmap.md        # Checkable (- [ ]) root-cause roadmap from the 0c88bda41164 125-label run + shipped Phase 0 d=0 fast-paths
+docs/lab-v5-accuracy-roadmap.md        # Checkable (- [ ]) root-cause roadmap from the 0c88bda41164 125-label run + shipped Phase 0 d=0 fast-paths
+docs/lab-v5-124-diagnostic-a709ad6.md  # Host analysis of the first compact-JSON diagnostic (124-label raw export, cached OCR): integrity, scores, funnel bottlenecks
+tools/run-host-lab.sh                  # One host Lab iteration: prepare cached OCR -> replay -> score (~90 s); see tools/host-lab/README.md
+tools/run-host-lab-replay.sh           # Compiles the real Lab post-OCR Kotlin + HostLabReplay.kt and replays all 124 cached-OCR journals on the JVM
+tools/host-lab/host_lab.py             # Host replay driver: cached-OCR asset -> runner input; runner output -> scored report + gains/losses diff
+tools/host-lab/sqlite_bridge.py        # SQLite bridge mirroring ProducerGazetteer SQL against the packaged gazetteer/wine DBs for the host runner
+tools/logic-checks/HostLabReplay.kt    # Host-only Lab v5 replay main (FormPreview + SpatialPreview, single-reading policy); never in the app
 
 _refs/                                 # Project docs: BACKLOG, ARCHIVE, PIPELINE, CHANGELOG, ARCH, AGENTS, THINGS_TO_CHECK, LESSONS_LEARNED
 _refs/major-feature-planning/off-device-backup-and-restore.md # W-057 phase decisions: SAF Drive, GitHub, TrueNAS WebDAV, app-open scheduling
@@ -242,3 +254,50 @@ WineDatabase (Room) ← SQLite
 - Migration 16→17 converts legacy archived bottle rows to events while preserving nullable `dateConsumed` as-is. It does not infer dates from tasting notes or add historical timestamps.
 - Add Note is a tasting-note-only operation; it does not decrement cellar inventory. Notes created from an event are linked to that specific event.
 - Normalize non-vintage aliases (`NV`, `(NV)`, and blank legacy values) for display, import, grouping, and lookup. Do not infer a missing vintage from an unrelated bottle.
+
+- `_refs/LAB_MODIFIERS.md` — Lab checkbox inventory, early candidate-discovery boundaries and combination-test protocol.
+
+- `tools/analyze-lab-runs.py` — scalar suite/recent-export comparison with per-wine gains/losses and reference/coverage validation.
+
+- `phonecorpus/LabSuiteArchive.kt` — streaming normalized ZIP suite writer with shared candidate/payload dictionaries, occurrence links and integrity/size manifest.
+- `tools/lab_suite_archive.py` — verified archive reader, existing CSV converter and lossless diagnostic-row reconstruction.
+- `tools/tests/test_lab_suite_archive.py` — round-trip, deduplication, unknown-field retention, integrity failure and archive UI wiring checks.
+
+### Device-photo Lab v5 sanity checks
+- `phonecorpus/DevicePhotoLabActivity.kt` — private activity with multi-image document picker and JSON/CSV save launchers; inherits a snapshot of the selected Lab modifier keys.
+- `ui/screens/DevicePhotoLabScreen.kt` — separate unscored progress/results screen showing each selected photo and all six assigned parameters, copyable results and optional diagnostics saving.
+- `viewmodels/DevicePhotoLabViewModel.kt` — sequential fresh-OCR session using the normal bounded photo importer, isolated private temporary copies, reusable extraction session and normalized JSON diagnostics; never writes corpus/baseline/best-build stores. Rotation preserves the ViewModel; leaving the activity cancels work and removes private copies after workers stop.
+- `phonecorpus/DevicePhotoLabResult.kt` — reads only the Lab v5 selected pipeline fields, preserving blanks and exposing failures/incomplete OCR.
+- `app/src/test/java/com/yourapp/wine/DevicePhotoLabTest.kt` — Robolectric contracts for exact selected values, blank/failure preservation, external-file checksum verification, production isolation and unreadable multi-photo sessions (no native OCR).
+- `tools/tests/test_device_photo_lab.py` — host source contracts for picker/results/configuration wiring, fresh OCR and isolation from standardized references/persistence.
+
+`PhoneCorpusRunner.runImageAllModes(sourceFile=...)` changes only verified input loading for
+Lab-only device photos; its default packaged-corpus behavior and downstream OCR/extraction
+remain unchanged. Native decoding determines the image format from original bytes: the
+40-hex `.jpg` identity is a runner key, not a conversion of PNG/HEIC/etc. No new model,
+scoring rule, label-specific heuristic, expected-value input or extraction tuning is added.
+
+### Span provenance and terminal producer safety
+- `tools/logic-checks/SpanSafetyChecks.kt` — executable Kotlin synthetic regressions for founding-date context, harvest/bare-year controls, an appellation/year extraction, typed shared-vintage ownership, and terminal supplemental support/identity ties. Runs via `tools/run-spatial-preview-checks.sh --span-safety-only`.
+- `tools/tests/test_span_safety.py` — source contracts for early discovery context, structured ownership exported at both hypothesis stages, and earlier-resolver evidence carried into terminal canonicalization.
+
+`Hypothesis.sharesVintageSource` is extractor-assigned provenance, not parsed diagnostic
+wording. Bare years retain exclusive ownership; valid embedded/harvest-derived year spans
+may coexist with other fields from their source. Option/state deduplication retains this
+compatibility distinction. `ProducerResolver.finalNearMatch` uses eligible earlier matches
+for supplemental identities, keeps verified-primary/LWIN comparison, rejects identity ties,
+and emits explicit rejection telemetry. Corpus answers, module presets and numeric ranks
+are not changed by these safety repairs.
+
+### Active versus historical Lab modifiers
+`LabPostOcrModules.selectableModuleIds` supplies new UI checkboxes and generated single/pair
+plans (16 active). The full enum/fromKeys retain historical wine-name-span and vertical-title-pair
+keys. `withoutRetiredModules()` sanitizes stored manual preferences, new configuration switches
+and device-photo settings without changing retained result/export metadata. New focused suites
+have six configurations; saved seven-configuration manifests remain intact.
+
+Raw diagnostics export now feeds `WineAppLabelsViewModel.rawExportRows()` into the existing
+`LabSuiteArchive` JSON package writer. It retains per-attempt order/indices, typed nested
+records and the frozen-production aggregates without an intermediate raw CSV or CSV splitting.
+The existing application/json picker saves the manifest and all numbered parts; ordinary
+scored/recent CSV routes retain their original writer/splitter behavior.

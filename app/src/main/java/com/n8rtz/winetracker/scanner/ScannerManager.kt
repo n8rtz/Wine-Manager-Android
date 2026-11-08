@@ -4,13 +4,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
 import com.yourapp.wine.capture.ScanReport
-import com.yourapp.wine.capture.WineScannerServices
+import com.yourapp.wine.capture.ProductionLabelScanner
+import com.yourapp.wine.diagnostics.ScanInputSource
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.fill.UiState
 import com.yourapp.wine.merge.LineBuilder
 import com.yourapp.wine.merge.TokenMerger
 import kotlinx.coroutines.CancellationException
-import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -28,9 +28,7 @@ class ScannerManager(context: Context) {
     /** EXIF-upright original JPEG pixels in / normalized original+label boxes out; deadline includes startup. */
     suspend fun scanLabel(file: File, shutterMs: Long = SystemClock.elapsedRealtime()): ScanReport = withContext(Dispatchers.Default) {
         try {
-            val scanner = ScanDeadline(shutterMs + ScanDeadline.BUDGET_MS).run { WineScannerServices.get(appContext) }
-            scanner?.scan(file, shutterMs) ?: ScanReport.red("Time budget reached — retake or enter manually",
-                SystemClock.elapsedRealtime() - shutterMs, deadlineCancelled = true)
+            ProductionLabelScanner.scan(appContext,file,shutterMs,ScanInputSource.FILE)
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (_: OutOfMemoryError) { ScanReport.red("Memory pressure — enter manually") }
         catch (_: LinkageError) { ScanReport.red("Native scanner unavailable — enter manually") }
