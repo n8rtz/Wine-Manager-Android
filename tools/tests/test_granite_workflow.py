@@ -190,6 +190,24 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertNotIn("leadingProducerArticles", rag)
         extractor = self.read(PKG / "GraniteLabelExtractor.kt")
         self.assertIn("Dynamic Reconstruction of Incomplete or Misread OCR", extractor)
+        self.assertIn("JNI library load failed:", extractor)
+
+        proguard = self.read(ROOT / "app/proguard-rules.pro")
+        self.assertIn("-keep class com.n8rtz.winetracker.debug.graniteworkflow.** { *; }", proguard)
+
+        import shutil
+        import subprocess
+        if shutil.which("readelf"):
+            phdrs = subprocess.check_output(["readelf", "-l", "-W", str(so_path)], text=True)
+            self.assertNotIn("TLS", phdrs, "Orphaned PT_TLS breaks Android Bionic linker64 dlopen")
+            relocs = subprocess.check_output(["readelf", "-r", "-W", str(so_path)], text=True)
+            self.assertNotIn("TLS", relocs, "TLSDESC relocations break Android Bionic without PT_TLS")
+            dynsyms = subprocess.check_output(["readelf", "--dyn-syms", "-W", str(so_path)], text=True)
+            und_notype = [
+                line for line in dynsyms.splitlines()
+                if "UND" in line and "NOTYPE" in line and not line.strip().startswith("0:")
+            ]
+            self.assertEqual(und_notype, [], f"Unexpected NOTYPE UND symbols: {und_notype}")
 
 
 if __name__ == "__main__":

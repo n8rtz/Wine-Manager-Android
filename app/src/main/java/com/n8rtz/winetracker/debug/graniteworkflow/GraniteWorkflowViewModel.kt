@@ -380,6 +380,8 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         }
                         val aggregate = GraniteLabCorpus.aggregate(updatedRows, stopped = false)
                         val elapsed = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L)
+                        val fallbackBanner = evaluatedRow.runResult?.executionBackendNote
+                            ?.takeIf { it.contains("JNI fallback:") }
                         state.copy(
                             datasetDoneCount = index + 1,
                             datasetBatchElapsedMs = elapsed,
@@ -388,7 +390,8 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                             activeDatasetImage = sample.image,
                             imageSourceLabel = "GLiNER dataset ${row.displayName}",
                             previewBitmap = evaluatedRow.runResult?.preprocessedBitmap ?: state.previewBitmap,
-                            lastResult = evaluatedRow.runResult ?: state.lastResult
+                            lastResult = evaluatedRow.runResult ?: state.lastResult,
+                            errorBannerMessage = fallbackBanner ?: state.errorBannerMessage
                         )
                     }
                 }
@@ -697,6 +700,9 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         state.datasetAggregate
                     }
                     val doneCount = updatedDatasetRows.count { it.runResult != null || it.status == "error" }
+                    val fallbackBanner = extraction.nativeFallbackReason?.let {
+                        "Granite GGUF JNI fallback: $it"
+                    }
                     state.copy(
                         modelsStatus = refreshedStatus,
                         isRunning = false,
@@ -705,7 +711,8 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         datasetRows = updatedDatasetRows,
                         datasetAggregate = updatedAggregate,
                         datasetDoneCount = if (datasetKey != null) doneCount else state.datasetDoneCount,
-                        statusBannerMessage = missingPrompt ?: "Workflow completed in ${totalMs}ms"
+                        statusBannerMessage = missingPrompt ?: "Workflow completed in ${totalMs}ms",
+                        errorBannerMessage = fallbackBanner
                     )
                 }
             } catch (cancel: CancellationException) {

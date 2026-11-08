@@ -30,3 +30,7 @@
 
 # Production ONNX Runtime uses JNI/reflection; preserve the genuine runtime entry points.
 -keep class ai.onnxruntime.** { *; }
+
+# Granite 4.2 llama.cpp JNI bridge resolves package/class/method names directly via dlsym/JNI.
+-keep class com.n8rtz.winetracker.debug.graniteworkflow.** { *; }
+

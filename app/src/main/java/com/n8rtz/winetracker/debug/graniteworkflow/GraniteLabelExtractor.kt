@@ -19,7 +19,9 @@ data class GraniteExtractionOutcome(
     val rawThinkTrace: String?,
     val rawLlmOutput: String,
     val elapsedMs: Long,
-    val backendUsed: String
+    val backendUsed: String,
+    val usedNativeLlm: Boolean = false,
+    val nativeFallbackReason: String? = null
 )
 
 /**
@@ -61,7 +63,10 @@ class GraniteLabelExtractor : AutoCloseable {
         }
 
         var nativeFallbackReason: String? = null
-        if (GraniteLlamaBridge.isNativeLibraryLoaded() && ggufFile.isFile && ggufFile.length() > 0L) {
+        if (!GraniteLlamaBridge.isNativeLibraryLoaded() && ggufFile.isFile && ggufFile.length() > 0L) {
+            val loadErr = GraniteLlamaBridge.lastNativeError().ifBlank { "libgranite_llama_jni.so not loaded" }
+            nativeFallbackReason = "JNI library load failed: $loadErr"
+        } else if (GraniteLlamaBridge.isNativeLibraryLoaded() && ggufFile.isFile && ggufFile.length() > 0L) {
             val rawOutput = runCatching {
                 GraniteLlamaBridge.generateWithGguf(
                     ggufFile = ggufFile,
@@ -87,7 +92,9 @@ class GraniteLabelExtractor : AutoCloseable {
                         rawThinkTrace = thinkTrace,
                         rawLlmOutput = rawOutput,
                         elapsedMs = elapsed,
-                        backendUsed = "llama.cpp JNI (${ggufFile.name})$ragTag"
+                        backendUsed = "llama.cpp JNI (${ggufFile.name})$ragTag",
+                        usedNativeLlm = true,
+                        nativeFallbackReason = null
                     )
                 } else {
                     nativeFallbackReason = "JSON parse fallback (${rawOutput.take(80)})"
@@ -126,7 +133,9 @@ class GraniteLabelExtractor : AutoCloseable {
                     "Spatial + DB RAG Reconciler$ragTag (${ggufFile.name} staged; build libgranite_llama_jni.so for native GGUF token generation)"
                 else ->
                     "Spatial + DB RAG Reconciler$ragTag (import granite-4.2-3b-Q4_K_M.gguf into models/granite)"
-            }
+            },
+            usedNativeLlm = false,
+            nativeFallbackReason = nativeFallbackReason
         )
     }
 
