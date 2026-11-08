@@ -267,11 +267,10 @@ class GraniteLabelExtractor : AutoCloseable {
             null
         }
         val spProducer = ragContext.spatialContenderFields["producer"]?.takeIf { it.isNotBlank() }
-        val spProducerGreen = ragContext.spatialContenderStates["producer"] == "GREEN"
         val finalProducer = when {
             matchedRagProducer != null -> matchedRagProducer
-            spProducer != null && (spProducerGreen || input.producerOrWinery.isNullOrBlank()) -> spProducer
             !input.producerOrWinery.isNullOrBlank() -> input.producerOrWinery
+            spProducer != null -> spProducer
             else -> ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
         }
 
@@ -285,11 +284,10 @@ class GraniteLabelExtractor : AutoCloseable {
             null
         }
         val spWineName = ragContext.spatialContenderFields["wine_name"]?.takeIf { it.isNotBlank() }
-        val spWineGreen = ragContext.spatialContenderStates["wine_name"] == "GREEN"
         val finalWineName = when {
             matchedRagWine != null -> matchedRagWine
-            spWineName != null && (spWineGreen || input.wineNameOrCuvee.isNullOrBlank()) -> spWineName
             !input.wineNameOrCuvee.isNullOrBlank() -> input.wineNameOrCuvee
+            spWineName != null -> spWineName
             else -> ragContext.linkedWineCandidates.firstOrNull { it.distance <= 1 }?.name
         }
 
@@ -300,8 +298,8 @@ class GraniteLabelExtractor : AutoCloseable {
         val spSubregion = ragContext.spatialContenderFields["subregion"]?.takeIf { it.isNotBlank() }
             ?: ragContext.appellationCandidates.firstOrNull()?.appellationOrSubregion?.takeIf { it.isNotBlank() && it != spRegion }
 
-        val finalCountry = spCountry ?: input.country
-        val finalAppellation = spSubregion ?: spRegion ?: input.appellationOrRegion
+        val finalCountry = input.country?.takeIf { it.isNotBlank() } ?: spCountry
+        val finalAppellation = input.appellationOrRegion?.takeIf { it.isNotBlank() } ?: spSubregion ?: spRegion
         val finalVarietals = (input.varietals + ragContext.matchedGrapes).distinct()
         val updatedDiscrepancies = input.ocrDiscrepanciesResolved.toMutableList()
         if (!input.producerOrWinery.isNullOrBlank() &&
@@ -323,8 +321,8 @@ class GraniteLabelExtractor : AutoCloseable {
             country = finalCountry,
             isNonVintage = finalIsNonVintage,
             ocrDiscrepanciesResolved = updatedDiscrepancies,
-            region = spRegion ?: input.region,
-            subregion = spSubregion ?: input.subregion
+            region = input.region?.takeIf { it.isNotBlank() } ?: spRegion,
+            subregion = input.subregion?.takeIf { it.isNotBlank() } ?: spSubregion
         )
     }
 
@@ -805,11 +803,12 @@ STRICT SYSTEM RULES:
    - Top-to-upper-center (y in 0.08..0.55, x near 0.50) = producer_or_winery and wine_name_or_cuvee.
    - Middle section (y in 0.40..0.75) = appellation_or_region, varietals, classification, vintage.
    - Bottom fine print (y > 0.75) = abv_percentage, bottle_volume_ml, country/importer legal text.
-2. Preserve European Diacritics: Always preserve and prefer proper European diacritics (e.g., "Château", "Côtes du Rhône", "Spätlese", "Ribera del Duero", "Crémant", "Saint-Émilion", "Pessac-Léognan", "Grüner Veltliner").
-3. Zero Hallucination Policy: NEVER guess or hallucinate missing fields. Return null for any scalar field (or [] for "varietals" and "ocr_discrepancies_resolved") when uncertain or absent from the OCR text.
-4. Non-Vintage & Sparkling Rule: If "NV" or "Non-Vintage" appears anywhere on the label, OR if no vintage year is printed on a sparkling wine (e.g., Champagne, Brut, Crémant, Prosecco, Cava, Sekt), set "vintage": null and "is_non_vintage": true.
-5. Database Candidate Grounding (RAG): When Retrieved Offline Wine Database Candidates are present and corroborated by the OCR spans, use the canonical database spellings for producer_or_winery, wine_name_or_cuvee, appellation_or_region, and country.
-6. Output Format: Respond with strict JSON matching this exact schema:
+2. Dynamic Reconstruction of Incomplete or Misread OCR: OCR on curved wine bottles and stylized typography frequently clips outer words/prefixes or misreads ornamental script/calligraphic capitals and ligatures (e.g., F/T/L/C/G/S, rn/m, cl/d, dropped leading/trailing words, or split multi-line titles). Dynamically discern when an OCR reading is incomplete or visually/phonetically corrupted, and reconstruct the true complete entity using cross-engine comparison, wine-domain knowledge, label context (country, region, varietals, bottling text), and the Retrieved Offline Wine Database Candidates.
+3. Preserve European Diacritics: Always preserve and restore proper European diacritics (e.g., "Château", "Côtes du Rhône", "Spätlese", "Ribera del Duero", "Crémant", "Saint-Émilion", "Pessac-Léognan", "Grüner Veltliner").
+4. Zero Hallucination Policy: Never invent fields that have no basis in the label's OCR or corroborated metadata. Return null for any scalar field (or [] for "varietals" and "ocr_discrepancies_resolved") when genuinely absent from the label.
+5. Non-Vintage & Sparkling Rule: If "NV" or "Non-Vintage" appears anywhere on the label, OR if no vintage year is printed on a sparkling wine (e.g., Champagne, Brut, Crémant, Prosecco, Cava, Sekt), set "vintage": null and "is_non_vintage": true.
+6. Database Candidate Grounding (RAG): Treat Retrieved Offline Wine Database Candidates as candidate hypotheses retrieved via character trigrams and sub-span similarity. When a candidate explains a noisy, clipped, or partial OCR reading and is consistent with the label's geography and varietal context, use the canonical database spelling for producer_or_winery, wine_name_or_cuvee, appellation_or_region, and country, and record the reconstruction in "ocr_discrepancies_resolved".
+7. Output Format: Respond with strict JSON matching this exact schema:
 {
   "producer_or_winery": "string | null",
   "wine_name_or_cuvee": "string | null",

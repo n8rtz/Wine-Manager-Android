@@ -140,14 +140,15 @@ data class GraniteDatabaseRagContext(
             appendLine("   - Styles/Classifications: $stylesText")
 
             if (spatialContenderFields.values.any { it.isNotBlank() }) {
-                appendLine("5. Corroborated Database Spatial Contender (SqliteWineKnowledgeBase + ProducerResolver + LinkedWineResolver):")
+                appendLine("5. Spatial + KnowledgeBase Contender Hints (verify against OCR coordinates, context, and candidate lists above):")
                 val p = spatialContenderFields["producer"].orEmpty().ifBlank { "null" }
                 val w = spatialContenderFields["wine_name"].orEmpty().ifBlank { "null" }
                 val c = spatialContenderFields["country"].orEmpty().ifBlank { "null" }
                 val r = spatialContenderFields["region"].orEmpty().ifBlank { "null" }
                 val s = spatialContenderFields["subregion"].orEmpty().ifBlank { "null" }
                 val v = spatialContenderFields["vintage"].orEmpty().ifBlank { "null" }
-                appendLine("   - producer=\"$p\", wine_name=\"$w\", country=\"$c\", region=\"$r\", subregion=\"$s\", vintage=\"$v\"")
+                val pState = spatialContenderStates["producer"].orEmpty().ifBlank { "UNVERIFIED" }
+                appendLine("   - producer=\"$p\" (kb_state=$pState), wine_name=\"$w\", country=\"$c\", region=\"$r\", subregion=\"$s\", vintage=\"$v\"")
             }
         }.trimEnd()
     }
@@ -389,8 +390,8 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                     }
                 }
 
-                // Also perform direct FTS + article-stripped near-match retrieval on ProducerGazetteer + LinkedWines
-                // (recovers single-word or clipped script-font spans such as "trancette" -> "La Francette")
+                // Perform general FTS5 trigram + contiguous word-subspan retrieval on ProducerGazetteer + LinkedWines
+                // so partial, clipped, or noisy OCR spans surface candidate hypotheses for Granite to reason over.
                 if (gazetteer != null) {
                     val directDeadline = SystemClock.elapsedRealtime() + 180L
                     val directBudget = {
@@ -429,11 +430,15 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
 
             val dedupedProducers = producerCandidates
                 .distinctBy { ProducerResolver.normalize(it.name) }
-                .sortedWith(compareBy<GraniteProducerCandidate> { it.distance }.thenByDescending { "lwin" in it.sources })
+                .sortedWith(
+                    compareBy<GraniteProducerCandidate> { it.distance }
+                        .thenBy { ProducerResolver.producerDistance(ProducerResolver.normalize(it.matchedSpan), ProducerResolver.normalize(it.name)) }
+                        .thenByDescending { "lwin" in it.sources }
+                )
                 .take(10)
 
-            // If spatial producer is blank or unresolved (e.g. "Trancette" when OCR cut off the script "F"
-            // and missed the leading "La"), canonicalize it when a unique distance <= 1 gazetteer match exists.
+            // If the spatial contender left producer blank or unverified, and a single unambiguous
+            // subspan/near-edit candidate exists among non-geography, non-grape spans, record it as a hint.
             val currentSpProducer = spatialFields["producer"].orEmpty().trim()
             val currentSpState = spatialStates["producer"].orEmpty()
             if (currentSpState != "GREEN") {
@@ -448,7 +453,7 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                     val matching = dedupedProducers.filter { cand ->
                         cand.distance <= 1 && (
                             ProducerResolver.normalize(cand.matchedSpan) == spKey ||
-                                effectiveProducerDistance(spKey, ProducerResolver.normalize(cand.name)) <= 1
+                                minSubspanEditDistance(spKey, ProducerResolver.normalize(cand.name)) <= 1
                             )
                     }
                     matching.singleOrNull()
@@ -534,29 +539,35 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
         return records
     }
 
-    private val leadingProducerArticles = setOf(
-        "la", "le", "les", "the", "l", "el", "los", "las", "il", "lo"
-    )
-
-    private fun stripLeadingProducerArticle(normKey: String): String {
-        val parts = normKey.split(' ').filter(String::isNotEmpty)
-        return if (parts.size >= 2 && parts.first() in leadingProducerArticles) {
-            parts.drop(1).joinToString(" ")
-        } else {
-            normKey
+    /**
+     * General contiguous word-window edit distance between an OCR query span [queryKey] and a
+     * candidate entity key [entityKey].
+     *
+     * When OCR misses leading or trailing words on a curved bottle or stylized typography (in any
+     * language), the captured span [queryKey] aligns with a contiguous word sub-window of [entityKey].
+     * Checking contiguous word windows of length `>= max(6, queryKey.length - 1)` measures how closely
+     * the captured text matches the corresponding sub-phrase of the candidate without relying on any
+     * language-specific word or article lists.
+     */
+    internal fun minSubspanEditDistance(queryKey: String, entityKey: String): Int {
+        var best = ProducerResolver.producerDistance(queryKey, entityKey)
+        if (best == 0) return 0
+        val entityWords = entityKey.split(' ').filter(String::isNotEmpty)
+        if (entityWords.size > 1 && queryKey.length >= 6) {
+            val minSubLen = maxOf(6, queryKey.length - 1)
+            for (winSize in 1 until entityWords.size) {
+                for (start in 0..(entityWords.size - winSize)) {
+                    val sub = entityWords.subList(start, start + winSize).joinToString(" ")
+                    if (sub.length >= minSubLen) {
+                        val subDist = ProducerResolver.producerDistance(queryKey, sub)
+                        if (subDist < best) {
+                            best = subDist
+                        }
+                    }
+                }
+            }
         }
-    }
-
-    private fun effectiveProducerDistance(queryKey: String, entityKey: String): Int {
-        val direct = ProducerResolver.producerDistance(queryKey, entityKey)
-        if (direct == 0) return 0
-        val strippedQuery = stripLeadingProducerArticle(queryKey)
-        val strippedEntity = stripLeadingProducerArticle(entityKey)
-        return if (strippedQuery.length >= 6 && strippedEntity.length >= 6) {
-            minOf(direct, ProducerResolver.producerDistance(strippedQuery, strippedEntity))
-        } else {
-            direct
-        }
+        return best
     }
 
     private fun supplementDirectGazetteerCandidates(
@@ -590,9 +601,14 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
             val q = ProducerResolver.normalize(span)
             if (q.length < 5) continue
             val hits = gazetteer.lookup(q, 48, checkBudget)
+            val maxAllowedDist = when {
+                q.length >= 14 -> 2
+                q.length >= 7 -> 2
+                else -> 1
+            }
             for (entity in hits) {
-                val dist = effectiveProducerDistance(q, entity.key)
-                if (dist <= if (q.length >= 16) 2 else 1) {
+                val dist = minSubspanEditDistance(q, entity.key)
+                if (dist <= maxAllowedDist) {
                     matchedProducerIds += entity.id
                     producerCandidates += GraniteProducerCandidate(
                         id = entity.id,
@@ -614,8 +630,8 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                 val q = ProducerResolver.normalize(span)
                 val wines = gazetteer.lookupWines(q, topProducerIds, 32, checkBudget)
                 for (wine in wines) {
-                    val dist = ProducerResolver.distance(q, wine.key)
-                    if (dist <= if (q.length >= 16) 2 else 1) {
+                    val dist = minSubspanEditDistance(q, wine.key)
+                    if (dist <= if (q.length >= 12) 2 else 1) {
                         linkedWineCandidates += GraniteLinkedWineCandidate(
                             id = wine.id,
                             name = wine.name,

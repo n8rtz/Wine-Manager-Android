@@ -164,8 +164,10 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertIn("mparams.use_extra_bufts = false;", cpp)
         self.assertIn("mparams.load_mode = LLAMA_LOAD_MODE_MMAP;", cpp)
         rag = self.read(rag_path)
-        self.assertIn("stripLeadingProducerArticle", rag)
-        self.assertIn("effectiveProducerDistance", rag)
+        self.assertIn("minSubspanEditDistance", rag)
+        self.assertNotIn("leadingProducerArticles", rag)
+        extractor = self.read(PKG / "GraniteLabelExtractor.kt")
+        self.assertIn("Dynamic Reconstruction of Incomplete or Misread OCR", extractor)
 
 
 if __name__ == "__main__":
