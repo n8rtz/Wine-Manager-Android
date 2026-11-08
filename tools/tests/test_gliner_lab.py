@@ -221,7 +221,8 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("coroutineScope {", ocr)
         self.assertIn("async(Dispatchers.Default) { readMlKit(", ocr)
         self.assertIn("async(Dispatchers.Default) { readPaddle(", ocr)
-        self.assertIn("mlkit.await() to paddle.await()", ocr)
+        self.assertIn("val first=mlkit.await()", ocr)
+        self.assertIn("first to paddle.await()", ocr)
         self.assertIn("GlinerFusion.fuse(mlKitReadings+paddleReadings)", ocr)
         self.assertIn("CaptureDecoder().decode", ocr)
 

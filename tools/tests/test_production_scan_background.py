@@ -12,10 +12,13 @@ STORE=JAVA/'com/n8rtz/winetracker/scanner/PendingLabelScanStore.kt'
 
 class ProductionScanBackgroundTest(unittest.TestCase):
     def test_screen_lifecycle_only_cancels_pending_shutter_not_reading(self):
-        for path in (SCREEN,PREVIEW):
-            source=path.read_text()
-            self.assertIn('ON_STOP) scannerViewModel.cancelPendingLabelCapture()',source)
-            self.assertNotIn('ON_STOP) scannerViewModel.cancelActiveLabelScan()',source)
+        preview=PREVIEW.read_text()
+        self.assertIn('ON_STOP) scannerViewModel.cancelPendingLabelCapture()',preview)
+        self.assertNotIn('ON_STOP) scannerViewModel.cancelActiveLabelScan()',preview)
+        screen=SCREEN.read_text()
+        self.assertIn('ON_STOP && !isChangingConfigurations(context)',screen)
+        self.assertIn('scannerViewModel.cancelPendingLabelCapture()',screen)
+        self.assertNotIn('cancelActiveLabelScan()',screen)
         source=SESSION.read_text()
         self.assertIn('CoroutineScope(SupervisorJob() + Dispatchers.Default)',source)
         self.assertIn('scope.launch(start = CoroutineStart.LAZY)',source)
