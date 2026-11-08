@@ -289,25 +289,38 @@ fun GraniteWorkflowScreen(
         // 2. Run Controls, Progress, RunTimers, and Stop/Close (mirrors GlinerLabScreen item 2)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                val bannerText = state.errorBannerMessage
-                    ?: state.activeStageMessage.takeIf { it.isNotBlank() }
-                    ?: state.statusBannerMessage
-                    ?: missingPrompt
-                if (!bannerText.isNullOrBlank()) {
-                    SelectionContainer {
-                        Text(
-                            text = bannerText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (state.errorBannerMessage != null) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
-                        )
+                if (state.isRunning && state.activeStageMessage.isNotBlank()) {
+                    Text(
+                        text = state.activeStageMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    val bannerText = state.errorBannerMessage
+                        ?: state.statusBannerMessage
+                        ?: missingPrompt
+                    if (!bannerText.isNullOrBlank()) {
+                        SelectionContainer {
+                            Text(
+                                text = bannerText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (state.errorBannerMessage != null) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                     }
                 }
 
-                if (state.isDatasetBatchRunning || state.datasetRan) {
+                val showBatchProgress = state.isDatasetBatchRunning || (state.datasetRan && !state.isRunning && state.useGlinerDatasetMode)
+                if (showBatchProgress) {
                     val total = state.datasetTotalCount.takeIf { it > 0 } ?: datasetCount
                     val done = state.datasetDoneCount
                     val pct = (done * 100) / total.coerceAtLeast(1)
@@ -318,13 +331,12 @@ fun GraniteWorkflowScreen(
                     }
                     Text(
                         "Granite completed: $done/$total ($pct%)$tail",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    if (state.isRunning) {
-                        LinearProgressIndicator(
-                            progress = { (done.toFloat() / total.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                    if (state.isRunning && done == 0) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     } else {
                         LinearProgressIndicator(
                             progress = { (done.toFloat() / total.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
@@ -394,18 +406,33 @@ fun GraniteWorkflowScreen(
                     }
                 }
 
-                if (state.isDatasetBatchRunning || state.datasetBatchElapsedMs > 0L) {
+                if (state.isDatasetBatchRunning || (state.datasetBatchElapsedMs > 0L && !state.isRunning && state.useGlinerDatasetMode)) {
                     GraniteDatasetBatchTimers(
                         elapsedMs = state.datasetBatchElapsedMs,
                         done = state.datasetDoneCount,
                         total = state.datasetTotalCount.takeIf { it > 0 } ?: datasetCount
                     )
                 } else {
+                    val timerTotalMs = if (state.isRunning) {
+                        state.liveTotalMs
+                    } else {
+                        result?.timingAndMemory?.totalMs ?: 0L
+                    }
+                    val timerOcrMs = if (state.isRunning) {
+                        state.liveOcrMs
+                    } else {
+                        (result?.timingAndMemory?.mlKitMs ?: 0L) + (result?.timingAndMemory?.ppOcrV6Ms ?: 0L)
+                    }
+                    val timerGraniteMs = if (state.isRunning) {
+                        state.liveGraniteMs
+                    } else {
+                        result?.timingAndMemory?.graniteMs ?: 0L
+                    }
                     GraniteRunTimers(
-                        elapsedMs = result?.timingAndMemory?.totalMs ?: 0L,
-                        ocrMs = (result?.timingAndMemory?.mlKitMs ?: 0L) + (result?.timingAndMemory?.ppOcrV6Ms ?: 0L),
-                        graniteMs = result?.timingAndMemory?.graniteMs ?: 0L,
-                        hasResult = result != null
+                        elapsedMs = timerTotalMs,
+                        ocrMs = timerOcrMs,
+                        graniteMs = timerGraniteMs,
+                        hasResult = result != null || state.isRunning
                     )
                 }
 

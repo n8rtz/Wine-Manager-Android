@@ -15,14 +15,20 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.coroutineContext
 import kotlin.math.max
 
@@ -53,7 +59,10 @@ data class GraniteWorkflowUiState(
     val datasetDoneCount: Int = 0,
     val datasetTotalCount: Int = 0,
     val datasetCurrentLabel: String = "",
-    val datasetBatchElapsedMs: Long = 0L
+    val datasetBatchElapsedMs: Long = 0L,
+    val liveTotalMs: Long = 0L,
+    val liveOcrMs: Long = 0L,
+    val liveGraniteMs: Long = 0L
 ) {
     val missingModelsPrompt: String?
         get() = modelsStatus.missingModelsPrompt(ocrMode)
@@ -171,6 +180,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun stopWorkflow() {
+        GraniteLlamaBridge.requestAbort()
         activeRunJob?.cancel()
         activeRunJob = null
         _uiState.update { state ->
@@ -359,14 +369,38 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 GraniteLlamaBridge.close()
                 val stagedInputs = ArrayList<StagedRowInputs?>(rows.size)
                 val immediateFailedRows = HashMap<String, GraniteDatasetRow>()
+                val batchStagePrefix = AtomicReference("Phase 1/2 OCR+RAG")
+                val inGranitePhase = AtomicBoolean(false)
+                val batchTicker = launch {
+                    while (isActive) {
+                        delay(250L)
+                        val elapsed = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L)
+                        val prefix = batchStagePrefix.get()
+                        val llmNote = if (inGranitePhase.get()) GraniteLlamaBridge.currentProgress() else ""
+                        val composed = if (llmNote.isNotBlank()) {
+                            "$prefix · $llmNote"
+                        } else {
+                            prefix
+                        }
+                        _uiState.update { state ->
+                            if (!state.isRunning) state else state.copy(
+                                datasetBatchElapsedMs = elapsed,
+                                activeStageMessage = composed
+                            )
+                        }
+                    }
+                }
 
+                try {
                 for ((index, row) in rows.withIndex()) {
                     coroutineContext.ensureActive()
                     val sample = row.sample
+                    val p1Prefix = "Phase 1/2 OCR+RAG [${index + 1}/${rows.size}] ${row.displayName}"
+                    batchStagePrefix.set(p1Prefix)
                     _uiState.update { state ->
                         state.copy(
                             datasetCurrentLabel = "OCR+RAG ${index + 1}/${rows.size} · ${row.displayName}",
-                            activeStageMessage = "Phase 1/2 (Dual OCR + DB RAG) ${index + 1}/${rows.size} · ${row.displayName}",
+                            activeStageMessage = "$p1Prefix · preprocessing...",
                             datasetBatchElapsedMs = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L),
                             datasetRows = state.datasetRows.map { existing ->
                                 if (existing.sample.image == sample.image) existing.copy(status = "OCR") else existing
@@ -385,6 +419,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         }
                         ramTracker.sample()
 
+                        batchStagePrefix.set("Phase 1/2 OCR [${index + 1}/${rows.size}] ${row.displayName}")
                         val dualOcrResult = dualOcrEngine.recognize(
                             context = app,
                             bitmap = preprocessed.bitmap,
@@ -394,6 +429,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         preprocessed.bitmap.recycle()
                         ramTracker.sample()
 
+                        batchStagePrefix.set("Phase 1/2 DB RAG [${index + 1}/${rows.size}] ${row.displayName}")
                         val ragContext = ragRetriever.retrieve(
                             context = app,
                             mlKitBlocks = dualOcrResult.mlKitBlocks,
@@ -428,17 +464,21 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 }
 
                 // Release ~800 MB of PP-OCRv6 ONNX Runtime CPU arenas + SQLite handles BEFORE loading the 2 GB Granite GGUF
+                batchStagePrefix.set("Phase 1/2 done · freeing OCR RAM before Granite...")
                 dualOcrEngine.releaseWarmPaddleSessions()
                 ragRetriever.close()
+                inGranitePhase.set(true)
 
                 // Phase 2: Load Granite 4.2 3B GGUF ONCE in clean RAM and reconcile all labels with cached system-prompt prefix
                 for ((index, row) in rows.withIndex()) {
                     coroutineContext.ensureActive()
                     val sample = row.sample
+                    val p2Prefix = "Phase 2/2 [${index + 1}/${rows.size}] ${row.displayName}"
+                    batchStagePrefix.set(p2Prefix)
                     _uiState.update { state ->
                         state.copy(
                             datasetCurrentLabel = row.displayName,
-                            activeStageMessage = "Phase 2/2 (Granite 4.2) ${index + 1}/${rows.size} · ${row.displayName}",
+                            activeStageMessage = "$p2Prefix · starting Granite...",
                             datasetBatchElapsedMs = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L),
                             datasetRows = state.datasetRows.map { existing ->
                                 if (existing.sample.image == sample.image) existing.copy(status = "Running") else existing
@@ -528,6 +568,9 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                             errorBannerMessage = fallbackBanner ?: state.errorBannerMessage
                         )
                     }
+                }
+                } finally {
+                    batchTicker.cancel()
                 }
 
                 val finalElapsed = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L)
@@ -708,9 +751,53 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     modelsStatus = currentStatus,
                     isRunning = true,
                     isDatasetBatchRunning = false,
-                    activeStageMessage = "Stage 1/4: Preprocessing image (<=1280px, CLAHE=${if (claheEnabled) "ON" else "OFF"})...",
+                    liveTotalMs = 0L,
+                    liveOcrMs = 0L,
+                    liveGraniteMs = 0L,
+                    activeStageMessage = "1/4 Preprocess · resizing image (<=1280px, CLAHE=${if (claheEnabled) "ON" else "OFF"})...",
                     errorBannerMessage = null
                 )
+            }
+
+            val stageNumber = AtomicInteger(1)
+            val ocrStartedAt = AtomicLong(0L)
+            val fixedOcrMs = AtomicLong(0L)
+            val graniteStartedAt = AtomicLong(0L)
+            val stageLabel = AtomicReference("1/4 Preprocess · resizing image (<=1280px, CLAHE=${if (claheEnabled) "ON" else "OFF"})...")
+            val singleTicker = launch {
+                while (isActive) {
+                    delay(250L)
+                    val now = SystemClock.elapsedRealtime()
+                    val totalElapsed = (now - totalStart).coerceAtLeast(1L)
+                    val sNum = stageNumber.get()
+                    val fixedOcr = fixedOcrMs.get()
+                    val ocrStart = ocrStartedAt.get()
+                    val curOcrMs = when {
+                        fixedOcr > 0L -> fixedOcr
+                        sNum == 2 && ocrStart > 0L -> (now - ocrStart).coerceAtLeast(1L)
+                        else -> 0L
+                    }
+                    val gStart = graniteStartedAt.get()
+                    val curGraniteMs = if (sNum == 4 && gStart > 0L) {
+                        (now - gStart).coerceAtLeast(1L)
+                    } else {
+                        0L
+                    }
+                    val llmNote = if (sNum == 4) GraniteLlamaBridge.currentProgress() else ""
+                    val composed = if (sNum == 4 && llmNote.isNotBlank()) {
+                        "4/4 Granite · $llmNote"
+                    } else {
+                        stageLabel.get()
+                    }
+                    _uiState.update { state ->
+                        if (!state.isRunning) state else state.copy(
+                            liveTotalMs = totalElapsed,
+                            liveOcrMs = curOcrMs,
+                            liveGraniteMs = curGraniteMs,
+                            activeStageMessage = composed
+                        )
+                    }
+                }
             }
 
             try {
@@ -730,10 +817,14 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 }
                 ramTracker.sample()
 
+                stageNumber.set(2)
+                ocrStartedAt.set(SystemClock.elapsedRealtime())
+                val s2Label = "2/4 Dual OCR · running ${currentMode.displayLabel}..."
+                stageLabel.set(s2Label)
                 _uiState.update {
                     it.copy(
                         previewBitmap = preprocessed.bitmap,
-                        activeStageMessage = "Stage 2/4: Running Parallel Dual-OCR (${currentMode.displayLabel})..."
+                        activeStageMessage = s2Label
                     )
                 }
 
@@ -743,11 +834,17 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     bitmap = preprocessed.bitmap,
                     ablationMode = currentMode
                 )
+                val finalOcrMs = (dualOcrResult.mlKitElapsedMs + dualOcrResult.ppOcrV6ElapsedMs).coerceAtLeast(1L)
+                fixedOcrMs.set(finalOcrMs)
                 ramTracker.sample()
 
+                stageNumber.set(3)
+                val s3Label = "3/4 DB RAG · matching producers, wines & appellations (MLKit=${dualOcrResult.mlKitBlocks.size}, PP=${dualOcrResult.ppOcrV6Blocks.size} blocks)..."
+                stageLabel.set(s3Label)
                 _uiState.update {
                     it.copy(
-                        activeStageMessage = "Stage 3/4: Retrieving candidates from Producer, Wine & Appellation DBs (RAG=${if (dbRagEnabled) "ON" else "OFF"})..."
+                        liveOcrMs = finalOcrMs,
+                        activeStageMessage = s3Label
                     )
                 }
 
@@ -762,12 +859,19 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 ramTracker.sample()
 
                 // Free ~800 MB of PP-OCRv6 ONNX Runtime arenas + SQLite handles before loading/running the 2 GB Granite GGUF
+                val s3DoneLabel = "3/4 DB RAG · ${ragContext.producerCandidates.size} producers, ${ragContext.wineCandidates.size} wines · freeing OCR RAM..."
+                stageLabel.set(s3DoneLabel)
+                _uiState.update { it.copy(activeStageMessage = s3DoneLabel) }
                 dualOcrEngine.releaseWarmPaddleSessions()
                 ragRetriever.close()
 
+                stageNumber.set(4)
+                graniteStartedAt.set(SystemClock.elapsedRealtime())
+                val s4Label = "4/4 Granite · preparing model (<think>=${if (thinkEnabled) "ON" else "OFF"})..."
+                stageLabel.set(s4Label)
                 _uiState.update {
                     it.copy(
-                        activeStageMessage = "Stage 4/4: Reconciling with Granite 4.2 3B (<think>=${if (thinkEnabled) "ON" else "OFF"}, DB RAG=${if (dbRagEnabled) "ON" else "OFF"})..."
+                        activeStageMessage = s4Label
                     )
                 }
 
@@ -864,6 +968,8 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         errorBannerMessage = "Workflow error: ${e.message ?: e.javaClass.simpleName}"
                     )
                 }
+            } finally {
+                singleTicker.cancel()
             }
         }
     }

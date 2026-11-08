@@ -21,6 +21,8 @@ object GraniteLlamaBridge : AutoCloseable {
     private var loadedModelPath: String? = null
     @Volatile
     private var lastErrorMessage: String = ""
+    @Volatile
+    var kotlinStageNote: String = ""
 
     private val nativeLoaded: Boolean by lazy {
         runCatching {
@@ -40,6 +42,19 @@ object GraniteLlamaBridge : AutoCloseable {
         if (!nativeLoaded) return lastErrorMessage
         val nativeErr = runCatching { nativeGetLastError() }.getOrDefault("").trim()
         return nativeErr.ifEmpty { lastErrorMessage }
+    }
+
+    fun currentProgress(): String {
+        val ktNote = kotlinStageNote
+        if (ktNote.isNotBlank()) return ktNote
+        if (!nativeLoaded) return ""
+        return runCatching { nativeGetProgressStatus() }.getOrDefault("").trim()
+    }
+
+    fun requestAbort() {
+        if (nativeLoaded) {
+            runCatching { nativeRequestAbort(true) }
+        }
     }
 
     suspend fun generateWithGguf(
@@ -103,6 +118,12 @@ object GraniteLlamaBridge : AutoCloseable {
 
     @JvmStatic
     private external fun nativeGetLastError(): String
+
+    @JvmStatic
+    private external fun nativeGetProgressStatus(): String
+
+    @JvmStatic
+    private external fun nativeRequestAbort(abort: Boolean)
 
     @JvmStatic
     private external fun nativeInitModel(

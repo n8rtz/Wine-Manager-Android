@@ -6,7 +6,9 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <exception>
 #include <cstring>
 
@@ -18,6 +20,64 @@
 namespace {
 std::mutex g_error_mutex;
 std::string g_last_error;
+
+std::mutex g_progress_mutex;
+std::string g_progress_stage;
+std::atomic<uint64_t> g_compute_ops{0};
+std::atomic<bool> g_show_op_pulse{false};
+std::atomic<bool> g_abort_requested{false};
+
+void set_progress_stage(const std::string & stage, bool show_op_pulse = false) {
+    g_show_op_pulse.store(show_op_pulse, std::memory_order_relaxed);
+    std::lock_guard<std::mutex> lock(g_progress_mutex);
+    g_progress_stage = stage;
+}
+
+std::string get_progress_snapshot() {
+    std::string base;
+    {
+        std::lock_guard<std::mutex> lock(g_progress_mutex);
+        base = g_progress_stage;
+    }
+    if (base.empty()) return "";
+    if (g_show_op_pulse.load(std::memory_order_relaxed)) {
+        const uint64_t ops = g_compute_ops.load(std::memory_order_relaxed);
+        if (ops > 0) {
+            base += " · op " + std::to_string(ops);
+        }
+    }
+    return base;
+}
+
+std::string detect_latest_json_key(const std::string & json_tail) {
+    static const char * kKnownKeys[] = {
+        "wine_name_or_cuvee",
+        "producer_or_winery",
+        "bottle_volume_ml",
+        "abv_percentage",
+        "is_non_vintage",
+        "vintage",
+        "classification",
+        "varietals",
+        "appellation_or_region",
+        "subregion",
+        "region",
+        "country",
+        "confidence_notes",
+        "ocr_discrepancies_resolved"
+    };
+    size_t best_pos = std::string::npos;
+    const char * best_key = nullptr;
+    for (const char * key : kKnownKeys) {
+        std::string quoted = std::string("\"") + key + "\"";
+        size_t p = json_tail.rfind(quoted);
+        if (p != std::string::npos && (best_pos == std::string::npos || p > best_pos)) {
+            best_pos = p;
+            best_key = key;
+        }
+    }
+    return best_key ? std::string(best_key) : std::string("");
+}
 
 void set_last_error(const std::string & msg) {
     std::lock_guard<std::mutex> lock(g_error_mutex);
@@ -44,6 +104,45 @@ void append_log_error(const char * text) {
 #include "llama.h"
 
 namespace {
+bool granite_abort_callback(void * /* user_data */) {
+    g_compute_ops.fetch_add(1, std::memory_order_relaxed);
+    return g_abort_requested.load(std::memory_order_relaxed);
+}
+
+int decode_tokens_chunked(
+        llama_context * ctx,
+        llama_token * tokens,
+        int total_tokens,
+        const char * phase_label) {
+    const int kChunk = 64;
+    int offset = 0;
+    while (offset < total_tokens) {
+        if (g_abort_requested.load(std::memory_order_relaxed)) {
+            return -2;
+        }
+        const int step = std::min(kChunk, total_tokens - offset);
+        const int done_after = offset + step;
+        const int pct = (done_after * 100) / std::max(1, total_tokens);
+        char buf[160];
+        std::snprintf(
+                buf,
+                sizeof(buf),
+                "%s %d/%d tok (%d%%)",
+                phase_label,
+                done_after,
+                total_tokens,
+                pct);
+        set_progress_stage(buf, true);
+        llama_batch chunk_batch = llama_batch_get_one(tokens + offset, step);
+        const int rc = llama_decode(ctx, chunk_batch);
+        if (rc != 0) {
+            return rc;
+        }
+        offset += step;
+    }
+    return 0;
+}
+
 void granite_llama_log_callback(ggml_log_level level, const char * text, void * /* user_data */) {
     if (!text || !*text) return;
     if (level == GGML_LOG_LEVEL_ERROR) {
@@ -84,6 +183,22 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeGetLas
     return env->NewStringUTF(g_last_error.c_str());
 }
 
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeGetProgressStatus(
+        JNIEnv * env,
+        jclass /* clazz */) {
+    const std::string snap = get_progress_snapshot();
+    return env->NewStringUTF(snap.c_str());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeRequestAbort(
+        JNIEnv * /* env */,
+        jclass /* clazz */,
+        jboolean abort) {
+    g_abort_requested.store(abort == JNI_TRUE, std::memory_order_relaxed);
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitModel(
         JNIEnv * env,
@@ -94,6 +209,9 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
 #if defined(GRANITE_HAS_LLAMA_CPP)
     try {
         set_last_error("");
+        g_abort_requested.store(false, std::memory_order_relaxed);
+        g_compute_ops.store(0, std::memory_order_relaxed);
+        set_progress_stage("mapping GGUF weights into RAM...", false);
         llama_log_set(granite_llama_log_callback, nullptr);
 
         const char * path_cstr = env->GetStringUTFChars(model_path, nullptr);
@@ -128,9 +246,12 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         // Leaving n_outputs_max == 0 allocates n_batch * n_vocab * 4 bytes (~1.64 GB for 4096 * 100,352)!
         cparams.n_outputs_max = 1;
         cparams.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
+        cparams.abort_callback = granite_abort_callback;
+        cparams.abort_callback_data = nullptr;
         cparams.n_threads = n_threads > 0 ? n_threads : 4;
         cparams.n_threads_batch = cparams.n_threads;
 
+        set_progress_stage("initializing KV + Mamba-2 context (" + std::to_string(cparams.n_threads) + " threads)...", false);
         llama_context * ctx = llama_init_from_model(model, cparams);
         if (!ctx) {
             LOGE("Failed to create llama_context for %s", path.c_str());
@@ -149,6 +270,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         session->ctx = ctx;
         session->n_ctx = cparams.n_ctx;
         session->n_threads = cparams.n_threads;
+        set_progress_stage("model ready (" + std::to_string(load_ms) + " ms)", false);
         LOGI("Initialized Granite GGUF session (%s, n_ctx=%d, threads=%d) in %lld ms",
              path.c_str(), cparams.n_ctx, session->n_threads, static_cast<long long>(load_ms));
         return reinterpret_cast<jlong>(session);
@@ -181,6 +303,9 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
     try {
         (void) grammar_jstr;
         set_last_error("");
+        g_abort_requested.store(false, std::memory_order_relaxed);
+        g_compute_ops.store(0, std::memory_order_relaxed);
+        set_progress_stage("tokenizing prompt...", false);
         auto * session = reinterpret_cast<GraniteLlamaSession *>(model_handle);
         if (!session || !session->ctx || !session->model) {
             set_last_error("Invalid GraniteLlamaSession handle");
@@ -294,10 +419,14 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         int prefilled_tokens = n_tokens;
         if (prefix_reused) {
             const int n_suffix = n_tokens - n_prefix;
-            llama_batch suffix_batch = llama_batch_get_one(tokens.data() + n_prefix, n_suffix);
-            decode_rc = llama_decode(session->ctx, suffix_batch);
+            g_compute_ops.store(0, std::memory_order_relaxed);
+            decode_rc = decode_tokens_chunked(
+                    session->ctx,
+                    tokens.data() + n_prefix,
+                    n_suffix,
+                    "prefilling label (cached prefix)");
             prefilled_tokens = n_suffix;
-            if (decode_rc != 0) {
+            if (decode_rc != 0 && !g_abort_requested.load(std::memory_order_relaxed)) {
                 LOGW("Suffix prefill failed after prefix restore (rc=%d); falling back to full prefill", decode_rc);
                 prefix_reused = false;
                 session->cached_prefix_tokens.clear();
@@ -305,7 +434,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             }
         }
 
-        if (!prefix_reused) {
+        if (!prefix_reused && !g_abort_requested.load(std::memory_order_relaxed)) {
             if (mem) {
                 llama_memory_clear(mem, false);
             }
@@ -313,10 +442,12 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             session->cached_prefix_state.clear();
 
             if (n_prefix > 0 && n_prefix < n_tokens) {
-                std::vector<int8_t> zero_logits(n_prefix, 0);
-                llama_batch prefix_batch = llama_batch_get_one(tokens.data(), n_prefix);
-                prefix_batch.logits = zero_logits.data();
-                decode_rc = llama_decode(session->ctx, prefix_batch);
+                g_compute_ops.store(0, std::memory_order_relaxed);
+                decode_rc = decode_tokens_chunked(
+                        session->ctx,
+                        tokens.data(),
+                        n_prefix,
+                        "prefilling system prompt");
                 if (decode_rc == 0) {
                     session->cached_prefix_tokens.assign(tokens.begin(), tokens.begin() + n_prefix);
                     const size_t state_size = llama_state_seq_get_size(session->ctx, 0);
@@ -334,22 +465,38 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
                         }
                     }
                     const int n_suffix = n_tokens - n_prefix;
-                    llama_batch suffix_batch = llama_batch_get_one(tokens.data() + n_prefix, n_suffix);
-                    decode_rc = llama_decode(session->ctx, suffix_batch);
+                    g_compute_ops.store(0, std::memory_order_relaxed);
+                    decode_rc = decode_tokens_chunked(
+                            session->ctx,
+                            tokens.data() + n_prefix,
+                            n_suffix,
+                            "prefilling label");
                 }
             } else {
-                llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
-                decode_rc = llama_decode(session->ctx, batch);
+                g_compute_ops.store(0, std::memory_order_relaxed);
+                decode_rc = decode_tokens_chunked(
+                        session->ctx,
+                        tokens.data(),
+                        n_tokens,
+                        "prefilling prompt");
             }
             prefilled_tokens = n_tokens;
         }
 
+        if (g_abort_requested.load(std::memory_order_relaxed)) {
+            set_progress_stage("stopped", false);
+            set_last_error("Granite generation stopped by user");
+            return env->NewStringUTF("");
+        }
+
         if (decode_rc != 0) {
+            set_progress_stage("prefill error", false);
             LOGE("llama_decode failed on prompt prefill (rc=%d, n_tokens=%d)", decode_rc, n_tokens);
             set_last_error("llama_decode failed on prompt prefill (rc=" + std::to_string(decode_rc) + ")");
             return env->NewStringUTF("");
         }
         auto t_prefill = std::chrono::steady_clock::now();
+        set_progress_stage("generating token 1...", false);
 
         llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
         llama_sampler * sampler = llama_sampler_chain_init(sparams);
@@ -431,15 +578,56 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             }
             generated++;
 
+            if (generated == 1 || (generated % 2 == 0)) {
+                auto t_now = std::chrono::steady_clock::now();
+                double sec = std::chrono::duration<double>(t_now - t_prefill).count();
+                double tps = sec > 0.02 ? (generated / sec) : 0.0;
+                const bool in_think = expect_closing_think && (output.find("</think>") == std::string::npos);
+                char status_buf[192];
+                if (in_think) {
+                    std::snprintf(
+                            status_buf,
+                            sizeof(status_buf),
+                            "<think> %d/80 tok (%.1f tok/s)",
+                            generated,
+                            tps);
+                } else {
+                    const std::string key = detect_latest_json_key(output);
+                    if (!key.empty()) {
+                        std::snprintf(
+                                status_buf,
+                                sizeof(status_buf),
+                                "generating JSON · %d tok (%.1f tok/s) -> %s",
+                                generated,
+                                tps,
+                                key.c_str());
+                    } else {
+                        std::snprintf(
+                                status_buf,
+                                sizeof(status_buf),
+                                "generating JSON · %d tok (%.1f tok/s)",
+                                generated,
+                                tps);
+                    }
+                }
+                set_progress_stage(status_buf, false);
+            }
+
             if (json_started && json_brace_depth <= 0) {
+                break;
+            }
+
+            if (g_abort_requested.load(std::memory_order_relaxed)) {
                 break;
             }
 
             llama_batch next_batch = llama_batch_get_one(&next, 1);
             int step_rc = llama_decode(session->ctx, next_batch);
             if (step_rc != 0) {
-                LOGE("llama_decode failed at generated token %d (rc=%d)", i, step_rc);
-                set_last_error("llama_decode failed at token " + std::to_string(i) + " (rc=" + std::to_string(step_rc) + ")");
+                if (!g_abort_requested.load(std::memory_order_relaxed)) {
+                    LOGE("llama_decode failed at generated token %d (rc=%d)", i, step_rc);
+                    set_last_error("llama_decode failed at token " + std::to_string(i) + " (rc=" + std::to_string(step_rc) + ")");
+                }
                 break;
             }
         }
@@ -447,6 +635,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         auto t_end = std::chrono::steady_clock::now();
         auto prefill_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_prefill - t_start).count();
         auto decode_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_prefill).count();
+        set_progress_stage("", false);
         LOGI("Granite completion finished: prompt_tokens=%d, prefilled_tokens=%d, prefix_reused=%d (prefill=%lld ms), generated_tokens=%d (decode=%lld ms)",
              n_tokens, prefilled_tokens, prefix_reused ? 1 : 0, static_cast<long long>(prefill_ms), generated, static_cast<long long>(decode_ms));
 

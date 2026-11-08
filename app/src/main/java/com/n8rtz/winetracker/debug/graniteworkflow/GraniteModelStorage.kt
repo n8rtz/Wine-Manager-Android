@@ -106,26 +106,43 @@ object GraniteModelStorage {
             return currentFile
         }
         return runCatching {
+            val totalBytes = currentFile.length().coerceAtLeast(1L)
+            val totalMb = totalBytes / (1024L * 1024L)
             val tmp = File(internalDir, "$GRANITE_GGUF_FILENAME.stage.tmp")
-            currentFile.inputStream().use { input ->
-                FileOutputStream(tmp).use { output ->
-                    val buf = ByteArray(512 * 1024)
-                    while (true) {
-                        val n = input.read(buf)
-                        if (n < 0) break
-                        output.write(buf, 0, n)
+            try {
+                GraniteLlamaBridge.kotlinStageNote = "staging GGUF to internal storage (0% · 0/$totalMb MB)..."
+                currentFile.inputStream().use { input ->
+                    FileOutputStream(tmp).use { output ->
+                        val buf = ByteArray(512 * 1024)
+                        var copied = 0L
+                        var nextReport = 32L * 1024L * 1024L
+                        while (true) {
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            output.write(buf, 0, n)
+                            copied += n
+                            if (copied >= nextReport || copied == totalBytes) {
+                                val pct = ((copied * 100L) / totalBytes).coerceIn(0L, 100L)
+                                val doneMb = copied / (1024L * 1024L)
+                                GraniteLlamaBridge.kotlinStageNote =
+                                    "staging GGUF to internal storage ($pct% · $doneMb/$totalMb MB)..."
+                                nextReport = copied + 32L * 1024L * 1024L
+                            }
+                        }
+                        output.flush()
                     }
-                    output.flush()
                 }
-            }
-            if (target.exists()) target.delete()
-            if (tmp.renameTo(target)) {
-                // Remove duplicate FUSE copy once safely staged on internal ext4/f2fs
-                runCatching { currentFile.delete() }
-                target
-            } else {
-                tmp.delete()
-                currentFile
+                if (target.exists()) target.delete()
+                if (tmp.renameTo(target)) {
+                    // Remove duplicate FUSE copy once safely staged on internal ext4/f2fs
+                    runCatching { currentFile.delete() }
+                    target
+                } else {
+                    tmp.delete()
+                    currentFile
+                }
+            } finally {
+                GraniteLlamaBridge.kotlinStageNote = ""
             }
         }.getOrDefault(currentFile)
     }
