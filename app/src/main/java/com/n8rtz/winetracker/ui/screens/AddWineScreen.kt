@@ -293,7 +293,8 @@ fun AddWineScreen(
             ).distinct().sorted()
     } else emptyList()
 
-    val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
+    // NV first: the most common non-year choice shouldn't sit below a century of scrolling.
+    val vintages = listOf("NV") + (currentYear downTo 1900).map { it.toString() }
     val processingStill = (labelScanState as? LabelScanState.Processing)?.photoPath
     val confirmingPhoto = holdPhotoPath
     // The camera is only on while the user is actively framing a shot: the preview unmounts
