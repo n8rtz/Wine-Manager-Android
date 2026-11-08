@@ -189,10 +189,13 @@ fun GraniteWorkflowScreen(
                     )
                     val jniBadge = if (state.modelsStatus.nativeLlamaJniLoaded) "llama.cpp JNI ✓" else "JNI fallback"
                     Text(
-                        text = if (state.modelsStatus.isGraniteReady) {
-                            "model ready (${state.modelsStatus.graniteGguf.fileName} · ${state.modelsStatus.graniteGguf.sizeFormatted}) · Q4_K_M ✓ · $jniBadge · PP-OCRv6 ${if (state.modelsStatus.isPpOcrReady) "ready" else "missing"}"
-                        } else {
-                            "model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName}) · $jniBadge · ML Kit & PP-OCRv6 shared (${if (state.modelsStatus.isPpOcrReady) "ready" else "checking"})"
+                        text = when {
+                            state.modelsStatus.isGraniteReady ->
+                                "model ready (${state.modelsStatus.graniteGguf.fileName} · ${state.modelsStatus.graniteGguf.sizeFormatted}) · Q4_K_M ✓ · $jniBadge · PP-OCRv6 ${if (state.modelsStatus.isPpOcrReady) "ready" else "missing"}"
+                            state.modelsStatus.graniteGguf.sizeBytes > 0L ->
+                                "model invalid · ${state.modelsStatus.graniteGguf.notes} · $jniBadge"
+                            else ->
+                                "model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName}) · $jniBadge · ML Kit & PP-OCRv6 shared (${if (state.modelsStatus.isPpOcrReady) "ready" else "checking"})"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (state.modelsStatus.isGraniteReady) {

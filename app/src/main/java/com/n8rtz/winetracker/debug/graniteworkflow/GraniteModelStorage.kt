@@ -38,6 +38,7 @@ object GraniteModelStorage {
     const val GRANITE_SUBDIR = "models/granite"
     const val SHARED_PADDLE_FOLDER = "text-lab-paddle-v1"
     const val GRANITE_GGUF_FILENAME = "granite-4.2-3b-Q4_K_M.gguf"
+    const val MIN_VALID_GGUF_BYTES = 64L * 1024L * 1024L // Real 3B Q4_K_M GGUF is ~1.9–2.5 GB
     const val PRODUCER_EXPANDED_ASSET_DIR = "producer-gazetteer-expanded-v1"
     const val PRODUCER_EXPANDED_DB_FILENAME = "producers-expanded.sqlite"
     const val PRODUCER_V1_ASSET_DIR = "producer-gazetteer-v1"
@@ -94,11 +95,14 @@ object GraniteModelStorage {
         val dictAvailable = (extractedDict.isFile && extractedDict.length() == spec.dictionary.bytes) ||
             (spec.dictionary.asset in bundledAssets)
 
-        val ggufValidHeader = if (ggufFile.isFile && ggufFile.length() >= 4L) {
+        val fileExists = ggufFile.isFile && ggufFile.length() > 0L
+        val ggufValidHeader = if (fileExists && ggufFile.length() >= 4L) {
             hasGgufMagic(ggufFile)
         } else {
             false
         }
+        val ggufValidSize = fileExists && ggufFile.length() >= MIN_VALID_GGUF_BYTES
+        val ggufReady = fileExists && ggufValidHeader && ggufValidSize
 
         return WorkflowModelsStatus(
             graniteDirectoryPath = gDir.absolutePath,
@@ -107,14 +111,15 @@ object GraniteModelStorage {
                 slotName = "Granite 4.2 3B GGUF",
                 fileName = ggufFile.name,
                 absolutePath = ggufFile.absolutePath,
-                present = ggufFile.isFile && ggufFile.length() > 0L,
-                sizeBytes = if (ggufFile.isFile) ggufFile.length() else 0L,
+                present = ggufReady,
+                sizeBytes = if (fileExists) ggufFile.length() else 0L,
                 required = true,
                 isBuiltInShared = false,
                 notes = when {
-                    !ggufFile.isFile -> "Place granite-4.2-3b-Q4_K_M.gguf in ${gDir.absolutePath}"
-                    ggufValidHeader -> "Valid GGUF header verified"
-                    else -> "File present (non-standard header)"
+                    !fileExists -> "Place granite-4.2-3b-Q4_K_M.gguf (~2 GB) in ${gDir.absolutePath}"
+                    !ggufValidHeader -> "Invalid file (${String.format(java.util.Locale.US, "%.1f MB", ggufFile.length() / (1024.0 * 1024.0))}): missing 'GGUF' magic header — tap Reset cache and import the real .gguf weights"
+                    !ggufValidSize -> "Incomplete/truncated GGUF (${String.format(java.util.Locale.US, "%.1f MB", ggufFile.length() / (1024.0 * 1024.0))}): expected ~1.9–2.5 GB Q4_K_M model weights"
+                    else -> "Valid GGUF header & model size verified"
                 }
             ),
             mlKitEngine = ModelFileSlotStatus(
@@ -234,6 +239,13 @@ object GraniteModelStorage {
                     check(total > 0L) { "Selected model file is empty (0 bytes)" }
                 }
             }
+            check(hasGgufMagic(tempFile)) {
+                val preview = readFirstBytesAscii(tempFile, 8)
+                "Selected file '${displayName.ifEmpty { uri.lastPathSegment.orEmpty() }}' (${String.format(java.util.Locale.US, "%.1f MB", tempFile.length() / (1024.0 * 1024.0))}) is NOT a valid GGUF file (starts with '$preview', expected 'GGUF'). Make sure it is not a .zip/.gz archive, HTML page, or partial download."
+            }
+            check(tempFile.length() >= MIN_VALID_GGUF_BYTES) {
+                "Selected GGUF file '${displayName.ifEmpty { uri.lastPathSegment.orEmpty() }}' is only ${String.format(java.util.Locale.US, "%.1f MB", tempFile.length() / (1024.0 * 1024.0))} (likely an imatrix file or interrupted download). Import the full ~1.9–2.5 GB Q4_K_M .gguf weights."
+            }
             if (destFile.exists()) {
                 destFile.delete()
             }
@@ -261,6 +273,16 @@ object GraniteModelStorage {
             }
         }
     }
+
+    private fun readFirstBytesAscii(file: File, count: Int): String = runCatching {
+        val buf = ByteArray(count)
+        val n = file.inputStream().use { it.read(buf) }
+        if (n <= 0) return ""
+        buf.take(n).joinToString("") { b ->
+            val c = b.toInt() and 0xFF
+            if (c in 32..126) c.toChar().toString() else String.format("\\x%02x", c)
+        }
+    }.getOrDefault("")
 
     private fun queryDisplayName(context: Context, uri: Uri): String? = runCatching {
         val cursor: Cursor? = context.contentResolver.query(
