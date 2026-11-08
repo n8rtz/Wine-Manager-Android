@@ -1,17 +1,8 @@
 package com.n8rtz.winetracker.debug.graniteworkflow
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
+import android.graphics.Paint
+import android.graphics.Typeface
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,43 +22,40 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -77,346 +65,738 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.n8rtz.winetracker.BuildConfig
-import java.io.File
 import java.util.Locale
 
-private val MlKitBlue = Color(0xFF2196F3)
-private val PpOcrGreenBright = Color(0xFF4CAF50)
+private val MlKitOverlayBlue = Color(0xFF2979FF)
+private val PpOcrOverlayGreen = Color(0xFF00C853)
 
 private val graniteFieldLabels = listOf(
-    "producer_or_winery" to "Producer",
-    "wine_name_or_cuvee" to "Wine name",
+    "producer" to "Producer",
+    "wine_name" to "Wine name",
     "country" to "Country",
-    "appellation_or_region" to "Region",
-    "classification" to "Classification",
+    "region" to "Region",
+    "subregion" to "Subregion",
     "vintage" to "Vintage"
 )
 
 /**
- * Dual OCR + Granite 4.2 4B Workflow screen formatted to mirror `GlinerLabScreen.kt`.
+ * Isolated debug/testing Compose screen for the **Dual OCR + Granite 4.2 4B Workflow**.
+ *
+ * Formatted to mirror `GlinerLabScreen.kt` (`GLiNER lane lab`):
+ * - Direct `LazyColumn` with `statusBarsPadding()`, `navigationBarsPadding()`,
+ *   `padding(horizontal = 16.dp, vertical = 12.dp)`, and `Arrangement.spacedBy(12.dp)`
+ * - `SelectionContainer` header block (`headlineSmall` title, `bodySmall` build/config/bundle lines)
+ * - Compact `TextButton` action row (`Import`, `Reset cache`, `Re-check`) and horizontal parameter strip
+ * - Run status, `Granite completed: X/Y`, `LinearProgressIndicator`, primary `Button` + `Run GLiNER dataset (124)`,
+ *   bordered 3-column `RunTimers`, and `Stop` / `Close` `TextButton` row
+ * - `Scored results` summary and field tables (`ScoreSummaryTable` + `ScoreFieldTable`)
+ * - `Your images` section with `Choose images`, `Snap photo`, `Use GLiNER dataset (124)`, `Sample label`,
+ *   `Run your images`, `Remove all`, `Hide`/`Show`
+ * - 4-Section Results Inspector rendered in `GlinerLabScreen`-style `Card`s and `0.5.dp` `outlineVariant` bordered cells
+ * - `Incomplete labels (N)` and `All labels (124)` expandable accordions for the shared GLiNER wine label dataset
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GraniteWorkflowScreen(
     state: GraniteWorkflowUiState,
-    onBack: () -> Unit,
+    onNavigateBack: () -> Unit,
     onRefreshModels: () -> Unit,
-    onResetCache: () -> Unit = {},
+    onResetCache: () -> Unit,
     onImportGraniteGguf: () -> Unit,
     onPickGalleryImage: () -> Unit,
-    onCameraPhotoCaptured: (File) -> Unit,
+    onSnapCameraPhoto: () -> Unit,
     onLoadSampleLabel: () -> Unit,
-    onClearImage: () -> Unit = {},
-    onSelectOcrMode: (OcrAblationMode) -> Unit,
-    onToggleThinkMode: (Boolean) -> Unit,
-    onToggleClahe: (Boolean) -> Unit,
-    onToggleShowMlKitBoxes: (Boolean) -> Unit,
-    onToggleShowPpOcrBoxes: (Boolean) -> Unit,
+    onUseGlinerDataset: () -> Unit = {},
+    onSelectDatasetSample: (String) -> Unit = {},
+    onRunDatasetSample: (String) -> Unit = {},
+    onRunAllGlinerDataset: () -> Unit = {},
+    onClearImage: () -> Unit,
     onRunWorkflow: () -> Unit,
-    onStopWorkflow: () -> Unit = {}
+    onStopWorkflow: () -> Unit,
+    onOcrModeChange: (OcrAblationMode) -> Unit,
+    onThinkModeChange: (Boolean) -> Unit,
+    onClaheChange: (Boolean) -> Unit,
+    onToggleMlKitBoxes: (Boolean) -> Unit,
+    onTogglePpOcrBoxes: (Boolean) -> Unit,
+    onShareJson: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val listState = rememberLazyListState()
-    var showCameraDialog by remember { mutableStateOf(false) }
-    var showCustom by remember { mutableStateOf(true) }
-    var expandThinkOutput by remember { mutableStateOf(true) }
-    var expandRawOcrAccordion by remember { mutableStateOf(false) }
-    var expandModelFiles by remember { mutableStateOf(false) }
+    var showImages by remember { mutableStateOf(true) }
+    var showModelPaths by remember { mutableStateOf(false) }
+    var showSection1 by remember { mutableStateOf(true) }
+    var showSection2 by remember { mutableStateOf(true) }
+    var showSection3 by remember { mutableStateOf(true) }
+    var showSection4 by remember { mutableStateOf(true) }
+    var showIncomplete by remember { mutableStateOf(false) }
+    var showAllDatasetLabels by remember { mutableStateOf(false) }
+    var selectedIncompleteFields by remember { mutableStateOf( emptySet<String>() ) }
+    var expandedIncompleteRaw by remember { mutableStateOf( emptySet<String>() ) }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            showCameraDialog = true
+    val result = state.lastResult
+    val missingPrompt = state.missingModelsPrompt
+    val configSignature = remember(state.ocrMode, state.thinkModeEnabled, state.claheEnabled) {
+        val modeKey = when (state.ocrMode) {
+            OcrAblationMode.DUAL -> "dual-ocr"
+            OcrAblationMode.ML_KIT_ONLY -> "mlkit-only"
+            OcrAblationMode.PP_OCRV6_ONLY -> "ppocrv6-only"
         }
+        "$modeKey · think=${if (state.thinkModeEnabled) "on" else "off"} · clahe=${if (state.claheEnabled) "on" else "off"}"
     }
 
-    val timing = state.lastResult?.timingAndMemory ?: WorkflowTimingAndMemory()
-    val jsonText = state.lastResult?.prettyJsonText ?: GraniteWineLabelJson().toPrettyJson(2)
-    val hasImage = state.previewBitmap != null || state.lastResult != null
-    val completedCount = if (state.lastResult != null) 1 else 0
-    val totalCount = if (hasImage) 1 else 0
+    val incompleteRows = remember(state.datasetRows) {
+        state.datasetRows.filter { row ->
+            (row.runResult != null || row.status == "error") && !row.complete
+        }
+    }
+    fun failedFieldKeys(row: GraniteDatasetRow): Set<String> =
+        row.fieldResults.filterNot { it.isCorrect }.map { it.field }.toSet()
+    val filteredIncomplete = remember(incompleteRows, selectedIncompleteFields) {
+        if (selectedIncompleteFields.isEmpty()) {
+            incompleteRows
+        } else {
+            incompleteRows.filter { row -> failedFieldKeys(row).any { it in selectedIncompleteFields } }
+        }
+    }
+    val datasetCount = state.datasetRows.size.takeIf { it > 0 } ?: 124
 
     LazyColumn(
-        Modifier
+        state = listState,
+        modifier = Modifier
             .fillMaxSize()
             .testTag("granite_workflow_list")
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        state = listState,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header block mirroring GlinerLabScreen item 1
+        // 1. Header, Bundle/Model Status, Action Buttons, and Parameter Strip (mirrors GlinerLabScreen item 1)
         item {
             SelectionContainer {
-                Column {
+                Column(
+                    modifier = Modifier.testTag("import_models_prompt_card"),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
                         "Dual OCR + Granite 4.2 4B Workflow",
                         style = MaterialTheme.typography.headlineSmall
                     )
                     Text(
-                        "build ${BuildConfig.BUILD_COMMIT} · ${state.ocrMode.displayLabel} · think=${if (state.thinkModeEnabled) "on" else "off"} · clahe=${if (state.claheEnabled) "on" else "off"}",
+                        "build ${BuildConfig.BUILD_COMMIT} · $configSignature",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    if (state.modelsStatus.graniteGguf.present) {
-                        Text(
-                            "model ready · Q4_K_M ✓ (${state.modelsStatus.graniteGguf.sizeFormatted}) · PP-OCRv6 shared ✓ · ML Kit ✓"
-                        )
-                    } else {
-                        Column(modifier = Modifier.testTag("import_models_prompt_card")) {
-                            Text("model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName})")
-                            state.missingModelsPrompt?.let { prompt ->
-                                Text(prompt, style = MaterialTheme.typography.bodySmall)
-                            }
+                    Text(
+                        text = if (state.modelsStatus.isGraniteReady) {
+                            "model ready (${state.modelsStatus.graniteGguf.fileName} · ${state.modelsStatus.graniteGguf.sizeFormatted}) · Q4_K_M ✓ · PP-OCRv6 ${if (state.modelsStatus.isPpOcrReady) "ready" else "missing"}"
+                        } else {
+                            "model missing · Import Model Files to Run (${state.modelsStatus.graniteGguf.fileName}) · ML Kit & PP-OCRv6 shared (${if (state.modelsStatus.isPpOcrReady) "ready" else "checking"})"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (state.modelsStatus.isGraniteReady) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.error
                         }
-                    }
-                    if (timing.totalMs > 0) {
+                    )
+                    if (result != null) {
+                        val t = result.timingAndMemory
                         Text(
-                            "granite ${timing.graniteMs} ms · mlkit ${timing.mlKitMs} ms · ppocr ${timing.ppOcrV6Ms} ms · prep ${timing.preprocessMs} ms",
+                            "last run: preprocess ${t.preprocessMs} ms + ML Kit ${t.mlKitMs} ms + PP-OCRv6 ${t.ppOcrV6Ms} ms + Granite ${t.graniteMs} ms · total ${t.totalMs} ms",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    if (!state.modelsStatus.isPpOcrReady) {
+                        Text(
+                            "PP-OCRv6 bundled assets not yet staged in text-lab-paddle-v1",
+                            color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
             }
-            Row {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(
                     onClick = onImportGraniteGguf,
                     enabled = !state.isRunning && !state.isImportingModel
-                ) { Text("Import") }
+                ) {
+                    Text(if (state.isImportingModel) "Importing…" else "Import")
+                }
                 TextButton(
                     onClick = onResetCache,
                     enabled = !state.isRunning && !state.isImportingModel
-                ) { Text("Reset cache") }
+                ) {
+                    Text("Reset cache")
+                }
                 TextButton(
                     onClick = onRefreshModels,
-                    enabled = !state.isRunning && !state.isImportingModel
-                ) { Text("Re-check") }
+                    enabled = !state.isRunning
+                ) {
+                    Text("Re-check")
+                }
             }
             Row(
                 Modifier.horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 OcrAblationMode.entries.forEach { mode ->
+                    val selected = state.ocrMode == mode
                     TextButton(
-                        onClick = { onSelectOcrMode(mode) },
+                        onClick = { onOcrModeChange(mode) },
                         enabled = !state.isRunning,
                         contentPadding = PaddingValues(horizontal = 8.dp)
                     ) {
-                        Text(if (state.ocrMode == mode) "${mode.displayLabel} ✓" else mode.displayLabel)
-                    }
-                }
-                TextButton(
-                    onClick = { onToggleThinkMode(!state.thinkModeEnabled) },
-                    enabled = !state.isRunning,
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    Text(if (state.thinkModeEnabled) "<think> ON (Reasoning)" else "<think> OFF (Fast)")
-                }
-                TextButton(
-                    onClick = { onToggleClahe(!state.claheEnabled) },
-                    enabled = !state.isRunning,
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    Text(if (state.claheEnabled) "CLAHE ON" else "CLAHE OFF")
-                }
-            }
-        }
-
-        // Run status, Start button, RunTimers, and Stop/Close row mirroring GlinerLabScreen item 2
-        item {
-            SelectionContainer {
-                Column {
-                    if (!state.statusBannerMessage.isNullOrBlank()) {
-                        Text(state.statusBannerMessage)
-                    }
-                    if (!state.errorBannerMessage.isNullOrBlank()) {
-                        Text(state.errorBannerMessage, color = MaterialTheme.colorScheme.error)
-                    }
-                    Text("Granite completed: $completedCount/$totalCount")
-                    if (state.isRunning) {
                         Text(
-                            state.activeStageMessage.ifBlank { "Running Dual OCR + Granite 4.2 workflow…" },
-                            style = MaterialTheme.typography.bodySmall
+                            text = if (selected) "[${mode.displayLabel}]" else mode.displayLabel,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
-            }
-            if (state.isRunning || state.isImportingModel) {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
-            }
-            Button(
-                onClick = onRunWorkflow,
-                enabled = !state.isRunning
-            ) {
-                Text(if (state.lastResult != null) "New Granite run" else "Start Granite run")
-            }
-            SelectionContainer {
-                GraniteRunTimers(timing = timing, hasRun = state.lastResult != null)
-            }
-            Row {
-                TextButton(onClick = onStopWorkflow, enabled = state.isRunning) { Text("Stop") }
-                TextButton(onClick = onBack) { Text("Close") }
+                TextButton(
+                    onClick = { onThinkModeChange(!state.thinkModeEnabled) },
+                    enabled = !state.isRunning,
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Text("<think> ${if (state.thinkModeEnabled) "ON" else "OFF"}")
+                }
+                TextButton(
+                    onClick = { onClaheChange(!state.claheEnabled) },
+                    enabled = !state.isRunning,
+                    contentPadding = PaddingValues(horizontal = 8.dp)
+                ) {
+                    Text("CLAHE ${if (state.claheEnabled) "ON" else "OFF"}")
+                }
             }
         }
 
-        // Scored results table mirroring GlinerLabScreen's ScoredResults
-        item(key = "curated_scores") {
-            SelectionContainer {
-                GraniteScoredResults(result = state.lastResult)
-            }
-        }
-
-        // Your images section mirroring GlinerLabScreen's custom_heading
-        item(key = "custom_heading") {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Your images ($totalCount)", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "Select a photo from Gallery, snap a photo with CameraX, or load the synthetic sample label. Source: ${state.imageSourceLabel}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Row(Modifier.horizontalScroll(rememberScrollState())) {
-                    TextButton(
-                        onClick = onPickGalleryImage,
-                        enabled = !state.isRunning,
-                        modifier = Modifier.testTag("granite_choose_images")
-                    ) { Text("Choose images") }
-                    TextButton(
-                        onClick = {
-                            val hasPermission = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.CAMERA
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (hasPermission) {
-                                showCameraDialog = true
+        // 2. Run Controls, Progress, RunTimers, and Stop/Close (mirrors GlinerLabScreen item 2)
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val bannerText = state.errorBannerMessage
+                    ?: state.activeStageMessage.takeIf { it.isNotBlank() }
+                    ?: state.statusBannerMessage
+                    ?: missingPrompt
+                if (!bannerText.isNullOrBlank()) {
+                    SelectionContainer {
+                        Text(
+                            text = bannerText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (state.errorBannerMessage != null) {
+                                MaterialTheme.colorScheme.error
                             } else {
-                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
+                }
+
+                if (state.isDatasetBatchRunning || state.datasetRan) {
+                    val total = state.datasetTotalCount.takeIf { it > 0 } ?: datasetCount
+                    val done = state.datasetDoneCount
+                    val pct = (done * 100) / total.coerceAtLeast(1)
+                    val tail = when {
+                        state.datasetCurrentLabel.isNotBlank() -> " · ${state.datasetCurrentLabel}"
+                        !state.isRunning && done > 0 -> " · finished"
+                        else -> ""
+                    }
+                    Text(
+                        "Granite completed: $done/$total ($pct%)$tail",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (state.isRunning) {
+                        LinearProgressIndicator(
+                            progress = { (done.toFloat() / total.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { (done.toFloat() / total.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
+                    val done = if (result != null && !state.isRunning) 1 else 0
+                    val total = if (state.previewBitmap != null || result != null || state.isRunning) 1 else 0
+                    val pct = if (total > 0) (done * 100) / total else 0
+                    val tail = when {
+                        state.isRunning -> " · ${state.imageSourceLabel}"
+                        result != null -> " · finished"
+                        else -> ""
+                    }
+                    Text(
+                        "Granite completed: $done/$total ($pct%)$tail",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (state.isRunning) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { if (total > 0) done.toFloat() / total.toFloat() else 0f },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            if (state.previewBitmap == null && !state.useGlinerDatasetMode) {
+                                onLoadSampleLabel()
+                            } else {
+                                onRunWorkflow()
                             }
                         },
+                        enabled = !state.isRunning,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            when {
+                                state.isRunning && !state.isDatasetBatchRunning -> "Running Granite…"
+                                result != null -> "New Granite run"
+                                else -> "Start Granite run"
+                            }
+                        )
+                    }
+                    Button(
+                        onClick = onRunAllGlinerDataset,
+                        enabled = !state.isRunning,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("run_gliner_dataset_button")
+                    ) {
+                        Text(
+                            when {
+                                state.isDatasetBatchRunning -> "Running $datasetCount…"
+                                state.datasetRan -> "Rerun GLiNER set ($datasetCount)"
+                                else -> "Run GLiNER set ($datasetCount)"
+                            }
+                        )
+                    }
+                }
+
+                if (state.isDatasetBatchRunning || state.datasetBatchElapsedMs > 0L) {
+                    GraniteDatasetBatchTimers(
+                        elapsedMs = state.datasetBatchElapsedMs,
+                        done = state.datasetDoneCount,
+                        total = state.datasetTotalCount.takeIf { it > 0 } ?: datasetCount
+                    )
+                } else {
+                    GraniteRunTimers(
+                        elapsedMs = result?.timingAndMemory?.totalMs ?: 0L,
+                        ocrMs = (result?.timingAndMemory?.mlKitMs ?: 0L) + (result?.timingAndMemory?.ppOcrV6Ms ?: 0L),
+                        graniteMs = result?.timingAndMemory?.graniteMs ?: 0L,
+                        hasResult = result != null
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = onStopWorkflow,
+                        enabled = state.isRunning
+                    ) {
+                        Text("Stop")
+                    }
+                    TextButton(onClick = onNavigateBack) {
+                        Text("Close")
+                    }
+                }
+            }
+        }
+
+        // 3. Scored Results Table (mirrors GlinerLabScreen ScoredResults: ScoreSummaryTable + ScoreFieldTable)
+        if (state.datasetAggregate != null) {
+            item {
+                GraniteDatasetScoredResults(aggregate = state.datasetAggregate)
+            }
+        } else if (result != null) {
+            item {
+                GraniteSingleImageScoredResults(result = result)
+            }
+        }
+
+        // 4. "Your images" + "GLiNER dataset (124)" Section (mirrors GlinerLabScreen item 4)
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val activeCount = if (state.useGlinerDatasetMode) {
+                    datasetCount
+                } else if (state.previewBitmap != null) {
+                    1
+                } else {
+                    0
+                }
+                Text(
+                    if (state.useGlinerDatasetMode) {
+                        "Your images · GLiNER dataset ($activeCount)"
+                    } else {
+                        "Your images ($activeCount)"
+                    },
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    "Select a gallery photo, snap a label, or use the packaged 124-label GLiNER / Lab v7 dataset (assets/wine-app-labels-v1). Reuses existing ML Kit and PP-OCRv6 files.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    TextButton(
+                        onClick = onPickGalleryImage,
                         enabled = !state.isRunning
-                    ) { Text("Snap photo") }
+                    ) {
+                        Text("Choose images")
+                    }
+                    TextButton(
+                        onClick = onSnapCameraPhoto,
+                        enabled = !state.isRunning
+                    ) {
+                        Text("Snap photo")
+                    }
+                    TextButton(
+                        onClick = onUseGlinerDataset,
+                        enabled = !state.isRunning,
+                        modifier = Modifier.testTag("use_gliner_dataset_button")
+                    ) {
+                        Text(
+                            if (state.useGlinerDatasetMode) {
+                                "[GLiNER dataset ($datasetCount)]"
+                            } else {
+                                "Use GLiNER dataset ($datasetCount)"
+                            },
+                            fontWeight = if (state.useGlinerDatasetMode) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
                     TextButton(
                         onClick = onLoadSampleLabel,
                         enabled = !state.isRunning
-                    ) { Text("Sample label") }
+                    ) {
+                        Text("Sample label")
+                    }
                     TextButton(
                         onClick = onRunWorkflow,
-                        enabled = !state.isRunning && hasImage
-                    ) { Text("Run your images") }
-                    TextButton(
-                        onClick = onClearImage,
-                        enabled = !state.isRunning && hasImage
-                    ) { Text("Remove all") }
-                    TextButton(onClick = { showCustom = !showCustom }) {
-                        Text(if (showCustom) "Hide" else "Show")
+                        enabled = !state.isRunning && (state.previewBitmap != null || state.activeDatasetImage != null)
+                    ) {
+                        Text("Run your images")
+                    }
+                    if (state.previewBitmap != null || state.useGlinerDatasetMode) {
+                        TextButton(
+                            onClick = onClearImage,
+                            enabled = !state.isRunning
+                        ) {
+                            Text("Remove all")
+                        }
+                        TextButton(onClick = { showImages = !showImages }) {
+                            Text(if (showImages) "Hide" else "Show")
+                        }
                     }
                 }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    OcrAblationMode.entries.forEach { mode ->
+
+                // GLiNER 124-label dataset quick selector strip when GLiNER dataset mode is active
+                if (state.useGlinerDatasetMode && state.datasetRows.isNotEmpty()) {
+                    val currentIdx = state.datasetRows.indexOfFirst { it.sample.image == state.activeDatasetImage }
+                        .coerceAtLeast(0)
+                    val currentRow = state.datasetRows[currentIdx]
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        TextButton(
+                            onClick = {
+                                val prevIdx = if (currentIdx > 0) currentIdx - 1 else state.datasetRows.lastIndex
+                                onSelectDatasetSample(state.datasetRows[prevIdx].sample.image)
+                            },
+                            enabled = !state.isRunning
+                        ) {
+                            Text("‹ Prev")
+                        }
+                        SelectionContainer(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Label ${currentIdx + 1}/${state.datasetRows.size}: ${currentRow.displayName} (${currentRow.status})",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                val nextIdx = if (currentIdx < state.datasetRows.lastIndex) currentIdx + 1 else 0
+                                onSelectDatasetSample(state.datasetRows[nextIdx].sample.image)
+                            },
+                            enabled = !state.isRunning
+                        ) {
+                            Text("Next ›")
+                        }
+                        TextButton(
+                            onClick = { onRunDatasetSample(currentRow.sample.image) },
+                            enabled = !state.isRunning
+                        ) {
+                            Text("Run label")
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        state.datasetRows.take(24).forEach { row ->
+                            val isSelected = row.sample.image == state.activeDatasetImage
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { onSelectDatasetSample(row.sample.image) },
+                                enabled = !state.isRunning,
+                                label = {
+                                    val badge = when {
+                                        row.complete -> " ✓"
+                                        row.runResult != null -> " (${row.errorCount} err)"
+                                        else -> ""
+                                    }
+                                    Text("${row.displayName}$badge", maxLines = 1)
+                                }
+                            )
+                        }
+                        if (state.datasetRows.size > 24) {
+                            FilterChip(
+                                selected = showAllDatasetLabels,
+                                onClick = { showAllDatasetLabels = !showAllDatasetLabels },
+                                label = {
+                                    Text("All ${state.datasetRows.size} labels ${if (showAllDatasetLabels) "▲" else "▼"}")
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         FilterChip(
-                            selected = state.ocrMode == mode,
-                            onClick = { onSelectOcrMode(mode) },
-                            label = { Text(mode.displayLabel) }
+                            selected = state.previewBitmap != null,
+                            onClick = {
+                                if (state.previewBitmap == null) onLoadSampleLabel() else onRunWorkflow()
+                            },
+                            label = { Text(state.imageSourceLabel, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                         )
                     }
-                    FilterChip(
-                        selected = state.thinkModeEnabled,
-                        onClick = { onToggleThinkMode(!state.thinkModeEnabled) },
-                        label = { Text(if (state.thinkModeEnabled) "<think> ON (Reasoning)" else "<think> OFF (Fast)") }
-                    )
-                    FilterChip(
-                        selected = state.claheEnabled,
-                        onClick = { onToggleClahe(!state.claheEnabled) },
-                        label = { Text(if (state.claheEnabled) "CLAHE ON" else "CLAHE OFF") }
-                    )
                 }
             }
         }
 
-        // 4-Section Results Inspector cards formatted identically to GlinerLabScreen's Card items
-        if (showCustom) {
-            item(key = "inspector_section_1") {
-                InspectorSection1ImageOverlay(
-                    bitmap = state.lastResult?.preprocessedBitmap ?: state.previewBitmap,
-                    result = state.lastResult,
-                    showMlKitBoxes = state.showMlKitBoxes,
-                    showPpOcrBoxes = state.showPpOcrBoxes,
-                    onToggleMlKitBoxes = onToggleShowMlKitBoxes,
-                    onTogglePpOcrBoxes = onToggleShowPpOcrBoxes
+        // 5. 4-Section Results Inspector (formatted in GlinerLabScreen Card style)
+        if (showImages) {
+            // Section 1: Preprocessed Image + Dual-OCR Bounding Box Overlay
+            item {
+                InspectorSection1OverlayCard(
+                    state = state,
+                    expanded = showSection1,
+                    onToggleExpanded = { showSection1 = !showSection1 },
+                    onToggleMlKitBoxes = onToggleMlKitBoxes,
+                    onTogglePpOcrBoxes = onTogglePpOcrBoxes
                 )
             }
 
-            item(key = "inspector_section_2") {
-                InspectorSection2TimingAndMemoryStrip(
-                    timing = timing,
-                    result = state.lastResult
+            // Section 2: Side-by-Side Raw OCR Comparison
+            item {
+                InspectorSection2SideBySideOcrCard(
+                    state = state,
+                    expanded = showSection2,
+                    onToggleExpanded = { showSection2 = !showSection2 }
                 )
             }
 
-            item(key = "inspector_section_3") {
-                InspectorSection3StructuredJsonCard(
-                    result = state.lastResult,
-                    expandThinkOutput = expandThinkOutput,
-                    onToggleExpandThink = { expandThinkOutput = !expandThinkOutput },
-                    onCopyJson = { text ->
-                        clipboard.setText(AnnotatedString(text))
+            // Section 3: Granite 4.2 Reconciled Output (Formatted JSON + <think> Reasoning Trace + Timing/RAM)
+            item {
+                InspectorSection3GraniteOutputCard(
+                    state = state,
+                    expanded = showSection3,
+                    onToggleExpanded = { showSection3 = !showSection3 }
+                )
+            }
+
+            // Section 4: Copy & Share Actions + Quick Field Table
+            item {
+                InspectorSection4ActionsCard(
+                    state = state,
+                    expanded = showSection4,
+                    onToggleExpanded = { showSection4 = !showSection4 },
+                    onCopyJson = { jsonText ->
+                        clipboard.setText(AnnotatedString(jsonText))
                     },
-                    onShareJson = { text ->
-                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "application/json"
-                            putExtra(Intent.EXTRA_SUBJECT, "Granite 4.2 Wine Label Extraction JSON")
-                            putExtra(Intent.EXTRA_TEXT, text)
-                        }
-                        context.startActivity(Intent.createChooser(sendIntent, "Share Extraction JSON"))
-                    }
-                )
-            }
-
-            item(key = "inspector_section_4") {
-                InspectorSection4RawOcrAccordion(
-                    result = state.lastResult,
-                    expanded = expandRawOcrAccordion,
-                    onToggleExpanded = { expandRawOcrAccordion = !expandRawOcrAccordion }
+                    onShareJson = onShareJson
                 )
             }
         }
 
-        // Export section mirroring GlinerLabScreen's Export block
-        item(key = "export_section") {
-            Text("Export", style = MaterialTheme.typography.titleMedium)
-            Row(Modifier.horizontalScroll(rememberScrollState())) {
-                TextButton(onClick = { clipboard.setText(AnnotatedString(jsonText)) }) {
-                    Text("Copy all results")
-                }
-                TextButton(
-                    onClick = {
-                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "application/json"
-                            putExtra(Intent.EXTRA_SUBJECT, "Granite 4.2 Wine Label Extraction JSON")
-                            putExtra(Intent.EXTRA_TEXT, jsonText)
+        // 6. Export Row (mirrors GlinerLabScreen "Export" section)
+        if (result != null || state.datasetRan) {
+            item {
+                Text("Export", style = MaterialTheme.typography.titleMedium)
+                Row(Modifier.horizontalScroll(rememberScrollState())) {
+                    TextButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(buildGraniteReportText(state)))
                         }
-                        context.startActivity(Intent.createChooser(sendIntent, "Share JSON"))
+                    ) {
+                        Text("Copy all results")
                     }
-                ) {
-                    Text("Share JSON")
+                    if (result != null) {
+                        TextButton(
+                            onClick = { onShareJson(result.prettyJsonText) },
+                            enabled = !state.isRunning
+                        ) {
+                            Text("Share JSON")
+                        }
+                    }
                 }
             }
         }
 
-        // Model files & storage paths accordion mirroring GlinerLabScreen's bottom accordions
-        item(key = "model_files_accordion_header") {
+        // 7. Expandable "Incomplete labels (N)" Accordion (mirrors GlinerLabScreen lines 279-313)
+        item {
             TextButton(
-                onClick = { expandModelFiles = !expandModelFiles },
+                onClick = { showIncomplete = !showIncomplete },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Incomplete labels (${incompleteRows.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        if (showIncomplete) "▲" else "▼",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+        if (showIncomplete) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        graniteFieldLabels.forEach { (key, label) ->
+                            val selected = key in selectedIncompleteFields
+                            FilterChip(
+                                selected = selected,
+                                onClick = {
+                                    selectedIncompleteFields = if (selected) {
+                                        selectedIncompleteFields - key
+                                    } else {
+                                        selectedIncompleteFields + key
+                                    }
+                                },
+                                label = {
+                                    Text("$label (${incompleteRows.count { key in failedFieldKeys(it) }})")
+                                }
+                            )
+                        }
+                    }
+                    if (selectedIncompleteFields.isNotEmpty()) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Showing ${filteredIncomplete.size}/${incompleteRows.size}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            TextButton(onClick = { selectedIncompleteFields = emptySet() }) {
+                                Text("Clear filters")
+                            }
+                        }
+                    }
+                    if (!state.datasetRan) {
+                        Text("No scored dataset labels yet.", style = MaterialTheme.typography.bodySmall)
+                    } else if (incompleteRows.isEmpty()) {
+                        Text("All scored dataset labels are completely correct.", style = MaterialTheme.typography.bodySmall)
+                    } else if (filteredIncomplete.isEmpty()) {
+                        Text("No labels failed the selected filter(s).", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            items(filteredIncomplete, key = { "incomplete:${it.sample.image}" }) { row ->
+                val rawOpen = row.sample.image in expandedIncompleteRaw
+                GraniteIncompleteDatasetCard(
+                    row = row,
+                    rawOpen = rawOpen,
+                    onToggleRaw = {
+                        expandedIncompleteRaw = if (rawOpen) {
+                            expandedIncompleteRaw - row.sample.image
+                        } else {
+                            expandedIncompleteRaw + row.sample.image
+                        }
+                    },
+                    onInspect = { onSelectDatasetSample(row.sample.image) },
+                    onRerun = { onRunDatasetSample(row.sample.image) },
+                    enabled = !state.isRunning
+                )
+            }
+        }
+
+        // 8. Expandable "All labels (124)" Accordion (mirrors GlinerLabScreen lines 314-325)
+        item {
+            TextButton(
+                onClick = { showAllDatasetLabels = !showAllDatasetLabels },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("all_gliner_labels_toggle")
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "All labels (${state.datasetRows.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        if (showAllDatasetLabels) "▲" else "▼",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+        if (showAllDatasetLabels) {
+            items(state.datasetRows, key = { "all:${it.sample.image}" }) { row ->
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SelectionContainer(Modifier.weight(1f)) {
+                        val scoreNote = when {
+                            row.complete -> " · 6/6 correct"
+                            row.runResult != null -> " · ${row.errorCount} error(s)"
+                            else -> ""
+                        }
+                        Text(
+                            "${row.displayName} · ${row.status}$scoreNote",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    TextButton(
+                        onClick = { onSelectDatasetSample(row.sample.image) },
+                        enabled = !state.isRunning
+                    ) {
+                        Text("Load")
+                    }
+                    TextButton(
+                        onClick = { onRunDatasetSample(row.sample.image) },
+                        enabled = !state.isRunning
+                    ) {
+                        Text("Run")
+                    }
+                }
+            }
+        }
+
+        // 9. Expandable "Model files & storage paths" Accordion
+        item {
+            TextButton(
+                onClick = { showModelPaths = !showModelPaths },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -426,41 +806,157 @@ fun GraniteWorkflowScreen(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        if (expandModelFiles) "▲" else "▼",
+                        if (showModelPaths) "▲" else "▼",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
-        }
-
-        if (expandModelFiles) {
-            item(key = "model_files_accordion_body") {
-                ModelFileStatusList(
-                    modelsStatus = state.modelsStatus,
-                    onImportGraniteGguf = onImportGraniteGguf
-                )
+            if (showModelPaths) {
+                Card(Modifier.fillMaxWidth()) {
+                    SelectionContainer {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(
+                                state.modelsStatus.graniteGguf,
+                                state.modelsStatus.mlKitEngine,
+                                state.modelsStatus.ppOcrDetOnnx,
+                                state.modelsStatus.ppOcrRecOnnx,
+                                state.modelsStatus.ppOcrDict
+                            ).forEach { slot ->
+                                Text(
+                                    "${if (slot.present) "✓" else "✗"} ${slot.slotName} · ${slot.fileName} (${slot.sizeFormatted})",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (slot.present) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    }
+                                )
+                            }
+                            if (state.modelsStatus.graniteDirectoryPath.isNotBlank()) {
+                                Text(
+                                    "Granite dir: ${state.modelsStatus.graniteDirectoryPath}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            if (state.modelsStatus.sharedPpOcrDirectoryPath.isNotBlank()) {
+                                Text(
+                                    "Shared PP-OCRv6 dir: ${state.modelsStatus.sharedPpOcrDirectoryPath}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
-    }
-
-    if (showCameraDialog) {
-        CameraXCaptureDialog(
-            onDismiss = { showCameraDialog = false },
-            onPhotoCaptured = { file ->
-                showCameraDialog = false
-                onCameraPhotoCaptured(file)
-            }
-        )
     }
 }
 
 @Composable
-private fun GraniteRunTimers(timing: WorkflowTimingAndMemory, hasRun: Boolean) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun GraniteIncompleteDatasetCard(
+    row: GraniteDatasetRow,
+    rawOpen: Boolean,
+    onToggleRaw: () -> Unit,
+    onInspect: () -> Unit,
+    onRerun: () -> Unit,
+    enabled: Boolean
+) {
+    val result = row.runResult
+    Card(Modifier.fillMaxWidth()) {
+        SelectionContainer {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "${row.displayName} · ${row.status} · ${row.errorCount} field error(s)",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onInspect, enabled = enabled) {
+                        Text("Inspect")
+                    }
+                    TextButton(onClick = onRerun, enabled = enabled) {
+                        Text("Run")
+                    }
+                }
+                if (row.message.isNotBlank()) {
+                    Text(row.message, style = MaterialTheme.typography.bodySmall)
+                }
+                row.fieldResults.filterNot { it.isCorrect }.forEach { field ->
+                    Text(
+                        "${field.label}: got \"${field.observed.ifBlank { "(blank)" }}\" · expected \"${field.expected.ifBlank { "(blank)" }}\" (${field.outcome})",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (result != null) {
+                    val t = result.timingAndMemory
+                    Text(
+                        "ML Kit ${result.mlKitBlocks.size} blk (${t.mlKitMs} ms) · PP-OCRv6 ${result.ppOcrV6Blocks.size} blk (${t.ppOcrV6Ms} ms) · Granite ${t.graniteMs} ms",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    TextButton(onClick = onToggleRaw) {
+                        Text(if (rawOpen) "Hide raw OCR + JSON" else "Raw OCR + JSON")
+                    }
+                    if (rawOpen) {
+                        Text("ML Kit OCR:", style = MaterialTheme.typography.labelMedium)
+                        result.mlKitBlocks.forEach { b ->
+                            Text("${b.formatCenterWhTag()} ${b.text}", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text("PP-OCRv6 OCR:", style = MaterialTheme.typography.labelMedium)
+                        result.ppOcrV6Blocks.forEach { b ->
+                            Text("${b.formatCenterWhTag()} ${b.text}", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text("Granite JSON:", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            result.prettyJsonText,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Mirrors `RunTimers` from `GlinerLabScreen.kt` for multi-image dataset runs (`Run time`, `Avg / image`, `Est. remaining`).
+ */
+@Composable
+private fun GraniteDatasetBatchTimers(
+    elapsedMs: Long,
+    done: Int,
+    total: Int
+) {
+    fun formatClock(ms: Long): String =
+        String.format(Locale.ROOT, "%02dm %02ds", ms / 60000L, (ms / 1000L) % 60L)
+
+    val avg = if (done > 0) elapsedMs / done else 0L
+    val remaining = if (done > 0) avg * (total - done).coerceAtLeast(0) else 0L
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         listOf(
-            "Run time" to if (hasRun) "${timing.totalMs} ms" else "—",
-            "Dual OCR" to if (hasRun) "${timing.mlKitMs + timing.ppOcrV6Ms} ms" else "—",
-            "Granite 4.2" to if (hasRun) "${timing.graniteMs} ms" else "—"
+            "Run time" to formatClock(elapsedMs),
+            "Avg / image" to if (done > 0) String.format(Locale.ROOT, "%.1fs", avg / 1000f) else "—",
+            "Est. remaining" to if (done > 0) formatClock(remaining) else "—"
         ).forEach { (title, value) ->
             Column(
                 Modifier
@@ -475,59 +971,135 @@ private fun GraniteRunTimers(timing: WorkflowTimingAndMemory, hasRun: Boolean) {
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(value, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1
+                )
             }
         }
     }
 }
 
+/**
+ * Mirrors `RunTimers` from `GlinerLabScreen.kt`: 3 equal-width `0.5.dp` `outlineVariant` bordered cells.
+ */
 @Composable
-private fun GraniteScoredResults(result: GraniteWorkflowRunResult?) {
-    val json = result?.structuredJson
-    val populatedFields = if (json == null) {
-        emptyMap()
-    } else {
-        mapOf(
-            "producer_or_winery" to !json.producerOrWinery.isNullOrBlank(),
-            "wine_name_or_cuvee" to (!json.wineNameOrCuvee.isNullOrBlank() || json.varietals.isNotEmpty()),
-            "country" to !json.country.isNullOrBlank(),
-            "appellation_or_region" to !json.appellationOrRegion.isNullOrBlank(),
-            "classification" to !json.classification.isNullOrBlank(),
-            "vintage" to (json.vintage != null || json.isNonVintage)
+private fun GraniteRunTimers(
+    elapsedMs: Long,
+    ocrMs: Long,
+    graniteMs: Long,
+    hasResult: Boolean
+) {
+    fun formatDuration(ms: Long): String =
+        if (ms >= 1000L) {
+            String.format(Locale.ROOT, "%.2fs (%d ms)", ms / 1000f, ms)
+        } else {
+            "${ms} ms"
+        }
+
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        listOf(
+            "Run time" to if (hasResult) formatDuration(elapsedMs) else "—",
+            "Dual OCR" to if (hasResult) formatDuration(ocrMs) else "—",
+            "Granite 4.2" to if (hasResult) formatDuration(graniteMs) else "—"
+        ).forEach { (title, value) ->
+            Column(
+                Modifier
+                    .weight(1f)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                    .padding(6.dp)
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Mirrors `ScoredResults` (`ScoreSummaryTable` + `ScoreFieldTable`) from `GlinerLabScreen.kt`
+ * using the real `PhoneCorpusMath` scores across the 124-label GLiNER dataset (`wine-app-labels-v1`).
+ */
+@Composable
+private fun GraniteDatasetScoredResults(aggregate: GraniteDatasetAggregate) {
+    val summaryRow = listOf(
+        "Granite 4.2",
+        aggregate.attempted.toString(),
+        aggregate.eligible.toString(),
+        "${aggregate.complete}/${aggregate.eligible}",
+        aggregate.oneError.toString(),
+        aggregate.multiError.toString(),
+        aggregate.failed.toString()
+    )
+    val fieldPairs = graniteFieldLabels.associate { (key, _) ->
+        val correct = aggregate.fieldCorrect[key] ?: 0
+        val total = aggregate.fieldTotal[key] ?: 0
+        key to (correct to (total - correct).coerceAtLeast(0))
+    }
+    Column(Modifier.testTag("granite_curated_score_tables")) {
+        Text("Scored results", style = MaterialTheme.typography.titleMedium)
+        GraniteScoreSummaryTable(rows = listOf(summaryRow))
+        Spacer(Modifier.height(8.dp))
+        GraniteScoreFieldTable(rows = listOf("Granite 4.2" to fieldPairs))
+        Text(
+            aggregate.text(),
+            style = MaterialTheme.typography.bodySmall
         )
     }
-    val filledCount = populatedFields.values.count { it }
-    val summaryRow = if (result == null) {
-        listOf("Granite 4.2", "0", "0", "0/0", "0", "0", "0")
-    } else {
-        listOf(
-            "Granite 4.2",
-            "1",
-            "1",
-            "${if (filledCount >= 4) 1 else 0}/1",
-            if (filledCount == 3) "1" else "0",
-            if (filledCount in 1..2) "1" else "0",
-            "0"
-        )
+}
+
+/**
+ * Fallback `Scored results` table when only a single gallery/camera/synthetic image has been run.
+ */
+@Composable
+private fun GraniteSingleImageScoredResults(result: GraniteWorkflowRunResult) {
+    val s = result.structuredJson
+    val fieldStatuses = linkedMapOf(
+        "producer" to !s.producerOrWinery.isNullOrBlank(),
+        "wine_name" to (!s.wineNameOrCuvee.isNullOrBlank() || s.varietals.isNotEmpty()),
+        "country" to !s.country.isNullOrBlank(),
+        "region" to !s.appellationOrRegion.isNullOrBlank(),
+        "subregion" to (!s.classification.isNullOrBlank() || !s.appellationOrRegion.isNullOrBlank()),
+        "vintage" to (s.vintage != null || s.isNonVintage)
+    )
+    val populatedCount = fieldStatuses.values.count { it }
+    val missingCount = fieldStatuses.size - populatedCount
+    val summaryRow = listOf(
+        "Granite 4.2",
+        "1",
+        "1",
+        "$populatedCount/${fieldStatuses.size}",
+        if (missingCount == 1) "1" else "0",
+        if (missingCount > 1) "1" else "0",
+        "0"
+    )
+    val fieldPairs = fieldStatuses.mapValues { (_, ok) ->
+        if (ok) (1 to 0) else (0 to 1)
     }
 
-    Column(Modifier.testTag("granite_scored_tables")) {
+    Column(Modifier.testTag("granite_curated_score_tables")) {
         Text("Scored results", style = MaterialTheme.typography.titleMedium)
-        GraniteScoreSummaryTable(listOf(summaryRow))
+        GraniteScoreSummaryTable(rows = listOf(summaryRow))
         Spacer(Modifier.height(8.dp))
-        GraniteScoreFieldTable(
-            title = "Granite 4.2",
-            fieldStates = populatedFields,
-            hasRun = result != null
+        GraniteScoreFieldTable(rows = listOf("Granite 4.2" to fieldPairs))
+        Text(
+            "Backend: ${result.executionBackendNote} · PP-OCRv6: ${result.ppOcrStatusNote}",
+            style = MaterialTheme.typography.bodySmall
         )
-        if (result == null) {
-            Text("— = no run completed yet in this session.", style = MaterialTheme.typography.bodySmall)
-        } else {
-            Text(
-                "Extracted $filledCount/${graniteFieldLabels.size} primary fields · ${result.structuredJson.ocrDiscrepanciesResolved.size} OCR discrepancies resolved.",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
     }
 }
 
@@ -539,7 +1111,9 @@ private fun GraniteScoreSummaryTable(rows: List<List<String>>) {
             headers.forEach {
                 Text(
                     it,
-                    Modifier.width(88.dp).padding(4.dp),
+                    Modifier
+                        .width(88.dp)
+                        .padding(4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -550,7 +1124,13 @@ private fun GraniteScoreSummaryTable(rows: List<List<String>>) {
             HorizontalDivider(Modifier.width((88 * headers.size).dp))
             Row {
                 values.forEach {
-                    Text(it, Modifier.width(88.dp).padding(4.dp), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        it,
+                        Modifier
+                            .width(88.dp)
+                            .padding(4.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
@@ -558,19 +1138,17 @@ private fun GraniteScoreSummaryTable(rows: List<List<String>>) {
 }
 
 @Composable
-private fun GraniteScoreFieldTable(
-    title: String,
-    fieldStates: Map<String, Boolean>,
-    hasRun: Boolean
-) {
+private fun GraniteScoreFieldTable(rows: List<Pair<String, Map<String, Pair<Int, Int>>>>) {
     val pass = if (isSystemInDarkTheme()) Color(0xFF81C784) else Color(0xFF2E7D32)
     val fail = MaterialTheme.colorScheme.error
-    val columns = graniteFieldLabels + ("total_correct" to "Total filled")
     Column(Modifier.horizontalScroll(rememberScrollState())) {
+        val columns = graniteFieldLabels + ("total_correct" to "Total correct")
         Row {
             Text(
                 "Build",
-                Modifier.width(128.dp).padding(4.dp),
+                Modifier
+                    .width(128.dp)
+                    .padding(4.dp),
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 softWrap = false
@@ -578,622 +1156,670 @@ private fun GraniteScoreFieldTable(
             columns.forEach { (_, label) ->
                 Text(
                     label,
-                    Modifier.width(88.dp).padding(4.dp),
+                    Modifier
+                        .width(88.dp)
+                        .padding(4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     softWrap = false
                 )
             }
         }
-        HorizontalDivider(Modifier.width((128 + 88 * columns.size).dp))
-        Row {
-            Text(
-                title,
-                Modifier.width(128.dp).padding(4.dp),
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            columns.forEach { (key, _) ->
-                val cell = buildAnnotatedString {
-                    if (!hasRun) {
-                        append("—")
-                    } else if (key == "total_correct") {
-                        val ok = fieldStates.values.count { it }
-                        val miss = graniteFieldLabels.size - ok
-                        withStyle(SpanStyle(color = pass)) { append("$ok") }
-                        append("/")
-                        withStyle(SpanStyle(color = fail)) { append("$miss") }
-                    } else {
-                        val filled = fieldStates[key] == true
-                        withStyle(SpanStyle(color = pass)) { append(if (filled) "1" else "0") }
-                        append("/")
-                        withStyle(SpanStyle(color = fail)) { append(if (filled) "0" else "1") }
-                    }
-                }
+        rows.forEach { (title, scores) ->
+            HorizontalDivider(Modifier.width((128 + 88 * columns.size).dp))
+            Row {
                 Text(
-                    cell,
-                    Modifier.width(88.dp).padding(4.dp),
+                    title,
+                    Modifier
+                        .width(128.dp)
+                        .padding(4.dp),
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
-                    softWrap = false
+                    overflow = TextOverflow.Ellipsis
                 )
+                columns.forEach { (key, _) ->
+                    val score = if (key == "total_correct") {
+                        scores.values.sumOf { it.first } to scores.values.sumOf { it.second }
+                    } else {
+                        scores[key]
+                    }
+                    val cell = buildAnnotatedString {
+                        if (score == null) {
+                            append("—")
+                        } else {
+                            withStyle(SpanStyle(color = pass)) { append("${score.first}") }
+                            append("/")
+                            withStyle(SpanStyle(color = fail)) { append("${score.second}") }
+                        }
+                    }
+                    Text(
+                        cell,
+                        Modifier
+                            .width(88.dp)
+                            .padding(4.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun InspectorSection1ImageOverlay(
-    bitmap: Bitmap?,
-    result: GraniteWorkflowRunResult?,
-    showMlKitBoxes: Boolean,
-    showPpOcrBoxes: Boolean,
+private fun InspectorSection1OverlayCard(
+    state: GraniteWorkflowUiState,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onToggleMlKitBoxes: (Boolean) -> Unit,
     onTogglePpOcrBoxes: (Boolean) -> Unit
 ) {
-    Card(Modifier.fillMaxWidth()) {
+    val result = state.lastResult
+    val bmp = result?.preprocessedBitmap ?: state.previewBitmap
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("inspector_section_1_overlay")
+    ) {
         Column(
-            Modifier.fillMaxWidth().padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "1. Image + Bounding Box Overlay",
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = showMlKitBoxes, onCheckedChange = onToggleMlKitBoxes)
-                    Text(
-                        text = "Blue = ML Kit (${result?.mlKitBlocks?.size ?: 0})",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = showPpOcrBoxes, onCheckedChange = onTogglePpOcrBoxes)
-                    Text(
-                        text = "Green = PP-OCRv6 (${result?.ppOcrV6Blocks?.size ?: 0})",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            if (bitmap == null) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        text = "No image loaded yet. Use Choose images, Snap photo, or Sample label above.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            } else {
-                val aspect = (bitmap.width.toFloat() / bitmap.height.toFloat().coerceAtLeast(1f))
-                    .coerceIn(0.45f, 2.0f)
-                val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 380.dp)
-                        .aspectRatio(aspect)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {
-                    Image(
-                        bitmap = imageBitmap,
-                        contentDescription = "Preprocessed wine label with OCR bounding boxes",
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val canvasW = size.width
-                        val canvasH = size.height
-
-                        if (showMlKitBoxes) {
-                            result?.mlKitBlocks.orEmpty().forEach { block ->
-                                val left = block.normBbox.left * canvasW
-                                val top = block.normBbox.top * canvasH
-                                val w = block.normBbox.width() * canvasW
-                                val h = block.normBbox.height() * canvasH
-                                drawRect(
-                                    color = MlKitBlue.copy(alpha = 0.16f),
-                                    topLeft = Offset(left, top),
-                                    size = Size(w, h)
-                                )
-                                drawRect(
-                                    color = MlKitBlue,
-                                    topLeft = Offset(left, top),
-                                    size = Size(w, h),
-                                    style = Stroke(width = 2.dp.toPx())
-                                )
-                            }
-                        }
-
-                        if (showPpOcrBoxes) {
-                            result?.ppOcrV6Blocks.orEmpty().forEach { block ->
-                                val left = block.normBbox.left * canvasW
-                                val top = block.normBbox.top * canvasH
-                                val w = block.normBbox.width() * canvasW
-                                val h = block.normBbox.height() * canvasH
-                                drawRect(
-                                    color = PpOcrGreenBright.copy(alpha = 0.16f),
-                                    topLeft = Offset(left, top),
-                                    size = Size(w, h)
-                                )
-                                drawRect(
-                                    color = PpOcrGreenBright,
-                                    topLeft = Offset(left, top),
-                                    size = Size(w, h),
-                                    style = Stroke(width = 2.dp.toPx())
-                                )
-                            }
-                        }
-                    }
-                }
-
-                result?.let { res ->
-                    Text(
-                        text = "Original: ${res.originalWidth}×${res.originalHeight}px · Preprocessed: ${res.preprocessedWidth}×${res.preprocessedHeight}px · CLAHE=${if (res.claheApplied) "ON" else "OFF"}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InspectorSection2TimingAndMemoryStrip(
-    timing: WorkflowTimingAndMemory,
-    result: GraniteWorkflowRunResult?
-) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(
-            Modifier.fillMaxWidth().padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "2. Timing & Memory Strip",
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            SelectionContainer {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(
-                            "Preprocess ms" to "${timing.preprocessMs} ms",
-                            "ML Kit ms" to "${timing.mlKitMs} ms",
-                            "PP-OCRv6 ms" to "${timing.ppOcrV6Ms} ms"
-                        ).forEach { (title, value) ->
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                                    .padding(6.dp)
-                            ) {
-                                Text(
-                                    title,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(value, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-                            }
-                        }
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(
-                            "Granite 4.2 ms" to "${timing.graniteMs} ms",
-                            "Total ms" to "${timing.totalMs} ms",
-                            "Peak Heap/Native RAM MB" to String.format(
-                                Locale.US,
-                                "%.1f MB",
-                                timing.peakCombinedRamMb
-                            )
-                        ).forEach { (title, value) ->
-                            Column(
-                                Modifier
-                                    .weight(1f)
-                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                                    .padding(6.dp)
-                            ) {
-                                Text(
-                                    title,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(value, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-                            }
-                        }
-                    }
-                }
-            }
-
-            result?.let { res ->
-                Text(
-                    text = "${res.ppOcrStatusNote} · ${res.executionBackendNote}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun InspectorSection3StructuredJsonCard(
-    result: GraniteWorkflowRunResult?,
-    expandThinkOutput: Boolean,
-    onToggleExpandThink: () -> Unit,
-    onCopyJson: (String) -> Unit,
-    onShareJson: (String) -> Unit
-) {
-    val jsonText = result?.prettyJsonText ?: GraniteWineLabelJson().toPrettyJson(2)
-
-    Card(Modifier.fillMaxWidth()) {
-        Column(
-            Modifier.fillMaxWidth().padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "3. Final Structured JSON Card",
-                style = MaterialTheme.typography.titleSmall
-            )
-
-            Row {
-                TextButton(onClick = { onCopyJson(jsonText) }) { Text("Copy JSON") }
-                TextButton(onClick = { onShareJson(jsonText) }) { Text("Share JSON") }
-                if (result?.thinkModeEnabled == true || !result?.rawThinkingTrace.isNullOrBlank()) {
-                    TextButton(onClick = onToggleExpandThink) {
-                        Text(if (expandThinkOutput) "Hide <think>" else "Show <think>")
-                    }
-                }
-            }
-
-            if ((result?.thinkModeEnabled == true || !result?.rawThinkingTrace.isNullOrBlank()) && expandThinkOutput) {
-                SelectionContainer {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = result?.rawThinkingTrace ?: "(No <think> trace emitted)",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-            }
-
-            SelectionContainer {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = jsonText,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("structured_json_output")
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InspectorSection4RawOcrAccordion(
-    result: GraniteWorkflowRunResult?,
-    expanded: Boolean,
-    onToggleExpanded: () -> Unit
-) {
-    val mlBlocks = result?.mlKitBlocks.orEmpty()
-    val ppBlocks = result?.ppOcrV6Blocks.orEmpty()
-
-    Card(Modifier.fillMaxWidth()) {
-        Column(
-            Modifier.fillMaxWidth().padding(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onToggleExpanded)
-                    .padding(vertical = 4.dp),
+                    .clickable { onToggleExpanded() },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "4. Expandable Raw OCR Accordion",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        "1. Preprocessed Image + Dual-OCR Bounding Box Overlay",
+                        style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        text = "ML Kit (${mlBlocks.size}) · PP-OCRv6 (${ppBlocks.size})",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = if (result != null) {
+                            "Original ${result.originalWidth}x${result.originalHeight} → Preprocessed ${result.preprocessedWidth}x${result.preprocessedHeight} · CLAHE ${if (result.claheApplied) "ON" else "OFF"}"
+                        } else {
+                            "Blue = ML Kit (${result?.mlKitBlocks?.size ?: 0}) · Green = PP-OCRv6 (${result?.ppOcrV6Blocks?.size ?: 0})"
+                        },
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Text(
                     if (expanded) "▲" else "▼",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 
             if (expanded) {
-                SelectionContainer {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                                .padding(8.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    "ML Kit (${mlBlocks.size})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                if (mlBlocks.isEmpty()) {
-                                    Text("(No lines)", style = MaterialTheme.typography.bodySmall)
-                                } else {
-                                    mlBlocks.forEachIndexed { idx, block ->
-                                        Text(
-                                            "#${idx + 1} ${block.formatCenterWhTag()} ${block.text}",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                                .padding(8.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    "PP-OCRv6 (${ppBlocks.size})",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                if (ppBlocks.isEmpty()) {
-                                    Text("(No lines)", style = MaterialTheme.typography.bodySmall)
-                                } else {
-                                    ppBlocks.forEachIndexed { idx, block ->
-                                        Text(
-                                            "#${idx + 1} ${block.formatCenterWhTag()} ${block.text}",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModelFileStatusList(
-    modelsStatus: WorkflowModelsStatus,
-    onImportGraniteGguf: () -> Unit
-) {
-    val slots = listOf(
-        modelsStatus.graniteGguf to onImportGraniteGguf,
-        modelsStatus.mlKitEngine to null,
-        modelsStatus.ppOcrDetOnnx to null,
-        modelsStatus.ppOcrRecOnnx to null,
-        modelsStatus.ppOcrDict to null
-    )
-    Card(Modifier.fillMaxWidth()) {
-        Column(
-            Modifier.fillMaxWidth().padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            slots.forEach { (slot, action) ->
                 Row(
-                    Modifier.fillMaxWidth(),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SelectionContainer(Modifier.weight(1f)) {
-                        Text(
-                            "${slot.slotName} · ${slot.fileName} · ${if (slot.present) "ready" else "missing"} (${slot.sizeFormatted})",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    if (action != null) {
-                        TextButton(onClick = action) { Text("Import") }
-                    } else {
-                        Text(
-                            "Shared",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            SelectionContainer {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                        .padding(8.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            "Granite dir: ${modelsStatus.graniteDirectoryPath}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "Shared PP-OCRv6 dir: ${modelsStatus.sharedPpOcrDirectoryPath}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "JNI runtime: ${if (modelsStatus.nativeLlamaJniLoaded) "libgranite_llama_jni.so loaded" else "Standby (spatial reconciler fallback ready)"}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Self-contained CameraX still photo capture dialog for the Granite workflow test page.
- */
-@Composable
-private fun CameraXCaptureDialog(
-    onDismiss: () -> Unit,
-    onPhotoCaptured: (File) -> Unit
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val imageCapture = remember {
-        ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .build()
-    }
-    var captureError by remember { mutableStateOf<String?>(null) }
-    var isCapturing by remember { mutableStateOf(false) }
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxSize(0.85f),
-            shape = RoundedCornerShape(16.dp),
-            color = Color.Black
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { ctx ->
-                        val previewView = PreviewView(ctx).apply {
-                            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                    FilterChip(
+                        selected = state.showMlKitBoxes,
+                        onClick = { onToggleMlKitBoxes(!state.showMlKitBoxes) },
+                        label = {
+                            Text("Blue: ML Kit (${result?.mlKitBlocks?.size ?: 0})")
                         }
-                        val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-                        cameraProviderFuture.addListener({
-                            runCatching {
-                                val provider = cameraProviderFuture.get()
-                                val preview = Preview.Builder().build().also {
-                                    it.surfaceProvider = previewView.surfaceProvider
-                                }
-                                provider.unbindAll()
-                                provider.bindToLifecycle(
-                                    lifecycleOwner,
-                                    CameraSelector.DEFAULT_BACK_CAMERA,
-                                    preview,
-                                    imageCapture
-                                )
-                            }.onFailure { err ->
-                                captureError = "Camera bind failed: ${err.message}"
-                            }
-                        }, ContextCompat.getMainExecutor(ctx))
-                        previewView
-                    }
-                )
-
-                captureError?.let { err ->
-                    Text(
-                        text = err,
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(16.dp)
-                            .background(Color.Red.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
+                    )
+                    FilterChip(
+                        selected = state.showPpOcrBoxes,
+                        onClick = { onTogglePpOcrBoxes(!state.showPpOcrBoxes) },
+                        label = {
+                            Text("Green: PP-OCRv6 (${result?.ppOcrV6Blocks?.size ?: 0})")
+                        }
                     )
                 }
 
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(onClick = onDismiss) {
-                        Text("Cancel", color = Color.White)
+                if (bmp == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No image loaded yet. Tap 'Choose images', 'Snap photo', 'Use GLiNER dataset', or 'Sample label'.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
+                } else {
+                    val aspect = (bmp.width.toFloat() / bmp.height.coerceAtLeast(1).toFloat()).coerceIn(0.45f, 1.8f)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(aspect)
+                            .clip(RoundedCornerShape(6.dp))
+                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+                    ) {
+                        Image(
+                            bitmap = bmp.asImageBitmap(),
+                            contentDescription = "Preprocessed Wine Label",
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                textSize = 22f
+                                typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+                                color = android.graphics.Color.WHITE
+                            }
+                            val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                                style = Paint.Style.FILL
+                            }
 
-                    Button(
-                        enabled = !isCapturing,
-                        onClick = {
-                            isCapturing = true
-                            val outDir = File(context.cacheDir, "granite_workflow_captures").apply { mkdirs() }
-                            val photoFile = File(outDir, "label_${System.currentTimeMillis()}.jpg")
-                            val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-                            imageCapture.takePicture(
-                                outputOptions,
-                                ContextCompat.getMainExecutor(context),
-                                object : ImageCapture.OnImageSavedCallback {
-                                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                                        isCapturing = false
-                                        onPhotoCaptured(photoFile)
-                                    }
-
-                                    override fun onError(exception: ImageCaptureException) {
-                                        isCapturing = false
-                                        captureError = "Capture failed: ${exception.message}"
+                            if (state.showMlKitBoxes && result != null) {
+                                result.mlKitBlocks.forEachIndexed { idx, block ->
+                                    val left = block.normBbox.left * size.width
+                                    val top = block.normBbox.top * size.height
+                                    val w = block.normBbox.width() * size.width
+                                    val h = block.normBbox.height() * size.height
+                                    drawRect(
+                                        color = MlKitOverlayBlue,
+                                        topLeft = Offset(left, top),
+                                        size = Size(w, h),
+                                        style = Stroke(width = 3.5f)
+                                    )
+                                    drawContext.canvas.nativeCanvas.apply {
+                                        val tag = "M${idx + 1}"
+                                        bgPaint.color = android.graphics.Color.argb(200, 41, 121, 255)
+                                        val tw = labelPaint.measureText(tag)
+                                        drawRect(
+                                            left,
+                                            (top - 26f).coerceAtLeast(0f),
+                                            left + tw + 10f,
+                                            top.coerceAtLeast(26f),
+                                            bgPaint
+                                        )
+                                        drawText(tag, left + 5f, (top - 6f).coerceAtLeast(20f), labelPaint)
                                     }
                                 }
-                            )
+                            }
+
+                            if (state.showPpOcrBoxes && result != null) {
+                                result.ppOcrV6Blocks.forEachIndexed { idx, block ->
+                                    val left = block.normBbox.left * size.width
+                                    val top = block.normBbox.top * size.height
+                                    val w = block.normBbox.width() * size.width
+                                    val h = block.normBbox.height() * size.height
+                                    drawRect(
+                                        color = PpOcrOverlayGreen,
+                                        topLeft = Offset(left, top),
+                                        size = Size(w, h),
+                                        style = Stroke(width = 3.5f)
+                                    )
+                                    drawContext.canvas.nativeCanvas.apply {
+                                        val tag = "P${idx + 1}"
+                                        bgPaint.color = android.graphics.Color.argb(200, 0, 200, 83)
+                                        val tw = labelPaint.measureText(tag)
+                                        val rx = (left + w - tw - 10f).coerceAtLeast(0f)
+                                        drawRect(
+                                            rx,
+                                            (top - 26f).coerceAtLeast(0f),
+                                            rx + tw + 10f,
+                                            top.coerceAtLeast(26f),
+                                            bgPaint
+                                        )
+                                        drawText(tag, rx + 5f, (top - 6f).coerceAtLeast(20f), labelPaint)
+                                    }
+                                }
+                            }
                         }
-                    ) {
-                        Text(if (isCapturing) "Saving…" else "Capture label")
                     }
                 }
             }
         }
     }
+}
 
-    DisposableEffect(Unit) {
-        onDispose {
-            runCatching {
-                ProcessCameraProvider.getInstance(context).get().unbindAll()
+@Composable
+private fun InspectorSection2SideBySideOcrCard(
+    state: GraniteWorkflowUiState,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit
+) {
+    val result = state.lastResult
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("inspector_section_2_side_by_side")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpanded() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "2. Side-by-Side Raw OCR Comparison",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        "Sorted top-to-bottom (y_center), left-to-right (x_center) with normalized [x, y, w, h] coordinates",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Text(
+                    if (expanded) "▲" else "▼",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
+
+            if (expanded) {
+                if (result == null) {
+                    Text(
+                        "Run the workflow to compare ML Kit and PP-OCRv6 raw coordinate-tagged blocks side by side.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    SelectionContainer {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OcrEngineColumnBox(
+                                modifier = Modifier.weight(1f),
+                                title = "ML Kit (${result.mlKitBlocks.size} · ${result.timingAndMemory.mlKitMs} ms)",
+                                blocks = result.mlKitBlocks,
+                                emptyNote = if (result.ocrMode.runsMlKit) "0 blocks" else "Disabled (${result.ocrMode.displayLabel})"
+                            )
+                            OcrEngineColumnBox(
+                                modifier = Modifier.weight(1f),
+                                title = "PP-OCRv6 (${result.ppOcrV6Blocks.size} · ${result.timingAndMemory.ppOcrV6Ms} ms)",
+                                blocks = result.ppOcrV6Blocks,
+                                emptyNote = if (result.ocrMode.runsPpOcrV6) result.ppOcrStatusNote else "Disabled (${result.ocrMode.displayLabel})"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OcrEngineColumnBox(
+    modifier: Modifier,
+    title: String,
+    blocks: List<OcrBlock>,
+    emptyNote: String
+) {
+    Column(
+        modifier = modifier
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            .padding(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        HorizontalDivider()
+        if (blocks.isEmpty()) {
+            Text(
+                text = emptyNote,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            blocks.forEachIndexed { idx, block ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "#${idx + 1} ${block.text}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${block.formatCenterWhTag()} conf=${String.format(Locale.US, "%.2f", block.confidence)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InspectorSection3GraniteOutputCard(
+    state: GraniteWorkflowUiState,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit
+) {
+    val result = state.lastResult
+    var thinkExpanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("inspector_section_3_granite_output")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpanded() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "3. Granite 4.2 Reconciled Output",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        "Strict 12-field JSON schema · collapsible <think> trace · per-stage latency & peak RAM",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Text(
+                    if (expanded) "▲" else "▼",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (expanded) {
+                if (result == null) {
+                    Text(
+                        "Run the workflow to inspect the Granite 4.2 reconciled JSON output, <think> trace, and stage timings.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    val t = result.timingAndMemory
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Per-stage latency & peak RAM grid styled like GlinerLabScreen's RunTimers
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    "Preprocess ms" to "${t.preprocessMs} ms",
+                                    "ML Kit ms" to "${t.mlKitMs} ms",
+                                    "PP-OCRv6 ms" to "${t.ppOcrV6Ms} ms"
+                                ).forEach { (label, value) ->
+                                    TimingStatBox(modifier = Modifier.weight(1f), label = label, value = value)
+                                }
+                            }
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    "Granite 4.2 ms" to "${t.graniteMs} ms",
+                                    "Total ms" to "${t.totalMs} ms",
+                                    "Peak Heap/Native RAM MB" to String.format(
+                                        Locale.US,
+                                        "%.1f / %.1f MB",
+                                        t.peakJvmHeapMb,
+                                        t.peakNativeHeapMb
+                                    )
+                                ).forEach { (label, value) ->
+                                    TimingStatBox(modifier = Modifier.weight(1f), label = label, value = value)
+                                }
+                            }
+
+                            // Collapsible <think> reasoning trace
+                            TextButton(
+                                onClick = { thinkExpanded = !thinkExpanded },
+                                contentPadding = PaddingValues(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    "<think> Reasoning Trace (${if (result.thinkModeEnabled) "ON" else "OFF — bypassed"}) " +
+                                        if (thinkExpanded) "▲" else "▼"
+                                )
+                            }
+                            AnimatedVisibility(visible = thinkExpanded) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                        .padding(8.dp)
+                                ) {
+                                    Text(
+                                        text = result.rawThinkingTrace
+                                            ?: "Thinking trace disabled (<think> OFF for fast structured JSON generation). Enable '<think> ON' in the parameter bar to capture step-by-step spatial reasoning.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+
+                            // Formatted JSON output
+                            Text(
+                                "Formatted JSON Output:",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    .padding(8.dp)
+                            ) {
+                                Text(
+                                    text = result.prettyJsonText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimingStatBox(
+    modifier: Modifier,
+    label: String,
+    value: String
+) {
+    Column(
+        modifier = modifier
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            .padding(6.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun InspectorSection4ActionsCard(
+    state: GraniteWorkflowUiState,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onCopyJson: (String) -> Unit,
+    onShareJson: (String) -> Unit
+) {
+    val result = state.lastResult
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("inspector_section_4_actions")
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpanded() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "4. Copy & Share Actions",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        "Copy JSON to clipboard or share via Android Intent",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Text(
+                    if (expanded) "▲" else "▼",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (expanded) {
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = { result?.let { onCopyJson(it.prettyJsonText) } },
+                        enabled = result != null,
+                        modifier = Modifier.testTag("copy_json_button")
+                    ) {
+                        Text("Copy JSON")
+                    }
+                    TextButton(
+                        onClick = { result?.let { onShareJson(it.prettyJsonText) } },
+                        enabled = result != null,
+                        modifier = Modifier.testTag("share_json_button")
+                    ) {
+                        Text("Share JSON")
+                    }
+                }
+
+                if (result != null) {
+                    val s = result.structuredJson
+                    HorizontalDivider()
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            FieldSummaryLine("Producer / Winery", s.producerOrWinery ?: "null")
+                            FieldSummaryLine("Wine Name / Cuvée", s.wineNameOrCuvee ?: "null")
+                            FieldSummaryLine(
+                                "Vintage",
+                                if (s.isNonVintage) "null (NV / Non-Vintage = true)" else (s.vintage?.toString() ?: "null")
+                            )
+                            FieldSummaryLine(
+                                "Varietals",
+                                if (s.varietals.isEmpty()) "[]" else s.varietals.joinToString(", ")
+                            )
+                            FieldSummaryLine("Appellation / Region", s.appellationOrRegion ?: "null")
+                            FieldSummaryLine("Country", s.country ?: "null")
+                            FieldSummaryLine("Classification", s.classification ?: "null")
+                            FieldSummaryLine("ABV / Volume", "${s.abvPercentage?.let { "$it%" } ?: "null"} · ${s.bottleVolumeMl?.let { "${it}mL" } ?: "null"}")
+                            if (s.ocrDiscrepanciesResolved.isNotEmpty()) {
+                                FieldSummaryLine(
+                                    "Discrepancies Resolved",
+                                    s.ocrDiscrepanciesResolved.joinToString("; ")
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FieldSummaryLine(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(0.42f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(0.58f)
+        )
+    }
+}
+
+private fun buildGraniteReportText(state: GraniteWorkflowUiState): String {
+    val result = state.lastResult
+    return buildString {
+        appendLine("Dual OCR + Granite 4.2 4B Workflow · ${BuildConfig.BUILD_COMMIT}")
+        appendLine("OCR Mode: ${state.ocrMode.displayLabel} · <think>: ${state.thinkModeEnabled} · CLAHE: ${state.claheEnabled}")
+        appendLine("Image: ${state.imageSourceLabel}")
+        state.datasetAggregate?.let { agg ->
+            appendLine("GLiNER 124-label dataset: ${agg.text()}")
+        }
+        if (result != null) {
+            val t = result.timingAndMemory
+            appendLine(
+                "Timing: preprocess ${t.preprocessMs} ms · ML Kit ${t.mlKitMs} ms · PP-OCRv6 ${t.ppOcrV6Ms} ms · Granite ${t.graniteMs} ms · total ${t.totalMs} ms"
+            )
+            appendLine(
+                String.format(
+                    Locale.US,
+                    "Peak RAM: JVM %.1f MB · Native %.1f MB · Combined %.1f MB",
+                    t.peakJvmHeapMb,
+                    t.peakNativeHeapMb,
+                    t.peakCombinedRamMb
+                )
+            )
+            appendLine("ML Kit blocks (${result.mlKitBlocks.size}):")
+            result.mlKitBlocks.forEach { b ->
+                appendLine("  ${b.formatCenterWhTag()} conf=${String.format(Locale.US, "%.2f", b.confidence)} ${b.text}")
+            }
+            appendLine("PP-OCRv6 blocks (${result.ppOcrV6Blocks.size}):")
+            result.ppOcrV6Blocks.forEach { b ->
+                appendLine("  ${b.formatCenterWhTag()} conf=${String.format(Locale.US, "%.2f", b.confidence)} ${b.text}")
+            }
+            if (!result.rawThinkingTrace.isNullOrBlank()) {
+                appendLine("<think>:")
+                appendLine(result.rawThinkingTrace)
+            }
+            appendLine("Granite 4.2 JSON:")
+            appendLine(result.prettyJsonText)
         }
     }
 }

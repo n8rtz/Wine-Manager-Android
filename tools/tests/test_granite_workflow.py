@@ -26,7 +26,7 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
 
     def test_decoupled_from_production_repositories_and_reuses_existing_ocr_files(self):
         kt_files = sorted(PKG.glob("*.kt"))
-        self.assertGreaterEqual(len(kt_files), 6)
+        self.assertGreaterEqual(len(kt_files), 7)
         forbidden_prefixes = (
             "com.n8rtz.winetracker.data.",
             "com.n8rtz.winetracker.scanner.",
@@ -34,9 +34,7 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
             "com.n8rtz.winetracker.image.",
             "com.n8rtz.winetracker.viewmodels.",
             "com.yourapp.wine.gliner.",
-            "com.yourapp.wine.phonecorpus.",
             "com.yourapp.wine.gazetteer.",
-            "com.yourapp.wine.kb.",
         )
         for path in kt_files:
             source = self.read(path)
@@ -53,6 +51,19 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertIn("PaddleTextDetector.detect", ocr)
         self.assertIn("PaddleTextRecognizer.recognize", ocr)
         self.assertIn("PaddleCandidates", ocr)
+
+    def test_shares_gliner_wine_app_labels_dataset(self):
+        corpus = self.read(PKG / "GraniteLabCorpus.kt")
+        screen = self.read(PKG / "GraniteWorkflowScreen.kt")
+        self.assertIn('const val ASSET_ROOT = "wine-app-labels-v1"', corpus)
+        self.assertIn("inputs.json", corpus)
+        self.assertIn("scoring.json", corpus)
+        self.assertIn("evaluation-set.json", corpus)
+        self.assertIn("PhoneCorpusMath", corpus)
+        self.assertIn("Use GLiNER dataset", screen)
+        self.assertIn("Run GLiNER set", screen)
+        self.assertIn("Incomplete labels", screen)
+        self.assertIn("All labels", screen)
 
     def test_preprocessor_constraints_and_clahe_toggle(self):
         prep = self.read(PKG / "GraniteWorkflowImagePreprocessor.kt")
@@ -102,10 +113,10 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         activity = self.read(PKG / "GraniteWorkflowActivity.kt")
         self.assertIn("ActivityResultContracts.OpenDocument()", activity)
         self.assertIn("Import Model Files to Run", screen)
-        self.assertIn("1. Image + Bounding Box Overlay", screen)
-        self.assertIn("2. Timing & Memory Strip", screen)
-        self.assertIn("3. Final Structured JSON Card", screen)
-        self.assertIn("4. Expandable Raw OCR Accordion", screen)
+        self.assertIn("1. Preprocessed Image + Dual-OCR Bounding Box Overlay", screen)
+        self.assertIn("2. Side-by-Side Raw OCR Comparison", screen)
+        self.assertIn("3. Granite 4.2 Reconciled Output", screen)
+        self.assertIn("4. Copy & Share Actions", screen)
         self.assertIn("Preprocess ms", screen)
         self.assertIn("ML Kit ms", screen)
         self.assertIn("PP-OCRv6 ms", screen)

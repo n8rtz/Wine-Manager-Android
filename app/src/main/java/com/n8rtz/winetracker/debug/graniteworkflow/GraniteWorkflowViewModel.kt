@@ -15,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.coroutines.coroutineContext
 import kotlin.math.max
 
 /**
@@ -41,18 +43,31 @@ data class GraniteWorkflowUiState(
     val activeStageMessage: String = "",
     val statusBannerMessage: String? = null,
     val errorBannerMessage: String? = null,
-    val lastResult: GraniteWorkflowRunResult? = null
+    val lastResult: GraniteWorkflowRunResult? = null,
+    val useGlinerDatasetMode: Boolean = false,
+    val activeDatasetImage: String? = null,
+    val datasetRows: List<GraniteDatasetRow> = emptyList(),
+    val datasetAggregate: GraniteDatasetAggregate? = null,
+    val isDatasetBatchRunning: Boolean = false,
+    val datasetDoneCount: Int = 0,
+    val datasetTotalCount: Int = 0,
+    val datasetCurrentLabel: String = "",
+    val datasetBatchElapsedMs: Long = 0L
 ) {
     val missingModelsPrompt: String?
         get() = modelsStatus.missingModelsPrompt(ocrMode)
+
+    val datasetRan: Boolean
+        get() = datasetRows.any { it.runResult != null || it.status == "error" }
 }
 
 /**
  * Standalone ViewModel for `Dual OCR + Granite 4.2 4B Workflow`.
  *
  * Reuses the app's existing ML Kit and PP-OCRv6 files (`v6-medium-det.onnx`, `v6-medium-rec.onnx`,
- * `ppocrv6_dict.utf8`) without downloading or copying second copies, while keeping ViewModel state
- * and Granite LLM extraction completely isolated from production repositories and services.
+ * `ppocrv6_dict.utf8`) and the packaged 124-label GLiNER / Lab v7 wine dataset
+ * (`assets/wine-app-labels-v1`) without downloading or copying second copies, while keeping
+ * ViewModel state and Granite LLM extraction completely isolated from production repositories.
  */
 class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(GraniteWorkflowUiState())
@@ -64,10 +79,12 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     private var currentSourceUri: Uri? = null
     private var currentSourceFile: File? = null
     private var currentMemoryBitmap: Bitmap? = null
+    private var currentDatasetImageKey: String? = null
     private var activeRunJob: Job? = null
 
     init {
         refreshModelStatus()
+        loadGlinerDatasetCatalog()
     }
 
     fun refreshModelStatus() {
@@ -83,6 +100,31 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 _uiState.update { state ->
                     state.copy(errorBannerMessage = "Model status check failed: ${err.message ?: err.javaClass.simpleName}")
                 }
+            }
+        }
+    }
+
+    /**
+     * Loads the packaged 124-image `wine-app-labels-v1` dataset catalog shared with `GLiNER lane lab`.
+     */
+    fun loadGlinerDatasetCatalog() {
+        val app = getApplication<Application>()
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                GraniteLabCorpus.load(app)
+            }.onSuccess { samples ->
+                _uiState.update { state ->
+                    val existingByImage = state.datasetRows.associateBy { it.sample.image }
+                    val rows = samples.mapIndexed { index, sample ->
+                        existingByImage[sample.image]?.copy(index = index) ?: GraniteDatasetRow(index, sample)
+                    }
+                    state.copy(
+                        datasetRows = rows,
+                        datasetTotalCount = if (state.isDatasetBatchRunning) state.datasetTotalCount else samples.size
+                    )
+                }
+            }.onFailure { err ->
+                Log.w("GraniteWorkflowVM", "Could not read packaged wine-app-labels-v1 dataset", err)
             }
         }
     }
@@ -125,11 +167,23 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     fun stopWorkflow() {
         activeRunJob?.cancel()
         activeRunJob = null
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val updatedAggregate = if (state.datasetRows.any { it.runResult != null || it.status == "error" }) {
+                GraniteLabCorpus.aggregate(state.datasetRows, stopped = true)
+            } else {
+                state.datasetAggregate
+            }
+            state.copy(
                 isRunning = false,
+                isDatasetBatchRunning = false,
                 activeStageMessage = "",
-                statusBannerMessage = "Stopped."
+                datasetCurrentLabel = "",
+                datasetAggregate = updatedAggregate,
+                statusBannerMessage = if (updatedAggregate != null) {
+                    "Stopped. ${updatedAggregate.text()}"
+                } else {
+                    "Stopped."
+                }
             )
         }
     }
@@ -140,16 +194,230 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         currentSourceUri = null
         currentSourceFile = null
         currentMemoryBitmap = null
+        currentDatasetImageKey = null
         _uiState.update {
             it.copy(
                 imageSourceLabel = "No image selected",
                 previewBitmap = null,
                 lastResult = null,
+                activeDatasetImage = null,
+                useGlinerDatasetMode = false,
                 isRunning = false,
+                isDatasetBatchRunning = false,
                 activeStageMessage = "",
                 statusBannerMessage = "Removed selected image.",
                 errorBannerMessage = null
             )
+        }
+    }
+
+    /**
+     * Switches the active source to the packaged 124-image GLiNER / Lab v7 wine label dataset
+     * (`assets/wine-app-labels-v1`) and loads the first (or currently selected) label.
+     */
+    fun onUseGlinerDataset() {
+        val rows = _uiState.value.datasetRows
+        val targetRow = rows.firstOrNull { it.sample.image == _uiState.value.activeDatasetImage }
+            ?: rows.firstOrNull()
+        if (targetRow == null) {
+            _uiState.update {
+                it.copy(
+                    useGlinerDatasetMode = true,
+                    statusBannerMessage = "Loading GLiNER / Lab v7 dataset (124 wine labels)..."
+                )
+            }
+            loadGlinerDatasetCatalog()
+            return
+        }
+        onSelectDatasetSample(targetRow.sample.image, autoRun = false)
+    }
+
+    /**
+     * Selects one wine label from the packaged 124-image GLiNER / Lab v7 dataset (`wine-app-labels-v1`),
+     * loads its bitmap into the preview, and restores its 4-section inspector result if already run
+     * (or runs it immediately when [autoRun] is true).
+     */
+    fun onSelectDatasetSample(imageKey: String, autoRun: Boolean = false) {
+        val app = getApplication<Application>()
+        val row = _uiState.value.datasetRows.firstOrNull { it.sample.image == imageKey } ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                GraniteLabCorpus.decodeBitmap(app, row.sample)
+            }.onSuccess { bmp ->
+                currentMemoryBitmap = bmp
+                currentSourceUri = null
+                currentSourceFile = null
+                currentDatasetImageKey = row.sample.image
+                _uiState.update { state ->
+                    state.copy(
+                        useGlinerDatasetMode = true,
+                        activeDatasetImage = row.sample.image,
+                        imageSourceLabel = "GLiNER dataset ${row.displayName}",
+                        previewBitmap = row.runResult?.preprocessedBitmap ?: bmp,
+                        lastResult = row.runResult ?: state.lastResult?.takeIf { state.activeDatasetImage == row.sample.image },
+                        statusBannerMessage = if (row.runResult != null) {
+                            "Loaded ${row.displayName} (${row.message})"
+                        } else {
+                            "Selected ${row.displayName} from GLiNER 124-label dataset."
+                        },
+                        errorBannerMessage = null
+                    )
+                }
+                if (autoRun) {
+                    runWorkflow(allowPreviewWithoutAllModels = true)
+                }
+            }.onFailure { err ->
+                _uiState.update { state ->
+                    state.copy(
+                        errorBannerMessage = "Could not load dataset image ${row.displayName}: ${err.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs Dual OCR + Granite 4.2 on a single label from the 124-label GLiNER dataset, scores it
+     * against `scoring.json`, and displays its 4-section inspector output.
+     */
+    fun runDatasetSample(imageKey: String) {
+        onSelectDatasetSample(imageKey, autoRun = true)
+    }
+
+    /**
+     * Runs the Dual OCR + Granite 4.2 pipeline sequentially across all 124 packaged wine labels
+     * in `assets/wine-app-labels-v1` (the exact same dataset as `GLiNER lane lab`), updating
+     * `Scored results`, `Incomplete labels`, and `All labels (124)` as each photo finishes.
+     */
+    fun runAllGlinerDatasetSamples() {
+        if (_uiState.value.isRunning) return
+        val app = getApplication<Application>()
+        activeRunJob?.cancel()
+        activeRunJob = viewModelScope.launch {
+            val batchStarted = SystemClock.elapsedRealtime()
+            val ramTracker = PeakRamTracker()
+            ramTracker.sample()
+
+            val currentStatus = withContext(Dispatchers.IO) {
+                GraniteModelStorage.inspectModels(app)
+            }
+            val currentMode = _uiState.value.ocrMode
+            val thinkEnabled = _uiState.value.thinkModeEnabled
+            val claheEnabled = _uiState.value.claheEnabled
+
+            val rows = _uiState.value.datasetRows.ifEmpty {
+                withContext(Dispatchers.IO) {
+                    GraniteLabCorpus.load(app).mapIndexed { idx, sample -> GraniteDatasetRow(idx, sample) }
+                }
+            }
+            if (rows.isEmpty()) {
+                _uiState.update {
+                    it.copy(errorBannerMessage = "No packaged GLiNER dataset images found in assets/wine-app-labels-v1.")
+                }
+                return@launch
+            }
+
+            _uiState.update { state ->
+                state.copy(
+                    modelsStatus = currentStatus,
+                    useGlinerDatasetMode = true,
+                    isRunning = true,
+                    isDatasetBatchRunning = true,
+                    datasetDoneCount = 0,
+                    datasetTotalCount = rows.size,
+                    datasetCurrentLabel = "",
+                    datasetBatchElapsedMs = 0L,
+                    datasetAggregate = null,
+                    datasetRows = rows.map { it.copy(status = "Waiting", runResult = null, fieldResults = emptyList()) },
+                    statusBannerMessage = "Starting Dual OCR + Granite 4.2 on GLiNER dataset (${rows.size} labels)...",
+                    errorBannerMessage = null
+                )
+            }
+
+            try {
+                for ((index, row) in rows.withIndex()) {
+                    coroutineContext.ensureActive()
+                    val sample = row.sample
+                    _uiState.update { state ->
+                        state.copy(
+                            datasetCurrentLabel = row.displayName,
+                            activeStageMessage = "Dataset ${index + 1}/${rows.size} · ${row.displayName}",
+                            datasetBatchElapsedMs = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L),
+                            datasetRows = state.datasetRows.map { existing ->
+                                if (existing.sample.image == sample.image) existing.copy(status = "Running") else existing
+                            }
+                        )
+                    }
+
+                    val evaluatedRow = try {
+                        val runResult = executeSinglePipelineOnSample(
+                            app = app,
+                            sample = sample,
+                            ocrMode = currentMode,
+                            thinkEnabled = thinkEnabled,
+                            claheEnabled = claheEnabled,
+                            ramTracker = ramTracker
+                        )
+                        GraniteLabCorpus.evaluateRow(index, sample, runResult)
+                    } catch (cancel: CancellationException) {
+                        throw cancel
+                    } catch (e: Exception) {
+                        Log.w("GraniteWorkflowVM", "Dataset label ${row.displayName} failed", e)
+                        GraniteLabCorpus.failedRow(index, sample, "${e.javaClass.simpleName}: ${e.message}")
+                    }
+
+                    _uiState.update { state ->
+                        val updatedRows = state.datasetRows.map { existing ->
+                            if (existing.sample.image == sample.image) evaluatedRow else existing
+                        }
+                        val aggregate = GraniteLabCorpus.aggregate(updatedRows, stopped = false)
+                        val elapsed = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L)
+                        state.copy(
+                            datasetDoneCount = index + 1,
+                            datasetBatchElapsedMs = elapsed,
+                            datasetRows = updatedRows,
+                            datasetAggregate = aggregate,
+                            activeDatasetImage = sample.image,
+                            imageSourceLabel = "GLiNER dataset ${row.displayName}",
+                            previewBitmap = evaluatedRow.runResult?.preprocessedBitmap ?: state.previewBitmap,
+                            lastResult = evaluatedRow.runResult ?: state.lastResult
+                        )
+                    }
+                }
+
+                val finalElapsed = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L)
+                _uiState.update { state ->
+                    val aggregate = GraniteLabCorpus.aggregate(state.datasetRows, stopped = false)
+                    state.copy(
+                        isRunning = false,
+                        isDatasetBatchRunning = false,
+                        activeStageMessage = "",
+                        datasetCurrentLabel = "",
+                        datasetBatchElapsedMs = finalElapsed,
+                        datasetAggregate = aggregate,
+                        statusBannerMessage = aggregate.text()
+                    )
+                }
+            } catch (cancel: CancellationException) {
+                val elapsed = (SystemClock.elapsedRealtime() - batchStarted).coerceAtLeast(1L)
+                _uiState.update { state ->
+                    val updatedRows = state.datasetRows.map { existing ->
+                        if (existing.status == "Running") existing.copy(status = "Stopped") else existing
+                    }
+                    val aggregate = GraniteLabCorpus.aggregate(updatedRows, stopped = true)
+                    state.copy(
+                        isRunning = false,
+                        isDatasetBatchRunning = false,
+                        activeStageMessage = "",
+                        datasetCurrentLabel = "",
+                        datasetBatchElapsedMs = elapsed,
+                        datasetRows = updatedRows,
+                        datasetAggregate = aggregate,
+                        statusBannerMessage = "Stopped after ${state.datasetDoneCount} photos. ${aggregate.text()}"
+                    )
+                }
+                throw cancel
+            }
         }
     }
 
@@ -195,8 +463,11 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         currentSourceUri = uri
         currentSourceFile = null
         currentMemoryBitmap = null
+        currentDatasetImageKey = null
         _uiState.update {
             it.copy(
+                useGlinerDatasetMode = false,
+                activeDatasetImage = null,
                 imageSourceLabel = "Gallery URI: ${uri.lastPathSegment ?: uri.toString()}",
                 statusBannerMessage = "Image selected. Running Dual OCR + Granite 4.2 workflow...",
                 errorBannerMessage = null
@@ -209,8 +480,11 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         currentSourceFile = file
         currentSourceUri = null
         currentMemoryBitmap = null
+        currentDatasetImageKey = null
         _uiState.update {
             it.copy(
+                useGlinerDatasetMode = false,
+                activeDatasetImage = null,
                 imageSourceLabel = "Camera capture: ${file.name}",
                 statusBannerMessage = "Photo captured. Running Dual OCR + Granite 4.2 workflow...",
                 errorBannerMessage = null
@@ -224,8 +498,11 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         currentMemoryBitmap = sample
         currentSourceUri = null
         currentSourceFile = null
+        currentDatasetImageKey = null
         _uiState.update {
             it.copy(
+                useGlinerDatasetMode = false,
+                activeDatasetImage = null,
                 imageSourceLabel = "Synthetic Test Label (Château Margaux 2018)",
                 previewBitmap = sample,
                 statusBannerMessage = "Loaded sample wine label. Running workflow...",
@@ -236,7 +513,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
     }
 
     /**
-     * Runs the 3-stage pipeline:
+     * Runs the 3-stage pipeline on the currently selected image:
      * 1. `GraniteWorkflowImagePreprocessor` (<=1280px longest edge, >=768px preserved, optional CLAHE)
      * 2. `DualOcrEngine` (`async` / `awaitAll` on `Dispatchers.Default` reusing existing ML Kit + PP-OCRv6)
      * 3. `GraniteLabelExtractor` (`granite-4.2-3b-Q4_K_M.gguf` / strict 12-field JSON schema + `<think>` toggle)
@@ -245,10 +522,11 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
         val uri = currentSourceUri
         val file = currentSourceFile
         val memBitmap = currentMemoryBitmap
-        if (uri == null && file == null && memBitmap == null) {
+        val datasetKey = currentDatasetImageKey
+        if (uri == null && file == null && memBitmap == null && datasetKey == null) {
             _uiState.update {
                 it.copy(
-                    errorBannerMessage = "Pick an image from Gallery or Snap Photo first."
+                    errorBannerMessage = "Pick an image from Gallery, Snap Photo, or Use GLiNER dataset (124) first."
                 )
             }
             return
@@ -283,6 +561,7 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 it.copy(
                     modelsStatus = currentStatus,
                     isRunning = true,
+                    isDatasetBatchRunning = false,
                     activeStageMessage = "Stage 1/3: Preprocessing image (<=1280px, CLAHE=${if (claheEnabled) "ON" else "OFF"})...",
                     errorBannerMessage = null
                 )
@@ -295,6 +574,11 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                         uri != null -> GraniteWorkflowImagePreprocessor.preprocessUri(app, uri, claheEnabled)
                         file != null -> GraniteWorkflowImagePreprocessor.preprocessFile(file, claheEnabled)
                         memBitmap != null -> GraniteWorkflowImagePreprocessor.preprocessBitmap(memBitmap, claheEnabled)
+                        datasetKey != null -> {
+                            val dsRow = _uiState.value.datasetRows.first { it.sample.image == datasetKey }
+                            val decoded = GraniteLabCorpus.decodeBitmap(app, dsRow.sample)
+                            GraniteWorkflowImagePreprocessor.preprocessBitmap(decoded, claheEnabled)
+                        }
                         else -> error("No image input available")
                     }
                 }
@@ -367,12 +651,32 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                     ppOcrStatusNote = dualOcrResult.ppOcrStatusMessage
                 )
 
-                _uiState.update {
-                    it.copy(
+                _uiState.update { state ->
+                    val updatedDatasetRows = if (datasetKey != null) {
+                        state.datasetRows.map { existing ->
+                            if (existing.sample.image == datasetKey) {
+                                GraniteLabCorpus.evaluateRow(existing.index, existing.sample, runResult)
+                            } else {
+                                existing
+                            }
+                        }
+                    } else {
+                        state.datasetRows
+                    }
+                    val updatedAggregate = if (updatedDatasetRows.any { it.runResult != null || it.status == "error" }) {
+                        GraniteLabCorpus.aggregate(updatedDatasetRows, stopped = false)
+                    } else {
+                        state.datasetAggregate
+                    }
+                    val doneCount = updatedDatasetRows.count { it.runResult != null || it.status == "error" }
+                    state.copy(
                         modelsStatus = refreshedStatus,
                         isRunning = false,
                         activeStageMessage = "",
                         lastResult = runResult,
+                        datasetRows = updatedDatasetRows,
+                        datasetAggregate = updatedAggregate,
+                        datasetDoneCount = if (datasetKey != null) doneCount else state.datasetDoneCount,
                         statusBannerMessage = missingPrompt ?: "Workflow completed in ${totalMs}ms"
                     )
                 }
@@ -389,6 +693,70 @@ class GraniteWorkflowViewModel(application: Application) : AndroidViewModel(appl
                 }
             }
         }
+    }
+
+    private suspend fun executeSinglePipelineOnSample(
+        app: Application,
+        sample: GraniteDatasetSample,
+        ocrMode: OcrAblationMode,
+        thinkEnabled: Boolean,
+        claheEnabled: Boolean,
+        ramTracker: PeakRamTracker
+    ): GraniteWorkflowRunResult {
+        val sampleStart = SystemClock.elapsedRealtime()
+        val preprocessed = withContext(Dispatchers.Default) {
+            val decoded = GraniteLabCorpus.decodeBitmap(app, sample)
+            GraniteWorkflowImagePreprocessor.preprocessBitmap(decoded, claheEnabled)
+        }
+        ramTracker.sample()
+
+        val dualOcrResult = dualOcrEngine.recognize(
+            context = app,
+            bitmap = preprocessed.bitmap,
+            ablationMode = ocrMode
+        )
+        ramTracker.sample()
+
+        val extraction = graniteExtractor.extract(
+            context = app,
+            mlKitBlocks = dualOcrResult.mlKitBlocks,
+            ppOcrV6Blocks = dualOcrResult.ppOcrV6Blocks,
+            ablationMode = ocrMode,
+            thinkModeEnabled = thinkEnabled
+        )
+        ramTracker.sample()
+
+        val totalMs = (SystemClock.elapsedRealtime() - sampleStart).coerceAtLeast(1L)
+        val timingAndMemory = WorkflowTimingAndMemory(
+            preprocessMs = preprocessed.elapsedMs,
+            mlKitMs = dualOcrResult.mlKitElapsedMs,
+            ppOcrV6Ms = dualOcrResult.ppOcrV6ElapsedMs,
+            graniteMs = extraction.elapsedMs,
+            totalMs = totalMs,
+            peakJvmHeapMb = ramTracker.peakJvmMb,
+            peakNativeHeapMb = ramTracker.peakNativeMb,
+            peakCombinedRamMb = ramTracker.peakCombinedMb
+        )
+
+        return GraniteWorkflowRunResult(
+            preprocessedBitmap = preprocessed.bitmap,
+            originalWidth = preprocessed.originalWidth,
+            originalHeight = preprocessed.originalHeight,
+            preprocessedWidth = preprocessed.width,
+            preprocessedHeight = preprocessed.height,
+            claheApplied = preprocessed.claheApplied,
+            ocrMode = ocrMode,
+            thinkModeEnabled = thinkEnabled,
+            mlKitBlocks = dualOcrResult.mlKitBlocks,
+            ppOcrV6Blocks = dualOcrResult.ppOcrV6Blocks,
+            timingAndMemory = timingAndMemory,
+            structuredJson = extraction.structuredJson,
+            prettyJsonText = extraction.prettyJson,
+            rawThinkingTrace = extraction.rawThinkTrace,
+            rawLlmResponse = extraction.rawLlmOutput,
+            executionBackendNote = extraction.backendUsed,
+            ppOcrStatusNote = dualOcrResult.ppOcrStatusMessage
+        )
     }
 
     override fun onCleared() {

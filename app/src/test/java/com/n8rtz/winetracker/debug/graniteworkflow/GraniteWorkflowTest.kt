@@ -27,10 +27,20 @@ class GraniteWorkflowTest {
     val composeRule = createAndroidComposeRule<GraniteWorkflowActivity>()
 
     @Test
-    fun screenOpensWithoutModelFilesAndShowsFriendlyImportPrompt() {
+    fun screenOpensWithoutModelFilesAndShowsFriendlyImportPromptAndGlinerDatasetControls() {
         composeRule.onNodeWithText("Dual OCR + Granite 4.2 4B Workflow").assertIsDisplayed()
         composeRule.onNodeWithTag("import_models_prompt_card").assertIsDisplayed()
         composeRule.onNodeWithText("Import Model Files to Run", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithTag("run_gliner_dataset_button").assertIsDisplayed()
+    }
+
+    @Test
+    fun graniteLabCorpusLoadsSame124WineLabelsAsGlinerLab() {
+        val context = RuntimeEnvironment.getApplication()
+        val samples = GraniteLabCorpus.load(context)
+        assertEquals(124, samples.size)
+        assertTrue(samples.all { it.included })
+        assertEquals("#2 · 158.jpg", samples.first().displayName)
     }
 
     @Test
@@ -47,7 +57,7 @@ class GraniteWorkflowTest {
     fun ocrBlockNormalizesCenterWhAndSortsTopToBottomThenLeftToRight() {
         val bottomRight = OcrBlock.fromPixelBounds("750 ML", 0.92f, 500f, 900f, 700f, 950f, 1000, 1000, OcrEngineSource.ML_KIT)
         val topCenter = OcrBlock.fromPixelBounds("Château Margaux", 0.96f, 200f, 100f, 800f, 180f, 1000, 1000, OcrEngineSource.ML_KIT)
-        val bottomLeft = OcrBlock.fromPixelBounds("13.5% ALC./VOL.", 0.90f, 100f, 900f, 350f, 950f, 1000, 1000, OcrEngineSource.PP_OCRV6)
+        val bottomLeft = OcrBlock.fromPixelBounds("13.5% ALC./VOL.", 0.90f, 100f, 900f, 350f, 950f, 1000, 1000, OcrEngineSource.ML_KIT)
 
         assertEquals(0.50f, topCenter.xCenter, 0.001f)
         assertEquals(0.14f, topCenter.yCenter, 0.001f)
