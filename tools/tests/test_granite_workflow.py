@@ -150,6 +150,8 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
 
     def test_prebuilt_granite_llama_jni_so_present_and_valid(self):
         so_path = ROOT / "app/src/main/jniLibs/arm64-v8a/libgranite_llama_jni.so"
+        cpp_path = ROOT / "app/src/main/cpp/graniteworkflow/granite_llama_jni.cpp"
+        rag_path = PKG / "GraniteDatabaseRagRetriever.kt"
         self.assertTrue(so_path.is_file(), f"Missing {so_path}")
         data = so_path.read_bytes()
         self.assertGreater(len(data), 1_000_000)
@@ -157,6 +159,13 @@ class GraniteWorkflowStructureTests(unittest.TestCase):
         self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitModel", data)
         self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComplete", data)
         self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeFreeModel", data)
+        self.assertIn(b"Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeGetLastError", data)
+        cpp = self.read(cpp_path)
+        self.assertIn("mparams.use_extra_bufts = false;", cpp)
+        self.assertIn("mparams.load_mode = LLAMA_LOAD_MODE_MMAP;", cpp)
+        rag = self.read(rag_path)
+        self.assertIn("stripLeadingProducerArticle", rag)
+        self.assertIn("effectiveProducerDistance", rag)
 
 
 if __name__ == "__main__":

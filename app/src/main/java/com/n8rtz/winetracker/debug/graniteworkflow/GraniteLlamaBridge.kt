@@ -19,6 +19,8 @@ object GraniteLlamaBridge : AutoCloseable {
     private val mutex = Mutex()
     private var modelHandle: Long = 0L
     private var loadedModelPath: String? = null
+    @Volatile
+    private var lastErrorMessage: String = ""
 
     private val nativeLoaded: Boolean by lazy {
         runCatching {
@@ -26,6 +28,7 @@ object GraniteLlamaBridge : AutoCloseable {
             Log.d(TAG, "Loaded native library lib$JNI_LIB_NAME.so")
             true
         }.getOrElse { err ->
+            lastErrorMessage = err.message ?: err.javaClass.simpleName
             Log.i(TAG, "lib$JNI_LIB_NAME.so not present in APK (${err.message}); JNI bridge inactive")
             false
         }
@@ -33,13 +36,19 @@ object GraniteLlamaBridge : AutoCloseable {
 
     fun isNativeLibraryLoaded(): Boolean = nativeLoaded
 
+    fun lastNativeError(): String {
+        if (!nativeLoaded) return lastErrorMessage
+        val nativeErr = runCatching { nativeGetLastError() }.getOrDefault("").trim()
+        return nativeErr.ifEmpty { lastErrorMessage }
+    }
+
     suspend fun generateWithGguf(
         ggufFile: File,
         prompt: String,
         gbnfGrammar: String,
         maxTokens: Int = 512,
         temperature: Float = 0.0f,
-        nCtx: Int = 4096,
+        nCtx: Int = 2048,
         nThreads: Int = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
     ): String = mutex.withLock {
         check(nativeLoaded) { "lib$JNI_LIB_NAME.so is not loaded" }
@@ -55,18 +64,29 @@ object GraniteLlamaBridge : AutoCloseable {
                 loadedModelPath = null
             }
             val handle = nativeInitModel(ggufFile.absolutePath, nCtx, nThreads)
-            check(handle != 0L) { "llama.cpp failed to initialize GGUF model at ${ggufFile.absolutePath}" }
+            if (handle == 0L) {
+                val errDetail = runCatching { nativeGetLastError() }.getOrDefault("").trim()
+                lastErrorMessage = errDetail.ifEmpty { "nativeInitModel returned 0L" }
+                error("llama.cpp failed to initialize GGUF model at ${ggufFile.name}: $lastErrorMessage")
+            }
             modelHandle = handle
             loadedModelPath = pathKey
         }
 
-        nativeComplete(
+        val out = nativeComplete(
             modelHandle = modelHandle,
             prompt = prompt,
             gbnfGrammar = gbnfGrammar,
             maxTokens = maxTokens,
             temperature = temperature
         )
+        if (out.isBlank()) {
+            val errDetail = runCatching { nativeGetLastError() }.getOrDefault("").trim()
+            if (errDetail.isNotEmpty()) {
+                lastErrorMessage = errDetail
+            }
+        }
+        out
     }
 
     override fun close() {
@@ -76,6 +96,9 @@ object GraniteLlamaBridge : AutoCloseable {
             loadedModelPath = null
         }
     }
+
+    @JvmStatic
+    private external fun nativeGetLastError(): String
 
     @JvmStatic
     private external fun nativeInitModel(

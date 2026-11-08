@@ -389,10 +389,10 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                     }
                 }
 
-                // Also perform direct FTS / exact retrieval on ProducerGazetteer + LinkedWines
-                // when TextLabSpatialPreview did not already populate producer candidates
-                if (gazetteer != null && producerCandidates.isEmpty()) {
-                    val directDeadline = SystemClock.elapsedRealtime() + 150L
+                // Also perform direct FTS + article-stripped near-match retrieval on ProducerGazetteer + LinkedWines
+                // (recovers single-word or clipped script-font spans such as "trancette" -> "La Francette")
+                if (gazetteer != null) {
+                    val directDeadline = SystemClock.elapsedRealtime() + 180L
                     val directBudget = {
                         if (SystemClock.elapsedRealtime() >= directDeadline) {
                             throw ProducerResolver.BudgetExceeded()
@@ -402,6 +402,8 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                         supplementDirectGazetteerCandidates(
                             gazetteer = gazetteer,
                             records = records,
+                            spatialFields = spatialFields,
+                            spatialStates = spatialStates,
                             producerCandidates = producerCandidates,
                             linkedWineCandidates = linkedWineCandidates,
                             checkBudget = directBudget
@@ -429,6 +431,41 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                 .distinctBy { ProducerResolver.normalize(it.name) }
                 .sortedWith(compareBy<GraniteProducerCandidate> { it.distance }.thenByDescending { "lwin" in it.sources })
                 .take(10)
+
+            // If spatial producer is blank or unresolved (e.g. "Trancette" when OCR cut off the script "F"
+            // and missed the leading "La"), canonicalize it when a unique distance <= 1 gazetteer match exists.
+            val currentSpProducer = spatialFields["producer"].orEmpty().trim()
+            val currentSpState = spatialStates["producer"].orEmpty()
+            if (currentSpState != "GREEN") {
+                val nonProducerTerms = (
+                    matchedGrapes +
+                        matchedStyles +
+                        appellationCandidates.flatMap { listOf(it.appellationOrSubregion, it.region, it.country) }
+                    ).map { ProducerResolver.normalize(it) }.filter(String::isNotBlank).toSet()
+
+                val canonicalProducer = if (currentSpProducer.isNotBlank()) {
+                    val spKey = ProducerResolver.normalize(currentSpProducer)
+                    val matching = dedupedProducers.filter { cand ->
+                        cand.distance <= 1 && (
+                            ProducerResolver.normalize(cand.matchedSpan) == spKey ||
+                                effectiveProducerDistance(spKey, ProducerResolver.normalize(cand.name)) <= 1
+                            )
+                    }
+                    matching.singleOrNull()
+                } else {
+                    val nonExcluded = dedupedProducers.filter { cand ->
+                        cand.distance <= 1 &&
+                            ProducerResolver.normalize(cand.matchedSpan) !in nonProducerTerms &&
+                            ProducerResolver.normalize(cand.name) !in nonProducerTerms
+                    }
+                    nonExcluded.singleOrNull()
+                }
+
+                if (canonicalProducer != null) {
+                    spatialFields["producer"] = canonicalProducer.name
+                    spatialStates["producer"] = "GREEN"
+                }
+            }
 
             val dedupedWines = linkedWineCandidates
                 .distinctBy { ProducerResolver.normalize(it.name) }
@@ -497,15 +534,50 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
         return records
     }
 
+    private val leadingProducerArticles = setOf(
+        "la", "le", "les", "the", "l", "el", "los", "las", "il", "lo"
+    )
+
+    private fun stripLeadingProducerArticle(normKey: String): String {
+        val parts = normKey.split(' ').filter(String::isNotEmpty)
+        return if (parts.size >= 2 && parts.first() in leadingProducerArticles) {
+            parts.drop(1).joinToString(" ")
+        } else {
+            normKey
+        }
+    }
+
+    private fun effectiveProducerDistance(queryKey: String, entityKey: String): Int {
+        val direct = ProducerResolver.producerDistance(queryKey, entityKey)
+        if (direct == 0) return 0
+        val strippedQuery = stripLeadingProducerArticle(queryKey)
+        val strippedEntity = stripLeadingProducerArticle(entityKey)
+        return if (strippedQuery.length >= 6 && strippedEntity.length >= 6) {
+            minOf(direct, ProducerResolver.producerDistance(strippedQuery, strippedEntity))
+        } else {
+            direct
+        }
+    }
+
     private fun supplementDirectGazetteerCandidates(
         gazetteer: ProducerGazetteer,
         records: List<TokenRecord>,
+        spatialFields: Map<String, String>,
+        spatialStates: Map<String, String>,
         producerCandidates: MutableList<GraniteProducerCandidate>,
         linkedWineCandidates: MutableList<GraniteLinkedWineCandidate>,
         checkBudget: () -> Unit
     ) {
         val proposals = TextLabSpatialPhrases.proposeUnconstrained(records)
-        val candidateSpans = (records.map { it.textRaw } + proposals.filter { it.sources.size in 2..3 }.map { it.phrase.mergedText })
+        val spProducerRaw = spatialFields["producer"].orEmpty().takeIf {
+            it.isNotBlank() && spatialStates["producer"] != "GREEN"
+        }
+        val rawPool = buildList {
+            if (spProducerRaw != null) add(spProducerRaw)
+            addAll(records.map { it.textRaw })
+            addAll(proposals.filter { it.sources.size in 2..3 }.map { it.phrase.mergedText })
+        }
+        val candidateSpans = rawPool
             .map { TextNorm.scrub(it) }
             .filter { it.length in 5..80 && !it.any(Char::isDigit) && '%' !in it }
             .distinctBy { ProducerResolver.normalize(it) }
@@ -517,9 +589,9 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
             checkBudget()
             val q = ProducerResolver.normalize(span)
             if (q.length < 5) continue
-            val hits = gazetteer.lookup(q, 32, checkBudget)
+            val hits = gazetteer.lookup(q, 48, checkBudget)
             for (entity in hits) {
-                val dist = ProducerResolver.producerDistance(q, entity.key)
+                val dist = effectiveProducerDistance(q, entity.key)
                 if (dist <= if (q.length >= 16) 2 else 1) {
                     matchedProducerIds += entity.id
                     producerCandidates += GraniteProducerCandidate(

@@ -186,4 +186,46 @@ class GraniteWorkflowTest {
         assertEquals("Bordeaux", outcome.structuredJson.region)
         assertEquals("Margaux", outcome.structuredJson.subregion)
     }
+
+    @Test
+    fun graniteDatabaseRagRecoversLaFrancetteWhenOcrReadsClippedScriptTrancette() = runBlocking {
+        val context = RuntimeEnvironment.getApplication()
+        val retriever = GraniteDatabaseRagRetriever()
+        val extractor = GraniteLabelExtractor()
+
+        val mlKitBlocks = listOf(
+            OcrBlock("trancette", 0.84f, RectF(0.22f, 0.24f, 0.78f, 0.34f), OcrEngineSource.ML_KIT),
+            OcrBlock("CABERNET SAUVIGNON", 0.93f, RectF(0.18f, 0.48f, 0.82f, 0.56f), OcrEngineSource.ML_KIT),
+            OcrBlock("PRODUIT DE FRANCE", 0.91f, RectF(0.25f, 0.78f, 0.75f, 0.84f), OcrEngineSource.ML_KIT),
+            OcrBlock("13% vol 750 ml", 0.90f, RectF(0.20f, 0.88f, 0.80f, 0.94f), OcrEngineSource.ML_KIT)
+        )
+
+        val ragContext = retriever.retrieve(
+            context = context,
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = emptyList(),
+            ablationMode = OcrAblationMode.ML_KIT_ONLY,
+            enabled = true
+        )
+
+        assertTrue(
+            "Expected La Francette in producerCandidates, got ${ragContext.producerCandidates}",
+            ragContext.producerCandidates.any { it.name == "La Francette" && it.distance <= 1 }
+        )
+        assertEquals("La Francette", ragContext.spatialContenderFields["producer"])
+
+        val outcome = extractor.extract(
+            context = context,
+            mlKitBlocks = mlKitBlocks,
+            ppOcrV6Blocks = emptyList(),
+            ablationMode = OcrAblationMode.ML_KIT_ONLY,
+            thinkModeEnabled = false,
+            ragContext = ragContext
+        )
+
+        assertEquals("La Francette", outcome.structuredJson.producerOrWinery)
+        assertTrue(outcome.structuredJson.varietals.contains("Cabernet Sauvignon"))
+        assertEquals("France", outcome.structuredJson.country)
+        retriever.close()
+    }
 }

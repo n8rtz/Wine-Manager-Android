@@ -60,6 +60,7 @@ class GraniteLabelExtractor : AutoCloseable {
             WINE_LABEL_JSON_GBNF
         }
 
+        var nativeFallbackReason: String? = null
         if (GraniteLlamaBridge.isNativeLibraryLoaded() && ggufFile.isFile && ggufFile.length() > 0L) {
             val rawOutput = runCatching {
                 GraniteLlamaBridge.generateWithGguf(
@@ -69,6 +70,8 @@ class GraniteLabelExtractor : AutoCloseable {
                     maxTokens = if (thinkModeEnabled) 768 else 384,
                     temperature = 0.0f
                 )
+            }.onFailure { err ->
+                nativeFallbackReason = err.message ?: GraniteLlamaBridge.lastNativeError()
             }.getOrNull()
 
             if (!rawOutput.isNullOrBlank()) {
@@ -86,7 +89,11 @@ class GraniteLabelExtractor : AutoCloseable {
                         elapsedMs = elapsed,
                         backendUsed = "llama.cpp JNI (${ggufFile.name})$ragTag"
                     )
+                } else {
+                    nativeFallbackReason = "JSON parse fallback (${rawOutput.take(80)})"
                 }
+            } else if (nativeFallbackReason == null) {
+                nativeFallbackReason = GraniteLlamaBridge.lastNativeError().ifBlank { "empty GGUF completion" }
             }
         }
 
@@ -112,10 +119,13 @@ class GraniteLabelExtractor : AutoCloseable {
                 fallback.first.toPrettyJson(2)
             },
             elapsedMs = elapsed,
-            backendUsed = if (ggufFile.isFile && ggufFile.length() > 0L) {
-                "Spatial + DB RAG Reconciler$ragTag (${ggufFile.name} staged; build libgranite_llama_jni.so for native GGUF token generation)"
-            } else {
-                "Spatial + DB RAG Reconciler$ragTag (import granite-4.2-3b-Q4_K_M.gguf into models/granite)"
+            backendUsed = when {
+                nativeFallbackReason != null ->
+                    "Spatial + DB RAG Reconciler$ragTag (JNI fallback: $nativeFallbackReason)"
+                ggufFile.isFile && ggufFile.length() > 0L ->
+                    "Spatial + DB RAG Reconciler$ragTag (${ggufFile.name} staged; build libgranite_llama_jni.so for native GGUF token generation)"
+                else ->
+                    "Spatial + DB RAG Reconciler$ragTag (import granite-4.2-3b-Q4_K_M.gguf into models/granite)"
             }
         )
     }
@@ -173,7 +183,7 @@ class GraniteLabelExtractor : AutoCloseable {
         val assistantPrefix = if (thinkModeEnabled) {
             "<|start_of_role|>assistant<|end_of_role|><think>\n"
         } else {
-            "<|start_of_role|>assistant<|end_of_role|><think>\n</think>\n"
+            "<|start_of_role|>assistant<|end_of_role|>"
         }
 
         return buildString {
@@ -249,7 +259,10 @@ class GraniteLabelExtractor : AutoCloseable {
 
         val llmProducerKey = normKey(input.producerOrWinery)
         val matchedRagProducer = if (llmProducerKey.isNotEmpty()) {
-            ragContext.producerCandidates.firstOrNull { normKey(it.name) == llmProducerKey }?.name
+            ragContext.producerCandidates.firstOrNull {
+                normKey(it.name) == llmProducerKey ||
+                    (it.distance <= 1 && normKey(it.matchedSpan) == llmProducerKey)
+            }?.name
         } else {
             null
         }
@@ -264,7 +277,10 @@ class GraniteLabelExtractor : AutoCloseable {
 
         val llmWineKey = normKey(input.wineNameOrCuvee)
         val matchedRagWine = if (llmWineKey.isNotEmpty()) {
-            ragContext.linkedWineCandidates.firstOrNull { normKey(it.name) == llmWineKey }?.name
+            ragContext.linkedWineCandidates.firstOrNull {
+                normKey(it.name) == llmWineKey ||
+                    (it.distance <= 1 && normKey(it.matchedSpan) == llmWineKey)
+            }?.name
         } else {
             null
         }
@@ -287,6 +303,16 @@ class GraniteLabelExtractor : AutoCloseable {
         val finalCountry = spCountry ?: input.country
         val finalAppellation = spSubregion ?: spRegion ?: input.appellationOrRegion
         val finalVarietals = (input.varietals + ragContext.matchedGrapes).distinct()
+        val updatedDiscrepancies = input.ocrDiscrepanciesResolved.toMutableList()
+        if (!input.producerOrWinery.isNullOrBlank() &&
+            finalProducer != null &&
+            !finalProducer.equals(input.producerOrWinery, ignoreCase = true)
+        ) {
+            val note = "Database RAG canonicalized producer '${input.producerOrWinery}' -> '$finalProducer' (ProducerGazetteer)"
+            if (note !in updatedDiscrepancies) {
+                updatedDiscrepancies += note
+            }
+        }
 
         return input.copy(
             producerOrWinery = finalProducer,
@@ -296,6 +322,7 @@ class GraniteLabelExtractor : AutoCloseable {
             appellationOrRegion = finalAppellation,
             country = finalCountry,
             isNonVintage = finalIsNonVintage,
+            ocrDiscrepanciesResolved = updatedDiscrepancies,
             region = spRegion ?: input.region,
             subregion = spSubregion ?: input.subregion
         )
@@ -407,8 +434,20 @@ class GraniteLabelExtractor : AutoCloseable {
         val spatialWineName = selectWineName(candidateIdentityLines, spatialProducer, varietals, finalAppellation, classification)
 
         val dbProducer = if (ragContext.enabled) {
-            ragContext.spatialContenderFields["producer"]?.takeIf { it.isNotBlank() }
-                ?: ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+            val spProducer = ragContext.spatialContenderFields["producer"]?.takeIf { it.isNotBlank() }
+            val spProducerGreen = ragContext.spatialContenderStates["producer"] == "GREEN"
+            val nearCandidate = ragContext.producerCandidates.firstOrNull { cand ->
+                cand.distance <= 1 && (
+                    cand.matchedSpan.equals(spProducer, ignoreCase = true) ||
+                        cand.matchedSpan.equals(spatialProducer, ignoreCase = true)
+                    )
+            }?.name
+            when {
+                spProducer != null && spProducerGreen -> spProducer
+                nearCandidate != null -> nearCandidate
+                spProducer != null -> spProducer
+                else -> ragContext.producerCandidates.firstOrNull { it.distance <= 1 }?.name
+            }
         } else {
             null
         }

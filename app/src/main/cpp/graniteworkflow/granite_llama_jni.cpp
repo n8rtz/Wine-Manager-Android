@@ -3,20 +3,60 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <chrono>
 #include <exception>
+#include <cstring>
 
 #define LOG_TAG "GraniteLlamaJNI"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+namespace {
+std::mutex g_error_mutex;
+std::string g_last_error;
+
+void set_last_error(const std::string & msg) {
+    std::lock_guard<std::mutex> lock(g_error_mutex);
+    g_last_error = msg;
+}
+
+void append_log_error(const char * text) {
+    if (!text || !*text) return;
+    std::lock_guard<std::mutex> lock(g_error_mutex);
+    if (g_last_error.size() > 1024) {
+        g_last_error.erase(0, g_last_error.size() - 512);
+    }
+    if (!g_last_error.empty() && g_last_error.back() != ' ' && g_last_error.back() != '\n') {
+        g_last_error.push_back(' ');
+    }
+    g_last_error.append(text);
+    while (!g_last_error.empty() && (g_last_error.back() == '\n' || g_last_error.back() == '\r')) {
+        g_last_error.pop_back();
+    }
+}
+} // namespace
 
 #if defined(GRANITE_HAS_LLAMA_CPP)
 #include "llama.h"
 
+namespace {
+void granite_llama_log_callback(ggml_log_level level, const char * text, void * /* user_data */) {
+    if (!text || !*text) return;
+    if (level == GGML_LOG_LEVEL_ERROR) {
+        LOGE("%s", text);
+        append_log_error(text);
+    } else if (level == GGML_LOG_LEVEL_WARN) {
+        LOGW("%s", text);
+    }
+}
+} // namespace
+
 struct GraniteLlamaSession {
     llama_model * model = nullptr;
     llama_context * ctx = nullptr;
-    int n_ctx = 4096;
+    int n_ctx = 2048;
     int n_threads = 4;
 
     ~GraniteLlamaSession() {
@@ -32,6 +72,14 @@ struct GraniteLlamaSession {
 };
 #endif
 
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeGetLastError(
+        JNIEnv * env,
+        jclass /* clazz */) {
+    std::lock_guard<std::mutex> lock(g_error_mutex);
+    return env->NewStringUTF(g_last_error.c_str());
+}
+
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitModel(
         JNIEnv * env,
@@ -41,23 +89,35 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         jint n_threads) {
 #if defined(GRANITE_HAS_LLAMA_CPP)
     try {
+        set_last_error("");
+        llama_log_set(granite_llama_log_callback, nullptr);
+
         const char * path_cstr = env->GetStringUTFChars(model_path, nullptr);
         std::string path(path_cstr ? path_cstr : "");
         if (path_cstr) env->ReleaseStringUTFChars(model_path, path_cstr);
 
         auto t0 = std::chrono::steady_clock::now();
         llama_backend_init();
+
         llama_model_params mparams = llama_model_default_params();
         mparams.n_gpu_layers = 0; // CPU arm64 NEON dotprod/fp16 inference
+        mparams.load_mode = LLAMA_LOAD_MODE_MMAP; // Zero-copy mmap directly from GGUF file
+        // Critical on Android: disable CPU_REPACK extra buffer types so weights stay in the
+        // default CPU buffer type (`is_default_buft == true`) and use zero-copy mmap instead
+        // of attempting a single >2 GB `aligned_alloc` that fails on Android's Scudo allocator.
+        mparams.use_extra_bufts = false;
 
         llama_model * model = llama_model_load_from_file(path.c_str(), mparams);
         if (!model) {
             LOGE("Failed to load GGUF model from %s", path.c_str());
+            if (g_last_error.empty()) {
+                set_last_error("llama_model_load_from_file returned null for " + path);
+            }
             return 0L;
         }
 
         llama_context_params cparams = llama_context_default_params();
-        cparams.n_ctx = n_ctx > 512 ? n_ctx : 4096;
+        cparams.n_ctx = n_ctx > 512 ? n_ctx : 2048;
         cparams.n_batch = cparams.n_ctx;
         cparams.n_ubatch = 512;
         cparams.n_threads = n_threads > 0 ? n_threads : 4;
@@ -66,6 +126,9 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         llama_context * ctx = llama_init_from_model(model, cparams);
         if (!ctx) {
             LOGE("Failed to create llama_context for %s", path.c_str());
+            if (g_last_error.empty()) {
+                set_last_error("llama_init_from_model returned null");
+            }
             llama_model_free(model);
             return 0L;
         }
@@ -83,6 +146,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         return reinterpret_cast<jlong>(session);
     } catch (const std::exception & e) {
         LOGE("Exception in nativeInitModel: %s", e.what());
+        set_last_error(std::string("Exception in nativeInitModel: ") + e.what());
         return 0L;
     }
 #else
@@ -91,6 +155,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
     (void) n_ctx;
     (void) n_threads;
     LOGE("GraniteLlamaJNI compiled without GRANITE_HAS_LLAMA_CPP");
+    set_last_error("GraniteLlamaJNI compiled without GRANITE_HAS_LLAMA_CPP");
     return 0L;
 #endif
 }
@@ -107,8 +172,10 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
 #if defined(GRANITE_HAS_LLAMA_CPP)
     try {
         (void) grammar_jstr;
+        set_last_error("");
         auto * session = reinterpret_cast<GraniteLlamaSession *>(model_handle);
         if (!session || !session->ctx || !session->model) {
+            set_last_error("Invalid GraniteLlamaSession handle");
             return env->NewStringUTF("");
         }
 
@@ -118,7 +185,9 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
 
         auto t_start = std::chrono::steady_clock::now();
         const llama_vocab * vocab = llama_model_get_vocab(session->model);
-        llama_memory_clear(llama_get_memory(session->ctx), true);
+        if (llama_memory_t mem = llama_get_memory(session->ctx)) {
+            llama_memory_clear(mem, true);
+        }
 
         const int n_prompt_max = static_cast<int>(prompt.size()) + 32;
         std::vector<llama_token> tokens(n_prompt_max);
@@ -143,6 +212,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         }
         if (n_tokens <= 0) {
             LOGE("Failed to tokenize Granite prompt");
+            set_last_error("llama_tokenize failed on prompt");
             return env->NewStringUTF("");
         }
         if (n_tokens > session->n_ctx - 128) {
@@ -151,8 +221,10 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         tokens.resize(n_tokens);
 
         llama_batch batch = llama_batch_get_one(tokens.data(), n_tokens);
-        if (llama_decode(session->ctx, batch) != 0) {
-            LOGE("llama_decode failed on prompt prefill (n_tokens=%d)", n_tokens);
+        int decode_rc = llama_decode(session->ctx, batch);
+        if (decode_rc != 0) {
+            LOGE("llama_decode failed on prompt prefill (rc=%d, n_tokens=%d)", decode_rc, n_tokens);
+            set_last_error("llama_decode failed on prompt prefill (rc=" + std::to_string(decode_rc) + ")");
             return env->NewStringUTF("");
         }
         auto t_prefill = std::chrono::steady_clock::now();
@@ -219,8 +291,10 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             }
 
             llama_batch next_batch = llama_batch_get_one(&next, 1);
-            if (llama_decode(session->ctx, next_batch) != 0) {
-                LOGE("llama_decode failed at generated token %d", i);
+            int step_rc = llama_decode(session->ctx, next_batch);
+            if (step_rc != 0) {
+                LOGE("llama_decode failed at generated token %d (rc=%d)", i, step_rc);
+                set_last_error("llama_decode failed at token " + std::to_string(i) + " (rc=" + std::to_string(step_rc) + ")");
                 break;
             }
         }
@@ -235,6 +309,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         return env->NewStringUTF(output.c_str());
     } catch (const std::exception & e) {
         LOGE("Exception in nativeComplete: %s", e.what());
+        set_last_error(std::string("Exception in nativeComplete: ") + e.what());
         return env->NewStringUTF("");
     }
 #else
@@ -243,6 +318,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
     (void) grammar_jstr;
     (void) max_tokens;
     (void) temperature;
+    set_last_error("GraniteLlamaJNI compiled without GRANITE_HAS_LLAMA_CPP");
     return env->NewStringUTF("");
 #endif
 }
