@@ -101,52 +101,53 @@ data class GraniteDatabaseRagContext(
      */
     fun toPromptRagSection(): String {
         if (!enabled) {
-            return "(Database RAG disabled by toggle)"
+            return "(RAG off)"
         }
         return buildString {
-            appendLine("1. LWIN / Expanded Producer Gazetteer Candidates (producers-expanded.sqlite — FTS5 trigram + subspan similarity):")
+            appendLine("Producers:")
             if (producerCandidates.isEmpty()) {
-                appendLine("   (No close producer matches in SQLite gazetteer)")
+                appendLine("- (none)")
             } else {
-                producerCandidates.take(6).forEach { p ->
-                    val countryPart = if (p.country.isNotBlank()) ", country=${p.country}" else ""
+                producerCandidates.take(5).forEach { p ->
+                    val countryPart = if (p.country.isNotBlank()) ", ${p.country}" else ""
                     val countryTag = if (p.countryCorroborated) " [COUNTRY_MATCHES_LABEL]" else ""
                     val wineTag = if (p.corroboratedWines.isNotEmpty()) {
                         " [CORROBORATED_BY_LINKED_WINE: ${p.corroboratedWines.take(2).joinToString(", ") { "\"$it\"" }}]"
                     } else {
                         ""
                     }
-                    appendLine("   - \"${p.name}\" (dist=${p.distance}, span=\"${p.matchedSpan}\"$countryPart)$countryTag$wineTag")
+                    appendLine("- \"${p.name}\" (d=${p.distance}$countryPart)$countryTag$wineTag")
                 }
             }
 
-            appendLine("2. Producer-Linked & Reverse-Matched Wine/Cuvée Candidates (wines.sqlite / LWIN7):")
+            appendLine("Linked Wines:")
             if (linkedWineCandidates.isEmpty()) {
-                appendLine("   (No linked wine matches in SQLite wine index)")
+                appendLine("- (none)")
             } else {
-                linkedWineCandidates.take(6).forEach { w ->
+                linkedWineCandidates.take(5).forEach { w ->
                     val prodPart = if (w.producerName.isNotBlank()) ", producer=\"${w.producerName}\"" else ""
-                    appendLine("   - \"${w.name}\" (dist=${w.distance}, span=\"${w.matchedSpan}\"$prodPart)")
+                    appendLine("- \"${w.name}\" (d=${w.distance}$prodPart)")
                 }
             }
 
-            appendLine("3. Appellation, Region & Country Hierarchy Candidates (ReferenceWineCatalog / BundledOrigins / SqliteWineKnowledgeBase):")
+            appendLine("Appellations:")
             if (appellationCandidates.isEmpty()) {
-                appendLine("   (No catalog appellation matches)")
+                appendLine("- (none)")
             } else {
-                appellationCandidates.take(5).forEach { a ->
+                appellationCandidates.take(4).forEach { a ->
                     val sub = a.appellationOrSubregion.ifBlank { "(none)" }
                     val reg = a.region.ifBlank { "(none)" }
                     val ctry = a.country.ifBlank { "(none)" }
-                    appendLine("   - Subregion/Appellation=\"$sub\" -> Region=\"$reg\", Country=\"$ctry\" (dist=${a.distance}, span=\"${a.matchedSpan}\")")
+                    appendLine("- Subregion/Appellation=\"$sub\" -> Region=\"$reg\", Country=\"$ctry\" (d=${a.distance})")
                 }
             }
 
-            appendLine("4. Grape Varietals & Wine Styles Catalog (BundledGrapes / BundledWineStyles):")
-            val grapesText = if (matchedGrapes.isEmpty()) "(none)" else matchedGrapes.joinToString(", ")
-            val stylesText = if (matchedStyles.isEmpty()) "(none)" else matchedStyles.joinToString(", ")
-            appendLine("   - Grapes: $grapesText")
-            appendLine("   - Styles/Classifications: $stylesText")
+            if (matchedGrapes.isNotEmpty()) {
+                appendLine("Grapes: ${matchedGrapes.take(5).joinToString(", ")}")
+            }
+            if (matchedStyles.isNotEmpty()) {
+                appendLine("Styles: ${matchedStyles.take(4).joinToString(", ")}")
+            }
         }.trimEnd()
     }
 }

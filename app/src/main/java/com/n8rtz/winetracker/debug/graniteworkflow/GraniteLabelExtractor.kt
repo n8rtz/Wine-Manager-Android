@@ -79,7 +79,7 @@ class GraniteLabelExtractor : AutoCloseable {
                     ggufFile = ggufFile,
                     prompt = prompt,
                     gbnfGrammar = grammar,
-                    maxTokens = if (thinkModeEnabled) 640 else 512,
+                    maxTokens = if (thinkModeEnabled) 360 else 240,
                     temperature = 0.0f
                 )
             }.onFailure { err ->
@@ -158,38 +158,6 @@ class GraniteLabelExtractor : AutoCloseable {
         thinkModeEnabled: Boolean = DEFAULT_THINK_MODE_ENABLED,
         ragContext: GraniteDatabaseRagContext = GraniteDatabaseRagContext(enabled = false)
     ): String {
-        val mlKitFormatted = if (!ablationMode.runsMlKit) {
-            "(Disabled by ablation mode: ${ablationMode.displayLabel})"
-        } else if (mlKitBlocks.isEmpty()) {
-            "(No text detected by ML Kit)"
-        } else {
-            mlKitBlocks.joinToString("\n") { b ->
-                String.format(
-                    Locale.US,
-                    "- %s conf=%.2f text=\"%s\"",
-                    b.formatCenterWhTag(),
-                    b.confidence,
-                    b.text
-                )
-            }
-        }
-
-        val ppOcrFormatted = if (!ablationMode.runsPpOcrV6) {
-            "(Disabled by ablation mode: ${ablationMode.displayLabel})"
-        } else if (ppOcrV6Blocks.isEmpty()) {
-            "(No text detected by PP-OCRv6)"
-        } else {
-            ppOcrV6Blocks.joinToString("\n") { b ->
-                String.format(
-                    Locale.US,
-                    "- %s conf=%.2f text=\"%s\"",
-                    b.formatCenterWhTag(),
-                    b.confidence,
-                    b.text
-                )
-            }
-        }
-
         val alignedReadingLines = buildAlignedReadingLinesSection(
             mlKitBlocks = mlKitBlocks,
             ppOcrV6Blocks = ppOcrV6Blocks,
@@ -197,15 +165,15 @@ class GraniteLabelExtractor : AutoCloseable {
         )
 
         val thinkingDirective = if (thinkModeEnabled) {
-            "Thinking mode is ON: write AT MOST 3 short bullet lines (under 40 words total) inside <think>...</think>, then output ONLY the JSON object."
+            "Thinking ON: <=30 words inside <think>...</think>, then compact single-line JSON."
         } else {
-            "Thinking mode is OFF: output ONLY the JSON object immediately. Keep \"ocr_discrepancies_resolved\" to [] or at most 2 terse items (<= 8 words each, ONLY real misreads/clippings, NEVER routine spacing/punctuation), and \"confidence_notes\" to null or <= 10 words."
+            "Thinking OFF: emit compact single-line JSON immediately."
         }
 
         val assistantPrefix = if (thinkModeEnabled) {
             "<|start_of_role|>assistant<|end_of_role|><think>\n"
         } else {
-            "<|start_of_role|>assistant<|end_of_role|>"
+            "<|start_of_role|>assistant<|end_of_role|>{\"ocr_discrepancies_resolved\":"
         }
 
         return buildString {
@@ -215,16 +183,11 @@ class GraniteLabelExtractor : AutoCloseable {
             append(thinkingDirective)
             append("<|end_of_text|>\n")
             append("<|start_of_role|>user<|end_of_role|>")
-            append("OCR Mode: ${ablationMode.displayLabel}\n\n")
-            append("=== Spatially Aligned Cross-Engine Reading Lines (Visual Hierarchy & Anomaly Flags) ===\n")
+            append("=== Spatially Aligned Cross-Engine Reading Lines (${ablationMode.displayLabel}) ===\n")
             append(alignedReadingLines)
-            if (ablationMode != OcrAblationMode.DUAL) {
-                append("\n\n=== Active Single-Engine Raw Coordinates ===\n")
-                append(if (ablationMode.runsMlKit) mlKitFormatted else ppOcrFormatted)
-            }
-            append("\n\n=== Retrieved Offline Wine Database Candidates (RAG Context — Same Databases as GLiNER Lab) ===\n")
+            append("\n=== Retrieved Offline Wine Database Candidates (RAG Context) ===\n")
             append(ragContext.toPromptRagSection())
-            append("\n\nExtract the JSON object concisely.")
+            append("\nReturn compact JSON.")
             append("<|end_of_text|>\n")
             append(assistantPrefix)
         }
@@ -312,7 +275,34 @@ class GraniteLabelExtractor : AutoCloseable {
             }
         }
 
-        val ordered = pairedLines.sortedWith(compareBy<PairedLine> { it.yCenter }.thenBy { it.xCenter })
+        val filteredPaired = pairedLines.filterNot { line ->
+            val combined = "${line.mlBlock?.text.orEmpty()} ${line.ppBlock?.text.orEmpty()}".trim()
+            BOILERPLATE_SKIP_REGEX.containsMatchIn(combined) &&
+                !ABV_REGEX.containsMatchIn(combined) &&
+                !VOLUME_ML_REGEX.containsMatchIn(combined) &&
+                !VOLUME_CL_REGEX.containsMatchIn(combined) &&
+                !VOLUME_L_REGEX.containsMatchIn(combined)
+        }.ifEmpty { pairedLines }
+
+        // Keep at most 22 most informative lines on dense photos so prompts stay ~400-550 tokens
+        val cappedPaired = if (filteredPaired.size <= 22) {
+            filteredPaired
+        } else {
+            filteredPaired
+                .sortedByDescending { line ->
+                    val combined = "${line.mlBlock?.text.orEmpty()} ${line.ppBlock?.text.orEmpty()}"
+                    val hasFactCue = VINTAGE_YEAR_REGEX.containsMatchIn(combined) ||
+                        ABV_REGEX.containsMatchIn(combined) ||
+                        VOLUME_ML_REGEX.containsMatchIn(combined) ||
+                        VOLUME_CL_REGEX.containsMatchIn(combined)
+                    val zoneBonus = if (line.yCenter < 0.72f) 1.0f else 0.0f
+                    val factBonus = if (hasFactCue) 1.5f else 0.0f
+                    (line.maxHeight / medianH) + zoneBonus + factBonus
+                }
+                .take(22)
+        }
+
+        val ordered = cappedPaired.sortedWith(compareBy<PairedLine> { it.yCenter }.thenBy { it.xCenter })
         return ordered.mapIndexed { idx, line ->
             val zone = when {
                 line.yCenter < 0.36f -> "TOP_HEADER"
@@ -334,45 +324,45 @@ class GraniteLabelExtractor : AutoCloseable {
                 firstAlpha != null &&
                 firstAlpha.isLowerCase()
             ) {
-                anomalies += "LOWERCASE_INITIAL_ON_HEADER: possible clipped capital/article or script misread"
+                anomalies += "LOWERCASE_INITIAL_ON_HEADER"
             }
             if (line.mlBlock != null && line.ppBlock != null) {
                 val minW = minOf(line.mlBlock.width, line.ppBlock.width).coerceAtLeast(0.01f)
                 val maxW = maxOf(line.mlBlock.width, line.ppBlock.width)
                 if (maxW / minW >= 1.25f) {
-                    anomalies += "WIDTH_MISMATCH: one engine clipped outer chars/words"
+                    anomalies += "WIDTH_MISMATCH"
                 }
             }
             val leftEdge = minOf(line.mlBlock?.normBbox?.left ?: 1f, line.ppBlock?.normBbox?.left ?: 1f)
             val rightEdge = maxOf(line.mlBlock?.normBbox?.right ?: 0f, line.ppBlock?.normBbox?.right ?: 0f)
             if (leftEdge <= 0.05f || rightEdge >= 0.95f) {
-                anomalies += "BOTTLE_EDGE_MARGIN"
+                anomalies += "EDGE_CLIP"
             }
 
             val readingsText = when {
                 line.mlBlock != null && line.ppBlock != null -> {
-                    val mlText = line.mlBlock.text.trim()
-                    val ppText = line.ppBlock.text.trim()
-                    if (mlText.equals(ppText, ignoreCase = false)) {
-                        "AGREE: \"$mlText\" (conf=${String.format(Locale.US, "%.2f/%.2f", line.mlBlock.confidence, line.ppBlock.confidence)})"
+                    val mlText = compactOcrText(line.mlBlock.text)
+                    val ppText = compactOcrText(line.ppBlock.text)
+                    if (mlText.equals(ppText, ignoreCase = true) && anomalies.isEmpty()) {
+                        val preferred = if (mlText.any { it.isLowerCase() } && ppText.all { !it.isLowerCase() }) mlText else ppText
+                        "\"$preferred\""
                     } else {
-                        "CONFLICT: MLKit=\"$mlText\" (conf=${String.format(Locale.US, "%.2f", line.mlBlock.confidence)}, w=${String.format(Locale.US, "%.2f", line.mlBlock.width)}) vs PP-OCRv6=\"$ppText\" (conf=${String.format(Locale.US, "%.2f", line.ppBlock.confidence)}, w=${String.format(Locale.US, "%.2f", line.ppBlock.width)})"
+                        "CONFLICT: MLKit=\"$mlText\" (w=${String.format(Locale.US, "%.2f", line.mlBlock.width)}) vs PP-OCRv6=\"$ppText\" (w=${String.format(Locale.US, "%.2f", line.ppBlock.width)})"
                     }
                 }
                 line.mlBlock != null ->
-                    "MLKit-only: \"${line.mlBlock.text.trim()}\" (conf=${String.format(Locale.US, "%.2f", line.mlBlock.confidence)}, w=${String.format(Locale.US, "%.2f", line.mlBlock.width)})"
+                    "MLKit=\"${compactOcrText(line.mlBlock.text)}\""
                 else -> {
                     val pp = line.ppBlock!!
-                    "PP-OCRv6-only: \"${pp.text.trim()}\" (conf=${String.format(Locale.US, "%.2f", pp.confidence)}, w=${String.format(Locale.US, "%.2f", pp.width)})"
+                    "PP-OCRv6=\"${compactOcrText(pp.text)}\""
                 }
             }
-            val anomalySuffix = if (anomalies.isEmpty()) "" else " [${anomalies.joinToString("; ")}]"
+            val anomalySuffix = if (anomalies.isEmpty()) "" else " [${anomalies.joinToString(",")}]"
             String.format(
                 Locale.US,
-                "Line %d [y=%.2f, x=%.2f, scale=%.1fx %s, zone=%s]: %s%s",
+                "L%d [y=%.2f, %.1fx %s, %s]: %s%s",
                 idx + 1,
                 line.yCenter,
-                line.xCenter,
                 scale,
                 prominence,
                 zone,
@@ -380,6 +370,11 @@ class GraniteLabelExtractor : AutoCloseable {
                 anomalySuffix
             )
         }.joinToString("\n")
+    }
+
+    private fun compactOcrText(raw: String): String {
+        val collapsed = raw.replace(Regex("\\s+"), " ").trim()
+        return if (collapsed.length <= 90) collapsed else collapsed.take(90)
     }
 
     internal fun extractThinkContent(rawOutput: String): String? {
@@ -998,20 +993,16 @@ class GraniteLabelExtractor : AutoCloseable {
         const val DEFAULT_THINK_MODE_ENABLED = false
 
         val SYSTEM_PROMPT = """
-You are an expert on-device wine label extraction and OCR reconciliation engine (IBM Granite 4.2 3B).
-Inputs:
-1. Spatially Aligned Cross-Engine Reading Lines pairing ML Kit v2 and PP-OCRv6 with scale (PRIMARY_DISPLAY, SUBHEADER, BODY, FINE_PRINT), zone (TOP_HEADER, UPPER_MAIN, MID_BODY, BOTTOM_LEGAL), and anomaly flags (LOWERCASE_INITIAL_ON_HEADER, WIDTH_MISMATCH, BOTTLE_EDGE_MARGIN).
-2. Retrieved Offline Wine Database Candidates (RAG) from SQLite Producer Gazetteer, Producer-Linked Wine Index (LWIN7), Origins, and Grapes ([COUNTRY_MATCHES_LABEL], [CORROBORATED_BY_LINKED_WINE], producer="...").
-
-STRICT RULES:
-1. Concise Reason-Then-Extract: Populate "ocr_discrepancies_resolved" ([] or AT MOST 2 terse items <= 8 words each ONLY when reconstructing a real misread/clipped entity, NEVER routine spacing/punctuation) and "confidence_notes" (null or <= 10 words) FIRST, then geography, varietals, producer, and wine_name.
-2. Spatial Hierarchy: TOP_HEADER/UPPER_MAIN (y 0.08..0.55, PRIMARY_DISPLAY/SUBHEADER) -> producer_or_winery & wine_name_or_cuvee; MID_BODY (y 0.40..0.75) -> appellation/region/subregion, varietals, classification, vintage; BOTTOM_LEGAL (y > 0.75) -> abv_percentage, bottle_volume_ml, country/legal.
-3. Dynamic Reconstruction of Incomplete or Misread OCR: Reconstruct clipped prefixes/words or misread script capitals/ligatures (flagged with [LOWERCASE_INITIAL_ON_HEADER], [WIDTH_MISMATCH], [BOTTLE_EDGE_MARGIN]) using cross-engine comparison, wine knowledge, and RAG candidates.
-4. 3-Level Geography: Resolve "country", "region" (broad state/wine region, e.g. "Bordeaux", "California", "Tuscany"), "subregion" (specific AOC/DOC/DOCG/AVA/village, e.g. "Margaux", "Napa Valley"), and "appellation_or_region" (most specific printed appellation/region).
-5. Diacritics & Zero Hallucination: Restore proper European diacritics ("Château", "Côtes du Rhône", "Saint-Émilion", "Spätlese", "Crémant"). Return null (or []) when absent.
-6. Non-Vintage & Sparkling: If "NV"/"Non-Vintage" appears OR a sparkling wine (Champagne, Brut, Crémant, Prosecco, Cava, Sekt) has no printed year, set "vintage": null and "is_non_vintage": true.
-7. Database Candidate Grounding (RAG) & Cuvée vs Varietal: Prefer [CORROBORATED_BY_LINKED_WINE] and [COUNTRY_MATCHES_LABEL] candidates. Use the cuvée/château/blend title for "wine_name_or_cuvee", or the primary varietal when varietal-labeled without a fanciful cuvée.
-8. Output ONLY strict JSON in this exact key order:
+You are IBM Granite 4.2 3B, an offline wine label OCR reconciliation engine.
+Inputs: Spatially Aligned Cross-Engine Reading Lines (ML Kit + PP-OCRv6 with scale, zone, and flags LOWERCASE_INITIAL_ON_HEADER, WIDTH_MISMATCH, EDGE_CLIP) plus Database Candidate Grounding (RAG) from LWIN producers, linked wines, origins, and grapes.
+Rules:
+1. Reason-Then-Extract: Keep "ocr_discrepancies_resolved" to [] (or <=2 items <=6 words ONLY for real clipped/misread names) and "confidence_notes" to null.
+2. Spatial: TOP_HEADER/UPPER_MAIN + PRIMARY_DISPLAY/SUBHEADER -> producer_or_winery & wine_name_or_cuvee; MID_BODY -> appellation/region/subregion, varietals, classification, vintage; BOTTOM_LEGAL -> abv_percentage, bottle_volume_ml, country.
+3. Dynamic Reconstruction of Incomplete or Misread OCR: Reconstruct clipped/misread headers ([LOWERCASE_INITIAL_ON_HEADER], [WIDTH_MISMATCH]) using cross-engine text and Database Candidate Grounding (RAG) ([CORROBORATED_BY_LINKED_WINE], [COUNTRY_MATCHES_LABEL]).
+4. Geography: country, broad region (e.g. Bordeaux, California), specific subregion (e.g. Margaux, Napa Valley), and appellation_or_region.
+5. Restore European diacritics (Château, Côtes du Rhône, Saint-Émilion, Spätlese, Crémant). Never guess absent fields (use null / []).
+6. Sparkling (Champagne, Brut, Crémant, Prosecco, Cava, Sekt) without a year OR explicit "NV" -> "vintage":null, "is_non_vintage":true.
+7. Output ONE compact single-line JSON object in this exact key order:
 {"ocr_discrepancies_resolved":[],"confidence_notes":null,"country":null,"region":null,"subregion":null,"appellation_or_region":null,"varietals":[],"classification":null,"vintage":null,"is_non_vintage":false,"abv_percentage":null,"bottle_volume_ml":null,"producer_or_winery":null,"wine_name_or_cuvee":null}
 """.trimIndent()
 
@@ -1105,6 +1096,11 @@ ws ::= [ \t\n\r]*
 
         private val FINE_PRINT_REGEX = Regex(
             "(\\bALC\\.?\\s*/?\\s*VOL|\\b\\d{1,2}(?:[.,]\\d)?\\s*%|\\b(750|375|1500)\\s*ML\\b|\\b75\\s*CL\\b|\\bCONTAINS\\s+SULFITES\\b|\\bIMPORTED\\s+BY\\b|\\bGOVERNMENT\\s+WARNING\\b|\\bMIS\\s+EN\\s+BOUTEILLE\\b|\\bPRODUCE\\s+OF\\b|\\bPRODUCT\\s+OF\\b)",
+            RegexOption.IGNORE_CASE
+        )
+
+        private val BOILERPLATE_SKIP_REGEX = Regex(
+            "(\\bGOVERNMENT\\s+WARNING\\b|\\bSURGEON\\s+GENERAL\\b|\\bACCORDING\\s+TO\\s+THE\\b|\\bBIRTH\\s+DEFECTS\\b|\\bIMPAIRS\\s+YOUR\\s+ABILITY\\b|\\bHEALTH\\s+PROBLEMS\\b|\\bCONTAINS\\s+SULFITES\\b|\\bWWW\\.[A-Z0-9-]+\\.)",
             RegexOption.IGNORE_CASE
         )
 

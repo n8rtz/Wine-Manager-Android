@@ -109,38 +109,19 @@ bool granite_abort_callback(void * /* user_data */) {
     return g_abort_requested.load(std::memory_order_relaxed);
 }
 
-int decode_tokens_chunked(
+int decode_prompt_single_pass(
         llama_context * ctx,
         llama_token * tokens,
         int total_tokens,
         const char * phase_label) {
-    const int kChunk = 64;
-    int offset = 0;
-    while (offset < total_tokens) {
-        if (g_abort_requested.load(std::memory_order_relaxed)) {
-            return -2;
-        }
-        const int step = std::min(kChunk, total_tokens - offset);
-        const int done_after = offset + step;
-        const int pct = (done_after * 100) / std::max(1, total_tokens);
-        char buf[160];
-        std::snprintf(
-                buf,
-                sizeof(buf),
-                "%s %d/%d tok (%d%%)",
-                phase_label,
-                done_after,
-                total_tokens,
-                pct);
-        set_progress_stage(buf, true);
-        llama_batch chunk_batch = llama_batch_get_one(tokens + offset, step);
-        const int rc = llama_decode(ctx, chunk_batch);
-        if (rc != 0) {
-            return rc;
-        }
-        offset += step;
+    if (g_abort_requested.load(std::memory_order_relaxed)) {
+        return -2;
     }
-    return 0;
+    char buf[160];
+    std::snprintf(buf, sizeof(buf), "%s (%d tok)", phase_label, total_tokens);
+    set_progress_stage(buf, true);
+    llama_batch batch = llama_batch_get_one(tokens, total_tokens);
+    return llama_decode(ctx, batch);
 }
 
 void granite_llama_log_callback(ggml_log_level level, const char * text, void * /* user_data */) {
@@ -157,7 +138,7 @@ void granite_llama_log_callback(ggml_log_level level, const char * text, void * 
 struct GraniteLlamaSession {
     llama_model * model = nullptr;
     llama_context * ctx = nullptr;
-    int n_ctx = 2048;
+    int n_ctx = 3072;
     int n_threads = 4;
     std::vector<llama_token> cached_prefix_tokens;
     std::vector<uint8_t> cached_prefix_state;
@@ -239,8 +220,8 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         }
 
         llama_context_params cparams = llama_context_default_params();
-        cparams.n_ctx = (n_ctx >= 1024 && n_ctx <= 4096) ? n_ctx : 2048;
-        cparams.n_batch = std::min<uint32_t>(cparams.n_ctx, 1024);
+        cparams.n_ctx = (n_ctx >= 1024 && n_ctx <= 4096) ? n_ctx : 3072;
+        cparams.n_batch = std::min<uint32_t>(cparams.n_ctx, 2048);
         cparams.n_ubatch = 512;
         // Critical RAM optimization: we only ever sample logits on the single final prompt/step token.
         // Leaving n_outputs_max == 0 allocates n_batch * n_vocab * 4 bytes (~1.64 GB for 4096 * 100,352)!
@@ -249,7 +230,9 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeInitMo
         cparams.abort_callback = granite_abort_callback;
         cparams.abort_callback_data = nullptr;
         cparams.n_threads = n_threads > 0 ? n_threads : 4;
-        cparams.n_threads_batch = cparams.n_threads;
+        // Multi-token GEMM prefill is compute-bound (can use up to 6 cores cleanly), while
+        // 1-token autoregressive decode is bandwidth-bound (4 big/prime cores avoids little-core stalls).
+        cparams.n_threads_batch = std::max<int32_t>(cparams.n_threads, std::min<int32_t>(6, cparams.n_threads + 2));
 
         set_progress_stage("initializing KV + Mamba-2 context (" + std::to_string(cparams.n_threads) + " threads)...", false);
         llama_context * ctx = llama_init_from_model(model, cparams);
@@ -346,14 +329,56 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             set_last_error("llama_tokenize failed on prompt");
             return env->NewStringUTF("");
         }
-        const int gen_reserve = std::max(128, std::min(512, static_cast<int>(max_tokens > 0 ? max_tokens : 512)));
-        if (n_tokens > session->n_ctx - gen_reserve) {
-            n_tokens = session->n_ctx - gen_reserve;
+        const int gen_reserve = std::max(128, std::min(384, static_cast<int>(max_tokens > 0 ? max_tokens : 256)));
+        const int max_prompt_tokens = session->n_ctx - gen_reserve;
+        if (n_tokens > max_prompt_tokens) {
+            // CRITICAL: NEVER blindly chop the tail of `tokens`! Chopping the tail removes
+            // `<|end_of_text|>\n<|start_of_role|>assistant<|end_of_role|>{"ocr_discrepancies_resolved":`
+            // and causes the LLM to autocomplete fake OCR lines instead of answering as assistant!
+            const std::string assistant_marker = "<|end_of_text|>\n<|start_of_role|>assistant<|end_of_role|>";
+            const size_t ass_pos = prompt.rfind(assistant_marker);
+            bool spliced = false;
+            if (ass_pos != std::string::npos) {
+                const std::string tail_str = "\n" + prompt.substr(ass_pos);
+                std::vector<llama_token> tail_tokens(static_cast<int>(tail_str.size()) + 16);
+                int n_tail = llama_tokenize(
+                        vocab,
+                        tail_str.c_str(),
+                        static_cast<int32_t>(tail_str.size()),
+                        tail_tokens.data(),
+                        static_cast<int32_t>(tail_tokens.size()),
+                        false,
+                        true);
+                if (n_tail < 0) {
+                    tail_tokens.resize(-n_tail);
+                    n_tail = llama_tokenize(
+                            vocab,
+                            tail_str.c_str(),
+                            static_cast<int32_t>(tail_str.size()),
+                            tail_tokens.data(),
+                            static_cast<int32_t>(tail_tokens.size()),
+                            false,
+                            true);
+                }
+                if (n_tail > 0 && n_tail < max_prompt_tokens - 64) {
+                    tail_tokens.resize(n_tail);
+                    const int keep_head = max_prompt_tokens - n_tail;
+                    tokens.resize(keep_head);
+                    tokens.insert(tokens.end(), tail_tokens.begin(), tail_tokens.end());
+                    n_tokens = static_cast<int>(tokens.size());
+                    spliced = true;
+                    LOGW("Prompt exceeded %d tokens; spliced %d head + %d assistant-tail tokens",
+                         max_prompt_tokens, keep_head, n_tail);
+                }
+            }
+            if (!spliced) {
+                tokens.resize(max_prompt_tokens);
+                n_tokens = max_prompt_tokens;
+            }
         }
-        tokens.resize(n_tokens);
 
         // Identify the static system-prompt prefix up to "<|start_of_role|>user<|end_of_role|>"
-        // so consecutive bottle scans reuse its KV + Mamba-2 recurrent state instead of re-prefilling.
+        // so consecutive bottle scans reuse its KV + Mamba-2 recurrent state in 1 single pass.
         int n_prefix = 0;
         const std::string user_role_marker = "<|start_of_role|>user<|end_of_role|>";
         const size_t marker_pos = prompt.find(user_role_marker);
@@ -394,13 +419,11 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         if (n_prefix > 0 &&
             session->cached_prefix_tokens.size() == static_cast<size_t>(n_prefix) &&
             std::equal(session->cached_prefix_tokens.begin(), session->cached_prefix_tokens.end(), tokens.begin())) {
-            // 1) Try zero-copy partial KV cache trim (succeeds on pure Transformer architectures)
             if (mem &&
                 llama_memory_seq_rm(mem, 0, n_prefix, -1) &&
                 llama_memory_seq_pos_max(mem, 0) == n_prefix - 1) {
                 prefix_reused = true;
             } else if (!session->cached_prefix_state.empty()) {
-                // 2) Hybrid Mamba-2 + Attention fallback (Granite 4.2): restore cached prefix sequence snapshot
                 if (mem) {
                     llama_memory_clear(mem, false);
                 }
@@ -420,14 +443,14 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
         if (prefix_reused) {
             const int n_suffix = n_tokens - n_prefix;
             g_compute_ops.store(0, std::memory_order_relaxed);
-            decode_rc = decode_tokens_chunked(
+            decode_rc = decode_prompt_single_pass(
                     session->ctx,
                     tokens.data() + n_prefix,
                     n_suffix,
-                    "prefilling label (cached prefix)");
+                    "prefilling label");
             prefilled_tokens = n_suffix;
             if (decode_rc != 0 && !g_abort_requested.load(std::memory_order_relaxed)) {
-                LOGW("Suffix prefill failed after prefix restore (rc=%d); falling back to full prefill", decode_rc);
+                LOGW("Suffix prefill failed after prefix restore (rc=%d); falling back to single-pass prefill", decode_rc);
                 prefix_reused = false;
                 session->cached_prefix_tokens.clear();
                 session->cached_prefix_state.clear();
@@ -443,7 +466,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
 
             if (n_prefix > 0 && n_prefix < n_tokens) {
                 g_compute_ops.store(0, std::memory_order_relaxed);
-                decode_rc = decode_tokens_chunked(
+                decode_rc = decode_prompt_single_pass(
                         session->ctx,
                         tokens.data(),
                         n_prefix,
@@ -451,7 +474,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
                 if (decode_rc == 0) {
                     session->cached_prefix_tokens.assign(tokens.begin(), tokens.begin() + n_prefix);
                     const size_t state_size = llama_state_seq_get_size(session->ctx, 0);
-                    if (state_size > 0 && state_size <= 64ULL * 1024ULL * 1024ULL) {
+                    if (state_size > 0 && state_size <= 32ULL * 1024ULL * 1024ULL) {
                         session->cached_prefix_state.resize(state_size);
                         const size_t written = llama_state_seq_get_data(
                                 session->ctx,
@@ -466,7 +489,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
                     }
                     const int n_suffix = n_tokens - n_prefix;
                     g_compute_ops.store(0, std::memory_order_relaxed);
-                    decode_rc = decode_tokens_chunked(
+                    decode_rc = decode_prompt_single_pass(
                             session->ctx,
                             tokens.data() + n_prefix,
                             n_suffix,
@@ -474,7 +497,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
                 }
             } else {
                 g_compute_ops.store(0, std::memory_order_relaxed);
-                decode_rc = decode_tokens_chunked(
+                decode_rc = decode_prompt_single_pass(
                         session->ctx,
                         tokens.data(),
                         n_tokens,
@@ -512,20 +535,26 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
             prompt.rfind("<think>\n") != std::string::npos &&
             prompt.rfind("</think>") == std::string::npos;
 
-        std::string output;
-        const int limit = max_tokens > 0 ? max_tokens : 512;
+        const std::string json_prefill_prefix = "{\"ocr_discrepancies_resolved\":";
+        const bool has_json_prefill =
+            !expect_closing_think &&
+            prompt.size() >= json_prefill_prefix.size() &&
+            prompt.compare(prompt.size() - json_prefill_prefix.size(), json_prefill_prefix.size(), json_prefill_prefix) == 0;
+
+        std::string output = has_json_prefill ? json_prefill_prefix : "";
+        const int limit = max_tokens > 0 ? max_tokens : 256;
         int generated = 0;
-        int json_brace_depth = 0;
-        bool json_started = false;
+        int json_brace_depth = has_json_prefill ? 1 : 0;
+        bool json_started = has_json_prefill;
         bool in_json_string = false;
         bool json_escape = false;
 
         for (int i = 0; i < limit; ++i) {
-            // Guardrail for <think> mode: if the model hasn't closed </think> after 80 tokens,
-            // inject "\n</think>\n" so it immediately emits the JSON object instead of exhausting max_tokens.
-            if (expect_closing_think && i == 80 && output.find("</think>") == std::string::npos) {
-                const std::string close_tag = "\n</think>\n";
-                std::vector<llama_token> close_toks(16);
+            // Guardrail for <think> mode: if the model hasn't closed </think> after 60 tokens,
+            // inject "\n</think>\n{\"ocr_discrepancies_resolved\":" so it immediately emits compact JSON.
+            if (expect_closing_think && i == 60 && output.find("</think>") == std::string::npos) {
+                const std::string close_tag = "\n</think>\n{\"ocr_discrepancies_resolved\":";
+                std::vector<llama_token> close_toks(32);
                 int n_close = llama_tokenize(
                         vocab,
                         close_tag.c_str(),
@@ -537,6 +566,10 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
                 if (n_close > 0) {
                     close_toks.resize(n_close);
                     output.append(close_tag);
+                    json_started = true;
+                    json_brace_depth = 1;
+                    in_json_string = false;
+                    json_escape = false;
                     llama_batch close_batch = llama_batch_get_one(close_toks.data(), n_close);
                     if (llama_decode(session->ctx, close_batch) != 0) {
                         break;
@@ -588,7 +621,7 @@ Java_com_n8rtz_winetracker_debug_graniteworkflow_GraniteLlamaBridge_nativeComple
                     std::snprintf(
                             status_buf,
                             sizeof(status_buf),
-                            "<think> %d/80 tok (%.1f tok/s)",
+                            "<think> %d/60 tok (%.1f tok/s)",
                             generated,
                             tps);
                 } else {

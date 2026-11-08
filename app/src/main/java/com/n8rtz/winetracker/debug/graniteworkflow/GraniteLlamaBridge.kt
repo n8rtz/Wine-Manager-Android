@@ -61,9 +61,9 @@ object GraniteLlamaBridge : AutoCloseable {
         ggufFile: File,
         prompt: String,
         gbnfGrammar: String,
-        maxTokens: Int = 512,
+        maxTokens: Int = 256,
         temperature: Float = 0.0f,
-        nCtx: Int = 2048,
+        nCtx: Int = 3072,
         nThreads: Int = Runtime.getRuntime().availableProcessors().let { cores ->
             // Target performance (Big/Prime) cores on Android big.LITTLE SoCs so ggml barriers
             // do not stall waiting on slow in-order efficiency cores.
