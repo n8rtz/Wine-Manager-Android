@@ -29,10 +29,11 @@ BODY_END = {
 }
 
 # Screens that keep a pinned back/action bar; those bars must scroll away instead of freezing.
+# AddWineScreen is exempt: camera-first is full-bleed with no top bar (see
+# test_add_wine_is_full_bleed_camera_first_with_no_top_bar below).
 SCROLLING_TOP_BAR_SCREENS = (
     "ParetoScreen.kt",
     "TastingNoteEditorScreen.kt",
-    "AddWineScreen.kt",
     "WineEditScreen.kt",
     "AppInfoScreen.kt",
     "DatabaseLookupScreen.kt",
@@ -221,6 +222,14 @@ class StatsAndHeaderTests(unittest.TestCase):
                 self.assertIn("import androidx.compose.material3.TopAppBarDefaults", source, name)
                 self.assertIn("import androidx.compose.material3.rememberTopAppBarState", source, name)
 
+    def test_add_wine_is_full_bleed_camera_first_with_no_top_bar(self):
+        source = (SCREENS / "AddWineScreen.kt").read_text()
+        for absent in ("TopAppBar(", "TopAppBarDefaults", "rememberTopAppBarState(",
+                       "scrollBehavior", "nestedScroll"):
+            self.assertNotIn(absent, source)
+        self.assertIn("BottomSheetScaffold(", source)
+        self.assertIn("LabelScanCameraPreview(", source)
+
     def test_no_explanatory_prose_was_added_to_the_new_controls(self):
         source = CONTROLS.read_text()
         for phrase in ("how it works", "Tap to", "Use the", "Scroll to", "Please"):
@@ -250,6 +259,9 @@ class ComposeImportTests(unittest.TestCase):
             body = "\n".join(
                 line for line in source.splitlines() if not line.startswith("import ")
             )
+            # Coil ImageRequest.Builder.size() takes bare-pixel ints (e.g. .size(1024));
+            # only Dp-valued .size() calls are the Compose layout extension.
+            body = re.sub(r"\.size\(\d+\)", "", body)
             for package, names in self.GROUPS.items():
                 wildcard = f"import {package}.*" in source
                 for name in names:

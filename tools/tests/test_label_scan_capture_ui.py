@@ -29,14 +29,15 @@ class LabelScanCaptureUiTest(unittest.TestCase):
             self.assertIn(f'.{cache}(CachePolicy.DISABLED)', source)
         self.assertIn('ownedFile?.let { if (it.exists() && !it.delete())', SESSION.read_text())
 
-    def test_add_wine_has_normal_camera_picker_but_no_ocr_lab_button(self):
+    def test_add_wine_has_camera_first_capture_but_no_ocr_lab_button(self):
         screen = SCREEN.read_text()
-        self.assertIn('LabelScanActions(', screen)
-        self.assertIn('onCamera = retake', screen)
+        self.assertIn('LabelScanCameraPreview(', screen)
         self.assertIn('photoPicker.launch(', screen)
+        self.assertIn('BottomSheetScaffold(', screen)
         self.assertNotIn('OCR Lab', screen)
         self.assertNotIn('OcrLabActivity', screen)
-        # Removing this shortcut does not remove the separate testing section from Settings.
-        self.assertIn('OCR Lab', PROFILE.read_text())
+        # The camera-first rework removed the form scan buttons, not the separate
+        # testing section in Settings (the OCR Lab entries left with the lab itself).
+        self.assertIn('Large image dataset test', PROFILE.read_text())
 
 if __name__ == '__main__': unittest.main()
