@@ -468,7 +468,7 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                         score = block.confidence.coerceIn(0.05f, 1f),
                         bboxOrig = block.normBbox,
                         bboxRect = block.normBbox,
-                        charBoxes = emptyList(),
+                        polyOrig = emptyList(),
                         engineId = "mlkit",
                         variantId = "original",
                         scoreIsEstimated = false
@@ -486,7 +486,7 @@ class GraniteDatabaseRagRetriever : AutoCloseable {
                         score = block.confidence.coerceIn(0.05f, 1f),
                         bboxOrig = block.normBbox,
                         bboxRect = block.normBbox,
-                        charBoxes = emptyList(),
+                        polyOrig = emptyList(),
                         engineId = "paddle_v6_medium",
                         variantId = "original",
                         scoreIsEstimated = false
