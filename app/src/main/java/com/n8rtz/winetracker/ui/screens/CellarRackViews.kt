@@ -95,36 +95,26 @@ private fun RackGlyph(modifier: Modifier = Modifier, color: Color, backgroundCol
             style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
         )
         val centers = listOf(
-            .17f to .17f, .50f to .17f, .83f to .17f,
-            .34f to .34f, .67f to .34f,
-            .17f to .51f, .50f to .51f, .83f to .51f,
-            .34f to .68f, .67f to .68f
+            .167f to .20f, .50f to .20f, .833f to .20f,
+            .333f to .40f, .667f to .40f,
+            .167f to .60f, .50f to .60f, .833f to .60f,
+            .333f to .80f, .667f to .80f
         )
-        fun inBounds(point: androidx.compose.ui.geometry.Offset) =
-            point.x in 0f..1f && point.y in 0f..1f
-        fun point(x: Float, y: Float) = androidx.compose.ui.geometry.Offset(
-            left + x * (right - left), top + y * (bottom - top)
-        )
-        // Continuous diagonal runs form one full diamond lattice across the frame, including
-        // the triangular end cells; drawing separate diamonds left an unwanted empty bottom band.
-        for (index in 0..6) {
-            val sum = index / 3f
-            val slash = listOf(
-                androidx.compose.ui.geometry.Offset(0f, sum),
-                androidx.compose.ui.geometry.Offset(1f, sum - 1f),
-                androidx.compose.ui.geometry.Offset(sum, 0f),
-                androidx.compose.ui.geometry.Offset(sum - 1f, 1f)
-            ).filter(::inBounds).distinct()
-            if (slash.size >= 2) drawLine(color, point(slash[0].x, slash[0].y), point(slash[1].x, slash[1].y), strokeWidth = stroke)
-
-            val difference = index / 3f - 1f
-            val backslash = listOf(
-                androidx.compose.ui.geometry.Offset(0f, difference),
-                androidx.compose.ui.geometry.Offset(1f, 1f + difference),
-                androidx.compose.ui.geometry.Offset(-difference, 0f),
-                androidx.compose.ui.geometry.Offset(1f - difference, 1f)
-            ).filter(::inBounds).distinct()
-            if (backslash.size >= 2) drawLine(color, point(backslash[0].x, backslash[0].y), point(backslash[1].x, backslash[1].y), strokeWidth = stroke)
+        // Each bottle opening sits inside its own diamond cell. Alternating rows are staggered
+        // and the outer frame closes the triangular cells at the edges, as in the supplied icon.
+        centers.forEach { (cx, cy) ->
+            val x = left + (right - left) * cx
+            val y = top + (bottom - top) * cy
+            val dx = (right - left) / 6f
+            val dy = (bottom - top) * .2f
+            val topPoint = androidx.compose.ui.geometry.Offset(x, y - dy)
+            val rightPoint = androidx.compose.ui.geometry.Offset(x + dx, y)
+            val bottomPoint = androidx.compose.ui.geometry.Offset(x, y + dy)
+            val leftPoint = androidx.compose.ui.geometry.Offset(x - dx, y)
+            drawLine(color, topPoint, rightPoint, strokeWidth = stroke)
+            drawLine(color, rightPoint, bottomPoint, strokeWidth = stroke)
+            drawLine(color, bottomPoint, leftPoint, strokeWidth = stroke)
+            drawLine(color, leftPoint, topPoint, strokeWidth = stroke)
         }
         centers.forEach { (cx, cy) ->
             val center = androidx.compose.ui.geometry.Offset(
