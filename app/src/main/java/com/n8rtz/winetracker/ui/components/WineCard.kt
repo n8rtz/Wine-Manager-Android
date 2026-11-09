@@ -14,8 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,7 +59,6 @@ fun WineCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .drawWithContent { drawContent(); drawRoundRect(stripeColor, size = Size(7.dp.toPx(), size.height), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())) }
             .semantics { contentDescription = "$title, $type wine" }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -73,10 +70,13 @@ fun WineCard(
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        // Using the Card surface itself for the accent avoids a custom drawing layer per row.
+        colors = CardDefaults.cardColors(containerColor = stripeColor)
     ) {
         // A type-coded accent is quicker to scan than repeating a Red/White label in every row.
-        Column(Modifier.fillMaxWidth().padding(start = 5.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 5.dp).background(MaterialTheme.colorScheme.surface)
+        ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
