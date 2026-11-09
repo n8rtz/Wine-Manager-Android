@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,8 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.n8rtz.winetracker.R
 import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.image.resolveWineImageModel
@@ -58,7 +63,7 @@ internal fun RackAssignmentControl(
                     if (currentRacks.isEmpty()) "New additions · add rack" else "New additions · +${currentRacks.size} racks"
                 } else assignedLabel ?: "Add to rack")
             },
-            trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surface) }
+            trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
         )
     }
 }
@@ -74,64 +79,19 @@ internal fun RackQuickAddButton(
             contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
         }
     ) {
-        RackGlyph(modifier = Modifier.size(width = 32.dp, height = 27.dp), color = MaterialTheme.colorScheme.primary, backgroundColor = MaterialTheme.colorScheme.surface)
+        RackGlyph(modifier = Modifier.size(width = 32.dp, height = 27.dp), color = MaterialTheme.colorScheme.primary)
     }
 }
 
 @Composable
-private fun RackGlyph(modifier: Modifier = Modifier, color: Color, backgroundColor: Color) {
-    androidx.compose.foundation.Canvas(modifier) {
-        val unit = size.minDimension
-        val stroke = unit * .045f
-        val left = size.width * .05f
-        val top = size.height * .05f
-        val right = size.width * .95f
-        val bottom = size.height * .95f
-        // Diamond lattice and circular bottle openings, matching the user's wine-rack reference.
-        drawRect(
-            color = color,
-            topLeft = androidx.compose.ui.geometry.Offset(left, top),
-            size = androidx.compose.ui.geometry.Size(right - left, bottom - top),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
-        )
-        val centers = listOf(
-            .167f to .20f, .50f to .20f, .833f to .20f,
-            .333f to .40f, .667f to .40f,
-            .167f to .60f, .50f to .60f, .833f to .60f,
-            .333f to .80f, .667f to .80f
-        )
-        // Each bottle opening sits inside its own diamond cell. Alternating rows are staggered
-        // and the outer frame closes the triangular cells at the edges, as in the supplied icon.
-        centers.forEach { (cx, cy) ->
-            val x = left + (right - left) * cx
-            val y = top + (bottom - top) * cy
-            val dx = (right - left) / 6f
-            val dy = (bottom - top) * .2f
-            val topPoint = androidx.compose.ui.geometry.Offset(x, y - dy)
-            val rightPoint = androidx.compose.ui.geometry.Offset(x + dx, y)
-            val bottomPoint = androidx.compose.ui.geometry.Offset(x, y + dy)
-            val leftPoint = androidx.compose.ui.geometry.Offset(x - dx, y)
-            drawLine(color, topPoint, rightPoint, strokeWidth = stroke)
-            drawLine(color, rightPoint, bottomPoint, strokeWidth = stroke)
-            drawLine(color, bottomPoint, leftPoint, strokeWidth = stroke)
-            drawLine(color, leftPoint, topPoint, strokeWidth = stroke)
-        }
-        centers.forEach { (cx, cy) ->
-            val center = androidx.compose.ui.geometry.Offset(
-                left + cx * (right - left), top + cy * (bottom - top)
-            )
-            val radius = unit * .058f
-            val ringStroke = unit * .02f
-            // Clear the crossing lattice from the opening so each wine slot reads as a hole.
-            drawCircle(backgroundColor, radius = radius + ringStroke / 2f, center = center)
-            drawCircle(
-                color = color,
-                radius = radius,
-                center = center,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = ringStroke)
-            )
-        }
-    }
+private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
+    Image(
+        painter = painterResource(R.drawable.wine_rack_lattice),
+        contentDescription = null,
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+        colorFilter = ColorFilter.tint(color)
+    )
 }
 
 @Composable
