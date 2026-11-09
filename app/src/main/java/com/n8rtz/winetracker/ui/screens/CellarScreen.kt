@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.consume
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -80,18 +79,51 @@ fun CellarScreen(
     val rackPreferences = remember(context) {
         context.getSharedPreferences("cellar_racks_v1", Context.MODE_PRIVATE)
     }
-    var rackNames by remember(rackPreferences) {
-        val saved = if (rackPreferences.contains("rack_names")) {
+    val initialRackNames = remember(rackPreferences) {
+        val savedUserRacks = if (rackPreferences.contains("rack_names")) {
             rackPreferences.getStringSet("rack_names", emptySet()).orEmpty().toList()
         } else {
             DEFAULT_CELLAR_RACK_NAMES + rackPreferences.getStringSet("user_racks", emptySet()).orEmpty()
         }
-        mutableStateOf(saved.sortedBy { it.lowercase(Locale.getDefault()) })
+        val expected = (listOf(NEW_ADDITIONS_RACK) + savedUserRacks.filterNot { it == NEW_ADDITIONS_RACK }).distinct()
+        val storedOrder = rackPreferences.getString("rack_order_json", null)?.let { encoded ->
+            runCatching {
+                val array = org.json.JSONArray(encoded)
+                List(array.length()) { index -> array.getString(index) }
+            }.getOrNull()
+        }
+        val ordered = if (storedOrder != null) {
+            (storedOrder.filter { it in expected } + expected.filterNot { it in storedOrder }).distinct()
+        } else {
+            // Preserve the existing displayed positions on first migration, then stop re-alphabetizing.
+            listOf(NEW_ADDITIONS_RACK) + savedUserRacks
+                .filterNot { it == NEW_ADDITIONS_RACK }
+                .distinct()
+                .sortedBy { it.lowercase(Locale.getDefault()) }
+        }
+        rackPreferences.edit()
+            .putStringSet("rack_names", ordered.filterNot { it == NEW_ADDITIONS_RACK }.toSet())
+            .putString("rack_order_json", org.json.JSONArray(ordered).toString())
+            .apply()
+        ordered
     }
-    val availableRackNames = rackNames
+    var rackNames by remember(rackPreferences) { mutableStateOf(initialRackNames) }
     val persistRackNames: (List<String>) -> Unit = { names ->
-        rackNames = names.sortedBy { it.lowercase(Locale.getDefault()) }
-        rackPreferences.edit().putStringSet("rack_names", rackNames.toSet()).apply()
+        rackNames = names.distinct()
+        rackPreferences.edit()
+            .putStringSet("rack_names", rackNames.filterNot { it == NEW_ADDITIONS_RACK }.toSet())
+            .putString("rack_order_json", org.json.JSONArray(rackNames).toString())
+            .apply()
+    }
+    val moveRack: (String, String) -> Unit = { fromRack, toRack ->
+        val fromIndex = rackNames.indexOf(fromRack)
+        val toIndex = rackNames.indexOf(toRack)
+        if (fromIndex >= 0 && toIndex >= 0 && fromIndex != toIndex) {
+            val reordered = rackNames.toMutableList().apply {
+                add(toIndex, removeAt(fromIndex))
+            }
+            persistRackNames(reordered)
+        }
     }
     val addUserRack: (String) -> Unit = { requestedName ->
         val name = requestedName.trim()
@@ -546,7 +578,7 @@ fun CellarScreen(
                     notesMap = notesMap,
                     assignments = rackAssignments,
                     excludedNewAdditions = excludedNewAdditionIds,
-                    userRackNames = availableRackNames,
+                    rackOrder = rackNames,
                     selectedRack = selectedRack,
                     onRackSelected = { selectedRack = it },
                     assignmentBottleId = assignmentBottleId,
@@ -568,6 +600,7 @@ fun CellarScreen(
                     onCreateRack = addUserRack,
                     onRenameRack = renameRack,
                     onDeleteRacks = deleteRacks,
+                    onMoveRack = moveRack,
                     onRemoveFromRack = removeFromRack,
                     onWineClick = onEditWine,
                     onTastingNotesClick = onTastingNotesClick

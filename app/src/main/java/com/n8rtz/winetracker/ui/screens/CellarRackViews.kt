@@ -6,25 +6,34 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -33,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -124,7 +134,7 @@ internal fun CellarRacks(
     notesMap: Map<Pair<Long, String>, List<TastingNoteWithDefinition>>,
     assignments: Map<Long, Set<String>>,
     excludedNewAdditions: Set<Long>,
-    userRackNames: List<String>,
+    rackOrder: List<String>,
     selectedRack: String?,
     onRackSelected: (String?) -> Unit,
     assignmentBottleId: Long?,
@@ -136,11 +146,13 @@ internal fun CellarRacks(
     onCreateRack: (String) -> Unit,
     onRenameRack: (String, String) -> Unit,
     onDeleteRacks: (Set<String>) -> Unit,
+    onMoveRack: (String, String) -> Unit,
     onRemoveFromRack: (Set<Long>, String) -> Unit,
     onWineClick: (Long) -> Unit,
     onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
 ) {
-    val rackNames = listOf(NEW_ADDITIONS_RACK) + userRackNames
+    val rackNames = rackOrder
+    val gridState = rememberLazyGridState()
     var showCreateRackDialog by remember { mutableStateOf(false) }
     var newRackName by remember { mutableStateOf("") }
     var selectedForRemoval by remember(selectedRack) { mutableStateOf<Set<Long>>(emptySet()) }
@@ -148,8 +160,41 @@ internal fun CellarRacks(
     var showRackDeleteConfirmation by remember { mutableStateOf(false) }
     var rackBeingEdited by remember { mutableStateOf<String?>(null) }
     var editedRackName by remember { mutableStateOf("") }
+    var draggingRack by remember { mutableStateOf<String?>(null) }
+    var dragPointerInGrid by remember { mutableStateOf(Offset.Zero) }
+    var grabOffsetInCard by remember { mutableStateOf(Offset.Zero) }
+    var lastDownPosInGrid by remember { mutableStateOf(Offset.Zero) }
+    val latestRackNames by rememberUpdatedState(rackNames)
+    val latestSelectedRackNames by rememberUpdatedState(selectedRackNamesForDeletion)
+    val latestOnMoveRack by rememberUpdatedState(onMoveRack)
     val rackDeletionMode = selectedRackNamesForDeletion.isNotEmpty()
+    val deletableSelectedRackNames = selectedRackNamesForDeletion - NEW_ADDITIONS_RACK
     val canRemoveFromRack = selectedRack != null
+    val findRackItemAt: (Offset) -> LazyGridItemInfo? = { pos ->
+        gridState.layoutInfo.visibleItemsInfo.firstOrNull { info ->
+            val key = info.key as? String
+            key != null && key in latestRackNames &&
+                pos.x >= info.offset.x && pos.x <= info.offset.x + info.size.width &&
+                pos.y >= info.offset.y && pos.y <= info.offset.y + info.size.height
+        }
+    }
+    val updateDraggedRackPosition: (String, Offset) -> Unit = { activeRack, pointerPos ->
+        dragPointerInGrid = pointerPos
+        val activeInfo = gridState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == activeRack }
+        val probePoint = if (activeInfo != null) {
+            val desiredTopLeft = pointerPos - grabOffsetInCard
+            Offset(
+                desiredTopLeft.x + activeInfo.size.width / 2f,
+                desiredTopLeft.y + activeInfo.size.height / 2f
+            )
+        } else {
+            pointerPos
+        }
+        val targetRack = findRackItemAt(probePoint)?.key as? String
+        if (targetRack != null && targetRack != activeRack) {
+            latestOnMoveRack(activeRack, targetRack)
+        }
+    }
     BackHandler(enabled = (canRemoveFromRack && selectedForRemoval.isNotEmpty()) ||
         (selectedRack == null && rackDeletionMode)) {
         if (canRemoveFromRack) selectedForRemoval = emptySet()
@@ -182,9 +227,97 @@ internal fun CellarRacks(
                     modifier = Modifier.padding(bottom = 8.dp))
             }
             LazyVerticalGrid(
-                modifier = Modifier.weight(1f),
+                state = gridState,
+                userScrollEnabled = draggingRack == null,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = 8.dp)
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            lastDownPosInGrid = awaitFirstDown(requireUnconsumed = false).position
+                        }
+                    }
+                    .pointerInput(rackDeletionMode, assignmentBottleId) {
+                        if (rackDeletionMode && assignmentBottleId == null) {
+                            var activeRack: String? = null
+                            detectDragGestures(
+                                onDragStart = { startOffset ->
+                                    if (draggingRack != null) return@detectDragGestures
+                                    val hitInfo = findRackItemAt(lastDownPosInGrid) ?: findRackItemAt(startOffset)
+                                    val hitRack = hitInfo?.key as? String ?: return@detectDragGestures
+                                    activeRack = hitRack
+                                    if (hitRack !in latestSelectedRackNames) {
+                                        selectedRackNamesForDeletion = setOf(hitRack)
+                                    }
+                                    grabOffsetInCard = Offset(
+                                        (lastDownPosInGrid.x - hitInfo.offset.x).coerceIn(0f, hitInfo.size.width.toFloat().coerceAtLeast(0f)),
+                                        (lastDownPosInGrid.y - hitInfo.offset.y).coerceIn(0f, hitInfo.size.height.toFloat().coerceAtLeast(0f))
+                                    )
+                                    dragPointerInGrid = startOffset
+                                    draggingRack = hitRack
+                                },
+                                onDragEnd = {
+                                    if (activeRack != null) draggingRack = null
+                                    activeRack = null
+                                },
+                                onDragCancel = {
+                                    if (activeRack != null) draggingRack = null
+                                    activeRack = null
+                                },
+                                onDrag = { change, _ ->
+                                    val rack = activeRack ?: return@detectDragGestures
+                                    change.consume()
+                                    updateDraggedRackPosition(rack, change.position)
+                                }
+                            )
+                        }
+                    }
+                    .pointerInput(assignmentBottleId) {
+                        if (assignmentBottleId == null) {
+                            var activeRack: String? = null
+                            var wasSelectedAtStart = false
+                            var didMove = false
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { startOffset ->
+                                    val hitInfo = findRackItemAt(startOffset) ?: findRackItemAt(lastDownPosInGrid)
+                                    val hitRack = hitInfo?.key as? String ?: return@detectDragGesturesAfterLongPress
+                                    activeRack = hitRack
+                                    wasSelectedAtStart = hitRack in latestSelectedRackNames
+                                    didMove = false
+                                    if (!wasSelectedAtStart) {
+                                        selectedRackNamesForDeletion = latestSelectedRackNames + hitRack
+                                    }
+                                    grabOffsetInCard = Offset(
+                                        (startOffset.x - hitInfo.offset.x).coerceIn(0f, hitInfo.size.width.toFloat().coerceAtLeast(0f)),
+                                        (startOffset.y - hitInfo.offset.y).coerceIn(0f, hitInfo.size.height.toFloat().coerceAtLeast(0f))
+                                    )
+                                    dragPointerInGrid = startOffset
+                                    draggingRack = hitRack
+                                },
+                                onDragEnd = {
+                                    if (activeRack != null) {
+                                        if (wasSelectedAtStart && !didMove) {
+                                            selectedRackNamesForDeletion = emptySet()
+                                        }
+                                        draggingRack = null
+                                    }
+                                    activeRack = null
+                                },
+                                onDragCancel = {
+                                    if (activeRack != null) draggingRack = null
+                                    activeRack = null
+                                },
+                                onDrag = { change, dragAmount ->
+                                    val rack = activeRack ?: return@detectDragGesturesAfterLongPress
+                                    change.consume()
+                                    if (dragAmount != Offset.Zero) didMove = true
+                                    updateDraggedRackPosition(rack, change.position)
+                                }
+                            )
+                        }
+                    },
                 columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -206,29 +339,42 @@ internal fun CellarRacks(
                     val manageable = rack != NEW_ADDITIONS_RACK
                     val selectable = assignmentBottleId != null && manageable
                     val selectedForDeletion = rack in selectedRackNamesForDeletion
+                    val isDragging = draggingRack == rack
                     Card(
-                        modifier = Modifier.fillMaxWidth().combinedClickable(
-                            onClick = {
+                        modifier = (if (isDragging) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().animateItem())
+                            .zIndex(if (isDragging) 1f else 0f)
+                            .graphicsLayer {
+                                if (draggingRack == rack) {
+                                    val info = gridState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == rack }
+                                    if (info != null) {
+                                        val desiredTopLeft = dragPointerInGrid - grabOffsetInCard
+                                        translationX = desiredTopLeft.x - info.offset.x
+                                        translationY = desiredTopLeft.y - info.offset.y
+                                    }
+                                    scaleX = 1.04f
+                                    scaleY = 1.04f
+                                } else {
+                                    translationX = 0f
+                                    translationY = 0f
+                                    scaleX = 1f
+                                    scaleY = 1f
+                                }
+                            }
+                            .clickable {
+                                if (draggingRack != null) return@clickable
                                 when {
                                     selectable -> onAssignmentRackToggle(rack)
                                     assignmentBottleId != null -> Unit
-                                    rackDeletionMode && manageable -> {
+                                    rackDeletionMode -> {
                                         selectedRackNamesForDeletion = if (selectedForDeletion) selectedRackNamesForDeletion - rack
                                         else selectedRackNamesForDeletion + rack
                                     }
                                     else -> onRackSelected(rack)
                                 }
                             },
-                            onLongClick = if (assignmentBottleId == null && manageable) {
-                                {
-                                    selectedRackNamesForDeletion = if (selectedForDeletion) emptySet()
-                                    else selectedRackNamesForDeletion + rack
-                                }
-                            } else null
-                        ),
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 8.dp else 2.dp)
                     ) {
                         Column {
                             Box(Modifier.fillMaxWidth().height(116.dp).background(
@@ -245,7 +391,7 @@ internal fun CellarRacks(
                                     )
                                     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
                                 }
-                                if (selectable || (rackDeletionMode && manageable)) {
+                                if (selectable || rackDeletionMode) {
                                     Checkbox(
                                         checked = if (selectable) rack in selectedAssignmentRacks else selectedForDeletion,
                                         onCheckedChange = if (selectable) ({ onAssignmentRackToggle(rack) }) else null,
@@ -316,17 +462,19 @@ internal fun CellarRacks(
                     OutlinedButton(onClick = { selectedRackNamesForDeletion = emptySet() }, modifier = Modifier.weight(1f)) {
                         Text("Cancel")
                     }
-                    if (selectedRackNamesForDeletion.size == 1) {
+                    if (selectedRackNamesForDeletion.size == 1 && deletableSelectedRackNames.isNotEmpty()) {
                         OutlinedButton(onClick = {
-                            rackBeingEdited = selectedRackNamesForDeletion.single()
+                            rackBeingEdited = deletableSelectedRackNames.single()
                             editedRackName = rackBeingEdited.orEmpty()
                             selectedRackNamesForDeletion = emptySet()
                         }, modifier = Modifier.weight(1f)) {
                             Text("Edit")
                         }
                     }
-                    Button(onClick = { showRackDeleteConfirmation = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (selectedRackNamesForDeletion.size == 1) "Delete" else "Delete ${selectedRackNamesForDeletion.size}")
+                    if (deletableSelectedRackNames.isNotEmpty()) {
+                        Button(onClick = { showRackDeleteConfirmation = true }, modifier = Modifier.weight(1f)) {
+                            Text(if (deletableSelectedRackNames.size == 1) "Delete" else "Delete ${deletableSelectedRackNames.size}")
+                        }
                     }
                 }
             }
@@ -469,13 +617,13 @@ internal fun CellarRacks(
     if (showRackDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showRackDeleteConfirmation = false },
-            title = { Text(if (selectedRackNamesForDeletion.size == 1) "Delete rack?" else "Delete racks?") },
+            title = { Text(if (deletableSelectedRackNames.size == 1) "Delete rack?" else "Delete racks?") },
             text = {
-                Text("${selectedRackNamesForDeletion.joinToString(", ")} will be deleted. Wines will remain in your cellar, but their assignments to these racks will be removed.")
+                Text("${deletableSelectedRackNames.joinToString(", ")} will be deleted. Wines will remain in your cellar, but their assignments to these racks will be removed.")
             },
             confirmButton = {
                 TextButton(onClick = {
-                    onDeleteRacks(selectedRackNamesForDeletion)
+                    onDeleteRacks(deletableSelectedRackNames)
                     selectedRackNamesForDeletion = emptySet()
                     showRackDeleteConfirmation = false
                 }) { Text("Delete") }

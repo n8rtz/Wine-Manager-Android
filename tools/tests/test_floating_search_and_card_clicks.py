@@ -277,6 +277,25 @@ class ComposeImportTests(unittest.TestCase):
                         continue  # fully-qualified call, no import needed
                     self.fail(f"{path.name}: uses .{name}( without importing {package}.{name}")
 
+    def test_every_material_icon_and_pointer_helper_is_validly_imported(self):
+        for path in sorted(UI.rglob("*.kt")):
+            source = path.read_text()
+            imports = {line.strip() for line in source.splitlines() if line.strip().startswith("import ")}
+            body = "\n".join(line for line in source.splitlines() if not line.strip().startswith("import "))
+            for removed in (
+                "import androidx.compose.ui.input.pointer.consume",
+                "import androidx.compose.foundation.lazy.grid.animateItem",
+                "import androidx.compose.foundation.lazy.animateItem",
+            ):
+                self.assertNotIn(removed, imports, f"{path.name}: {removed} does not exist in Compose 1.10")
+            if "import androidx.compose.material.icons.filled.*" not in imports:
+                for icon in set(re.findall(r"\bIcons\.Default\.([A-Za-z0-9_]+)\b", body)):
+                    self.assertIn(
+                        f"import androidx.compose.material.icons.filled.{icon}",
+                        imports,
+                        f"{path.name}: uses Icons.Default.{icon} without import",
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
