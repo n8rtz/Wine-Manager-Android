@@ -220,7 +220,10 @@ internal fun CellarRacks(
                                 }
                             },
                             onLongClick = if (assignmentBottleId == null && manageable) {
-                                { selectedRackNamesForDeletion = selectedRackNamesForDeletion + rack }
+                                {
+                                    selectedRackNamesForDeletion = if (selectedForDeletion) emptySet()
+                                    else selectedRackNamesForDeletion + rack
+                                }
                             } else null
                         ),
                         shape = RoundedCornerShape(14.dp),
@@ -268,13 +271,9 @@ internal fun CellarRacks(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(rack, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
                                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                    if (manageable && assignmentBottleId == null && !rackDeletionMode) {
-                                        IconButton(onClick = {
-                                            rackBeingEdited = rack
-                                            editedRackName = rack
-                                        }, modifier = Modifier.size(36.dp)) {
-                                            Icon(Icons.Default.Edit, contentDescription = "Edit $rack name", modifier = Modifier.size(18.dp))
-                                        }
+                                    if (rackDeletionMode && selectedForDeletion) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = "Selected for rack management",
+                                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                     }
                                 }
                                 Text("${rackItems.size} ${if (rackItems.size == 1) "wine" else "wines"}",
@@ -313,12 +312,21 @@ internal fun CellarRacks(
                 }
             }
             if (rackDeletionMode) {
-                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { selectedRackNamesForDeletion = emptySet() }, modifier = Modifier.weight(1f)) {
                         Text("Cancel")
                     }
+                    if (selectedRackNamesForDeletion.size == 1) {
+                        OutlinedButton(onClick = {
+                            rackBeingEdited = selectedRackNamesForDeletion.single()
+                            editedRackName = rackBeingEdited.orEmpty()
+                            selectedRackNamesForDeletion = emptySet()
+                        }, modifier = Modifier.weight(1f)) {
+                            Text("Edit")
+                        }
+                    }
                     Button(onClick = { showRackDeleteConfirmation = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (selectedRackNamesForDeletion.size == 1) "Delete rack" else "Delete ${selectedRackNamesForDeletion.size} racks")
+                        Text(if (selectedRackNamesForDeletion.size == 1) "Delete" else "Delete ${selectedRackNamesForDeletion.size}")
                     }
                 }
             }

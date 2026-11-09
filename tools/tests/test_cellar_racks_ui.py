@@ -67,12 +67,14 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('getStringSet("rack_names"', screen)
         self.assertIn('putStringSet("rack_names", rackNames.toSet())', screen)
 
-    def test_rack_tiles_support_long_press_delete_and_pencil_rename(self):
+    def test_rack_tiles_reveal_edit_and_delete_only_after_long_press(self):
         views = (APP / "ui/screens/CellarRackViews.kt").read_text()
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
-        self.assertIn("selectedRackNamesForDeletion = selectedRackNamesForDeletion + rack", views)
-        self.assertIn("Icons.Default.Edit", views)
-        self.assertIn('contentDescription = "Edit $rack name"', views)
+        self.assertIn("onLongClick = if (assignmentBottleId == null && manageable)", views)
+        self.assertIn("if (selectedForDeletion) emptySet()", views)
+        self.assertNotIn('contentDescription = "Edit $rack name"', views)
+        self.assertIn('if (selectedRackNamesForDeletion.size == 1)', views)
+        self.assertIn('Text("Edit")', views)
         self.assertIn('showRackDeleteConfirmation = true', views)
         self.assertIn('title = { Text(if (selectedRackNamesForDeletion.size == 1) "Delete rack?" else "Delete racks?") }', views)
         self.assertIn('onDeleteRacks(selectedRackNamesForDeletion)', views)

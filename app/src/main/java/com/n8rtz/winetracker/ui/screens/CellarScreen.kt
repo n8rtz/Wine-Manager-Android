@@ -432,6 +432,7 @@ fun CellarScreen(
                             )
                         )?.let { it.startYear to it.endYear }
                     },
+                    onLongClick = { onEditWine(item.bottle.bottleId) },
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             RackAssignmentControl(
@@ -473,9 +474,6 @@ fun CellarScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
                             ) {
-                                IconButton(onClick = { onEditWine(item.bottle.bottleId) }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit wine")
-                                }
                                 IconButton(
                                     onClick = {
                                         onAddNote(item.definition.definitionId, item.bottle.vintage)
