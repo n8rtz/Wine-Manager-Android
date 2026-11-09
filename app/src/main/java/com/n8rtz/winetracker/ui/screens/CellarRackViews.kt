@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.*
@@ -79,17 +80,31 @@ internal fun RackQuickAddButton(
             contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
         }
     ) {
-        RackGlyph(modifier = Modifier.size(width = 27.dp, height = 27.dp), color = MaterialTheme.colorScheme.primary)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+            RackGlyph(
+                modifier = Modifier.size(width = 20.dp, height = 27.dp),
+                color = MaterialTheme.colorScheme.primary,
+                contentScale = ContentScale.FillBounds
+            )
+        }
     }
 }
 
 @Composable
-private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
+private fun RackGlyph(
+    modifier: Modifier = Modifier,
+    color: Color,
+    contentScale: ContentScale = ContentScale.Fit
+) {
     Image(
         painter = painterResource(R.drawable.wine_rack_lattice),
         contentDescription = null,
         modifier = modifier,
-        contentScale = ContentScale.Fit,
+        contentScale = contentScale,
         colorFilter = ColorFilter.tint(color)
     )
 }
