@@ -306,6 +306,13 @@ fun CellarScreen(
                     rating = ratingStr,
                     isExpanded = expandedBottleId == item.bottle.bottleId,
                     onExpandToggle = toggleExpanded,
+                    trailingAction = {
+                        RackQuickAddButton(
+                            currentRack = rackAssignments[item.bottle.bottleId],
+                            automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
+                            onAssign = { rack -> updateRackAssignment(item.bottle.bottleId, rack) }
+                        )
+                    },
                     drinkingWindow = run {
                         val start = item.definition.drinkingWindowStart
                         val end = item.definition.drinkingWindowEnd

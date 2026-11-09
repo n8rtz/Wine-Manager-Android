@@ -8,8 +8,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Inventory2
@@ -21,6 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -72,6 +76,62 @@ internal fun RackAssignmentControl(
 }
 
 @Composable
+internal fun RackQuickAddButton(
+    currentRack: String?,
+    automaticNewAddition: Boolean,
+    onAssign: (String?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(
+            onClick = { expanded = true },
+            enabled = !automaticNewAddition,
+            modifier = Modifier.size(40.dp).semantics {
+                contentDescription = if (automaticNewAddition) "New additions rack is assigned automatically" else "Add to rack"
+            }
+        ) {
+            Box(Modifier.size(28.dp)) {
+                Icon(
+                    Icons.Default.Inventory2,
+                    contentDescription = null,
+                    tint = if (automaticNewAddition) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.Center).size(21.dp)
+                )
+                Surface(
+                    shape = CircleShape,
+                    color = if (automaticNewAddition) MaterialTheme.colorScheme.surfaceVariant
+                    else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.BottomEnd).size(14.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            tint = if (automaticNewAddition) MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(11.dp)
+                        )
+                    }
+                }
+            }
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("No rack") },
+                onClick = { onAssign(null); expanded = false }
+            )
+            cellarRackNames.forEach { rack ->
+                DropdownMenuItem(
+                    text = { Text(if (currentRack == rack) "$rack · selected" else rack) },
+                    onClick = { onAssign(rack); expanded = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 internal fun CellarRacks(
     inventory: List<WineBottleWithDefinition>,
     ratingsMap: Map<Pair<Long, String>, String>,
@@ -102,16 +162,9 @@ internal fun CellarRacks(
 
     if (selectedRack == null) {
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            Text("Wine racks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            Text(
-                "Group bottles by how you plan to enjoy or age them.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
-            )
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(bottom = 16.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -200,6 +253,7 @@ internal fun CellarRacks(
                         val vintage = com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)
                         val key = item.definition.definitionId to vintage
                         val notes = notesMap[key].orEmpty()
+                        val automaticNewAddition = notes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() }
                         WineCard(
                             title = "${item.definition.maker} - ${item.definition.name} ($vintage)",
                             subtitle = listOfNotNull(item.definition.subregion, item.definition.region, item.definition.country)
@@ -209,10 +263,17 @@ internal fun CellarRacks(
                             imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
                             imageLocalPath = item.imageAsset?.relativePath,
                             rating = ratingsMap[key],
+                            trailingAction = {
+                                RackQuickAddButton(
+                                    currentRack = assignments[item.bottle.bottleId],
+                                    automaticNewAddition = automaticNewAddition,
+                                    onAssign = { rack -> onAssign(item.bottle.bottleId, rack) }
+                                )
+                            },
                             details = {
                                 RackAssignmentControl(
                                     currentRack = assignments[item.bottle.bottleId],
-                                    automaticNewAddition = notes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
+                                    automaticNewAddition = automaticNewAddition,
                                     onAssign = { rack -> onAssign(item.bottle.bottleId, rack) }
                                 )
                                 val aromaNote = notes.firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }

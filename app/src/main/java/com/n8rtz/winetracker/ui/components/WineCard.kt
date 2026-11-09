@@ -42,6 +42,7 @@ fun WineCard(
     isExpanded: Boolean? = null,
     onExpandToggle: (() -> Unit)? = null,
     details: @Composable (() -> Unit)? = null,
+    trailingAction: @Composable (() -> Unit)? = null,
     dateAdded: String? = null,
     drinkingWindow: Pair<Int, Int>? = null,
     onClick: () -> Unit
@@ -105,18 +106,23 @@ fun WineCard(
                         )
                     }
                 }
-                if (details != null) {
-                    Box(
-                        modifier = Modifier.size(48.dp).clip(CircleShape).clickable {
-                            if (onExpandToggle != null) onExpandToggle.invoke() else internalExpanded = !internalExpanded
-                        },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (expanded) "Collapse wine" else "Expand wine",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                if (trailingAction != null || details != null) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        trailingAction?.invoke()
+                        if (details != null) {
+                            Box(
+                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable {
+                                    if (onExpandToggle != null) onExpandToggle.invoke() else internalExpanded = !internalExpanded
+                                },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (expanded) "Collapse wine" else "Expand wine",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
