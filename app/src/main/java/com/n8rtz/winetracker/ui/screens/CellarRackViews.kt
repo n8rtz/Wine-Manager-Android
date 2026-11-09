@@ -267,9 +267,7 @@ internal fun CellarRacks(
                                         modifier = Modifier.size(56.dp))
                                 }
                                 Column(Modifier.padding(horizontal = 10.dp, vertical = 9.dp)) {
-                                    Text("Add rack", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                    Text("Create a custom rack", style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("New Rack", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
