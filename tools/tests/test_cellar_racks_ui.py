@@ -24,7 +24,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn(".333f to .40f, .667f to .40f", source)
         self.assertIn(".333f to .80f, .667f to .80f", source)
         self.assertIn("drawLine(color, topPoint, rightPoint", source)
-        self.assertIn("modifier = Modifier.size(30.dp)", source)
+        self.assertIn("modifier = Modifier.size(width = 32.dp, height = 27.dp)", source)
         self.assertIn("val ringStroke = unit * .02f", source)
         self.assertIn("drawCircle(backgroundColor", source)
         self.assertIn("onOpenRackSelection", source)
