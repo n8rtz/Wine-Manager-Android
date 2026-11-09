@@ -143,12 +143,20 @@ fun WineCard(
                                     .clip(ratingShape)
                                     .then(
                                         if (ratingValues.size >= 2) {
+                                            // Keep each bound's colour solid
+                                            // across its own side of the box and
+                                            // confine the blend to a narrow
+                                            // band in the centre, rather than
+                                            // washing the whole box out with a
+                                            // full-width transition.
+                                            val lowerColor = ratingColor(ratingValues.first())
+                                            val upperColor = ratingColor(ratingValues.last())
                                             Modifier.background(
                                                 Brush.horizontalGradient(
-                                                    listOf(
-                                                        ratingColor(ratingValues.first()),
-                                                        ratingColor(ratingValues.last())
-                                                    )
+                                                    0.0f to lowerColor,
+                                                    0.42f to lowerColor,
+                                                    0.58f to upperColor,
+                                                    1.0f to upperColor
                                                 )
                                             )
                                         } else if (ratingValues.size == 1) {

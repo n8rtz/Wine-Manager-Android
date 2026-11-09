@@ -167,6 +167,10 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("Brush.horizontalGradient(", card)
         self.assertIn("ratingColor(ratingValues.first())", card)
         self.assertIn("ratingColor(ratingValues.last())", card)
+        # The ombre blend is confined to a narrow centre band; each bound's
+        # colour stays solid across its own side of the box.
+        self.assertIn("0.42f to lowerColor", card)
+        self.assertIn("0.58f to upperColor", card)
         sensory = (APP / "ui/components/SensoryEvaluationFields.kt").read_text()
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
         # The rating fill is a continuous scale with extra stops where most
