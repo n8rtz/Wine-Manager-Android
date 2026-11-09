@@ -79,7 +79,7 @@ internal fun RackQuickAddButton(
             contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
         }
     ) {
-        RackGlyph(modifier = Modifier.size(width = 30.dp, height = 27.dp), color = MaterialTheme.colorScheme.primary)
+        RackGlyph(modifier = Modifier.size(width = 27.dp, height = 27.dp), color = MaterialTheme.colorScheme.primary)
     }
 }
 
