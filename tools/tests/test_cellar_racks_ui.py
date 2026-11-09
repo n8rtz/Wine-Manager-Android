@@ -20,7 +20,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("private fun RackGlyph(", source)
         self.assertIn("painterResource(R.drawable.wine_rack_lattice)", source)
         self.assertIn("ColorFilter.tint(color)", source)
-        self.assertIn("modifier = Modifier.size(width = 32.dp, height = 27.dp)", source)
+        self.assertIn("modifier = Modifier.size(width = 30.dp, height = 27.dp)", source)
         asset = ROOT / "app/src/main/res/drawable-nodpi/wine_rack_lattice.png"
         self.assertTrue(asset.exists())
         data = asset.read_bytes()
