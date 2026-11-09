@@ -165,8 +165,8 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("style = MaterialTheme.typography.titleMedium", card)
         self.assertIn(".border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)", card)
         self.assertIn("Brush.horizontalGradient(", card)
-        self.assertIn("overallScoreBand(ratingValues.first()).color", card)
-        self.assertIn("overallScoreBand(ratingValues.last()).color", card)
+        self.assertIn("ratingColor(ratingValues.first())", card)
+        self.assertIn("ratingColor(ratingValues.last())", card)
         sensory = (APP / "ui/components/SensoryEvaluationFields.kt").read_text()
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
         # The rating fill is a continuous scale with extra stops where most
