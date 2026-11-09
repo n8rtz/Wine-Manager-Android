@@ -69,7 +69,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('onRemoveFromRack(selectedForRemoval, it)', views)
         self.assertIn('Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)', card)
         self.assertIn('val removeFromRack: (Set<Long>, String) -> Unit', screen)
-        self.assertIn('.offset(x = 4.dp, y = (-4).dp)', views)
+        self.assertIn('.offset(x = (-4).dp, y = (-4).dp)', views)
 
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()

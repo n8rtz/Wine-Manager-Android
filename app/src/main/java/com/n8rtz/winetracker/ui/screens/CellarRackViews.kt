@@ -79,7 +79,7 @@ internal fun RackQuickAddButton(
     Box(
         modifier = Modifier
             .size(width = 44.dp, height = 40.dp)
-            .offset(x = 4.dp, y = (-4).dp)
+            .offset(x = (-4).dp, y = (-4).dp)
             .semantics {
                 contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
             }
