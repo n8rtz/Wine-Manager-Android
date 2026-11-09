@@ -242,7 +242,10 @@ fun TastingNotesScreen(
                             expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
                         },
                         price = prices[groupKey],
-                        onNoteClick = onNoteClick
+                        onNoteClick = onNoteClick,
+                        onAromaIntensityChange = { noteId, descriptorId, phase, intensity ->
+                            tastingNoteViewModel.updateAromaIntensity(noteId, descriptorId, phase, intensity)
+                        }
                     )
                 }
             }
@@ -286,7 +289,8 @@ fun CompactNoteItem(
     listDateFormat: java.text.SimpleDateFormat,
     price: Double?,
     onExpandToggle: () -> Unit,
-    onNoteClick: (Long) -> Unit
+    onNoteClick: (Long) -> Unit,
+    onAromaIntensityChange: (Long, String, TastingPhase, Float?) -> Unit
 ) {
     val firstItem = group.first()
     val latestNoteId = remember(group) {
@@ -365,7 +369,7 @@ fun CompactNoteItem(
                                             phase = phase,
                                             observations = phaseObservations,
                                             onIntensityChange = { descriptorId, updatedPhase, intensity ->
-                                                tastingNoteViewModel.updateAromaIntensity(
+                                                onAromaIntensityChange(
                                                     selectedNote.note.noteId, descriptorId, updatedPhase, intensity
                                                 )
                                             },
