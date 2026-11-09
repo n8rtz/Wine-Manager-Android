@@ -81,8 +81,7 @@ internal fun CellarRacks(
     onRackSelected: (String?) -> Unit,
     onAssign: (Long, String?) -> Unit,
     onWineClick: (Long) -> Unit,
-    onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit,
-    resetKey: Any
+    onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
 ) {
     val rackNames = listOf(NEW_ADDITIONS_RACK) + cellarRackNames
     val newAdditions = remember(inventory, notesMap) {
@@ -210,7 +209,6 @@ internal fun CellarRacks(
                             imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
                             imageLocalPath = item.imageAsset?.relativePath,
                             rating = ratingsMap[key],
-                            expansionResetKey = resetKey,
                             details = {
                                 RackAssignmentControl(
                                     currentRack = assignments[item.bottle.bottleId],

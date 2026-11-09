@@ -14,7 +14,7 @@ import android.os.PowerManager
 import android.util.Log
 
 /**
- * Keeps the 125-label benchmark process active when the user navigates away from
+ * Keeps the 124-label benchmark process active when the user navigates away from
  * [WineAppLabelsActivity] (either to another screen in WineTracker or to another app while
  * WineTracker stays open in the background).
  */
@@ -29,7 +29,7 @@ class WineAppLabelsRunService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val status = intent?.getStringExtra(EXTRA_STATUS)?.takeIf { it.isNotBlank() }
-            ?: "Running 125-label benchmark…"
+            ?: "Running 124-label benchmark…"
         promoteForeground(status)
         if (intent?.action == ACTION_STOP) {
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -119,7 +119,7 @@ class WineAppLabelsRunService : Service() {
                 "Large image dataset test",
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "Progress while the 125-label wine benchmark runs in the background"
+                description = "Progress while the 124-label wine benchmark runs in the background"
                 setShowBadge(false)
             }
             manager.createNotificationChannel(channel)

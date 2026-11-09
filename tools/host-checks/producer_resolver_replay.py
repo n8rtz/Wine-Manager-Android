@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Host-side replay of the Lab producer resolver.
 
-This is the offline half of the producer/wine evidence check. It re-implements
-`ProducerResolver` and the FTS lookup in `ProducerGazetteer` exactly (normalize,
-`eligible`, exact-key lookup, trigram `OR` match, bm25 order, the edit-distance
-gate, the two-engine/disjoint-observation rule, the separation rule and the
-existing-producer protection) and runs it over the readings that a Lab run
-actually recorded for each image.
+This is the offline replay for the primary-index, two-engine upstream span-based
+producer path and its retrieval-bound experiment. It replays normalization,
+exact/FTS lookup, edit-distance, evidence and existing-value gates over readings
+recorded by a Lab run. It does not model Lab's expanded-source/single-reading
+policy or the terminal completed-value database canonicalization pass; that pass
+must be evaluated against the final producer field, not OCR spans.
 
 It exists because the matcher cannot be exercised on the device without a
 cellar install, and because the interesting question is not "does the code
@@ -44,7 +44,10 @@ GENERIC = {"chateau", "domaine", "domaines", "estate", "winery", "wine", "wines"
            "reserve", "reserva", "grand", "cru"}
 MAX_SPANS = 128
 MAX_HITS = 32
+# Legacy bound used by the standalone experiment scripts importing this module.
 MAX_FUZZY_CANDIDATES = 200
+# ProducerResolver's current producer shortlist; wine-name lookup remains at 200.
+MAX_PRODUCER_FUZZY_CANDIDATES = 256
 
 # Rows in the primary producer export that cannot be a match target. Measured against
 # the packaged asset: 431 keys carry more than one producer id (975 rows, 544 of them
@@ -77,7 +80,7 @@ def eligible(text):
             and any(len(w) >= 4 and w not in GENERIC for w in words))
 
 
-def distance(a, b, allow=2):
+def _character_distance(a, b, allow):
     if abs(len(a) - len(b)) > allow:
         return allow + 1
     previous = list(range(len(b) + 1))
@@ -88,6 +91,14 @@ def distance(a, b, allow=2):
                                  previous[j] + (0 if a[i] == b[j] else 1))
         previous = current
     return previous[-1]
+
+
+def distance(a, b, allow=2):
+    """Resolver edit distance; omission of the French particle `de` costs zero."""
+    without_de_a = " ".join(word for word in a.split() if word != "de")
+    without_de_b = " ".join(word for word in b.split() if word != "de")
+    return min(_character_distance(a, b, allow),
+               _character_distance(without_de_a, without_de_b, allow))
 
 
 def passes(q, key, word_boundary_tolerant):
@@ -283,8 +294,8 @@ def main(argv):
         ("current  fetch LIMIT 33, drop the span when the window is full",
          dict(candidate_limit=MAX_HITS + 1, word_boundary_tolerant=False,
               skip_on_saturation=True)),
-        ("fixed    fetch LIMIT 200, keep the span",
-         dict(candidate_limit=MAX_FUZZY_CANDIDATES, word_boundary_tolerant=False,
+        ("fixed    fetch LIMIT %d, keep the span" % MAX_PRODUCER_FUZZY_CANDIDATES,
+         dict(candidate_limit=MAX_PRODUCER_FUZZY_CANDIDATES, word_boundary_tolerant=False,
               skip_on_saturation=False)),
     ]
 

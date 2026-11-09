@@ -1,6 +1,60 @@
 # Things to Check
 
-> **Status:** these are verification steps, not results. No Android build, unit test or emulator run has been done for any branch below. Each section carries a **Last run** line to fill in.
+> **Status:** these are verification steps, not device results. No Android build, Kotlin/Gradle unit test, or emulator run has been done for any branch below unless its **Last run** line says otherwise. Each section carries a **Last run** line to fill in.
+
+## GLiNER Lab v7 baseline restoration
+
+*Last run: host-only selector/scorer tests and source checks; Android and device verification pending.*
+
+- [ ] Upgrade over the existing install with its saved Lab v7 results; do not clear app storage. Before running GLiNER, confirm Lab v7 and Prod v6 rows show available saved results and coverage, explicitly not paired. An earlier 124-photo Lab v7 run should appear as retained-photo results, not as a full 193-photo run; if missing, confirm there is a saved Lab v7 run on this device.
+- [ ] Run a few GLiNER photos and verify the comparator rows update for precisely the matching photos; unavailable or unmatched baselines show `—`, and partial comparisons state their coverage. New photos must not receive fabricated old baseline results.
+- [ ] Confirm the reported Lab build/configuration and the rescored-against-current-references note for an older corpus. Opening this page must not overwrite the original Lab run, its checkpoints, or historical build scores. Check the Lab screen separately before and after.
+- [ ] Run `:app:testDebugUnitTest --tests com.yourapp.wine.WineAppLabelsSavedLabComparisonTest --tests com.yourapp.wine.phonecorpus.GlinerLabBaselinesTest` in an Android-capable environment.
+
+## GLiNER curated score tables placement
+
+*Last run: host source checks only; phone and Android UI verification pending.*
+
+- [ ] Open **GLiNER lane lab** with no run and confirm **Scored results** and its summary and field tables are directly below the run controls, before **Your images** and **Personal audit**. Missing baselines remain `—`, not fabricated zeros.
+- [ ] With 26 imported photos and with the audit results expanded, confirm the curated tables stay above those cards; run a few curated photos and check both tables update alongside the run. Personal audit scores remain separate. Export any results before stopping the app process.
+- [ ] Run `:app:testDebugUnitTest --tests com.yourapp.wine.GlinerLabStartupTest`; the host source guard checks placement but not phone rendering.
+
+## Shared Lab startup crash after corpus expansion
+
+*Last run: host source checks only; Android unit test and phone confirmation pending.*
+
+- [ ] Install the fix over the existing app without clearing storage. From Settings open **GLiNER lane lab**, and separately open **Large image dataset test**, including after a force-stop and on a fresh install. Both should open instead of crashing; the combined count should be 193 and old saved results must remain intact.
+- [ ] Wait for saved Lab/Prod baseline loading; any corpus-loading failure should appear in the GLiNER score section instead of crashing. No new model or OCR run is required for this check.
+- [ ] Run `:app:testDebugUnitTest --tests com.yourapp.wine.WineAppLabelsStartupTest --tests com.yourapp.wine.GlinerLabStartupTest` on an Android-capable build environment. These tests are not a substitute for the phone launch check.
+
+## Branch `arena/1bab4a14-wine-manager-android` — GLiNER policy v5
+
+*Last run: host-only saved-OCR replay and Kotlin policy tests; Android compilation and device checks pending.*
+
+- [ ] Build/install on the phone and confirm Settings → Scanner testing → GLiNER lane lab opens; the JSON export reports `gliner-field-policy-v5`.
+- [ ] Run the 26-photo Personal audit using the original image bytes. Compare its paired fields and label scores to the saved v4 baseline; inspect Altos de Valdoso, its Crianza, and the grape-blend/title cases, as well as any newly wrong fields. Host replay is not a predicted phone score: OCR, model and expanded index may differ.
+- [ ] Run the combined 193-photo curated set on Lab v7 and GLiNER. Check #191–259 each show one wine bottle and a whole front label, review their candidate reference fields, and verify unresolved fields are unscored. Compare old-photo results with the earlier 124-photo run, particularly #126: `Pays d'Oc` should not be incorrectly prefixed to its grape name. Do not compare raw aggregate totals across the different sets.
+- [ ] Verify the re-reviewed references and field-level denominators on device: 61/63 X-Wines and 188/193 total labels are all-six eligible. A vintage/subregion absent from the photographed front is an expected blank, not a claim about the wine itself; verify blank is correct and an unsupported fill is wrong. #238 vintage and #226 region remain unresolved, and #196 geography remains unresolved. Printed #259 vintage is 2019; #226 subregion is Delle Venezie. Old and current scoring signatures must not be silently merged.
+- [ ] Confirm matching frozen Prod results for the original photos carry over, and the 69 internet photos receive their own first baseline captures and fresh OCR. In GLiNER, verify the Lab/Prod table shows missing or partial coverage until those captures finish; no fabricated baseline score.
+- [ ] Check cold single-scan wall time including model setup and compare with the previous build; confirm Prod and Lab v7 remain unchanged. Export the diagnostic JSON for comparison.
+
+### 2f. Lab v6 Item 1a integration (bounded wine-title pairs)
+
+**Phone-verified 2026-10-29 on build `d1e44611074f`: EXACT match with host.** Lab v6 = 66/122 fully correct, 47 one-error, 9 with 2+ errors; wine_name 86 (was 82, exactly the +4 host gains), producer 97, country/region 124, subregion 122, vintage 123. Prod v5.0 unchanged at 62/122 with wine_name 82 (frozen; did not gain the 1a pairs).
+
+- [x] Run Lab v6 on #170, #177, #184, #186: wine_name should be `Inscription Pinot Noir`, `Ultra Malbec`, `Volcanic Pinot Noir`, `Merlot` respectively, with no other field changes vs the previous Lab v6 run. (Aggregate wine_name delta is exactly +4 with all other fields identical, matching the host gain set.)
+- [ ] Spot-check #58, #66, #72, #126, #127: wine_name unchanged (`Cabernet Sauvignon`, `Cremant d'Alsace`, `Bordeaux Superieur`, `Cabernet Sauvignon`, `Corbieres`) — the pair must not prepend producer fragments.
+- [x] Prod v5.0 column unchanged everywhere (frozen ten-module checkpoint; it must NOT gain the 1a pairs). Confirmed: 62/122, wine_name 82.
+
+### 2g. Lab v6 Items 4b/4c integration (stacked wine titles, split producer spans)
+
+**Phone-verified 2026-10-29 on build `f5cfe0e383d0`: EXACT match with host.** Lab v6 = 72/121 fully correct, 43 one-error, 6 with 2+ errors; producer 100/23, wine_name 91/32, country/region 124, subregion 122, vintage 123. Eligible dropped to 121 with Unresolved = 3 (#169 producer excluded). Prod v5.0 unchanged at 62/121 with wine_name 82 (frozen; did not gain 4b/4c).
+
+- [x] Run Lab v6: fully correct should be 72/121 (was 66/122; dataset now excludes #169 producer — blown out by lighting, marked unresolved 2026-10-29), wine_name 91, producer 100.
+- [ ] Wine gains: #50 `Naturae Merlot`, #152 `Naturae Syrah Rose`, #154 `LBV Port` (or `Late Bottled Vintage Port`), #183 `Golden Reserve Malbec`.
+- [ ] Producer gains: #92 and #136 `Domaine Allary Haut-Brion`, #164 (producer field), plus #137 wine_name.
+- [ ] No-steal spot checks: #58/#66/#72/#126/#127 wine unchanged (see 2f); #177 still `Ultra Malbec` (not `Kaiken Ultra Malbec`); #170 still `Inscription Pinot Noir`.
+- [ ] Prod v5.0 column unchanged at 62/122 (frozen; must NOT gain 4b/4c).
 
 ## How to use this file
 
@@ -16,6 +70,12 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 
 | Branch | PR | State | What it changes | Section |
 | --- | --- | --- | --- | --- |
+| `arena/a89d1ab7-wine-manager-android` | #14, open | active | Silent startup crash fix: schema aligned forward to v22; startup DB gate with error screen | [Jump](#branch-arenaa89d1ab7-wine-manager-android) |
+| `arena/fff57f7b-wine-manager-android` | #13, merged 2026-11-07 | in `main` | W-057 Backup & Restore, W-061 structured notes, and Cellar stock/edit/note actions | [Jump](#branch-arenaffff57f7b-wine-manager-android) |
+| `arena/49fc9af5-wine-manager-android` | not opened | active | First compact-JSON diagnostic analysis; host Lab replay harness (phone = final verification only) | [Jump](#branch-arena49fc9af5-wine-manager-android) |
+| `arena/0a282176-wine-manager-android` | not opened | active | Multi-photo, unscored Lab v5 sanity checks | [Jump](#branch-arena0a282176-wine-manager-android) |
+| `arena/ab7b824f-wine-manager-android` | not opened | active | Pre-refresh 125-label results relabeled Lab v5 / Prod v4.0; legacy pipeline and frozen-baseline compatibility | [Jump](#branch-arenaab7b824f-wine-manager-android) |
+
 | `arena/673cafd4-wine-manager-android` | not opened | current work | Regions and subregions now nest: catalog 1,020 → 2,065 names across 48 countries, `path` column, authored `geography/*.txt` trees | [Jump](#branch-arena673cafd4-wine-manager-android) |
 | `arena/5dc78d5f-wine-manager-android` | #11, merged 2026-10-26 | in `main` | Restored the CSV export flow (prepare, save parts, split) on the **Large image dataset test** screen | [Jump](#branch-arena5dc78d5f-wine-manager-android) |
 | `arena/18cd55a1-wine-manager-android` | not opened | current work | Four-version lockstep benchmark; Lab v4 expanded producer index (X-Wines/TTB/OSM) vs LWIN-only Prod v3.0; expanded index on the Database Lookup page; condensed diagnostic table | [Jump](#branch-arena18cd55a1-wine-manager-android) |
@@ -26,6 +86,270 @@ When you start a new branch, copy the **Template** at the bottom, put it directl
 | `arena/d055fead-wine-manager-android`, `arena/9d4919dd-wine-manager-android` | #2 and #3, merged 2026-10-15 | in `main` | Camera label scan, Open Food Facts image import, Manage Offline Images, Pareto screen | [Jump](#branches-arenad055fead-wine-manager-android-and-arena9d4919dd-wine-manager-android) |
 
 *Merged branches live in `main` now, so “load the branch” for them means building `main` (or any later branch) and running that section. The mapping of the camera, importer and Pareto work to PRs #2 and #3 comes from the PR titles and the changelog; the repository history was squashed, so it could not be confirmed from the commits.*
+
+## Branch `arena/a89d1ab7-wine-manager-android`
+
+**Build it:** `git checkout arena/a89d1ab7-wine-manager-android`; install the debug build over the existing phone install WITHOUT clearing storage (the crash only reproduces with a v22 database left by a `main` build).
+
+**What changed:** schema aligned forward to v22 (`MIGRATION_21_22`, `WineDefinition.defaultColorHsv`, `HsvColor`/rich `SensoryData` storage parity with `main`) so branch builds open `main`-created databases with no data loss; startup now gates the cellar UI on the database probe and shows an error screen instead of closing silently.
+
+### Silent startup crash on a v22 database
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Install this branch's debug build over the phone install holding the real cellar (v22 database); do not clear storage. The app must open to the Cellar — no instant close. Cellar counts, a wine detail, notes and history must match the pre-install state.
+2. [ ] Open and save a tasting note, then JSON-export before/after and diff the `sensoryData` payload: color, entry/tight-open and aroma observations must survive the round-trip (no silent field drops).
+3. [ ] Export a JSON backup and re-import it; the restore must succeed and `defaultColorHsv` values must survive.
+4. [ ] Run `:app:testDebugUnitTest --tests com.n8rtz.winetracker.data.local.SensoryDataAromasConverterTest` in an Android-capable environment; all six converter tests must pass unchanged.
+5. [ ] From the + menu, tap Add Wine: a full-screen camera opens (first run asks for camera permission once; denying shows an Allow camera prompt, never the old form-first screen). The viewfinder shows a portrait (taller-than-wide) label guide, a shutter button bottom-center and a gallery swatch bottom-left; a skinny full-width handle card sits at the bottom. Drag the handle up: the full manual entry form slides up ("Add New Wine", all fields, Save to Cellar); drag it back down to the camera. While the form is up the camera must be off (no green privacy dot); dragging back down reactivates the viewfinder.
+6. [ ] Tap the shutter: the photo freezes full-screen with retake (✗) and use-photo (✓) buttons and no scan starts. Tap ✗: the live preview resumes and the shutter works again. Tap the shutter and ✓: the frozen still stays up with the guide over it, the drawer rises just enough to show the analyzing bar and one-line status ("Getting the label reader ready…" → "Loading the label reader…" → "Preparing the photo…" → "Reading the label text…" → "Checking with a second read…" → "Understanding the label…" → "Filling in the wine details…", left-to-right, no spinner), and when the scan completes the drawer expands to the full form with the read details filled in. Rotate the phone on the confirm still: the photo must survive and ✓ must still start the scan (rotation must not silently cancel the pending capture).
+7. [ ] Tap the gallery swatch and pick a photo: it processes like a confirmed shutter photo (frozen still, guide, progress drawer, form on completion) with no confirm step. Deny camera permission, kill and reopen Add Wine: no re-prompt, the Allow camera prompt shows, and the manual form still works from the drawer. After any error the live preview returns with a Retake shutter plus an Enter manually action. If the camera itself doesn't start within a few seconds, a "taking too long" error with Retry camera appears; Retry re-readies the camera without leaving the screen. A completed scan whose draft backup fails must still release the scanner with a notice, never wedge later scans; scan notices must never disable the shutter. Dragging the drawer, switching tabs or rotating during the completion animation must never wedge later scans either.
+8. [ ] Type into several Add Wine fields (no scan), then leave via system back, via another bottom tab, and via Save: every return shows blank fields. Rotate the phone mid-entry instead: the fields must survive. Start a scan, leave before it finishes, return: fields stay blank until the result lands, then fill in.
+9. [ ] Fresh install (or clear app data): launch the app and confirm it opens to the Cellar as fast as before (no startup stall). Wait ~30 s without scanning, then check logcat for `GlinerModelPrewarm: done (ready=true, int4=true)`; the first scan afterwards must skip the model-install wait. Also scan ~10 s after launch at least once (pre-warm mid-install): logcat must show `GlinerModelPrewarm: yielding (scan started)` and the scan must proceed at full speed with no paced wait.
+10. [ ] Blackstone Merlot re-test (same file, this branch's build): import the photo into the GLINER lane lab (confirm the header shows 0.50 · w12) and scan it from Add Wine via the gallery. Logcat must show one `WineScan OK` line per Add Wine scan with build/policy/lane/modules, both engines' reading counts, accepted entities and decided fields. If production still finds less than the lab, paste the `WineScan OK` line plus the form result — it records everything needed to isolate engine, entity or decision divergence.
+
+## Branch `arena/fff57f7b-wine-manager-android`
+
+**Build it:** `git checkout arena/fff57f7b-wine-manager-android`; `./gradlew :app:assembleDebug :app:testDebugUnitTest`, then install on an **emulator or disposable install** only.
+
+**What changed:** W-057 complete (except backup encryption, which the owner declined) — **Profile → Settings → Backup & Restore**, app-open scheduled backups to **Local, Google Drive (SAF), GitHub and TrueNAS SCALE WebDAV**, calendar-based days/weeks/months frequency, keep-newest-N retention per destination, priority reorder, setup dialogs, restore from any destination, a popup on every app open while a backup is failing, Keystore-protected credentials excluded from Auto Backup, and the reviewer list + image budget in the JSON backup. Follow-up UI fix: the main menu shows only destination toggles; each destination opens a submenu with its actions and the shared schedule/retention controls. Enabled destinations show a small last-backup date/time; disabled ones show none. One unified **Restore from backup…** row sits on the main menu. No explanatory prose, no Move up / Move down, and no global `+` FAB overlapping the page. Still no WorkManager, service, alarm, system notification, network-state permission or Room migration. The `+` Add menu is restricted to Cellar and Notes, and the Cellar tab always returns to the Cellar root. Expanded Cellar cards have `− Stock: N +` controls (one bottle per tap, with consumption recorded in History and snackbar UNDO), an Add Tasting Note icon prefilled for that wine/vintage, and a separate Edit icon; the Wine Detail route is gone. The obsolete legacy CSV imports, Wine images section, OCR Text Lab, OCR Lab and Export OCR test data entries are gone from Settings; the **Large image dataset test** stays.
+Cellar, Rankings and Tasting Notes reopen at the top of their lists, and every search bar hint is just **Search** on one line.
+Cancelling Google Drive **Change setup** without choosing a folder keeps the previously selected folder.
+The top search bars and filter buttons stay, but now scroll away; compact search/filter buttons appear in the upper right once they are out of view and follow the user down the list. Cellar card bodies and carets both expand/collapse, Cellar stats live in a dialog, and page titles scroll away with their content.
+
+### Floating search/filter bubbles, card clicks, stats dialog and scrolling headers
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On **Cellar**, confirm the stats icon (analytics glyph, not a donut) sits on the **left** of the full-width **Search** bar, with the filter button on the right, all on one line, and **Showing N bottles** directly below. There is no separate stats header row above the search bar. Confirm no compact buttons are visible yet.
+2. [ ] Tap the left-hand stats icon: **Cellar Stats** opens with **Total Bottles**, **Unique Wines** and **Est. Value**. Close it and confirm the list did not move. Confirm the three analytics cards are not back at the top of the screen.
+3. [ ] Scroll down until the top search row has scrolled out of view. Confirm two small buttons then appear in the upper right **stacked vertically** (search on top, filter below) and stay visible as you keep scrolling. Scroll back to the top and confirm they disappear again.
+4. [ ] Scroll down, tap the compact **Search** button, and confirm a one-line **Search** field pops up at the top of the screen while the same cards stay exactly where they were. Type a query and confirm the list still does not jump to the top. Close the field and confirm the compact buttons return.
+5. [ ] Scroll down again, tap compact **Tune**, change a filter or sort, and confirm the list stays at the same position. Check the filter button shows its active colour when a filter is set.
+6. [ ] Repeat 3–5 on **Rankings** and **Tasting Notes**. Confirm the top search rows and the titles (**Rankings**, **Tasting Notes**) and **Consumption History** scroll away with the list instead of staying frozen at the top.
+7. [ ] On **Cellar**, tap the card body and caret: both expand/collapse it, and opening a second card collapses the first. In the expanded card verify `− Stock: N +`, the Edit icon, and Add Tasting Note icon. The body no longer opens a Wine Detail screen.
+8. [ ] On **Tasting Notes**, repeat the carat checks for the one-open accordion. Tap an expanded note row: that note opens in the editor. Tap anywhere else on a collapsed card: that wine's most recent tasting note opens in the editor.
+9. [ ] On **Rankings**, confirm the carat still expands a card and tapping elsewhere does nothing.
+10. [ ] On **Add / Edit Tasting Note**, **Add New Wine**, **Edit Wine**, **App Information**, **Database Lookup**, **Settings**, **Backup & Restore** and **Price vs. Rating**, scroll down and confirm the title bar scrolls away; scroll back up and confirm back/actions return. Check at the largest display size that the compact buttons do not cover a card's caret while scrolling.
+
+### Google Drive folder change — cancel keeps the folder
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set up a Google Drive folder under **Backup & Restore → Google Drive**, confirm the row shows **Change setup** and **Drive folder selected**.
+2. [ ] Tap **Change setup**, then press Back repeatedly until the folder picker closes without selecting anything. Confirm no "No Drive folder was selected." popup appears and the row still shows **Change setup** / **Drive folder selected**.
+3. [ ] Run **Back up now** after that cancel and confirm it still writes to the same Drive folder; leave the screen and come back to confirm the folder is still configured.
+4. [ ] Tap **Change setup** again and select a *different* folder. Confirm the new folder replaces the old one and backups go there.
+5. [ ] Tap **Disconnect** and confirm it is still the only action that leaves no folder selected.
+
+### Tab re-entry scroll and one-line search hints
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On **Cellar**, scroll down several cards, then switch to **Rankings** and back via the bottom bar. Confirm Cellar opens at the top (analytics cards and search bar visible), not at the previous card.
+2. [ ] Repeat on **Rankings** and **Tasting Notes**, including leaving Notes by opening a note and returning with the back arrow.
+3. [ ] Expand a Cellar card and open **Edit Wine** after scrolling down, then tap **Cellar** and **Back**. Both should show the top of the Cellar list.
+4. [ ] On each of the three tabs, check the search bar shows only **Search** on a single line; widen the font to the largest display size and confirm it still does not wrap or grow the field.
+5. [ ] Check the same on **Add Note → Wine**, the **aroma wheel** search, and **Settings → Database Lookup**; Database Lookup should show no second hint under the field.
+
+### Add menu visibility and Cellar tab
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] From **Cellar** and **Notes** confirm the `+` FAB is present. On Notes it opens **Add Note** directly; on Cellar it opens the **Add Wine / Add Note** submenu.
+2. [ ] Open **Edit Wine**, **Add Wine**, a note editor, **History**, **Rankings**, **Profile**, **Settings**, **Backup & Restore** and **Database Lookup**. Confirm no `+` FAB appears on any of them, and that an open submenu closes when you leave Cellar or Notes.
+3. [ ] From **Edit Wine**, tap **Cellar**. Expect the unfiltered Cellar root: expanded cards collapsed, search cleared, filters reset.
+4. [ ] From **Add Wine**, a note editor opened from any tab, and from **History / Rankings / Profile → Settings → Backup & Restore**, tap **Cellar**. Each time expect the Cellar root, not the previous screen or a restored filtered view. Repeat with **Back** to confirm no stale screens remain in the back stack.
+
+### Cellar stock controls, Add Tasting Note and wine editing
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a wine with 3 bottles, expand the card and tap `+` twice. Confirm the stock count increments to 5 without changing any existing History rows.
+2. [ ] Tap `−` once. Confirm the stock drops to 4, exactly one History event with quantity 1 appears, and no tasting note is created automatically.
+3. [ ] Right after that consumption, tap snackbar **UNDO**. Confirm the stock returns to 5 and the History entry disappears.
+4. [ ] Consume one bottle again, then in **History** press and hold → **Restore to cellar → Restore**. Confirm the stock goes up by one, the entry disappears, and no note is created.
+5. [ ] Consume all remaining bottles one at a time. Confirm the wine leaves active Cellar after the last bottle and each `−` tap creates one History event.
+6. [ ] Tap the expanded-card **Add Tasting Note** icon. Confirm the editor is prefilled with that wine and vintage (including NV); save and verify the note appears in **Tasting Notes**. Keep the separate read-only tasting-note detail route working.
+7. [ ] Tap the expanded-card **Edit Wine** icon. Change wine metadata and save; confirm it persists and returns to Cellar. No Wine Detail screen or route should appear.
+
+### Settings cleanup — obsolete entries
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Profile → Settings**. Confirm **Backup & Restore**, **Import Data (JSON)**, **Export Data**, **Reset Database**, **Database Lookup** and **App Information** are still present, and that no **Wine images** section, legacy CSV import row, OCR Text Lab, OCR Lab or Export OCR test data row appears.
+2. [ ] In a debug build, confirm **Scanner testing** contains only **Large image dataset test** and that it still opens the 125-label benchmark. In a release build, confirm the whole **Scanner testing** block is absent.
+3. [ ] Open **Add Wine** in a debug build and confirm the **OCR Lab — test production stack** button is gone and the label scanner still works.
+4. [ ] Confirm **Import Data (JSON)**, **Export Data** and **Reset Database** still behave as before, and that an exported JSON still restores image provenance rows without trying to fetch or import new images.
+5. [ ] Confirm no Open Food Facts image review, offline-image management or storage-budget dialog can be reached anywhere in the app, and that a wine card with an existing local image still displays it.
+6. [ ] Run `python3 tools/tests/test_settings_cleanup.py` and the rest of `tools/tests/`; all host checks should pass. Then `./gradlew :app:assembleDebug :app:testDebugUnitTest` to confirm no dangling references to the deleted classes.
+
+### Backup & Restore — fresh install and first automatic backup
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a fresh disposable install, open the app once without touching Settings. Expect the first automatic local backup on that app open (nothing has ever been confirmed, so it is due). Confirm a `WineTracker_<date>_<time>.json` file appears in **Documents/WineManager/** (Device Explorer or a Files app).
+2. [ ] Open **Profile → Settings → Backup & Restore**. Confirm defaults: **Automatic backup** on, **Every 1 month**, **Local folder** toggle on, **Delete old backups** on, **Keep the newest 5**, and the three off-device toggles visible but off.
+3. [ ] Confirm the status card reads **Only a local copy exists — it does not protect against losing the phone** and the Local row shows a **Last confirmed <date/time>** line. A local copy must never be reported as off-device protection.
+4. [ ] Close and reopen the app immediately. Confirm no second backup file is created (the last confirmed copy is younger than the interval).
+5. [ ] Confirm no new runtime permission prompt appears and that the app manifest is unchanged (no service/receiver entries).
+
+### Frequency, overdue flag and manual backup
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open any destination submenu and set **Backup frequency** to `1` / **days**. Leave and reopen the submenu; confirm the setting persisted and that it is the same value in every other destination's submenu. The number box must reject values outside 1–365.
+2. [ ] With the device clock moved forward more than one day (or after waiting a day), reopen the app. Expect an overdue notice ("Your last confirmed backup was older than the selected interval…") and a new local snapshot created on that app open.
+3. [ ] Turn **Automatic backup** off. After the interval passes, expect an **overdue** warning card and **no** automatic upload; **Back up now** in a destination submenu then creates a copy and clears the warning.
+4. [ ] In a destination submenu, tap **Back up now** twice in a row (allow a second to pass between taps). Confirm each produces a distinct file name (the name includes seconds) and the run message names **Local folder: confirmed**.
+5. [ ] Confirm nothing is ever scheduled while the app is closed: no notification, no service and no new file appears after the app has been in the background across an interval boundary until it is opened again.
+6. [ ] Simulate a failed write (e.g. no free space) and confirm **Needs attention** appears with a reason and no "confirmed" status; a later successful **Back up now** in a destination submenu clears it. Old snapshots must survive a failed run.
+
+### Retention and restore round-trip
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Set **Keep the newest 2**, tap **Back up now** until at least four app-owned snapshots exist in **Documents/WineManager/**. Confirm exactly the two newest remain and unrelated files (e.g. a `notes.json` you place in the same folder) are untouched.
+2. [ ] Turn **Delete old backups** off, create another backup, and confirm the older snapshots remain.
+3. [ ] From **Restore from backup…**, confirm the dialog lists app-owned snapshots **newest first** and that **No local backups were found** appears only when the folder is empty.
+4. [ ] Pick a snapshot, read **Replace app data?**, tap **Cancel**, and confirm no data changes. Pick it again and tap **Replace and restore**. Expect the same wines/bottles/notes/history counts as the exported snapshot and the snackbar "Backup restored. Existing app data was replaced."
+5. [ ] Restore a deliberately malformed JSON file through **Settings → Import Data (JSON)** and confirm the existing cellar is unchanged and an error is shown (the existing validated importer is reused).
+6. [ ] On a second disposable install, restore a snapshot from **Documents/WineManager/** and compare counts. Note any MediaStore ownership limitation after reinstall and fall back to **Import Data (JSON)** with the system file picker.
+7. [ ] Run `:app:testDebugUnitTest` and confirm `BackupScheduleTest` passes (month ends, leap year, DST, clock rollback, naming round-trip, keep-newest-N, protection).
+
+### Off-device destinations — setup, independent uploads, verification
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Open **Backup & Restore**. Confirm the main menu shows only four destination name + toggle rows. Toggles work independently, there are no **Move up / Move down** controls, and no `+` FAB overlaps the page.
+2. [ ] **Google Drive → Set up…**: the system folder picker opens; choose a Drive folder. Expect **Drive ready** and a persisted grant. Restart the app and confirm the grant is still valid without re-picking. Revoke it in Android Settings → Apps → special access (or pick another folder) and confirm the row reads **Needs setup/reconnect** and no "failed backup" popup appears.
+3. [ ] **GitHub → Set up…**: enabling it first shows the **Back up to GitHub?** warning naming git history; cancel leaves it off. Accepting opens setup. Enter `owner/repo` and a fine-grained PAT for a **private** repo; expect **GitHub ready: Private owner/repo on branch …**. Verify a `WineManager/` folder appears in the repo with the snapshot as a commit.
+4. [ ] Repeat GitHub setup against a **public** repository and confirm setup fails with an explicit refusal and the credentials are cleared. Confirm a full URL (`https://github.com/…`) is rejected with the owner/name hint.
+5. [ ] **WebDAV → Set up…**: point at a TrueNAS SCALE WebDAV share (or Nextcloud's `/remote.php/dav/files/<user>/WineManager/`). Expect **WebDAV ready**. Enter an `http://` URL and confirm the unencrypted warning appears; enter `ftp://`, a URL with `user:pass@`, or one with spaces and confirm setup is rejected with a visible reason.
+6. [ ] Enable all four destinations, open each submenu in turn and tap **Back up now**. Expect one result line per tap, naming only that destination, with **confirmed**. Deliberately break one (expired PAT / wrong DAV password / revoked Drive grant) and confirm only that destination's run fails, the other three still confirm, and old snapshots at the broken destination survive.
+7. [ ] Confirm every destination verifies by read-back: tamper with one remote copy if possible and expect a checksum/read-back failure with a **Needs attention** reason, not a silent "confirmed".
+8. [ ] Confirm **Back up now** on an unchanged database still creates a new snapshot (no fingerprint/skip logic was requested), and **keep the newest N** applies independently at GitHub, Drive, WebDAV and Local without touching unrelated files in any folder/repo.
+
+### Destination toggle menu and submenus (W-057 follow-up)
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] On a phone-width screen, confirm the main menu has only four destination rows with a working toggle each, plus the short **Backup status** values. Each **enabled** destination that has a confirmed backup shows a small **Last confirmed <date/time>** under its name; a disabled destination shows no second line, and neither does one that has never backed up. No explanatory paragraphs, descriptions, helper text or action buttons. Rotate the device and try the largest system font size: nothing wraps into unreadable columns.
+2. [ ] Turn one destination off and confirm its date/time line disappears immediately; turn it back on and confirm the line returns. Tap a destination name (not its switch). Expect a submenu titled with that destination, holding **Back up now**, **Change setup** / **Disconnect** (off-device only), **Schedule** and **Old backups**. There is no restore row inside a submenu. Tap the back arrow: it returns to the toggle menu; a second back leaves the screen. No `+` FAB or Add submenu appears anywhere on this route.
+3. [ ] Change **Backup frequency** or **Keep the newest N** in one submenu, then open another destination's submenu and confirm it shows the same values (these settings are shared, not per-destination).
+4. [ ] With **GitHub** toggled off but fully configured, open its submenu and tap **Back up now**. Expect a new snapshot only at GitHub and `Last confirmed` to update. Confirm Local, Drive and WebDAV did **not** receive a snapshot. (Single-target manual runs ignore the toggle; automatic runs still obey it.)
+5. [ ] Tap **Back up now**, then immediately try another destination's **Back up now** before the first finishes. Expect no duplicate snapshots and **Backing up…** to clear when the run ends.
+6. [ ] Tap **Back up now** on a destination with **Needs setup**. Expect a visible setup-needed result, not a crash, and no snapshot written anywhere else.
+7. [ ] Tap **Restore from backup…** on the main menu. Confirm one **Saved backups** dialog lists snapshots from every enabled, configured destination with the destination name on each row, newest first — no destination-chooser step. Pick a snapshot and confirm the replacement dialog names both the destination and the file.
+
+### Failure popup, warnings and restore from off-device
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] With one destination deliberately broken, close and reopen the app. Expect a **Backup failed** popup naming the destination and its reason **every time** the app opens, plus the persistent **Backup needs attention** banner on Backup & Restore. Confirm no system notification appears and Android shows no runtime permission prompt.
+2. [ ] Fix the destination and run **Back up now**. Expect the popup and banner to clear, and `Last confirmed <date/time>` to update. Confirm no popup on the next app open.
+3. [ ] Turn **Automatic backup** off and leave the last confirmed copy older than 30 days (clock change). Expect the manual reminder in the banner, and no automatic upload. After 3+ days overdue in automatic mode, expect **no confirmed backup for N day(s)** in the banner.
+4. [ ] **Restore from backup…** now offers a destination chooser in priority order. Pick GitHub (then Drive, then WebDAV), confirm the list is newest-first and contains only `WineTracker_<date>_<time>.json` names, and cancel once to confirm no data changes.
+5. [ ] Restore a snapshot from each off-device destination on a disposable install and compare wine/bottle/note/rating/event counts with the source. Expect the same **Replace app data?** confirmation and the existing validated importer's error message for a deliberately malformed file.
+6. [ ] Export a JSON backup and inspect it: confirm `reviewerNames` and `imageStorageBudgetBytes` are present, and that no token, password, Drive URI or image bytes appear. Restore a backup produced **before** these fields existed and confirm the current reviewer list and image-storage budget are unchanged (no silent defaults).
+7. [ ] After a restore, change the reviewer list and the offline-image budget in the source install, export, restore, and confirm both appear immediately in **Wine reviewers** and **Offline wine image storage** without restarting the app.
+8. [ ] In Android Backup settings / `adb shell bmgr`, confirm `backup_credentials.xml` and `files/wine-images/` are excluded from cloud backup and device transfer, and that the Room database and the two settings preference files are still included.
+9. [ ] Run `:app:testDebugUnitTest` (`BackupScheduleTest`, `BackupConfigRulesTest`) and `python3 tools/tests/test_backup_preferences.py`.
+
+## Branch `arena/49fc9af5-wine-manager-android`
+
+**Build it:** `git checkout arena/49fc9af5-wine-manager-android`; build/install the debug build as usual (wireless debugging is fine — nothing here writes cellar data).
+
+**What changed:** host Lab replay harness (`tools/host-lab/`, `tools/run-host-lab.sh`, `tools/logic-checks/HostLabReplay.kt`; parity gate PASS, 0/744 field diffs vs the phone baseline — re-verified after the app changes below) plus a Lab-only wine-name winner: new opt-in module `appellation_wine_fallback` (Lab settings toggles it), `AppellationFallback` now reads the supplemented origins view (it previously saw only the 27 raw-KB places, so e.g. Montagne-Saint-Emilion could never match; it also gains a bounded one-edit repair used only when no exact printed appellation matches), wired through `TextLabEvidencePreview`/`TextLabSpatialPreview` with default 0 so Prod and every existing caller are unchanged. Winning Lab module set (host-measured): baseline `blank_subregion_fuzzy+vintage_recovery+final_producer_near_match+producer_role_particle+spatial_semantic_guards` **+ `appellation_wine_fallback` + `stacked_appellations`** = **58/122 complete, 113/122 ≤1 error** (+7 wine-name gains: #36, #46, #94, #122, #151, #164, #167; zero losses). **Superseded 2026-10-29 by v2:** add **`appellation_classification_precedence`** (Item 2b) and the completed fallback repair (#99) = **60/122 complete, 113/122 ≤1 error, wine_name 81/123** (+9 gains: previous seven + #99, #157; zero losses; host-verified, phone pending).
+
+### Host-first Lab verification (final phone check)
+
+*Last runs: 2026-10-29 (phone, cached OCR) — build 3436fa0b9eb8 winning set: **58/122 complete, 55 one-error (= 113/122 ≤1 error), 9 with 2+ errors; wine_name 79/44** (exact host match, +7 vs a709ad6 baseline 72/51). Build 960bbe2f2db9 v2 set (adds `appellation_classification_precedence`): **60/122 complete, 53 one-error (= 113/122 ≤1 error), 9 with 2+ errors; producer 96/28, wine_name 81/42, country 124/0, region 124/0, subregion 122/2, vintage 123/0** — exact host match again (+9 wine names vs baseline). Fresh-OCR/export checks (items 3-5) still pending.*
+
+1. [x] Only after a host run beats the baseline (53/122 complete, 111/122 ≤1 error): build/install this branch and confirm **Profile → Settings → App Information** shows the expected build commit. *(2026-10-29: build 3436fa0b9eb8 confirmed on the results screen.)*
+2. [x] **Profile → Settings → Large image dataset test**: run Lab v5 over the 124 labels with cached OCR and the winning module set above (enable "Appellation as wine name fallback" and "Stacked appellations" on top of the usual five). Expected: **58/122 complete, 113/122 ≤1 error**, wine_name 79/123 correct; labels #36, #46, #94, #122, #151, #164, #167 gain their wine names with no other field changes. Any mismatch is a harness bug, not a tuning result — stop and report it. *(2026-10-29: exact match — 58/122, 55 one-error, 9 with 2+, per-field 96/28 · 79/44 · 124/0 · 124/0 · 122/2 · 123/0.)*
+2b. [x] **v2 re-run (new)**: same as item 2 but ALSO enable **"Appellation classification precedence"** (8 toggles total). Expected: **60/122 complete, 113/122 ≤1 error**, wine_name **81/123**; per-field producer 96, country 124, region 124, subregion 122, vintage 123; #99 and #157 wine names additionally correct vs the 2026-10-29 run. *(2026-10-29 build 960bbe2f2db9: exact match — 60/122, 53 one-error, 9 with 2+, per-field 96/28 · 81/42 · 124/0 · 124/0 · 122/2 · 123/0.)*
+2c-note. *(2026-10-29 build 218ef081235b export: ran 9 of the 10 v3 toggles (`role_aware_joins` off) and scored 61/122 complete, 113/122 ≤1 error, producer 97, wine_name 81 — host diff of the export vs the v3 prediction found exactly **one differing field in 744**: #105 wine_name, i.e. precisely the `role_aware_joins` gain. Re-run with "Role-aware joins" on for the full 62/122.)*
+2c. [ ] **v3 re-run (Item 3 round, new)**: same 8 toggles as 2b PLUS **"Protect exact producer evidence"** and **"Role-aware joins"** (10 toggles total). Expected: **62/122 complete, 113/122 ≤1 error**, producer **97/124**, wine_name **82/123**; per-field country 124, region 124, subregion 122, vintage 123; #146 producer and #105 wine additionally correct vs the v2 run, nothing else changes.
+2e. [ ] **Lab v6 integration (new)**: the Lab module list must no longer show checkboxes for the ten Prod v5.0 checkpoint modules (blank-subregion fuzzy, vintage recovery, final producer near-match, producer role & 'de' rules, spatial join & anchor guards, appellation fallback + classification precedence, stacked appellations, exact-producer protection, role-aware joins) — they are always on in Lab v6. With every remaining experimental toggle off, Lab v6 must reproduce the checkpoint exactly (**62/122 complete, 113/122 ≤1 error**, producer 97, wine_name 82, geography/vintage 124/124/122/123), matching the frozen Prod v5.0 row.
+2d. [ ] **Prod v5.0 checkpoint (new, frozen like every Prod version)**: Prod v5.0 is a retired comparator — it computes **once per photo on its first capture pass, then never again**; later runs replay the frozen record (`WineAppLabelsBaselines`, mode `PRODUCTION_V5`). On a device where the other Prod rows are already frozen, the first run on this build shows "capturing Prod v5.0" and freezes 124 records; the **Prod v5.0** row must then read **62/122 complete, 113/122 ≤1 error**, producer 97, wine_name 82, country 124, region 124, subregion 122, vintage 123 (identical to Lab v6 at its default checkpoint toggles, since Lab v6 starts from the same configuration). On every subsequent run Prod v5.0 must **not** recalculate: flip any Lab toggle, re-run, and the Prod v5.0 row (and its captured-build provenance / ten-module signature in the export) stays exactly the same while only the Lab v6 row moves.
+3. [ ] Re-run with fresh OCR (cache off) on at least the labels the host iteration changed: no new execution failures, and the changed labels' fields match the host prediction except where OCR itself read differently (note those labels).
+4. [ ] Export the compact JSON diagnostic (manifest + every numbered part) and confirm each part parses and stays ≤20 MB; the host rescore of that export must reproduce the phone's own `score.complete` / `score.at_most_one` rows.
+5. [ ] Confirm Prod v1.0/v2.0/v4.0 frozen rows, the Add Wine scanner, and all non-Lab behaviour are untouched, and that timings still complete without new budget-blocked labels beyond the known producer #105/#118 and wine #26/#105/#118/#165/#185.
+
+## Branch `arena/0a282176-wine-manager-android`
+
+*Last run: 55 targeted host checks passed. Full host discovery: 291 tests, 289 passed and two resolver-policy source-contract failures reproduced on unmodified pre-change HEAD. Android compilation, Robolectric and device checks pending (no JDK/Android SDK here).*
+
+### GLiNER lane lab (new structure on top of Lab v7) — phone checks
+
+*Last run: 25 GLiNER unit tests pass (`python3 -m unittest tools.tests.test_gliner_lab`), including the
+synthetic INT4 bundle / refusal cases. Full discovery has the same 15 pre-existing failures as
+unmodified HEAD. Kotlin type-checked with kotlinc against API stubs; Android build and device run pending.*
+
+Screen: **Settings → Scanner testing → GLiNER lane lab — ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4**.
+Structure and contracts: `_refs/GLINER_LAB.md`. Weights are not in Git, so this list starts with
+provisioning.
+
+0. [ ] Host check first: `bash tools/run-host-lab.sh` (parity) then `bash tools/run-host-gliner-lane.sh none`
+   and `… oracle-additive`. The 2026-10-30 numbers are in `_refs/GLINER_LAB_HOST_RUN.md`; a perfect labeller
+   currently scores below Lab v7, so fix the stage-3 record shape before pinning a bundle into the APK.
+1. [ ] Build the bundle on a desktop: `python3 tools/fetch-gliner-small-int4.py --out app/src/main/assets/gliner-lab-v1 --pin`
+   then `python3 tools/inspect-gliner-bundle.py app/src/main/assets/gliner-lab-v1`. Confirm the graph
+   has `MatMulNBits` nodes, exposes only `input_ids`/`attention_mask`/`words_mask`/`text_lengths`/`span_idx`/`span_mask`
+   and that the smoke run prints a lane span. A layout the script rejects is also a layout the screen would reject.
+2. [ ] Install with `-PglinerLabAssets=true` (baked bundle) or copy the three files to the phone and use
+   **Import model files**. Confirm the screen lists model/tokenizer/config with byte sizes, "INT4 detected",
+   the tokenizer description, and that a wrong file (a screenshot renamed to `.onnx`) is rejected.
+3. [ ] Run one label. Confirm the notes start with both reads, e.g. `PP-OCRv6_medium_det + PP-OCRv6_medium_rec = 14 lines;
+   ML Kit Latin = 12 lines; fused = 16 lines`, followed by `readings: mlkit 12 lines · paddle-v6-medium 14 lines`. A photo
+   where ML Kit finds nothing must still complete on PP-OCRv6 alone (and vice versa) — one engine failing is not a failed
+   label. Confirm the row shows the three lane texts plus residual text, the six fields, and a layout line such as
+   `span logits [1, spans, classes]`. If the graph shape is not supported, the row must fail with the shape and expected
+   span/class counts, not run silently.
+4. [ ] Confirm a fragment both engines read produces two records: in the CSV, `engine` is `mlkit` and `paddle-v6-medium`
+   for the same lane text, with different scores. Confirm a fragment only one engine read produces one record, and that
+   no field is marked GREEN on a lane record whose score is below the engine threshold.
+5. [ ] Run all 124 labels. Confirm progress advances one photo at a time, the aggregate shows
+   fully correct / one error / 2+ errors / failed, and per-field correct counts are sane. Compare against the
+   Lab v7 baseline (81/121 at the promotion build); a large regression is a real result, not a UI bug.
+6. [ ] Confirm a product/label photo is never written to a wine form and no Lab v7 score, frozen baseline or
+   best-build log changes after this run.
+7. [ ] Stop mid-run; completed rows stay, remaining rows read `Waiting`. Rotate during a run; the model
+   session and progress survive. Remove the imported files and confirm the next run refuses with a clear message.
+8. [ ] Save the scored CSV. Confirm one row per label with model/INT4/layout/words/spans/threshold/max_width,
+   lane texts, residual text, OCR lines, per-field expected/observed/state/outcome and all four timings.
+9. [ ] Check `isInt4` caching: replace the ONNX with a non-INT4 export of the same size and confirm the
+   "INT4 not confirmed" text appears after **Re-check**.
+
+### Multi-photo Lab v7 wine label audit/test (renamed from "Device-photo sanity check", 2026-10-30)
+
+1. [ ] Build/install on a disposable device. Select **Best build** on **Large image dataset test**, tap **Test Lab v7 on device photos**, and verify the displayed module keys match. Repeat with a custom configuration; entering the new screen must not silently replace it.
+2. [ ] Select several previously unseen label photos together, including JPEG and PNG and a rotated portrait. Confirm sequential fresh-OCR progress and that each photo has the correct six parameters beside it when finished. Check the actual values manually, including blanks; there is no guessed reference or accuracy score.
+3. [ ] Include a non-wine/blank image, corrupt/unreadable photo and image above 32 MiB. Confirm blanks/errors remain visible for their own photos and another valid photo still runs. Incomplete OCR should warn rather than claim a fully successful read.
+4. [ ] Rotate during OCR and after completion. Confirm no duplicate scan starts, the same photo-to-results association is preserved, and copy-all includes build/module keys, all six fields, errors and incomplete-OCR warnings.
+5. [ ] Cancel the photo picker with existing results visible; results must remain unchanged. Pick a new batch after finishing and verify no old photo fields leak into it.
+6. [ ] Stop mid-batch. The current image finishes; remaining images read **Not run — stopped**. Hardware Back ends the session; original photos remain unchanged, private copies are eventually removed, and re-entering starts a new empty session.
+7. [ ] Save the diagnostic manifest and every numbered JSON part. Confirm valid JSON, matching hashes and no photo bytes; retained rows include input identity/build/configuration, selected parameters, original OCR and extraction decision records. Do not expect benchmark accuracy analysis without reference answers.
+8. [ ] Compare the standard dataset's scores, checkpoints, frozen baselines and best-build log before and after this check: all must be unchanged. Its normal packaged-photo runs must still work. Run `:app:testDebugUnitTest --tests com.yourapp.wine.DevicePhotoLabTest` and existing benchmark tests.
+9. [ ] The screen and dataset card are titled **Device wine label audit/test**. Each finished photo card shows a **Raw OCR** list in reading order: `[engine] text · N.Nx median size · conf 0.NN`; Copy-all-results includes the raw OCR lines.
+10. [ ] Case-study follow-up: re-run the audit on the Kirkland Signature Saint-Julien photo (expect wine `Demeure Bourgeoise` still possible; check the SAINT-JULIEN line's size multiple in raw OCR) and the Conde de Basalu photo (check whether `DE BASALU` appears as its own line, merged, or not at all). Optionally save the diagnostic export for both so the readings can become host fixtures.
+
+## Branch `arena/ab7b824f-wine-manager-android`
+
+*Last run: `python3 -m unittest discover -s tools/tests -v` — 268 Python host tests passed. No Java/JDK, Android SDK, Gradle or adb is available here; Android/Kotlin/device checks remain pending.*
+
+**What changed:** the just-before-refresh Wine App Labels capture is now labeled **Lab v5** and **Prod v4.0**. New runs use `lab-v5-expanded-producers` and `production-v4.0-lwin-only`; the uploaded capture retains `lab-v4-expanded-producers` / `production-v3.0-lwin-only` as provenance. Retired IDs, the legacy `PRODUCTION_V3` baseline folder, saved build-log titles and nested funnel/scoreboard lookups have compatibility paths. The latest reference-only rescore and uploaded CSV/raw-part hashes are in `docs/lab-v5-accuracy-roadmap.md`.
+
+### Version labels and saved-result compatibility
+
+1. [ ] Build/install a debug APK on a disposable device and open **Profile → Settings → Large image dataset test**. Confirm the selectable row is **Lab v5**, the frozen spatial comparator is **Prod v4.0**, and Prod v1.0/v2.0 remain unchanged. Do not run a fresh full corpus just to check labels.
+2. [ ] Upgrade an install that contains frozen records under `baselines-v1/<signature>/PRODUCTION_V3/`. Confirm the screen still shows the old captured count/build as **Prod v4.0**, does not request a duplicate Prod run, and exports current display labels with `stored_pipeline=production-v3.0-lwin-only` retained as provenance.
+3. [ ] With saved prediction fixtures containing retired IDs (`lab-v4-expanded-producers`, `lab-v4-lwin-only`, `production-v3.0-lwin-only`, `production-v3.0-spatial-merged`), confirm nested pipeline selection restores the correct final fields and compact funnel rather than creating a failed placeholder. On device, confirm any old Prod run folder can be promoted to the frozen Prod v4.0 store.
+4. [ ] Confirm a new Lab v5 pass writes `pipeline=lab-v5-expanded-producers` and starts a fresh Lab v5 run folder; a pre-refresh Lab v4 run must not be silently reused as the current Lab v5 extraction. The old run remains available to the Lab v5 best-build history; any previously saved CSV continues to carry its original pipeline ID.
+5. [ ] Open an existing `benchmark-results-log.csv` with Lab v4 rows. Confirm the best-build comparison displays **Lab v5 Best build**, keeps original `pipeline_id` provenance until that run is updated, and refreshes the persisted best-build row title.
+6. [ ] Check the side-by-side score and per-field table against `docs/lab-v5-accuracy-roadmap.md`. The supplied capture is a reference-only rescore, not a new OCR run; do not describe it as a same-build live A/B for frozen Prod.
+
 
 ## Branch `arena/673cafd4-wine-manager-android`
 
@@ -501,6 +825,23 @@ Use a throwaway install or the debug seed, not data you can't replace.
 3. [ ] Legacy CSV imports (W-033 / W-034) and JSON restore, on a disposable install.
 
 
+## W-061 — Structured tasting notes
+
+*Last run: never (update this line with the date, device/emulator and result after each run).*
+
+1. [ ] Run `./gradlew :app:assembleDebug` and `:app:testDebugUnitTest` (including `TastingNoteStructureTest`). The agent sandbox has no JDK or Android SDK, so these were not run here.
+2. [ ] On a disposable install with a v21 database, open the app and confirm `MIGRATION_21_22` succeeds. In Database Inspector, confirm `wine_definitions.defaultColorHsv` is NULL for every pre-existing row and no other table or column changed.
+3. [ ] Add a wine and tap the color swatch. Confirm the glass matches the reference: a broad, rounded Bordeaux bowl with a narrower rim, gently tapered base, long stem and broader foot; the wine fill spans most of the bowl. The popup has no **Color** heading and has comfortable horizontal and bottom padding. The icon-only X and checkmark sit together at the lower-right, in that order. The hue strip covers 330° through red at 0° to 60° and omits green/cyan/blue; the saturation/value plane remains adjustable and no H/S/V value boxes are shown. Keep the floating swatch clear of the touch point, and confirm its Y position stays fixed while moving vertically on the hue strip. Choose a color, save, reopen, and confirm it persists. Repeat in **Edit Wine**, then clear the default color.
+4. [ ] Create a tasting note. Confirm **Color**, its swatch, the aroma-wheel logo, and **Aroma wheel** title share one horizontal row. The Color label and swatch remain outside the aroma card, with matching 8 dp clearance to the right and below the swatch. The wheel header sits beside Color; the selected-aroma panel widens to the full content width below, forming one continuous stepped card with a uniformly rounded outline and no seam or gap between header and chips. Confirm the chips have even inset, wrap across the wider panel, and the card height grows/shrinks with the wrapped rows. Tap the swatch to open the HSV editor, choose a note color, save and reopen; then clear the note override and confirm it inherits the wine-definition color.
+5. [ ] Confirm the aroma launcher card's mini-wheel and selected-aroma chips update as descriptors are added or removed. Open the wheel, choose each of **Aroma**, **Entry**, **Mid-palate** and **Finish**, and add descriptors. Confirm the same stable ID can appear in multiple phases and the 24-distinct-ID limit still applies to the whole note. Confirm the list/search mode matches the wheel selection.
+6. [ ] In each aroma phase, confirm the labels form a wrapping cluster rather than a vertical list and show no numeric intensity badges or steppers. Pinch labels larger/smaller; confirm the word size changes continuously and the most intense/largest labels move to the top. Save, reopen and confirm sizes and largest-first order persist.
+7. [ ] Confirm the editor is one scroll with exactly four short headers: **Visual / Aroma**, **Entry**, **Mid-palate**, **Finish**. All ten existing sliders remain editable in their assigned sections, **Complexity** is in Mid-palate, and one **Entry** scale matches the other sliders' nonnumeric selected-label styling while retaining the **Tight** and **Open** endpoints. Overall score, Common faults, written notes, reviewer/recommend/value and save/delete remain outside the sections.
+8. [ ] On an old note with flat aromas and no observations, open edit mode. Confirm the phase-assignment sheet appears, no phase is preselected, Save stays disabled until every retained aroma is explicitly assigned or removed, and Cancel makes no silent phase inference.
+9. [ ] Expand a Cellar wine with multiple tasting notes and tap each dated note line. Confirm each opens its own read-only detail with the note-entry layout, color, phase-grouped aromas/intensity, sectioned sliders, faults, written notes and other saved values. Only the explicit Edit action opens the editor; the wine-card body and caret retain their own behaviors.
+10. [ ] In **Tasting Notes**, search an aroma descriptor without a phase filter and confirm notes match from any phase, including legacy flat notes. Apply an optional phase filter and confirm only observations in that phase match.
+11. [ ] Export JSON, inspect it for `defaultColorHsv`, `colorHsv`, `entryTightOpen`, `aromaObservations`, per-observation intensity and all slider values. Restore on a second disposable install and confirm counts, legacy notes, colors, phases, intensities and sectioned slider values are unchanged.
+12. [ ] Run Compose/large-font/TalkBack checks for the HSV color editor, wheel phase chips, pinch-only word cloud, legacy sheet and section headers on an emulator/device. Confirm no new permissions, dependencies, network use or background work.
+
 ## Template for a new branch
 
 Copy this block, fill it in, place it under the table at the top, and add a table row.
@@ -519,3 +860,65 @@ Copy this block, fill it in, place it under the table at the top, and add a tabl
 1. [ ] First step, with the exact button or screen names.
 2. [ ] Expected result written as something you can see.
 ```
+
+### Span context / ownership / terminal fuzzy follow-up — `arena/0a282176-wine-manager-android`
+
+*Last run: actual Kotlin safety harness passed (12 terminal producer checks plus extraction/ownership synthetic regressions). Full Python discovery: 294 tests, 292 passed, two pre-existing resolver-policy source-contract failures. No Android build, native OCR execution, or new measured accuracy result.*
+
+1. [ ] Rebuild and run the focused seven configurations using the same corpus and pinned OCR; export/upload every JSON part and its manifest. Do not compare different reference cohorts or assume previous saved predictions were regenerated.
+2. [ ] Verify founding/establishment phrases with ordinary/spaced digits stay blank for vintage; explicit harvest wording and standalone valid years continue to work. Test ordinary and moderate-confidence inputs, with vintage recovery on/off.
+3. [ ] Compare isolation-only to isolation plus vintage spans on appellation/name lines with an attached year. The existing supported wine name must not be displaced merely because the same year is now offered as a separate numeric span.
+4. [ ] Verify unsupported single-engine supplemental fuzzy neighbors do not replace a selected producer, whether the terminal pass finishes or exhausts its budget. Confirm `insufficient_supplemental_support` in summaries, while exact eligible and truly independent/disjoint supporting cases can still pass.
+5. [ ] Enable exact-producer protection and test a confidently observed maker absent from the catalog; confirm it is retained. Test equal-distance catalog identities: no FTS-order tie-breaking. Confirm diagnostics retain `shares_vintage_source`, the updated post-processing versions and terminal rejection status.
+6. [ ] Repeat unseen device-photo checks under a recorded unchanged configuration. Originals, standardized truth and frozen Prod outputs must remain untouched.
+
+### Retired modifier cleanup — `arena/0a282176-wine-manager-android`
+
+*Last run: actual Kotlin checks passed for the 16-entry active list, All on, historical-key decoding and preservation of current control; source-contract checks pass. Android UI/device verification pending.*
+
+1. [ ] Open the Lab page: confirm no checkbox for **Vertical wine-title pairs** or **Wine / cuvée span discovery**. Candidate isolation, vintage spans, all five current-control modifiers and all untested modifiers must remain available.
+2. [ ] Upgrade from settings with either retired flag enabled. Confirm it is not secretly active in newly logged module signatures, including device-photo checks. No other selection should change.
+3. [ ] Check **All on** activates exactly 16 selectable flags and neither retired flag. Confirm control remains the same five keys. Single/pair suite counts must be 17/137, and **Run focused diagnostics suite (6 configs)** must omit the retired wine-name-span run.
+4. [ ] Re-export a saved older seven-configuration suite: its original wine-name-span configuration and results must still be included, with original historical keys and decisions.
+
+### Manual raw JSON export — `arena/0a282176-wine-manager-android`
+
+*Last run: targeted Python archive/routing checks passed; Android build/device verification pending.*
+
+1. [ ] With retained Lab attempts, tap **Prepare raw diagnostics JSON export**. Save the manifest and every numbered JSON part via the JSON document picker; each part must parse as JSON and be no larger than 20 MB. Do not send these through the CSV splitter.
+2. [ ] Verify per-attempt image identity/order, tokens, timings, traces, pipelines, nested fields and funnel records survive reconstruction. Confirm frozen Prod pipeline-step aggregates remain, without claiming raw traces absent from the frozen store. No photo bytes should be exported.
+3. [ ] Confirm **Prepare scored CSV export**, **Prepare recent builds CSV export**, and splitting an older CSV still produce their normal CSV outputs. Existing suite and device-photo JSON exports must be unaffected.
+
+## Lab v6 gap batch (77/121 host floor) — phone spot checks
+
+**Phone-verified 2026-10-29 on build `75bfb53f0a93`: EXACT match with host.** Lab v6 = 77/121 fully correct, 38 one-error, 6 with 2+ errors; producer 102/21, wine_name 94/29, country/region 124, subregion 122/2, vintage 123. Prod v5.0 unchanged at 62/121 (frozen).
+
+- [x] Integrated gap modules reproduce on device: #116 (Payrouliere), #171 (Triton), #190 (Rosso di Montalcino), #54 (Les Chemins d'Onairac), #104 (Baron de la Variere). (Aggregate deltas match the host gain set exactly: producer +2, wine_name +3 vs the 72/121 build.)
+- [ ] #188 (Decoy): producer-headed wine guard is host-inert (fixture KB lacks Decoy); check whether phone wine still shows DECOY Pinot Noir before considering integration
+
+## Prod v6.0 promotion — phone verification
+**Phone-verified 2026-10-30 on build `bf63370aadaa`: EXACT match with host.** Prod v6.0 frozen at 77/121 (producer 102/21, wine_name 94/29); Prod v5.0 62/121, Prod v4.0/v2.0 43/121, Prod v1.0 16/121 — all historical rows unchanged.
+
+- [x] First run after updating: Prod baselines show one version uncaptured (Prod v6.0) until its first pass completes 124/124; that is expected, not a failure
+- [x] Prod v6.0 frozen row: 77/121 fully correct, producer 102, wine_name 94 (must equal Lab v6's verified result)
+- [x] Lab v7 with all Post-OCR checkboxes off: 77/121 at the promotion build (superseded by the Lab v7 batch-1 section below: now 81/121)
+- [x] Prod v5.0 unchanged at 62/121; Prod v4.0/v2.0/v1.0 rows unchanged
+- [ ] Older saved Lab runs still load (lab-v6 pipeline ID aliased to Lab v7)
+
+## Lab v7 first batch (81/121 host floor) — phone checks
+**Phone-verified 2026-10-30 on build `bf63370aadaa`: EXACT match with host.** Lab v7 = 81/121 fully correct, 34 one-error, 6 with 2+ errors; producer 102/21, wine_name 98/25 (+4 vs Prod v6.0, exactly the batch-1 gain set), country/region 124, subregion 122/2, vintage 123. Prod v6.0 row unchanged at 77/121. Note: the header/run signature displays only the 16 checkpoint modules although the two new integrated modules were active — logged as Bug-029 (display only).
+
+- [x] Lab v7 (all checkboxes off): 81/121 fully correct; new gains #92 wine `Pessac-Léognan`, #103 wine `Blaye Côtes de Bordeaux`, #163 wine `Castillon Côtes de Bordeaux`, #135 wine `Orange Muscat`
+- [x] Prod v6.0 row still 77/121 (frozen; the Orange Muscat catalog addition must not move any frozen Prod row)
+
+## Lab v7 case standardization (81/121 host floor) — phone checks
+- [ ] Lab v7 (all checkboxes off): still 81/121; final fields now title-cased, e.g. wine `Margaux` (not `MARGAUX`), producer `Cave de Roquebrun` on #129, `Les Chemins d'Onairac` on #54
+- [ ] Prod v6.0 row still 77/121 on the existing device (frozen); on a fresh install its first capture must also freeze at 77/121 (checkpoint integrity restored)
+- [ ] Spot-check a few off-corpus labels: producer/wine values read as standard title case instead of label-print ALL CAPS
+11. [ ] Bug-030: after a multi-photo run, scroll through all results to the bottom — the screen must stay open; the top **Save results** block (Copy all + Save exports) works without scrolling.
+
+## Lab v7 prominence arbitration — phone checks
+- [ ] Re-run the audit on the Kirkland Signature Saint-Julien photo: wine name should now be `Saint-Julien` (was `Demeure Bourgeoise`); producer/subregion/vintage unchanged
+- [ ] Dataset screen: Lab v7 still 81/121 (the module is inert on the corpus by measurement)
+- [ ] Bug-030 verify: scroll the audit results to the very bottom — no exit; Save buttons at the bottom compose fine
+- [ ] Re-run the audit on the Conde de Basalu photo: producer should now be `Conde de Basalu` (was `Conde`); wine `Rioja`, vintage 2021 unchanged

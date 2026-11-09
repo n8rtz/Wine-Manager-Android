@@ -13,6 +13,7 @@ JAVA = ROOT / "app/src/main/java"
 LOCAL_ROOT = JAVA / "com/yourapp/wine"
 FACADE = JAVA / "com/n8rtz/winetracker/scanner/ScannerManager.kt"
 VIEW_MODEL = JAVA / "com/n8rtz/winetracker/viewmodels/ScannerViewModel.kt"
+SCAN_SESSION = JAVA / "com/n8rtz/winetracker/scanner/ProductionLabelScanSession.kt"
 
 # These are not a ban on com.google.*, Play Services, CameraX or ordinary Android APIs.
 FORBIDDEN_IMPORT = re.compile(
@@ -47,7 +48,12 @@ def body(code, name):
 def violations():
     errors = []
     debug_root = ROOT / "app/src/debug/java/com/yourapp/wine"
-    sources = sorted(LOCAL_ROOT.rglob("*.kt")) + sorted(debug_root.rglob("*.kt")) + [FACADE]
+    gliner_root = ROOT / "gliner-workflow/src"
+    sources = (sorted(LOCAL_ROOT.rglob("*.kt")) + sorted(debug_root.rglob("*.kt")) +
+               sorted((gliner_root / "main").rglob("*.kt")) +
+               sorted((gliner_root / "appIntegration").rglob("*.kt")) +
+               sorted((JAVA / "com/n8rtz/winetracker/scanner").glob("LabelScan*.kt")) +
+               [SCAN_SESSION, JAVA / "com/n8rtz/winetracker/scanner/PendingLabelScanStore.kt", FACADE])
     if len(sources) < 10:
         raise AssertionError("Missing recognition source tree")
     for path in sources:
@@ -59,12 +65,22 @@ def violations():
         if FORBIDDEN_CLIENT.search(text):
             errors.append(f"{path.relative_to(ROOT)}: wine/HTTP client referenced by recognition code")
 
-    # The ViewModel legitimately contains lazy Retrofit for startImageImport(), but scans must not use it.
+    # The ViewModel contains lazy Retrofit for unrelated image features. Guard the scan-only
+    # delegation section as well as the entire independently-owned session above.
     vm = code_only(VIEW_MODEL.read_text())
-    for name in ("requestLabelScan", "onLabelPhotoCaptured", "onLabelPhotoSelected", "launchPhotoScan", "warmLabelScanner", "finishScan", "onImageCaptured"):
-        entry = body(vm, name)
-        if FORBIDDEN_CLIENT.search(entry) or re.search(r"\b(?:api|retrofit|batchProcessor|startImageImport)\b", entry):
-            errors.append(f"{VIEW_MODEL.relative_to(ROOT)}: network dependency inside {name}()")
+    if "val labelScanState" not in vm or "fun clearScannedResult" not in vm:
+        raise AssertionError("Scanner delegation section disappeared")
+    scan_vm = vm.split("val labelScanState", 1)[1].split("fun clearScannedResult", 1)[0]
+    for name in ("requestLabelScan", "onLabelPhotoCaptured", "onLabelPhotoSelected", "warmLabelScanner"):
+        if not re.search(r"\bfun\s+" + name + r"\s*\(", scan_vm):
+            raise AssertionError(f"Recognition entry point disappeared: {name}")
+    if "ProductionLabelScanSession" not in scan_vm or FORBIDDEN_CLIENT.search(scan_vm) or re.search(r"\b(?:api|retrofit|batchProcessor|startImageImport)\b", scan_vm):
+        errors.append(f"{VIEW_MODEL.relative_to(ROOT)}: invalid or network-dependent scan delegation")
+    session = code_only(SCAN_SESSION.read_text())
+    for name in ("requestCapture", "captured", "selected", "launchPhotoScan", "recover"):
+        body(session, name)
+    if "ProductionLabelScanner.scan" not in session:
+        errors.append(f"{SCAN_SESSION.relative_to(ROOT)}: production scan routing disappeared")
 
     # Keep the bundled Latin coordinate, not the on-demand model-download coordinate, for offline first use.
     catalog = (ROOT / "gradle/libs.versions.toml").read_text()
@@ -78,5 +94,5 @@ if __name__ == "__main__":
     if errors:
         print("\n".join(errors), file=sys.stderr)
         raise SystemExit(1)
-    print(f"PASS: {count} local recognition sources and 7 scan entry points have no project wine-network client dependency")
+    print(f"PASS: {count} local recognition sources and camera/picker background scan entry points have no project wine-network client dependency")
     print("Normal Android/Google dependencies and explicit image-import networking remain allowed.")

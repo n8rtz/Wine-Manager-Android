@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package all 125 retained workbook labels for the normal-app benchmark."""
+"""Package the retained workbook labels and temporary internet additions for the benchmark."""
 from __future__ import annotations
 
 import hashlib
@@ -14,8 +14,8 @@ DEST = ROOT / "app/src/main/assets/wine-app-labels-v1"
 SOURCE_ZIP = "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/Wine%20App%20Labels.zip"
 WORKBOOK = "https://github.com/n8rtz/Wine-Reference-Drop/blob/main/reference-data-scrubbed.xlsx"
 WORKBOOK_BLOB = "5e1e2b0f8938f1ed789c9f2430cd37881a2b2bdc"
-EXPECTED_LABELS = 125
-REMOVED_WORKBOOK_ROWS = [14, 49, 52, 55, 64, 73, 133, 159, 168]
+EXPECTED_LABELS = 124
+REMOVED_WORKBOOK_ROWS = [14, 49, 52, 55, 64, 67, 73, 133, 159, 168]
 
 
 def normalize(value: str) -> str:
@@ -34,7 +34,7 @@ def main() -> None:
     labels = json.loads((HERE / "candidate-labels.json").read_text())
     source_entries = {entry["workbook_image_id"]: entry for entry in manifest["included_images"]}
     if len(labels["records"]) != EXPECTED_LABELS or len(source_entries) != EXPECTED_LABELS:
-        raise ValueError("The active label batch and updated workbook selection must both contain 125 entries")
+        raise ValueError(f"The active label batch and updated workbook selection must both contain {EXPECTED_LABELS} entries")
     DEST.mkdir(parents=True, exist_ok=True)
     image_dir = DEST / "images"
     image_dir.mkdir(exist_ok=True)
@@ -69,6 +69,9 @@ def main() -> None:
         for field in ("producer", "wine_name", "country", "region", "subregion", "vintage"):
             value = item.get(field)
             status = item.get(f"{field}_status")
+            # Later owner correction supersedes the historical workbook's blank subregion.
+            if item["review_number"] == 154 and field == "subregion":
+                value, status = "Porto", "expected_value"
             if status not in {"expected_value", "expected_blank", "unresolved"}:
                 raise ValueError(f"Invalid {field} target status for review #{item['review_number']}: {status!r}")
             if status == "expected_value":
@@ -93,7 +96,36 @@ def main() -> None:
                               "source_filename": item["source_filename"], "fields": fields})
 
     if len({item["image"] for item in inputs}) != EXPECTED_LABELS or len({item["review_number"] for item in inputs}) != EXPECTED_LABELS:
-        raise ValueError("The 125 retained workbook rows must have unique photo and review identities")
+        raise ValueError(f"The {EXPECTED_LABELS} retained workbook rows must have unique photo and review identities")
+    extra_path = HERE / "internet-labels-v1.json"
+    extra = json.loads(extra_path.read_text())["records"]
+    fields_order = ("producer", "wine_name", "country", "region", "subregion", "vintage")
+    for item in extra:
+        photo = image_dir / item["image"]
+        data = photo.read_bytes()  # The selected downloaded photo is retained as a test asset.
+        if hashlib.sha256(data).hexdigest() != item["sha256"]:
+            raise ValueError(f"Internet photo checksum mismatch: {photo}")
+        total_bytes += len(data)
+        inputs.append({key: item[key] for key in ("image", "sha256", "review_number", "source_filename", "source_repo", "source_url", "source_page")})
+        included.append({key: item[key] for key in ("review_number", "image", "source_filename", "source_repo")})
+        fields = {}
+        for field in fields_order:
+            status = item[f"{field}_status"]
+            if status not in {"expected_value", "expected_blank", "unresolved"}:
+                raise ValueError(f"Invalid {field} target status for review #{item['review_number']}")
+            value = item.get(field, "")
+            if status == "expected_value" and not value:
+                raise ValueError(f"Missing {field} target for review #{item['review_number']}")
+            accepted = sorted({normalize(str(candidate)) for candidate in [value, *item.get(f"{field}_alternates", [])] if candidate}) if status == "expected_value" else []
+            fields[field] = {"status": status, "accepted": accepted, "target": str(value) if status == "expected_value" else ""}
+        target_images.append({"image": item["image"], "review_number": item["review_number"],
+                              "source_filename": item["source_filename"], "fields": fields})
+    if len({row["image"] for row in inputs}) != len(inputs) or len({row["review_number"] for row in inputs}) != len(inputs):
+        raise ValueError("Duplicate photo or review identity in combined corpus")
+    expected_image_ids = {item["image"] for item in inputs}
+    for stale_image in image_dir.glob("*.jpg"):
+        if stale_image.name not in expected_image_ids:
+            stale_image.unlink()
     inputs_bytes = write_json(DEST / "inputs.json", {"version": 2, "images": inputs})
     eval_bytes = write_json(DEST / "evaluation-set.json", {
         "version": 2,
@@ -103,7 +135,7 @@ def main() -> None:
         "updated_workbook": "tools/evaluation/wine-app-labels-review-v1/reference-data-scrubbed-updated.xlsx",
         "updated_workbook_sha256": updated_workbook_sha256,
         "source_zip": SOURCE_ZIP,
-        "review_decision": "Run all 125 retained rows in the updated owner-reviewed workbook. The owner-removed workbook rows and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run.",
+        "review_decision": "Run all 124 retained rows in the updated owner-reviewed workbook. Owner-removed workbook rows including review #67 and IMG_2732.jpeg are excluded; this is not a replay of the full legacy 168-photo run. Front-label internet photos are appended for temporary testing.",
         "included_count": len(included),
         "excluded_count": len(REMOVED_WORKBOOK_ROWS) + 1,
         "included_images": included,
@@ -112,8 +144,8 @@ def main() -> None:
     })
     scoring_bytes = write_json(DEST / "scoring.json", {
         "version": 2,
-        "reference_sha256": hashlib.sha256((HERE / "candidate-labels.json").read_bytes()).hexdigest(),
-        "note": "Frozen owner-corrected values from the 125 retained rows of the updated workbook. Unresolved references remain unscorable; expected blanks are scored as blanks. Targets are scorer-only and never provided to OCR.",
+        "reference_sha256": hashlib.sha256((HERE / "candidate-labels.json").read_bytes() + extra_path.read_bytes()).hexdigest(),
+        "note": "Owner-corrected workbook references and internet front-label candidate references; unresolved fields are unscored. Targets are scorer-only and never provided to OCR.",
         "images": target_images,
     })
     coverage = DEST / "gazetteer-coverage.json"
@@ -122,16 +154,16 @@ def main() -> None:
     write_json(DEST / "manifest.json", {
         "count": len(inputs),
         "bytes": total_bytes,
-        "source_repositories": ["AntoninLeroy/wine_label_reader_toolkit", "n8rtz/Wine-Reference-Drop"],
+        "source_repositories": ["AntoninLeroy/wine_label_reader_toolkit", "n8rtz/Wine-Reference-Drop", "CostcoWineBlog.com", "rogerioxavier/X-Wines"],
         "source_commits": sorted({entry["source_url"].split("/blob/")[-1].split("/")[0] for entry in inputs if "/blob/" in entry["source_url"]}),
         "updated_workbook_sha256": updated_workbook_sha256,
-        "rights": "No license is declared for the two source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights.",
+        "rights": "No license is declared for the two original source repositories. Images are included in the normal-app project at the owner's direction; do not redistribute beyond authorized use without confirming rights. Additional CostcoWineBlog.com label photographs credited by source page; site FAQ permits label photo use elsewhere online. X-Wines repository declares CC0 but underlying web photo rights have not been independently verified; see per-photo source and image member. Temporary testing assets; remove when model is finalized.",
         "inputs_sha256": hashlib.sha256(inputs_bytes).hexdigest(),
         "evaluation_set_sha256": hashlib.sha256(eval_bytes).hexdigest(),
         "scoring_sha256": hashlib.sha256(scoring_bytes).hexdigest(),
         "gazetteer_coverage_sha256": hashlib.sha256(coverage.read_bytes()).hexdigest(),
     })
-    print(f"Wrote {len(inputs)} exact workbook-linked images ({total_bytes:,} bytes) and scoring metadata to {DEST}")
+    print(f"Wrote {len(inputs)} workbook and internet test images ({total_bytes:,} bytes) and scoring metadata to {DEST}")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 ## Implemented scope
 
-Historical implementation note: this linked-wine resolver became part of the normal-app benchmark migration. The current benchmark displays **Lab v4** and scores only LWIN-backed producer and linked-wine data; production scanner behavior remains unchanged. Saved historical comparison rows remain comparisons only, not rerun contenders.
+Historical implementation note: this linked-wine resolver became part of the normal-app benchmark migration. The current benchmark displays **Lab v5** (the pre-refresh capture used the legacy `lab-v4-expanded-producers` pipeline ID) and scores producer candidates from the expanded index with linked-wine matches remaining LWIN-backed; production scanner behavior remains unchanged. Saved historical comparison rows remain comparisons only, not rerun contenders.
 
 Lab uses two separate indices:
 
@@ -25,7 +25,7 @@ Same user-supplied primary workbook and provenance as the preceding version; no 
 
 The last group remains available for producer matching but contributes **no inferred wine name**. Missing/NA values are not reconstructed from DISPLAY_NAME, product geography or producer names. Product names sharing the same literal WINE string can map to multiple LWIN codes; a name match does not uniquely identify a bottle, vintage, colour or site.
 
-`wines.sqlite` uses distinct names, an external-content FTS5 trigram index, and compact integer links to producer IDs. This avoided duplicating long producer identifiers in every index entry. The added wine file is **23,003,136 bytes (~21.94 MiB)** and is now in the main asset source set. The migrated benchmark also packages 125 photos; these asset sizes do not predict compressed APK or installed size.
+`wines.sqlite` uses distinct names, an external-content FTS5 trigram index, and compact integer links to producer IDs. This avoided duplicating long producer identifiers in every index entry. The added wine file is **23,003,136 bytes (~21.94 MiB)** and is now in the main asset source set. The migrated benchmark also packages 124 photos; these asset sizes do not predict compressed APK or installed size.
 
 Manifest schema is 2. Both packaged LWIN database hashes are included in runtime diagnostics. Source identity, licensing, strict live-wine filtering and attribution remain in the manifest and NOTICE. Unverified TTB/OSM lists are not packaged supporting layers; the producer and linked-wine indexes contain only LWIN-derived fields.
 

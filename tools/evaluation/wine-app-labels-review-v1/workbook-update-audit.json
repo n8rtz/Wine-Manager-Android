@@ -132,6 +132,7 @@
     52,
     55,
     64,
+    67,
     73,
     133,
     159,
@@ -142,14 +143,87 @@
     "Condensed Table": 112
   },
   "existing_rows_retained": {
-    "reference-data-168": 103,
-    "Condensed Table": 103
+    "reference-data-168": 102,
+    "Condensed Table": 102
   },
   "rows_after_appending_22": {
-    "reference-data-168": 125,
-    "Condensed Table": 125
+    "reference-data-168": 124,
+    "Condensed Table": 124
   },
   "retained_candidate_count": 22,
   "producer_exclusion": "Rows whose producer/original producer target is Club des Sommeliers are removed at the owner's direction; branding is not treated as the actual producer.",
-  "output_workbook": "reference-data-scrubbed-updated.xlsx"
+  "output_workbook": "reference-data-scrubbed-updated.xlsx",
+  "owner_adjudication_date": "2026-10-28",
+  "updated_workbook_sha256": "825618b3b54d6dfd74eb213741b57ee9e2c8cfcb0911353eb7b345b6b2b143b5",
+  "owner_adjudicated_field_corrections": [
+    {
+      "review_number": 90,
+      "fields": {
+        "wine_name": "Premier Grand Cru Classé",
+        "country": "France",
+        "region": "Bordeaux",
+        "subregion": "Margaux"
+      },
+      "note": "Owner-adjudicated wine name and Bordeaux/Margaux geography."
+    },
+    {
+      "review_number": 92,
+      "fields": {
+        "region": "Bordeaux",
+        "subregion": "Pessac-Léognan"
+      },
+      "note": "Pessac-Léognan is the printed appellation/subregion; Bordeaux is its parent region."
+    },
+    {
+      "review_number": 171,
+      "fields": {
+        "region": "Castilla y Leon",
+        "subregion": "Toro"
+      }
+    },
+    {
+      "review_number": 179,
+      "fields": {
+        "producer": "Campo Eliseo",
+        "wine_name": "Cuvée Alegre",
+        "region": "Castilla y Leon",
+        "subregion": "Toro"
+      }
+    },
+    {
+      "review_number": 181,
+      "fields": {
+        "region": "Maipo Valley",
+        "subregion": "Puente Alto"
+      }
+    },
+    {
+      "review_number": 184,
+      "fields": {
+        "region": "Willamette Valley",
+        "subregion": "Dundee Hills"
+      },
+      "note": "Canonical catalog spelling is Willamette Valley."
+    }
+  ],
+  "owner_removed_dataset_review_ids": [
+    67
+  ],
+  "owner_removed_dataset_row_detail": [
+    {
+      "sheet": "reference-data-168",
+      "review_number": 67,
+      "row_before_removal": 38,
+      "image": "6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg",
+      "reason": "Owner-directed removal from the active wine-label dataset."
+    },
+    {
+      "sheet": "Condensed Table",
+      "review_number": 67,
+      "row_before_removal": 38,
+      "image": "6555b2de6eefa99d5ce9bdcef06b8a700d1dc780.jpg",
+      "reason": "Owner-directed removal from the active wine-label dataset."
+    }
+  ],
+  "updated_active_dataset_count": 124
 }

@@ -22,12 +22,49 @@ internal object TextLabSpatialPhrases {
                 bboxRect=envelope(sources.map { it.bboxRect }),bboxOrig=envelope(sources.map { it.bboxOrig }),polyOrig=emptyList())
         }
     }
-    fun propose(records:List<TokenRecord>):List<Proposal> = records.groupBy { it.engineId to it.variantId }
+    /**
+     * Joins are disabled unless the Lab caller supplies a role-aware producer policy. Even when
+     * permitted, vertical spans are at most two lines; wine title/appellation pairs belong to the
+     * evidence graph, not to a paragraph-sized producer lookup span.
+     */
+    fun propose(
+        records:List<TokenRecord>,
+        allowHorizontalJoin:(leftText:String,rightText:String)->Boolean={ _,_ -> false },
+        allowVerticalJoin:(upperText:String,lowerText:String)->Boolean={ _,_ -> false },
+        bypassVerticalHeightRatio:(upperText:String,lowerText:String)->Boolean={ _,_ -> false },
+    ):List<Proposal> = records.groupBy { it.engineId to it.variantId }
+        .flatMap { (key,group) ->
+            val horizontalDecisions=mutableMapOf<Pair<String,String>,Boolean>()
+            val verticalDecisions=mutableMapOf<Pair<String,String>,Boolean>()
+            fun horizontalAllowed(left:String,right:String)=horizontalDecisions.getOrPut(left to right) { allowHorizontalJoin(left,right) }
+            fun verticalAllowed(upper:String,lower:String)=verticalDecisions.getOrPut(upper to lower) { allowVerticalJoin(upper,lower) }
+            val detections=group.map { token ->
+                val box=token.bboxRect
+                SpatialPhraseMerger.Detection(token.textRaw,SpatialPhraseMerger.Box(box.left.toDouble(),box.top.toDouble(),box.right.toDouble(),box.bottom.toDouble()))
+            }
+            SpatialPhraseMerger.merge(
+                detections,
+                maxVerticalLines=2,
+                maxVerticalHeightRatio=1.45,
+                allowHorizontalJoin={ left,right -> horizontalAllowed(left,right) },
+                allowVerticalJoin={ upper,lower -> verticalAllowed(upper,lower) },
+                bypassVerticalHeightRatio=bypassVerticalHeightRatio,
+            ).map { phrase -> Proposal(key.first,key.second,phrase,phrase.sourceIndices.map { group[it] }) }
+        }
+
+    /** Best-V5 baseline spatial merger without vertical-line count, height-ratio, or role gates. */
+    fun proposeUnconstrained(records:List<TokenRecord>):List<Proposal> = records.groupBy { it.engineId to it.variantId }
         .flatMap { (key,group) ->
             val detections=group.map { token ->
                 val box=token.bboxRect
                 SpatialPhraseMerger.Detection(token.textRaw,SpatialPhraseMerger.Box(box.left.toDouble(),box.top.toDouble(),box.right.toDouble(),box.bottom.toDouble()))
             }
-            SpatialPhraseMerger.merge(detections).map { phrase -> Proposal(key.first,key.second,phrase,phrase.sourceIndices.map { group[it] }) }
+            SpatialPhraseMerger.merge(
+                detections,
+                maxVerticalLines=Int.MAX_VALUE,
+                maxVerticalHeightRatio=Double.POSITIVE_INFINITY,
+                allowHorizontalJoin={ _,_ -> true },
+                allowVerticalJoin={ _,_ -> true },
+            ).map { phrase -> Proposal(key.first,key.second,phrase,phrase.sourceIndices.map { group[it] }) }
         }
 }

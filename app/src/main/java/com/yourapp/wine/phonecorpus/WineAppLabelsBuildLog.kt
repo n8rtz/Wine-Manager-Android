@@ -33,6 +33,7 @@ internal class WineAppLabelsBuildLog(
         val versionCode: String,
         val buildCommit: String,
         val branch: String,
+        val labModules: String = "",
     )
 
     data class FieldScore(
@@ -69,6 +70,8 @@ internal class WineAppLabelsBuildLog(
         val unresolved: MetricBest<Int>,
         val deadlinePartial: MetricBest<Int>,
         val fieldBests: Map<String, MetricBest<FieldScore>>,
+        /** Corner of the composite: the corpus the values were measured on; blank for legacy rows. */
+        val corpusKey: String = "",
     ) {
         val fieldScores: Map<String, FieldScore>
             get() = fieldBests.mapValues { it.value.value }
@@ -100,7 +103,7 @@ internal class WineAppLabelsBuildLog(
                 val best = fieldBests[field] ?: continue
                 parts += "$field ${best.value.label()} [${best.buildNumber}]"
             }
-            return "Lab v4 Best build sources: " + parts.joinToString(" · ")
+            return "Lab v5 Best build sources: " + parts.joinToString(" · ")
         }
 
         fun toCsvMap(zoneId: ZoneId, mode: PhoneCorpusRunner.Mode): Map<String, String> {
@@ -162,6 +165,8 @@ internal class WineAppLabelsBuildLog(
                 "branch" to sourceBranches,
                 "model_version" to BEST_BUILD_ROW_TITLE,
                 "pipeline_id" to mode.pipelineId,
+                "lab_modules" to "",
+                "corpus_key" to corpusKey,
                 "run_id" to BEST_BUILD_ROW_TYPE,
                 "attempted" to attempted.value.toString(),
                 "eligible" to eligible.value.toString(),
@@ -236,6 +241,9 @@ internal class WineAppLabelsBuildLog(
         val unresolved: Int,
         val deadlinePartial: Int,
         val fieldScores: Map<String, FieldScore> = emptyMap(),
+        val labModules: String = "",
+        /** Stable id of the label corpus this run scored; empty for rows logged before it existed. */
+        val corpusKey: String = "",
     ) {
         val totalCorrect: Int
             get() = correctValues + correctBlanks
@@ -265,6 +273,8 @@ internal class WineAppLabelsBuildLog(
             "branch" to branch,
             "model_version" to modelVersion,
             "pipeline_id" to pipelineId,
+            "lab_modules" to labModules,
+            "corpus_key" to corpusKey,
             "run_id" to runId,
             "attempted" to attempted.toString(),
             "eligible" to eligible.toString(),
@@ -329,8 +339,12 @@ internal class WineAppLabelsBuildLog(
                     if (headers == null) {
                         headers = record
                     } else {
-                        val idx = headers.orEmpty().indexOf("row_type")
-                        if (idx >= 0 && record.getOrNull(idx) == BEST_BUILD_ROW_TYPE) {
+                        val cols = headers.orEmpty()
+                        val typeIdx = cols.indexOf("row_type")
+                        val modelIdx = cols.indexOf("model_version")
+                        if (typeIdx >= 0 && record.getOrNull(typeIdx) == BEST_BUILD_ROW_TYPE &&
+                            modelIdx >= 0 && record.getOrNull(modelIdx) == BEST_BUILD_ROW_TITLE
+                        ) {
                             found = true
                         }
                     }
@@ -353,6 +367,7 @@ internal class WineAppLabelsBuildLog(
         summaryRow: List<String>,
         timestampMs: Long = System.currentTimeMillis(),
         fieldScores: Map<String, FieldScore> = emptyMap(),
+        corpusKey: String = "",
     ) {
         if (runId.isBlank() || summaryRow.size < EXPECTED_TABLE_COLUMNS) return
         val attempted = summaryRow[1].toIntOrNull() ?: return
@@ -386,6 +401,8 @@ internal class WineAppLabelsBuildLog(
             unresolved = summaryRow[12].toIntOrNull() ?: 0,
             deadlinePartial = summaryRow[13].toIntOrNull() ?: 0,
             fieldScores = fieldScores,
+            labModules = buildInfo.labModules,
+            corpusKey = corpusKey,
         )
 
         val existing = readEntries().toMutableList()
@@ -421,10 +438,39 @@ internal class WineAppLabelsBuildLog(
     }
 
     /**
-     * Computes the composite "Best build" across all logged runs for [mode]: each parameter
-     * independently selects the highest score ever achieved along with the build it came from.
-     * Error/failure minimums are evaluated over the fullest attempted run cohort so a partial
-     * in-progress run (e.g. 5/125 photos) never claims a false low error count.
+     * Tags already-recorded runs with the corpus they were measured on, without rescoring them, so
+     * runs logged before `corpus_key` existed can still join the composite when their saved run
+     * folder proves they used the current corpus. Runs from another corpus are left alone.
+     */
+    @Synchronized
+    fun stampCorpusKeys(
+        runIds: Collection<String>,
+        corpusKey: String,
+        mode: PhoneCorpusRunner.Mode = PhoneCorpusRunner.Mode.LAB,
+    ) {
+        if (runIds.isEmpty() || corpusKey.isBlank()) return
+        val entries = readEntries().toMutableList()
+        var changed = false
+        for (i in entries.indices) {
+            val entry = entries[i]
+            if (entry.modelVersion != mode.title || entry.runId !in runIds) continue
+            if (entry.corpusKey == corpusKey) continue
+            entries[i] = entry.copy(corpusKey = corpusKey)
+            changed = true
+        }
+        if (changed) writeEntries(entries.sortedBy { it.timestampMs }, mode)
+    }
+
+    /**
+     * Computes the composite "Best build" for [mode]: each parameter independently selects the
+     * highest score ever achieved along with the build it came from. Error/failure minimums are
+     * evaluated over the fullest attempted run cohort so a partial in-progress run (e.g. 5/124
+     * photos) never claims a false low error count.
+     *
+     * Every value is selected from one corpus only - the corpus of the newest logged run - because a
+     * high-water mark from a five-label-larger reference set is not a target the current run can
+     * reach. Rows written before `corpus_key` existed carry a blank key and still form one cohort
+     * among themselves, so an old log keeps its previous behaviour until the next run is recorded.
      */
     @Synchronized
     fun bestBuildSummary(
@@ -446,16 +492,18 @@ internal class WineAppLabelsBuildLog(
             it.modelVersion == mode.title && it.buildKey.isNotBlank() && it.attempted > 0
         }
         if (candidates.isEmpty()) return null
-        val maxAttempted = candidates.maxOf { it.attempted }
-        val fullPool = candidates.filter { it.attempted == maxAttempted }
+        val corpusKey = candidates.maxByOrNull { it.timestampMs }?.corpusKey.orEmpty()
+        val cohort = if (corpusKey.isBlank()) candidates else candidates.filter { it.corpusKey == corpusKey }
+        val maxAttempted = cohort.maxOf { it.attempted }
+        val fullPool = cohort.filter { it.attempted == maxAttempted }
 
-        val bestAttempted = candidates.maxWith(
+        val bestAttempted = cohort.maxWith(
             compareBy<Entry> { it.attempted }.thenBy { it.complete }.thenBy { it.timestampMs },
         )
-        val bestEligible = candidates.maxWith(
+        val bestEligible = cohort.maxWith(
             compareBy<Entry> { it.eligible }.thenBy { it.complete }.thenBy { it.timestampMs },
         )
-        val bestComplete = candidates.maxWith(
+        val bestComplete = cohort.maxWith(
             compareBy<Entry> { it.complete }
                 .thenBy { it.eligible }
                 .thenBy { it.totalCorrect }
@@ -477,7 +525,7 @@ internal class WineAppLabelsBuildLog(
                 .thenByDescending { it.complete }
                 .thenByDescending { it.timestampMs },
         )
-        val bestCorrectValues = candidates.maxWith(
+        val bestCorrectValues = cohort.maxWith(
             compareBy<Entry> { it.correctValues }
                 .thenBy { it.attempted }
                 .thenBy { -(it.wrong + it.missing) }
@@ -493,12 +541,12 @@ internal class WineAppLabelsBuildLog(
                 .thenByDescending { it.correctValues }
                 .thenByDescending { it.timestampMs },
         )
-        val bestCorrectBlanks = candidates.maxWith(
+        val bestCorrectBlanks = cohort.maxWith(
             compareBy<Entry> { it.correctBlanks }
                 .thenBy { it.correctValues }
                 .thenBy { it.timestampMs },
         )
-        val bestTotalCorrect = candidates.maxWith(
+        val bestTotalCorrect = cohort.maxWith(
             compareBy<Entry> { it.totalCorrect }
                 .thenBy { it.complete }
                 .thenBy { it.attempted }
@@ -520,7 +568,7 @@ internal class WineAppLabelsBuildLog(
 
         val fieldBests = buildMap {
             for (field in PhoneCorpusMath.fields) {
-                val withField = candidates.filter { entry ->
+                val withField = cohort.filter { entry ->
                     val score = entry.fieldScores[field]
                     score != null && score.total > 0
                 }
@@ -550,6 +598,7 @@ internal class WineAppLabelsBuildLog(
             unresolved = bestUnresolved.toMetricBest { it.unresolved },
             deadlinePartial = bestDeadline.toMetricBest { it.deadlinePartial },
             fieldBests = fieldBests,
+            corpusKey = corpusKey,
         )
     }
 
@@ -576,7 +625,7 @@ internal class WineAppLabelsBuildLog(
 
     companion object {
         const val FILE_NAME = "benchmark-results-log.csv"
-        const val BEST_BUILD_ROW_TITLE = "Lab v4 Best build"
+        const val BEST_BUILD_ROW_TITLE = "Lab v5 Best build"
         const val RUN_ROW_TYPE = "run"
         const val BEST_BUILD_ROW_TYPE = "best_build"
         const val EXPECTED_TABLE_COLUMNS = 14
@@ -609,7 +658,7 @@ internal class WineAppLabelsBuildLog(
 
         fun currentBuildKey(): String {
             val commit = BuildConfig.BUILD_COMMIT.ifBlank { "unknown" }
-            return if (BuildConfig.BUILD_DIRTY) "$commit:dirty:${BuildConfig.BUILD_TIME_MILLIS}" else "$commit:clean"
+            return if (BuildConfig.BUILD_DIRTY) "$commit:dirty:${BuildConfig.BUILD_FINGERPRINT}" else "$commit:clean"
         }
 
         fun currentBuildInfo(): BuildInfo {
@@ -626,16 +675,25 @@ internal class WineAppLabelsBuildLog(
         }
 
         fun buildInfoFromSavedRun(metadata: JSONObject?, predictions: List<JSONObject>): BuildInfo {
+            val savedModules = metadata?.optString("lab_modules_key").orEmpty()
+            fun withModules(base: BuildInfo): BuildInfo {
+                if (savedModules.isBlank()) return base
+                val keyWithModules = if (base.buildKey.endsWith(":$savedModules")) base.buildKey else "${base.buildKey}:$savedModules"
+                val tag = " [$savedModules]"
+                val numberWithModules = if (base.buildNumber.endsWith(tag)) base.buildNumber else "${base.buildNumber}$tag"
+                return base.copy(buildKey = keyWithModules, buildNumber = numberWithModules, labModules = savedModules)
+            }
             val currentCommit = BuildConfig.BUILD_COMMIT.ifBlank { "unknown" }
             val runCommit = metadata?.optString("build").orEmpty()
             val hasCurrentPrediction = predictions.any { it.optString("build") == currentCommit }
             if (runCommit == currentCommit || hasCurrentPrediction) {
                 val explicitKey = metadata?.optString("build_key").orEmpty()
-                return if (explicitKey.isNotBlank() && runCommit == currentCommit && !hasCurrentPrediction) {
+                val base = if (explicitKey.isNotBlank() && runCommit == currentCommit && !hasCurrentPrediction) {
                     currentBuildInfo().copy(buildKey = explicitKey)
                 } else {
                     currentBuildInfo()
                 }
+                return withModules(base)
             }
             val commit = runCommit.ifBlank {
                 predictions.firstNotNullOfOrNull { it.optString("build").takeIf(String::isNotBlank) } ?: "unknown"
@@ -647,22 +705,32 @@ internal class WineAppLabelsBuildLog(
             val suffix = if (dirty) "-dirty" else ""
             val buildNumber = if (versionCode.isNotBlank()) "#$versionCode ($commit$suffix)" else commit + suffix
             val branch = metadata?.optString("branch").orEmpty().ifBlank { "unknown" }
-            return BuildInfo(
-                buildKey = explicitKey,
-                buildNumber = buildNumber,
-                versionCode = versionCode,
-                buildCommit = commit,
-                branch = branch,
+            return withModules(
+                BuildInfo(
+                    buildKey = explicitKey,
+                    buildNumber = buildNumber,
+                    versionCode = versionCode,
+                    buildCommit = commit,
+                    branch = branch,
+                ),
             )
         }
 
-        private fun fromCsvMap(map: Map<String, String>): Entry? {
+        internal fun fromCsvMap(map: Map<String, String>): Entry? {
             if (map["row_type"] == BEST_BUILD_ROW_TYPE) return null
             val runId = map["run_id"].orEmpty()
             val buildCommit = map["build_commit"].orEmpty()
             val buildKey = map["build_key"].orEmpty().ifBlank { if (buildCommit.isNotBlank()) "$buildCommit:clean" else "" }
             val attempted = map["attempted"]?.toIntOrNull() ?: return null
             if (buildKey.isBlank() || buildKey == BEST_BUILD_ROW_TYPE || attempted <= 0) return null
+            val savedPipeline = map["pipeline_id"].orEmpty()
+            val ownerMode = PhoneCorpusRunner.Mode.fromPipelineId(savedPipeline)
+            val savedModel = map["model_version"].orEmpty()
+            val modelVersion = ownerMode?.title ?: when (savedModel) {
+                "Lab v4" -> PhoneCorpusRunner.Mode.LAB.title
+                "Prod v3.0" -> PhoneCorpusRunner.Mode.PRODUCTION_V4.title
+                else -> savedModel.ifBlank { PhoneCorpusRunner.Mode.LAB.title }
+            }
             return Entry(
                 date = map["date"].orEmpty(),
                 time = map["time"].orEmpty(),
@@ -672,8 +740,8 @@ internal class WineAppLabelsBuildLog(
                 buildCommit = buildCommit,
                 buildKey = buildKey,
                 branch = map["branch"].orEmpty().ifBlank { "unknown" },
-                modelVersion = map["model_version"].orEmpty().ifBlank { PhoneCorpusRunner.Mode.LAB.title },
-                pipelineId = map["pipeline_id"].orEmpty().ifBlank { PhoneCorpusRunner.Mode.LAB.pipelineId },
+                modelVersion = modelVersion,
+                pipelineId = savedPipeline.ifBlank { ownerMode?.pipelineId ?: PhoneCorpusRunner.Mode.LAB.pipelineId },
                 runId = runId.ifBlank { "$buildKey:${map["timestamp_ms"].orEmpty()}" },
                 attempted = attempted,
                 eligible = map["eligible"]?.toIntOrNull() ?: 0,
@@ -697,6 +765,8 @@ internal class WineAppLabelsBuildLog(
                         }
                     }
                 },
+                labModules = map["lab_modules"].orEmpty(),
+                corpusKey = map["corpus_key"].orEmpty(),
             )
         }
     }

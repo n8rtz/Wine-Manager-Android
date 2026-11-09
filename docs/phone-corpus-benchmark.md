@@ -2,23 +2,23 @@
 
 > **Retired 2026-10-26:** the 168-photo `phone-corpus-v1` page (`PhoneCorpusActivity`), its
 > ViewModel, its scored-CSV importer and its 31 MB debug asset bundle were removed. **Profile /
-> Settings → Large image dataset test** now opens the 125-label `WineAppLabelsActivity`, and the
-> Prod v1.0/v2.0/v3.0 rows on it are frozen comparators, not live contenders. Sections below
+> Settings → Large image dataset test** now opens the 124-label `WineAppLabelsActivity`, and the
+> Prod v1.0/v2.0/v4.0 rows on it are frozen comparators, not live contenders. Sections below
 > describing the 168-photo run, the "Saved Production v2.0" comparison rows and **Import scored
 > results CSV** describe the retired page and no longer exist in the app; the historical inputs are
 > kept offline in `tools/evaluation/retired-phone-corpus-v1/`.
 
-## Use on the phone (live 125-label benchmark)
+## Use on the phone (live 124-label benchmark)
 
-Build/install the app, then open **Profile / Settings → Large image dataset test**. It is separate from both existing OCR Labs and uses `app/src/main/assets/wine-app-labels-v1/` (125 retained workbook photos).
+Build/install the app, then open **Profile / Settings → Large image dataset test**. It is separate from both existing OCR Labs and uses `app/src/main/assets/wine-app-labels-v1/` (124 retained workbook photos).
 
-Only Lab v4 opens the Lab-only expanded producer index (LWIN plus source-tagged X-Wines, TTB and OpenStreetMap candidates); supplemental candidates never reach production or the Prod versions, and every suggestion still requires confirmation. The page itself carries no prose about this — the session copy of the scored stats and this document hold the provenance, the screen shows only state and counts.
+Only Lab v5 opens the Lab-only expanded producer index (LWIN plus source-tagged X-Wines, TTB and OpenStreetMap candidates); supplemental candidates never reach production or the Prod versions, and every suggestion still requires confirmation. The page itself carries no prose about this — the session copy of the scored stats and this document hold the provenance, the screen shows only state and counts.
 
-**Prod v1.0, Prod v2.0 and Prod v3.0 are frozen baselines.** Each photo runs through them once; the outcome (fields, status, engine flags and the compact pipeline funnel) is saved on the device under `noBackupFilesDir/wine-app-labels-v1/baselines-v1/<corpus signature>/<MODE>/` and every later pass scores that record instead of re-running the version. Only **Lab v4** runs fresh OCR on later passes, so a re-run measures the current model against a fixed baseline. Records are keyed by the corpus signature (inputs/evaluation-set/scoring hashes), so a revised reference set never mixes with an older capture, and they survive app updates (uninstall/clear data removes them). The first pass after upgrading freezes any Prod checkpoints an earlier build already produced instead of asking for a second run. **Retry failed / partial** re-runs a Prod version only for photos whose frozen record is a failure.
+**Prod v1.0, Prod v2.0 and Prod v4.0 are frozen baselines.** Each photo runs through them once; the outcome (fields, status, engine flags and the compact pipeline funnel) is saved on the device under `noBackupFilesDir/wine-app-labels-v1/baselines-v1/<corpus signature>/<MODE>/` and every later pass scores that record instead of re-running the version. Only **Lab v5** runs fresh OCR on later passes, so a re-run measures the current model against a fixed baseline. Records are keyed by the corpus signature (inputs/evaluation-set/scoring hashes), so a revised reference set never mixes with an older capture, and they survive app updates (uninstall/clear data removes them). The first pass after upgrading freezes any Prod checkpoints an earlier build already produced instead of asking for a second run. **Retry failed / partial** re-runs a Prod version only for photos whose frozen record is a failure.
 
-All 125 retained rows of the updated, owner-reviewed workbook are eligible and no photo is filtered out of OCR: Club des Sommeliers #14 and the marked-red rows were removed from both workbook tabs, IMG_2732.jpeg stays excluded, and the 168-photo bundle is no longer packaged. The legacy 168/106 selection, its 62 exclusions and its retired 160-label acceptance target therefore no longer apply to this screen.
+All 124 retained rows of the updated, owner-reviewed workbook are eligible and no photo is filtered out of OCR: Club des Sommeliers #14, review #67 and the marked-red rows were removed from both workbook tabs, IMG_2732.jpeg stays excluded, and the 168-photo bundle is no longer packaged. The legacy 168/106 selection, its 62 exclusions and its retired 160-label acceptance target therefore no longer apply to this screen.
 
-1. **Lab v4** is the only selectable version (latest spatial-merging variant, 60 seconds per engine). The Prod radios are display-only and show each version's frozen photo count and capturing build. On a first pass the Prod versions run alongside Lab, once per photo.
+1. **Lab v5** is the only selectable version (latest spatial-merging variant, 60 seconds per engine). The Prod radios are display-only and show each version's frozen photo count and capturing build. On a first pass the Prod versions run alongside Lab, once per photo.
 2. Tap **Start / resume remaining photos**. No picker, image download, desktop OCR or saved-text replay is used.
 3. Keep the screen open and the phone powered. The screen stays awake while working; runs can take hours and generate heat. Stop requests take effect after the current photo. Backgrounding requests a stop. Closing the Activity or process death may interrupt the current photo, which will be reattempted on resume.
 4. Read the horizontally scrollable aggregate table and expand **Show per-photo results** for expected/recognized values and outcomes.
@@ -30,7 +30,7 @@ New runs preserve old files. Runs are isolated by build SHA, APK install/update 
 
 ## Exactly which photos? (retired 168-photo bundle)
 
-*The bundle described in this section is no longer packaged; it lives in `tools/evaluation/retired-phone-corpus-v1/` and the commit history. The live corpus is `app/src/main/assets/wine-app-labels-v1/` (125 photos).*
+*The bundle described in this section is no longer packaged; it lives in `tools/evaluation/retired-phone-corpus-v1/` and the commit history. The live corpus is `app/src/main/assets/wine-app-labels-v1/` (124 photos).*
 
 `app/src/debug/assets/phone-corpus-v1/images/` contained **168 JPEGs, 31,163,745 bytes (29.72 MiB)**. Their bytes match the previously evaluated, EXIF-oriented, maximum-1600-edge JPEGs—not newly substituted labels. All transformed SHA-256 hashes match the frozen reference. The builder additionally verified each original source Git blob SHA-1.
 
@@ -50,7 +50,7 @@ Production v1.0 calls the real FILE scanner with its ordinary 15-second budget, 
 
 Production v2.0 and Lab decode fresh pixels and run the same full-label crop OCR path used by the prior corpus harness: ML Kit and Medium, each with the existing 60-second experimental budget. V2.0 selects the former `lab-guarded-producer` implementation without spatial merging. Lab selects only the latest raw-preserving guarded extraction plus primary-LWIN linked producer/wine resolver; it does not also run v2.0, trigram or residual contenders. Per-engine field comparison work is skipped for these benchmark modes. The original form extraction remains an internal anchor required by the guarded algorithm, not an additional scored contender.
 
-Each mode has exactly one current scored pipeline: `production-v1.0-15s`, `production-v2.0-guarded`, `production-v3.0-lwin-only`, or `lab-v4-expanded-producers` (the current Lab generation, formerly reported as `lab-linked-wine-v1`). Scored CSVs saved under retired mode pipeline IDs (`lab-v4-lwin-only`, `production-v3.0-spatial-merged`) restore and import read-only under their owning mode via `Mode.fromPipelineId` / `legacyPipelineIds`; the file's own ID is what remains displayed, and future renames must be appended to that alias map. Prod v3.0 and Lab v4 run the identical raw-preserving spatial pipeline; they differ only in producer data — Prod v3.0 resolves against the verified LWIN producer index only, Lab v4 against the Lab expanded producer index (same LWIN subset plus source-tagged X-Wines/TTB/OpenStreetMap winery candidates). Saved historical-baseline rows remain and are not rerun. V2.0 and Lab are **not** 60-second production-camera scans. Phone timings and emulator timings are not interchangeable. The normal Add Wine scanner is unchanged (v1.0).
+Each mode has exactly one current scored pipeline: `production-v1.0-15s`, `production-v2.0-guarded`, `production-v4.0-lwin-only`, or `lab-v5-expanded-producers`. The just-before-refresh captures supplied with this update were produced under legacy IDs `production-v3.0-lwin-only` and `lab-v4-expanded-producers`; those IDs (plus earlier aliases such as `lab-v4-lwin-only` and `production-v3.0-spatial-merged`) remain mapped to Prod v4.0 or Lab v5 so saved CSVs and frozen Prod records remain readable. The filename/CSV keeps its original pipeline ID for provenance; new runs write the current ID. Prod v4.0 and Lab v5 run the identical raw-preserving spatial pipeline; they differ only in producer data — Prod v4.0 resolves against the verified LWIN producer index only, Lab v5 against the Lab expanded producer index (same LWIN subset plus source-tagged X-Wines/TTB/OpenStreetMap winery candidates). Saved historical-baseline rows remain and are not rerun. V2.0 and Lab are **not** 60-second production-camera scans. Phone timings and emulator timings are not interchangeable. The normal Add Wine scanner is unchanged (v1.0).
 
 Both expected engines and Medium assets are required at preflight. Execution errors/missing summaries do not receive correct-blank credit. Deadline-limited or truncated executions can retain real partial predictions and are flagged separately. Failed eligible forms conservatively count as multi-error as well as appearing in the explicit failure column. No manual cellar entries are read. Raw tokens/provenance stay in private per-attempt files; lab traces also retain their detailed CSV. Both user-facing exports are text only, not photo uploads. Raw export streams one attempt at a time and uses the same formula-safe CSV encoder.
 
@@ -102,7 +102,7 @@ The selected implementation is identified in the run metadata and CSV pipeline I
 
 ## Saved Production v2.0 comparison (retired with the 168-photo page)
 
-*This section documents the removed debug page. The live page has no saved-v2/baseline comparison rows; its Prod v1.0/v2.0/v3.0 rows are that device's own frozen capture. The offline data is retained in `tools/evaluation/retired-phone-corpus-v1/saved-production-v2.json` for the historical analyses below.*
+*This section documents the removed debug page. The live page has no saved-v2/baseline comparison rows; its Prod v1.0/v2.0/v4.0 rows are that device's own frozen capture. The offline data is retained in `tools/evaluation/retired-phone-corpus-v1/saved-production-v2.json` for the historical analyses below.*
 
 The retired page displayed two additional rows from the user's completed 168-photo phone run on build `28bce9e81cc3`, whose original pipeline ID was `lab-guarded-producer`:
 

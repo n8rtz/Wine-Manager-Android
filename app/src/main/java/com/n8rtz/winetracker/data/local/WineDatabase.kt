@@ -39,7 +39,6 @@ data class SensoryData(
     val finish: Int = 2,
     val quality: Int = 2,
     val overallScore: Int = 75,
-    /** Legacy field kept for reading old backups; fault selection now lives in AromaTaxonomy.aromas. */
     val flaws: List<String> = emptyList(),
     val colorHsv: HsvColor? = null,
     val entryTightOpen: Float? = 0.5f,
@@ -73,11 +72,13 @@ class Converters {
             }.map { parsed ->
                 // Gson bypasses Kotlin defaults for keys absent from legacy JSON,
                 // which would leave the non-null lists null at runtime.
-                parsed.copy(
-                    flaws = parsed.flaws.orEmpty(),
-                    entryTightOpen = parsed.entryTightOpen ?: 0.5f,
-                    aromaObservations = parsed.aromaObservations.orEmpty(),
-                    aromas = parsed.aromas.orEmpty()
+                normalizeSensoryData(
+                    parsed.copy(
+                        flaws = parsed.flaws.orEmpty(),
+                        aromas = parsed.aromas.orEmpty(),
+                        aromaObservations = parsed.aromaObservations.orEmpty(),
+                        entryTightOpen = parsed.entryTightOpen ?: 0.5f
+                    )
                 )
             }.getOrElse {
                 // If stored json belongs to the float-based sensory model, parse gracefully
@@ -94,23 +95,25 @@ class Converters {
                             arr.optString(i).takeIf { it.isNotBlank() }
                         }
                     }
-                    SensoryData(
-                        sweetness = getIntFromNumber("sweetness", 1),
-                        aroma = getIntFromNumber("aroma", getIntFromNumber("noseIntensity", 2)),
-                        acidity = getIntFromNumber("acidity", 2),
-                        tannins = getIntFromNumber("tannins", getIntFromNumber("tannin", 2)),
-                        body = getIntFromNumber("body", 2),
-                        balance = getIntFromNumber("balance", 2),
-                        intensity = getIntFromNumber("intensity", 2),
-                        complexity = getIntFromNumber("complexity", getIntFromNumber("noseComplexity", 1)),
-                        finish = getIntFromNumber("finish", getIntFromNumber("finishLength", 2)),
-                        quality = getIntFromNumber("quality", 2),
-                        overallScore = obj.optInt("overallScore", 75),
-                        flaws = getStringList("flaws"),
-                        colorHsv = null,
-                        entryTightOpen = 0.5f,
-                        aromaObservations = emptyList(),
-                        aromas = getStringList("aromas")
+                    normalizeSensoryData(
+                        SensoryData(
+                            sweetness = getIntFromNumber("sweetness", 1),
+                            aroma = getIntFromNumber("aroma", getIntFromNumber("noseIntensity", 2)),
+                            acidity = getIntFromNumber("acidity", 2),
+                            tannins = getIntFromNumber("tannins", getIntFromNumber("tannin", 2)),
+                            body = getIntFromNumber("body", 2),
+                            balance = getIntFromNumber("balance", 2),
+                            intensity = getIntFromNumber("intensity", 2),
+                            complexity = getIntFromNumber("complexity", getIntFromNumber("noseComplexity", 1)),
+                            finish = getIntFromNumber("finish", getIntFromNumber("finishLength", 2)),
+                            quality = getIntFromNumber("quality", 2),
+                            overallScore = obj.optInt("overallScore", 75),
+                            flaws = getStringList("flaws"),
+                            colorHsv = null,
+                            entryTightOpen = 0.5f,
+                            aromaObservations = emptyList(),
+                            aromas = getStringList("aromas")
+                        )
                     )
                 }.getOrNull()
             }

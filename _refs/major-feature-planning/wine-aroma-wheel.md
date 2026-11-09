@@ -57,7 +57,7 @@ with header, notice banner, chips, list mode, and attribution caption.
 - New "Aroma descriptors" section between the trait sliders and Common faults: header with selected count, Clear, and "Browse wheel" opening the dialog; removable chips for current selections.
 - Selections live in `SensoryData` editor state and commit with the existing Save button; Cancel/back discards. Aroma selection must not create or modify bottles.
 
-### 5. Note detail display (`ui/screens/WineDetailScreen.kt`)
+### 5. Note detail display (`ui/screens/TastingNoteDetailScreen.kt`)
 
 - Note cards resolve stored IDs through the taxonomy and render small chips; unknown IDs (future vocabulary changes) render as raw text so nothing disappears.
 
@@ -69,6 +69,7 @@ with header, notice banner, chips, list mode, and attribution caption.
 ## Future (explicitly out of scope now)
 
 - Filtering the tasting-notes list by aroma.
+- **Phase-aware aromas and per-aroma intensity** are tracked in the [W-061 implementation framework](structured-tasting-notes.md); they are not part of the shipped wheel.
 - Taxonomy localization/synonyms; vocabulary growth beyond the Wine Folly set.
 - ~~Exporting aromas in CSV~~ — declined (no CSV export; JSON backup already includes aromas).
 

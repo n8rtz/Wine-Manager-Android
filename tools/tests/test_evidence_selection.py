@@ -1,4 +1,4 @@
-"""Lab v4 selection rules: designation bases, bare designations, fragments, level pairs.
+"""Lab v5 selection rules: designation bases, bare designations, fragments, level pairs.
 
 The extractor is Kotlin, so this pins the rules by mirroring the one deterministic part over the
 real catalog (`WineDesignations.split` + `classificationBase`) and by asserting the wiring of the
@@ -106,6 +106,14 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         # The combined offer that promoted GRAND CRU / DOCG to a wine name must be gone.
         self.assertNotIn('"observed varietal or designation"', source)
 
+    def test_bounded_title_pair_hypothesis_passes_rank_and_reason_to_offer(self):
+        source = EVIDENCE.read_text()
+        self.assertIn(
+            'offer(mapOf(FieldId.WINE_NAME to WineDesignations.orderName(text)),116.0,\n'
+            '                        "bounded two-line cuvee/title plus varietal or appellation; no geography or vintage boundary crossed")',
+            source,
+        )
+
     def test_one_word_fragments_cannot_become_an_identity(self):
         source = EVIDENCE.read_text()
         self.assertIn("val fragmentOnly=norm.split(' ').size==1 && incomplete>0", source)
@@ -141,7 +149,7 @@ class EvidenceSelectionWiringTests(unittest.TestCase):
         runner = RUNNER.read_text()
         self.assertIn('internal const val REPAIR_PLACES_IN_BENCHMARK=true', runner)
         self.assertIn('internal const val SINGLE_READING_RESOLVERS_IN_BENCHMARK=true', runner)
-        self.assertIn('evidence-lab-v4-context', EVIDENCE.read_text())
+        self.assertIn('evidence-lab-v5-span-provenance-v2', EVIDENCE.read_text())
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Lab v4 expanded producer index (LWIN primary + supplemental candidates).
+"""Build the Lab v5 expanded producer index (LWIN primary + supplemental candidates).
 
 The verified primary producers.sqlite is copied verbatim (every LWIN row and ID is
 preserved, so the primary linked-wine index keeps joining), then supplemental
@@ -12,9 +12,9 @@ appended from the pinned snapshots already audited for source review:
 
 Supplemental rows are tagged in producer_sources so runtime telemetry attributes
 every suggestion to its source. The output is written only to the Lab benchmark
-asset folder app/src/main/assets/producer-gazetteer-expanded-v1/; the primary
-database and manifest are never modified, and production/Prod pipelines never
-open this index. Candidate identity status stays candidate_not_verified_label_producer:
+asset folder app/src/main/assets/producer-gazetteer-expanded-v1/; the Lab and
+GLiNER post-processing paths use it, while production/Prod pipelines do not.
+The primary database and manifest are never modified. Candidate identity status stays candidate_not_verified_label_producer:
 membership is lexical support only, never proof of a label producer.
 """
 from __future__ import annotations
@@ -46,6 +46,7 @@ spec.loader.exec_module(refresh)
 PRIMARY_DIR = ROOT / "app/src/main/assets/producer-gazetteer-v1"
 OUT_DIR = ROOT / "app/src/main/assets/producer-gazetteer-expanded-v1"
 REPORT = TOOLS / "supplemental-source-refresh.json"
+APPROVED_BRANDS = TOOLS / "approved-wine-brands.json"
 VERSION = "lab-expanded-producers-v1"
 
 
@@ -105,8 +106,9 @@ def osm_names(snapshot: dict) -> list[tuple[str, str]]:
 
 NOTICE = """# Lab expanded producer index — sources and attribution
 
-`producers-expanded.sqlite` is opened ONLY by the benchmark's Lab v4 pipeline.
-Production and Prod v1.0/v2.0/v3.0 never read it. Every suggestion it supports is
+`producers-expanded.sqlite` is used by Lab benchmark and GLiNER post-processing,
+and is searchable on Database Lookup. Production/Prod pipelines do not read it.
+Every suggestion it supports is
 YELLOW / confirm manually; membership is lexical support, not proof of identity.
 
 ## Primary LWIN subset (verbatim)
@@ -128,6 +130,11 @@ their attested provenance.
   (https://www.ttb.gov/public-information/foia/list-of-permittees), via the
   user-supplied pinned cache recorded in `manifest.json`. Authenticity/freshness
   of the supplied cache were not independently validated against a fresh export.
+- **Owner-approved wine brands** (`source = 'approved_brand'`). Individually
+  researched marketed names approved by the owner; source URLs and product
+  examples are recorded in `tools/producer-sources/approved-wine-brands.json`.
+  Brand names do not necessarily identify a legal winery. Source text and
+  images are not included, and their reuse rights have not been established.
 - **OpenStreetMap wineries** (`source = 'osm'`). © OpenStreetMap contributors,
   ODbL-1.0; derivative snapshot by OpenHistoryMap/openwinemap at the pinned
   commit in `manifest.json`. Named explicit craft/industrial wineries only.
@@ -189,6 +196,13 @@ def main() -> None:
             raise ValueError("X-Wines candidate count differs from the audited refresh report")
         add_candidates("ttb", ttb)
         add_candidates("osm", osm)
+        approved = json.loads(APPROVED_BRANDS.read_text(encoding="utf-8"))
+        if approved.get("schema") != 1 or approved.get("source_id") != "approved_brand":
+            raise ValueError("Invalid approved brand source")
+        brands = approved["brands"]
+        add_candidates("approved_brand", [(row["name"], "") for row in brands])
+        if counts["approved_brand"]["added"] != len(brands):
+            raise ValueError("Approved brand collides with an existing producer key; review explicitly")
 
         new_ids = [row[0] for row in additions]
         if len(set(new_ids)) != len(new_ids) or primary_ids & set(new_ids):
@@ -267,6 +281,11 @@ def main() -> None:
              "license": "ODbL-1.0", "attribution": "© OpenStreetMap contributors",
              "repo": "openhistorymap/openwinemap", "commit": report["osm"]["commit"],
              "archive_sha256": report["osm"]["archive_sha256"]},
+            {"id": "approved_brand", "records": per_source["approved_brand"],
+             "source_records": counts["approved_brand"]["source_records"],
+             "source_file": "tools/producer-sources/approved-wine-brands.json",
+             "source_sha256": refresh.db_hash(APPROVED_BRANDS),
+             "note": "Owner-approved marketed wine names; not asserted to be legal wineries or LWIN records"},
         ],
         "identity_status": "candidate_not_verified_label_producer",
         "built_by": "tools/producer-sources/build_expanded.py",

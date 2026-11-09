@@ -16,7 +16,6 @@ EVIDENCE = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceE
 REPAIR = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/PlaceRepair.kt'
 BATCH = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabBatch.kt'
 RUNNER = ROOT / 'app/src/main/java/com/yourapp/wine/phonecorpus/PhoneCorpusRunner.kt'
-LAB_SCREEN = ROOT / 'app/src/main/java/com/yourapp/wine/textlab/OcrTextLabActivity.kt'
 
 
 def normalize(text):
@@ -175,6 +174,18 @@ class PlaceRepairPolicyTests(unittest.TestCase):
         synthetic = [('Alpha One', 'Alpha One'), ('Beta Twoo', 'Beta Twoo')]
         self.assertIsNone(resolve('Alpha Ono', synthetic, readings=(('paddle', 'Beta Two'),)))
 
+    def test_label34_uses_a_classification_base_and_drops_only_the_orphan_ocr_o(self):
+        # Saved OCR was "AINT-ÉMILION O GRAND CRU". The full phrase and the raw base
+        # exceed the two-edit repair budget; the recognized Grand Cru suffix gives a base,
+        # and only its isolated final O is omitted from the lookup query.
+        target = 'Saint-Emilion Grand Cru'
+        self.assertIsNone(bounded_distance('AINT-ÉMILION O GRAND CRU', target))
+        self.assertIsNone(bounded_distance('AINT-ÉMILION O', 'Saint-Emilion'))
+        self.assertEqual(bounded_distance('AINT-ÉMILION', 'Saint-Emilion'), 1)
+        near_places = {place for place, form in self.forms
+                       if bounded_distance('AINT-ÉMILION', form) is not None}
+        self.assertEqual(near_places, {'Saint-Emilion'})
+
     def test_unrelated_text_is_not_forced_onto_a_place(self):
         for query in ('Chateau Mouton', 'Grand Vin de Bordeaux', 'Mis en bouteille'):
             self.assertIsNone(resolve(query, self.forms), query)
@@ -185,7 +196,7 @@ class PlaceRepairWiringTests(unittest.TestCase):
         extractor = EVIDENCE.read_text()
         repair = REPAIR.read_text()
         for fragment in ('private val placeRepair:PlaceRepair.Config=PlaceRepair.Config.off',
-                         'if(placeRepair.enabled && matched.isEmpty()'):
+                         'if(repairConfig.enabled && matched.isEmpty()'):
             self.assertTrue(fragment in extractor, fragment)
         self.assertNotIn('placeRepair.enabled || exact.isEmpty()', extractor)
         for fragment in ('val off=Config()', 'val experimental=Config(enabled=true)'):
@@ -206,13 +217,39 @@ class PlaceRepairWiringTests(unittest.TestCase):
         self.assertNotIn('minimumEngines', repair)
         self.assertIn('engines.ifEmpty { listOf("phrase") }', repair)
         extractor = EVIDENCE.read_text()
-        for fragment in ('LabelContext.collect(graph,gazetteer,view,kb,typedIdentity)',
+        for fragment in ('LabelContext.collect(contextGraph,gazetteer,view,kb,typedIdentity)',
                          'labelContext.anchorsExcluding(p.id)',
                          'sources.map { source -> PlaceRepair.Reading(family(source.record.engineId)'):
             self.assertTrue(fragment in extractor, fragment)
         for fragment in ('place.type in setOf("country", "region")',
                          'IdentityRoles.originOnly(text, listOf(place))'):
             self.assertTrue(fragment in label_ctx, fragment)
+
+    def test_blank_subregion_raw_ocr_fallback_is_last_resort_only(self):
+        extractor = EVIDENCE.read_text()
+        spatial = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
+        # Weak unsupported lines never enter main hypothesis competition or rely on bespoke suffix hacks.
+        self.assertNotIn('LOW_CONFIDENCE_PLACE_REPAIR_MIN_SCORE', extractor)
+        self.assertNotIn('withoutOrphanO', extractor)
+        self.assertNotIn('low_confidence_place_repair', extractor)
+        # Raw OCR appellation span search runs ONLY when subregion would otherwise remain blank.
+        for fragment in ('internal fun fallbackBlankSubregionFromRawOcr(',
+                         'fill.fields[FieldId.SUBREGION]?.value.isNullOrBlank()',
+                         'trace.add("raw_ocr_subregion_fallback"',
+                         'val compact=BoundedSpelling.key(form).replace(" ","")'):
+            self.assertIn(fragment, extractor, fragment)
+        for fragment in ('if(isLabMode && engine!=null && row["subregion"].orEmpty().isBlank())',
+                         'engine.fallbackBlankSubregionFromRawOcr(',
+                         'engine.withDeferredBlankSubregionFallback',
+                         '"raw_ocr_subregion_fallback"'):
+            self.assertIn(fragment, spatial, fragment)
+        target_compact = key('Saint-Emilion').replace(' ', '')
+        self.assertEqual(target_compact, 'saintemilion')
+        for raw_span in ('aint-emilion', 'aint   emilion', 'aint\nemilion', 'AINT-ÉMILION'):
+            obs_compact = key(raw_span).replace(' ', '')
+            d = levenshtein(obs_compact, target_compact, 2)
+            self.assertEqual(d, 1, raw_span)
+            self.assertLessEqual(d / max(len(obs_compact), len(target_compact)), 0.2, raw_span)
 
     def test_a_repair_cannot_outrank_exact_evidence_or_name_the_wine(self):
         extractor = EVIDENCE.read_text()
@@ -224,13 +261,12 @@ class PlaceRepairWiringTests(unittest.TestCase):
 
     def test_the_switch_is_recorded_and_marked_lab_only(self):
         runner = RUNNER.read_text()
-        # Turned on for the measurement run (owner, 2026-10-27); Prod v3.0 is a frozen baseline,
+        # Turned on for the measurement run (owner, 2026-10-27); Prod v4.0 is a frozen baseline,
         # so enabling the Lab switch cannot change the comparison row it is measured against.
         for fragment in ('internal const val REPAIR_PLACES_IN_BENCHMARK=true',
                          'repairPlaces=REPAIR_PLACES_IN_BENCHMARK'):
             self.assertTrue(fragment in runner, fragment)
         self.assertTrue('"place_repair_enabled" to repairPlaces.toString()' in BATCH.read_text())
-        self.assertTrue('Repair appellations with bounded spelling (experimental)' in LAB_SCREEN.read_text())
         self.assertTrue('Lab-only' in REPAIR.read_text())
 
 

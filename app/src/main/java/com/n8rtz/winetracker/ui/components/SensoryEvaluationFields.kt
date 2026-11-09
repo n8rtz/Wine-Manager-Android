@@ -39,21 +39,19 @@ import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.SensoryData
 import kotlin.math.roundToInt
 
-private data class SensoryTraitControl(
+internal data class SensoryTraitControl(
     val title: String,
     val descriptors: List<String>,
     val value: Int,
     val onValueChange: (Int) -> Unit
 )
 
-@Composable
-fun SensoryEvaluationFields(
+internal fun sensoryTraitControls(
     data: SensoryData,
     onChange: (SensoryData) -> Unit
-) {
-    val traits = listOf(
+): List<SensoryTraitControl> = listOf(
         SensoryTraitControl("Sweetness", listOf("Bone dry", "Dry", "Off-dry", "Medium sweet", "Sweet", "Luscious"), data.sweetness) { onChange(data.copy(sweetness = it)) },
-        SensoryTraitControl("Aroma / bouquet", listOf("Very subdued", "Subdued", "Moderate", "Expressive", "Powerful"), data.aroma) { onChange(data.copy(aroma = it)) },
+        SensoryTraitControl("Aroma", listOf("Very subdued", "Subdued", "Moderate", "Expressive", "Powerful"), data.aroma) { onChange(data.copy(aroma = it)) },
         SensoryTraitControl("Acidity", listOf("Flabby", "Low", "Balanced", "Crisp", "Tart / searing"), data.acidity) { onChange(data.copy(acidity = it)) },
         SensoryTraitControl("Tannins / grip", listOf("Silky", "Low", "Medium", "Grippy", "Harsh"), data.tannins) { onChange(data.copy(tannins = it)) },
         SensoryTraitControl("Body", listOf("Light", "Medium-minus", "Medium", "Medium-plus", "Full"), data.body) { onChange(data.copy(body = it)) },
@@ -63,6 +61,13 @@ fun SensoryEvaluationFields(
         SensoryTraitControl("Finish", listOf("Short", "Medium-minus", "Medium", "Long", "Lingering"), data.finish) { onChange(data.copy(finish = it)) },
         SensoryTraitControl("Quality", listOf("Poor", "Acceptable", "Good", "Very good", "Outstanding"), data.quality) { onChange(data.copy(quality = it)) }
     )
+
+@Composable
+fun SensoryEvaluationFields(
+    data: SensoryData,
+    onChange: (SensoryData) -> Unit
+) {
+    val traits = sensoryTraitControls(data, onChange)
     traits.forEach { trait -> SensoryTraitSlider(trait) }
 
 }
@@ -94,6 +99,7 @@ private fun overallScoreBand(score: Int): OverallScoreBand = when {
 fun OverallScoreSlider(
     score: Float,
     scoreSelected: Boolean = true,
+    enabled: Boolean = true,
     onScoreChange: (Float) -> Unit
 ) {
     // Reserve a font-scaled label width at both endpoints. The explicit thumb
@@ -169,6 +175,7 @@ fun OverallScoreSlider(
             Slider(
                 value = sliderScore,
                 onValueChange = { onScoreChange(it.coerceIn(50f, 100f)) },
+                enabled = enabled,
                 valueRange = 50f..100f,
                 steps = 49,
                 modifier = Modifier.fillMaxWidth(),
@@ -189,10 +196,15 @@ fun OverallScoreSlider(
                 },
                 colors = SliderDefaults.colors(
                     thumbColor = indicatorColor,
+                    disabledThumbColor = indicatorColor,
                     activeTrackColor = Color.Transparent,
                     activeTickColor = Color.Transparent,
                     inactiveTrackColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent
+                    inactiveTickColor = Color.Transparent,
+                    disabledActiveTrackColor = Color.Transparent,
+                    disabledActiveTickColor = Color.Transparent,
+                    disabledInactiveTrackColor = Color.Transparent,
+                    disabledInactiveTickColor = Color.Transparent
                 )
             )
         }
@@ -218,7 +230,7 @@ fun OverallScoreSlider(
 }
 
 @Composable
-private fun SensoryTraitSlider(trait: SensoryTraitControl) {
+internal fun SensoryTraitSlider(trait: SensoryTraitControl, enabled: Boolean = true) {
     val maxValue = (trait.descriptors.size - 1).coerceAtLeast(1)
     val value = trait.value.coerceIn(0, maxValue)
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -253,13 +265,14 @@ private fun SensoryTraitSlider(trait: SensoryTraitControl) {
             valueRange = 0f..maxValue.toFloat(),
             steps = (trait.descriptors.size - 2).coerceAtLeast(0),
             gradientColors = gradientColorsFor(trait.title),
+            enabled = enabled,
             onValueChange = { trait.onValueChange(it.roundToInt().coerceIn(0, maxValue)) }
         )
     }
 }
 
-private fun gradientColorsFor(title: String): List<Color> = when (title) {
-    "Aroma / bouquet" -> listOf(Color(0xFFF6DCE6), Color(0xFFA25D89), Color(0xFF4B1F55))
+internal fun gradientColorsFor(title: String): List<Color> = when (title) {
+    "Aroma" -> listOf(Color(0xFFF6DCE6), Color(0xFFA25D89), Color(0xFF4B1F55))
     "Acidity" -> listOf(Color(0xFFD7EFC5), Color(0xFF63A875), Color(0xFF246B5B))
     "Tannins / grip" -> listOf(Color(0xFFF1D0D3), Color(0xFFA65E75), Color(0xFF532342))
     "Body" -> listOf(Color(0xFFF6DFC9), Color(0xFFC9826B), Color(0xFF722F37))
@@ -272,11 +285,12 @@ private fun gradientColorsFor(title: String): List<Color> = when (title) {
 }
 
 @Composable
-private fun GradientSensorySlider(
+internal fun GradientSensorySlider(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
     gradientColors: List<Color>,
+    enabled: Boolean = true,
     onValueChange: (Float) -> Unit
 ) {
     val progress = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
@@ -311,13 +325,17 @@ private fun GradientSensorySlider(
         Slider(
             value = value,
             onValueChange = onValueChange,
+            enabled = enabled,
             valueRange = valueRange,
             steps = steps,
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
                 thumbColor = thumbColor,
+                disabledThumbColor = thumbColor,
                 activeTrackColor = Color.Transparent,
-                inactiveTrackColor = Color.Transparent
+                inactiveTrackColor = Color.Transparent,
+                disabledActiveTrackColor = Color.Transparent,
+                disabledInactiveTrackColor = Color.Transparent
             )
         )
     }

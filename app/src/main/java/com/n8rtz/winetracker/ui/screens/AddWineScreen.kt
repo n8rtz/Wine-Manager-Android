@@ -1,63 +1,82 @@
 package com.n8rtz.winetracker.ui.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.data.repository.WineRepository
+import com.n8rtz.winetracker.data.local.HsvColor
+import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.AddWineDraft
+import com.n8rtz.winetracker.scanner.AddWineDraftStore
 import com.n8rtz.winetracker.scanner.isBusy
+import com.n8rtz.winetracker.scanner.scanProgressFraction
+import com.n8rtz.winetracker.scanner.scanStepLabel
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
-import com.n8rtz.winetracker.BuildConfig
 import com.yourapp.wine.capture.ScanReport
 import com.yourapp.wine.fill.FieldId
 import com.yourapp.wine.ui.ScanFormState
-import com.yourapp.wine.ui.ScanFieldStatus
-import com.yourapp.wine.ui.ScanFieldChoices
-import com.yourapp.wine.ui.ScanReviewHeader
-import com.yourapp.wine.ui.LabelScanActions
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWineScreen(
     viewModel: WineViewModel,
     scannerViewModel: ScannerViewModel,
-    onWineAdded: () -> Unit
+    onWineAdded: () -> Unit,
+    onClose: () -> Unit
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
@@ -67,16 +86,28 @@ fun AddWineScreen(
                 PackageManager.PERMISSION_GRANTED
         )
     }
-    var showLabelCamera by remember { mutableStateOf(false) }
     var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    // Informational scan notices (unreadable label, busy picker, backup failure): shown like
+    // cameraError but never disables the shutter — a stale notice must not wedge the camera.
+    var scanHint by remember { mutableStateOf<String?>(null) }
+    // Bumped by bind-failure retry to force a full preview remount (fresh CameraX binding).
+    var cameraMountKey by remember { mutableStateOf(0) }
+    // Confirm/retake hold: the photo waits here until the user confirms (scan starts) or retakes.
+    // Rotation-safe (id + path only); the file is deleted unless the scan consumes it.
+    var holdRequestId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var holdPhotoPath by rememberSaveable { mutableStateOf<String?>(null) }
+    var holdConsumed by remember { mutableStateOf(false) }
+    val scaffoldState = rememberBottomSheetScaffoldState()
+    val scope = rememberCoroutineScope()
+    var drawerPeekHeight by remember { mutableStateOf(IDLE_PEEK_HEIGHT) }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         cameraPermissionGranted = granted
         if (granted) {
             cameraError = null
-            showLabelCamera = true
+            scanHint = null
         } else {
             cameraError = "Camera permission is needed to scan a wine label. You can still enter the wine manually."
         }
@@ -85,37 +116,70 @@ fun AddWineScreen(
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             cameraError = null
-            if (!scannerViewModel.onLabelPhotoSelected(uri)) cameraError = "Wait for the previous scan to finish, then choose the photo again."
+            scanHint = null
+            if (!scannerViewModel.onLabelPhotoSelected(uri)) scanHint = "Wait for the previous scan to finish, then choose the photo again."
         }
     }
+    // Rotation must not cancel the confirm hold's pending request (the hold id/path survive
+    // via rememberSaveable); only a real leave/stop cancels it.
     DisposableEffect(lifecycleOwner, scannerViewModel) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) scannerViewModel.cancelActiveLabelScan()
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP && !isChangingConfigurations(context))
+                scannerViewModel.cancelPendingLabelCapture()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            scannerViewModel.cancelActiveLabelScan()
+            if (!isChangingConfigurations(context)) scannerViewModel.cancelPendingLabelCapture()
         }
     }
     
-    var maker by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
-    var vintage by remember { mutableStateOf("NV") }
-    var type by remember { mutableStateOf("Red") }
-    var quantity by remember { mutableStateOf("1") }
-    var price by remember { mutableStateOf("") }
-    var drinkingWindowStart by remember { mutableStateOf("") }
-    var drinkingWindowEnd by remember { mutableStateOf("") }
+    val draftStore = remember(context) { AddWineDraftStore(context) }
+    val initialDraft = remember { draftStore.load() }
+    var keepDraft by remember { mutableStateOf(true) }
+    var saving by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
+    var maker by remember { mutableStateOf(initialDraft.maker) }
+    var name by remember { mutableStateOf(initialDraft.name) }
+    var vintage by remember { mutableStateOf(initialDraft.vintage) }
+    var type by remember { mutableStateOf(initialDraft.type) }
+    var quantity by remember { mutableStateOf(initialDraft.quantity) }
+    var price by remember { mutableStateOf(initialDraft.price) }
+    var drinkingWindowStart by remember { mutableStateOf(initialDraft.windowStart) }
+    var drinkingWindowEnd by remember { mutableStateOf(initialDraft.windowEnd) }
+    var defaultColorHsv by remember { mutableStateOf<HsvColor?>(null) }
 
-    // Cascading Location State
-    var selectedCountry by remember { mutableStateOf("") }
-    var selectedRegion by remember { mutableStateOf("") }
-    var selectedAppellation by remember { mutableStateOf("") }
+    var selectedCountry by remember { mutableStateOf(initialDraft.country) }
+    var selectedRegion by remember { mutableStateOf(initialDraft.region) }
+    var selectedAppellation by remember { mutableStateOf(initialDraft.subregion) }
 
-    var scanForm by remember { mutableStateOf(ScanFormState()) }
+    var scanForm by remember { mutableStateOf(initialDraft.formState()) }
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
     var lastScanId by remember { mutableStateOf(0L) }
+    // Camera-first screen: ask once ever, so re-entering Add Wine never re-prompts.
+    LaunchedEffect(Unit) {
+        if (!cameraPermissionGranted && !draftStore.wasCameraPrompted()) {
+            draftStore.markCameraPrompted()
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+    // Leaving Add Wine blanks the form: back, tab switch and Save all dispose this screen, and
+    // the states above are fresh on return. Rotation keeps the draft (recreated below); process
+    // death keeps it for scan-return recovery; a running scan is never cancelled by leaving.
+    DisposableEffect(Unit) {
+        onDispose { if (!isChangingConfigurations(context)) draftStore.clear() }
+    }
+    // An unconfirmed hold file is orphaned by leaving (or by rotation-safe clearing); the scan
+    // owns it once confirmed. Deletion is idempotent, so the retake path shares this cleanup.
+    val latestHoldConsumed = rememberUpdatedState(holdConsumed)
+    DisposableEffect(holdPhotoPath) {
+        val heldPath = holdPhotoPath
+        onDispose {
+            if (!isChangingConfigurations(context) && latestHoldConsumed.value != true) {
+                heldPath?.let { runCatching { File(it).delete() } }
+            }
+        }
+    }
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     val syncFormToInputs = {
         maker = scanForm.fields.getValue(FieldId.PRODUCER).value
@@ -127,24 +191,24 @@ fun AddWineScreen(
     }
     val formValues = { mapOf(FieldId.PRODUCER to maker, FieldId.WINE_NAME to name, FieldId.VINTAGE to vintage,
         FieldId.COUNTRY to selectedCountry, FieldId.REGION to selectedRegion, FieldId.SUBREGION to selectedAppellation) }
-    val selectChoice: (FieldId, String) -> Unit = { field, value ->
-        scanForm = scanForm.selectChoice(field, value)
-        syncFormToInputs()
+    val currentDraft = {
+        AddWineDraft(maker, name, vintage, type, quantity, price, drinkingWindowStart, drinkingWindowEnd,
+            selectedCountry, selectedRegion, selectedAppellation,
+            scanForm.fields.filterValues { it.edited }.keys)
     }
-    val dismissChoices: (FieldId) -> Unit = { field -> scanForm = scanForm.dismissChoices(field) }
+    SideEffect { if (keepDraft) draftStore.save(currentDraft()) }
     val clearField: (FieldId) -> Unit = { field ->
         scanForm = scanForm.clearSuggestion(field, lastScanReport?.fill, formValues(), currentYear)
         syncFormToInputs()
     }
-    val fieldChoices: @Composable (FieldId) -> Unit = { field ->
-        ScanFieldChoices(scanForm.fields.getValue(field),
-            onSelectChoice = { value -> selectChoice(field, value) },
-            onDismissChoices = { dismissChoices(field) }, enabled = !labelScanState.isBusy)
-    }
-    val retake: () -> Unit = {
+    val requestScan: () -> Unit = {
+        Log.d("WineTracker", "Shutter tapped: state=" + labelScanState.javaClass.simpleName +
+            " busy=" + labelScanState.isBusy + " permission=" + cameraPermissionGranted +
+            " ready=" + cameraReady + " error=" + cameraError)
         if (!labelScanState.isBusy) {
             cameraError = null
-            if (cameraPermissionGranted) showLabelCamera = true
+            scanHint = null
+            if (cameraPermissionGranted) Log.d("WineTracker", "Shutter: requestCapture returned " + scannerViewModel.requestLabelScan())
             else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
@@ -153,19 +217,32 @@ fun AddWineScreen(
             Icon(Icons.Default.Close, contentDescription = "Clear ${field.name.lowercase().replace('_', ' ')}")
         }
     }
-    val fieldStatus: @Composable (FieldId) -> Unit = { field ->
-        ScanFieldStatus(scanForm.fields.getValue(field),
-            onConfirm = { scanForm = scanForm.confirm(field) }, onRetake = retake,
-            enabled = !labelScanState.isBusy, showChoices = false)
-    }
-    LaunchedEffect(showLabelCamera) {
-        if (showLabelCamera) {
+    LaunchedEffect(cameraPermissionGranted) {
+        if (cameraPermissionGranted) {
             focusManager.clearFocus()
             scannerViewModel.warmLabelScanner()
         }
     }
+    // OCR done: the drawer slides up to the full entry form, then the form scrolls to top.
+    // Separated from the dismissal above so interrupting the animation loses nothing.
     LaunchedEffect(lastScanId) {
-        if (lastScanId != 0L) formScrollState.scrollTo(0)
+        if (lastScanId != 0L) {
+            scaffoldState.bottomSheetState.expand()
+            formScrollState.scrollTo(0)
+        }
+    }
+    // Drawer detents: skinny handle card at rest, progress peek while busy — never during the
+    // confirm hold, when the user is deciding rather than waiting. Only steers a collapsed
+    // drawer; an expanded drawer stays where the user put it.
+    val showDrawerProgress = labelScanState.isBusy && holdPhotoPath == null
+    LaunchedEffect(showDrawerProgress) {
+        drawerPeekHeight = if (showDrawerProgress) PROGRESS_PEEK_HEIGHT else IDLE_PEEK_HEIGHT
+        withFrameNanos {}; withFrameNanos {}
+        val sheet = scaffoldState.bottomSheetState
+        // Never yank a drawer that's on its way to full: the completion expand runs
+        // concurrently with this reset, and retargeting it to peek kills the slide-up.
+        if (sheet.currentValue == SheetValue.PartiallyExpanded &&
+            sheet.targetValue == SheetValue.PartiallyExpanded) sheet.partialExpand()
     }
     LaunchedEffect((labelScanState as? LabelScanState.Review)?.requestId) {
         val review = labelScanState as? LabelScanState.Review ?: return@LaunchedEffect
@@ -179,9 +256,17 @@ fun AddWineScreen(
         selectedRegion = scanForm.fields.getValue(FieldId.REGION).value
         selectedAppellation = scanForm.fields.getValue(FieldId.SUBREGION).value
         lastScanReport = review.result
-        lastScanId = review.requestId
-        showLabelCamera = false
+        scanHint = if (review.result.fill.fields.values.all { it.state == com.yourapp.wine.fill.UiState.RED })
+            review.result.fill.overallHint ?: "Could not read the label — retake or enter details manually" else null
+        // Acknowledge the result even if the draft backup fails: a stuck Review bricks the
+        // whole scanner (shutter silently rejected, gallery "wait"), while a lost backup
+        // only costs restart recovery — and the filled form above is kept either way.
+        val draftSaved = draftStore.save(currentDraft(), synchronous = true) || draftStore.save(currentDraft(), synchronous = true)
+        if (!draftSaved) scanHint = "Scan result kept, but this device refused the backup — it won't survive a restart"
         scannerViewModel.dismissLabelScan(review.requestId)
+        // Last: drives the completion-UI effect below. Everything above is non-suspending,
+        // so a mid-animation drag, tab switch or rotation can never skip the dismissal.
+        lastScanId = review.requestId
     }
 
     val availableCountries = (
@@ -211,37 +296,35 @@ fun AddWineScreen(
             ).distinct().sorted()
     } else emptyList()
 
-    val vintages = (currentYear downTo 1900).map { it.toString() } + listOf("NV")
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Add New Wine") }) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(formScrollState)
-        ) {
+    // NV first: the most common non-year choice shouldn't sit below a century of scrolling.
+    val vintages = listOf("NV") + (currentYear downTo 1900).map { it.toString() }
+    val processingStill = (labelScanState as? LabelScanState.Processing)?.photoPath
+    val confirmingPhoto = holdPhotoPath
+    // The camera is only on while the user is actively framing a shot: the preview unmounts
+    // (releasing the camera) for the confirm still, for the analysis, and whenever the drawer
+    // is expanded to the form. Readiness is re-reported when the preview remounts, and
+    // backgrounding releases the camera via the lifecycle binding.
+    val drawerExpanded = scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded
+    val liveCamera = cameraPermissionGranted && confirmingPhoto == null && processingStill == null && !drawerExpanded
+    LaunchedEffect(processingStill != null) {
+        if (processingStill != null) cameraReady = false
+    }
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = drawerPeekHeight,
+        sheetDragHandle = { DrawerHandleCard() },
+        sheetContent = {
+            if (showDrawerProgress) DrawerScanProgress(labelScanState)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(formScrollState)
+                    .imePadding()
+            ) {
             // Form Section
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                LabelScanActions(busy = labelScanState.isBusy,
-                    progressMessage = if (showLabelCamera) null else when (labelScanState) {
-                        is LabelScanState.ImportingPhoto -> "Opening selected photo…"
-                        is LabelScanState.Processing -> "Reading selected photo on this device…"
-                        is LabelScanState.FinishingCancelledScan -> "Finishing the previous scan…"
-                        else -> null
-                    }, onCamera = retake, onChoosePhoto = {
-                        cameraError = null
-                        scannerViewModel.warmLabelScanner()
-                        runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
-                            .onFailure { cameraError = "Photo picker could not open. You can still use the camera or enter details manually." }
-                    })
-                if (BuildConfig.DEBUG) {
-                    OutlinedButton(enabled = !labelScanState.isBusy && !showLabelCamera, onClick = {
-                        context.startActivity(android.content.Intent().setClassName(context,
-                            "com.yourapp.wine.benchmark.OcrLabActivity"))
-                    }) { Text("OCR Lab — test production stack") }
-                }
-                (cameraError ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
+                Text("Add New Wine", style = MaterialTheme.typography.titleLarge)
+                (cameraError ?: scanHint ?: (labelScanState as? LabelScanState.Error)?.message)?.let { message ->
                     Text(
                         message,
                         modifier = Modifier.fillMaxWidth(),
@@ -250,11 +333,6 @@ fun AddWineScreen(
                     )
                 }
 
-                lastScanReport?.takeUnless { labelScanState.isBusy }?.let { report ->
-                    ScanReviewHeader(report = report, form = scanForm, scanId = lastScanId,
-                        allowDebugOverlay = BuildConfig.DEBUG, canRetake = !labelScanState.isBusy, onRetake = retake)
-                }
-                fieldStatus(FieldId.PRODUCER)
                 // Autocomplete Producer Search
                 var producerSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -297,6 +375,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         producerSearchExpanded = false
                                     }
                                 )
@@ -304,9 +383,8 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.PRODUCER)
 
-                fieldStatus(FieldId.WINE_NAME)
+
                 // Autocomplete Wine Name Search
                 var nameSearchExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -359,6 +437,7 @@ fun AddWineScreen(
                                         scanForm = scanForm.edit(FieldId.COUNTRY, selectedCountry)
                                             .edit(FieldId.REGION, selectedRegion).edit(FieldId.SUBREGION, selectedAppellation)
                                         type = def.type
+                                        defaultColorHsv = def.defaultColorHsv
                                         nameSearchExpanded = false
                                     }
                                 )
@@ -366,9 +445,8 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.WINE_NAME)
-                
-                fieldStatus(FieldId.VINTAGE)
+
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Vintage Dropdown
                     var vintageExpanded by remember(lastScanId) { mutableStateOf(false) }
@@ -434,12 +512,11 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.VINTAGE)
+
 
                 // Cascading Geography Section
                 Text("Geography", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-                
-                fieldStatus(FieldId.COUNTRY)
+
                 // Country Dropdown
                 var countryExpanded by remember(lastScanId) { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -479,11 +556,11 @@ fun AddWineScreen(
                         }
                     }
                 }
-                fieldChoices(FieldId.COUNTRY)
+
 
                 // Region stays visible and editable even when the fixture gazetteer has no suggestions.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    fieldStatus(FieldId.REGION)
+
                     var regionExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = regionExpanded,
@@ -521,7 +598,7 @@ fun AddWineScreen(
                             }
                         }
                     }
-                    fieldChoices(FieldId.REGION)
+
                 }
 
                 if(selectedAppellation.isNotBlank() && selectedRegion.isBlank()) {
@@ -529,7 +606,7 @@ fun AddWineScreen(
                 }
                 // Subregion stays visible and editable for boutique/unknown wines.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    fieldStatus(FieldId.SUBREGION)
+
                     var appellationExpanded by remember(lastScanId) { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = appellationExpanded,
@@ -563,7 +640,7 @@ fun AddWineScreen(
                             }
                         }
                     }
-                    fieldChoices(FieldId.SUBREGION)
+
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
@@ -603,9 +680,16 @@ fun AddWineScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                DefaultColorField(
+                    color = defaultColorHsv,
+                    onColorChange = { defaultColorHsv = it }
+                )
+                saveError?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 Button(
-                    enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !scanForm.hasPendingConfirmation && !labelScanState.isBusy,
+                    enabled = (selectedAppellation.isBlank() || selectedRegion.isNotBlank()) && isWindowValid && maker.isNotBlank() && name.isNotBlank() && !labelScanState.isBusy && !saving,
                     onClick = {
+                        saving = true
+                        saveError = null
                         viewModel.addWine(
                             maker = maker,
                             name = name,
@@ -617,9 +701,17 @@ fun AddWineScreen(
                             quantity = quantity.toIntOrNull() ?: 1,
                             price = price.toDoubleOrNull(),
                             drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull()
+                            drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                            defaultColorHsv = defaultColorHsv,
+                            onComplete = { success ->
+                                saving = false
+                                if (success) {
+                                    keepDraft = false
+                                    draftStore.clear()
+                                    onWineAdded()
+                                } else saveError = "Could not save the wine. Your draft is still here; please try again."
+                            }
                         )
-                        onWineAdded()
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     shape = RoundedCornerShape(8.dp)
@@ -627,179 +719,278 @@ fun AddWineScreen(
                     Text("Save to Cellar")
                 }
             }
+            }
         }
-    }
-
-    if (showLabelCamera) {
-        LabelScanCameraDialog(
-            scannerViewModel = scannerViewModel,
+    ) {
+        AddWineCameraLayer(
+            liveCamera = liveCamera,
+            previewKey = cameraMountKey,
+            drawerExpanded = drawerExpanded,
+            frozenPath = confirmingPhoto ?: processingStill,
+            showGuide = cameraPermissionGranted && confirmingPhoto == null,
             cameraReady = cameraReady,
             cameraError = cameraError,
+            scanHint = scanHint,
+            scanState = labelScanState,
+            isConfirming = confirmingPhoto != null,
+            controlsBottomPadding = drawerPeekHeight + 16.dp,
+            scannerViewModel = scannerViewModel,
             onCameraError = { cameraError = it },
             onCameraReadyChanged = { ready ->
                 cameraReady = ready
-                if (ready) cameraError = null
+                if (ready) { cameraError = null; scanHint = null }
             },
-            onDismiss = {
-                scannerViewModel.cancelActiveLabelScan()
-                showLabelCamera = false
-                cameraReady = false
-            }
+            onPhotoTaken = { requestId, photoFile ->
+                holdConsumed = false
+                holdRequestId = requestId
+                holdPhotoPath = photoFile.absolutePath
+            },
+            onShutter = requestScan,
+            onGallery = {
+                cameraError = null
+                scanHint = null
+                scannerViewModel.warmLabelScanner()
+                runCatching { photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    .onFailure { scanHint = "Photo picker could not open. You can still use the camera or enter details manually." }
+            },
+            onConfirmPhoto = {
+                val id = holdRequestId
+                val path = holdPhotoPath
+                if (id != null && path != null) {
+                    // A stale confirm (capture watchdog already fired) deletes the file and
+                    // no-ops inside captured(); the Review effect has already shown the error.
+                    scannerViewModel.onLabelPhotoCaptured(id, File(path))
+                    holdConsumed = true
+                    holdRequestId = null
+                    holdPhotoPath = null
+                }
+            },
+            onRetakePhoto = {
+                holdRequestId = null
+                holdPhotoPath = null
+                scannerViewModel.cancelPendingLabelCapture()
+            },
+            onRetryCamera = { cameraError = null; scanHint = null; cameraMountKey++ },
+            onAllowCamera = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
+            onEnterManually = { scope.launch { scaffoldState.bottomSheetState.expand() } },
+            onClose = onClose
         )
     }
-
-
 }
 
+private const val CAMERA_BIND_TIMEOUT_MS = 8_000L
+
+private val DRAWER_HANDLE_HEIGHT = 40.dp
+private val DRAWER_PROGRESS_HEIGHT = 76.dp
+private val IDLE_PEEK_HEIGHT = DRAWER_HANDLE_HEIGHT
+private val PROGRESS_PEEK_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_PROGRESS_HEIGHT
+
+private fun isChangingConfigurations(context: Context): Boolean {
+    var current: Context? = context
+    while (current is ContextWrapper) current = current.baseContext
+    return (current as? Activity)?.isChangingConfigurations == true
+}
+
+/** Full-width skinny card with a centered handle: the drawer's collapsed face. */
 @Composable
-private fun LabelScanCameraDialog(
-    scannerViewModel: ScannerViewModel,
+private fun DrawerHandleCard() {
+    Box(modifier = Modifier.fillMaxWidth().height(DRAWER_HANDLE_HEIGHT), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.width(48.dp).height(5.dp).clip(RoundedCornerShape(3.dp))
+            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)))
+    }
+}
+
+/** Loading bar plus one-line status, sized to fit the progress peek exactly. */
+@Composable
+private fun DrawerScanProgress(scanState: LabelScanState) {
+    val message = scanState.scanStepLabel ?: return
+    val progress = scanState.scanProgressFraction
+    val animated by animateFloatAsState(targetValue = progress ?: 0f, label = "labelScanProgress")
+    Column(modifier = Modifier.fillMaxWidth().height(DRAWER_PROGRESS_HEIGHT).padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.Center) {
+        if (progress == null) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        else LinearProgressIndicator(progress = { animated }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        Text(message, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
+ * Full-screen camera behind the drawer: live preview with the portrait label guide, the frozen
+ * confirm/processing still, or the permission prompt. Bottom controls sit above the drawer peek.
+ */
+@Composable
+private fun AddWineCameraLayer(
+    liveCamera: Boolean,
+    drawerExpanded: Boolean,
+    previewKey: Int,
+    frozenPath: String?,
+    showGuide: Boolean,
     cameraReady: Boolean,
     cameraError: String?,
+    scanHint: String?,
+    scanState: LabelScanState,
+    isConfirming: Boolean,
+    controlsBottomPadding: Dp,
+    scannerViewModel: ScannerViewModel,
     onCameraError: (String) -> Unit,
     onCameraReadyChanged: (Boolean) -> Unit,
-    onDismiss: () -> Unit
+    onPhotoTaken: (Long, File) -> Unit,
+    onShutter: () -> Unit,
+    onGallery: () -> Unit,
+    onConfirmPhoto: () -> Unit,
+    onRetakePhoto: () -> Unit,
+    onAllowCamera: () -> Unit,
+    onEnterManually: () -> Unit,
+    onRetryCamera: () -> Unit,
+    onClose: () -> Unit
 ) {
-    val scanState by scannerViewModel.labelScanState.collectAsState()
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-            usePlatformDefaultWidth = false
-        )
-    ) {
-        Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
-            Box(modifier = Modifier.fillMaxSize()) {
+    val errorMessage = cameraError ?: scanHint ?: (scanState as? LabelScanState.Error)?.message
+    // Bind watchdog: a camera that never reports ready (stalled provider, wedged HAL) must
+    // surface instead of leaving a dead shutter. Only runs while the preview is mounted and
+    // silent; a late bind success clears the error via onCameraReadyChanged(true), and Retry
+    // remounts the preview for a fresh bind.
+    if (liveCamera && !cameraReady && cameraError == null) {
+        LaunchedEffect(previewKey) {
+            delay(CAMERA_BIND_TIMEOUT_MS)
+            Log.w("LabelScanCamera", "Camera bind timed out; offering retry")
+            onCameraError("The camera is taking too long to start. Retry, or enter details manually.")
+        }
+    }
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        when {
+            frozenPath != null -> AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(File(frozenPath))
+                    .crossfade(true)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.DISABLED)
+                    .build(),
+                contentDescription = "Label photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            liveCamera -> key(previewKey) {
                 LabelScanCameraPreview(
                     scannerViewModel = scannerViewModel,
                     onCameraError = onCameraError,
                     onCameraReadyChanged = onCameraReadyChanged,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    onPhotoCaptured = onPhotoTaken
                 )
-
-                // A bottle label is portrait, so the guide is portrait too: the old full-width box
-                // was wider than any label and told the user to frame something no bottle matches.
-                // WineLabelFraming holds the shape and the guarantee that whatever the user fits
-                // inside it is inside every crop the scanner reads.
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxHeight(WineLabelFraming.GUIDE_HEIGHT_FRACTION)
-                        .aspectRatio(WineLabelFraming.ASPECT_RATIO)
-                        .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
-                )
-
+            }
+            // Drawer expanded over an otherwise live camera: plain black from the Box behind,
+            // camera off, no permission prompt.
+            else -> if (!drawerExpanded) {
                 Column(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.55f))
-                        .statusBarsPadding()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Close scanner", tint = Color.White)
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Scan wine label", style = MaterialTheme.typography.titleLarge, color = Color.White)
-                            Text(
-                                "Fit the label in the frame, then take a photo.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.9f)
-                            )
-                        }
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .background(Color.Black.copy(alpha = 0.68f))
-                        .navigationBarsPadding()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    modifier = Modifier.fillMaxSize().padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    when {
-                        cameraError != null -> Text(
-                            cameraError,
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                        scanState is LabelScanState.Error -> Text(
-                            (scanState as LabelScanState.Error).message,
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                        scanState is LabelScanState.FinishingCancelledScan -> Text(
-                            "Finishing the previous scan…",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                        !cameraReady -> Text(
-                            "Starting camera…",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
-                    if (scanState is LabelScanState.Error || cameraError != null) {
-                        Text("RED · No fields filled", color = Color(0xffffb4ab), style = MaterialTheme.typography.labelLarge)
-                        TextButton(onClick = onDismiss) { Text("Enter manually", color = Color.White) }
-                    }
-                    when (scanState) {
-                        LabelScanState.Idle, is LabelScanState.Error -> Button(
-                            enabled = cameraReady && cameraError == null,
-                            onClick = { scannerViewModel.requestLabelScan() },
-                            modifier = Modifier.fillMaxWidth().height(56.dp)
-                        ) {
-                            Icon(Icons.Default.Camera, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(if (scanState is LabelScanState.Error) "Retake Label" else "Take Label Photo")
-                        }
-                        is LabelScanState.ImportingPhoto -> LabelScanProgress("Opening selected photo…")
-                        is LabelScanState.CapturingPhoto -> LabelScanProgress("Taking high-quality photo…")
-                        is LabelScanState.Processing -> LabelScanProgress("Reading offline… 8-second budget, then review any partial results.")
-                        is LabelScanState.FinishingCancelledScan -> LabelScanProgress("Finishing the previous scan…")
-                        is LabelScanState.Review -> Text(
-                            "Scan complete. Review the suggestions.",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
                     Text(
-                        "Hold the phone steady and make sure the label is in focus.",
-                        color = Color.White.copy(alpha = 0.85f),
-                        style = MaterialTheme.typography.bodySmall,
+                        cameraError ?: "Allow the camera to scan a label.",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = onAllowCamera, modifier = Modifier.fillMaxWidth()) {
+                        Text("Allow camera")
+                    }
+                    TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun LabelScanProgress(message: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(20.dp),
-            strokeWidth = 2.dp,
-            color = Color.White
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(message, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+        // A bottle label is portrait, so the guide is portrait too. WineLabelFraming holds the
+        // shape and the guarantee that whatever the user fits inside it is inside every crop the
+        // scanner reads. It stays up over the frozen still while the photo is processed, and hides
+        // only while the user inspects the confirm still.
+        if (showGuide) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxHeight(WineLabelFraming.GUIDE_HEIGHT_FRACTION)
+                    .aspectRatio(WineLabelFraming.ASPECT_RATIO)
+                    .border(2.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(16.dp))
+            )
+        }
+
+        IconButton(
+            onClick = onClose,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(start = 8.dp, top = 8.dp)
+                .background(Color.Black.copy(alpha = 0.35f), CircleShape)
+        ) {
+            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+        }
+
+        // While busy the drawer carries the loading bar and status line, and the permission
+        // placeholder carries its own buttons, so neither needs controls down here.
+        if (isConfirming || (!scanState.isBusy && liveCamera)) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = controlsBottomPadding, top = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (isConfirming) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
+                        IconButton(onClick = onRetakePhoto,
+                            modifier = Modifier.size(52.dp).border(2.dp, Color.White, CircleShape)) {
+                            Icon(Icons.Default.Close, contentDescription = "Retake", tint = Color.White,
+                                modifier = Modifier.size(26.dp))
+                        }
+                        IconButton(onClick = onConfirmPhoto,
+                            modifier = Modifier.size(52.dp).border(2.dp, Color.White, CircleShape)) {
+                            Icon(Icons.Default.Check, contentDescription = "Use photo", tint = Color.White,
+                                modifier = Modifier.size(26.dp))
+                        }
+                    }
+                } else {
+                    // Errors keep a compact card so they stay readable without the old full-width bar.
+                    errorMessage?.let {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.background(Color.Black.copy(alpha = 0.68f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(it, color = Color.White, style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(onClick = onRetryCamera) { Text("Retry camera", color = Color.White) }
+                                TextButton(onClick = onEnterManually) { Text("Enter manually", color = Color.White) }
+                            }
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onGallery,
+                            modifier = Modifier.size(56.dp)
+                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .border(2.dp, Color.Black.copy(alpha = 0.25f), RoundedCornerShape(12.dp))) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = "Choose label",
+                                tint = Color.Black)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        // A disabled shutter must LOOK disabled: the explicit black tint ignores
+                        // IconButton's content dimming, so dim the whole button while not ready.
+                        val shutterEnabled = cameraReady && cameraError == null
+                        IconButton(onClick = onShutter, enabled = shutterEnabled,
+                            modifier = Modifier.size(60.dp)
+                                .alpha(if (shutterEnabled) 1f else 0.4f)
+                                .background(Color.White, CircleShape)
+                                .border(2.dp, Color.Black.copy(alpha = 0.25f), CircleShape)) {
+                            Icon(Icons.Default.Camera, contentDescription = "Take photo", tint = Color.Black,
+                                modifier = Modifier.size(28.dp))
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Spacer(Modifier.size(56.dp))
+                    }
+                }
+            }
+        }
     }
 }

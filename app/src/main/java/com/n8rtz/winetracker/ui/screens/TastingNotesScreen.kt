@@ -4,7 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,8 +25,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
+import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.data.local.matchesAromaQuery
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
+import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.AromaChips
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -60,15 +62,13 @@ fun TastingNotesScreen(
     val prices by tastingNoteViewModel.rankingsPrices.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var searchExpanded by remember { mutableStateOf(false) }
     var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }
     val wineNotesRequest by tastingNoteViewModel.wineNotesRequest.collectAsState()
-
-    LaunchedEffect(wineNotesRequest) {
-        if (wineNotesRequest != null) {
-            searchQuery = ""
-            tastingNoteViewModel.updateFilterState(TastingNotesFilterState())
-        }
-    }
+    val isFilterActive = filterState.types.isNotEmpty() ||
+            filterState.status != "All" ||
+            filterState.country != null || filterState.region != null || filterState.subregion != null ||
+            filterState.priceRange != null || filterState.aromaQuery.isNotBlank() || filterState.aromaPhase != null
 
     val filteredHistory = remember(history, searchQuery, filterState, prices) {
         history.filter { item ->
@@ -94,8 +94,15 @@ fun TastingNotesScreen(
             val matchesRegion = filterState.region == null || item.definition.region?.trim()?.equals(filterState.region, ignoreCase = true) == true
             val matchesSubregion = filterState.subregion == null || item.definition.subregion?.trim()?.equals(filterState.subregion, ignoreCase = true) == true
 
+            val matchesAroma = matchesAromaQuery(
+                item.note.sensoryData?.aromaObservations.orEmpty(),
+                item.note.sensoryData?.aromas.orEmpty(),
+                filterState.aromaQuery,
+                filterState.aromaPhase
+            )
+
             matchesSearch && matchesType && matchesStatus && matchesPrice &&
-                    matchesCountry && matchesRegion && matchesSubregion
+                    matchesCountry && matchesRegion && matchesSubregion && matchesAroma
         }.sortedWith { a, b ->
             val priceA = prices[Pair(a.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(a.note.vintage))] ?: 0.0
             val priceB = prices[Pair(b.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(b.note.vintage))] ?: 0.0
@@ -108,142 +115,164 @@ fun TastingNotesScreen(
         }
     }
 
-    // Back to the top when the sort, a filter or the search changes. The saved key means coming back to
-    // this tab (or from a note) with nothing changed leaves the list where it was.
-    val notesListState = rememberLazyListState()
-    val listKey = remember(filterState, searchQuery) { 31 * filterState.hashCode() + searchQuery.hashCode() }
-    var lastListKey by rememberSaveable { mutableIntStateOf(listKey) }
-    LaunchedEffect(listKey) {
-        if (listKey != lastListKey) {
-            lastListKey = listKey
-            notesListState.scrollToItem(0)
-        }
+    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
+    // screen where it was scrolled to instead of at the top.
+    val notesListState = remember { LazyListState() }
+    LaunchedEffect(Unit) { notesListState.scrollToItem(0) }
+    // The restored top search row scrolls away with the list; the compact controls appear once
+    // both the title and the search row are out of view, and stay visible while scrolling.
+    val showCompactControls by remember {
+        derivedStateOf { notesListState.firstVisibleItemIndex > 1 }
     }
+    // Back at the top the full search row is visible again, so the pop-up is no longer needed.
+    LaunchedEffect(showCompactControls) {
+        if (!showCompactControls) searchExpanded = false
+    }
+
+    // Opening search or changing a filter keeps the list exactly where it is.
 
     val groupedHistory = remember(filteredHistory) {
         filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .values.toList()
     }
 
+    LaunchedEffect(wineNotesRequest) {
+        if (wineNotesRequest != null) {
+            searchQuery = ""
+            showFilterSheet = false
+            tastingNoteViewModel.updateFilterState(TastingNotesFilterState())
+        }
+    }
     LaunchedEffect(wineNotesRequest, groupedHistory, searchQuery, filterState) {
         val request = wineNotesRequest ?: return@LaunchedEffect
         if (searchQuery.isNotBlank() || filterState != TastingNotesFilterState()) return@LaunchedEffect
-        val targetKey = request.definitionId to com.n8rtz.winetracker.data.local.displayVintage(request.vintage)
+        val targetVintage = com.n8rtz.winetracker.data.local.displayVintage(request.vintage)
         val targetIndex = groupedHistory.indexOfFirst { group ->
             val note = group.first().note
-            note.definitionId == targetKey.first &&
-                com.n8rtz.winetracker.data.local.displayVintage(note.vintage) == targetKey.second
+            note.definitionId == request.definitionId &&
+                com.n8rtz.winetracker.data.local.displayVintage(note.vintage) == targetVintage
         }
         if (targetIndex >= 0) {
-            expandedGroupKey = targetKey
-            notesListState.scrollToItem(targetIndex)
+            expandedGroupKey = request.definitionId to targetVintage
+            notesListState.scrollToItem(targetIndex + 2)
             tastingNoteViewModel.consumeWineTastingNotesRequest(request.requestId)
         }
     }
 
     val listDateFormat = remember { java.text.SimpleDateFormat("M/d/yy", java.util.Locale.getDefault()) }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Tasting Notes") }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Search Producer, Name, or Vintage") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = notesListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item(key = "notes_header") {
+                Text(
+                    "Tasting Notes",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
-                Spacer(Modifier.width(8.dp))
-                IconButton(
-                    onClick = { showFilterSheet = true },
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    val isFilterActive = filterState.types.isNotEmpty() ||
-                            filterState.status != "All" ||
-                            filterState.country != null || filterState.region != null || filterState.subregion != null ||
-                            filterState.priceRange != null
-                    Icon(
-                        Icons.Default.Tune, 
-                        contentDescription = "Filter Notes",
-                        tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
-
-            if (groupedHistory.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Description, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(16.dp))
-                        Text("No notes found", style = MaterialTheme.typography.titleLarge)
-                    }
-                }
-            } else {
-                LazyColumn(
-                    state = notesListState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            item(key = "notes_search") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(groupedHistory, key = { group ->
-                        "${group.first().note.definitionId}_${com.n8rtz.winetracker.data.local.displayVintage(group.first().note.vintage)}"
-                    }) { group ->
-                        val firstItem = group.first()
-                        val groupKey = firstItem.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)
-                        CompactNoteItem(
-                            group = group,
-                            expanded = expandedGroupKey == groupKey,
-                            rating = ratingsMap[groupKey],
-                            listDateFormat = listDateFormat,
-                            onExpandToggle = {
-                                expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
-                            },
-                            price = prices[groupKey],
-                            onNoteClick = onNoteClick
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Search", maxLines = 1) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { showFilterSheet = true },
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Filter Notes",
+                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
+            if (groupedHistory.isEmpty()) {
+                item(key = "notes_empty") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Description, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(16.dp))
+                            Text("No notes found", style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+                }
+            } else {
+                items(groupedHistory, key = { group ->
+                    "${group.first().note.definitionId}_${com.n8rtz.winetracker.data.local.displayVintage(group.first().note.vintage)}"
+                }) { group ->
+                    val firstItem = group.first()
+                    val groupKey = firstItem.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)
+                    CompactNoteItem(
+                        group = group,
+                        expanded = expandedGroupKey == groupKey,
+                        rating = ratingsMap[groupKey],
+                        listDateFormat = listDateFormat,
+                        onExpandToggle = {
+                            expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
+                        },
+                        price = prices[groupKey],
+                        onNoteClick = onNoteClick
+                    )
+                }
+            }
         }
 
-        if (showFilterSheet) {
-            val maxPrice = prices.values.filterNotNull().maxOrNull()?.toFloat() ?: 500f
-            TastingNotesFilterSheet(
-                currentState = filterState,
-                locationData = locationData,
-                maxPrice = maxPrice,
-                onDismiss = { showFilterSheet = false },
-                onApply = { newState ->
-                    tastingNoteViewModel.updateFilterState(newState)
-                },
-                onClearAll = { searchQuery = "" }
+        if (showCompactControls || searchExpanded) {
+            FloatingSearchFilterControls(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                searchExpanded = searchExpanded,
+                onOpenSearch = { searchExpanded = true },
+                onCloseSearch = { searchExpanded = false },
+                onOpenFilters = { showFilterSheet = true },
+                filterActive = isFilterActive,
+                modifier = Modifier.align(Alignment.TopCenter)
             )
         }
+    }
+
+    if (showFilterSheet) {
+        val maxPrice = prices.values.filterNotNull().maxOrNull()?.toFloat() ?: 500f
+        TastingNotesFilterSheet(
+            currentState = filterState,
+            locationData = locationData,
+            maxPrice = maxPrice,
+            onDismiss = { showFilterSheet = false },
+            onApply = { newState ->
+                tastingNoteViewModel.updateFilterState(newState)
+            },
+            onClearAll = { searchQuery = "" }
+        )
     }
 }
 
@@ -259,6 +288,9 @@ fun CompactNoteItem(
     onNoteClick: (Long) -> Unit
 ) {
     val firstItem = group.first()
+    val latestNoteId = remember(group) {
+        group.maxByOrNull { it.note.dateTasted }?.note?.noteId ?: firstItem.note.noteId
+    }
     com.n8rtz.winetracker.ui.components.WineCard(
         title = run {
             "${firstItem.definition.maker} - ${firstItem.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)})"
@@ -275,7 +307,8 @@ fun CompactNoteItem(
         imageLocalPath = firstItem.imageAsset?.relativePath,
         rating = rating,
         isExpanded = expanded,
-        onClick = onExpandToggle,
+        onExpandToggle = onExpandToggle,
+        onClick = { onNoteClick(latestNoteId) },
         details = {
             val orderedGroup = remember(group) { group.sortedByDescending { it.note.dateTasted } }
             var selectedNoteId by remember(orderedGroup.first().note.noteId) {
@@ -285,11 +318,7 @@ fun CompactNoteItem(
             val selectedNote = orderedGroup[selectedIndex]
             Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (orderedGroup.size > 1) {
-                    ScrollableTabRow(
-                        selectedTabIndex = selectedIndex,
-                        edgePadding = 0.dp,
-                        divider = {}
-                    ) {
+                    ScrollableTabRow(selectedTabIndex = selectedIndex, edgePadding = 0.dp, divider = {}) {
                         orderedGroup.forEachIndexed { index, item ->
                             Tab(
                                 selected = selectedIndex == index,
@@ -560,6 +589,51 @@ fun TastingNotesFilterSheet(
                         onApply(newState)
                     }
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                Text("Aroma", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = state.aromaQuery,
+                    onValueChange = { text ->
+                        val newState = state.copy(aromaQuery = text)
+                        state = newState
+                        onApply(newState)
+                    },
+                    label = { Text("Aroma") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = state.aromaPhase == null,
+                        onClick = {
+                            val newState = state.copy(aromaPhase = null)
+                            state = newState
+                            onApply(newState)
+                        },
+                        label = { Text("All") },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    TastingPhase.values().forEach { phase ->
+                        FilterChip(
+                            selected = state.aromaPhase == phase,
+                            onClick = {
+                                val newState = state.copy(aromaPhase = phase)
+                                state = newState
+                                onApply(newState)
+                            },
+                            label = { Text(phase.label) },
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(16.dp))
             }

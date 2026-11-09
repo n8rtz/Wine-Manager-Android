@@ -3,8 +3,8 @@ package com.n8rtz.winetracker.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -29,7 +29,7 @@ import coil.request.ImageRequest
 import com.n8rtz.winetracker.image.resolveWineImageModel
 import java.io.File
 
-/** Shared, compact wine row used by Cellar, Notes and Rankings. */
+/** Shared compact wine row used by Cellar, Tasting Notes, and Rankings. */
 @Composable
 fun WineCard(
     title: String,
@@ -40,119 +40,124 @@ fun WineCard(
     imageLocalPath: String? = null,
     rating: String? = null,
     isExpanded: Boolean? = null,
-    expansionResetKey: Any? = Unit,
+    onExpandToggle: (() -> Unit)? = null,
     details: @Composable (() -> Unit)? = null,
     dateAdded: String? = null,
     drinkingWindow: Pair<Int, Int>? = null,
     onClick: () -> Unit
 ) {
-    var internalExpanded by remember(expansionResetKey) { mutableStateOf(false) }
+    var internalExpanded by remember { mutableStateOf(false) }
     val expanded = isExpanded ?: internalExpanded
     val context = LocalContext.current
     val imageModel = remember(context, imageLocalPath, imageUrl) {
         resolveWineImageModel(context, imageLocalPath, imageUrl)
     }
     val stripeColor = wineTypeColor(type)
-    val compactMetadata = listOfNotNull(metadata.takeIf { it.isNotBlank() }, rating?.let { "★ $it" })
-        .joinToString("  ·  ")
+    val compactMetadata = listOfNotNull(
+        metadata.takeIf { it.isNotBlank() },
+        rating?.let { "★ $it" }
+    ).joinToString("  ·  ")
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .semantics { contentDescription = "$title, $type wine" }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    if (details != null && isExpanded == null) internalExpanded = !internalExpanded
-                    onClick()
-                }
-            ),
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
-        // Using the Card surface itself for the accent avoids a custom drawing layer per row.
         colors = CardDefaults.cardColors(containerColor = stripeColor)
     ) {
-        // A type-coded accent is quicker to scan than repeating a Red/White label in every row.
         Column(
-            Modifier.fillMaxWidth().padding(start = 5.dp).background(MaterialTheme.colorScheme.surface)
+            Modifier.fillMaxWidth()
+                .padding(start = 5.dp)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 12.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (subtitle.isNotBlank()) {
                         Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                            maxLines = 2,
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        if (subtitle.isNotBlank()) {
-                            Text(
-                                text = subtitle,
-                                style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        Spacer(Modifier.height(3.dp))
-                        if (compactMetadata.isNotBlank()) {
-                            Text(
-                                text = compactMetadata,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
                     }
-                    if (details != null) {
-                        IconButton(onClick = {
-                            if (isExpanded == null) internalExpanded = !internalExpanded
-                            onClick()
-                        }, modifier = Modifier.size(32.dp)) {
-                            Icon(
-                                if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = if (expanded) "Collapse wine" else "Expand wine",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                    if (compactMetadata.isNotBlank()) {
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = compactMetadata,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
-
-                AnimatedVisibility(visible = expanded) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                if (details != null) {
+                    Box(
+                        modifier = Modifier.size(48.dp).clip(CircleShape).clickable {
+                            if (onExpandToggle != null) onExpandToggle.invoke() else internalExpanded = !internalExpanded
+                        },
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Actual user-selected bottle photos are useful at detail size; never render
-                        // the generic glass placeholder in a list card.
-                        if (imageModel != null) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(imageModel).crossfade(true)
-                                        .memoryCachePolicy(CachePolicy.ENABLED)
-                                        .diskCachePolicy(if (imageModel is File) CachePolicy.DISABLED else CachePolicy.ENABLED)
-                                        .build(),
-                                    contentDescription = "Bottle photo",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(width = 48.dp, height = 64.dp).clip(RoundedCornerShape(7.dp))
-                                )
-                                if (drinkingWindow != null) DrinkingWindowScale(drinkingWindow.first, drinkingWindow.second, Modifier.weight(1f))
-                            }
-                        } else if (drinkingWindow != null) {
-                            DrinkingWindowScale(drinkingWindow.first, drinkingWindow.second)
-                        }
-                        details?.invoke()
+                        Icon(
+                            if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (expanded) "Collapse wine" else "Expand wine",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                }
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    if (imageModel != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(imageModel)
+                                    .crossfade(true)
+                                    .memoryCachePolicy(CachePolicy.ENABLED)
+                                    .diskCachePolicy(if (imageModel is File) CachePolicy.DISABLED else CachePolicy.ENABLED)
+                                    .build(),
+                                contentDescription = "Bottle photo",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(width = 48.dp, height = 64.dp)
+                                    .clip(RoundedCornerShape(7.dp))
+                            )
+                            if (drinkingWindow != null) {
+                                DrinkingWindowScale(drinkingWindow.first, drinkingWindow.second, Modifier.weight(1f))
+                            }
+                        }
+                    } else if (drinkingWindow != null) {
+                        DrinkingWindowScale(drinkingWindow.first, drinkingWindow.second)
+                    }
+                    details?.invoke()
                 }
             }
         }
     }
+}
 
 private fun wineTypeColor(type: String): Color = when (type.trim().lowercase()) {
     "red" -> Color(0xFF8B2635)
@@ -162,11 +167,12 @@ private fun wineTypeColor(type: String): Color = when (type.trim().lowercase()) 
     else -> Color(0xFF897C72)
 }
 
-/** Passive reference scale, not a control. */
+/** Passive reference scale; deliberately not an interactive control. */
 @Composable
 private fun DrinkingWindowScale(startYear: Int, endYear: Int, modifier: Modifier = Modifier) {
     val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-    val fraction = ((year - startYear).toFloat() / (endYear - startYear).coerceAtLeast(1)).coerceIn(0f, 1f)
+    val fraction = ((year - startYear).toFloat() / (endYear - startYear).coerceAtLeast(1))
+        .coerceIn(0f, 1f)
     Column(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Drink", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

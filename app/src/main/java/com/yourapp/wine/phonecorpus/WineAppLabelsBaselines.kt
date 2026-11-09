@@ -10,7 +10,7 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
 /**
- * Frozen Prod v1.0 / v2.0 / v3.0 outcomes for the 125-label benchmark.
+ * Frozen Prod v1.0 / v2.0 / v4.0 / v5.0 / v6.0 outcomes for the 124-label benchmark.
  *
  * The Prod versions are retired comparators: each photo runs through them once, the outcome is
  * written here under the current corpus signature, and every later pass reads that record instead
@@ -31,23 +31,36 @@ internal class WineAppLabelsBaselines(app: Application, corpusSignature: String)
 
     private val app = app
     private val signature = anchor(corpusSignature)
+    private val baselinesRoot = File(app.noBackupFilesDir, "wine-app-labels-v1/baselines-v1")
     private val root = File(app.noBackupFilesDir, "wine-app-labels-v1/baselines-v1/$signature")
 
     private fun folder(mode: PhoneCorpusRunner.Mode) = File(root, mode.name)
 
+    /** The owner relabeled the captured Prod v3 baseline as Prod v4; read the old store path too. */
+    private fun legacyFolders(mode: PhoneCorpusRunner.Mode): List<File> = when (mode) {
+        PhoneCorpusRunner.Mode.PRODUCTION_V4 -> listOf(File(root, "PRODUCTION_V3"))
+        else -> emptyList()
+    }
+
+    /** Legacy first, current last so a migrated/current record wins if both exist. */
+    private fun readFolders(mode: PhoneCorpusRunner.Mode) = legacyFolders(mode) + folder(mode)
+
     /** Frozen outcomes for this version, keyed by photo. Unreadable records are treated as missing. */
     fun all(mode: PhoneCorpusRunner.Mode): Map<String, JSONObject> {
-        val files = folder(mode).listFiles().orEmpty().filter { it.extension == "json" && !it.name.startsWith("_") }
+        val files = readFolders(mode).flatMap { dir ->
+            dir.listFiles().orEmpty().filter { it.extension == "json" && !it.name.startsWith("_") }
+        }
         val records = files.mapNotNull { file -> runCatching { JSONObject(file.readText()) }.getOrNull() }
             .filter { it.optBoolean("frozen") && it.optString("image").isNotBlank() }
         return records.associateBy { it.getString("image") }
     }
 
-    fun record(mode: PhoneCorpusRunner.Mode, image: String): JSONObject? {
-        val file = File(folder(mode), "$image.json")
-        if (!file.isFile) return null
-        return runCatching { JSONObject(file.readText()) }.getOrNull()?.takeIf { it.optBoolean("frozen") }
-    }
+    fun record(mode: PhoneCorpusRunner.Mode, image: String): JSONObject? =
+        readFolders(mode).asReversed().asSequence()
+            .map { File(it, "$image.json") }
+            .filter { it.isFile }
+            .mapNotNull { file -> runCatching { JSONObject(file.readText()) }.getOrNull() }
+            .firstOrNull { it.optBoolean("frozen") }
 
     /** Freezes one photo's outcome. Called only for a capture this device just produced. */
     fun save(mode: PhoneCorpusRunner.Mode, image: String, result: JSONObject) {
@@ -87,11 +100,12 @@ internal class WineAppLabelsBaselines(app: Application, corpusSignature: String)
             .put("updated_ms", System.currentTimeMillis()).toString())
     }
 
-    private fun index(mode: PhoneCorpusRunner.Mode): JSONObject? {
-        val file = File(folder(mode), "_capture.json")
-        if (!file.isFile) return null
-        return runCatching { JSONObject(file.readText()) }.getOrNull()
-    }
+    private fun index(mode: PhoneCorpusRunner.Mode): JSONObject? =
+        readFolders(mode).asReversed().asSequence()
+            .map { File(it, "_capture.json") }
+            .filter { it.isFile }
+            .mapNotNull { file -> runCatching { JSONObject(file.readText()) }.getOrNull() }
+            .firstOrNull()
 
     /** Capture summary for the screen; count is always read back from the records themselves. */
     fun capture(mode: PhoneCorpusRunner.Mode): Capture? {
@@ -130,6 +144,93 @@ internal class WineAppLabelsBaselines(app: Application, corpusSignature: String)
             }
         }
         return promoted
+    }
+
+    /**
+     * Carries over already-frozen per-photo Prod baseline outcomes from sibling
+     * `baselines-v1/<sig>` directories when the photo remains in the active evaluation set with
+     * matching [expectedHashes], so reference-sheet/scoring updates do not discard unaffected
+     * frozen baselines.
+     */
+    fun migrateRetainedBaselines(
+        modes: List<PhoneCorpusRunner.Mode>,
+        expectedHashes: Map<String, String>,
+    ): Int {
+        val siblings = baselinesRoot.listFiles().orEmpty()
+            .filter { it.isDirectory && it.absolutePath != root.absolutePath }
+            .sortedBy { it.lastModified() }
+        if (siblings.isEmpty()) return 0
+        var migrated = 0
+        for (mode in modes) {
+            val targetDir = folder(mode)
+            val sourceDirsForMode = siblings.flatMap { sib ->
+                when (mode) {
+                    PhoneCorpusRunner.Mode.PRODUCTION_V4 -> listOf(File(sib, "PRODUCTION_V3"), File(sib, mode.name))
+                    else -> listOf(File(sib, mode.name))
+                }
+            }.filter { it.isDirectory }
+            if (sourceDirsForMode.isEmpty()) continue
+            var inheritedBuild: String? = null
+            var inheritedMs: Long? = null
+            for (srcDir in sourceDirsForMode) {
+                val srcIndex = File(srcDir, "_capture.json").takeIf { it.isFile }
+                    ?.let { runCatching { JSONObject(it.readText()) }.getOrNull() }
+                if (inheritedBuild.isNullOrBlank()) {
+                    inheritedBuild = srcIndex?.optString("build")?.takeIf { it.isNotBlank() }
+                }
+                if (inheritedMs == null || inheritedMs == 0L) {
+                    inheritedMs = srcIndex?.optLong("captured_ms")?.takeIf { it > 0L }
+                }
+                for (file in srcDir.listFiles().orEmpty().filter { it.extension == "json" && !it.name.startsWith("_") }) {
+                    val prev = runCatching { JSONObject(file.readText()) }.getOrNull() ?: continue
+                    if (!prev.optBoolean("frozen") || prev.optString("status") != "complete") continue
+                    val image = prev.optString("image").ifBlank { file.nameWithoutExtension }
+                    val expectedSha = expectedHashes[image] ?: continue
+                    if (record(mode, image) != null) continue
+                    val recordedSha = prev.optString("image_sha256")
+                    if (recordedSha.isNotBlank() && recordedSha != expectedSha) continue
+                    targetDir.mkdirs()
+                    val copy = JSONObject(prev.toString())
+                    copy.optJSONArray("pipelines")?.let { pipelines ->
+                        for (idx in 0 until pipelines.length()) {
+                            val row = pipelines.getJSONObject(idx)
+                            if (PhoneCorpusRunner.Mode.fromPipelineId(row.optString("pipeline")) == mode) {
+                                row.put("pipeline", mode.pipelineId)
+                            }
+                        }
+                    }
+                    copy.put("mode", mode.name)
+                    copy.put("pipeline", mode.pipelineId)
+                    copy.put("corpus_signature", signature)
+                    atomic(File(targetDir, "$image.json"), copy.toString())
+                    migrated++
+                }
+            }
+            if (targetDir.isDirectory) {
+                val records = all(mode)
+                if (records.isNotEmpty() && !File(targetDir, "_capture.json").isFile) {
+                    val build = inheritedBuild
+                        ?: records.values.mapNotNull { it.optString("captured_build").takeIf(String::isNotBlank) }.firstOrNull()
+                        ?: "unknown"
+                    val capMs = inheritedMs
+                        ?: records.values.mapNotNull { it.optLong("captured_ms").takeIf { ms -> ms > 0L } }.minOrNull()
+                        ?: System.currentTimeMillis()
+                    atomic(
+                        File(targetDir, "_capture.json"),
+                        JSONObject()
+                            .put("mode", mode.name)
+                            .put("pipeline", mode.pipelineId)
+                            .put("corpus_signature", signature)
+                            .put("count", records.size)
+                            .put("build", build)
+                            .put("captured_ms", capMs)
+                            .put("updated_ms", System.currentTimeMillis())
+                            .toString(),
+                    )
+                }
+            }
+        }
+        return migrated
     }
 
     private fun atomic(file: File, text: String) {

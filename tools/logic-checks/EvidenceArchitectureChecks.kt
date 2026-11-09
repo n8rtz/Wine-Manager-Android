@@ -9,7 +9,28 @@ import com.yourapp.wine.kb.SupplementedWineKnowledgeBase
 
 object EvidenceArchitectureChecks {
     fun run() {
+        // General role policies: no reference label IDs or producer-specific exceptions.
+        check(com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity("INDICATION GEOGRAPHIQUE PROTEGEE"))
+        check(com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity("EARL DES VIGNOBLES EXAMPLE"))
+        check(!com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity("Cuvee des Collines"))
+        check(com.yourapp.wine.extract.LabelTextRoles.isNumericTitle("Gran Reserva 123"))
+        check(!com.yourapp.wine.extract.LabelTextRoles.isNumericTitle("Reserva 2018"))
+        check(!com.yourapp.wine.extract.LabelTextRoles.isNumericTitle("Bottle 123"))
+        check(!com.yourapp.wine.extract.LabelTextRoles.isNumericTitle("13.5% vol"))
+        val mixedRoleGraph=EvidenceGraphBuilder.build(
+            listOf(LogicChecks.token("Chateau Example",.99f,x=.2f,y=.2f,w=.4f,h=.05f),
+                LogicChecks.token("Cabernet Sauvignon",.99f,x=.2f,y=.26f,w=.4f,h=.05f)),
+            allowWineTitlePairs=true, requireRoleAwareJoins=true,
+            isKnownProducerLine={ it=="Chateau Example" },
+        )
+        check(mixedRoleGraph.phrases.none { it.observations.size>1 })
         val kb=FixtureKnowledgeBase()
+        val isolated=EvidenceExtractor(kb,modules=LabPostOcrModules(
+            candidateIsolation=true, vintageSpans=true, wineNameSpans=true,
+        )).extract(listOf(LogicChecks.token("Cuvee Example 2018",.99f,x=.2f,y=.2f,w=.2f,h=.05f)),2026)
+        check(isolated.hypotheses.filter { it.phrase.construction.startsWith("candidate-span:") }.all { h ->
+            h.values.keys.all { it.name in h.phrase.construction.substringAfter(":").split(",") }
+        })
         val engine=EvidenceExtractor(kb)
         val records=listOf(LogicChecks.token("ALTOSde",.9f,y=.15f),LogicChecks.token("VALDOSO",.9f,y=.25f),
             LogicChecks.token("CRIANZA",.9f,y=.45f),LogicChecks.token("2019",.9f,y=.8f))
@@ -61,6 +82,83 @@ object EvidenceArchitectureChecks {
         check(variant.fields.getValue(FieldId.WINE_NAME).value.equals("Crianza",true))
         val partial=EvidenceGraphBuilder.build(listOf(t("COLINASde",.1f),t("COLINAS de",.1f,"paddle-v6-medium")))
         check(partial.phrases.none { it.observations.size>1 }) // Same location is not two consecutive phrases.
+        check(engine.isBroadGeographyLine("Willamette Valley"))
+        check(!engine.isBroadGeographyLine("Chianti Classico")) // Catalog appellation, not broad geography.
+        val defaultNoTitlePair=engine.extract(listOf(t("Inscription",.2f),t("Pinot Noir",.3f)),2026)
+        check(defaultNoTitlePair.graph.phrases.none { it.construction=="bounded vertical wine-title pair" })
+        val titlePairEngine=EvidenceExtractor(FixtureKnowledgeBase(),allowWineTitlePairs=true)
+        val inscriptionPinot=titlePairEngine.extract(listOf(t("Inscription",.2f),t("Pinot Noir",.3f)),2026)
+        check(inscriptionPinot.graph.phrases.any { it.construction=="bounded vertical wine-title pair" && it.text=="Inscription Pinot Noir" })
+        check(com.yourapp.wine.merge.TextNorm.normalize(inscriptionPinot.fill.fields.getValue(FieldId.WINE_NAME).value)=="inscription pinot noir") {
+            inscriptionPinot.fill.fields
+        }
+        val peppoliChianti=titlePairEngine.extract(listOf(t("Peppoli",.2f),t("Chianti Classico",.3f)),2026)
+        check(peppoliChianti.graph.phrases.any { it.construction=="bounded vertical wine-title pair" && it.text=="Peppoli Chianti Classico" })
+        check(com.yourapp.wine.merge.TextNorm.normalize(peppoliChianti.fill.fields.getValue(FieldId.WINE_NAME).value)=="peppoli chianti classico") {
+            peppoliChianti.fill.fields
+        }
+        val regionBoundary=titlePairEngine.extract(listOf(t("Inscription",.2f),t("Willamette Valley",.3f)),2026)
+        check(regionBoundary.graph.phrases.none { it.construction=="bounded vertical wine-title pair" || it.observations.size>1 })
+        val vintageBoundary=titlePairEngine.extract(listOf(t("Inscription",.2f),t("2019",.3f)),2026)
+        check(vintageBoundary.graph.phrases.none { it.construction=="bounded vertical wine-title pair" || it.observations.size>1 })
+        val vintageWordBoundary=engine.extract(listOf(t("VINTAGE",.2f),t("Pinot Noir",.3f)),2026)
+        check(vintageWordBoundary.graph.phrases.none { it.observations.size>1 })
+        val framingBoundary=engine.extract(listOf(t("APPELLATION",.2f),t("Pinot Noir",.3f)),2026)
+        check(framingBoundary.graph.phrases.none { it.observations.size>1 })
+        val horizontalRegionBoundary=engine.extract(listOf(
+            LogicChecks.token("Inscription",.9f,x=.1f,y=.4f,w=.22f,h=.06f),
+            LogicChecks.token("Willamette Valley",.9f,x=.34f,y=.4f,w=.35f,h=.06f),
+        ),2026)
+        check(horizontalRegionBoundary.graph.phrases.none { it.observations.size>1 })
+        val horizontalVintageBoundary=engine.extract(listOf(
+            LogicChecks.token("Inscription",.9f,x=.1f,y=.4f,w=.22f,h=.06f),
+            LogicChecks.token("2019",.9f,x=.34f,y=.4f,w=.12f,h=.06f),
+        ),2026)
+        check(horizontalVintageBoundary.graph.phrases.none { it.observations.size>1 })
+        val crossEngineTitle=engine.extract(listOf(t("Inscription",.2f,"mlkit"),t("Pinot Noir",.3f,"paddle-v6-medium")),2026)
+        check(crossEngineTitle.graph.phrases.none { it.observations.mapNotNull { id -> crossEngineTitle.graph.observations.firstOrNull { it.id==id }?.record?.engineId }.distinct().size>1 })
+        val crossPassTitle=engine.extract(listOf(
+            LogicChecks.token("Inscription",.9f,engine="mlkit",variant="V0",y=.2f,h=.1f),
+            LogicChecks.token("Pinot Noir",.9f,engine="mlkit",variant="V1",y=.3f,h=.1f),
+        ),2026)
+        check(crossPassTitle.graph.phrases.none { it.observations.size>1 })
+        val crossEngineConnector=EvidenceGraphBuilder.build(listOf(
+            LogicChecks.token("Domaine",.9f,engine="mlkit",variant="V0",y=.2f,h=.1f),
+            LogicChecks.token("de",.9f,engine="paddle-v6-medium",variant="V0",y=.3f,h=.1f),
+            LogicChecks.token("Romanée-Conti",.9f,engine="mlkit",variant="V0",y=.4f,h=.1f),
+        ),typedIdentity=true)
+        check(crossEngineConnector.phrases.none { it.observations.size>1 })
+        val crossPassConnector=EvidenceGraphBuilder.build(listOf(
+            LogicChecks.token("Domaine",.9f,engine="mlkit",variant="V0",y=.2f,h=.1f),
+            LogicChecks.token("de",.9f,engine="mlkit",variant="V1",y=.3f,h=.1f),
+            LogicChecks.token("Romanée-Conti",.9f,engine="mlkit",variant="V0",y=.4f,h=.1f),
+        ),typedIdentity=true)
+        check(crossPassConnector.phrases.none { it.observations.size>1 })
+        check(!engine.allowsSpatialProducerJoin("Domaine", "2019"))
+        check(!engine.allowsSpatialProducerJoin("Domaine", "Willamette Valley"))
+        check(!engine.allowsSpatialProducerJoin("Willamette", "Valley"))
+        check(!engine.allowsSpatialProducerJoin("Domaine", "Pinot Noir"))
+        check(engine.allowsSpatialProducerJoin("Domaine de la", "Romanée-Conti"))
+        fun producerSpatialJoin(a:String,b:String)=engine.allowsSpatialProducerJoin(a,b)
+        val horizontalWineTitle=listOf(
+            LogicChecks.token("Inscription",.9f,engine="mlkit",x=.1f,y=.4f,w=.22f,h=.06f),
+            LogicChecks.token("Pinot Noir",.9f,engine="mlkit",x=.34f,y=.4f,w=.25f,h=.06f),
+        )
+        val horizontalTitleProposals=TextLabSpatialPhrases.propose(horizontalWineTitle,
+            allowHorizontalJoin={ left,right -> producerSpatialJoin(left,right) },
+            allowVerticalJoin={ upper,lower -> producerSpatialJoin(upper,lower) })
+        check(horizontalTitleProposals.none { it.phrase.sourceIndices.size>1 })
+        val horizontalProducer=listOf(
+            LogicChecks.token("Domaine",.9f,engine="mlkit",x=.1f,y=.5f,w=.16f,h=.06f),
+            LogicChecks.token("de",.9f,engine="mlkit",x=.27f,y=.5f,w=.04f,h=.06f),
+            LogicChecks.token("la",.9f,engine="mlkit",x=.32f,y=.5f,w=.03f,h=.06f),
+            LogicChecks.token("Romanée-Conti",.9f,engine="mlkit",x=.36f,y=.5f,w=.35f,h=.06f),
+        )
+        val horizontalProducerProposals=TextLabSpatialPhrases.propose(horizontalProducer,
+            allowHorizontalJoin={ left,right -> producerSpatialJoin(left,right) },
+            allowVerticalJoin={ upper,lower -> producerSpatialJoin(upper,lower) })
+        check(horizontalProducerProposals.any { it.phrase.mergedText=="Domaine de la Romanée-Conti" })
+        check(horizontalProducerProposals.flatMap { it.sources }.toSet()==horizontalProducer.toSet())
         val novelReserve=engine.extract(listOf(t("BLACKSTONE",.02f),t("LUNAVISTA",.25f),t("GRAN RESERVA",.39f)),2026).fill
         check(novelReserve.fields.getValue(FieldId.WINE_NAME).value.equals("LUNAVISTA Gran Reserva",true)) { novelReserve.fields }
         val percentage=engine.extract(listOf(t("BLACKSTONE",.02f),t("100% TINTA DEL PAIS",.25f),t("CRIANZA",.39f)),2026).fill
@@ -199,7 +297,7 @@ object EvidenceArchitectureChecks {
         val gascogne=extractor.extract(listOf(line("SAUVIGNON BLANC",.3f),line("CÔTES DE GASCOGNE",.65f)),2026).fill
         check(gascogne.fields.getValue(FieldId.REGION).value=="South West France") { gascogne.fields }
         check(gascogne.fields.getValue(FieldId.SUBREGION).value=="Cotes de Gascogne") { gascogne.fields }
-        // Lab v4 d=0 exact geography fast-path: locks coherent exact appellation/region chains, populates
+        // Lab v5 d=0 exact geography fast-path: locks coherent exact appellation/region chains, populates
         // ancestral Country/Region/Subregion, feeds LabelContext, and leaves Prod default untouched.
         val labRepairExtractor=EvidenceExtractor(kb,placeRepair=PlaceRepair.Config.experimental)
         val heritageProd=labRepairExtractor.extract(
@@ -254,6 +352,102 @@ object EvidenceArchitectureChecks {
         check(corroboratedPessacLab.fields.getValue(FieldId.REGION).value=="Bordeaux") { corroboratedPessacLab.fields }
         check(corroboratedPessacLab.fields.getValue(FieldId.SUBREGION).value=="Pessac-Leognan") { corroboratedPessacLab.fields }
         check(corroboratedPessacLab.fields.getValue(FieldId.WINE_NAME).value=="Haut-Brion") { corroboratedPessacLab.fields }
+        // Last-resort blank-subregion raw-OCR span search: runs ONLY when SUBREGION would otherwise
+        // remain blank, across any span length / spacing / line count / glued token, without letting
+        // weak OCR lines enter main hypothesis competition or clobber already-resolved fields.
+        val weakSaintEmilion=labRepairExtractor.extract(
+            listOf(LogicChecks.token("AINT-ÉMILION O GRAND CRU",.149f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(weakSaintEmilion.fields.getValue(FieldId.COUNTRY).value=="France") { weakSaintEmilion.fields }
+        check(weakSaintEmilion.fields.getValue(FieldId.REGION).value=="Bordeaux") { weakSaintEmilion.fields }
+        check(weakSaintEmilion.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { weakSaintEmilion.fields }
+        check(weakSaintEmilion.fields.getValue(FieldId.WINE_NAME).value.isBlank()) { weakSaintEmilion.fields }
+        val saintEmilionProdOff=extractor.extract(
+            listOf(LogicChecks.token("aint-emilion",.149f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=false,
+        ).fill
+        check(saintEmilionProdOff.fields.getValue(FieldId.SUBREGION).value.isBlank()) { saintEmilionProdOff.fields }
+        val multiLineSpanFallback=labRepairExtractor.extract(
+            listOf(
+                LogicChecks.token("aint",.12f,engine="mlkit",x=.24f,y=.52f,w=.20f,h=.06f),
+                LogicChecks.token("emilion",.12f,engine="mlkit",x=.24f,y=.62f,w=.28f,h=.06f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(multiLineSpanFallback.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { multiLineSpanFallback.fields }
+        val gluedTokenFallback=labRepairExtractor.extract(
+            listOf(LogicChecks.token("appellationsaintemilioncontrolee",.20f,engine="paddle-v6-medium",x=.18f,y=.70f,w=.64f,h=.06f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(gluedTokenFallback.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { gluedTokenFallback.fields }
+        val nonInterferenceWhenSubregionPresent=labRepairExtractor.extract(
+            listOf(
+                line("PAUILLAC",.45f),
+                LogicChecks.token("aint-emilion",.20f,engine="mlkit",x=.24f,y=.75f,w=.44f,h=.06f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(nonInterferenceWhenSubregionPresent.fields.getValue(FieldId.SUBREGION).value=="Pauillac") { nonInterferenceWhenSubregionPresent.fields }
+        val incompatibleRegionGuard=labRepairExtractor.extract(
+            listOf(
+                line("NAPA VALLEY",.45f),
+                LogicChecks.token("aint-emilion",.20f,engine="mlkit",x=.24f,y=.75f,w=.44f,h=.06f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(incompatibleRegionGuard.fields.getValue(FieldId.REGION).value=="Napa Valley") { incompatibleRegionGuard.fields }
+        check(incompatibleRegionGuard.fields.getValue(FieldId.SUBREGION).value.isBlank()) { incompatibleRegionGuard.fields }
+        val producerSubspanGuard=labRepairExtractor.fallbackBlankSubregionFromRawOcr(
+            records=listOf(line("MOULIN DE JAURE",.30f),line("BORDEAUX",.60f)),
+            existingCountry="France",
+            existingRegion="Bordeaux",
+            existingProducer="Chateau Moulin de Jaure",
+            knownProducerLineObservations=setOf("MOULIN DE JAURE"),
+        )
+        check(producerSubspanGuard==null) { "Producer sub-span must not invent subregion: $producerSubspanGuard" }
+        val stackedCastillonLab=labRepairExtractor.extract(
+            listOf(
+                LogicChecks.token("CASTILLON",.95f,engine="mlkit",x=.30f,y=.54f,w=.40f,h=.07f),
+                LogicChecks.token("CÔTES DE BORDEAUX",.95f,engine="mlkit",x=.22f,y=.62f,w=.56f,h=.05f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(stackedCastillonLab.fields.getValue(FieldId.SUBREGION).value=="Castillon Cotes de Bordeaux") { stackedCastillonLab.fields }
+        val rescuedBordeauxSuperieurLab=labRepairExtractor.extract(
+            listOf(
+                LogicChecks.token("BORDEAUX SUPÉRIEUR",.55f,engine="mlkit",x=.22f,y=.62f,w=.56f,h=.06f),
+                LogicChecks.token("BORDEAUX SUPERIEU",.88f,engine="paddle-v6-medium",x=.22f,y=.62f,w=.56f,h=.06f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(rescuedBordeauxSuperieurLab.fields.getValue(FieldId.REGION).value=="Bordeaux") { rescuedBordeauxSuperieurLab.fields }
+        check(rescuedBordeauxSuperieurLab.fields.getValue(FieldId.SUBREGION).value.isBlank()) { rescuedBordeauxSuperieurLab.fields }
+        val rescuedVintageLab=labRepairExtractor.extract(
+            listOf(
+                line("PAUILLAC",.45f),
+                LogicChecks.token("I998",.598f,engine="mlkit",x=.42f,y=.78f,w=.16f,h=.06f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(rescuedVintageLab.fields.getValue(FieldId.VINTAGE).value=="1998") { rescuedVintageLab.fields }
+        val noiseOnly=labRepairExtractor.extract(
+            listOf(LogicChecks.token("CHATEAU MOUTON",.175f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(noiseOnly.fields.getValue(FieldId.COUNTRY).value.isBlank()) { noiseOnly.fields }
+        check(noiseOnly.fields.getValue(FieldId.REGION).value.isBlank()) { noiseOnly.fields }
+        check(noiseOnly.fields.getValue(FieldId.SUBREGION).value.isBlank()) { noiseOnly.fields }
         val contradictoryLab=extractor.extract(
             listOf(line("BAROLO",.25f),line("CHIANTI",.55f),line("2019",.85f)),
             2026,
@@ -261,5 +455,61 @@ object EvidenceArchitectureChecks {
         ).fill
         check(contradictoryLab.fields.getValue(FieldId.COUNTRY).value=="Italy") { contradictoryLab.fields }
         check(contradictoryLab.fields.getValue(FieldId.REGION).value.isBlank()) { contradictoryLab.fields }
+
+        // Modular post-OCR isolation: LabPostOcrModules.none is the pre-improvement control (all 7
+        // modules off), and the Best build preset holds only the modules measured as net wins.
+        check(LabPostOcrModules.none.signatureKey()=="best-v5") { LabPostOcrModules.none.signatureKey() }
+        check(LabPostOcrModules.none.summaryLabel()=="Baseline (pre-improvement)") { LabPostOcrModules.none.summaryLabel() }
+        check(LabPostOcrModules.bestBuild.summaryLabel()=="Best build (4 modules)") { LabPostOcrModules.bestBuild.summaryLabel() }
+        check(LabPostOcrModules.bestBuild.enabledModules()==listOf(
+            LabPostOcrModules.ModuleId.VINTAGE_RECOVERY,
+            LabPostOcrModules.ModuleId.FINAL_PRODUCER_NEAR_MATCH,
+            LabPostOcrModules.ModuleId.PRODUCER_ROLE_AND_PARTICLE,
+            LabPostOcrModules.ModuleId.SPATIAL_SEMANTIC_GUARDS,
+        )) { LabPostOcrModules.bestBuild.enabledKeys() }
+        // Vertical wine-title pairs measured -10 wine names on the 124-label corpus (187a01ae7732),
+        // so they stay out of the best combination while remaining selectable on their own.
+        check(!LabPostOcrModules.bestBuild.verticalWineTitlePairs)
+        check(!LabPostOcrModules.bestBuild.blankSubregionFuzzy && !LabPostOcrModules.bestBuild.stackedAppellations)
+        check(LabPostOcrModules.bestBuild!=LabPostOcrModules.none && LabPostOcrModules.bestBuild!=LabPostOcrModules.all)
+        check(LabPostOcrModules.fromKeys(LabPostOcrModules.bestBuild.activeKeys())==LabPostOcrModules.bestBuild)
+        check(LabPostOcrModules.fromKeys(LabPostOcrModules.all.activeKeys())==LabPostOcrModules.all)
+        val bestV5Extractor=EvidenceExtractor(base,placeRepair=PlaceRepair.Config.conservativeLab,modules=LabPostOcrModules.none)
+        val bestV5SubregionOff=bestV5Extractor.extract(
+            listOf(LogicChecks.token("aint-emilion",.149f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(bestV5SubregionOff.fields.getValue(FieldId.SUBREGION).value.isBlank()) { bestV5SubregionOff.fields }
+        val bestV5VintageOff=bestV5Extractor.extract(
+            listOf(line("PAUILLAC",.45f),LogicChecks.token("I998",.598f,engine="mlkit",x=.42f,y=.78f,w=.16f,h=.06f)),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(bestV5VintageOff.fields.getValue(FieldId.VINTAGE).value.isBlank()) { bestV5VintageOff.fields }
+        val bestV5StackedOff=bestV5Extractor.extract(
+            listOf(
+                LogicChecks.token("CASTILLON",.95f,engine="mlkit",x=.30f,y=.54f,w=.40f,h=.07f),
+                LogicChecks.token("CÔTES DE BORDEAUX",.95f,engine="mlkit",x=.22f,y=.62f,w=.56f,h=.05f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(bestV5StackedOff.fields.getValue(FieldId.SUBREGION).value!="Castillon Cotes de Bordeaux") { bestV5StackedOff.fields }
+        val subregionOnlyExtractor=EvidenceExtractor(
+            base,
+            placeRepair=PlaceRepair.Config.conservativeLab,
+            modules=LabPostOcrModules(blankSubregionFuzzy=true),
+        )
+        val subregionOnlyFill=subregionOnlyExtractor.extract(
+            listOf(
+                LogicChecks.token("aint-emilion",.149f,engine="mlkit",x=.24f,y=.64f,w=.44f,h=.10f),
+                LogicChecks.token("I998",.598f,engine="mlkit",x=.42f,y=.78f,w=.16f,h=.06f),
+            ),
+            2026,
+            exactGeographyFastPath=true,
+        ).fill
+        check(subregionOnlyFill.fields.getValue(FieldId.SUBREGION).value=="Saint-Emilion") { subregionOnlyFill.fields }
+        check(subregionOnlyFill.fields.getValue(FieldId.VINTAGE).value.isBlank()) { subregionOnlyFill.fields }
     }
 }

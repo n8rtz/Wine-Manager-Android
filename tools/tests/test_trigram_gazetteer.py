@@ -39,7 +39,7 @@ class TrigramGazetteerTests(unittest.TestCase):
             self.assertIn('cotes du rhone',aliases);self.assertIn('cotes-du-rhone',aliases)
     def test_opt_in_preparser_preserves_baseline_and_raw_evidence(self):
         base=ROOT/'app/src/main/java/com/yourapp/wine/textlab'
-        for f in ['TextLabBatch.kt','TextLabViewModel.kt']:self.assertIn('compareGazetteer:Boolean=false',(base/f).read_text())
+        for f in ['TextLabBatch.kt']:self.assertIn('compareGazetteer:Boolean=false',(base/f).read_text())
         s=(base/'TextLabGazetteerPreview.kt').read_text()
         self.assertLess(s.index('records.map { resolver.resolve'),s.index('engine.fill(remaining'))
         self.assertIn('matches[i].accepted==null',s)

@@ -3,14 +3,14 @@
   "kind": "lab-expanded-producer-index",
   "lab_only": true,
   "version": "lab-expanded-producers-v1",
-  "records": 78615,
-  "database_sha256": "566ec89b4cc8514a3c6ccd5796b2b8e13de0ae7d67d171235b7ac245b25c923d",
+  "records": 78632,
+  "database_sha256": "ddc894d7a8bb211818cd26b3759be3fbea9c0c4fabf645d7503029d91ac93167",
   "wine_database_sha256": "83ac9248e85efa238c9c95e949396e8d92a057833b3d3ddb929caa06858ba01c",
   "wine_names": 101326,
   "wine_links": 154405,
   "primary_database_sha256": "4e5a50c9dae33d122ba4c8f02f1a4b5792e2a1e724bfb2084512f6c5e0d2345f",
   "primary_records": 33160,
-  "supplemental_records": 45455,
+  "supplemental_records": 45472,
   "sources": [
     {
       "id": "lwin",
@@ -57,6 +57,14 @@
       "repo": "openhistorymap/openwinemap",
       "commit": "1f4bf605d1938844c275e7ec0ae0e23141b4a61e",
       "archive_sha256": "a3481829930bc58babd71e22e5c31382ba3458c76066e2b42bbc04b29e51ea53"
+    },
+    {
+      "id": "approved_brand",
+      "records": 17,
+      "source_records": 17,
+      "source_file": "tools/producer-sources/approved-wine-brands.json",
+      "source_sha256": "c13fb7d00879f17b703592bc76d879f337211d75e12c5ad355eea28be582c003",
+      "note": "Owner-approved marketed wine names; not asserted to be legal wineries or LWIN records"
     }
   ],
   "identity_status": "candidate_not_verified_label_producer",

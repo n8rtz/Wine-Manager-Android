@@ -59,7 +59,21 @@ fun gitOutput(vararg args: String): String? = runCatching {
 // True when the working tree has uncommitted changes (the commit hash alone then does not identify the build).
 // The tracked .idea/ folder is ignored here because Android Studio rewrites those files on its own.
 val buildDirty = gitOutput("status", "--porcelain", "--", ".", ":(exclude).idea")?.isNotBlank() == true
-val buildTimeMillis = System.currentTimeMillis()
+// Commit time, not wall-clock time: stamping System.currentTimeMillis() changed BuildConfig on
+// every build and forced the app module to recompile (plus dex and repackage) even with zero
+// source changes, so no on-device build was ever incremental. Falls back to wall-clock only
+// where git is unavailable (then today's behavior and cost apply to that build alone).
+val buildTimeMillis = gitMetadata("log", "-1", "--format=%ct")?.trim()?.toLongOrNull()?.times(1000L)
+    ?: System.currentTimeMillis()
+// Stable identity for dirty builds: the same worktree content stamps the same value (keeping
+// no-change rebuilds up-to-date), while any content change stamps a new one so benchmark logs
+// still tell dirty builds apart. Matches BUILD_DIRTY's .idea exclusion.
+val buildFingerprint = if (!buildDirty) "clean" else runCatching {
+    val status = gitOutput("status", "--porcelain", "--", ".", ":(exclude).idea").orEmpty()
+    val diff = gitOutput("diff", "HEAD", "--no-color", "--no-ext-diff", "--", ".", ":(exclude).idea").orEmpty()
+    MessageDigest.getInstance("SHA-256").digest("$status\n$diff".toByteArray())
+        .joinToString("") { "%02x".format(it) }.take(12)
+}.getOrNull()?.takeIf { it.isNotBlank() } ?: "unknown"
 
 android {
     namespace = "com.n8rtz.winetracker"
@@ -76,6 +90,7 @@ android {
 
         buildConfigField("String", "BUILD_BRANCH", "\"$escapedBuildBranch\"")
         buildConfigField("String", "BUILD_COMMIT", "\"$buildCommit\"")
+        buildConfigField("String", "BUILD_FINGERPRINT", "\"$buildFingerprint\"")
         buildConfigField("String", "BUILD_WORKING_TREE", "\"$buildWorkingTree\"")
         buildConfigField("String", "NATIVE_ABIS", "\"${packagedNativeAbis.joinToString(",")}\"")
         buildConfigField("boolean", "BUILD_DIRTY", buildDirty.toString())
@@ -102,7 +117,16 @@ android {
         compose = true
         buildConfig = true
     }
+    androidResources {
+        // These assets are already compressed; re-compressing ~300 MB of them on every build
+        // only costs packaging time and gains nothing. Uncompressed entries install faster too.
+        // (The GLiNER model split parts match on their full "part-nn" extensions.)
+        noCompress += listOf("onnx", "gz", "sqlite", "jpg", "jpeg", "part-00", "part-01")
+    }
 
+    // Register Kotlin with AGP's built-in Kotlin source set, not the Java-only set.
+    sourceSets.getByName("main").kotlin.srcDir("../gliner-workflow/src/appIntegration/java")
+    sourceSets.getByName("test").kotlin.srcDir("../gliner-workflow/src/appIntegrationTest/java")
     // Reuse the full-resolution OCR fixtures in instrumented tests without duplicating them.
     sourceSets.getByName("androidTest").assets.srcDir("src/test/resources")
     sourceSets.getByName("androidTest").assets.srcDir("../testdata")
@@ -111,7 +135,8 @@ android {
 }
 
 dependencies {
-    // Production v6 Medium OCR plus the debug comparison lab share the genuine runtime.
+    implementation(project(":gliner-workflow"))
+    // Production v6 Medium OCR uses the genuine ONNX runtime.
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.21.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -230,6 +255,9 @@ abstract class PrepareTextLabPaddle : DefaultTask() {
                 "9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba", 76554979L)
     }
 }
+
+// The pinned GLiNER INT4 model and tokenizer are normal src/main/assets, compressed and split
+// for Git. The app reconstructs and verifies them locally; no opt-in task or download is needed.
 
 val preparePaddleMedium = tasks.register<PrepareTextLabPaddle>("preparePaddleMedium") {
     outputDirectory.set(layout.buildDirectory.dir("generated/paddleMediumAssets"))

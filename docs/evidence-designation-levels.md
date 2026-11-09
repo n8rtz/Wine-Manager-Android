@@ -1,9 +1,10 @@
-# Lab v4 designation, level and fragment rules
+# Lab v5 designation, level and fragment rules
 
 Date: 2026-10-27. Basis: the owner's 125-label run at build `d645b9fca7b9`
 (`wine-app-labels-125-all-versions-*.csv` plus both raw parts), 4 versions, 3,226 scored
 rows and 37 MB of raw trace. This records why five selection rules changed, and what was
-measured before changing them.
+measured before changing them. The baseline below retains the original Lab v4 label for that
+historical capture; the current benchmark label is Lab v5.
 
 ## Baseline the analysis started from (Lab v4, 123 eligible labels)
 
@@ -39,7 +40,7 @@ take completeness from 32 to 79; that is the whole reason these five rules exist
 * Single-word fragments won identity slots: producers `CRUCLASS`, `HATEAU`, `PREMIER`,
   `MARQUES`, `dak`; wine names `ITERNA`, `LANGUEDOc`, `DOCG`, `REPUTATION`, `ultra`.
 
-## The five rules now in the Lab v4 extractor
+## The five rules now in the Lab v5 extractor
 
 1. **Classification base.** `WineDesignations.classificationBase` maps a
    classification-qualified name to the place it qualifies. Only `Grand Cru`,
@@ -68,31 +69,34 @@ Plus the ambiguity projection: `EvidenceRankingConfig(equivalentNames = true)` t
 spellings that differ only by spacing or punctuation as one answer, which is what turned 17
 blanked identity fields into a single value.
 
-## Level convention: kept hierarchical, measured
+## Historical level convention: hierarchical, measured before owner correction
 
-The reviewer's own expectations are not internally consistent for DO/AVA countries
-(`Toro` and `Dundee Hills` are expected as the *region* with a blank subregion, while
-`Stags Leap District` is expected as a *subregion* of `Napa Valley`). Simulating both
-conventions over the same run:
+The original review targets for DO/AVA countries were not internally consistent: `Toro` and
+`Dundee Hills` were expected as the *region* with a blank subregion, while `Stags Leap District`
+was expected as a *subregion* of `Napa Valley`. Simulating both conventions over that earlier run:
 
 | convention | region correct | subregion correct |
 | --- | --- | --- |
-| hierarchical (current) | 91 | 82 |
+| hierarchical (at the time) | 91 | 82 |
 | flatten (deepest printed name → region, subregion blank) | 35 | 48 |
 
-Flattening loses badly, so the hierarchy stays. What the run *did* show is genuinely wrong
-values, and those are what rules 1, 2 and 5 remove: `Bordeaux Supérieur`, `Médoc Supérieur`
-and `Saint-Émilion Grand Cru` were being written into the subregion slot.
+Flattening lost badly, so the hierarchy stays. The prior run also showed genuine wrong values;
+rules 1, 2 and 5 remove `Bordeaux Supérieur`, `Médoc Supérieur` and `Saint-Émilion Grand Cru`
+from the subregion slot.
 
-Still open for the owner (not changed here): `Toro` → `Castilla y León`, `Dundee Hills` →
-`Willamette Valley`, `Margaux`, `Porto` and `Crémant d'Alsace` as subregions. Resolving those
-needs one convention decision per country, or a marker in the catalog for "this appellation is
-the region in its market", and neither can be guessed from the label.
+**Owner correction, 2026-10-27:** the historical reference convention is superseded for four
+Wine App Labels: #171 and #179 use Region `Castilla y Leon` / Subregion `Toro`; #181 uses
+Region `Maipo Valley` / Subregion `Puente Alto`; and #184 uses Region `Willamette Valley` /
+Subregion `Dundee Hills`. The workbook, scorer assets and corrected-reference rescore now reflect
+those parent/child levels; the table above remains a historical measurement under the prior targets.
+
+Still open for the owner: whether `Margaux`, `Porto` and `Crémant d'Alsace` should be accepted as
+subregions under their broader regions. Keep this separate from the four explicit corrections above.
 
 ## Context clues, framed appellations, and accent-free matching (follow-up)
 
-On top of the five designation/fragment rules above, `EvidenceExtractor` (`evidence-lab-v4-context`)
-and `TextLabSpatialPreview` now apply unified label-wide context clues in Lab v4 and scrub
+On top of the five designation/fragment rules above, the current `EvidenceExtractor`
+(`evidence-lab-v5-vintage-recovery`) and `TextLabSpatialPreview` apply unified label-wide context clues in Lab v5 and scrub
 letter accent marks across all OCR inputs and database/catalog outputs:
 
 * **`LabelContext` (`textlab/evidence/LabelContext.kt`).** Collects supported country/region
@@ -112,8 +116,8 @@ letter accent marks across all OCR inputs and database/catalog outputs:
   country cue (penalty 10.0), or (3) an unanchored globally unique non-`context_required`
   appellation of `>= 10` letters separated from every rival worldwide by at least `best + 2` edits
   (penalty 12.0).
-* **Lab v4 `country_group` homonym tie-break & `YELLOW` geography backfill.** `ProducerGazetteer`
-  reads `country_group` from `producers.sqlite` / `producers-expanded.sqlite`. In Lab v4 only
+* **Lab v5 `country_group` homonym tie-break & `YELLOW` geography backfill.** `ProducerGazetteer`
+  reads `country_group` from `producers.sqlite` / `producers-expanded.sqlite`. In Lab v5 only
   (`policy.minimumIndependentEngines < 2`), `ProducerResolver` uses an already-resolved label
   country to break cross-country LWIN homonym ties, and `TextLabSpatialPreview` backfills still-blank
   geography as `YELLOW` from a confirmed `supported_pair` LWIN wine's unambiguous catalog
@@ -130,6 +134,6 @@ letter accent marks across all OCR inputs and database/catalog outputs:
 `PhoneCorpusRunner.REPAIR_PLACES_IN_BENCHMARK` and
 `SINGLE_READING_RESOLVERS_IN_BENCHMARK` are both **true** in this build, so the next
 **New Lab run** measures the place repair, `LabelContext` context clues, and the single-engine
-resolver policy together. Frozen Prod v1.0–v3.0 scoreboard rows automatically filter to Lab v4's
+resolver policy together. Frozen Prod v1.0–v4.0 scoreboard rows automatically filter to Lab v5's
 attempted photo subset while a pass is in progress (`attempted` non-empty) and revert to the
 full frozen set once complete or idle.

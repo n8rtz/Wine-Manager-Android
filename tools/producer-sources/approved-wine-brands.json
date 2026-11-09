@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "source_id": "approved_brand",
+  "researched_at": "2026-10-31",
+  "approval": "User approved all 17 strong-evidence candidates in this session.",
+  "scope": "Marketed wine names, not necessarily legal producers. Country describes the cited product only and is not used for origin inference.",
+  "reuse": "Source URLs are research citations, not a license to reproduce descriptions, photographs, or source databases.",
+  "brands": [
+    {
+      "name": "Altos de Valdoso",
+      "example_country": "Spain",
+      "example_wine": "Crianza 2019",
+      "evidence_urls": [
+        "https://www.tri-vin.com/products/brands/bodegas-olarra/altos-de-valdoso-crianza-750ml-2019",
+        "https://www.iberowine.com/wine/altos-de-valdoso-crianza"
+      ]
+    },
+    {
+      "name": "Amore di Amanti",
+      "example_country": "Italy",
+      "example_wine": "Prosecco DOC",
+      "evidence_urls": [
+        "https://enovationbrands.com/our-brands/product-details/amore-di-amanti/",
+        "https://www.gotoliquorstore.com/p/amore-di-amanti-prosecco/26908"
+      ]
+    },
+    {
+      "name": "Vegania",
+      "example_country": "Italy",
+      "example_wine": "Pinot Grigio",
+      "evidence_urls": [
+        "https://www.enoitalia.it/en/vegania/",
+        "https://www.barnivore.com/products/54822-vegania-pinot-grigio"
+      ]
+    },
+    {
+      "name": "Lady Lola",
+      "example_country": "Italy",
+      "example_wine": "Pinot Grigio Moscato",
+      "evidence_urls": [
+        "https://www.prnewswire.com/news-releases/enoitalia-announces-launch-of-us-wine-importer-enovation-brands-inc-188649851.html",
+        "https://winestyleonline.com/products/Lady-Lola-Pinot-Grigio-Moscato-Sicilia-IGT.html"
+      ]
+    },
+    {
+      "name": "Lion and the Lily",
+      "example_country": "France",
+      "example_wine": "Bordeaux Rosé",
+      "evidence_urls": [
+        "https://www.tesco.com/shop/en-GB/products/323775781",
+        "https://www.nataliemaclean.com/wine-reviews/tutiac-lion-and-the-lily-rose-2019/318791"
+      ]
+    },
+    {
+      "name": "Living Coral",
+      "example_country": "Italy",
+      "example_wine": "Sparkling Rosé",
+      "evidence_urls": [
+        "https://www.prnewswire.com/news-releases/living-coral-wine-and-force-blue-partner-to-save-coral-reefs-301189574.html",
+        "https://www.ubereats.com/product/b/c3870241-80e3-5be7-a713-9e511e3498e1"
+      ]
+    },
+    {
+      "name": "Sicalia",
+      "example_country": "Italy",
+      "example_wine": "Pinot Grigio",
+      "evidence_urls": [
+        "https://enovationbrands.com/our-brands/product-details/sicalia/",
+        "https://www.ubereats.com/product/b/b42577d9-7f5c-50a1-9bdc-a63cb362d4f2"
+      ]
+    },
+    {
+      "name": "Vite Mia",
+      "example_country": "Italy",
+      "example_wine": "Organic Grillo",
+      "evidence_urls": [
+        "https://www.enoitalia.it/en/vite-mia/vite-mia-organic-white-wine/",
+        "https://www.internationalwinechallenge.com/canopy/beverage_details?wid=164006"
+      ]
+    },
+    {
+      "name": "Pop-it Now",
+      "example_country": "Italy",
+      "example_wine": "Spumante",
+      "evidence_urls": [
+        "https://www.enoitalia.it/en/pop-it-now/",
+        "https://www.africaneasternauh.com/direct/auh/pop-it-now-glera-spumante-new.html"
+      ]
+    },
+    {
+      "name": "She’s Always Rosé",
+      "example_country": "Italy",
+      "example_wine": "Sparkling Pinot Noir",
+      "evidence_urls": [
+        "https://www.enoitalia.it/en/shes-always-rose/shes-always-rose-sparkling/",
+        "https://www.meininger.de/en/node/2110143"
+      ]
+    },
+    {
+      "name": "Terra Venetica",
+      "example_country": "Italy",
+      "example_wine": "Amarone della Valpolicella",
+      "evidence_urls": [
+        "https://www.enoitalia.it/en/terra-venetica/terra-venetica-organic-amarone/",
+        "https://divinparadis.kork.ca/en/our-wineries/enoitalia/terra-venetica-amarone/2015"
+      ]
+    },
+    {
+      "name": "Dal Vulcano",
+      "example_country": "Italy",
+      "example_wine": "Aglianico del Vulture",
+      "evidence_urls": [
+        "https://www.enoitalia.it/en/dal-vulcano/dal-vulcano-aglianico/",
+        "https://www.internationalwinechallenge.com/canopy/beverage_details?wid=159869"
+      ]
+    },
+    {
+      "name": "Giorgio & Gianni",
+      "example_country": "Italy",
+      "example_wine": "Pinot Grigio",
+      "evidence_urls": [
+        "https://www.prnewswire.com/news-releases/enoitalia-announces-launch-of-us-wine-importer-enovation-brands-inc-188649851.html",
+        "https://zyn.ca/products/giorgio-gianni-pinot-grigio"
+      ]
+    },
+    {
+      "name": "Lupi Reali",
+      "example_country": "Italy",
+      "example_wine": "Montepulciano d’Abruzzo 2020",
+      "evidence_urls": [
+        "https://www.prnewswire.com/news-releases/enoitalia-announces-launch-of-us-wine-importer-enovation-brands-inc-188649851.html",
+        "https://www.systembolaget.se/produkt/vin/lupi-reali-238401/"
+      ]
+    },
+    {
+      "name": "Cole Cellars",
+      "example_country": null,
+      "example_wine": "Chardonnay",
+      "evidence_urls": [
+        "https://www.wegmans.com/shop/categories/2957343",
+        "https://armchairsommelier.com/learning-wine/private-label-wine/"
+      ]
+    },
+    {
+      "name": "Les Carrières de Mézy",
+      "example_country": "France",
+      "example_wine": "Sancerre Cuvée de la Réserve 2024",
+      "evidence_urls": [
+        "https://www.tri-vin.com/products/brands/les-carrieres-de-mezy/les-carrieres-de-mezy-sancerre-cuvee-de-la-reserve-750ml-2024",
+        "https://wineanthology.com/29443-les-carrieres-de-mezy-sancerre-cuvee-de-la-reserve-2024"
+      ]
+    },
+    {
+      "name": "When Life Gives You Oranges",
+      "example_country": "France",
+      "example_wine": "Vin Orange",
+      "evidence_urls": [
+        "https://www.winesellersltd.com/brand/whe-live-gives-you-oranges/",
+        "https://www.stonewellspring.co.uk/shop-all/vin-orange-when-life"
+      ]
+    }
+  ]
+}

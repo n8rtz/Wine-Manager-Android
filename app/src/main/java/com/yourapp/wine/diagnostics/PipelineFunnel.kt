@@ -92,7 +92,7 @@ internal object PipelineFunnel {
             val title = if (kind == "producer") "Producer" else "Linked wine"
             step("$kind.invoked", title, "Resolver invoked", "The resolver was actually called.", true)
             step("$kind.execution", title, "Resolver completed within budget", "Returned normally, including abstention; exceptions and budget exhaustion block this row.", true)
-            step("$kind.primary", title, "Verified producer index available", "The resolver received an integrity-checked producer index (verified primary LWIN; Lab v4 also admits source-tagged supplemental candidates).", true)
+            step("$kind.primary", title, "Verified producer index available", "The resolver received an integrity-checked producer index (verified primary LWIN; Lab v5 also admits source-tagged supplemental candidates).", true)
             step("$kind.spans", title, "Span-count bound passed", "The preserved-original/alternative span list is within its bound.", true)
             if (kind == "wine") {
                 step("wine.producer_observed", title, "Independently observed producer", "At least one producer has the independent support the active resolver policy requires (two engines by default; the Lab single-reading experiment accepts one), including exact validation of an existing name.", true)

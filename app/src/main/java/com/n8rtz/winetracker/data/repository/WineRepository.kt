@@ -16,6 +16,7 @@ import com.n8rtz.winetracker.data.local.WineBottleWithDefinition
 import com.n8rtz.winetracker.data.local.WineDao
 import com.n8rtz.winetracker.data.local.WineDatabase
 import com.n8rtz.winetracker.data.local.WineDefinition
+import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.normalizeVintage
 import kotlinx.coroutines.flow.Flow
 
@@ -74,7 +75,8 @@ class WineRepository(
         quantity: Int,
         price: Double?,
         drinkingWindowStart: Int? = null,
-        drinkingWindowEnd: Int? = null
+        drinkingWindowEnd: Int? = null,
+        defaultColorHsv: HsvColor? = null
     ) {
         require(drinkingWindowStart == null || drinkingWindowEnd == null || drinkingWindowStart <= drinkingWindowEnd) {
             "Drinking window start year cannot be later than its end year."
@@ -96,7 +98,8 @@ class WineRepository(
                     subregion = subregion,
                     imageUrl = imageUrl,
                     drinkingWindowStart = drinkingWindowStart,
-                    drinkingWindowEnd = drinkingWindowEnd
+                    drinkingWindowEnd = drinkingWindowEnd,
+                    defaultColorHsv = defaultColorHsv
                 )
             )
         } else {
@@ -108,7 +111,8 @@ class WineRepository(
                     subregion = subregion,
                     imageUrl = imageUrl ?: existingDefinition.imageUrl,
                     drinkingWindowStart = drinkingWindowStart ?: existingDefinition.drinkingWindowStart,
-                    drinkingWindowEnd = drinkingWindowEnd ?: existingDefinition.drinkingWindowEnd
+                    drinkingWindowEnd = drinkingWindowEnd ?: existingDefinition.drinkingWindowEnd,
+                    defaultColorHsv = defaultColorHsv ?: existingDefinition.defaultColorHsv
                 )
             )
             existingDefinition.definitionId
@@ -136,6 +140,15 @@ class WineRepository(
 
     suspend fun updateWineDefinition(definition: WineDefinition) {
         wineDao.updateDefinition(definition)
+    }
+
+    /** Add one bottle to a cellar row without deriving the update from potentially stale UI state. */
+    suspend fun addBottleToStock(bottleId: Long) {
+        database.withTransaction {
+            val bottle = inventoryDao.getBottleById(bottleId) ?: return@withTransaction
+            if (bottle.status != BottleStatus.IN_CELLAR) return@withTransaction
+            inventoryDao.updateBottle(bottle.copy(quantity = bottle.quantity + 1))
+        }
     }
 
     suspend fun updateWine(definition: WineDefinition, bottle: WineBottle) {
@@ -245,12 +258,14 @@ class WineRepository(
         rating: Double?,
         notes: String?,
         rebuy: Boolean,
-        consumptionDate: Long = System.currentTimeMillis()
+        consumptionDate: Long = System.currentTimeMillis(),
+        quantity: Int = 1
     ): Long = database.withTransaction {
         val bottle = inventoryDao.getBottleById(bottleId) ?: return@withTransaction 0L
         if (bottle.status != BottleStatus.IN_CELLAR || bottle.quantity <= 0) {
             return@withTransaction 0L
         }
+        val consumedQuantity = quantity.coerceIn(1, bottle.quantity)
 
         val noteId = if (rating != null || !notes.isNullOrBlank() || rebuy) {
             tastingNoteDao.insertNote(
@@ -273,7 +288,7 @@ class WineRepository(
                 bottleId = bottleId,
                 vintage = bottle.vintage,
                 consumedAt = consumptionDate,
-                quantity = 1,
+                quantity = consumedQuantity,
                 price = bottle.price,
                 noteId = noteId
             )
@@ -283,7 +298,7 @@ class WineRepository(
         // A zero quantity row is hidden from active inventory and can be reused when restocked.
         inventoryDao.updateBottle(
             bottle.copy(
-                quantity = bottle.quantity - 1,
+                quantity = bottle.quantity - consumedQuantity,
                 status = BottleStatus.IN_CELLAR,
                 dateConsumed = null
             )
@@ -316,7 +331,7 @@ class WineRepository(
                         matchingCellarRow.copy(quantity = matchingCellarRow.quantity + event.quantity)
                     )
                 } else {
-                    // Restore this exact event's one-bottle contribution if its original cellar row
+                    // Restore this exact event's bottle count if its original cellar row
                     // was explicitly removed after the consumption.
                     inventoryDao.insertBottle(
                         WineBottle(

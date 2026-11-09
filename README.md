@@ -4,7 +4,7 @@ A personal wine cellar app for Android. It tracks what is in the cellar,
 what has been consumed, and tasting notes and ratings.
 
 Cellar data is stored locally on the device; there is no account or
-application server. Optional external image-import features use the network.
+application server. The label scanner uses a network barcode lookup; no account is required.
 
 > **Private project, no project licence.**
 > Package: `com.n8rtz.winetracker`.
@@ -20,12 +20,10 @@ application server. Optional external image-import features use the network.
 - **Tasting notes and history:** notes, scores, sensory sliders, aromas,
   reviewers, value scores and consumption history.
 - **Rankings and Price vs. Rating:** compare wines by score and value.
-- **Wine images:** optionally import reviewed bottle or label images from
-  Open Food Facts and manage their local storage.
 - **Backup:** export the cellar to JSON and restore it with validation and
   transactional updates.
-- **Profile and Settings:** reviewer management, import/export, image tools
-  and App Information.
+- **Profile and Settings:** reviewer management, import/export, backup and
+  App Information.
 
 ## Local label scanner
 
@@ -44,7 +42,9 @@ See:
 - [Offline scanner architecture, build and tests](docs/offline-scanner.md)
 - [Knowledge-base import formats](docs/offline-scanner-data.md)
 - [Production PP-OCRv6 Medium integration](docs/production-v6-medium.md)
-- [OCR Text Lab](docs/text-lab-candidates.md)
+- [GLiNER lane lab (ML Kit + PP-OCRv6 ➔ GLiNER-Small INT4 ➔ Lab v7 post-processing)](_refs/GLINER_LAB.md)
+- [GLiNER lane lab: first host measurement against Lab v7](_refs/GLINER_LAB_HOST_RUN.md)
+- [GLiNER lane lab: how to produce and upload the INT4 model bundle](_refs/GLINER_MODEL_UPLOAD.md)
 - [Phone-hosted prebuilt OpenCV](docs/opencv-prebuilt.md)
 - [OCR post-processing investigation](docs/ocr-postprocessing-review.md)
 

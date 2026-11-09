@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "schema": "gliner-lab-bundle-v1",
+  "asset_root": "gliner-lab-v1",
+  "pipeline": "ML Kit Latin + PP-OCRv6 Medium det+rec (parallel, fused) -> GLiNER-Small INT4 -> existing Lab v7 post-processing",
+  "model": {
+    "upstream": "urchade/gliner_small-v2.1",
+    "architecture": "uni-encoder span GLiNER (DeBERTa-v3-small backbone)",
+    "license": "Apache-2.0",
+    "quantization": "int4-weight-only (onnxruntime MatMul4BitsQuantizer, MatMulNBits, block 32, symmetric)",
+    "notes": "INT4 weight-only quantization keeps float32 activations. The graph must contain MatMulNBits nodes; the app reports whether it does before a run."
+  },
+  "files": [
+    {
+      "name": "gliner_small_int4.onnx",
+      "role": "model",
+      "bytes": 131313484,
+      "sha256": "a4d97745ba14a2b5f3606b30fa46a4c9a78e7b78a5f8b6c9e9fb35078d7c4a6d",
+      "url": null,
+      "asset_encoding": "gzip",
+      "asset_parts": [
+        "gliner_small_int4.onnx.gz.part-00",
+        "gliner_small_int4.onnx.gz.part-01"
+      ]
+    },
+    {
+      "name": "tokenizer.json",
+      "role": "tokenizer",
+      "bytes": 8340684,
+      "sha256": "1731c431e5e851a4a73487b5bbfbef265b29ab64de190c402b4e6df9ce2cb0ab",
+      "url": null,
+      "asset_encoding": "gzip",
+      "asset_parts": [
+        "tokenizer.json.gz"
+      ]
+    },
+    {
+      "name": "gliner_config.json",
+      "role": "config",
+      "bytes": 2310,
+      "sha256": "74fa245ddcaf2ad5ec1c611d197b829a352ada033d14c797564a67ffe2902365",
+      "url": null,
+      "asset_encoding": "raw",
+      "asset_parts": [
+        "gliner_config.json"
+      ]
+    }
+  ],
+  "io_contract": {
+    "inputs": [
+      "input_ids",
+      "attention_mask",
+      "words_mask",
+      "text_lengths",
+      "span_idx",
+      "span_mask"
+    ],
+    "outputs": [
+      "logits"
+    ],
+    "prompt": "ent_token, label, ent_token, label, ent_token, label, sep_token + label words",
+    "words_mask": "1-based word index on the first subtoken of each text word, 0 on prompt and continuation subtokens",
+    "spans": "every (start, width) pair as a flat (words*max_width, 2) list, end clipped at the last word; the graph reshapes it to (words, max_width) and the decoder skips the clipped spans",
+    "accepted_output_layouts": [
+      "span logits [1, words, max_width, classes]  (what gliner 0.2.29 exports)",
+      "span logits [spans, classes]",
+      "span logits [1, spans, classes]",
+      "span logits [1, classes, spans]",
+      "token start/end/inside logits [1, words, classes, 3]"
+    ]
+  },
+  "readings": {
+    "engines": [
+      "paddle-v6-medium",
+      "mlkit"
+    ],
+    "start": "both engines read the same decoded label, launched together; the app-wide NativeEngineGate serialises the native calls",
+    "fusion": "one line when the normalized texts match at (almost) the same place, or when boxes overlap strongly and the spellings are close; every other reading is kept for GLiNER",
+    "engine_scores": "each fused line keeps every engine that read it with that engine's own measured score; lane records emit one TokenRecord per engine",
+    "rejected": "nothing is dropped for low confidence in stage 1; low-confidence fragments are evidence for the contextual stage"
+  },
+  "lanes": [
+    {
+      "key": "producer",
+      "prompt": "wine producer or winery name"
+    },
+    {
+      "key": "wine_name",
+      "prompt": "wine name or cuvee"
+    },
+    {
+      "key": "appellation",
+      "prompt": "wine appellation, region or country"
+    }
+  ],
+  "provisioning": {
+    "build_time": "The pinned INT4 model is included as compressed parts in ordinary app assets; no build-time download is required.",
+    "device_time": "The first scan installs and verifies the bundled model in private storage automatically.",
+    "producer": "Existing tested GLiNER-Small INT4 release, compressed and split for GitHub."
+  },
+  "runtime": "com.microsoft.onnxruntime:onnxruntime-android:1.21.1",
+  "validation": "Every bundled file is reconstructed to private storage and checked against its pinned SHA-256 and size before use. The scanner requires an INT4 MatMulNBits graph."
+}
