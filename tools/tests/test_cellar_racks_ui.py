@@ -13,15 +13,20 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertNotIn("Group bottles by how you plan to enjoy or age them.", source)
         self.assertIn("LazyVerticalGrid(", source)
 
-    def test_compact_rack_action_uses_rack_and_plus_glyphs_and_assigns_a_rack(self):
+    def test_quick_rack_action_opens_multi_select_rack_tab_with_clear_rack_glyph(self):
         source = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
         self.assertIn("fun RackQuickAddButton(", source)
-        self.assertIn("Icons.Default.Inventory2", source)
-        self.assertIn("Icons.Default.Add", source)
-        self.assertIn('else "Add to rack"', source)
-        self.assertIn('text = { Text("No rack") }', source)
-        self.assertIn("cellarRackNames.forEach", source)
-        self.assertIn("onAssign(rack)", source)
+        self.assertIn("private fun RackGlyph(", source)
+        self.assertIn("A framed rack with three shelves and bottle silhouettes", source)
+        self.assertIn("onOpenRackSelection", source)
+        self.assertNotIn("DropdownMenu(expanded = expanded", source)
+        self.assertIn("Choose one or more racks", source)
+        self.assertIn("selectedAssignmentRacks", source)
+        self.assertIn('else "Add to ${selectedAssignmentRacks.size} racks")', source)
+        self.assertIn('"Remove from racks"', source)
+        self.assertIn("cellarTab = 1", screen)
+        self.assertIn("updateRackAssignments", screen)
 
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()
@@ -30,6 +35,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertLess(card.index("trailingAction?.invoke()"), card.index("Icons.Default.ExpandLess"))
         self.assertIn("trailingAction = {", cellar)
         self.assertIn("RackQuickAddButton(", cellar)
+        self.assertIn("onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }", cellar)
 
 
 if __name__ == "__main__":

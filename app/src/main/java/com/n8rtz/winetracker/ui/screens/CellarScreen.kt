@@ -58,6 +58,8 @@ fun CellarScreen(
     var expandedBottleId by remember { mutableStateOf<Long?>(null) }
     var cellarTab by remember { mutableIntStateOf(0) }
     var selectedRack by remember { mutableStateOf<String?>(null) }
+    var assignmentBottleId by remember { mutableStateOf<Long?>(null) }
+    var selectedAssignmentRacks by remember { mutableStateOf<Set<String>>(emptySet()) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val rackPreferences = remember(context) {
         context.getSharedPreferences("cellar_racks_v1", Context.MODE_PRIVATE)
@@ -66,16 +68,22 @@ fun CellarScreen(
         mutableStateOf(rackPreferences.getStringSet("assignments", mutableSetOf()).orEmpty().mapNotNull { entry ->
             val parts = entry.split('|', limit = 2)
             if (parts.size == 2) parts[0].toLongOrNull()?.let { it to parts[1] } else null
-        }.toMap())
+        }.groupBy({ it.first }, { it.second }).mapValues { it.value.toSet() })
     }
-    val updateRackAssignment: (Long, String?) -> Unit = { bottleId, rack ->
+    val updateRackAssignments: (Long, Set<String>) -> Unit = { bottleId, racks ->
         val updated = rackAssignments.toMutableMap().apply {
-            if (rack == null) remove(bottleId) else put(bottleId, rack)
+            if (racks.isEmpty()) remove(bottleId) else put(bottleId, racks)
         }
         rackAssignments = updated
         rackPreferences.edit().putStringSet(
-            "assignments", updated.map { (id, name) -> "$id|$name" }.toSet()
+            "assignments", updated.flatMap { (id, names) -> names.map { name -> "$id|$name" } }.toSet()
         ).apply()
+    }
+    val startRackAssignment: (Long) -> Unit = { bottleId ->
+        assignmentBottleId = bottleId
+        selectedAssignmentRacks = rackAssignments[bottleId].orEmpty()
+        selectedRack = null
+        cellarTab = 1
     }
     // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
     // screen where it was scrolled to instead of at the top.
@@ -308,9 +316,8 @@ fun CellarScreen(
                     onExpandToggle = toggleExpanded,
                     trailingAction = {
                         RackQuickAddButton(
-                            currentRack = rackAssignments[item.bottle.bottleId],
                             automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
-                            onAssign = { rack -> updateRackAssignment(item.bottle.bottleId, rack) }
+                            onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }
                         )
                     },
                     drinkingWindow = run {
@@ -329,9 +336,9 @@ fun CellarScreen(
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             RackAssignmentControl(
-                                currentRack = rackAssignments[item.bottle.bottleId],
+                                currentRacks = rackAssignments[item.bottle.bottleId].orEmpty(),
                                 automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
-                                onAssign = { rack -> updateRackAssignment(item.bottle.bottleId, rack) }
+                                onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -443,7 +450,22 @@ fun CellarScreen(
                     assignments = rackAssignments,
                     selectedRack = selectedRack,
                     onRackSelected = { selectedRack = it },
-                    onAssign = updateRackAssignment,
+                    assignmentBottleId = assignmentBottleId,
+                    selectedAssignmentRacks = selectedAssignmentRacks,
+                    onAssignmentRackToggle = { rack ->
+                        selectedAssignmentRacks = if (rack in selectedAssignmentRacks) selectedAssignmentRacks - rack else selectedAssignmentRacks + rack
+                    },
+                    onCancelAssignment = {
+                        assignmentBottleId = null
+                        selectedAssignmentRacks = emptySet()
+                        cellarTab = 0
+                    },
+                    onConfirmAssignment = {
+                        assignmentBottleId?.let { updateRackAssignments(it, selectedAssignmentRacks) }
+                        assignmentBottleId = null
+                        selectedAssignmentRacks = emptySet()
+                    },
+                    onOpenRackSelection = startRackAssignment,
                     onWineClick = onEditWine,
                     onTastingNotesClick = onTastingNotesClick
                 )

@@ -8,18 +8,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -43,11 +39,10 @@ private const val NEW_ADDITIONS_RACK = "New additions"
 
 @Composable
 internal fun RackAssignmentControl(
-    currentRack: String?,
+    currentRacks: Set<String>,
     automaticNewAddition: Boolean,
-    onAssign: (String?) -> Unit
+    onOpenRackSelection: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             "Rack",
@@ -58,76 +53,61 @@ internal fun RackAssignmentControl(
         if (automaticNewAddition) {
             AssistChip(onClick = {}, label = { Text("New additions · automatic") }, enabled = false)
         } else {
-            Box {
-                AssistChip(
-                    onClick = { expanded = true },
-                    label = { Text(currentRack ?: "Add to rack") },
-                    trailingIcon = { Icon(Icons.Default.Inventory2, null, Modifier.size(16.dp)) }
-                )
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(text = { Text("No rack") }, onClick = { onAssign(null); expanded = false })
-                    cellarRackNames.forEach { rack ->
-                        DropdownMenuItem(text = { Text(rack) }, onClick = { onAssign(rack); expanded = false })
-                    }
-                }
-            }
+            AssistChip(
+                onClick = onOpenRackSelection,
+                label = { Text(currentRacks.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "Add to rack") },
+                trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
+            )
         }
     }
 }
 
 @Composable
 internal fun RackQuickAddButton(
-    currentRack: String?,
     automaticNewAddition: Boolean,
-    onAssign: (String?) -> Unit
+    onOpenRackSelection: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        IconButton(
-            onClick = { expanded = true },
-            enabled = !automaticNewAddition,
-            modifier = Modifier.size(40.dp).semantics {
-                contentDescription = if (automaticNewAddition) "New additions rack is assigned automatically" else "Add to rack"
-            }
-        ) {
-            Box(Modifier.size(28.dp)) {
-                Icon(
-                    Icons.Default.Inventory2,
-                    contentDescription = null,
-                    tint = if (automaticNewAddition) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center).size(21.dp)
-                )
-                Surface(
-                    shape = CircleShape,
-                    color = if (automaticNewAddition) MaterialTheme.colorScheme.surfaceVariant
-                    else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.BottomEnd).size(14.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            tint = if (automaticNewAddition) MaterialTheme.colorScheme.onSurfaceVariant
-                            else MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(11.dp)
-                        )
-                    }
-                }
-            }
+    IconButton(
+        onClick = onOpenRackSelection,
+        enabled = !automaticNewAddition,
+        modifier = Modifier.size(40.dp).semantics {
+            contentDescription = if (automaticNewAddition) "New additions rack is assigned automatically" else "Choose wine racks"
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text("No rack") },
-                onClick = { onAssign(null); expanded = false }
-            )
-            cellarRackNames.forEach { rack ->
-                DropdownMenuItem(
-                    text = { Text(if (currentRack == rack) "$rack · selected" else rack) },
-                    onClick = { onAssign(rack); expanded = false }
-                )
-            }
+    ) {
+        RackGlyph(
+            modifier = Modifier.size(25.dp),
+            color = if (automaticNewAddition) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            else MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
+    androidx.compose.foundation.Canvas(modifier) {
+        val stroke = size.width * 0.09f
+        // A framed rack with three shelves and bottle silhouettes, rather than a generic box icon.
+        drawRoundRect(color, topLeft = androidx.compose.ui.geometry.Offset(size.width * .1f, size.height * .08f),
+            size = androidx.compose.ui.geometry.Size(size.width * .8f, size.height * .84f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * .08f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+        for (row in 1..2) {
+            val y = size.height * (0.08f + row * .28f)
+            drawLine(color, androidx.compose.ui.geometry.Offset(size.width * .1f, y),
+                androidx.compose.ui.geometry.Offset(size.width * .9f, y), strokeWidth = stroke)
         }
+        for (row in 0..2) for (col in 0..2) {
+            val x = size.width * (.24f + col * .26f)
+            val y = size.height * (.16f + row * .28f)
+            drawRoundRect(color, topLeft = androidx.compose.ui.geometry.Offset(x, y),
+                size = androidx.compose.ui.geometry.Size(size.width * .1f, size.height * .16f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * .05f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke * .7f))
+        }
+        val badgeCenter = androidx.compose.ui.geometry.Offset(size.width * .8f, size.height * .8f)
+        drawCircle(color, radius = size.width * .18f, center = badgeCenter)
+        drawLine(Color.White, androidx.compose.ui.geometry.Offset(badgeCenter.x - size.width * .08f, badgeCenter.y),
+            androidx.compose.ui.geometry.Offset(badgeCenter.x + size.width * .08f, badgeCenter.y), strokeWidth = stroke)
+        drawLine(Color.White, androidx.compose.ui.geometry.Offset(badgeCenter.x, badgeCenter.y - size.width * .08f),
+            androidx.compose.ui.geometry.Offset(badgeCenter.x, badgeCenter.y + size.width * .08f), strokeWidth = stroke)
     }
 }
 
@@ -136,10 +116,15 @@ internal fun CellarRacks(
     inventory: List<WineBottleWithDefinition>,
     ratingsMap: Map<Pair<Long, String>, String>,
     notesMap: Map<Pair<Long, String>, List<TastingNoteWithDefinition>>,
-    assignments: Map<Long, String>,
+    assignments: Map<Long, Set<String>>,
     selectedRack: String?,
     onRackSelected: (String?) -> Unit,
-    onAssign: (Long, String?) -> Unit,
+    assignmentBottleId: Long?,
+    selectedAssignmentRacks: Set<String>,
+    onAssignmentRackToggle: (String) -> Unit,
+    onCancelAssignment: () -> Unit,
+    onConfirmAssignment: () -> Unit,
+    onOpenRackSelection: (Long) -> Unit,
     onWineClick: (Long) -> Unit,
     onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
 ) {
@@ -155,14 +140,22 @@ internal fun CellarRacks(
         when (selectedRack) {
             null -> emptyList()
             NEW_ADDITIONS_RACK -> inventory.filter { it.bottle.bottleId in newAdditions }
-            else -> inventory.filter { assignments[it.bottle.bottleId] == selectedRack && it.bottle.bottleId !in newAdditions }
+            else -> inventory.filter { selectedRack in assignments[it.bottle.bottleId].orEmpty() && it.bottle.bottleId !in newAdditions }
         }
     }
     val context = LocalContext.current
 
     if (selectedRack == null) {
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            if (assignmentBottleId != null) {
+                Text("Choose one or more racks", style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                Text("Selected wine will be added to each rack you choose.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp))
+            }
             LazyVerticalGrid(
+                modifier = Modifier.weight(1f),
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -171,7 +164,7 @@ internal fun CellarRacks(
                 items(rackNames, key = { it }) { rack ->
                     val rackItems = when (rack) {
                         NEW_ADDITIONS_RACK -> inventory.filter { it.bottle.bottleId in newAdditions }
-                        else -> inventory.filter { assignments[it.bottle.bottleId] == rack && it.bottle.bottleId !in newAdditions }
+                        else -> inventory.filter { rack in assignments[it.bottle.bottleId].orEmpty() && it.bottle.bottleId !in newAdditions }
                     }
                     val cover = rackItems.firstOrNull()?.let { wine ->
                         resolveWineImageModel(context, wine.imageAsset?.relativePath,
@@ -183,8 +176,11 @@ internal fun CellarRacks(
                         "Daily drinkers" -> Color(0xFF647D5D)
                         else -> Color(0xFF77739A)
                     }
+                    val selectable = assignmentBottleId != null && rack != NEW_ADDITIONS_RACK
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable { onRackSelected(rack) },
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            if (selectable) onAssignmentRackToggle(rack) else if (assignmentBottleId == null) onRackSelected(rack)
+                        },
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -203,6 +199,13 @@ internal fun CellarRacks(
                                         modifier = Modifier.fillMaxSize()
                                     )
                                     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
+                                }
+                                if (selectable) {
+                                    Checkbox(
+                                        checked = rack in selectedAssignmentRacks,
+                                        onCheckedChange = { onAssignmentRackToggle(rack) },
+                                        modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
+                                    )
                                 }
                                 Text(
                                     rack.take(1).uppercase(),
@@ -226,6 +229,18 @@ internal fun CellarRacks(
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
+                    }
+                }
+            }
+            if (assignmentBottleId != null) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(onClick = onCancelAssignment, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                    val canRemoveExisting = assignments[assignmentBottleId].orEmpty().isNotEmpty()
+                    Button(onClick = onConfirmAssignment,
+                        enabled = selectedAssignmentRacks.isNotEmpty() || canRemoveExisting,
+                        modifier = Modifier.weight(1f)) {
+                        Text(if (selectedAssignmentRacks.isEmpty() && canRemoveExisting) "Remove from racks"
+                            else "Add to ${selectedAssignmentRacks.size} racks")
                     }
                 }
             }
@@ -265,16 +280,15 @@ internal fun CellarRacks(
                             rating = ratingsMap[key],
                             trailingAction = {
                                 RackQuickAddButton(
-                                    currentRack = assignments[item.bottle.bottleId],
                                     automaticNewAddition = automaticNewAddition,
-                                    onAssign = { rack -> onAssign(item.bottle.bottleId, rack) }
+                                    onOpenRackSelection = { onOpenRackSelection(item.bottle.bottleId) }
                                 )
                             },
                             details = {
                                 RackAssignmentControl(
-                                    currentRack = assignments[item.bottle.bottleId],
+                                    currentRacks = assignments[item.bottle.bottleId].orEmpty(),
                                     automaticNewAddition = automaticNewAddition,
-                                    onAssign = { rack -> onAssign(item.bottle.bottleId, rack) }
+                                    onOpenRackSelection = { onOpenRackSelection(item.bottle.bottleId) }
                                 )
                                 val aromaNote = notes.firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
                                 if (aromaNote != null) {
