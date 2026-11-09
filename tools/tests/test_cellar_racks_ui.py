@@ -38,7 +38,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("selectedAssignmentRacks", source)
         self.assertIn('else "Add to ${selectedAssignmentRacks.size} racks")', source)
         self.assertIn('"Remove from racks"', source)
-        self.assertIn("cellarTab = 1", screen)
+        self.assertIn("selectCellarTab(1)", screen)
         self.assertIn("updateRackAssignments", screen)
 
     def test_rack_order_is_persisted_and_long_press_supports_live_drag_reordering(self):
@@ -64,11 +64,24 @@ class CellarRacksUiTests(unittest.TestCase):
 
     def test_cellar_swipe_changes_between_bottles_and_racks_without_interrupting_rack_detail(self):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
-        self.assertIn("detectHorizontalDragGestures(", screen)
-        self.assertIn("horizontalDrag <= -swipeThresholdPx && cellarTab == 0 -> cellarTab = 1", screen)
-        self.assertIn("horizontalDrag >= swipeThresholdPx && cellarTab == 1 -> cellarTab = 0", screen)
-        self.assertIn("selectedRack == null && assignmentBottleId == null", screen)
-        self.assertIn("change.consume()", screen)
+        views = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        # A pager gives a smooth, finger-tracking slide between the two pages
+        # (and an animated settle on tab taps) instead of a sudden swap.
+        self.assertIn("rememberPagerState(initialPage = 0) { 2 }", screen)
+        self.assertIn("HorizontalPager(", screen)
+        self.assertIn("pagerState.animateScrollToPage(page)", screen)
+        self.assertIn("selectCellarTab(0)", screen)
+        self.assertIn("selectCellarTab(1)", screen)
+        self.assertNotIn("detectHorizontalDragGestures(", screen)
+        self.assertNotIn("if (cellarTab == 0)", screen)
+        # Paging must never interrupt an open rack, a rack assignment, or a
+        # rack-tile drag-reorder.
+        self.assertIn(
+            "userScrollEnabled = selectedRack == null && assignmentBottleId == null && !rackDragActive",
+            screen,
+        )
+        self.assertIn("onRackDragActiveChange = { rackDragActive = it }", screen)
+        self.assertIn("LaunchedEffect(draggingRack != null) { onRackDragActiveChange(draggingRack != null) }", views)
 
     def test_automatic_new_additions_does_not_disable_other_rack_assignments(self):
         source = (APP / "ui/screens/CellarRackViews.kt").read_text()

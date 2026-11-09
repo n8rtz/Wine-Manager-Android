@@ -147,6 +147,7 @@ internal fun CellarRacks(
     onRenameRack: (String, String) -> Unit,
     onDeleteRacks: (Set<String>) -> Unit,
     onMoveRack: (String, String) -> Unit,
+    onRackDragActiveChange: (Boolean) -> Unit = {},
     onRemoveFromRack: (Set<Long>, String) -> Unit,
     onWineClick: (Long) -> Unit,
     onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
@@ -161,6 +162,8 @@ internal fun CellarRacks(
     var rackBeingEdited by remember { mutableStateOf<String?>(null) }
     var editedRackName by remember { mutableStateOf("") }
     var draggingRack by remember { mutableStateOf<String?>(null) }
+    // Keep the Bottles/Racks pager from stealing horizontal rack-reorder drags.
+    LaunchedEffect(draggingRack != null) { onRackDragActiveChange(draggingRack != null) }
     var dragPointerInGrid by remember { mutableStateOf(Offset.Zero) }
     var grabOffsetInCard by remember { mutableStateOf(Offset.Zero) }
     var lastDownPosInGrid by remember { mutableStateOf(Offset.Zero) }

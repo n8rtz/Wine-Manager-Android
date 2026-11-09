@@ -23,7 +23,7 @@ class GlobalBackNavigationTests(unittest.TestCase):
         source = (APP / "ui/screens/CellarScreen.kt").read_text()
         self.assertIn("BackHandler(enabled = cellarTab == 1)", source)
         self.assertIn("selectedRack = null", source)
-        self.assertIn("cellarTab = 0", source)
+        self.assertIn("selectCellarTab(0)", source)
 
 
 if __name__ == "__main__":

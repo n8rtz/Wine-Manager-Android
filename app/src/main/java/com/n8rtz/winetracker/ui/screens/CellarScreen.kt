@@ -3,8 +3,9 @@ package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,9 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.AnalyticsCard
 import com.n8rtz.winetracker.ui.components.WineCard
@@ -60,7 +60,15 @@ fun CellarScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var showStatsDialog by remember { mutableStateOf(false) }
     var expandedBottleId by remember { mutableStateOf<Long?>(null) }
-    var cellarTab by remember { mutableIntStateOf(0) }
+    // Bottles (0) and Racks (1) live in a pager so swipes and tab taps slide
+    // smoothly between pages instead of swapping content instantaneously.
+    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val cellarTab = pagerState.currentPage
+    val pagerScope = rememberCoroutineScope()
+    val selectCellarTab: (Int) -> Unit = { page ->
+        pagerScope.launch { pagerState.animateScrollToPage(page) }
+    }
+    var rackDragActive by remember { mutableStateOf(false) }
     var selectedRack by remember { mutableStateOf<String?>(null) }
     var assignmentBottleId by remember { mutableStateOf<Long?>(null) }
     var selectedAssignmentRacks by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -68,11 +76,11 @@ fun CellarScreen(
         if (assignmentBottleId != null) {
             assignmentBottleId = null
             selectedAssignmentRacks = emptySet()
-            cellarTab = 0
+            selectCellarTab(0)
         } else if (selectedRack != null) {
             selectedRack = null
         } else {
-            cellarTab = 0
+            selectCellarTab(0)
         }
     }
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -195,7 +203,7 @@ fun CellarScreen(
         assignmentBottleId = bottleId
         selectedAssignmentRacks = rackAssignments[bottleId].orEmpty()
         selectedRack = null
-        cellarTab = 1
+        selectCellarTab(1)
     }
     // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
     // screen where it was scrolled to instead of at the top.
@@ -219,7 +227,7 @@ fun CellarScreen(
         searchExpanded = false
         showFilterSheet = false
         expandedBottleId = null
-        cellarTab = 0
+        pagerState.animateScrollToPage(0)
         selectedRack = null
     }
 
@@ -331,8 +339,6 @@ fun CellarScreen(
             filterState.sortField != CellarSortField.DATE_ADDED || filterState.sortAscending ||
             filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
     val displayedBottleCount = remember(filteredInventory) { filteredInventory.sumOf { it.bottle.quantity } }
-    val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
-
     val formattedDatesMap = remember(filteredInventory, dateFormat, parseFormat) {
         filteredInventory.associate { item ->
             val formatted = item.bottle.dateAdded?.let {
@@ -349,29 +355,21 @@ fun CellarScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = cellarTab) {
-            Tab(selected = cellarTab == 0, onClick = { cellarTab = 0; selectedRack = null }, text = { Text("Bottles") })
-            Tab(selected = cellarTab == 1, onClick = { cellarTab = 1; selectedRack = null }, text = { Text("Racks") })
+            Tab(selected = cellarTab == 0, onClick = { selectCellarTab(0); selectedRack = null }, text = { Text("Bottles") })
+            Tab(selected = cellarTab == 1, onClick = { selectCellarTab(1); selectedRack = null }, text = { Text("Racks") })
         }
-        Box(
-            modifier = Modifier.weight(1f).pointerInput(cellarTab, selectedRack, assignmentBottleId, swipeThresholdPx) {
-                if (selectedRack == null && assignmentBottleId == null) {
-                    var horizontalDrag = 0f
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            when {
-                                horizontalDrag <= -swipeThresholdPx && cellarTab == 0 -> cellarTab = 1
-                                horizontalDrag >= swipeThresholdPx && cellarTab == 1 -> cellarTab = 0
-                            }
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            horizontalDrag += dragAmount
-                            change.consume()
-                        }
-                    )
-                }
-            }
-        ) {
-            if (cellarTab == 0) {
+        // The pager tracks the finger while swiping and animates (settles) to
+        // the neighbouring page on release or when a tab is tapped. Paging is
+        // locked while a rack is open, while assigning a bottle to racks, or
+        // while a rack tile is being drag-reordered, so those gestures are
+        // never stolen by a page change.
+        HorizontalPager(
+            state = pagerState,
+            userScrollEnabled = selectedRack == null && assignmentBottleId == null && !rackDragActive,
+            modifier = Modifier.weight(1f)
+        ) { page ->
+            if (page == 0) {
+        Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = cellarListState,
             modifier = Modifier.fillMaxSize(),
@@ -571,6 +569,7 @@ fun CellarScreen(
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         }
+        }
             } else {
                 CellarRacks(
                     inventory = inventory,
@@ -589,7 +588,7 @@ fun CellarScreen(
                     onCancelAssignment = {
                         assignmentBottleId = null
                         selectedAssignmentRacks = emptySet()
-                        cellarTab = 0
+                        selectCellarTab(0)
                     },
                     onConfirmAssignment = {
                         assignmentBottleId?.let { updateRackAssignments(it, selectedAssignmentRacks) }
@@ -601,6 +600,7 @@ fun CellarScreen(
                     onRenameRack = renameRack,
                     onDeleteRacks = deleteRacks,
                     onMoveRack = moveRack,
+                    onRackDragActiveChange = { rackDragActive = it },
                     onRemoveFromRack = removeFromRack,
                     onWineClick = onEditWine,
                     onTastingNotesClick = onTastingNotesClick
