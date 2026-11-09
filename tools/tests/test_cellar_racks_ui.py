@@ -129,13 +129,22 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('val removeFromRack: (Set<Long>, String) -> Unit', screen)
         self.assertIn('new_additions_exclusions', screen)
         self.assertIn('excludedNewAdditions = excludedNewAdditionIds', screen)
-        self.assertIn('.offset(x = (-4).dp, y = (-4).dp)', views)
+        self.assertIn('.offset(x = (-7.5).dp, y = (-4).dp)', views)
 
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()
         cellar = (APP / "ui/screens/CellarScreen.kt").read_text()
+        views = (APP / "ui/screens/CellarRackViews.kt").read_text()
         self.assertIn("trailingAction: @Composable (() -> Unit)? = null", card)
         self.assertLess(card.index("trailingAction?.invoke()"), card.index("Icons.Default.ExpandLess"))
+        # The rack glyph (25.dp) sits right of the "+" (14.dp + 1.dp gap) in
+        # the button's centred row, so its centre is 7.5.dp right of the
+        # button centre; the button is shifted left by exactly that so the
+        # rack icon is centred over the caret, which is centred in the same
+        # WineCard trailing column (Column is CenterHorizontally).
+        self.assertIn("Column(horizontalAlignment = Alignment.CenterHorizontally)", card)
+        self.assertIn('.offset(x = (-7.5).dp, y = (-4).dp)', views)
+        self.assertNotIn('.offset(x = (-4).dp, y = (-4).dp)', views)
         self.assertIn("trailingAction = {", cellar)
         self.assertIn("RackQuickAddButton(", cellar)
         self.assertIn("onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }", cellar)

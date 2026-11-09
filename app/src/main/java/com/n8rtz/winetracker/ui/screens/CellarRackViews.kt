@@ -91,7 +91,12 @@ internal fun RackQuickAddButton(
     Box(
         modifier = Modifier
             .size(width = 44.dp, height = 40.dp)
-            .offset(x = (-4).dp, y = (-4).dp)
+            // The "+" (14.dp) + 1.dp gap pushes the 25.dp rack glyph's centre
+            // 7.5.dp right of this button's centre. Shifting the button left
+            // by that amount centres the rack icon over the expand caret in
+            // the WineCard trailing column below it (both are centred in
+            // that column).
+            .offset(x = (-7.5).dp, y = (-4).dp)
             .semantics {
                 contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
             }
