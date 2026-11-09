@@ -320,7 +320,7 @@ fun CellarScreen(
                         listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
                     },
                     type = item.definition.type,
-                    metadata = "Stock: ${item.bottle.quantity}",
+                    metadata = "Cellar: ${item.bottle.quantity}",
                     imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
                     imageLocalPath = item.imageAsset?.relativePath,
                     rating = ratingStr,
@@ -374,7 +374,7 @@ fun CellarScreen(
                                     Icon(Icons.Default.Remove, contentDescription = "Consume one bottle")
                                 }
                                 Text(
-                                    text = "Stock: ${item.bottle.quantity}",
+                                    text = "Cellar: ${item.bottle.quantity}",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold
                                 )

@@ -47,7 +47,7 @@ class CellarStockContractTests(unittest.TestCase):
 
     def test_expanded_cellar_card_exposes_stock_add_note_and_edit_actions(self):
         cellar = CELLAR.read_text()
-        self.assertIn('text = "Stock: ${item.bottle.quantity}"', cellar)
+        self.assertIn('text = "Cellar: ${item.bottle.quantity}"', cellar)
         self.assertIn('contentDescription = "Consume one bottle"', cellar)
         self.assertIn('contentDescription = "Add one bottle"', cellar)
         self.assertIn("quantity = 1", cellar)
