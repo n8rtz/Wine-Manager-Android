@@ -142,7 +142,7 @@ class CellarRacksUiTests(unittest.TestCase):
         # button centre; the button is shifted left by exactly that so the
         # rack icon is centred over the caret, which is centred in the same
         # WineCard trailing column (Column is CenterHorizontally).
-        self.assertIn("Column(horizontalAlignment = Alignment.CenterHorizontally)", card)
+        self.assertIn("horizontalAlignment = Alignment.CenterHorizontally", card)
         self.assertIn('.offset(x = (-7.5).dp, y = (-8).dp)', views)
         self.assertNotIn('.offset(x = (-4).dp, y = (-4).dp)', views)
         self.assertIn("trailingAction = {", cellar)
@@ -157,6 +157,18 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertLess(rating_block, card.index("Icons.Default.ExpandLess"))
         self.assertIn("text = rating,", card)
         self.assertIn("Modifier.size(48.dp).offset(y = 4.dp)", card)
+        # The whole rack-button / rating / caret stack is shifted down, the
+        # rating text is larger, and its bordered box is filled with the
+        # colour assigned to the rating -- an ombre between the colours of
+        # the lower and upper bounds for a rating range.
+        self.assertIn("Modifier.offset(y = 6.dp)", card)
+        self.assertIn("style = MaterialTheme.typography.titleMedium", card)
+        self.assertIn(".border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)", card)
+        self.assertIn("Brush.horizontalGradient(", card)
+        self.assertIn("overallScoreBand(ratingValues.first()).color", card)
+        self.assertIn("overallScoreBand(ratingValues.last()).color", card)
+        sensory = (APP / "ui/components/SensoryEvaluationFields.kt").read_text()
+        self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
         self.assertIn("onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }", cellar)
 
 

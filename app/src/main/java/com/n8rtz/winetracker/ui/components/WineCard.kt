@@ -3,6 +3,7 @@ package com.n8rtz.winetracker.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -111,22 +113,57 @@ fun WineCard(
                     }
                 }
                 if (trailingAction != null || details != null || !rating.isNullOrBlank()) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // The whole rack-button / rating / caret stack sits a
+                    // little lower on the card than its natural position.
+                    Column(
+                        modifier = Modifier.offset(y = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         trailingAction?.invoke()
                         if (!rating.isNullOrBlank()) {
-                            // Bare number (no star), centred in the space
+                            // Bare number (no star) in a bordered box centred
                             // between the add-to-rack button above and the
-                            // expand caret below.
-                            Text(
-                                text = rating,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
+                            // expand caret below. The box is filled with the
+                            // colour assigned to the rating (see
+                            // overallScoreBand); for a rating range it is an
+                            // ombre from the lower bound's colour (left) to
+                            // the upper bound's colour (right).
+                            val ratingValues = rating.split("-")
+                                .mapNotNull { it.trim().toIntOrNull() }
+                            val ratingShape = RoundedCornerShape(6.dp)
+                            Box(
                                 modifier = Modifier
-                                    .padding(vertical = 1.dp)
-                                    .semantics { contentDescription = "Rating $rating" }
-                            )
+                                    .padding(vertical = 2.dp)
+                                    .clip(ratingShape)
+                                    .then(
+                                        if (ratingValues.size >= 2) {
+                                            Modifier.background(
+                                                Brush.horizontalGradient(
+                                                    listOf(
+                                                        overallScoreBand(ratingValues.first()).color,
+                                                        overallScoreBand(ratingValues.last()).color
+                                                    )
+                                                )
+                                            )
+                                        } else if (ratingValues.size == 1) {
+                                            Modifier.background(overallScoreBand(ratingValues.first()).color)
+                                        } else {
+                                            Modifier.background(MaterialTheme.colorScheme.primary)
+                                        }
+                                    )
+                                    .border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    .semantics { contentDescription = "Rating $rating" },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = rating,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1
+                                )
+                            }
                         }
                         if (details != null) {
                             Box(

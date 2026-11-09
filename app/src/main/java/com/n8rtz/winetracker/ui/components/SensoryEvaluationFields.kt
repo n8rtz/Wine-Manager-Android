@@ -72,7 +72,7 @@ fun SensoryEvaluationFields(
 
 }
 
-private data class OverallScoreBand(val label: String, val color: Color)
+internal data class OverallScoreBand(val label: String, val color: Color)
 
 private val overallScoreMarkers = listOf(50, 60, 70, 80, 90, 100)
 private val overallScoreGradient = listOf(
@@ -84,7 +84,7 @@ private val overallScoreGradient = listOf(
     Color(0xFF347A59)
 )
 
-private fun overallScoreBand(score: Int): OverallScoreBand = when {
+internal fun overallScoreBand(score: Int): OverallScoreBand = when {
     score >= 98 -> OverallScoreBand("Extraordinary", Color(0xFF27664A))
     score >= 94 -> OverallScoreBand("Outstanding", Color(0xFF347A59))
     score >= 90 -> OverallScoreBand("Excellent", Color(0xFF3E7448))
