@@ -125,7 +125,7 @@ fun WineCard(
                             // between the add-to-rack button above and the
                             // expand caret below. The box is filled with the
                             // colour assigned to the rating (see
-                            // overallScoreBand); for a rating range it is an
+                            // ratingColor); for a rating range it is an
                             // ombre from the lower bound's colour (left) to
                             // the upper bound's colour (right). Wines with
                             // no rating show "NR" on a plain grey fill.
@@ -146,13 +146,13 @@ fun WineCard(
                                             Modifier.background(
                                                 Brush.horizontalGradient(
                                                     listOf(
-                                                        overallScoreBand(ratingValues.first()).color,
-                                                        overallScoreBand(ratingValues.last()).color
+                                                        ratingColor(ratingValues.first()),
+                                                        ratingColor(ratingValues.last())
                                                     )
                                                 )
                                             )
                                         } else if (ratingValues.size == 1) {
-                                            Modifier.background(overallScoreBand(ratingValues.first()).color)
+                                            Modifier.background(ratingColor(ratingValues.first()))
                                         } else if (!rated) {
                                             Modifier.background(Color(0xFF9E9E9E))
                                         } else {

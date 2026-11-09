@@ -30,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp as colorLerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -93,6 +94,42 @@ internal fun overallScoreBand(score: Int): OverallScoreBand = when {
     score >= 70 -> OverallScoreBand("Average", Color(0xFF8A6B1E))
     score >= 60 -> OverallScoreBand("Below Average", Color(0xFFA85F31))
     else -> OverallScoreBand("Unacceptable", Color(0xFFA9444D))
+}
+
+/**
+ * Continuous colour for a 50-100 rating, used to fill the WineCard rating
+ * box. Most rated wines land between 80 and 95, so that stretch of the
+ * scale gets the most stops: it runs Yellow-green (80) through clear green
+ * (85 -- anything 85+ is decent, so Yellow, which reads as mediocre, is
+ * gone by then), emerald (88-90) and teal-green (93) to deep teal (95+).
+ * Below 80 the scale runs back through Yellow and amber to orange-red and
+ * deep red, so weaker wines are just as easy to tell apart.
+ */
+private val ratingColorStops: List<Pair<Int, Color>> = listOf(
+    50 to Color(0xFFB03A3A),
+    60 to Color(0xFFD3542E),
+    70 to Color(0xFFE39A1E),
+    75 to Color(0xFFD9B81F),
+    80 to Color(0xFFA8B93C),
+    82 to Color(0xFF86B04A),
+    85 to Color(0xFF55A04A),
+    88 to Color(0xFF3E9B5F),
+    90 to Color(0xFF2E9E77),
+    93 to Color(0xFF1F8A8A),
+    95 to Color(0xFF147A8C),
+    100 to Color(0xFF146B7A)
+)
+
+internal fun ratingColor(score: Int): Color {
+    val clamped = score.coerceIn(
+        ratingColorStops.first().first,
+        ratingColorStops.last().first
+    )
+    val lower = ratingColorStops.last { it.first <= clamped }
+    val upper = ratingColorStops.first { it.first >= clamped }
+    if (lower.first == upper.first) return lower.second
+    val fraction = (clamped - lower.first).toFloat() / (upper.first - lower.first)
+    return colorLerp(lower.second, upper.second, fraction)
 }
 
 @Composable

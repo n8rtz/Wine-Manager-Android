@@ -169,6 +169,20 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("overallScoreBand(ratingValues.last()).color", card)
         sensory = (APP / "ui/components/SensoryEvaluationFields.kt").read_text()
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
+        # The rating fill is a continuous scale with extra stops where most
+        # wines land (80-95), and nothing 85+ is Yellow: 85 is already a
+        # clear green, running through emerald to deep teal at 95+.
+        self.assertIn("internal fun ratingColor(score: Int): Color", sensory)
+        for stop in (
+            "80 to Color(0xFFA8B93C)",
+            "82 to Color(0xFF86B04A)",
+            "85 to Color(0xFF55A04A)",
+            "88 to Color(0xFF3E9B5F)",
+            "90 to Color(0xFF2E9E77)",
+            "93 to Color(0xFF1F8A8A)",
+            "95 to Color(0xFF147A8C)",
+        ):
+            self.assertIn(stop, sensory)
         # Unrated wines show "NR" on a plain grey fill instead of no box.
         self.assertIn('val ratingText = rating?.takeIf { it.isNotBlank() } ?: "NR"', card)
         self.assertIn("Modifier.background(Color(0xFF9E9E9E))", card)
