@@ -81,29 +81,47 @@ internal fun RackQuickAddButton(
 @Composable
 private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
     androidx.compose.foundation.Canvas(modifier) {
-        val stroke = size.width * 0.09f
-        // A framed rack with three shelves and bottle silhouettes, rather than a generic box icon.
-        drawRoundRect(color, topLeft = androidx.compose.ui.geometry.Offset(size.width * .1f, size.height * .08f),
-            size = androidx.compose.ui.geometry.Size(size.width * .8f, size.height * .84f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * .08f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
-        for (row in 1..2) {
-            val y = size.height * (0.08f + row * .28f)
-            drawLine(color, androidx.compose.ui.geometry.Offset(size.width * .1f, y),
-                androidx.compose.ui.geometry.Offset(size.width * .9f, y), strokeWidth = stroke)
+        val unit = size.minDimension
+        val stroke = unit * .065f
+        val left = size.width * .05f
+        val top = size.height * .05f
+        val right = size.width * .95f
+        val bottom = size.height * .95f
+        // Diamond lattice and circular bottle openings, matching the user's wine-rack reference.
+        drawRect(
+            color = color,
+            topLeft = androidx.compose.ui.geometry.Offset(left, top),
+            size = androidx.compose.ui.geometry.Size(right - left, bottom - top),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
+        )
+        val centers = listOf(
+            .17f to .17f, .50f to .17f, .83f to .17f,
+            .34f to .34f, .67f to .34f,
+            .17f to .51f, .50f to .51f, .83f to .51f,
+            .34f to .68f, .67f to .68f
+        )
+        centers.forEach { (cx, cy) ->
+            val x = size.width * cx
+            val y = size.height * cy
+            val dx = size.width * .17f
+            val dy = size.height * .17f
+            val topPoint = androidx.compose.ui.geometry.Offset(x, y - dy)
+            val rightPoint = androidx.compose.ui.geometry.Offset(x + dx, y)
+            val bottomPoint = androidx.compose.ui.geometry.Offset(x, y + dy)
+            val leftPoint = androidx.compose.ui.geometry.Offset(x - dx, y)
+            drawLine(color, topPoint, rightPoint, strokeWidth = stroke)
+            drawLine(color, rightPoint, bottomPoint, strokeWidth = stroke)
+            drawLine(color, bottomPoint, leftPoint, strokeWidth = stroke)
+            drawLine(color, leftPoint, topPoint, strokeWidth = stroke)
         }
-        for (row in 0..2) for (col in 0..2) {
-            val x = size.width * (.24f + col * .26f)
-            val y = size.height * (.16f + row * .28f)
-            drawRoundRect(color, topLeft = androidx.compose.ui.geometry.Offset(x, y),
-                size = androidx.compose.ui.geometry.Size(size.width * .1f, size.height * .16f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * .05f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke * .7f))
+        centers.forEach { (cx, cy) ->
+            drawCircle(
+                color = color,
+                radius = unit * .078f,
+                center = androidx.compose.ui.geometry.Offset(size.width * cx, size.height * cy),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke * 1.4f)
+            )
         }
-        val badgeCenter = androidx.compose.ui.geometry.Offset(size.width * .8f, size.height * .8f)
-        drawCircle(color, radius = size.width * .18f, center = badgeCenter)
-        drawLine(Color.White, androidx.compose.ui.geometry.Offset(badgeCenter.x - size.width * .08f, badgeCenter.y),
-            androidx.compose.ui.geometry.Offset(badgeCenter.x + size.width * .08f, badgeCenter.y), strokeWidth = stroke)
-        drawLine(Color.White, androidx.compose.ui.geometry.Offset(badgeCenter.x, badgeCenter.y - size.width * .08f),
-            androidx.compose.ui.geometry.Offset(badgeCenter.x, badgeCenter.y + size.width * .08f), strokeWidth = stroke)
     }
 }
 
