@@ -41,6 +41,14 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("cellarTab = 1", screen)
         self.assertIn("updateRackAssignments", screen)
 
+    def test_cellar_swipe_changes_between_bottles_and_racks_without_interrupting_rack_detail(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        self.assertIn("detectHorizontalDragGestures(", screen)
+        self.assertIn("horizontalDrag <= -swipeThresholdPx && cellarTab == 0 -> cellarTab = 1", screen)
+        self.assertIn("horizontalDrag >= swipeThresholdPx && cellarTab == 1 -> cellarTab = 0", screen)
+        self.assertIn("selectedRack == null && assignmentBottleId == null", screen)
+        self.assertIn("change.consume()", screen)
+
     def test_automatic_new_additions_does_not_disable_other_rack_assignments(self):
         source = (APP / "ui/screens/CellarRackViews.kt").read_text()
         self.assertNotIn("enabled = !automaticNewAddition", source)

@@ -3,6 +3,7 @@ package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
@@ -13,6 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.consume
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.AnalyticsCard
@@ -295,6 +299,7 @@ fun CellarScreen(
             filterState.sortField != CellarSortField.DATE_ADDED || filterState.sortAscending ||
             filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
     val displayedBottleCount = remember(filteredInventory) { filteredInventory.sumOf { it.bottle.quantity } }
+    val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
 
     val formattedDatesMap = remember(filteredInventory, dateFormat, parseFormat) {
         filteredInventory.associate { item ->
@@ -315,7 +320,25 @@ fun CellarScreen(
             Tab(selected = cellarTab == 0, onClick = { cellarTab = 0; selectedRack = null }, text = { Text("Bottles") })
             Tab(selected = cellarTab == 1, onClick = { cellarTab = 1; selectedRack = null }, text = { Text("Racks") })
         }
-        Box(modifier = Modifier.weight(1f)) {
+        Box(
+            modifier = Modifier.weight(1f).pointerInput(cellarTab, selectedRack, assignmentBottleId, swipeThresholdPx) {
+                if (selectedRack == null && assignmentBottleId == null) {
+                    var horizontalDrag = 0f
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            when {
+                                horizontalDrag <= -swipeThresholdPx && cellarTab == 0 -> cellarTab = 1
+                                horizontalDrag >= swipeThresholdPx && cellarTab == 1 -> cellarTab = 0
+                            }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            horizontalDrag += dragAmount
+                            change.consume()
+                        }
+                    )
+                }
+            }
+        ) {
             if (cellarTab == 0) {
         LazyColumn(
             state = cellarListState,
