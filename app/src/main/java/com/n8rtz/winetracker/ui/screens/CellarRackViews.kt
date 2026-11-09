@@ -91,14 +91,13 @@ internal fun RackQuickAddButton(
     Box(
         modifier = Modifier
             .size(width = 44.dp, height = 40.dp)
-            // The "+" (11.2.dp) + 1.dp gap pushes the 20.dp rack glyph's
-            // centre 6.1.dp right of this button's centre. Shifting the
-            // button left by that amount centres the rack icon over the
-            // expand caret in the WineCard trailing column below it (both
-            // are centred in that column), while the extra upward shift
-            // lifts it away from the rating number now sitting between the
-            // button and the caret.
-            .offset(x = (-6.1).dp, y = (-8).dp)
+            // The "+" (14.dp) + 1.dp gap pushes the 25.dp rack glyph's centre
+            // 7.5.dp right of this button's centre. Shifting the button left
+            // by that amount centres the rack icon over the expand caret in
+            // the WineCard trailing column below it (both are centred in
+            // that column), while the upward shift lifts it away from the
+            // rating number now sitting between the button and the caret.
+            .offset(x = (-7.5).dp, y = (-8).dp)
             .semantics {
                 contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
             }
@@ -109,9 +108,9 @@ internal fun RackQuickAddButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(1.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(11.2.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
             RackGlyph(
-                modifier = Modifier.size(width = 20.dp, height = 21.6.dp),
+                modifier = Modifier.size(width = 25.dp, height = 27.dp),
                 color = MaterialTheme.colorScheme.primary,
                 contentScale = ContentScale.FillBounds
             )
