@@ -58,7 +58,7 @@ internal fun RackAssignmentControl(
                     if (currentRacks.isEmpty()) "New additions · add rack" else "New additions · +${currentRacks.size} racks"
                 } else assignedLabel ?: "Add to rack")
             },
-            trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
+            trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surface) }
         )
     }
 }
@@ -74,12 +74,12 @@ internal fun RackQuickAddButton(
             contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
         }
     ) {
-        RackGlyph(modifier = Modifier.size(30.dp), color = MaterialTheme.colorScheme.primary)
+        RackGlyph(modifier = Modifier.size(30.dp), color = MaterialTheme.colorScheme.primary, backgroundColor = MaterialTheme.colorScheme.surface)
     }
 }
 
 @Composable
-private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
+private fun RackGlyph(modifier: Modifier = Modifier, color: Color, backgroundColor: Color) {
     androidx.compose.foundation.Canvas(modifier) {
         val unit = size.minDimension
         val stroke = unit * .045f
@@ -100,26 +100,45 @@ private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
             .17f to .51f, .50f to .51f, .83f to .51f,
             .34f to .68f, .67f to .68f
         )
-        centers.forEach { (cx, cy) ->
-            val x = size.width * cx
-            val y = size.height * cy
-            val dx = size.width * .17f
-            val dy = size.height * .17f
-            val topPoint = androidx.compose.ui.geometry.Offset(x, y - dy)
-            val rightPoint = androidx.compose.ui.geometry.Offset(x + dx, y)
-            val bottomPoint = androidx.compose.ui.geometry.Offset(x, y + dy)
-            val leftPoint = androidx.compose.ui.geometry.Offset(x - dx, y)
-            drawLine(color, topPoint, rightPoint, strokeWidth = stroke)
-            drawLine(color, rightPoint, bottomPoint, strokeWidth = stroke)
-            drawLine(color, bottomPoint, leftPoint, strokeWidth = stroke)
-            drawLine(color, leftPoint, topPoint, strokeWidth = stroke)
+        fun inBounds(point: androidx.compose.ui.geometry.Offset) =
+            point.x in 0f..1f && point.y in 0f..1f
+        fun point(x: Float, y: Float) = androidx.compose.ui.geometry.Offset(
+            left + x * (right - left), top + y * (bottom - top)
+        )
+        // Continuous diagonal runs form one full diamond lattice across the frame, including
+        // the triangular end cells; drawing separate diamonds left an unwanted empty bottom band.
+        for (index in 0..6) {
+            val sum = index / 3f
+            val slash = listOf(
+                androidx.compose.ui.geometry.Offset(0f, sum),
+                androidx.compose.ui.geometry.Offset(1f, sum - 1f),
+                androidx.compose.ui.geometry.Offset(sum, 0f),
+                androidx.compose.ui.geometry.Offset(sum - 1f, 1f)
+            ).filter(::inBounds).distinct()
+            if (slash.size >= 2) drawLine(color, point(slash[0].x, slash[0].y), point(slash[1].x, slash[1].y), strokeWidth = stroke)
+
+            val difference = index / 3f - 1f
+            val backslash = listOf(
+                androidx.compose.ui.geometry.Offset(0f, difference),
+                androidx.compose.ui.geometry.Offset(1f, 1f + difference),
+                androidx.compose.ui.geometry.Offset(-difference, 0f),
+                androidx.compose.ui.geometry.Offset(1f - difference, 1f)
+            ).filter(::inBounds).distinct()
+            if (backslash.size >= 2) drawLine(color, point(backslash[0].x, backslash[0].y), point(backslash[1].x, backslash[1].y), strokeWidth = stroke)
         }
         centers.forEach { (cx, cy) ->
+            val center = androidx.compose.ui.geometry.Offset(
+                left + cx * (right - left), top + cy * (bottom - top)
+            )
+            val radius = unit * .058f
+            val ringStroke = unit * .02f
+            // Clear the crossing lattice from the opening so each wine slot reads as a hole.
+            drawCircle(backgroundColor, radius = radius + ringStroke / 2f, center = center)
             drawCircle(
                 color = color,
-                radius = unit * .058f,
-                center = androidx.compose.ui.geometry.Offset(size.width * cx, size.height * cy),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = unit * .02f)
+                radius = radius,
+                center = center,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = ringStroke)
             )
         }
     }
