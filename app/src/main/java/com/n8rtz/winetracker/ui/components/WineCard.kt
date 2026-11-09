@@ -120,16 +120,22 @@ fun WineCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         trailingAction?.invoke()
-                        if (!rating.isNullOrBlank()) {
+                        run {
                             // Bare number (no star) in a bordered box centred
                             // between the add-to-rack button above and the
                             // expand caret below. The box is filled with the
                             // colour assigned to the rating (see
                             // overallScoreBand); for a rating range it is an
                             // ombre from the lower bound's colour (left) to
-                            // the upper bound's colour (right).
-                            val ratingValues = rating.split("-")
-                                .mapNotNull { it.trim().toIntOrNull() }
+                            // the upper bound's colour (right). Wines with
+                            // no rating show "NR" on a plain grey fill.
+                            val rated = !rating.isNullOrBlank()
+                            val ratingText = rating?.takeIf { it.isNotBlank() } ?: "NR"
+                            val ratingValues = if (rated) {
+                                ratingText.split("-").mapNotNull { it.trim().toIntOrNull() }
+                            } else {
+                                emptyList()
+                            }
                             val ratingShape = RoundedCornerShape(6.dp)
                             Box(
                                 modifier = Modifier
@@ -147,17 +153,19 @@ fun WineCard(
                                             )
                                         } else if (ratingValues.size == 1) {
                                             Modifier.background(overallScoreBand(ratingValues.first()).color)
+                                        } else if (!rated) {
+                                            Modifier.background(Color(0xFF9E9E9E))
                                         } else {
                                             Modifier.background(MaterialTheme.colorScheme.primary)
                                         }
                                     )
                                     .border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
-                                    .semantics { contentDescription = "Rating $rating" },
+                                    .semantics { contentDescription = if (rated) "Rating $ratingText" else "Not rated" },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = rating,
+                                    text = ratingText,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,

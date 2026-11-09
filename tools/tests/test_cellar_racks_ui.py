@@ -152,10 +152,10 @@ class CellarRacksUiTests(unittest.TestCase):
         # and the caret is nudged down to open that space up.
         self.assertNotIn("★", card)
         self.assertIn("val compactMetadata = metadata", card)
-        rating_block = card.index("if (!rating.isNullOrBlank())")
+        rating_block = card.index("val ratingText =")
         self.assertLess(card.index("trailingAction?.invoke()"), rating_block)
         self.assertLess(rating_block, card.index("Icons.Default.ExpandLess"))
-        self.assertIn("text = rating,", card)
+        self.assertIn("text = ratingText,", card)
         self.assertIn("Modifier.size(48.dp).offset(y = 4.dp)", card)
         # The whole rack-button / rating / caret stack is shifted down, the
         # rating text is larger, and its bordered box is filled with the
@@ -169,6 +169,10 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("overallScoreBand(ratingValues.last()).color", card)
         sensory = (APP / "ui/components/SensoryEvaluationFields.kt").read_text()
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
+        # Unrated wines show "NR" on a plain grey fill instead of no box.
+        self.assertIn('val ratingText = rating?.takeIf { it.isNotBlank() } ?: "NR"', card)
+        self.assertIn("Modifier.background(Color(0xFF9E9E9E))", card)
+        self.assertIn('contentDescription = if (rated) "Rating $ratingText" else "Not rated"', card)
         self.assertIn("onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }", cellar)
 
 
