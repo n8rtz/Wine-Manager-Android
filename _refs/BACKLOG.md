@@ -61,7 +61,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 ## 2. Open wishes — in priority order
 
-*Rewritten 2026-10-15 against the current architecture (schema v21, `WineCard` shared by Cellar/Rankings/Notes, in-memory filter states, still-photo scanner, aroma wheel, Open Food Facts importer). Several entries originally described an app that no longer exists; the original lists (`wishes.md`, `wishes-v2.md`, `PLAN.md`) remain in git history at `d4ba796`, and where the old wording still helps it is kept in a collapsed “Original specification” block.*
+*Rewritten 2026-10-15 against the current architecture (schema v22, `WineCard` shared by Cellar/Rankings/Notes, in-memory filter states, still-photo scanner, aroma wheel, Open Food Facts importer). Several entries originally described an app that no longer exists; the original lists (`wishes.md`, `wishes-v2.md`, `PLAN.md`) remain in git history at `d4ba796`, and where the old wording still helps it is kept in a collapsed “Original specification” block.*
 *How the order is used, how complexity is defined, and the release plan: [`PIPELINE.md`](PIPELINE.md).*
 
 **Complexity:** **S** = one component/screen, no schema change · **M** = several files across UI + ViewModel, new pure-Kotlin logic with JVM tests, no schema change · **L** = Room migration or a new subsystem; needs a brief · **XL** = multi-release program with external content/licensing.

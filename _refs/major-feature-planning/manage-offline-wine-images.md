@@ -34,7 +34,7 @@ The first management pass is implemented in the source: Profile has a scrollable
 - After the database reference is cleared, delete the old file only if no Room row still references that path. Serialize this mutation with approved-image saving (or otherwise guard the same-path race); the importer names files by definition and hash, so a replacement may reuse the same path.
 - If the Room update fails, leave the file untouched. If unlinking succeeds but filesystem deletion fails, keep the row safely unreferenced, report that space may not be freed immediately, and let orphan cleanup retry. Startup orphan cleanup remains the recovery path after interruption.
 - Recompute `usedBytes` from referenced local assets after removal. No LRU, age-based, budget-based, or background deletion is permitted.
-- **Room schema/migration:** this management feature alone does not need a new schema version because `WineImageAsset.relativePath` is already nullable; removal uses `relativePath = null` to represent “provenance retained, no offline copy.” The importer already requires the database upgrade from v20 to v21 (`MIGRATION_20_21`) to be registered. Keep that migration and add upgrade/migration tests for it; do not add v21→v22 unless the data model actually changes. If a future implementation adds persisted management fields/tables, increment the Room version, add/register the next migration, and test the full supported upgrade path.
+- **Room schema/migration:** this management feature alone does not need another schema version because `WineImageAsset.relativePath` is already nullable; removal uses `relativePath = null` to represent “provenance retained, no offline copy.” The database is now at v22: keep both the v20→v21 image-asset migration and v21→v22 color migration registered. Any future persisted management fields/tables must increment the Room version again, add/register the next migration, and test the full supported upgrade path.
 - Existing backup behavior continues to export metadata only, and Android backup rules continue excluding image bytes.
 
 ## Implementation steps
@@ -59,10 +59,10 @@ The first management pass is implemented in the source: Profile has a scrollable
 ### Migration and upgrade compatibility
 
 - Open a database created with the pre-importer v20 schema using the registered `MIGRATION_20_21`. Verify Room creates `wine_image_assets`, validates its primary/foreign keys, and preserves existing definitions, bottles, notes, ratings, and consumption events.
-- Confirm every supported older-version migration chain still reaches v21 and that `MIGRATION_20_21` remains registered in the database builder.
-- Test an upgraded v21 database containing an approved image, then remove it. Since this feature changes no schema, the Room version remains 21; the asset row should retain provenance with a null path and the local file should be deleted safely.
+- Confirm every supported older-version migration chain still reaches v22 and that `MIGRATION_20_21` and `MIGRATION_21_22` remain registered in the database builder.
+- Test an upgraded v22 database containing an approved image, then remove it. Since this feature changes no further schema, the Room version remains 22; the asset row should retain provenance with a null path and the local file should be deleted safely.
 - Test Android backup/device restore where Room metadata survives but `filesDir/wine-images/` is excluded. Startup reconciliation must null stale paths, preserve wine/history data, and expose the asset to reviewed re-import.
-- If implementation adds any persisted field/table beyond this plan, stop and add/register the next migration (v21→v22) plus migration tests before merging; do not rely on destructive migration.
+- If implementation adds any persisted field/table beyond this plan, stop and add/register the next migration (v22→v23) plus migration tests before merging; do not rely on destructive migration.
 
 ### UI/manual checks
 

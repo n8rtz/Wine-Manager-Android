@@ -41,6 +41,9 @@ data class SensoryData(
     val overallScore: Int = 75,
     /** Legacy field kept for reading old backups; fault selection now lives in AromaTaxonomy.aromas. */
     val flaws: List<String> = emptyList(),
+    val colorHsv: HsvColor? = null,
+    val entryTightOpen: Float? = 0.5f,
+    val aromaObservations: List<AromaObservation> = emptyList(),
     val aromas: List<String> = emptyList()
 )
 
@@ -50,6 +53,14 @@ class Converters {
 
     @TypeConverter
     fun toStatus(value: String): BottleStatus = BottleStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromHsvColor(value: HsvColor?): String? = value?.let { Gson().toJson(it) }
+
+    @TypeConverter
+    fun toHsvColor(value: String?): HsvColor? = value?.takeIf { it.isNotBlank() }?.let { json ->
+        runCatching { Gson().fromJson(json, HsvColor::class.java) }.getOrNull()
+    }
 
     @TypeConverter
     fun fromSensoryData(value: SensoryData?): String? = value?.let { Gson().toJson(it) }
@@ -64,6 +75,8 @@ class Converters {
                 // which would leave the non-null lists null at runtime.
                 parsed.copy(
                     flaws = parsed.flaws.orEmpty(),
+                    entryTightOpen = parsed.entryTightOpen ?: 0.5f,
+                    aromaObservations = parsed.aromaObservations.orEmpty(),
                     aromas = parsed.aromas.orEmpty()
                 )
             }.getOrElse {
@@ -94,6 +107,9 @@ class Converters {
                         quality = getIntFromNumber("quality", 2),
                         overallScore = obj.optInt("overallScore", 75),
                         flaws = getStringList("flaws"),
+                        colorHsv = null,
+                        entryTightOpen = 0.5f,
+                        aromaObservations = emptyList(),
                         aromas = getStringList("aromas")
                     )
                 }.getOrNull()
@@ -117,7 +133,8 @@ data class WineDefinition(
     val subregion: String? = null,
     val imageUrl: String? = null,
     val drinkingWindowStart: Int? = null,
-    val drinkingWindowEnd: Int? = null
+    val drinkingWindowEnd: Int? = null,
+    val defaultColorHsv: HsvColor? = null
 )
 
 /** Provenance for the one approved, offline image associated with a wine definition. */
@@ -265,7 +282,7 @@ data class ConsumptionEvent(
 
 @Database(
     entities = [WineDefinition::class, WineImageAsset::class, WineBottle::class, TastingNote::class, Rating::class, ConsumptionEvent::class],
-    version = 21,
+    version = 22,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -585,6 +602,12 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
                 FOREIGN KEY(`definitionId`) REFERENCES `wine_definitions`(`definitionId`) ON UPDATE NO ACTION ON DELETE CASCADE
             )
         """.trimIndent())
+    }
+}
+
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE wine_definitions ADD COLUMN defaultColorHsv TEXT")
     }
 }
 
