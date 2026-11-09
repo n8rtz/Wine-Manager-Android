@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -74,11 +75,15 @@ internal fun RackQuickAddButton(
     automaticNewAddition: Boolean,
     onOpenRackSelection: () -> Unit
 ) {
-    IconButton(
-        onClick = onOpenRackSelection,
-        modifier = Modifier.size(40.dp).semantics {
-            contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
-        }
+    Box(
+        modifier = Modifier
+            .size(width = 44.dp, height = 40.dp)
+            .semantics {
+                contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
+                role = Role.Button
+            }
+            .clickable(onClick = onOpenRackSelection),
+        contentAlignment = Alignment.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

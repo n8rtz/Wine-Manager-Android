@@ -24,6 +24,9 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("Arrangement.spacedBy(1.dp)", source)
         self.assertIn("Icons.Default.Add, contentDescription = null", source)
         self.assertIn("contentScale = ContentScale.FillBounds", source)
+        self.assertIn(".size(width = 44.dp, height = 40.dp)", source)
+        self.assertIn(".clickable(onClick = onOpenRackSelection)", source)
+        self.assertIn("role = Role.Button", source)
         asset = ROOT / "app/src/main/res/drawable-nodpi/wine_rack_lattice.png"
         self.assertTrue(asset.exists())
         data = asset.read_bytes()
