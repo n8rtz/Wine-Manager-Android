@@ -334,14 +334,17 @@ fun MainAppScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
+    var isMenuExpanded by remember { mutableStateOf(false) }
     var menuHistory by remember { mutableStateOf(listOf("cellar")) }
     fun navigateToMenu(route: String) {
         if (menuHistory.lastOrNull() != route) menuHistory = menuHistory + route
         navigateToTab(navController, route)
     }
     val hasPreviousMenu = menuHistory.size > 1
-    BackHandler(enabled = currentRoute != null && (currentRoute !in TOP_LEVEL_MENU_ROUTES || hasPreviousMenu)) {
-        if (currentRoute != null && currentRoute in TOP_LEVEL_MENU_ROUTES) {
+    BackHandler(enabled = isMenuExpanded || currentRoute != null && (currentRoute !in TOP_LEVEL_MENU_ROUTES || hasPreviousMenu)) {
+        if (isMenuExpanded) {
+            isMenuExpanded = false
+        } else if (currentRoute != null && currentRoute in TOP_LEVEL_MENU_ROUTES) {
             if (hasPreviousMenu) {
                 val target = menuHistory[menuHistory.lastIndex - 1]
                 menuHistory = menuHistory.dropLast(1)
@@ -371,7 +374,6 @@ fun MainAppScaffold(
         }
     }
     val backupState by backupViewModel.state.collectAsState()
-    var isMenuExpanded by remember { mutableStateOf(false) }
     // Close an open Add submenu as soon as the user leaves Cellar or Notes.
     LaunchedEffect(currentRoute) {
         if (!showAddMenu) isMenuExpanded = false
