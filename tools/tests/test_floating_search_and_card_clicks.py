@@ -167,7 +167,8 @@ class CardClickTests(unittest.TestCase):
         self.assertIn("group.maxByOrNull { it.note.dateTasted }", source)
         self.assertIn("ScrollableTabRow(", source)
         self.assertIn("selectedNote.note.noteId", source)
-        self.assertIn("AromaChips(selectedNote.note.sensoryData?.aromas.orEmpty())", source)
+        self.assertIn("PhaseAromaCloud(", source)
+        self.assertIn("AromaChips(sensory?.aromas.orEmpty())", source)
         self.assertNotIn(".clickable { onNoteClick(item.note.noteId) }", source)
 
     def test_rankings_body_stays_a_no_op(self):

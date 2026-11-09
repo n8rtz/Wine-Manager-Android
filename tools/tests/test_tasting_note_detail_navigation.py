@@ -54,6 +54,19 @@ class TastingNoteDetailNavigationTests(unittest.TestCase):
         self.assertNotIn("Save Tasting Note", detail)
         self.assertNotIn("Delete note", detail)
 
+    def test_notes_screen_resizes_structured_aromas_and_persists_intensity(self):
+        notes = (APP / "ui/screens/TastingNotesScreen.kt").read_text()
+        cloud = (APP / "ui/components/PhaseAromaCloud.kt").read_text()
+        view_model = (APP / "viewmodels/TastingNoteViewModel.kt").read_text()
+        self.assertIn("PhaseAromaCloud(", notes)
+        self.assertIn("allowIntensityAdjustment = true", notes)
+        self.assertIn("tastingNoteViewModel.updateAromaIntensity(", notes)
+        self.assertIn("AromaChips(sensory?.aromas.orEmpty())", notes)
+        self.assertIn("allowIntensityAdjustment: Boolean = !readOnly", cloud)
+        self.assertIn("pinch to resize", cloud)
+        self.assertIn("aromaIntensitySaveMutex.withLock", view_model)
+        self.assertIn("setAromaIntensity(currentSensory, descriptorId, phase, intensity)", view_model)
+
     def test_editor_does_not_duplicate_faults_already_available_in_the_aroma_wheel(self):
         editor = (APP / "ui/screens/TastingNoteEditorScreen.kt").read_text()
         self.assertNotIn("CommonFaultsFields(", editor)
@@ -71,7 +84,8 @@ class TastingNoteDetailNavigationTests(unittest.TestCase):
         self.assertIn("enabled: Boolean = true", sensory)
         self.assertIn("enabled = enabled", sensory)
         self.assertIn("readOnly: Boolean = false", cloud)
-        self.assertIn("if (readOnly) {", cloud)
+        self.assertIn("allowIntensityAdjustment: Boolean = !readOnly", cloud)
+        self.assertIn("if (!allowIntensityAdjustment) {", cloud)
         self.assertIn("if (!readOnly) {", cloud)
 
 

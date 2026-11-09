@@ -47,6 +47,7 @@ fun PhaseAromaCloud(
     onIntensityChange: (String, TastingPhase, Float?) -> Unit,
     onRemove: (String, TastingPhase) -> Unit,
     readOnly: Boolean = false,
+    allowIntensityAdjustment: Boolean = !readOnly,
     modifier: Modifier = Modifier
 ) {
     val sortedObservations = sortAromaObservationsByIntensity(observations)
@@ -63,7 +64,7 @@ fun PhaseAromaCloud(
                 val info = AromaTaxonomy.describe(observation.descriptorId)
                 val currentIntensity = rememberUpdatedState(observation.intensity)
                 val fontSize = aromaFontSize(observation.intensity)
-                val zoomModifier = if (readOnly) {
+                val zoomModifier = if (!allowIntensityAdjustment) {
                     Modifier
                 } else {
                     Modifier.pointerInput(observation.descriptorId, phase) {
@@ -86,7 +87,7 @@ fun PhaseAromaCloud(
                     modifier = Modifier
                         .then(zoomModifier)
                         .semantics {
-                            contentDescription = if (readOnly) {
+                            contentDescription = if (!allowIntensityAdjustment) {
                                 info.label
                             } else {
                                 "${info.label}, pinch to resize"

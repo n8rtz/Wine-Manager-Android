@@ -31,6 +31,7 @@ import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.AromaChips
+import com.n8rtz.winetracker.ui.components.PhaseAromaCloud
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -345,7 +346,37 @@ fun CompactNoteItem(
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (selectedNote.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                         )
-                        AromaChips(selectedNote.note.sensoryData?.aromas.orEmpty())
+                        val sensory = selectedNote.note.sensoryData
+                        val aromaObservations = sensory?.aromaObservations.orEmpty()
+                        if (aromaObservations.isEmpty()) {
+                            // Legacy flat aromas have no phase/intensity data to resize; retain their chips as-is.
+                            AromaChips(sensory?.aromas.orEmpty())
+                        } else {
+                            TastingPhase.values().forEach { phase ->
+                                val phaseObservations = aromaObservations.filter { it.phase == phase }
+                                if (phaseObservations.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                            phase.label,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        PhaseAromaCloud(
+                                            phase = phase,
+                                            observations = phaseObservations,
+                                            onIntensityChange = { descriptorId, updatedPhase, intensity ->
+                                                tastingNoteViewModel.updateAromaIntensity(
+                                                    selectedNote.note.noteId, descriptorId, updatedPhase, intensity
+                                                )
+                                            },
+                                            onRemove = { _, _ -> },
+                                            readOnly = true,
+                                            allowIntensityAdjustment = true
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         selectedNote.note.recommendedBy?.takeIf { it.isNotBlank() }?.let {
                             Text("Recommended by $it", style = MaterialTheme.typography.bodySmall)
                         }
