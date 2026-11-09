@@ -101,9 +101,11 @@ internal fun overallScoreBand(score: Int): OverallScoreBand = when {
  * box. Most rated wines land between 80 and 95, so that stretch of the
  * scale gets the most stops: it runs Yellow-green (80) through clear green
  * (85 -- anything 85+ is decent, so Yellow, which reads as mediocre, is
- * gone by then), emerald (88-90) and teal-green (93) to deep teal (95+).
- * Below 80 the scale runs back through Yellow and amber to orange-red and
- * deep red, so weaker wines are just as easy to tell apart.
+ * gone by then) and emerald (88-90) to teal-green (93). At 95 the scale
+ * steps out of the greens entirely into violet/lavender, reserving that
+ * colour family for exceptional wines. Below 80 the scale runs back
+ * through Yellow and amber to orange-red and deep red, so weaker wines
+ * are just as easy to tell apart.
  */
 private val ratingColorStops: List<Pair<Int, Color>> = listOf(
     50 to Color(0xFFB03A3A),
@@ -116,8 +118,9 @@ private val ratingColorStops: List<Pair<Int, Color>> = listOf(
     88 to Color(0xFF3E9B5F),
     90 to Color(0xFF2E9E77),
     93 to Color(0xFF1F8A8A),
-    95 to Color(0xFF147A8C),
-    100 to Color(0xFF146B7A)
+    95 to Color(0xFF7B5EA7),
+    98 to Color(0xFF6D54A8),
+    100 to Color(0xFF5B3E99)
 )
 
 internal fun ratingColor(score: Int): Color {

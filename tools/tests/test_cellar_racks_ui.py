@@ -171,7 +171,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
         # The rating fill is a continuous scale with extra stops where most
         # wines land (80-95), and nothing 85+ is Yellow: 85 is already a
-        # clear green, running through emerald to deep teal at 95+.
+        # clear green, running through emerald/teal to violet at 95+.
         self.assertIn("internal fun ratingColor(score: Int): Color", sensory)
         for stop in (
             "80 to Color(0xFFA8B93C)",
@@ -180,7 +180,10 @@ class CellarRacksUiTests(unittest.TestCase):
             "88 to Color(0xFF3E9B5F)",
             "90 to Color(0xFF2E9E77)",
             "93 to Color(0xFF1F8A8A)",
-            "95 to Color(0xFF147A8C)",
+            # 95+ leaves the greens for violet/lavender (exceptional).
+            "95 to Color(0xFF7B5EA7)",
+            "98 to Color(0xFF6D54A8)",
+            "100 to Color(0xFF5B3E99)",
         ):
             self.assertIn(stop, sensory)
         # Unrated wines show "NR" on a plain grey fill instead of no box.
