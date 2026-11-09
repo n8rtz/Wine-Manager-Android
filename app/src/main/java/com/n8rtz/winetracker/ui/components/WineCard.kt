@@ -58,10 +58,10 @@ fun WineCard(
         resolveWineImageModel(context, imageLocalPath, imageUrl)
     }
     val stripeColor = wineTypeColor(type)
-    val compactMetadata = listOfNotNull(
-        metadata.takeIf { it.isNotBlank() },
-        rating?.let { "★ $it" }
-    ).joinToString("  ·  ")
+    // The rating no longer rides along in this left-hand metadata line: it is
+    // shown as a bare number in the trailing column, between the add-to-rack
+    // button and the expand caret (see below).
+    val compactMetadata = metadata
 
     Card(
         modifier = Modifier
@@ -110,12 +110,27 @@ fun WineCard(
                         )
                     }
                 }
-                if (trailingAction != null || details != null) {
+                if (trailingAction != null || details != null || !rating.isNullOrBlank()) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         trailingAction?.invoke()
+                        if (!rating.isNullOrBlank()) {
+                            // Bare number (no star), centred in the space
+                            // between the add-to-rack button above and the
+                            // expand caret below.
+                            Text(
+                                text = rating,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .padding(vertical = 1.dp)
+                                    .semantics { contentDescription = "Rating $rating" }
+                            )
+                        }
                         if (details != null) {
                             Box(
-                                modifier = Modifier.size(48.dp).clip(CircleShape).clickable {
+                                modifier = Modifier.size(48.dp).offset(y = 4.dp).clip(CircleShape).clickable {
                                     if (onExpandToggle != null) onExpandToggle.invoke() else internalExpanded = !internalExpanded
                                 },
                                 contentAlignment = Alignment.Center

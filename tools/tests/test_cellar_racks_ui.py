@@ -20,7 +20,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("private fun RackGlyph(", source)
         self.assertIn("painterResource(R.drawable.wine_rack_lattice)", source)
         self.assertIn("ColorFilter.tint(color)", source)
-        self.assertIn("modifier = Modifier.size(width = 25.dp, height = 27.dp)", source)
+        self.assertIn("modifier = Modifier.size(width = 20.dp, height = 21.6.dp)", source)
         self.assertIn("Arrangement.spacedBy(1.dp)", source)
         self.assertIn("Icons.Default.Add, contentDescription = null", source)
         self.assertIn("contentScale = ContentScale.FillBounds", source)
@@ -129,7 +129,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('val removeFromRack: (Set<Long>, String) -> Unit', screen)
         self.assertIn('new_additions_exclusions', screen)
         self.assertIn('excludedNewAdditions = excludedNewAdditionIds', screen)
-        self.assertIn('.offset(x = (-7.5).dp, y = (-4).dp)', views)
+        self.assertIn('.offset(x = (-6.1).dp, y = (-8).dp)', views)
 
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()
@@ -137,16 +137,26 @@ class CellarRacksUiTests(unittest.TestCase):
         views = (APP / "ui/screens/CellarRackViews.kt").read_text()
         self.assertIn("trailingAction: @Composable (() -> Unit)? = null", card)
         self.assertLess(card.index("trailingAction?.invoke()"), card.index("Icons.Default.ExpandLess"))
-        # The rack glyph (25.dp) sits right of the "+" (14.dp + 1.dp gap) in
-        # the button's centred row, so its centre is 7.5.dp right of the
+        # The rack glyph (20.dp) sits right of the "+" (11.2.dp + 1.dp gap)
+        # in the button's centred row, so its centre is 6.1.dp right of the
         # button centre; the button is shifted left by exactly that so the
         # rack icon is centred over the caret, which is centred in the same
         # WineCard trailing column (Column is CenterHorizontally).
         self.assertIn("Column(horizontalAlignment = Alignment.CenterHorizontally)", card)
-        self.assertIn('.offset(x = (-7.5).dp, y = (-4).dp)', views)
+        self.assertIn('.offset(x = (-6.1).dp, y = (-8).dp)', views)
         self.assertNotIn('.offset(x = (-4).dp, y = (-4).dp)', views)
         self.assertIn("trailingAction = {", cellar)
         self.assertIn("RackQuickAddButton(", cellar)
+        # The rating is a bare number (no star) in the trailing column,
+        # between the rack button (invoked above it) and the caret (below),
+        # and the caret is nudged down to open that space up.
+        self.assertNotIn("★", card)
+        self.assertIn("val compactMetadata = metadata", card)
+        rating_block = card.index("if (!rating.isNullOrBlank())")
+        self.assertLess(card.index("trailingAction?.invoke()"), rating_block)
+        self.assertLess(rating_block, card.index("Icons.Default.ExpandLess"))
+        self.assertIn("text = rating,", card)
+        self.assertIn("Modifier.size(48.dp).offset(y = 4.dp)", card)
         self.assertIn("onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }", cellar)
 
 
