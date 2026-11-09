@@ -76,15 +76,23 @@ fun CellarScreen(
     val rackPreferences = remember(context) {
         context.getSharedPreferences("cellar_racks_v1", Context.MODE_PRIVATE)
     }
-    var userRackNames by remember(rackPreferences) {
-        mutableStateOf(rackPreferences.getStringSet("user_racks", emptySet()).orEmpty().toList().sortedBy { it.lowercase(Locale.getDefault()) })
+    var rackNames by remember(rackPreferences) {
+        val saved = if (rackPreferences.contains("rack_names")) {
+            rackPreferences.getStringSet("rack_names", emptySet()).orEmpty().toList()
+        } else {
+            DEFAULT_CELLAR_RACK_NAMES + rackPreferences.getStringSet("user_racks", emptySet()).orEmpty()
+        }
+        mutableStateOf(saved.sortedBy { it.lowercase(Locale.getDefault()) })
     }
-    val availableRackNames = remember(userRackNames) { DEFAULT_CELLAR_RACK_NAMES + userRackNames }
+    val availableRackNames = rackNames
+    val persistRackNames: (List<String>) -> Unit = { names ->
+        rackNames = names.sortedBy { it.lowercase(Locale.getDefault()) }
+        rackPreferences.edit().putStringSet("rack_names", rackNames.toSet()).apply()
+    }
     val addUserRack: (String) -> Unit = { requestedName ->
         val name = requestedName.trim()
-        if (name.isNotEmpty() && '|' !in name && availableRackNames.none { it.equals(name, ignoreCase = true) }) {
-            userRackNames = (userRackNames + name).sortedBy { it.lowercase(Locale.getDefault()) }
-            rackPreferences.edit().putStringSet("user_racks", userRackNames.toSet()).apply()
+        if (name.isNotEmpty() && '|' !in name && rackNames.none { it.equals(name, ignoreCase = true) }) {
+            persistRackNames(rackNames + name)
         }
     }
     var excludedNewAdditionIds by remember(rackPreferences) {
@@ -103,6 +111,30 @@ fun CellarScreen(
         rackAssignments = updated
         rackPreferences.edit().putStringSet(
             "assignments", updated.flatMap { (id, names) -> names.map { name -> "$id|$name" } }.toSet()
+        ).apply()
+    }
+    val renameRack: (String, String) -> Unit = { oldName, requestedName ->
+        val name = requestedName.trim()
+        if (name.isNotEmpty() && '|' !in name && rackNames.none { it != oldName && it.equals(name, ignoreCase = true) }) {
+            persistRackNames(rackNames.map { if (it == oldName) name else it })
+            val updatedAssignments = rackAssignments.mapValues { (_, racks) ->
+                if (oldName in racks) racks - oldName + name else racks
+            }
+            rackAssignments = updatedAssignments
+            rackPreferences.edit().putStringSet(
+                "assignments", updatedAssignments.flatMap { (id, names) -> names.map { rack -> "$id|$rack" } }.toSet()
+            ).apply()
+        }
+    }
+    val deleteRacks: (Set<String>) -> Unit = { deletedNames ->
+        persistRackNames(rackNames.filterNot { it in deletedNames })
+        val updatedAssignments = rackAssignments.mapNotNull { (id, racks) ->
+            val remaining = racks - deletedNames
+            if (remaining.isEmpty()) null else id to remaining
+        }.toMap()
+        rackAssignments = updatedAssignments
+        rackPreferences.edit().putStringSet(
+            "assignments", updatedAssignments.flatMap { (id, names) -> names.map { rack -> "$id|$rack" } }.toSet()
         ).apply()
     }
     val removeFromRack: (Set<Long>, String) -> Unit = { bottleIds, rack ->
@@ -513,6 +545,8 @@ fun CellarScreen(
                     },
                     onOpenRackSelection = startRackAssignment,
                     onCreateRack = addUserRack,
+                    onRenameRack = renameRack,
+                    onDeleteRacks = deleteRacks,
                     onRemoveFromRack = removeFromRack,
                     onWineClick = onEditWine,
                     onTastingNotesClick = onTastingNotesClick

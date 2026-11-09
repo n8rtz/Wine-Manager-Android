@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.n8rtz.winetracker.ui.screens
 
 import androidx.activity.compose.BackHandler
@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -132,6 +134,8 @@ internal fun CellarRacks(
     onConfirmAssignment: () -> Unit,
     onOpenRackSelection: (Long) -> Unit,
     onCreateRack: (String) -> Unit,
+    onRenameRack: (String, String) -> Unit,
+    onDeleteRacks: (Set<String>) -> Unit,
     onRemoveFromRack: (Set<Long>, String) -> Unit,
     onWineClick: (Long) -> Unit,
     onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
@@ -140,9 +144,16 @@ internal fun CellarRacks(
     var showCreateRackDialog by remember { mutableStateOf(false) }
     var newRackName by remember { mutableStateOf("") }
     var selectedForRemoval by remember(selectedRack) { mutableStateOf<Set<Long>>(emptySet()) }
+    var selectedRackNamesForDeletion by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var showRackDeleteConfirmation by remember { mutableStateOf(false) }
+    var rackBeingEdited by remember { mutableStateOf<String?>(null) }
+    var editedRackName by remember { mutableStateOf("") }
+    val rackDeletionMode = selectedRackNamesForDeletion.isNotEmpty()
     val canRemoveFromRack = selectedRack != null
-    BackHandler(enabled = canRemoveFromRack && selectedForRemoval.isNotEmpty()) {
-        selectedForRemoval = emptySet()
+    BackHandler(enabled = (canRemoveFromRack && selectedForRemoval.isNotEmpty()) ||
+        (selectedRack == null && rackDeletionMode)) {
+        if (canRemoveFromRack) selectedForRemoval = emptySet()
+        else selectedRackNamesForDeletion = emptySet()
     }
     val newAdditions = remember(inventory, notesMap, excludedNewAdditions) {
         inventory.filter { bottle ->
@@ -192,11 +203,26 @@ internal fun CellarRacks(
                         "Daily drinkers" -> Color(0xFF647D5D)
                         else -> Color(0xFF77739A)
                     }
-                    val selectable = assignmentBottleId != null && rack != NEW_ADDITIONS_RACK
+                    val manageable = rack != NEW_ADDITIONS_RACK
+                    val selectable = assignmentBottleId != null && manageable
+                    val selectedForDeletion = rack in selectedRackNamesForDeletion
                     Card(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            if (selectable) onAssignmentRackToggle(rack) else if (assignmentBottleId == null) onRackSelected(rack)
-                        },
+                        modifier = Modifier.fillMaxWidth().combinedClickable(
+                            onClick = {
+                                when {
+                                    selectable -> onAssignmentRackToggle(rack)
+                                    assignmentBottleId != null -> Unit
+                                    rackDeletionMode && manageable -> {
+                                        selectedRackNamesForDeletion = if (selectedForDeletion) selectedRackNamesForDeletion - rack
+                                        else selectedRackNamesForDeletion + rack
+                                    }
+                                    else -> onRackSelected(rack)
+                                }
+                            },
+                            onLongClick = if (assignmentBottleId == null && manageable) {
+                                { selectedRackNamesForDeletion = selectedRackNamesForDeletion + rack }
+                            } else null
+                        ),
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -216,10 +242,10 @@ internal fun CellarRacks(
                                     )
                                     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
                                 }
-                                if (selectable) {
+                                if (selectable || (rackDeletionMode && manageable)) {
                                     Checkbox(
-                                        checked = rack in selectedAssignmentRacks,
-                                        onCheckedChange = { onAssignmentRackToggle(rack) },
+                                        checked = if (selectable) rack in selectedAssignmentRacks else selectedForDeletion,
+                                        onCheckedChange = if (selectable) ({ onAssignmentRackToggle(rack) }) else null,
                                         modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
                                     )
                                 }
@@ -238,16 +264,26 @@ internal fun CellarRacks(
                                         style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = accent)
                                 }
                             }
-                            Column(Modifier.padding(horizontal = 10.dp, vertical = 9.dp)) {
-                                Text(rack, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(rack, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                    if (manageable && assignmentBottleId == null && !rackDeletionMode) {
+                                        IconButton(onClick = {
+                                            rackBeingEdited = rack
+                                            editedRackName = rack
+                                        }, modifier = Modifier.size(36.dp)) {
+                                            Icon(Icons.Default.Edit, contentDescription = "Edit $rack name", modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
                                 Text("${rackItems.size} ${if (rackItems.size == 1) "wine" else "wines"}",
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
                 }
-                if (assignmentBottleId == null) {
+                if (assignmentBottleId == null && !rackDeletionMode) {
                     item(key = "add_rack_tile") {
                         Card(
                             modifier = Modifier.fillMaxWidth().clickable {
@@ -273,6 +309,16 @@ internal fun CellarRacks(
                                 }
                             }
                         }
+                    }
+                }
+            }
+            if (rackDeletionMode) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(onClick = { selectedRackNamesForDeletion = emptySet() }, modifier = Modifier.weight(1f)) {
+                        Text("Cancel")
+                    }
+                    Button(onClick = { showRackDeleteConfirmation = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (selectedRackNamesForDeletion.size == 1) "Delete rack" else "Delete ${selectedRackNamesForDeletion.size} racks")
                     }
                 }
             }
@@ -411,6 +457,57 @@ internal fun CellarRacks(
                 }
             }
         }
+    }
+    if (showRackDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showRackDeleteConfirmation = false },
+            title = { Text(if (selectedRackNamesForDeletion.size == 1) "Delete rack?" else "Delete racks?") },
+            text = {
+                Text("${selectedRackNamesForDeletion.joinToString(", ")} will be deleted. Wines will remain in your cellar, but their assignments to these racks will be removed.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteRacks(selectedRackNamesForDeletion)
+                    selectedRackNamesForDeletion = emptySet()
+                    showRackDeleteConfirmation = false
+                }) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { showRackDeleteConfirmation = false }) { Text("Cancel") } }
+        )
+    }
+    if (rackBeingEdited != null) {
+        val oldName = rackBeingEdited!!
+        val candidate = editedRackName.trim()
+        val duplicate = rackNames.any { it != oldName && it.equals(candidate, ignoreCase = true) }
+        AlertDialog(
+            onDismissRequest = { rackBeingEdited = null },
+            title = { Text("Edit rack name") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = editedRackName,
+                        onValueChange = { editedRackName = it },
+                        label = { Text("Rack name") },
+                        singleLine = true,
+                        isError = candidate.isNotEmpty() && (duplicate || '|' in candidate)
+                    )
+                    if (candidate.isNotEmpty() && duplicate) {
+                        Text("A rack with this name already exists.", color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = candidate.isNotEmpty() && !duplicate && '|' !in candidate,
+                    onClick = {
+                        onRenameRack(oldName, candidate)
+                        rackBeingEdited = null
+                    }
+                ) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { rackBeingEdited = null }) { Text("Cancel") } }
+        )
     }
     if (showCreateRackDialog) {
         val candidate = newRackName.trim()

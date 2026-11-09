@@ -56,8 +56,20 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertNotIn('Text("Create a custom rack"', views)
         self.assertIn('title = { Text("Create rack") }', views)
         self.assertIn('onCreateRack(candidate)', views)
-        self.assertIn('getStringSet("user_racks"', screen)
-        self.assertIn('putStringSet("user_racks", userRackNames.toSet())', screen)
+        self.assertIn('getStringSet("rack_names"', screen)
+        self.assertIn('putStringSet("rack_names", rackNames.toSet())', screen)
+
+    def test_rack_tiles_support_long_press_delete_and_pencil_rename(self):
+        views = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        self.assertIn("selectedRackNamesForDeletion = selectedRackNamesForDeletion + rack", views)
+        self.assertIn("Icons.Default.Edit", views)
+        self.assertIn('contentDescription = "Edit $rack name"', views)
+        self.assertIn('showRackDeleteConfirmation = true', views)
+        self.assertIn('title = { Text(if (selectedRackNamesForDeletion.size == 1) "Delete rack?" else "Delete racks?") }', views)
+        self.assertIn('onDeleteRacks(selectedRackNamesForDeletion)', views)
+        self.assertIn('val renameRack: (String, String) -> Unit', screen)
+        self.assertIn('val deleteRacks: (Set<String>) -> Unit', screen)
 
     def test_long_press_selects_wines_for_removal_from_the_open_rack(self):
         views = (APP / "ui/screens/CellarRackViews.kt").read_text()
