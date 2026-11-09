@@ -93,6 +93,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 9 | W-061 | Structured tasting notes — color picker, phase-aware aromas, aroma intensity, four sections | L (implemented; Android verification pending) | Fixed – awaiting device check | TBD (owner to rank) |
 | 10 | W-062 | Wine wishlist — wines to buy later, not yet owned | L (persistent list + UI; brief needed) | Open — placement and scope TBD | TBD (owner to rank) |
 | 11 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
+| 12 | W-065 | Wine-card UI cleanup: improve layout and rating prominence | M | Open — logged only; do not implement yet | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 *(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
@@ -355,6 +356,14 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Current state (verified in source 2026-11-07):** the production pipeline does not crop at all — it reads the full photo (decode is downsample + EXIF only; `LOCALIZE`/`WARP` exist only in the legacy `OfflineWineScanner` and the `PhoneCorpusRunner` benchmark paths). The photo kept on Add Wine therefore already shows exactly what the pipeline reads, so there is no display/pipeline mismatch to fix today.
 * **Constraints for the brief:** edge detection must be conservative — an uncertain crop falls back to the full photo (cutting the label is worse than showing background); must run on-device with no new paid provider; any pipeline-input change needs a before/after benchmark comparison (recognition behaviour change, cf. W-058).
 * **Revisit when:** the owner asks, or measurement shows cropping would help OCR accuracy.
+
+### 12. W-065 — Wine-card UI cleanup: improve layout and rating prominence *(logged 2026-11-09)*
+**Complexity:** M (shared card UI across Cellar, Notes and Rankings; no data/schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** Improve the overall layout of the shared wine cards and make their existing rating display more prominent.
+* **UI-Trigger / Location:** Shared `WineCard` in `ui/components/WineCard.kt`, used by Cellar, Tasting Notes and Rankings.
+* **Scope:** Revisit the card's visual hierarchy and spacing, and increase the at-a-glance prominence of the existing rating or rating range. Preserve current rating data and behavior.
+* **Design:** Not specified yet; work out the card layout with the owner before implementation.
+* **Owner instruction:** Record this cleanup item only. Do not change the wine-card layout or rating presentation until the owner asks to work on W-065.
 
 ---
 
