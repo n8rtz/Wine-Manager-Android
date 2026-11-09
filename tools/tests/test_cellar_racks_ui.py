@@ -20,7 +20,8 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("private fun RackGlyph(", source)
         self.assertIn("painterResource(R.drawable.wine_rack_lattice)", source)
         self.assertIn("ColorFilter.tint(color)", source)
-        self.assertIn("modifier = Modifier.size(width = 20.dp, height = 27.dp)", source)
+        self.assertIn("modifier = Modifier.size(width = 25.dp, height = 27.dp)", source)
+        self.assertIn("Arrangement.spacedBy(1.dp)", source)
         self.assertIn("Icons.Default.Add, contentDescription = null", source)
         self.assertIn("contentScale = ContentScale.FillBounds", source)
         asset = ROOT / "app/src/main/res/drawable-nodpi/wine_rack_lattice.png"

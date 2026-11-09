@@ -82,11 +82,11 @@ internal fun RackQuickAddButton(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+            horizontalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
             RackGlyph(
-                modifier = Modifier.size(width = 20.dp, height = 27.dp),
+                modifier = Modifier.size(width = 25.dp, height = 27.dp),
                 color = MaterialTheme.colorScheme.primary,
                 contentScale = ContentScale.FillBounds
             )
