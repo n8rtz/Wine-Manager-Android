@@ -17,7 +17,21 @@ import java.util.Locale
 
 // Exposes tasting-note, wine-vintage, and reviewer-setting state while delegating note
 // persistence to the shared repository provided by MainActivity.
+data class WineTastingNotesRequest(val definitionId: Long, val vintage: String, val requestId: Long)
+
 class TastingNoteViewModel(application: Application, private val repository: WineRepository) : AndroidViewModel(application) {
+
+    private val _wineNotesRequest = MutableStateFlow<WineTastingNotesRequest?>(null)
+    val wineNotesRequest: StateFlow<WineTastingNotesRequest?> = _wineNotesRequest.asStateFlow()
+    private var wineNotesRequestId = 0L
+
+    fun openWineTastingNotes(definitionId: Long, vintage: String) {
+        _wineNotesRequest.value = WineTastingNotesRequest(definitionId, displayVintage(vintage), ++wineNotesRequestId)
+    }
+
+    fun consumeWineTastingNotesRequest(requestId: Long) {
+        if (_wineNotesRequest.value?.requestId == requestId) _wineNotesRequest.value = null
+    }
 
     val tastingNotes = repository.tastingHistory
     val allDefinitions = repository.allDefinitions

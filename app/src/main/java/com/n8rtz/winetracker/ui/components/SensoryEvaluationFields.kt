@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -67,22 +65,6 @@ fun SensoryEvaluationFields(
     )
     traits.forEach { trait -> SensoryTraitSlider(trait) }
 
-    Spacer(Modifier.height(12.dp))
-    Text("Common faults", style = MaterialTheme.typography.titleSmall)
-    val flaws = listOf("Cork taint (TCA)", "Oxidation", "Volatile acidity", "Brettanomyces", "Reduction / sulfur", "Heat damage")
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        flaws.forEach { flaw ->
-            val selected = flaw in data.flaws
-            FilterChip(
-                selected = selected,
-                onClick = {
-                    val updated = if (selected) data.flaws - flaw else data.flaws + flaw
-                    onChange(data.copy(flaws = updated))
-                },
-                label = { Text(flaw) }
-            )
-        }
-    }
 }
 
 private data class OverallScoreBand(val label: String, val color: Color)

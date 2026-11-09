@@ -10,12 +10,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.CachePolicy
+import com.n8rtz.winetracker.image.resolveWineImageModel
+import com.n8rtz.winetracker.drinkingwindow.DrinkingWindowEstimator
+import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.AnalyticsCard
 import com.n8rtz.winetracker.ui.components.WineCard
+import com.n8rtz.winetracker.ui.components.AromaChips
 import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
@@ -32,13 +41,27 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
+fun CellarScreen(
+    viewModel: WineViewModel,
+    onWineClick: (Long) -> Unit,
+    onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
+) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
     val cellarLocationData by viewModel.cellarLocationData.collectAsState()
     val cellarResetKey by viewModel.cellarResetKey.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
+    var cellarTab by rememberSaveable { mutableIntStateOf(0) }
+    var selectedRack by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val rackPreferences = remember(context) { context.getSharedPreferences("cellar_racks_v1", android.content.Context.MODE_PRIVATE) }
+    var rackAssignments by remember(rackPreferences) {
+        mutableStateOf(rackPreferences.getStringSet("assignments", mutableSetOf()).orEmpty().mapNotNull { entry ->
+            val parts = entry.split('|', limit = 2)
+            if (parts.size == 2) parts[0].toLongOrNull()?.let { it to parts[1] } else null
+        }.toMap())
+    }
     val cellarListState = rememberLazyListState()
     val tastingHistory by viewModel.tastingHistory.collectAsState(initial = emptyList())
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -47,6 +70,18 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     LaunchedEffect(cellarResetKey) {
         searchQuery = ""
         showFilterSheet = false
+        cellarTab = 0
+        selectedRack = null
+    }
+
+    val updateRackAssignment: (Long, String?) -> Unit = { bottleId, rack ->
+        val updated = rackAssignments.toMutableMap().apply {
+            if (rack == null) remove(bottleId) else put(bottleId, rack)
+        }
+        rackAssignments = updated
+        rackPreferences.edit().putStringSet(
+            "assignments", updated.map { (id, name) -> "$id|$name" }.toSet()
+        ).apply()
     }
 
     val ratingsMap = remember(tastingHistory) {
@@ -169,6 +204,24 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        TabRow(selectedTabIndex = cellarTab) {
+            Tab(selected = cellarTab == 0, onClick = { cellarTab = 0; selectedRack = null }, text = { Text("Bottles") })
+            Tab(selected = cellarTab == 1, onClick = { cellarTab = 1; selectedRack = null }, text = { Text("Racks") })
+        }
+        if (cellarTab == 1) {
+            CellarRacks(
+                inventory = inventory,
+                ratingsMap = ratingsMap,
+                notesMap = notesMap,
+                assignments = rackAssignments,
+                selectedRack = selectedRack,
+                onRackSelected = { selectedRack = it },
+                onAssign = updateRackAssignment,
+                onWineClick = onWineClick,
+                onTastingNotesClick = onTastingNotesClick,
+                resetKey = cellarResetKey
+            )
+        } else {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -244,8 +297,26 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                     imageLocalPath = item.imageAsset?.relativePath,
                     rating = ratingStr,
                     expansionResetKey = cellarResetKey,
+                    drinkingWindow = run {
+                        val explicitStart = item.definition.drinkingWindowStart
+                        val explicitEnd = item.definition.drinkingWindowEnd
+                        if (explicitStart != null && explicitEnd != null) explicitStart to explicitEnd
+                        else DrinkingWindowEstimator.estimate(
+                            WineDescription(
+                                type = item.definition.type, country = item.definition.country,
+                                region = item.definition.region, subregion = item.definition.subregion,
+                                maker = item.definition.maker, name = item.definition.name,
+                                vintage = item.bottle.vintage
+                            )
+                        )?.let { it.startYear to it.endYear }
+                    },
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            RackAssignmentControl(
+                                currentRack = rackAssignments[item.bottle.bottleId],
+                                automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
+                                onAssign = { rack -> updateRackAssignment(item.bottle.bottleId, rack) }
+                            )
                             if (formattedAddedDate != null) {
                                 Text(
                                     text = "Added on: $formattedAddedDate",
@@ -254,32 +325,32 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                                 )
                             }
                             
-                            if (itemNotes.isNotEmpty()) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 4.dp),
-                                    thickness = 0.5.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                )
+                            TextButton(onClick = { onWineClick(item.bottle.bottleId) }, contentPadding = PaddingValues(0.dp)) {
+                                Text("Wine details")
+                            }
+                            val aromaNote = itemNotes.firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
+                            if (aromaNote != null) {
                                 Text(
-                                    text = "Tasting Notes",
+                                    text = "Aromas · ${dateFormat.format(Date(aromaNote.note.dateTasted))}",
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                itemNotes.forEach { noteWithDef ->
-                                    val noteDate = dateFormat.format(Date(noteWithDef.note.dateTasted))
-                                    Text(
-                                        text = "$noteDate: ${noteWithDef.note.notes ?: ""}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                AromaChips(aromaNote.note.sensoryData?.aromas.orEmpty(), maxVisible = 7)
+                            }
+                            if (itemNotes.isNotEmpty()) {
+                                OutlinedButton(
+                                    onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) },
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Tasting notes")
                                 }
                             }
                         }
                     },
-                    onClick = { onWineClick(item.bottle.bottleId) }
+                    onClick = { }
                 )
             }
             
@@ -293,9 +364,10 @@ fun CellarScreen(viewModel: WineViewModel, onWineClick: (Long) -> Unit) {
                 }
             }
         }
+        }
     }
 
-    if (showFilterSheet) {
+    if (showFilterSheet && cellarTab == 0) {
         FilterSheet(
             currentState = filterState,
             locationData = cellarLocationData,

@@ -417,9 +417,14 @@ fun MainAppScaffold(
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             composable("cellar") {
-                CellarScreen(viewModel) { bottleId ->
-                    navController.navigate("detail/$bottleId")
-                }
+                CellarScreen(
+                    viewModel = viewModel,
+                    onWineClick = { bottleId -> navController.navigate("detail/$bottleId") },
+                    onTastingNotesClick = { definitionId, vintage ->
+                        tastingNoteViewModel.openWineTastingNotes(definitionId, vintage)
+                        navigateToTab(navController, "notes")
+                    }
+                )
             }
             composable("notes") {
                 TastingNotesScreen(

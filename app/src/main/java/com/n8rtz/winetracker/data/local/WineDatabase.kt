@@ -39,6 +39,7 @@ data class SensoryData(
     val finish: Int = 2,
     val quality: Int = 2,
     val overallScore: Int = 75,
+    /** Legacy field kept for reading old backups; fault selection now lives in AromaTaxonomy.aromas. */
     val flaws: List<String> = emptyList(),
     val aromas: List<String> = emptyList()
 )

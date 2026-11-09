@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
+import com.n8rtz.winetracker.ui.components.AromaChips
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,6 +61,14 @@ fun TastingNotesScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
     var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    val wineNotesRequest by tastingNoteViewModel.wineNotesRequest.collectAsState()
+
+    LaunchedEffect(wineNotesRequest) {
+        if (wineNotesRequest != null) {
+            searchQuery = ""
+            tastingNoteViewModel.updateFilterState(TastingNotesFilterState())
+        }
+    }
 
     val filteredHistory = remember(history, searchQuery, filterState, prices) {
         history.filter { item ->
@@ -114,6 +123,22 @@ fun TastingNotesScreen(
     val groupedHistory = remember(filteredHistory) {
         filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .values.toList()
+    }
+
+    LaunchedEffect(wineNotesRequest, groupedHistory, searchQuery, filterState) {
+        val request = wineNotesRequest ?: return@LaunchedEffect
+        if (searchQuery.isNotBlank() || filterState != TastingNotesFilterState()) return@LaunchedEffect
+        val targetKey = request.definitionId to com.n8rtz.winetracker.data.local.displayVintage(request.vintage)
+        val targetIndex = groupedHistory.indexOfFirst { group ->
+            val note = group.first().note
+            note.definitionId == targetKey.first &&
+                com.n8rtz.winetracker.data.local.displayVintage(note.vintage) == targetKey.second
+        }
+        if (targetIndex >= 0) {
+            expandedGroupKey = targetKey
+            notesListState.scrollToItem(targetIndex)
+            tastingNoteViewModel.consumeWineTastingNotesRequest(request.requestId)
+        }
     }
 
     val listDateFormat = remember { java.text.SimpleDateFormat("M/d/yy", java.util.Locale.getDefault()) }
@@ -222,6 +247,7 @@ fun TastingNotesScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompactNoteItem(
     group: List<TastingNoteWithDefinition>,
@@ -251,35 +277,52 @@ fun CompactNoteItem(
         isExpanded = expanded,
         onClick = onExpandToggle,
         details = {
-            Column(modifier = Modifier.padding(top = 8.dp)) {
-                group.sortedByDescending { it.note.dateTasted }.forEach { item ->
-                    val dateStr = listDateFormat.format(java.util.Date(item.note.dateTasted))
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNoteClick(item.note.noteId) }
-                            .padding(vertical = 4.dp)
+            val orderedGroup = remember(group) { group.sortedByDescending { it.note.dateTasted } }
+            var selectedNoteId by remember(orderedGroup.first().note.noteId) {
+                mutableLongStateOf(orderedGroup.first().note.noteId)
+            }
+            val selectedIndex = orderedGroup.indexOfFirst { it.note.noteId == selectedNoteId }.coerceAtLeast(0)
+            val selectedNote = orderedGroup[selectedIndex]
+            Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (orderedGroup.size > 1) {
+                    ScrollableTabRow(
+                        selectedTabIndex = selectedIndex,
+                        edgePadding = 0.dp,
+                        divider = {}
                     ) {
-                        Text(
-                            text = "$dateStr - ${item.note.notes ?: "No notes written..."}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (item.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                        )
-                        if (!item.note.recommendedBy.isNullOrBlank()) {
-                            Text(
-                                "Recommended by ${item.note.recommendedBy}",
-                                style = MaterialTheme.typography.bodySmall
+                        orderedGroup.forEachIndexed { index, item ->
+                            Tab(
+                                selected = selectedIndex == index,
+                                onClick = { selectedNoteId = item.note.noteId },
+                                text = { Text(listDateFormat.format(Date(item.note.dateTasted))) }
                             )
                         }
-                        item.note.reviewerRating?.let { reviewerRating ->
-                            Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable { onNoteClick(selectedNote.note.noteId) },
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                ) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        val score = selectedNote.note.rating.takeIf { it > 0.0 }?.toInt()?.let { "$it points" } ?: "Unrated"
+                        Text(
+                            "${listDateFormat.format(Date(selectedNote.note.dateTasted))} · $score",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            selectedNote.note.notes?.takeIf { it.isNotBlank() } ?: "No written notes",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedNote.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                        )
+                        AromaChips(selectedNote.note.sensoryData?.aromas.orEmpty())
+                        selectedNote.note.recommendedBy?.takeIf { it.isNotBlank() }?.let {
+                            Text("Recommended by $it", style = MaterialTheme.typography.bodySmall)
                         }
-                        item.note.valueScore?.let { valueScore ->
-                            Text("Value: $valueScore/10", style = MaterialTheme.typography.bodySmall)
-                        }
-                        item.note.price?.let { notePrice ->
-                            Text("Price: $${"%.2f".format(notePrice)}", style = MaterialTheme.typography.bodySmall)
-                        }
+                        selectedNote.note.reviewerRating?.let { Text("Reviewer rating: $it", style = MaterialTheme.typography.bodySmall) }
+                        selectedNote.note.valueScore?.let { Text("Value: $it/10", style = MaterialTheme.typography.bodySmall) }
+                        selectedNote.note.price?.let { Text("Price: $${"%.2f".format(it)}", style = MaterialTheme.typography.bodySmall) }
                     }
                 }
             }
