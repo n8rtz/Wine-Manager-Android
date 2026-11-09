@@ -87,6 +87,9 @@ fun CellarScreen(
             rackPreferences.edit().putStringSet("user_racks", userRackNames.toSet()).apply()
         }
     }
+    var excludedNewAdditionIds by remember(rackPreferences) {
+        mutableStateOf(rackPreferences.getStringSet("new_additions_exclusions", emptySet()).orEmpty().mapNotNull { it.toLongOrNull() }.toSet())
+    }
     var rackAssignments by remember(rackPreferences) {
         mutableStateOf(rackPreferences.getStringSet("assignments", mutableSetOf()).orEmpty().mapNotNull { entry ->
             val parts = entry.split('|', limit = 2)
@@ -103,15 +106,22 @@ fun CellarScreen(
         ).apply()
     }
     val removeFromRack: (Set<Long>, String) -> Unit = { bottleIds, rack ->
-        val updated = rackAssignments.toMutableMap()
-        bottleIds.forEach { bottleId ->
-            val remaining = updated[bottleId].orEmpty() - rack
-            if (remaining.isEmpty()) updated.remove(bottleId) else updated[bottleId] = remaining
+        if (rack == NEW_ADDITIONS_RACK) {
+            excludedNewAdditionIds = excludedNewAdditionIds + bottleIds
+            rackPreferences.edit().putStringSet(
+                "new_additions_exclusions", excludedNewAdditionIds.map { it.toString() }.toSet()
+            ).apply()
+        } else {
+            val updated = rackAssignments.toMutableMap()
+            bottleIds.forEach { bottleId ->
+                val remaining = updated[bottleId].orEmpty() - rack
+                if (remaining.isEmpty()) updated.remove(bottleId) else updated[bottleId] = remaining
+            }
+            rackAssignments = updated
+            rackPreferences.edit().putStringSet(
+                "assignments", updated.flatMap { (id, names) -> names.map { name -> "$id|$name" } }.toSet()
+            ).apply()
         }
-        rackAssignments = updated
-        rackPreferences.edit().putStringSet(
-            "assignments", updated.flatMap { (id, names) -> names.map { name -> "$id|$name" } }.toSet()
-        ).apply()
     }
     val startRackAssignment: (Long) -> Unit = { bottleId ->
         assignmentBottleId = bottleId
@@ -482,6 +492,7 @@ fun CellarScreen(
                     ratingsMap = ratingsMap,
                     notesMap = notesMap,
                     assignments = rackAssignments,
+                    excludedNewAdditions = excludedNewAdditionIds,
                     userRackNames = availableRackNames,
                     selectedRack = selectedRack,
                     onRackSelected = { selectedRack = it },

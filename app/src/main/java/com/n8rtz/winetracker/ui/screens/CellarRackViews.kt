@@ -43,7 +43,7 @@ import com.n8rtz.winetracker.ui.components.AromaChips
 import java.io.File
 
 internal val DEFAULT_CELLAR_RACK_NAMES = listOf("Long-term aging", "Daily drinkers", "Special occasions")
-private const val NEW_ADDITIONS_RACK = "New additions"
+internal const val NEW_ADDITIONS_RACK = "New additions"
 
 @Composable
 internal fun RackAssignmentControl(
@@ -121,6 +121,7 @@ internal fun CellarRacks(
     ratingsMap: Map<Pair<Long, String>, String>,
     notesMap: Map<Pair<Long, String>, List<TastingNoteWithDefinition>>,
     assignments: Map<Long, Set<String>>,
+    excludedNewAdditions: Set<Long>,
     userRackNames: List<String>,
     selectedRack: String?,
     onRackSelected: (String?) -> Unit,
@@ -139,15 +140,16 @@ internal fun CellarRacks(
     var showCreateRackDialog by remember { mutableStateOf(false) }
     var newRackName by remember { mutableStateOf("") }
     var selectedForRemoval by remember(selectedRack) { mutableStateOf<Set<Long>>(emptySet()) }
-    val canRemoveFromRack = selectedRack != null && selectedRack != NEW_ADDITIONS_RACK
+    val canRemoveFromRack = selectedRack != null
     BackHandler(enabled = canRemoveFromRack && selectedForRemoval.isNotEmpty()) {
         selectedForRemoval = emptySet()
     }
-    val newAdditions = remember(inventory, notesMap) {
+    val newAdditions = remember(inventory, notesMap, excludedNewAdditions) {
         inventory.filter { bottle ->
             val vintage = com.n8rtz.winetracker.data.local.displayVintage(bottle.bottle.vintage)
-            notesMap[bottle.definition.definitionId to vintage].orEmpty()
-                .none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() }
+            bottle.bottle.bottleId !in excludedNewAdditions &&
+                notesMap[bottle.definition.definitionId to vintage].orEmpty()
+                    .none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() }
         }.map { it.bottle.bottleId }.toSet()
     }
     val displayed = remember(inventory, selectedRack, assignments, newAdditions) {

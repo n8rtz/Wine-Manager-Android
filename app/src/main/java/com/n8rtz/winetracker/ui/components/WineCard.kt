@@ -66,11 +66,8 @@ fun WineCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .semantics { contentDescription = "$title, $type wine" }
-            .then(
-                if (onLongClick == null) Modifier.clickable(onClick = onClick)
-                else Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            ),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .semantics { contentDescription = "$title, $type wine" },
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = stripeColor)

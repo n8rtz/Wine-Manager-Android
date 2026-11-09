@@ -132,7 +132,7 @@ class ScrollPositionTests(unittest.TestCase):
 class CardClickTests(unittest.TestCase):
     def test_body_click_uses_the_action_supplied_by_its_screen(self):
         source = WINE_CARD.read_text()
-        self.assertIn(".clickable(onClick = onClick)", source)
+        self.assertIn(".combinedClickable(onClick = onClick, onLongClick = onLongClick)", source)
         self.assertNotIn("if (details != null && isExpanded == null)", source)
         self.assertIn("onExpandToggle: (() -> Unit)? = null", source)
         self.assertNotIn("expansionResetKey", source)
