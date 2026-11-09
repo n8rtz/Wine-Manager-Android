@@ -76,6 +76,17 @@ fun CellarScreen(
     val rackPreferences = remember(context) {
         context.getSharedPreferences("cellar_racks_v1", Context.MODE_PRIVATE)
     }
+    var userRackNames by remember(rackPreferences) {
+        mutableStateOf(rackPreferences.getStringSet("user_racks", emptySet()).orEmpty().toList().sortedBy { it.lowercase(Locale.getDefault()) })
+    }
+    val availableRackNames = remember(userRackNames) { DEFAULT_CELLAR_RACK_NAMES + userRackNames }
+    val addUserRack: (String) -> Unit = { requestedName ->
+        val name = requestedName.trim()
+        if (name.isNotEmpty() && '|' !in name && availableRackNames.none { it.equals(name, ignoreCase = true) }) {
+            userRackNames = (userRackNames + name).sortedBy { it.lowercase(Locale.getDefault()) }
+            rackPreferences.edit().putStringSet("user_racks", userRackNames.toSet()).apply()
+        }
+    }
     var rackAssignments by remember(rackPreferences) {
         mutableStateOf(rackPreferences.getStringSet("assignments", mutableSetOf()).orEmpty().mapNotNull { entry ->
             val parts = entry.split('|', limit = 2)
@@ -85,6 +96,17 @@ fun CellarScreen(
     val updateRackAssignments: (Long, Set<String>) -> Unit = { bottleId, racks ->
         val updated = rackAssignments.toMutableMap().apply {
             if (racks.isEmpty()) remove(bottleId) else put(bottleId, racks)
+        }
+        rackAssignments = updated
+        rackPreferences.edit().putStringSet(
+            "assignments", updated.flatMap { (id, names) -> names.map { name -> "$id|$name" } }.toSet()
+        ).apply()
+    }
+    val removeFromRack: (Set<Long>, String) -> Unit = { bottleIds, rack ->
+        val updated = rackAssignments.toMutableMap()
+        bottleIds.forEach { bottleId ->
+            val remaining = updated[bottleId].orEmpty() - rack
+            if (remaining.isEmpty()) updated.remove(bottleId) else updated[bottleId] = remaining
         }
         rackAssignments = updated
         rackPreferences.edit().putStringSet(
@@ -460,6 +482,7 @@ fun CellarScreen(
                     ratingsMap = ratingsMap,
                     notesMap = notesMap,
                     assignments = rackAssignments,
+                    userRackNames = availableRackNames,
                     selectedRack = selectedRack,
                     onRackSelected = { selectedRack = it },
                     assignmentBottleId = assignmentBottleId,
@@ -478,6 +501,8 @@ fun CellarScreen(
                         selectedAssignmentRacks = emptySet()
                     },
                     onOpenRackSelection = startRackAssignment,
+                    onCreateRack = addUserRack,
+                    onRemoveFromRack = removeFromRack,
                     onWineClick = onEditWine,
                     onTastingNotesClick = onTastingNotesClick
                 )

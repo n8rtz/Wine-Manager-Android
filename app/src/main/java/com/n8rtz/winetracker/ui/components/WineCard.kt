@@ -1,8 +1,10 @@
 package com.n8rtz.winetracker.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +32,7 @@ import com.n8rtz.winetracker.image.resolveWineImageModel
 import java.io.File
 
 /** Shared compact wine row used by Cellar, Tasting Notes, and Rankings. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WineCard(
     title: String,
@@ -45,6 +48,7 @@ fun WineCard(
     trailingAction: @Composable (() -> Unit)? = null,
     dateAdded: String? = null,
     drinkingWindow: Pair<Int, Int>? = null,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     var internalExpanded by remember { mutableStateOf(false) }
@@ -63,7 +67,10 @@ fun WineCard(
         modifier = Modifier
             .fillMaxWidth()
             .semantics { contentDescription = "$title, $type wine" }
-            .clickable(onClick = onClick),
+            .then(
+                if (onLongClick == null) Modifier.clickable(onClick = onClick)
+                else Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = stripeColor)

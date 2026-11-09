@@ -48,6 +48,29 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('selectedRack in assignments[it.bottle.bottleId].orEmpty()', source)
         self.assertNotIn("bottle.bottleId !in newAdditions", source)
 
+    def test_custom_rack_tile_creates_and_persists_named_racks(self):
+        views = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        self.assertIn('item(key = "add_rack_tile")', views)
+        self.assertIn('Text("Add rack"', views)
+        self.assertIn('Text("Create a custom rack"', views)
+        self.assertIn('title = { Text("Create rack") }', views)
+        self.assertIn('onCreateRack(candidate)', views)
+        self.assertIn('getStringSet("user_racks"', screen)
+        self.assertIn('putStringSet("user_racks", userRackNames.toSet())', screen)
+
+    def test_long_press_selects_wines_for_removal_from_the_open_rack(self):
+        views = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        card = (APP / "ui/components/WineCard.kt").read_text()
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        self.assertIn('onLongClick = if (canRemoveFromRack)', views)
+        self.assertIn('selectedForRemoval = selectedForRemoval + item.bottle.bottleId', views)
+        self.assertIn('Text("Remove from rack")', views)
+        self.assertIn('onRemoveFromRack(selectedForRemoval, it)', views)
+        self.assertIn('Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)', card)
+        self.assertIn('val removeFromRack: (Set<Long>, String) -> Unit', screen)
+        self.assertIn('.offset(x = 4.dp, y = (-4).dp)', views)
+
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()
         cellar = (APP / "ui/screens/CellarScreen.kt").read_text()
