@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.net.Uri
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -81,17 +82,17 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
-    
+
     // Consolidate database and repository as single instances for the entire app lifecycle
     private val database by lazy {
         Log.d("WineTracker", "MainActivity: Initializing database builder")
         androidx.room.Room.databaseBuilder(
             applicationContext,
-            com.n8rtz.winetracker.data.local.WineDatabase::class.java, 
+            com.n8rtz.winetracker.data.local.WineDatabase::class.java,
             "wine-database"
         )
         .addMigrations(
-            com.n8rtz.winetracker.data.local.MIGRATION_5_6, 
+            com.n8rtz.winetracker.data.local.MIGRATION_5_6,
             com.n8rtz.winetracker.data.local.MIGRATION_6_7,
             com.n8rtz.winetracker.data.local.MIGRATION_7_8,
             com.n8rtz.winetracker.data.local.MIGRATION_8_9,
@@ -323,7 +324,7 @@ private fun BottomBarLabel(text: String, fontSize: TextUnit) {
 
 @Composable
 fun MainAppScaffold(
-    navController: androidx.navigation.NavHostController, 
+    navController: androidx.navigation.NavHostController,
     viewModel: WineViewModel,
     tastingNoteViewModel: TastingNoteViewModel,
     rankingsViewModel: RankingsViewModel,
@@ -333,6 +334,25 @@ fun MainAppScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
+    var menuHistory by remember { mutableStateOf(listOf("cellar")) }
+    fun navigateToMenu(route: String) {
+        if (menuHistory.lastOrNull() != route) menuHistory = menuHistory + route
+        navigateToTab(navController, route)
+    }
+    val hasPreviousMenu = menuHistory.size > 1
+    BackHandler(enabled = currentRoute != null && (currentRoute !in TOP_LEVEL_MENU_ROUTES || hasPreviousMenu)) {
+        if (currentRoute != null && currentRoute in TOP_LEVEL_MENU_ROUTES) {
+            if (hasPreviousMenu) {
+                val target = menuHistory[menuHistory.lastIndex - 1]
+                menuHistory = menuHistory.dropLast(1)
+                navigateToTab(navController, target)
+            }
+        } else if (!navController.popBackStack() && hasPreviousMenu) {
+            val target = menuHistory[menuHistory.lastIndex - 1]
+            menuHistory = menuHistory.dropLast(1)
+            navigateToTab(navController, target)
+        }
+    }
     // The Add menu is only available from the Cellar and Notes tabs. It stays off every other
     // route, including the wine editor, note editors, Settings and Backup & Restore.
     val showAddMenu = currentRoute == "cellar" || currentRoute == "notes"
@@ -417,14 +437,15 @@ fun MainAppScaffold(
                 NavigationBarItem(
                     modifier = Modifier.onSizeChanged { bottomBarItemWidthPx = it.width },
                     selected = currentRoute == "cellar" || currentRoute == "add_wine",
-                    onClick = { 
+                    onClick = {
                         Log.d("WineTracker", "BottomBar: Cellar clicked")
                         isMenuExpanded = false
                         if (currentRoute != "cellar") {
                             // Always land on the Cellar root: this covers the wine editor, an
                             // add/note editor reached from any tab, and every other tab.
+                            if (menuHistory.lastOrNull() != "cellar") menuHistory = menuHistory + "cellar"
                             if (!navController.popBackStack("cellar", inclusive = false)) {
-                                navigateToTab(navController, "cellar")
+                                navigateToMenu("cellar")
                             }
                         }
                         viewModel.resetCellarScreen()
@@ -437,7 +458,7 @@ fun MainAppScaffold(
                     onClick = {
                         Log.d("WineTracker", "BottomBar: Notes clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "notes")
+                        navigateToMenu("notes")
                     },
                     icon = { Icon(Icons.Default.Description, "Notes") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_NOTES, bottomBarLabelSize) }
@@ -447,27 +468,27 @@ fun MainAppScaffold(
                     onClick = {
                         Log.d("WineTracker", "BottomBar: History clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "history")
+                        navigateToMenu("history")
                     },
                     icon = { Icon(Icons.Default.History, contentDescription = "Consumption History") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_HISTORY, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "rankings",
-                    onClick = { 
+                    onClick = {
                         Log.d("WineTracker", "BottomBar: Rankings clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "rankings") 
+                        navigateToMenu("rankings")
                     },
                     icon = { Icon(Icons.Default.Star, "Rankings") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_RANKINGS, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "profile" || currentRoute == "settings" || currentRoute == "app_info" || currentRoute == "pareto" || currentRoute == "backup_restore",
-                    onClick = { 
+                    onClick = {
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "profile") 
+                        navigateToMenu("profile")
                     },
                     icon = { Icon(Icons.Default.Person, "Profile") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_PROFILE, bottomBarLabelSize) }
@@ -494,7 +515,7 @@ fun MainAppScaffold(
                     onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") },
                     onTastingNotesClick = { definitionId, vintage ->
                         tastingNoteViewModel.openWineTastingNotes(definitionId, vintage)
-                        navigateToTab(navController, "notes")
+                        navigateToMenu("notes")
                     },
                     onConsumed = ::showConsumptionUndo
                 )
@@ -527,7 +548,7 @@ fun MainAppScaffold(
                     onParetoClick = { navController.navigate("pareto") }
                 ) {
                     refreshAfterRestore()
-                    navigateToTab(navController, "cellar")
+                    navigateToMenu("cellar")
                 }
             }
             composable("settings") {
@@ -541,7 +562,7 @@ fun MainAppScaffold(
                     onDatabaseLookupClick = { navController.navigate("database_lookup") }
                 ) {
                     refreshAfterRestore()
-                    navigateToTab(navController, "cellar")
+                    navigateToMenu("cellar")
                 }
             }
             composable("backup_restore") {
@@ -551,7 +572,7 @@ fun MainAppScaffold(
                     onBack = { navController.popBackStack() }
                 ) {
                     refreshAfterRestore()
-                    navigateToTab(navController, "cellar")
+                    navigateToMenu("cellar")
                 }
             }
             composable("database_lookup") {
@@ -849,6 +870,8 @@ private fun StartupDbErrorScreen(detail: String, onRetry: () -> Unit) {
         }
     }
 }
+
+private val TOP_LEVEL_MENU_ROUTES = setOf("cellar", "notes", "history", "rankings", "profile")
 
 private fun navigateToTab(navController: androidx.navigation.NavHostController, route: String) {
     Log.d("WineTracker", "navigateToTab: target=$route")

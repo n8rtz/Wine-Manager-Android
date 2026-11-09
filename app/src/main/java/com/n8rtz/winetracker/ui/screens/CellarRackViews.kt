@@ -50,15 +50,16 @@ internal fun RackAssignmentControl(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.width(6.dp))
-        if (automaticNewAddition) {
-            AssistChip(onClick = {}, label = { Text("New additions · automatic") }, enabled = false)
-        } else {
-            AssistChip(
-                onClick = onOpenRackSelection,
-                label = { Text(currentRacks.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "Add to rack") },
-                trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
-            )
-        }
+        AssistChip(
+            onClick = onOpenRackSelection,
+            label = {
+                val assignedLabel = currentRacks.takeIf { it.isNotEmpty() }?.joinToString(", ")
+                Text(if (automaticNewAddition) {
+                    if (currentRacks.isEmpty()) "New additions · add rack" else "New additions · +${currentRacks.size} racks"
+                } else assignedLabel ?: "Add to rack")
+            },
+            trailingIcon = { RackGlyph(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant) }
+        )
     }
 }
 
@@ -69,16 +70,11 @@ internal fun RackQuickAddButton(
 ) {
     IconButton(
         onClick = onOpenRackSelection,
-        enabled = !automaticNewAddition,
         modifier = Modifier.size(40.dp).semantics {
-            contentDescription = if (automaticNewAddition) "New additions rack is assigned automatically" else "Choose wine racks"
+            contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
         }
     ) {
-        RackGlyph(
-            modifier = Modifier.size(25.dp),
-            color = if (automaticNewAddition) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-            else MaterialTheme.colorScheme.primary
-        )
+        RackGlyph(modifier = Modifier.size(25.dp), color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -140,7 +136,7 @@ internal fun CellarRacks(
         when (selectedRack) {
             null -> emptyList()
             NEW_ADDITIONS_RACK -> inventory.filter { it.bottle.bottleId in newAdditions }
-            else -> inventory.filter { selectedRack in assignments[it.bottle.bottleId].orEmpty() && it.bottle.bottleId !in newAdditions }
+            else -> inventory.filter { selectedRack in assignments[it.bottle.bottleId].orEmpty() }
         }
     }
     val context = LocalContext.current
@@ -164,7 +160,7 @@ internal fun CellarRacks(
                 items(rackNames, key = { it }) { rack ->
                     val rackItems = when (rack) {
                         NEW_ADDITIONS_RACK -> inventory.filter { it.bottle.bottleId in newAdditions }
-                        else -> inventory.filter { rack in assignments[it.bottle.bottleId].orEmpty() && it.bottle.bottleId !in newAdditions }
+                        else -> inventory.filter { rack in assignments[it.bottle.bottleId].orEmpty() }
                     }
                     val cover = rackItems.firstOrNull()?.let { wine ->
                         resolveWineImageModel(context, wine.imageAsset?.relativePath,

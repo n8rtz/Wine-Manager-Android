@@ -28,6 +28,13 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("cellarTab = 1", screen)
         self.assertIn("updateRackAssignments", screen)
 
+    def test_automatic_new_additions_does_not_disable_other_rack_assignments(self):
+        source = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        self.assertNotIn("enabled = !automaticNewAddition", source)
+        self.assertIn('if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"', source)
+        self.assertIn('selectedRack in assignments[it.bottle.bottleId].orEmpty()', source)
+        self.assertNotIn("bottle.bottleId !in newAdditions", source)
+
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()
         cellar = (APP / "ui/screens/CellarScreen.kt").read_text()

@@ -22,6 +22,7 @@ import com.n8rtz.winetracker.ui.screens.CellarRacks
 import com.n8rtz.winetracker.drinkingwindow.DrinkingWindowEstimator
 import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
@@ -60,6 +61,17 @@ fun CellarScreen(
     var selectedRack by remember { mutableStateOf<String?>(null) }
     var assignmentBottleId by remember { mutableStateOf<Long?>(null) }
     var selectedAssignmentRacks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    BackHandler(enabled = cellarTab == 1) {
+        if (assignmentBottleId != null) {
+            assignmentBottleId = null
+            selectedAssignmentRacks = emptySet()
+            cellarTab = 0
+        } else if (selectedRack != null) {
+            selectedRack = null
+        } else {
+            cellarTab = 0
+        }
+    }
     val context = androidx.compose.ui.platform.LocalContext.current
     val rackPreferences = remember(context) {
         context.getSharedPreferences("cellar_racks_v1", Context.MODE_PRIVATE)

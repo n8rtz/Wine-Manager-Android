@@ -21,7 +21,7 @@ class TastingNoteDetailNavigationTests(unittest.TestCase):
         self.assertIn('Text("Tasting notes")', cellar)
         self.assertIn("onTastingNotesClick(item.definition.definitionId, item.bottle.vintage)", cellar)
         self.assertIn("tastingNoteViewModel.openWineTastingNotes(definitionId, vintage)", main)
-        self.assertIn('navigateToTab(navController, "notes")', main)
+        self.assertIn('navigateToMenu("notes")', main)
         self.assertIn("fun openWineTastingNotes(definitionId: Long, vintage: String)", view_model)
         self.assertIn('route = "note_detail/{noteId}"', main)
         self.assertNotIn('route = "detail/{bottleId}"', main)
