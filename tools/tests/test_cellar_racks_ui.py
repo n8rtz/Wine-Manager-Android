@@ -21,6 +21,8 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("Diamond lattice and circular bottle openings", source)
         self.assertIn("drawCircle(", source)
         self.assertIn("drawLine(color, topPoint, rightPoint", source)
+        self.assertIn("modifier = Modifier.size(30.dp)", source)
+        self.assertIn("width = unit * .02f", source)
         self.assertIn("onOpenRackSelection", source)
         self.assertNotIn("DropdownMenu(expanded = expanded", source)
         self.assertIn("Choose one or more racks", source)

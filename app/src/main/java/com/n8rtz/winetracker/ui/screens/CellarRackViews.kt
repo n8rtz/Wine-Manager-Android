@@ -74,7 +74,7 @@ internal fun RackQuickAddButton(
             contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
         }
     ) {
-        RackGlyph(modifier = Modifier.size(25.dp), color = MaterialTheme.colorScheme.primary)
+        RackGlyph(modifier = Modifier.size(30.dp), color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -82,7 +82,7 @@ internal fun RackQuickAddButton(
 private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
     androidx.compose.foundation.Canvas(modifier) {
         val unit = size.minDimension
-        val stroke = unit * .065f
+        val stroke = unit * .045f
         val left = size.width * .05f
         val top = size.height * .05f
         val right = size.width * .95f
@@ -117,9 +117,9 @@ private fun RackGlyph(modifier: Modifier = Modifier, color: Color) {
         centers.forEach { (cx, cy) ->
             drawCircle(
                 color = color,
-                radius = unit * .078f,
+                radius = unit * .058f,
                 center = androidx.compose.ui.geometry.Offset(size.width * cx, size.height * cy),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke * 1.4f)
+                style = androidx.compose.ui.graphics.drawscope.Stroke(width = unit * .02f)
             )
         }
     }
