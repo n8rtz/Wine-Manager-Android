@@ -146,6 +146,26 @@ class DataImporter(
             }
             bytes
         }
+        val restoredRacks = source.cellarRackNames?.let { names ->
+            require(names.all { it.isNotBlank() && it == it.trim() && '|' !in it } &&
+                names.distinctBy { it.lowercase(Locale.ROOT) }.size == names.size) {
+                "The backup contains invalid or duplicate cellar rack names."
+            }
+            val bottleIds = sourceBottles.mapTo(mutableSetOf()) { it.bottleId }
+            val assignments = source.cellarRackAssignments.orEmpty()
+            require(assignments.map { it.bottleId }.distinct().size == assignments.size && assignments.all { row ->
+                row.bottleId in bottleIds && row.rackNames.isNotEmpty() &&
+                    row.rackNames.all { rack -> names.any { it == rack } } &&
+                    row.rackNames.distinct().size == row.rackNames.size
+            }) {
+                "The backup contains rack assignments to missing wines or racks."
+            }
+            val exclusions = source.newAdditionsExclusions.orEmpty()
+            require(exclusions.distinct().size == exclusions.size && exclusions.all { it in bottleIds }) {
+                "The backup contains New Additions exclusions for missing wines."
+            }
+            Triple(names, assignments, exclusions)
+        }
 
         // A pre-event backup can contain multiple archived rows for the same wine/vintage.
         // Convert each archived row into a history event instead of violating the inventory
@@ -214,6 +234,9 @@ class DataImporter(
         }
         if (restoredBudget != null) {
             BackupPreferences.writeBudgetBytes(context, restoredBudget)
+        }
+        if (restoredRacks != null) {
+            BackupRackPreferences.write(context, restoredRacks.first, restoredRacks.second, restoredRacks.third)
         }
     }
 

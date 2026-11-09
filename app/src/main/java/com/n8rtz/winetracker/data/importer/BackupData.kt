@@ -20,5 +20,14 @@ data class BackupData(
      * current reviewer list and storage budget untouched instead of guessing defaults.
      */
     val reviewerNames: List<String>? = null,
-    val imageStorageBudgetBytes: Long? = null
+    val imageStorageBudgetBytes: Long? = null,
+    /** Optional cellar rack configuration; null in older backups means leave current settings untouched. */
+    val cellarRackNames: List<String>? = null,
+    val cellarRackAssignments: List<BackupRackAssignment>? = null,
+    val newAdditionsExclusions: List<Long>? = null
+)
+
+data class BackupRackAssignment(
+    val bottleId: Long,
+    val rackNames: List<String>
 )

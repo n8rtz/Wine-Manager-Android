@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter
 object JsonExporter {
     suspend fun exportDataToJson(context: Context, db: WineDatabase): File {
         val file = File(context.cacheDir, "WineTracker_Backup.json")
+        val rackPreferences = BackupRackPreferences.read(context)
         val backupData = db.withTransaction {
             BackupData(
                 definitions = db.wineDao().getAllDefinitionsOnce(),
@@ -20,7 +21,10 @@ object JsonExporter {
                 imageAssets = db.wineImageAssetDao().getAllOnce().map { it.copy(relativePath = null) }
             ).copy(
                 reviewerNames = BackupPreferences.readReviewers(context),
-                imageStorageBudgetBytes = BackupPreferences.readBudgetBytes(context)
+                imageStorageBudgetBytes = BackupPreferences.readBudgetBytes(context),
+                cellarRackNames = rackPreferences.rackNames,
+                cellarRackAssignments = rackPreferences.assignments,
+                newAdditionsExclusions = rackPreferences.newAdditionsExclusions
             )
         }
 

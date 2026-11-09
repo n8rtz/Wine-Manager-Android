@@ -72,6 +72,29 @@ class BackupPreferenceContractTests(unittest.TestCase):
             self.assertNotIn(forbidden, data)
             self.assertNotIn(forbidden, exporter)
 
+    def test_cellar_racks_are_exported_and_restored_as_optional_preferences(self):
+        data = BACKUP_DATA.read_text()
+        exporter = EXPORTER.read_text()
+        importer = IMPORTER_FILE.read_text()
+        rack_prefs = (IMPORTER / "BackupRackPreferences.kt").read_text()
+        self.assertIn("val cellarRackNames: List<String>? = null", data)
+        self.assertIn("val cellarRackAssignments: List<BackupRackAssignment>? = null", data)
+        self.assertIn("val newAdditionsExclusions: List<Long>? = null", data)
+        self.assertIn("BackupRackPreferences.read(context)", exporter)
+        self.assertIn("cellarRackNames = rackPreferences.rackNames", exporter)
+        self.assertIn("cellarRackAssignments = rackPreferences.assignments", exporter)
+        self.assertIn("newAdditionsExclusions = rackPreferences.newAdditionsExclusions", exporter)
+        self.assertIn("BackupRackPreferences.write(context, restoredRacks.first, restoredRacks.second, restoredRacks.third)", importer)
+        self.assertIn("if (restoredRacks != null)", importer)
+        self.assertIn('const val PREFERENCES_FILE = "cellar_racks_v1"', rack_prefs)
+        self.assertIn('const val RACK_NAMES_KEY = "rack_names"', rack_prefs)
+        self.assertIn('const val ASSIGNMENTS_KEY = "assignments"', rack_prefs)
+        self.assertIn('const val NEW_ADDITIONS_EXCLUSIONS_KEY = "new_additions_exclusions"', rack_prefs)
+        self.assertLess(importer.index("val restoredRacks"), importer.index("database.withTransaction"))
+        self.assertIn("row.bottleId in bottleIds", importer)
+        self.assertIn("row.rackNames.all { rack -> names.any { it == rack } }", importer)
+        self.assertIn("newAdditionsExclusions", data)
+
     def test_auto_backup_rules_exclude_secrets_only_and_are_referenced(self):
         for xml in (RULES_XML, EXTRACTION_XML):
             text = re.sub(r"<!--.*?-->", "", xml.read_text(), flags=re.S)
