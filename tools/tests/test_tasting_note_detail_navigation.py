@@ -18,7 +18,7 @@ class TastingNoteDetailNavigationTests(unittest.TestCase):
         main = MAIN.read_text()
         view_model = (APP / "viewmodels/TastingNoteViewModel.kt").read_text()
         self.assertIn("onTastingNotesClick: (Long, String) -> Unit", cellar)
-        self.assertIn('Text("Tasting notes")', cellar)
+        self.assertIn('Text("Notes", maxLines = 1, softWrap = false)', cellar)
         self.assertIn("onTastingNotesClick(item.definition.definitionId, item.bottle.vintage)", cellar)
         self.assertIn("tastingNoteViewModel.openWineTastingNotes(definitionId, vintage)", main)
         self.assertIn('navigateToMenu("notes")', main)

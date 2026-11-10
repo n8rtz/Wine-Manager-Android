@@ -554,7 +554,7 @@ fun CellarScreen(
                                     ) {
                                         Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Tasting notes", maxLines = 1, softWrap = false)
+                                        Text("Notes", maxLines = 1, softWrap = false)
                                     }
                                 }
                             }

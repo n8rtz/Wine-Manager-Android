@@ -590,7 +590,7 @@ internal fun CellarRacks(
                                         OutlinedButton(onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) }) {
                                             Icon(Icons.Default.Description, null, Modifier.size(18.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Tasting notes")
+                                            Text("Notes")
                                         }
                                     }
                                     TextButton(onClick = { onWineClick(item.bottle.bottleId) }, contentPadding = PaddingValues(0.dp)) {
