@@ -133,23 +133,19 @@ fun OverallScoreSlider(
     val indicatorColor = if (scoreSelected) band.color else MaterialTheme.colorScheme.primary
 
     Column {
+        // Same lined header treatment as the phase sections.
+        SectionHeaderLine("Overall Score")
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Overall score",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    if (scoreSelected) band.label else "Choose a score",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (scoreSelected) band.color else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Text(
+                if (scoreSelected) band.label else "Choose a score",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (scoreSelected) band.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = indicatorColor.copy(alpha = 0.13f),

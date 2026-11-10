@@ -348,3 +348,12 @@ class W061SourceContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SliderGroupSeparationTests(unittest.TestCase):
+    def test_no_extra_divider_and_overall_score_is_lined_header(self):
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        self.assertNotIn("HorizontalDivider", sections)
+        fields = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/SensoryEvaluationFields.kt").read_text()
+        self.assertIn('SectionHeaderLine("Overall Score")', fields)
+        self.assertNotIn('"Overall score",\n                    style = MaterialTheme.typography.titleSmall', fields)

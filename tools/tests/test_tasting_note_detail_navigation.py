@@ -48,7 +48,7 @@ class TastingNoteDetailNavigationTests(unittest.TestCase):
             "enabled = false",
         ):
             self.assertIn(token, detail)
-        self.assertIn('"Overall score"', SENSORY.read_text())
+        self.assertIn('SectionHeaderLine("Overall Score")', SENSORY.read_text())
         self.assertIn('Text("Common faults"', SECTIONS.read_text())
         self.assertNotIn("Save Changes", detail)
         self.assertNotIn("Save Tasting Note", detail)

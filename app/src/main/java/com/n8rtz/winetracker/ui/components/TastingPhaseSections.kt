@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -261,8 +260,8 @@ fun SectionedSensoryFields(
                 SensoryTraitSlider(trait, enabled = !readOnly)
             }
             // Aromas are listed only once, with the aroma wheel above;
-            // the per-phase sections below carry just their sliders.
-            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+            // the per-phase sections below carry just their sliders. No
+            // extra divider: the lined phase header separates sections.
         }
     }
 }
