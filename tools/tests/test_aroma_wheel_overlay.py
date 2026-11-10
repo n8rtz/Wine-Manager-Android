@@ -47,7 +47,10 @@ class AromaWheelOverlayTests(unittest.TestCase):
         source = DIALOG.read_text()
         detail = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/TastingNoteDetailScreen.kt").read_text()
         self.assertIn("readOnly: Boolean = false", source)
-        self.assertIn('if (readOnly) "View only"', source)
+        # No header text in the wheel screen, and the whole dialog uses
+        # the wheel's grey background (no white top bar).
+        self.assertEqual(source.count("color = Color(AromaWheelTheme.backgroundMid)"), 2)
+        self.assertNotIn('"${selected.size} selected"', source)
         self.assertIn("locked = readOnly", source)
         self.assertIn("showRemove = !locked", source)
         # Detail screen opens the wheel without entering edit mode.

@@ -667,7 +667,7 @@ fun AromaWheelDialog(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
-            color = MaterialTheme.colorScheme.surface
+            color = Color(AromaWheelTheme.backgroundMid)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
@@ -679,18 +679,7 @@ fun AromaWheelDialog(
                     IconButton(onClick = ::requestDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Aroma wheel",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            "${selected.size} selected",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(
                         onClick = { showListMode = !showListMode },
                         modifier = Modifier.semantics {
@@ -1300,7 +1289,7 @@ fun PhaseAromaWheelDialog(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
-            color = MaterialTheme.colorScheme.surface
+            color = Color(AromaWheelTheme.backgroundMid)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
@@ -1312,18 +1301,7 @@ fun PhaseAromaWheelDialog(
                     IconButton(onClick = ::requestDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Aroma wheel",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            if (readOnly) "View only" else "$distinctCount/$MAX_SELECTED_DESCRIPTORS",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(
                         onClick = { showListMode = !showListMode },
                         modifier = Modifier.semantics {
