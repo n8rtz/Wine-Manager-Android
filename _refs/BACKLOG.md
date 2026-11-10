@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-065**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-067**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -94,6 +94,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 10 | W-062 | Wine wishlist — wines to buy later, not yet owned | L (persistent list + UI; brief needed) | Open — placement and scope TBD | TBD (owner to rank) |
 | 11 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
 | 12 | W-065 | Wine-card UI cleanup: improve layout and rating prominence | M | Open — logged only; do not implement yet | TBD |
+| 13 | W-066 | Ratings dot plot (Fed-style): one dot per wine, coloured by wine type | M | Open — logged only; do not implement yet | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 *(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
@@ -364,6 +365,12 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Scope:** Revisit the card's visual hierarchy and spacing, and increase the at-a-glance prominence of the existing rating or rating range. Preserve current rating data and behavior.
 * **Design:** Not specified yet; work out the card layout with the owner before implementation.
 * **Owner instruction:** Record this cleanup item only. Do not change the wine-card layout or rating presentation until the owner asks to work on W-065.
+
+### 13. W-066 — Ratings distribution dot plot *(logged 2026-11-10)*
+**Complexity:** M (new chart UI; data already available from tasting notes, no schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** A dot plot, like the Federal Reserve's dot plot, showing the distribution of wine ratings. Each dot represents one wine, positioned by its rating (dots stack at the same rating so frequency is visible at a glance), and coloured by wine type — red, white, or rosé.
+* **UI-Trigger / Location:** TBD with the owner (candidates: Rankings, the Pareto/analytics area, or its own chart view).
+* **Design needed before implementation:** which rating represents a wine with several tasting notes (most recent is the app convention), the rating axis range/buckets, how sparkling/other types are coloured, and whether dot tap should jump to the wine. Record this feature only; do not build it until the owner asks to work on W-066.
 
 ---
 
