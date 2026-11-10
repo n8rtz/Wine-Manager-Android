@@ -36,6 +36,15 @@ import kotlinx.coroutines.launch
 /** Which of the two Profile-tab screens [ProfileScreen] shows. They share one state/dialog host. */
 enum class ProfileSection { HOME, SETTINGS }
 
+internal fun defaultCellarSortLabel(field: CellarSortField): String = when (field) {
+    CellarSortField.DATE_ADDED -> "Date Added"
+    CellarSortField.QUANTITY -> "Quantity"
+    CellarSortField.RATING -> "Rating"
+    CellarSortField.PRICE -> "Price"
+    CellarSortField.DRINKING_WINDOW_SOONEST -> "Drinking Window (Soonest)"
+    CellarSortField.DRINKING_WINDOW_FURTHEST -> "Drinking Window (Furthest)"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -60,6 +69,8 @@ fun ProfileScreen(
     var showRestoreConfirmation by remember { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var showReviewerSettings by remember { mutableStateOf(false) }
+    val defaultCellarSort by viewModel.defaultCellarSort.collectAsState()
+    var showDefaultSortSettings by remember { mutableStateOf(false) }
     var reviewerDraft by remember { mutableStateOf(emptyList<String>()) }
     var newReviewer by remember { mutableStateOf("") }
 
@@ -199,6 +210,39 @@ fun ProfileScreen(
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 } else {
+                    Text(
+                        text = "Cellar",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = bordeauxRed,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    ListItem(
+                        headlineContent = { Text("Default cellar sort") },
+                        supportingContent = {
+                            val direction = when (defaultCellarSort.sortField) {
+                                CellarSortField.DRINKING_WINDOW_SOONEST,
+                                CellarSortField.DRINKING_WINDOW_FURTHEST -> ""
+                                else -> if (defaultCellarSort.sortAscending) " (ascending)" else " (descending)"
+                            }
+                            Text("Bottles start sorted by ${defaultCellarSortLabel(defaultCellarSort.sortField)}$direction")
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = null,
+                                tint = bordeauxRed
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable { showDefaultSortSettings = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
                     Text(
                         text = "Backup & data",
                         style = MaterialTheme.typography.titleSmall,
@@ -369,6 +413,53 @@ fun ProfileScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
+    }
+
+    if (showDefaultSortSettings) {
+        AlertDialog(
+            onDismissRequest = { showDefaultSortSettings = false },
+            title = { Text("Default cellar sort") },
+            text = {
+                Column {
+                    CellarSortField.entries.forEach { field ->
+                        val selected = defaultCellarSort.sortField == field
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                viewModel.setDefaultCellarSort(field, defaultCellarSort.sortAscending)
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selected,
+                                onClick = { viewModel.setDefaultCellarSort(field, defaultCellarSort.sortAscending) }
+                            )
+                            Text(defaultCellarSortLabel(field))
+                        }
+                    }
+                    // Drinking-window sorts have a built-in direction; the
+                    // other fields can default to ascending or descending.
+                    if (defaultCellarSort.sortField != CellarSortField.DRINKING_WINDOW_SOONEST &&
+                        defaultCellarSort.sortField != CellarSortField.DRINKING_WINDOW_FURTHEST
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Ascending", modifier = Modifier.weight(1f))
+                            Switch(
+                                checked = defaultCellarSort.sortAscending,
+                                onCheckedChange = { ascending ->
+                                    viewModel.setDefaultCellarSort(defaultCellarSort.sortField, ascending)
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDefaultSortSettings = false }) { Text("Done") }
+            }
+        )
     }
 
     if (showReviewerSettings) {

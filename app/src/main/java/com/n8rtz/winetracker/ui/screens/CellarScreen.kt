@@ -787,7 +787,7 @@ fun FilterSheet(
                     }
                 }
                 Text(
-                    "Tap an active sort button again to reverse the order. Rating uses the average recorded score; unrated wines stay last.",
+                    "Tap an active sort button again to reverse the order. Rating uses each wine's most recent recorded score; unrated wines stay last.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
