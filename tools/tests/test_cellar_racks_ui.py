@@ -44,7 +44,7 @@ class CellarRacksUiTests(unittest.TestCase):
     def test_expanded_card_orders_aromas_buttons_then_racks_with_line_headers(self):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
         details = screen.split("details = {", 1)[1].split("                    },\n                    onClick = {", 1)[0]
-        aromas = details.index('CellarSectionHeader("Aromas · ')
+        aromas = details.index('CellarSectionHeader("Aromas"')
         buttons = details.index('text = "Cellar: ${item.bottle.quantity}"')
         racks = details.index('CellarSectionHeader("Racks")')
         self.assertLess(aromas, buttons)
@@ -53,7 +53,7 @@ class CellarRacksUiTests(unittest.TestCase):
         divider = details.index("HorizontalDivider()", aromas)
         self.assertLess(divider, buttons)
         # Header is a line with the text inline, filling the card width.
-        self.assertIn("private fun CellarSectionHeader(text: String)", screen)
+        self.assertIn("private fun CellarSectionHeader(text: String, suffix: String? = null)", screen)
         self.assertIn("HorizontalDivider(modifier = Modifier.width(24.dp))", screen)
         self.assertIn("HorizontalDivider(modifier = Modifier.weight(1f))", screen)
 
