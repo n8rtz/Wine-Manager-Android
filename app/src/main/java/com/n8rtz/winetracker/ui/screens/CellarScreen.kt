@@ -591,26 +591,81 @@ fun CellarScreen(
                 }
                 DropdownMenu(
                     expanded = wineMenuBottleId == item.bottle.bottleId,
-                    onDismissRequest = { wineMenuBottleId = null }
+                    onDismissRequest = { wineMenuBottleId = null },
+                    modifier = Modifier.width(252.dp)
                 ) {
-                    // Edit only makes sense for a single selected wine.
-                    if (selectedWineIds.size == 1) {
-                        DropdownMenuItem(
-                            text = { Text("Edit") },
+                    // Themed action popup: a bordeaux-tinted header naming
+                    // the long-pressed wine and the live selection count,
+                    // then icon-tile actions. Edit only makes sense for a
+                    // single selected wine, so it disappears at 2+.
+                    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ) {
+                                Icon(
+                                    Icons.Default.WineBar,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(8.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "${item.definition.maker} - ${item.definition.name}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = if (selectedWineIds.size == 1) "1 wine selected" else "${selectedWineIds.size} wines selected",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                        )
+                        if (selectedWineIds.size == 1) {
+                            WineActionMenuRow(
+                                icon = Icons.Default.Edit,
+                                label = "Edit wine",
+                                iconTint = MaterialTheme.colorScheme.primary,
+                                iconBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                onClick = {
+                                    val target = selectedWineIds.single()
+                                    wineMenuBottleId = null
+                                    onEditWine(target)
+                                }
+                            )
+                        }
+                        WineActionMenuRow(
+                            icon = Icons.Default.Delete,
+                            label = if (selectedWineIds.size == 1) "Delete wine" else "Delete ${selectedWineIds.size} wines",
+                            iconTint = MaterialTheme.colorScheme.error,
+                            iconBackground = MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
+                            labelColor = MaterialTheme.colorScheme.error,
                             onClick = {
-                                val target = selectedWineIds.single()
                                 wineMenuBottleId = null
-                                onEditWine(target)
+                                showWineDeleteConfirmation = true
                             }
                         )
+                        WineActionMenuRow(
+                            icon = Icons.Default.Close,
+                            label = "Cancel",
+                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            iconBackground = MaterialTheme.colorScheme.surfaceVariant,
+                            onClick = { wineMenuBottleId = null }
+                        )
                     }
-                    DropdownMenuItem(
-                        text = { Text(if (selectedWineIds.size == 1) "Delete" else "Delete ${selectedWineIds.size} wines") },
-                        onClick = {
-                            wineMenuBottleId = null
-                            showWineDeleteConfirmation = true
-                        }
-                    )
                 }
                 }
             }
@@ -1082,6 +1137,41 @@ fun FilterSheet(
             }
 
         }
+    }
+}
+
+/** One polished action row inside the long-press wine popup menu. */
+@Composable
+private fun WineActionMenuRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    iconTint: androidx.compose.ui.graphics.Color,
+    iconBackground: androidx.compose.ui.graphics.Color,
+    labelColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(shape = RoundedCornerShape(8.dp), color = iconBackground) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.padding(6.dp).size(18.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = labelColor
+        )
     }
 }
 

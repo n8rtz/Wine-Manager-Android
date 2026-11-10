@@ -104,8 +104,17 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("Modifier.align(Alignment.TopStart)", screen)
         # Edit disappears once 2+ wines are selected; Delete stays.
         self.assertIn("if (selectedWineIds.size == 1)", screen)
-        self.assertIn('Text("Edit")', screen)
         self.assertIn("showWineDeleteConfirmation = true", screen)
+        # The popup is a themed, polished menu (not a bare dropdown): a
+        # bordeaux-tinted header naming the wine + selection count, and
+        # icon-tile action rows.
+        self.assertIn("private fun WineActionMenuRow(", screen)
+        self.assertIn('label = "Edit wine"', screen)
+        self.assertIn("Icons.Default.WineBar", screen)
+        self.assertIn("Icons.Default.Edit", screen)
+        self.assertIn("Icons.Default.Delete", screen)
+        self.assertIn("MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)", screen)
+        self.assertIn('"${selectedWineIds.size} wines selected"', screen)
         # Deleting always asks for confirmation first.
         self.assertIn('Text(if (selectedWineIds.size == 1) "Delete wine?" else "Delete wines?")', screen)
         self.assertIn("selectedWineIds.forEach { bottleId -> viewModel.deleteWine(bottleId) }", screen)
@@ -192,7 +201,9 @@ class CellarRacksUiTests(unittest.TestCase):
         # the lower and upper bounds for a rating range.
         self.assertIn("Modifier.offset(y = 6.dp)", card)
         self.assertIn("style = MaterialTheme.typography.titleMedium", card)
-        self.assertIn(".border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)", card)
+        # The rating box outline uses the app's bordeaux theme primary.
+        self.assertIn(".border(1.5.dp, MaterialTheme.colorScheme.primary, ratingShape)", card)
+        self.assertNotIn(".border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)", card)
         self.assertIn("Brush.horizontalGradient(", card)
         self.assertIn("ratingColor(ratingValues.first())", card)
         self.assertIn("ratingColor(ratingValues.last())", card)

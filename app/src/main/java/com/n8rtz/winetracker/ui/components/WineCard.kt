@@ -167,7 +167,7 @@ fun WineCard(
                                             Modifier.background(MaterialTheme.colorScheme.primary)
                                         }
                                     )
-                                    .border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)
+                                    .border(1.5.dp, MaterialTheme.colorScheme.primary, ratingShape)
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                                     .semantics { contentDescription = if (rated) "Rating $ratingText" else "Not rated" },
                                 contentAlignment = Alignment.Center
