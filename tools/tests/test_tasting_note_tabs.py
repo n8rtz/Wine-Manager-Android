@@ -129,7 +129,7 @@ class TabTransitionAndChipCapTests(unittest.TestCase):
         source = NOTES.read_text()
         aromas = source.index("val aromaObservations = sensory?.aromaObservations.orEmpty()")
         divider = source.index("HorizontalDivider()", aromas)
-        value = source.index('Text("Value", style = MaterialTheme.typography.titleSmall', aromas)
+        value = source.index('Text("Value", style = MaterialTheme.typography.titleMedium', aromas)
         self.assertLess(divider, value)
 
     def test_phase_chips_capped_at_two_lines_with_overflow(self):
