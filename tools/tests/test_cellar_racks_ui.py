@@ -25,7 +25,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("Icons.Default.Add, contentDescription = null", source)
         self.assertIn("contentScale = ContentScale.FillBounds", source)
         self.assertIn(".size(width = 44.dp, height = 40.dp)", source)
-        self.assertIn(".clickable(onClick = onOpenRackSelection)", source)
+        self.assertIn(".combinedClickable(onClick = onOpenRackSelection, onLongClick = onLongPress)", source)
         self.assertIn("contentDescription = if (automaticNewAddition) \"Add wine to another rack\"", source)
         asset = ROOT / "app/src/main/res/drawable-nodpi/wine_rack_lattice.png"
         self.assertTrue(asset.exists())
@@ -40,6 +40,23 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('"Remove from racks"', source)
         self.assertIn("selectCellarTab(1)", screen)
         self.assertIn("updateRackAssignments", screen)
+
+    def test_long_press_rack_button_picks_multiple_wines_for_one_rack(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        racks = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        # Long-pressing a card's add-to-rack button starts the pick with
+        # that wine checked; tapping other cards toggles them.
+        self.assertIn("onLongPress = { rackPickWineIds = setOf(item.bottle.bottleId) }", screen)
+        self.assertIn("val rackPickMode = rackPickWineIds.isNotEmpty()", screen)
+        self.assertIn("if (wineSelectionMode || rackPickMode) {", screen)
+        # Tapping a rack in the Racks tab assigns every picked wine, then a
+        # bottom popup confirms with Undo.
+        self.assertIn("onRackPicked = if (rackPickMode) completeRackPick else null", screen)
+        self.assertIn("onRackPicked != null && manageable -> onRackPicked(rack)", racks)
+        self.assertIn('"Added $count wines to $rack"', screen)
+        self.assertIn("Added 1 wine to $rack", screen)
+        self.assertIn("onClick = undoRackPick", screen)
+        self.assertIn("updateRackAssignments(bottleId, rackPickAssignmentsBefore[bottleId].orEmpty())", screen)
 
     def test_expanded_card_inline_actions_and_overflow_aroma_chip_opens_note(self):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()

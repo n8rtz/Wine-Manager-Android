@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -86,7 +87,8 @@ internal fun RackAssignmentControl(
 @Composable
 internal fun RackQuickAddButton(
     automaticNewAddition: Boolean,
-    onOpenRackSelection: () -> Unit
+    onOpenRackSelection: () -> Unit,
+    onLongPress: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -101,7 +103,7 @@ internal fun RackQuickAddButton(
             .semantics {
                 contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
             }
-            .clickable(onClick = onOpenRackSelection),
+            .combinedClickable(onClick = onOpenRackSelection, onLongClick = onLongPress),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -157,7 +159,11 @@ internal fun CellarRacks(
     onRemoveFromRack: (Set<Long>, String) -> Unit,
     onWineClick: (Long) -> Unit,
     onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit,
-    onNoteClick: (Long) -> Unit = {}
+    onNoteClick: (Long) -> Unit = {},
+    // Multi-wine rack pick: when non-null, tapping a rack assigns all the
+    // wines the user selected over in the Bottles tab to that rack.
+    rackPickWineCount: Int = 0,
+    onRackPicked: ((String) -> Unit)? = null
 ) {
     val rackNames = rackOrder
     val gridState = rememberLazyGridState()
@@ -233,6 +239,14 @@ internal fun CellarRacks(
                 Text("Choose one or more racks", style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
                 Text("Selected wine will be added to each rack you choose.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp))
+            } else if (onRackPicked != null) {
+                Text("Choose a rack", style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                Text(
+                    if (rackPickWineCount == 1) "The selected wine will be added to the rack you tap."
+                    else "$rackPickWineCount selected wines will be added to the rack you tap.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp))
             }
@@ -373,6 +387,8 @@ internal fun CellarRacks(
                             .clickable {
                                 if (draggingRack != null) return@clickable
                                 when {
+                                    onRackPicked != null && manageable -> onRackPicked(rack)
+                                    onRackPicked != null -> Unit
                                     selectable -> onAssignmentRackToggle(rack)
                                     assignmentBottleId != null -> Unit
                                     rackDeletionMode -> {

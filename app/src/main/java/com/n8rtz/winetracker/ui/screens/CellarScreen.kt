@@ -74,7 +74,9 @@ fun CellarScreen(
     // bottom of the screen (above the main navigation); while it is up the
     // "+" Add menu in the host scaffold is hidden.
     val wineActionBarVisible = wineMenuBottleId != null && wineSelectionMode
-    LaunchedEffect(wineActionBarVisible) { onWineActionBarVisibleChange(wineActionBarVisible) }
+    LaunchedEffect(wineActionBarVisible, rackPickMode, rackPickConfirmation) {
+        onWineActionBarVisibleChange(wineActionBarVisible || rackPickMode || rackPickConfirmation != null)
+    }
     // Bottles (0) and Racks (1) live in a pager so swipes and tab taps slide
     // smoothly between pages instead of swapping content instantaneously.
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
@@ -87,12 +89,30 @@ fun CellarScreen(
     var selectedRack by remember { mutableStateOf<String?>(null) }
     var assignmentBottleId by remember { mutableStateOf<Long?>(null) }
     var selectedAssignmentRacks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    // Multi-wine rack pick: long-pressing a card's add-to-rack button starts
+    // selecting wines; tapping a rack in the Racks tab assigns them all.
+    var rackPickWineIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    val rackPickMode = rackPickWineIds.isNotEmpty()
+    var rackPickConfirmation by remember { mutableStateOf<Pair<Int, String>?>(null) }
+    var rackPickAssignmentsBefore by remember { mutableStateOf<Map<Long, Set<String>>>(emptyMap()) }
+    LaunchedEffect(rackPickConfirmation) {
+        if (rackPickConfirmation != null) {
+            kotlinx.coroutines.delay(5000)
+            rackPickConfirmation = null
+        }
+    }
+    BackHandler(enabled = rackPickMode && cellarTab == 0) {
+        rackPickWineIds = emptySet()
+    }
     BackHandler(enabled = wineSelectionMode && cellarTab == 0) {
         selectedWineIds = emptySet()
         wineMenuBottleId = null
     }
     BackHandler(enabled = cellarTab == 1) {
-        if (assignmentBottleId != null) {
+        if (rackPickMode) {
+            rackPickWineIds = emptySet()
+            selectCellarTab(0)
+        } else if (assignmentBottleId != null) {
             assignmentBottleId = null
             selectedAssignmentRacks = emptySet()
             selectCellarTab(0)
@@ -223,6 +243,23 @@ fun CellarScreen(
         selectedAssignmentRacks = rackAssignments[bottleId].orEmpty()
         selectedRack = null
         selectCellarTab(1)
+    }
+
+    val completeRackPick: (String) -> Unit = { rack ->
+        rackPickAssignmentsBefore = rackAssignments.filterKeys { it in rackPickWineIds }
+        val count = rackPickWineIds.size
+        rackPickWineIds.forEach { bottleId ->
+            updateRackAssignments(bottleId, rackAssignments[bottleId].orEmpty() + rack)
+        }
+        rackPickWineIds = emptySet()
+        rackPickConfirmation = count to rack
+    }
+    val undoRackPick: () -> Unit = {
+        // Completion cleared the pick set, so restore from the snapshot.
+        rackPickAssignmentsBefore.keys.forEach { bottleId ->
+            updateRackAssignments(bottleId, rackPickAssignmentsBefore[bottleId].orEmpty())
+        }
+        rackPickConfirmation = null
     }
     // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
     // screen where it was scrolled to instead of at the top.
@@ -473,7 +510,8 @@ fun CellarScreen(
                     trailingAction = {
                         RackQuickAddButton(
                             automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
-                            onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }
+                            onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) },
+                            onLongPress = { rackPickWineIds = setOf(item.bottle.bottleId) }
                         )
                     },
                     drinkingWindow = run {
@@ -490,9 +528,17 @@ fun CellarScreen(
                         )?.let { it.startYear to it.endYear }
                     },
                     onLongClick = {
-                        // Select the long-pressed wine and pop up its menu.
-                        selectedWineIds = selectedWineIds + item.bottle.bottleId
-                        wineMenuBottleId = item.bottle.bottleId
+                        if (rackPickMode) {
+                            rackPickWineIds = if (item.bottle.bottleId in rackPickWineIds) {
+                                rackPickWineIds - item.bottle.bottleId
+                            } else {
+                                rackPickWineIds + item.bottle.bottleId
+                            }
+                        } else {
+                            // Select the long-pressed wine and pop up its menu.
+                            selectedWineIds = selectedWineIds + item.bottle.bottleId
+                            wineMenuBottleId = item.bottle.bottleId
+                        }
                     },
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -588,7 +634,13 @@ fun CellarScreen(
                         }
                     },
                     onClick = {
-                        if (wineSelectionMode) {
+                        if (rackPickMode) {
+                            rackPickWineIds = if (item.bottle.bottleId in rackPickWineIds) {
+                                rackPickWineIds - item.bottle.bottleId
+                            } else {
+                                rackPickWineIds + item.bottle.bottleId
+                            }
+                        } else if (wineSelectionMode) {
                             selectedWineIds = if (item.bottle.bottleId in selectedWineIds) {
                                 selectedWineIds - item.bottle.bottleId
                             } else {
@@ -599,14 +651,23 @@ fun CellarScreen(
                         }
                     }
                 )
-                if (wineSelectionMode) {
+                if (wineSelectionMode || rackPickMode) {
                     Checkbox(
-                        checked = item.bottle.bottleId in selectedWineIds,
+                        checked = item.bottle.bottleId in selectedWineIds ||
+                            item.bottle.bottleId in rackPickWineIds,
                         onCheckedChange = { checked ->
-                            selectedWineIds = if (checked) {
-                                selectedWineIds + item.bottle.bottleId
+                            if (rackPickMode) {
+                                rackPickWineIds = if (checked) {
+                                    rackPickWineIds + item.bottle.bottleId
+                                } else {
+                                    rackPickWineIds - item.bottle.bottleId
+                                }
                             } else {
-                                selectedWineIds - item.bottle.bottleId
+                                selectedWineIds = if (checked) {
+                                    selectedWineIds + item.bottle.bottleId
+                                } else {
+                                    selectedWineIds - item.bottle.bottleId
+                                }
                             }
                         },
                         colors = CheckboxDefaults.colors(
@@ -708,6 +769,34 @@ fun CellarScreen(
                 )
             }
         }
+
+        if (rackPickMode) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.inverseSurface,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                shadowElevation = 6.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (rackPickWineIds.size == 1) "1 wine selected — swipe to Racks and tap a rack"
+                        else "${rackPickWineIds.size} wines selected — swipe to Racks and tap a rack",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = { rackPickWineIds = emptySet() }) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.inversePrimary)
+                    }
+                }
+            }
+        }
         }
             } else {
                 CellarRacks(
@@ -743,8 +832,41 @@ fun CellarScreen(
                     onRemoveFromRack = removeFromRack,
                     onWineClick = onEditWine,
                     onTastingNotesClick = onTastingNotesClick,
-                    onNoteClick = onNoteClick
+                    onNoteClick = onNoteClick,
+                    rackPickWineCount = rackPickWineIds.size,
+                    onRackPicked = if (rackPickMode) completeRackPick else null
                 )
+            }
+        }
+
+        rackPickConfirmation?.let { (count, rack) ->
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.inverseSurface,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                shadowElevation = 6.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (count == 1) "Added 1 wine to $rack" else "Added $count wines to $rack",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = undoRackPick) {
+                        Text(
+                            "Undo",
+                            color = MaterialTheme.colorScheme.inversePrimary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
         }
     }
