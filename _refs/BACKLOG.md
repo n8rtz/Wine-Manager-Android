@@ -371,6 +371,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Goal:** A dot plot, like the Federal Reserve's dot plot, showing the distribution of wine ratings. Each dot represents one wine, positioned by its rating (dots stack at the same rating so frequency is visible at a glance), and coloured by wine type — red, white, or rosé.
 * **UI-Trigger / Location:** TBD with the owner (candidates: Rankings, the Pareto/analytics area, or its own chart view).
 * **Design needed before implementation:** which rating represents a wine with several tasting notes (most recent is the app convention), the rating axis range/buckets, how sparkling/other types are coloured, and whether dot tap should jump to the wine. Record this feature only; do not build it until the owner asks to work on W-066.
+* **Extension — two-group comparison (owner, 2026-11-10):** advanced analytics filters let the owner define two groups and overlay their dot plots on the same axes to compare rating distributions — e.g. red vs white, France vs Spain, bottles under $10 vs $15–20 bottles. Group definitions can combine the app's existing filter dimensions (wine type, country/region, price range, and similar). Design questions for implementation time: how the two overlaid groups stay visually distinguishable when dots share the type colouring (e.g. shape/opacity split, or group colour replacing type colour in compare mode), whether groups are mutually exclusive or may overlap, and whether more than two groups are ever needed (owner specified two).
 
 ---
 
