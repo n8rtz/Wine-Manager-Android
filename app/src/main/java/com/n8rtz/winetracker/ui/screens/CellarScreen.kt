@@ -594,7 +594,13 @@ fun CellarScreen(
                             uncheckedColor = Color.Gray,
                             checkmarkColor = Color.White
                         ),
-                        modifier = Modifier.align(Alignment.TopStart).padding(2.dp)
+                        // Small and tucked up into the card's top-left
+                        // corner so it never overlaps the wine's name.
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .offset(x = (-2).dp, y = (-8).dp)
+                            .size(28.dp)
+                            .graphicsLayer { scaleX = 0.8f; scaleY = 0.8f }
                     )
                 }
                 }
@@ -1148,17 +1154,20 @@ private fun WineActionBarAction(
         modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = tint
+                color = tint,
+                // One line, never split mid-word inside the pill.
+                maxLines = 1,
+                softWrap = false
             )
         }
     }

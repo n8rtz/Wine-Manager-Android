@@ -101,7 +101,14 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("if (wineSelectionMode)", screen)
         self.assertIn("checked = item.bottle.bottleId in selectedWineIds", screen)
         self.assertIn("uncheckedColor = Color.Gray", screen)
-        self.assertIn("Modifier.align(Alignment.TopStart)", screen)
+        self.assertIn(".align(Alignment.TopStart)", screen)
+        # The checkbox is small and tucked up above the wine's name.
+        self.assertIn(".offset(x = (-2).dp, y = (-8).dp)", screen)
+        self.assertIn(".size(28.dp)", screen)
+        self.assertIn("scaleX = 0.8f; scaleY = 0.8f", screen)
+        # Action-bar pill labels never wrap mid-word.
+        self.assertIn("maxLines = 1,", screen)
+        self.assertIn("softWrap = false", screen)
         # Edit disappears once 2+ wines are selected; Delete stays.
         self.assertIn("if (selectedWineIds.size == 1)", screen)
         self.assertIn("showWineDeleteConfirmation = true", screen)
