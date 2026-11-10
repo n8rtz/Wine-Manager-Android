@@ -49,6 +49,9 @@ class CellarRacksUiTests(unittest.TestCase):
         racks = details.index('CellarSectionHeader("Racks")')
         self.assertLess(aromas, buttons)
         self.assertLess(buttons, racks)
+        # A divider line sits under the aromas, above the action row.
+        divider = details.index("HorizontalDivider()", aromas)
+        self.assertLess(divider, buttons)
         # Header is a line with the text inline, filling the card width.
         self.assertIn("private fun CellarSectionHeader(text: String)", screen)
         self.assertIn("HorizontalDivider(modifier = Modifier.width(24.dp))", screen)

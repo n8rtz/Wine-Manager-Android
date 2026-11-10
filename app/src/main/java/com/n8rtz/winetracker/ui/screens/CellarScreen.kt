@@ -557,6 +557,9 @@ fun CellarScreen(
                                     maxVisible = 7,
                                     onOverflowClick = { onNoteClick(aromaNote.note.noteId) }
                                 )
+                                // Divider separating the aroma section from
+                                // the cellar/Notes/add-note action row.
+                                HorizontalDivider()
                             }
                             // Cellar count, Notes and add-note
                             // all sit inline in a single row.
