@@ -129,12 +129,7 @@ fun SectionedSensoryFields(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         TastingPhase.values().forEach { phase ->
-            Text(
-                phase.sectionLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SectionHeaderLine(phase.sectionLabel)
             when (phase) {
                 TastingPhase.AROMA_BEFORE_TASTING -> {
                     Column(
@@ -434,12 +429,7 @@ fun StructuredNoteSummary(
             }
         }
         TastingPhase.values().forEach { phase ->
-            Text(
-                phase.sectionLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            SectionHeaderLine(phase.sectionLabel)
             if (phase == TastingPhase.ENTRY) {
                 Text(
                     "Entry: ${entryTightOpenLabel(data.entryTightOpen ?: 0.5f)}",

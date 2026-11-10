@@ -96,9 +96,16 @@ class RatingPhaseAndValueStylingTests(unittest.TestCase):
         self.assertNotIn("0xFF333333", NOTES.read_text())
 
     def test_phase_titles_are_larger_bold_and_dark(self):
+        # Phase titles now go through the shared lined header, which keeps
+        # the larger bold dark styling.
+        header = (APP / "ui/components/SectionHeaderLine.kt").read_text()
+        self.assertIn("style = MaterialTheme.typography.titleMedium", header)
+        self.assertIn("fontWeight = FontWeight.Bold", header)
+        self.assertIn("color = MaterialTheme.colorScheme.onSurface", header)
+        self.assertIn("HorizontalDivider(modifier = Modifier.weight(1f))", header)
         sections = (APP / "ui/components/TastingPhaseSections.kt").read_text()
-        self.assertEqual(sections.count("style = MaterialTheme.typography.titleMedium,\n                fontWeight = FontWeight.Bold,"), 2)
-        self.assertIn("style = MaterialTheme.typography.titleMedium,\n                                            fontWeight = FontWeight.Bold,", NOTES.read_text())
+        self.assertEqual(sections.count("SectionHeaderLine(phase.sectionLabel)"), 2)
+        self.assertIn("SectionHeaderLine(phase.label)", NOTES.read_text())
 
     def test_expanded_value_matches_detail_styling(self):
         detail = (APP / "ui/screens/TastingNoteDetailScreen.kt").read_text()

@@ -39,6 +39,7 @@ import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.AromaChips
 import com.n8rtz.winetracker.ui.components.PhaseAromaCloud
 import com.n8rtz.winetracker.ui.components.ratingColor
+import com.n8rtz.winetracker.ui.components.SectionHeaderLine
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -478,12 +479,7 @@ fun CompactNoteItem(
                                 val phaseObservations = aromaObservations.filter { it.phase == phase }
                                 if (phaseObservations.isNotEmpty()) {
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(
-                                            phase.label,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
+                                        SectionHeaderLine(phase.label)
                                         PhaseAromaCloud(
                                             phase = phase,
                                             observations = phaseObservations,
