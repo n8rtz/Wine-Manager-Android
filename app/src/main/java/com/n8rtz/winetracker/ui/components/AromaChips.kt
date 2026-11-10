@@ -47,7 +47,7 @@ fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8, onOverflowClick: (()
                 border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(aroma.groupId)))
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(start = 9.dp, end = 13.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
