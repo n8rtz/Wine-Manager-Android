@@ -384,6 +384,8 @@ private fun AromaChipPill(
             Text(
                 label,
                 style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 6.dp)
             )
             Icon(
@@ -693,6 +695,55 @@ private fun SelectedAromasOverlay(
     modifier: Modifier = Modifier
 ) {
     val orderedIds = selectedIds
+    // Collapsed by default to a single line -- the first two chips plus a
+    // "+N" chip -- so a big selection never covers the wheel. Tapping "+N"
+    // expands the full wrapping list (capped and scrollable); tapping
+    // "Show less" collapses it again.
+    var expanded by remember { mutableStateOf(false) }
+    val showExpanded = expanded && orderedIds.size > 2
+    if (!showExpanded && orderedIds.size > 2) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            orderedIds.take(2).forEach { id ->
+                val info = AromaTaxonomy.describe(id)
+                AromaChipPill(
+                    label = info.label,
+                    groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                    dragging = false,
+                    dragOffsetPx = 0f,
+                    onRemove = { onRemove(id) },
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = 2.dp,
+                modifier = Modifier.clickable { expanded = true }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "+${orderedIds.size - 2}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Icon(
+                        Icons.Default.ExpandMore,
+                        contentDescription = "Show all selected aromas",
+                        modifier = Modifier.padding(start = 2.dp).size(16.dp)
+                    )
+                }
+            }
+        }
+        return
+    }
     // Wraps into rows so nothing is pushed off-screen; capped at roughly three rows and
     // scrollable beyond that so a very large selection can never cover the whole wheel.
     FlowRow(
@@ -724,6 +775,30 @@ private fun SelectedAromasOverlay(
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
             )
+        }
+        if (orderedIds.size > 2) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.primary,
+                shadowElevation = 2.dp,
+                modifier = Modifier.clickable { expanded = false }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Show less",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Icon(
+                        Icons.Default.ExpandLess,
+                        contentDescription = "Collapse selected aromas",
+                        modifier = Modifier.padding(start = 2.dp).size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
