@@ -22,8 +22,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -94,7 +98,36 @@ fun SectionedSensoryFields(
         (aromaSummaryStartPx - aromaHeaderHeightPx).coerceAtLeast(0).toDp()
     }
     val aromaCardColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // Aroma chip delete mode: long-pressing a chip reveals every chip's X;
+    // tapping anywhere else in these sections dismisses them again.
+    var aromaDeleteMode by remember { mutableStateOf(false) }
+    val currentAromaDeleteMode = rememberUpdatedState(aromaDeleteMode)
+    Column(
+        modifier = modifier.pointerInput(Unit) {
+            awaitPointerEventScope {
+                var downTime = 0L
+                var downPosition = Offset.Zero
+                while (true) {
+                    // Main pass runs after children, so taps consumed by a
+                    // chip (its X button / long-press) arrive consumed and
+                    // only a genuine tap elsewhere exits delete mode.
+                    val event = awaitPointerEvent(PointerEventPass.Main)
+                    val change = event.changes.firstOrNull() ?: continue
+                    if (change.pressed && !change.previousPressed) {
+                        downTime = change.uptimeMillis
+                        downPosition = change.position
+                    } else if (!change.pressed && change.previousPressed &&
+                        currentAromaDeleteMode.value && !change.isConsumed &&
+                        change.uptimeMillis - downTime < 500 &&
+                        (change.position - downPosition).getDistance() < 24f
+                    ) {
+                        aromaDeleteMode = false
+                    }
+                }
+            }
+        },
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         TastingPhase.values().forEach { phase ->
             Text(phase.sectionLabel, style = MaterialTheme.typography.titleSmall)
             when (phase) {
@@ -198,7 +231,9 @@ fun SectionedSensoryFields(
                                             com.n8rtz.winetracker.aromawheel.AromaTaxonomy.describe(id).label
                                         ) { onDataChange(before) }
                                     },
-                                    readOnly = readOnly
+                                    readOnly = readOnly,
+                                    chipDeleteMode = aromaDeleteMode,
+                                    onChipDeleteModeChange = { aromaDeleteMode = it }
                                 )
                             }
                         } else {

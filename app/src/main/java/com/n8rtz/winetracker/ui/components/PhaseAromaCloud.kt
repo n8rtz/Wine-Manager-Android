@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
@@ -107,8 +108,19 @@ fun AromaObservationCloud(
     onRemove: (String, TastingPhase) -> Unit,
     readOnly: Boolean = false,
     allowIntensityAdjustment: Boolean = !readOnly,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Delete affordances are hidden by default: a long-press on any chip
+    // enters delete mode (every chip shows its X) until the host reports
+    // a tap elsewhere via [chipDeleteMode].
+    chipDeleteMode: Boolean? = null,
+    onChipDeleteModeChange: (Boolean) -> Unit = {}
 ) {
+    var internalDeleteMode by remember { mutableStateOf(false) }
+    val deleteMode = chipDeleteMode ?: internalDeleteMode
+    fun setDeleteMode(value: Boolean) {
+        internalDeleteMode = value
+        onChipDeleteModeChange(value)
+    }
     // An aroma picked for more than one phase is listed only once; the
     // list is intensity-sorted, so the kept chip is its largest instance.
     val sortedObservations = sortAromaObservationsByIntensity(observations)
@@ -215,6 +227,17 @@ fun AromaObservationCloud(
                     color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
+                        .then(
+                            if (readOnly) {
+                                Modifier
+                            } else {
+                                Modifier.pointerInput(observation.descriptorId) {
+                                    detectTapGestures(
+                                        onLongPress = { setDeleteMode(true) }
+                                    )
+                                }
+                            }
+                        )
                         .onGloballyPositioned { coordinates ->
                             val origin = coordinates.positionInParent()
                             chipBounds[chipKey(observation)] = Rect(
@@ -245,7 +268,7 @@ fun AromaObservationCloud(
                                 FontWeight.Normal
                             }
                         )
-                        if (!readOnly) {
+                        if (!readOnly && deleteMode) {
                             IconButton(
                                 onClick = { currentOnRemove.value(observation.descriptorId, observation.phase) },
                                 modifier = Modifier.size(24.dp)

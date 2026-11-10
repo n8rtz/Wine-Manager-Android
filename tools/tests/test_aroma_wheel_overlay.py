@@ -72,6 +72,19 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("TastingPhase.values().fold(normalized) { data, phaseValue ->\n                                                setAromaIntensity(data, id, phaseValue, intensity)", sections)
         self.assertIn("TastingPhase.values().fold(normalized) { data, phaseValue ->\n                                                removeAromaObservation(data, id, phaseValue)", sections)
 
+    def test_note_chips_hide_x_until_long_press_delete_mode(self):
+        cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        # No X by default; it only renders in delete mode.
+        self.assertIn("if (!readOnly && deleteMode) {", cloud)
+        # A one-finger long-press on a chip enters delete mode.
+        self.assertIn("onLongPress = { setDeleteMode(true) }", cloud)
+        # The note sections own the mode and dismiss it on a tap elsewhere
+        # (observed on the Main pass, so chip taps arrive consumed).
+        self.assertIn("chipDeleteMode = aromaDeleteMode", sections)
+        self.assertIn("awaitPointerEvent(PointerEventPass.Main)", sections)
+        self.assertIn("aromaDeleteMode = false", sections)
+
     def test_pinch_resize_is_sensitive_angle_independent_and_shrinks_below_default(self):
         cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
         structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()

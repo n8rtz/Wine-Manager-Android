@@ -86,7 +86,7 @@ class TastingNoteDetailNavigationTests(unittest.TestCase):
         self.assertIn("readOnly: Boolean = false", cloud)
         self.assertIn("allowIntensityAdjustment: Boolean = !readOnly", cloud)
         self.assertIn("if (!allowIntensityAdjustment) {", cloud)
-        self.assertIn("if (!readOnly) {", cloud)
+        self.assertIn("if (!readOnly && deleteMode) {", cloud)
 
 
 if __name__ == "__main__":
