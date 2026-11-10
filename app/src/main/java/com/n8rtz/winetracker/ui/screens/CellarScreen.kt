@@ -543,12 +543,22 @@ fun CellarScreen(
                     },
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            RackAssignmentControl(
-                                currentRacks = rackAssignments[item.bottle.bottleId].orEmpty(),
-                                automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
-                                onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }
-                            )
-                            // Cellar count, add-note and Tasting notes
+                            // Aromas on top, then the action row, then racks.
+                            // Most recent review's aromas; if the newest
+                            // review has none, fall back to the newest
+                            // review that does.
+                            val aromaNote = itemNotes
+                                .sortedByDescending { it.note.dateTasted }
+                                .firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
+                            if (aromaNote != null) {
+                                CellarSectionHeader("Aromas · ${dateFormat.format(Date(aromaNote.note.dateTasted))}")
+                                AromaChips(
+                                    aromaNote.note.sensoryData?.aromas.orEmpty(),
+                                    maxVisible = 7,
+                                    onOverflowClick = { onNoteClick(aromaNote.note.noteId) }
+                                )
+                            }
+                            // Cellar count, Notes and add-note
                             // all sit inline in a single row.
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -605,31 +615,17 @@ fun CellarScreen(
                                     Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
                                 }
                             }
+                            CellarSectionHeader("Racks")
+                            RackAssignmentControl(
+                                currentRacks = rackAssignments[item.bottle.bottleId].orEmpty(),
+                                automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
+                                onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }
+                            )
                             if (formattedAddedDate != null) {
                                 Text(
                                     text = "Added on: $formattedAddedDate",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            
-                            // Most recent review's aromas; if the newest
-                            // review has none, fall back to the newest
-                            // review that does.
-                            val aromaNote = itemNotes
-                                .sortedByDescending { it.note.dateTasted }
-                                .firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
-                            if (aromaNote != null) {
-                                Text(
-                                    text = "Aromas · ${dateFormat.format(Date(aromaNote.note.dateTasted))}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                AromaChips(
-                                    aromaNote.note.sensoryData?.aromas.orEmpty(),
-                                    maxVisible = 7,
-                                    onOverflowClick = { onNoteClick(aromaNote.note.noteId) }
                                 )
                             }
                         }
@@ -1325,6 +1321,31 @@ fun FilterSheet(
 
 /** One solid pill action in the bottom wine action bar. */
 @Composable
+/**
+ * Small section header for the expanded wine card: a short line segment,
+ * the header text inline with it, then a line filling the rest of the
+ * card width — ------- Aromas --------------------------
+ */
+@Composable
+private fun CellarSectionHeader(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        HorizontalDivider(modifier = Modifier.width(24.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+        HorizontalDivider(modifier = Modifier.weight(1f))
+    }
+}
+
 private fun WineActionBarAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,

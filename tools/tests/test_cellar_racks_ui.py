@@ -41,6 +41,19 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("selectCellarTab(1)", screen)
         self.assertIn("updateRackAssignments", screen)
 
+    def test_expanded_card_orders_aromas_buttons_then_racks_with_line_headers(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        details = screen.split("details = {", 1)[1].split("                    },\n                    onClick = {", 1)[0]
+        aromas = details.index('CellarSectionHeader("Aromas · ')
+        buttons = details.index('text = "Cellar: ${item.bottle.quantity}"')
+        racks = details.index('CellarSectionHeader("Racks")')
+        self.assertLess(aromas, buttons)
+        self.assertLess(buttons, racks)
+        # Header is a line with the text inline, filling the card width.
+        self.assertIn("private fun CellarSectionHeader(text: String)", screen)
+        self.assertIn("HorizontalDivider(modifier = Modifier.width(24.dp))", screen)
+        self.assertIn("HorizontalDivider(modifier = Modifier.weight(1f))", screen)
+
     def test_long_press_rack_button_picks_multiple_wines_for_one_rack(self):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
         racks = (APP / "ui/screens/CellarRackViews.kt").read_text()
