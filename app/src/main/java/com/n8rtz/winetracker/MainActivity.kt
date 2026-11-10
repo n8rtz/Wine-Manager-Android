@@ -335,6 +335,9 @@ fun MainAppScaffold(
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
     var isMenuExpanded by remember { mutableStateOf(false) }
+    // True while the cellar's bottom wine action bar is showing; the "+"
+    // Add button/menu disappears for as long as it is up.
+    var wineActionBarVisible by remember { mutableStateOf(false) }
     var menuHistory by remember { mutableStateOf(listOf("cellar")) }
     fun navigateToMenu(route: String) {
         if (menuHistory.lastOrNull() != route) menuHistory = menuHistory + route
@@ -377,6 +380,11 @@ fun MainAppScaffold(
     // Close an open Add submenu as soon as the user leaves Cellar or Notes.
     LaunchedEffect(currentRoute) {
         if (!showAddMenu) isMenuExpanded = false
+        if (currentRoute != "cellar") wineActionBarVisible = false
+    }
+    // The cellar wine action bar replaces the "+" menu while it is showing.
+    LaunchedEffect(wineActionBarVisible) {
+        if (wineActionBarVisible) isMenuExpanded = false
     }
 
     /** A JSON restore rewrites SharedPreferences; refresh the in-memory ViewModels immediately. */
@@ -389,7 +397,7 @@ fun MainAppScaffold(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
-                if (showAddMenu && currentRoute != "add_wine") {
+                if (showAddMenu && currentRoute != "add_wine" && !wineActionBarVisible) {
                     Surface(
                         onClick = {
                             if (currentRoute == "notes") {
@@ -519,7 +527,8 @@ fun MainAppScaffold(
                         tastingNoteViewModel.openWineTastingNotes(definitionId, vintage)
                         navigateToMenu("notes")
                     },
-                    onConsumed = ::showConsumptionUndo
+                    onConsumed = ::showConsumptionUndo,
+                    onWineActionBarVisibleChange = { wineActionBarVisible = it }
                 )
             }
             composable("notes") {
@@ -686,7 +695,7 @@ fun MainAppScaffold(
 
     // Dimming Overlay
     AnimatedVisibility(
-        visible = isMenuExpanded && showAddMenu,
+        visible = isMenuExpanded && showAddMenu && !wineActionBarVisible,
         enter = fadeIn(),
         exit = fadeOut()
     ) {
@@ -710,7 +719,7 @@ fun MainAppScaffold(
 
     // Popup Menu
     AnimatedVisibility(
-        visible = isMenuExpanded && showAddMenu,
+        visible = isMenuExpanded && showAddMenu && !wineActionBarVisible,
         enter = slideInVertically(initialOffsetY = { 40 }) + fadeIn() + expandVertically(),
         exit = slideOutVertically(targetOffsetY = { 40 }) + fadeOut() + shrinkVertically(),
         modifier = Modifier.fillMaxSize()

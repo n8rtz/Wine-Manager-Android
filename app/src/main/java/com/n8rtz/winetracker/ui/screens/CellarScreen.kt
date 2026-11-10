@@ -1,6 +1,11 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,7 +54,8 @@ fun CellarScreen(
     onEditWine: (Long) -> Unit,
     onNoteClick: (Long) -> Unit,
     onTastingNotesClick: (Long, String) -> Unit,
-    onConsumed: (String, Long) -> Unit
+    onConsumed: (String, Long) -> Unit,
+    onWineActionBarVisibleChange: (Boolean) -> Unit = {}
 ) {
     val inventory by viewModel.activeInventory.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
@@ -66,6 +72,11 @@ fun CellarScreen(
     var wineMenuBottleId by remember { mutableStateOf<Long?>(null) }
     var showWineDeleteConfirmation by remember { mutableStateOf(false) }
     val wineSelectionMode = selectedWineIds.isNotEmpty()
+    // The wine action popup is a transparent single-line bar docked at the
+    // bottom of the screen (above the main navigation); while it is up the
+    // "+" Add menu in the host scaffold is hidden.
+    val wineActionBarVisible = wineMenuBottleId != null && wineSelectionMode
+    LaunchedEffect(wineActionBarVisible) { onWineActionBarVisibleChange(wineActionBarVisible) }
     // Bottles (0) and Racks (1) live in a pager so swipes and tab taps slide
     // smoothly between pages instead of swapping content instantaneously.
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
@@ -589,84 +600,6 @@ fun CellarScreen(
                         modifier = Modifier.align(Alignment.TopStart).padding(2.dp)
                     )
                 }
-                DropdownMenu(
-                    expanded = wineMenuBottleId == item.bottle.bottleId,
-                    onDismissRequest = { wineMenuBottleId = null },
-                    modifier = Modifier.width(252.dp)
-                ) {
-                    // Themed action popup: a bordeaux-tinted header naming
-                    // the long-pressed wine and the live selection count,
-                    // then icon-tile actions. Edit only makes sense for a
-                    // single selected wine, so it disappears at 2+.
-                    Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            ) {
-                                Icon(
-                                    Icons.Default.WineBar,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(8.dp).size(20.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "${item.definition.maker} - ${item.definition.name}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = if (selectedWineIds.size == 1) "1 wine selected" else "${selectedWineIds.size} wines selected",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                        )
-                        if (selectedWineIds.size == 1) {
-                            WineActionMenuRow(
-                                icon = Icons.Default.Edit,
-                                label = "Edit wine",
-                                iconTint = MaterialTheme.colorScheme.primary,
-                                iconBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                onClick = {
-                                    val target = selectedWineIds.single()
-                                    wineMenuBottleId = null
-                                    onEditWine(target)
-                                }
-                            )
-                        }
-                        WineActionMenuRow(
-                            icon = Icons.Default.Delete,
-                            label = if (selectedWineIds.size == 1) "Delete wine" else "Delete ${selectedWineIds.size} wines",
-                            iconTint = MaterialTheme.colorScheme.error,
-                            iconBackground = MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
-                            labelColor = MaterialTheme.colorScheme.error,
-                            onClick = {
-                                wineMenuBottleId = null
-                                showWineDeleteConfirmation = true
-                            }
-                        )
-                        WineActionMenuRow(
-                            icon = Icons.Default.Close,
-                            label = "Cancel",
-                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            iconBackground = MaterialTheme.colorScheme.surfaceVariant,
-                            onClick = { wineMenuBottleId = null }
-                        )
-                    }
-                }
                 }
             }
             
@@ -692,6 +625,57 @@ fun CellarScreen(
                 filterActive = isFilterActive,
                 modifier = Modifier.align(Alignment.TopCenter)
             )
+        }
+
+        // Single-line transparent action bar docked at the bottom of the
+        // screen, just above the main navigation buttons. It has no solid
+        // backdrop -- only the individual action pills carry a translucent
+        // fill so they stay readable over the list.
+        AnimatedVisibility(
+            visible = wineActionBarVisible,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Edit only makes sense for a single selected wine.
+                if (selectedWineIds.size == 1) {
+                    WineActionBarAction(
+                        icon = Icons.Default.Edit,
+                        label = "Edit",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            val target = selectedWineIds.single()
+                            wineMenuBottleId = null
+                            onEditWine(target)
+                        }
+                    )
+                }
+                WineActionBarAction(
+                    icon = Icons.Default.Delete,
+                    label = if (selectedWineIds.size == 1) "Delete" else "Delete ${selectedWineIds.size}",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        wineMenuBottleId = null
+                        showWineDeleteConfirmation = true
+                    }
+                )
+                WineActionBarAction(
+                    icon = Icons.Default.Close,
+                    label = "Cancel",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    onClick = { wineMenuBottleId = null }
+                )
+            }
         }
         }
             } else {
@@ -1140,38 +1124,39 @@ fun FilterSheet(
     }
 }
 
-/** One polished action row inside the long-press wine popup menu. */
+/** One translucent pill action in the transparent bottom wine action bar. */
 @Composable
-private fun WineActionMenuRow(
+private fun WineActionBarAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
-    iconTint: androidx.compose.ui.graphics.Color,
-    iconBackground: androidx.compose.ui.graphics.Color,
-    labelColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+    tint: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+        ),
+        shadowElevation = 6.dp,
+        modifier = modifier
     ) {
-        Surface(shape = RoundedCornerShape(8.dp), color = iconBackground) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.padding(6.dp).size(18.dp)
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = tint
             )
         }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            color = labelColor
-        )
     }
 }
 

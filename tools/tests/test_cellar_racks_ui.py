@@ -95,7 +95,7 @@ class CellarRacksUiTests(unittest.TestCase):
         # Long-press selects the wine and opens its popup menu.
         self.assertIn("selectedWineIds = selectedWineIds + item.bottle.bottleId", screen)
         self.assertIn("wineMenuBottleId = item.bottle.bottleId", screen)
-        self.assertIn("DropdownMenu(", screen)
+        self.assertNotIn("DropdownMenu(", screen)
         # Every card shows a top-left checkbox while selecting; the selected
         # wine's is checked (checkmark), the rest are empty grey boxes.
         self.assertIn("if (wineSelectionMode)", screen)
@@ -105,16 +105,21 @@ class CellarRacksUiTests(unittest.TestCase):
         # Edit disappears once 2+ wines are selected; Delete stays.
         self.assertIn("if (selectedWineIds.size == 1)", screen)
         self.assertIn("showWineDeleteConfirmation = true", screen)
-        # The popup is a themed, polished menu (not a bare dropdown): a
-        # bordeaux-tinted header naming the wine + selection count, and
-        # icon-tile action rows.
-        self.assertIn("private fun WineActionMenuRow(", screen)
-        self.assertIn('label = "Edit wine"', screen)
-        self.assertIn("Icons.Default.WineBar", screen)
+        # The popup is a single-line, transparent action bar docked at the
+        # bottom of the screen (above the main navigation): no solid
+        # backdrop, just translucent bordeaux-outlined pills, and the "+"
+        # Add menu in the host scaffold hides while it is up.
+        self.assertIn("private fun WineActionBarAction(", screen)
+        self.assertIn('label = "Edit"', screen)
         self.assertIn("Icons.Default.Edit", screen)
         self.assertIn("Icons.Default.Delete", screen)
-        self.assertIn("MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)", screen)
-        self.assertIn('"${selectedWineIds.size} wines selected"', screen)
+        self.assertIn("Alignment.BottomCenter", screen)
+        self.assertIn("MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)", screen)
+        self.assertIn("onWineActionBarVisibleChange: (Boolean) -> Unit = {}", screen)
+        main = (ROOT / "app/src/main/java/com/n8rtz/winetracker/MainActivity.kt").read_text()
+        self.assertIn("onWineActionBarVisibleChange = { wineActionBarVisible = it }", main)
+        self.assertIn('currentRoute != "add_wine" && !wineActionBarVisible', main)
+        self.assertIn("visible = isMenuExpanded && showAddMenu && !wineActionBarVisible", main)
         # Deleting always asks for confirmation first.
         self.assertIn('Text(if (selectedWineIds.size == 1) "Delete wine?" else "Delete wines?")', screen)
         self.assertIn("selectedWineIds.forEach { bottleId -> viewModel.deleteWine(bottleId) }", screen)
