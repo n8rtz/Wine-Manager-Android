@@ -217,9 +217,9 @@ class CellarRacksUiTests(unittest.TestCase):
         # the lower and upper bounds for a rating range.
         self.assertIn("Modifier.offset(y = 6.dp)", card)
         self.assertIn("style = MaterialTheme.typography.titleMedium", card)
-        # The rating box outline uses the app's bordeaux theme primary.
-        self.assertIn(".border(1.5.dp, MaterialTheme.colorScheme.primary, ratingShape)", card)
-        self.assertNotIn(".border(1.5.dp, MaterialTheme.colorScheme.outline, ratingShape)", card)
+        # The rating box outline is a neutral black/dark gray.
+        self.assertIn(".border(1.5.dp, Color(0xFF333333), ratingShape)", card)
+        self.assertNotIn(".border(1.5.dp, MaterialTheme.colorScheme.primary, ratingShape)", card)
         self.assertIn("Brush.horizontalGradient(", card)
         self.assertIn("ratingColor(ratingValues.first())", card)
         self.assertIn("ratingColor(ratingValues.last())", card)
