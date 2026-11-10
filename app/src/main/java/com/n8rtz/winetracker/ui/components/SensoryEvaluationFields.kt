@@ -135,21 +135,24 @@ fun OverallScoreSlider(
     Column {
         // Same lined header treatment as the phase sections.
         SectionHeaderLine("Overall Score")
-        Row(
+        // Rating description centred under the header; the score pill
+        // stays at the right edge of the same row.
+        Box(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 if (scoreSelected) band.label else "Choose a score",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (scoreSelected) band.color else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
+                textAlign = TextAlign.Center
             )
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = indicatorColor.copy(alpha = 0.13f),
-                contentColor = indicatorColor
+                contentColor = indicatorColor,
+                modifier = Modifier.align(Alignment.CenterEnd)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
