@@ -318,7 +318,14 @@ fun AromaObservationCloud(
                         )
                         Text(
                             text = info.label,
-                            style = MaterialTheme.typography.labelLarge.copy(fontSize = fontSize),
+                            // Line height scales with the pinch-driven font
+                            // size: the fixed labelLarge line height would
+                            // otherwise cap the text layout, so the chip
+                            // height never grew or shrank with its text.
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontSize = fontSize,
+                                lineHeight = fontSize * 1.2f
+                            ),
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )

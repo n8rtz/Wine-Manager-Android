@@ -119,3 +119,9 @@ class AromaWheelOverlayTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ChipHeightTests(unittest.TestCase):
+    def test_chip_height_scales_with_pinch_font_size(self):
+        cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
+        self.assertIn("lineHeight = fontSize * 1.2f", cloud)
