@@ -358,7 +358,8 @@ private fun AromaChipPill(
     dragOffsetPx: Float,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
-    dragOffsetYPx: Float = 0f
+    dragOffsetYPx: Float = 0f,
+    showRemove: Boolean = true
 ) {
     Surface(
         shape = RoundedCornerShape(50),
@@ -392,17 +393,19 @@ private fun AromaChipPill(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 6.dp)
             )
-            Icon(
-                Icons.Default.Close,
-                contentDescription = "Remove $label",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onRemove)
-                    .padding(3.dp)
-                    .size(14.dp)
-            )
+            if (showRemove) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove $label",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(start = 2.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onRemove)
+                        .padding(3.dp)
+                        .size(14.dp)
+                )
+            }
         }
     }
 }
@@ -773,7 +776,8 @@ private fun SelectedAromasOverlay(
     // drag it up to a phase chip; the drop reports the pointer's root
     // coordinates so the caller can resolve which phase it landed on.
     onDropChipAt: ((String, Offset) -> Unit)? = null,
-    onChipDragChange: ((String?, Offset) -> Unit)? = null
+    onChipDragChange: ((String?, Offset) -> Unit)? = null,
+    locked: Boolean = false
 ) {
     val orderedIds = selectedIds
     var draggingChipId by remember { mutableStateOf<String?>(null) }
@@ -848,6 +852,7 @@ private fun SelectedAromasOverlay(
                     dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
                     dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
                     onRemove = { onRemove(id) },
+                    showRemove = !locked,
                     modifier = Modifier.weight(1f, fill = false).then(chipDragModifier(id))
                 )
             }
@@ -894,21 +899,24 @@ private fun SelectedAromasOverlay(
                 dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
                 dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
                 onRemove = { onRemove(id) },
+                showRemove = !locked,
                 modifier = chipDragModifier(id)
             )
         }
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-            contentColor = MaterialTheme.colorScheme.primary,
-            shadowElevation = 2.dp,
-            modifier = Modifier.clickable(onClick = onClear)
-        ) {
-            Text(
-                "Clear all",
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-            )
+        if (!locked) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.primary,
+                shadowElevation = 2.dp,
+                modifier = Modifier.clickable(onClick = onClear)
+            ) {
+                Text(
+                    "Clear all",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
         }
         if (orderedIds.size > 2) {
             Surface(
@@ -1145,7 +1153,8 @@ fun PhaseAromaWheelDialog(
     initialObservations: List<AromaObservation>,
     initialPhase: TastingPhase,
     onConfirm: (TastingPhase, List<AromaObservation>) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    readOnly: Boolean = false
 ) {
     val observations = remember {
         mutableStateListOf<AromaObservation>().apply {
@@ -1173,11 +1182,12 @@ fun PhaseAromaWheelDialog(
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
     val hasUnsavedChanges = observations.toList() != initialObservationSnapshot
     fun requestDismiss() {
-        if (hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
+        if (!readOnly && hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
     }
     BackHandler { requestDismiss() }
 
     fun applyToggle(id: String) {
+        if (readOnly) return
         val result = toggleAromaObservation(
             SensoryData(aromaObservations = observations.toList()),
             id,
@@ -1222,6 +1232,7 @@ fun PhaseAromaWheelDialog(
     }
 
     fun moveChipToPhaseAt(id: String, pointerRoot: Offset) {
+        if (readOnly) return
         val target = phaseChipBounds.entries
             .firstOrNull { it.value.contains(pointerRoot) }?.key ?: return
         if (target == activePhase) return
@@ -1297,7 +1308,7 @@ fun PhaseAromaWheelDialog(
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "$distinctCount/$MAX_SELECTED_DESCRIPTORS",
+                            if (readOnly) "View only" else "$distinctCount/$MAX_SELECTED_DESCRIPTORS",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1314,8 +1325,10 @@ fun PhaseAromaWheelDialog(
                             contentDescription = null
                         )
                     }
-                    TextButton(onClick = { onConfirm(activePhase, observations.toList()) }) {
-                        Text("Done")
+                    if (!readOnly) {
+                        TextButton(onClick = { onConfirm(activePhase, observations.toList()) }) {
+                            Text("Done")
+                        }
                     }
                 }
 
@@ -1385,13 +1398,14 @@ fun PhaseAromaWheelDialog(
                                         .align(Alignment.TopCenter)
                                         .fillMaxWidth()
                                         .padding(top = 8.dp),
-                                    onDropChipAt = { id, pointerRoot ->
+                                    onDropChipAt = if (readOnly) null else { id, pointerRoot ->
                                         moveChipToPhaseAt(id, pointerRoot)
                                     },
-                                    onChipDragChange = { id, pointerRoot ->
+                                    onChipDragChange = if (readOnly) null else { id, pointerRoot ->
                                         chipDragId = id
                                         chipDragPointerRoot = pointerRoot
-                                    }
+                                    },
+                                    locked = readOnly
                                 )
                             }
                         }

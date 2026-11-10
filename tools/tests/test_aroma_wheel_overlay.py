@@ -22,7 +22,7 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn('"Clear all"', source)
         self.assertNotIn("heightIn(max = 148.dp)", source)
         # Long-pressing a chip and dragging it to a phase chip reassigns it.
-        self.assertIn("onDropChipAt = { id, pointerRoot ->", source)
+        self.assertIn("onDropChipAt = if (readOnly) null else { id, pointerRoot ->", source)
         self.assertIn("moveChipToPhaseAt(id, pointerRoot)", source)
         self.assertIn("moveAromaObservation(", source)
         self.assertIn("phaseChipBounds[phase] = Rect(", source)
@@ -42,6 +42,17 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn('Text("Don\'t save")', source)
         self.assertIn("onConfirm(selected.toList())", source)
         self.assertIn("onConfirm(activePhase, observations.toList())", source)
+
+    def test_phase_wheel_can_open_locked_for_viewing_a_note(self):
+        source = DIALOG.read_text()
+        detail = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/TastingNoteDetailScreen.kt").read_text()
+        self.assertIn("readOnly: Boolean = false", source)
+        self.assertIn('if (readOnly) "View only"', source)
+        self.assertIn("locked = readOnly", source)
+        self.assertIn("showRemove = !locked", source)
+        # Detail screen opens the wheel without entering edit mode.
+        self.assertIn("onOpenWheel = { showAromaWheel = true }", detail)
+        self.assertIn("readOnly = true\n                )", detail)
 
     def test_chip_deletion_shows_bottom_undo_popup_in_wheel_and_note(self):
         wheel = DIALOG.read_text()

@@ -190,7 +190,9 @@ fun SectionedSensoryFields(
                             AromaWheelLauncherHeader(
                                 selectedIds = selectedAromaIds,
                                 onClick = onOpenWheel,
-                                enabled = !readOnly,
+                                // Always tappable: in read-only contexts the
+                                // wheel itself opens locked for viewing.
+                                enabled = true,
                                 compact = true,
                                 modifier = Modifier.weight(1f)
                             )
@@ -240,7 +242,7 @@ fun SectionedSensoryFields(
                             AromaWheelSummaryPanel(
                                 selectedIds = selectedAromaIds,
                                 onClick = onOpenWheel,
-                                enabled = !readOnly,
+                                enabled = true,
                                 compact = true,
                                 modifier = Modifier.fillMaxWidth()
                             )

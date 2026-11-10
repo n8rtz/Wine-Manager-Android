@@ -49,6 +49,8 @@ import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.ui.components.CommonFaultsFields
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
+import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.ui.components.PhaseAromaWheelDialog
 import com.n8rtz.winetracker.ui.components.SectionedSensoryFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
@@ -67,6 +69,7 @@ fun TastingNoteDetailScreen(
     val cellarPrices by viewModel.cellarPrices.collectAsState(initial = emptyMap())
     var note by remember(noteId) { mutableStateOf<TastingNote?>(null) }
     var loaded by remember(noteId) { mutableStateOf(false) }
+    var showAromaWheel by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
         note = viewModel.getTastingNoteById(noteId)
@@ -193,10 +196,22 @@ fun TastingNoteDetailScreen(
                 definitionColor = definition?.defaultColorHsv,
                 legacyAromasUnresolved = sensoryData.aromaObservations.isEmpty() && sensoryData.aromas.isNotEmpty(),
                 onDataChange = {},
-                onOpenWheel = {},
+                onOpenWheel = { showAromaWheel = true },
                 onAssignLegacy = {},
                 readOnly = true
             )
+
+            if (showAromaWheel) {
+                // Viewing mode: the wheel opens locked — aromas can be
+                // browsed by phase but not changed.
+                PhaseAromaWheelDialog(
+                    initialObservations = sensoryData.aromaObservations,
+                    initialPhase = TastingPhase.AROMA_BEFORE_TASTING,
+                    onConfirm = { _, _ -> showAromaWheel = false },
+                    onDismiss = { showAromaWheel = false },
+                    readOnly = true
+                )
+            }
             CommonFaultsFields(data = sensoryData, onChange = {}, readOnly = true)
 
             OutlinedTextField(
