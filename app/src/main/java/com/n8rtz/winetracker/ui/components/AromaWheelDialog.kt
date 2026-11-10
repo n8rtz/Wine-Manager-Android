@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.DonutLarge
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -592,14 +593,6 @@ fun AromaWheelDialog(
             removedChipLabel = null
         }
     }
-    fun removeChipWithUndo(id: String) {
-        val snapshot = selected.toList()
-        applyToggle(id)
-        if (id !in selected) {
-            removedChipSnapshot = snapshot
-            removedChipLabel = AromaTaxonomy.describe(id).label
-        }
-    }
     val hasUnsavedChanges = selected.toSet() != initiallySelectedIds.toSet()
     fun requestDismiss() {
         if (hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
@@ -620,6 +613,15 @@ fun AromaWheelDialog(
                     "That descriptor is no longer in the aroma wheel"
                 else -> null
             }
+        }
+    }
+
+    fun removeChipWithUndo(id: String) {
+        val snapshot = selected.toList()
+        applyToggle(id)
+        if (id !in selected) {
+            removedChipSnapshot = snapshot
+            removedChipLabel = AromaTaxonomy.describe(id).label
         }
     }
 
