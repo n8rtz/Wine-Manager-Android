@@ -1343,19 +1343,27 @@ fun PhaseAromaWheelDialog(
                     }
                 }
 
-                FlowRow(
+                // All four phases share one line (equal widths) instead of
+                // wrapping onto a second row.
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     TastingPhase.values().forEach { phase ->
                         FilterChip(
                             selected = activePhase == phase || hoveredPhase == phase,
                             onClick = { activePhase = phase },
-                            label = { Text(phase.label) },
-                            modifier = Modifier.onGloballyPositioned { coordinates ->
+                            label = {
+                                Text(
+                                    phase.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            },
+                            modifier = Modifier.weight(1f).onGloballyPositioned { coordinates ->
                                 val origin = coordinates.positionInRoot()
                                 phaseChipBounds[phase] = Rect(
                                     origin.x, origin.y,

@@ -125,3 +125,10 @@ class ChipHeightTests(unittest.TestCase):
     def test_chip_height_scales_with_pinch_font_size(self):
         cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
         self.assertIn("lineHeight = fontSize * 1.2f", cloud)
+
+
+class PhaseBarLayoutTests(unittest.TestCase):
+    def test_all_four_phases_share_one_line(self):
+        source = DIALOG.read_text()
+        self.assertIn("modifier = Modifier.weight(1f).onGloballyPositioned { coordinates ->", source)
+        self.assertIn("style = MaterialTheme.typography.labelMedium,\n                                    maxLines = 1,", source)
