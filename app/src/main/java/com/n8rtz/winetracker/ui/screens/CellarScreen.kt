@@ -385,6 +385,11 @@ fun CellarScreen(
         // never stolen by a page change.
         HorizontalPager(
             state = pagerState,
+            // Keep the off-screen page composed so swiping Bottles <-> Racks
+            // and back does not reset the page's local state (wine selection
+            // and its Edit/Delete bar, expanded card, scroll position, rack
+            // selection state, ...). With only two pages this is cheap.
+            beyondViewportPageCount = 1,
             userScrollEnabled = selectedRack == null && assignmentBottleId == null && !rackDragActive,
             modifier = Modifier.weight(1f)
         ) { page ->

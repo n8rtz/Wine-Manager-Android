@@ -69,6 +69,9 @@ class CellarRacksUiTests(unittest.TestCase):
         # (and an animated settle on tab taps) instead of a sudden swap.
         self.assertIn("rememberPagerState(initialPage = 0) { 2 }", screen)
         self.assertIn("HorizontalPager(", screen)
+        # Both pages stay composed so swipe-away-and-back keeps page state
+        # (e.g. an open wine Edit/Delete bar is still open on return).
+        self.assertIn("beyondViewportPageCount = 1", screen)
         self.assertIn("pagerState.animateScrollToPage(page)", screen)
         self.assertIn("selectCellarTab(0)", screen)
         self.assertIn("selectCellarTab(1)", screen)
