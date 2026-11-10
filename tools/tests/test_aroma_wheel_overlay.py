@@ -55,7 +55,7 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("showRemove = !locked", source)
         # Detail screen opens the wheel without entering edit mode.
         self.assertIn("onOpenWheel = { aromaWheelEditMode = false; showAromaWheel = true }", detail)
-        self.assertIn("readOnly = true\n                )", detail)
+        self.assertIn("readOnly = !aromaWheelEditMode,", detail)
 
     def test_chip_deletion_shows_bottom_undo_popup_in_wheel_and_note(self):
         wheel = DIALOG.read_text()
