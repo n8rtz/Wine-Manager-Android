@@ -17,9 +17,18 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("modifier = Modifier.clickable { expanded = true }", source)
         self.assertIn('"Show less"', source)
         self.assertIn("modifier = Modifier.clickable { expanded = false }", source)
-        # The expanded view keeps the full wrapping list and Clear all.
+        # The expanded view shows every chip at once (no cap, no scroll)
+        # and keeps Clear all.
         self.assertIn('"Clear all"', source)
-        self.assertIn("heightIn(max = 148.dp)", source)
+        self.assertNotIn("heightIn(max = 148.dp)", source)
+        # Long-pressing a chip and dragging it to a phase chip reassigns it.
+        self.assertIn("onDropChipAt = { id, pointerRoot ->", source)
+        self.assertIn("moveChipToPhaseAt(id, pointerRoot)", source)
+        self.assertIn("moveAromaObservation(", source)
+        self.assertIn("phaseChipBounds[phase] = Rect(", source)
+        self.assertIn("hoveredPhase == phase", source)
+        structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()
+        self.assertIn("fun moveAromaObservation(", structure)
 
 
 if __name__ == "__main__":

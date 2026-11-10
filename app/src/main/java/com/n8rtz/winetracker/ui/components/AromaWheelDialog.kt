@@ -54,6 +54,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.runtime.key
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -97,6 +98,7 @@ import com.n8rtz.winetracker.data.local.AromaEditReason
 import com.n8rtz.winetracker.data.local.AromaObservation
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.data.local.moveAromaObservation
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.toFlatAromaIds
 import com.n8rtz.winetracker.data.local.toggleAromaObservation
@@ -692,9 +694,64 @@ private fun SelectedAromasOverlay(
     selectedIds: List<String>,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Phase reassignment (phase wheel dialog only): long-press a chip and
+    // drag it up to a phase chip; the drop reports the pointer's root
+    // coordinates so the caller can resolve which phase it landed on.
+    onDropChipAt: ((String, Offset) -> Unit)? = null,
+    onChipDragChange: ((String?, Offset) -> Unit)? = null
 ) {
     val orderedIds = selectedIds
+    var draggingChipId by remember { mutableStateOf<String?>(null) }
+    var chipDragOffset by remember { mutableStateOf(Offset.Zero) }
+    var chipDragPointerRoot by remember { mutableStateOf(Offset.Zero) }
+    val chipBoundsRoot = remember { mutableStateMapOf<String, Rect>() }
+    val chipDragModifier: (String) -> Modifier = { id ->
+        if (onDropChipAt == null) {
+            Modifier
+        } else {
+            Modifier
+                .onGloballyPositioned { coordinates ->
+                    val origin = coordinates.positionInRoot()
+                    chipBoundsRoot[id] = Rect(
+                        origin.x, origin.y,
+                        origin.x + coordinates.size.width,
+                        origin.y + coordinates.size.height
+                    )
+                }
+                .pointerInput(id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { start ->
+                            draggingChipId = id
+                            chipDragOffset = Offset.Zero
+                            chipDragPointerRoot =
+                                (chipBoundsRoot[id]?.topLeft ?: Offset.Zero) + start
+                            onChipDragChange?.invoke(id, chipDragPointerRoot)
+                        },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            if (draggingChipId != id) return@detectDragGesturesAfterLongPress
+                            chipDragOffset += amount
+                            chipDragPointerRoot += amount
+                            onChipDragChange?.invoke(id, chipDragPointerRoot)
+                        },
+                        onDragEnd = {
+                            if (draggingChipId == id) {
+                                onDropChipAt(id, chipDragPointerRoot)
+                            }
+                            draggingChipId = null
+                            chipDragOffset = Offset.Zero
+                            onChipDragChange?.invoke(null, chipDragPointerRoot)
+                        },
+                        onDragCancel = {
+                            draggingChipId = null
+                            chipDragOffset = Offset.Zero
+                            onChipDragChange?.invoke(null, chipDragPointerRoot)
+                        }
+                    )
+                }
+        }
+    }
     // Collapsed by default to a single line -- the first two chips plus a
     // "+N" chip -- so a big selection never covers the wheel. Tapping "+N"
     // expands the full wrapping list (capped and scrollable); tapping
@@ -709,13 +766,15 @@ private fun SelectedAromasOverlay(
         ) {
             orderedIds.take(2).forEach { id ->
                 val info = AromaTaxonomy.describe(id)
+                val dragging = draggingChipId == id
                 AromaChipPill(
                     label = info.label,
                     groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                    dragging = false,
-                    dragOffsetPx = 0f,
+                    dragging = dragging,
+                    dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
+                    dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
                     onRemove = { onRemove(id) },
-                    modifier = Modifier.weight(1f, fill = false)
+                    modifier = Modifier.weight(1f, fill = false).then(chipDragModifier(id))
                 )
             }
             Surface(
@@ -744,23 +803,24 @@ private fun SelectedAromasOverlay(
         }
         return
     }
-    // Wraps into rows so nothing is pushed off-screen; capped at roughly three rows and
-    // scrollable beyond that so a very large selection can never cover the whole wheel.
+    // Expanded: every chip is shown at once, however much of the wheel it
+    // covers -- no height cap and no scrolling.
     FlowRow(
-        modifier = modifier
-            .heightIn(max = 148.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         orderedIds.forEach { id ->
             val info = AromaTaxonomy.describe(id)
+            val dragging = draggingChipId == id
             AromaChipPill(
                 label = info.label,
                 groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                dragging = false,
-                dragOffsetPx = 0f,
-                onRemove = { onRemove(id) }
+                dragging = dragging,
+                dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
+                dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
+                onRemove = { onRemove(id) },
+                modifier = chipDragModifier(id)
             )
         }
         Surface(
@@ -1049,6 +1109,38 @@ fun PhaseAromaWheelDialog(
         observations.removeAll { it.phase == activePhase }
     }
 
+    // Dragging a selected chip up to the phase bar reassigns it. The phase
+    // chips register their root bounds; the hovered one highlights mid-drag.
+    val phaseChipBounds = remember { mutableStateMapOf<TastingPhase, Rect>() }
+    var chipDragId by remember { mutableStateOf<String?>(null) }
+    var chipDragPointerRoot by remember { mutableStateOf(Offset.Zero) }
+    val hoveredPhase = if (chipDragId != null) {
+        phaseChipBounds.entries.firstOrNull { it.value.contains(chipDragPointerRoot) }?.key
+    } else {
+        null
+    }
+
+    fun moveChipToPhaseAt(id: String, pointerRoot: Offset) {
+        val target = phaseChipBounds.entries
+            .firstOrNull { it.value.contains(pointerRoot) }?.key ?: return
+        if (target == activePhase) return
+        val result = moveAromaObservation(
+            SensoryData(aromaObservations = observations.toList()),
+            id,
+            activePhase,
+            target
+        )
+        result.onSuccess { updated ->
+            observations.clear()
+            observations.addAll(updated.aromaObservations)
+        }.onFailure { error ->
+            notice = when ((error as? AromaEditException)?.reason) {
+                AromaEditReason.DUPLICATE -> "Already in ${target.label}"
+                else -> null
+            }
+        }
+    }
+
     LaunchedEffect(notice) {
         if (notice != null) {
             delay(2600)
@@ -1121,9 +1213,17 @@ fun PhaseAromaWheelDialog(
                 ) {
                     TastingPhase.values().forEach { phase ->
                         FilterChip(
-                            selected = activePhase == phase,
+                            selected = activePhase == phase || hoveredPhase == phase,
                             onClick = { activePhase = phase },
-                            label = { Text(phase.label) }
+                            label = { Text(phase.label) },
+                            modifier = Modifier.onGloballyPositioned { coordinates ->
+                                val origin = coordinates.positionInRoot()
+                                phaseChipBounds[phase] = Rect(
+                                    origin.x, origin.y,
+                                    origin.x + coordinates.size.width,
+                                    origin.y + coordinates.size.height
+                                )
+                            }
                         )
                     }
                 }
@@ -1169,7 +1269,14 @@ fun PhaseAromaWheelDialog(
                                     modifier = Modifier
                                         .align(Alignment.TopCenter)
                                         .fillMaxWidth()
-                                        .padding(top = 8.dp)
+                                        .padding(top = 8.dp),
+                                    onDropChipAt = { id, pointerRoot ->
+                                        moveChipToPhaseAt(id, pointerRoot)
+                                    },
+                                    onChipDragChange = { id, pointerRoot ->
+                                        chipDragId = id
+                                        chipDragPointerRoot = pointerRoot
+                                    }
                                 )
                             }
                         }

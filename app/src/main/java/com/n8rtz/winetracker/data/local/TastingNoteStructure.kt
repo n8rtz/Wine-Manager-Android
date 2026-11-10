@@ -136,6 +136,30 @@ fun toggleAromaObservation(
     }
 }
 
+/** Moves one aroma from one tasting phase to another (keeping its intensity). */
+fun moveAromaObservation(
+    state: SensoryData,
+    descriptorId: String,
+    fromPhase: TastingPhase,
+    toPhase: TastingPhase
+): Result<SensoryData> = runCatching {
+    val normalized = normalizeSensoryData(state)
+    if (fromPhase == toPhase) return@runCatching normalized
+    val duplicate = normalized.aromaObservations.any {
+        it.descriptorId == descriptorId && it.phase == toPhase
+    }
+    if (duplicate) throw AromaEditException(AromaEditReason.DUPLICATE)
+    val movedOrder = nextDisplayOrder(normalized.aromaObservations)
+    val updated = normalized.aromaObservations.map { observation ->
+        if (observation.descriptorId == descriptorId && observation.phase == fromPhase) {
+            observation.copy(phase = toPhase, displayOrder = movedOrder)
+        } else {
+            observation
+        }
+    }
+    withDerivedAromas(normalized.copy(aromaObservations = updated))
+}
+
 fun setAromaIntensity(
     state: SensoryData,
     descriptorId: String,
