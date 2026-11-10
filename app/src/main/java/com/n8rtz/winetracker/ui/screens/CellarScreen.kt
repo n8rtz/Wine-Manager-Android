@@ -632,8 +632,8 @@ fun CellarScreen(
 
         // Single-line transparent action bar docked at the bottom of the
         // screen, just above the main navigation buttons. It has no solid
-        // backdrop -- only the individual action pills carry a translucent
-        // fill so they stay readable over the list. (Animated by hand with
+        // backdrop -- the individual action pills are solid
+        // so they stay readable over the list. (Animated by hand with
         // an alpha/translation fade-slide: AnimatedVisibility resolves to
         // the ColumnScope overload inside this Column-nested pager and
         // refuses to compile.)
@@ -1134,7 +1134,7 @@ fun FilterSheet(
     }
 }
 
-/** One translucent pill action in the transparent bottom wine action bar. */
+/** One solid pill action in the bottom wine action bar. */
 @Composable
 private fun WineActionBarAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -1146,7 +1146,7 @@ private fun WineActionBarAction(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 6.dp,
         modifier = modifier
     ) {

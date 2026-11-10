@@ -125,7 +125,8 @@ class CellarRacksUiTests(unittest.TestCase):
         # overload inside the Column-nested pager and fails to compile.
         self.assertIn("animateFloatAsState(", screen)
         self.assertNotIn("AnimatedVisibility(", screen)
-        self.assertIn("MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)", screen)
+        self.assertIn("color = MaterialTheme.colorScheme.surface,", screen)
+        self.assertNotIn("copy(alpha = 0.82f)", screen)
         self.assertNotIn("BorderStroke(\n            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)", screen)
         self.assertIn("onWineActionBarVisibleChange: (Boolean) -> Unit = {}", screen)
         main = (ROOT / "app/src/main/java/com/n8rtz/winetracker/MainActivity.kt").read_text()
