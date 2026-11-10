@@ -18,7 +18,7 @@ import com.n8rtz.winetracker.aromawheel.AromaWheelTheme
 
 /** Read-only descriptor chips, shared by the cellar preview and tasting-note viewer. */
 @Composable
-fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8) {
+fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8, onOverflowClick: (() -> Unit)? = null) {
     val uniqueIds = aromaIds.distinct()
     if (uniqueIds.isEmpty()) return
     val visible = uniqueIds.take(maxVisible.coerceAtLeast(1))
@@ -43,13 +43,24 @@ fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8) {
             }
         }
         if (uniqueIds.size > visible.size) {
-            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+            val overflowLabel: @Composable () -> Unit = {
                 Text(
                     "+${uniqueIds.size - visible.size}",
                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            if (onOverflowClick != null) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    onClick = onOverflowClick
+                ) { overflowLabel() }
+            } else {
+                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+                    overflowLabel()
+                }
             }
         }
     }

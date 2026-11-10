@@ -41,6 +41,19 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("selectCellarTab(1)", screen)
         self.assertIn("updateRackAssignments", screen)
 
+    def test_expanded_card_inline_actions_and_overflow_aroma_chip_opens_note(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        chips = (APP / "ui/components/AromaChips.kt").read_text()
+        # Cellar count, add-note and Tasting notes share one inline row.
+        row = screen.split('text = "Cellar: ${item.bottle.quantity}"', 1)[1].split("if (formattedAddedDate != null)", 1)[0]
+        self.assertIn("Icons.Default.NoteAdd", row)
+        self.assertIn('Text("Tasting notes")', row)
+        # Aromas come from the most recent note that has aromas.
+        self.assertIn(".sortedByDescending { it.note.dateTasted }", screen)
+        # The "+N" overflow chip is a button straight to that tasting note.
+        self.assertIn("onOverflowClick: (() -> Unit)? = null", chips)
+        self.assertIn("onOverflowClick = { onNoteClick(aromaNote.note.noteId) }", screen)
+
     def test_rack_order_is_persisted_and_long_press_supports_live_drag_reordering(self):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
         views = (APP / "ui/screens/CellarRackViews.kt").read_text()

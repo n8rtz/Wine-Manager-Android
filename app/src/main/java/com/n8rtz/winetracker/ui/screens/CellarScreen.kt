@@ -501,6 +501,8 @@ fun CellarScreen(
                                 automaticNewAddition = itemNotes.none { it.note.rating > 0.0 || !it.note.notes.isNullOrBlank() },
                                 onOpenRackSelection = { startRackAssignment(item.bottle.bottleId) }
                             )
+                            // Cellar count, add-note and Tasting notes
+                            // all sit inline in a single row.
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -530,17 +532,23 @@ fun CellarScreen(
                                 IconButton(onClick = { viewModel.addBottleToStock(item.bottle.bottleId) }) {
                                     Icon(Icons.Default.Add, contentDescription = "Add one bottle")
                                 }
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
+                                Spacer(Modifier.weight(1f))
                                 IconButton(
                                     onClick = {
                                         onAddNote(item.definition.definitionId, item.bottle.vintage)
                                     }
                                 ) {
                                     Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
+                                }
+                                if (itemNotes.isNotEmpty()) {
+                                    OutlinedButton(
+                                        onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) },
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Tasting notes")
+                                    }
                                 }
                             }
                             if (formattedAddedDate != null) {
@@ -551,7 +559,12 @@ fun CellarScreen(
                                 )
                             }
                             
-                            val aromaNote = itemNotes.firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
+                            // Most recent review's aromas; if the newest
+                            // review has none, fall back to the newest
+                            // review that does.
+                            val aromaNote = itemNotes
+                                .sortedByDescending { it.note.dateTasted }
+                                .firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
                             if (aromaNote != null) {
                                 Text(
                                     text = "Aromas · ${dateFormat.format(Date(aromaNote.note.dateTasted))}",
@@ -559,17 +572,11 @@ fun CellarScreen(
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                AromaChips(aromaNote.note.sensoryData?.aromas.orEmpty(), maxVisible = 7)
-                            }
-                            if (itemNotes.isNotEmpty()) {
-                                OutlinedButton(
-                                    onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) },
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Tasting notes")
-                                }
+                                AromaChips(
+                                    aromaNote.note.sensoryData?.aromas.orEmpty(),
+                                    maxVisible = 7,
+                                    onOverflowClick = { onNoteClick(aromaNote.note.noteId) }
+                                )
                             }
                         }
                     },
@@ -728,7 +735,8 @@ fun CellarScreen(
                     onRackDragActiveChange = { rackDragActive = it },
                     onRemoveFromRack = removeFromRack,
                     onWineClick = onEditWine,
-                    onTastingNotesClick = onTastingNotesClick
+                    onTastingNotesClick = onTastingNotesClick,
+                    onNoteClick = onNoteClick
                 )
             }
         }

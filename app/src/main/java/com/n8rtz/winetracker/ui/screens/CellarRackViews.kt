@@ -156,7 +156,8 @@ internal fun CellarRacks(
     onRackDragActiveChange: (Boolean) -> Unit = {},
     onRemoveFromRack: (Set<Long>, String) -> Unit,
     onWineClick: (Long) -> Unit,
-    onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit
+    onTastingNotesClick: (definitionId: Long, vintage: String) -> Unit,
+    onNoteClick: (Long) -> Unit = {}
 ) {
     val rackNames = rackOrder
     val gridState = rememberLazyGridState()
@@ -572,12 +573,18 @@ internal fun CellarRacks(
                                         automaticNewAddition = automaticNewAddition,
                                         onOpenRackSelection = { onOpenRackSelection(item.bottle.bottleId) }
                                     )
-                                    val aromaNote = notes.firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
+                                    val aromaNote = notes
+                                        .sortedByDescending { it.note.dateTasted }
+                                        .firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
                                     if (aromaNote != null) {
                                         Text("Aromas · ${java.text.SimpleDateFormat("M/d/yy", java.util.Locale.getDefault()).format(java.util.Date(aromaNote.note.dateTasted))}",
                                             style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        AromaChips(aromaNote.note.sensoryData?.aromas.orEmpty(), maxVisible = 7)
+                                        AromaChips(
+                                            aromaNote.note.sensoryData?.aromas.orEmpty(),
+                                            maxVisible = 7,
+                                            onOverflowClick = { onNoteClick(aromaNote.note.noteId) }
+                                        )
                                     }
                                     if (notes.isNotEmpty()) {
                                         OutlinedButton(onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) }) {
