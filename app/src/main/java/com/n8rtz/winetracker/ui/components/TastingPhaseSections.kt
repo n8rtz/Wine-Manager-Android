@@ -176,12 +176,24 @@ fun SectionedSensoryFields(
                             ) {
                                 AromaObservationCloud(
                                     observations = normalized.aromaObservations,
-                                    onIntensityChange = { id, phaseValue, intensity ->
-                                        onDataChange(setAromaIntensity(normalized, id, phaseValue, intensity))
+                                    // The note lists each aroma once, even if
+                                    // it was picked for several phases, so
+                                    // resizing/removing its chip applies to
+                                    // every phase instance of that aroma.
+                                    onIntensityChange = { id, _, intensity ->
+                                        onDataChange(
+                                            TastingPhase.values().fold(normalized) { data, phaseValue ->
+                                                setAromaIntensity(data, id, phaseValue, intensity)
+                                            }
+                                        )
                                     },
-                                    onRemove = { id, phaseValue ->
+                                    onRemove = { id, _ ->
                                         val before = normalized
-                                        onDataChange(removeAromaObservation(normalized, id, phaseValue))
+                                        onDataChange(
+                                            TastingPhase.values().fold(normalized) { data, phaseValue ->
+                                                removeAromaObservation(data, id, phaseValue)
+                                            }
+                                        )
                                         onAromaRemoved?.invoke(
                                             com.n8rtz.winetracker.aromawheel.AromaTaxonomy.describe(id).label
                                         ) { onDataChange(before) }

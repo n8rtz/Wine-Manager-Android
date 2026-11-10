@@ -63,6 +63,15 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("AromaObservationCloud(", editor_sections)
         self.assertNotIn("PhaseAromaCloud(", editor_sections)
 
+    def test_aroma_picked_for_multiple_phases_is_listed_once_in_the_note(self):
+        cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        # Display dedupes by descriptor (intensity-sorted, so largest wins).
+        self.assertIn(".distinctBy { it.descriptorId }", cloud)
+        # Resizing/removing the single chip applies across all its phases.
+        self.assertIn("TastingPhase.values().fold(normalized) { data, phaseValue ->\n                                                setAromaIntensity(data, id, phaseValue, intensity)", sections)
+        self.assertIn("TastingPhase.values().fold(normalized) { data, phaseValue ->\n                                                removeAromaObservation(data, id, phaseValue)", sections)
+
     def test_pinch_resize_is_sensitive_angle_independent_and_shrinks_below_default(self):
         cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
         structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()

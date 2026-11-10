@@ -109,7 +109,10 @@ fun AromaObservationCloud(
     allowIntensityAdjustment: Boolean = !readOnly,
     modifier: Modifier = Modifier
 ) {
+    // An aroma picked for more than one phase is listed only once; the
+    // list is intensity-sorted, so the kept chip is its largest instance.
     val sortedObservations = sortAromaObservationsByIntensity(observations)
+        .distinctBy { it.descriptorId }
     val currentObservations = rememberUpdatedState(sortedObservations)
     val currentOnIntensityChange = rememberUpdatedState(onIntensityChange)
     val currentOnRemove = rememberUpdatedState(onRemove)
