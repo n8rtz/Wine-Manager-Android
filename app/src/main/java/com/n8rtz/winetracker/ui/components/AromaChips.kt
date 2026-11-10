@@ -30,14 +30,13 @@ fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8, onOverflowClick: (()
     ) {
         visible.forEach { id ->
             val aroma = AromaTaxonomy.describe(id)
-            // Wheel colours at full strength: the group's wheel tint
-            // behind its wheel ink, ringed by the saturated group colour --
-            // not a faint wash of the group colour over white.
+            // Same colour as a selected descriptor on the aroma wheel,
+            // for both the fill and the border; standard text colour.
             Surface(
                 shape = RoundedCornerShape(50),
-                color = Color(AromaWheelTheme.groupTint(aroma.groupId)),
-                contentColor = Color(AromaWheelTheme.groupInk(aroma.groupId)),
-                border = BorderStroke(1.dp, Color(AromaWheelTheme.groupColor(aroma.groupId)))
+                color = Color(AromaWheelTheme.groupSelectedColor(aroma.groupId)),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(aroma.groupId)))
             ) {
                 Text(
                     aroma.label,

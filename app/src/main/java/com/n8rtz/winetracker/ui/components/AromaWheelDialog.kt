@@ -232,9 +232,9 @@ private fun AromaSummaryChipRow(
                 val info = AromaTaxonomy.describe(id)
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = Color(AromaWheelTheme.groupTint(info.groupId)),
-                    contentColor = Color(AromaWheelTheme.groupInk(info.groupId)),
-                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupColor(info.groupId)))
+                    color = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(info.groupId)))
                 ) {
                     Row(
                         modifier = Modifier.padding(
@@ -302,8 +302,7 @@ fun ReorderableAromaChipRow(
                 AromaChipPill(
                     label = info.label,
                     groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                    groupTint = Color(AromaWheelTheme.groupTint(info.groupId)),
-                    groupInk = Color(AromaWheelTheme.groupInk(info.groupId)),
+                    groupSelected = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
                     dragging = dragging,
                     dragOffsetPx = offset.x,
                     dragOffsetYPx = offset.y,
@@ -358,8 +357,7 @@ fun ReorderableAromaChipRow(
 private fun AromaChipPill(
     label: String,
     groupColor: Color,
-    groupTint: Color = Color.Unspecified,
-    groupInk: Color = Color.Unspecified,
+    groupSelected: Color = Color.Unspecified,
     dragging: Boolean,
     dragOffsetPx: Float,
     onRemove: () -> Unit,
@@ -369,9 +367,9 @@ private fun AromaChipPill(
 ) {
     Surface(
         shape = RoundedCornerShape(50),
-        color = if (groupTint == Color.Unspecified) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else groupTint,
-        contentColor = if (groupInk == Color.Unspecified) MaterialTheme.colorScheme.onSurface else groupInk,
-        border = BorderStroke(1.dp, groupColor),
+        color = if (groupSelected == Color.Unspecified) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else groupSelected,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, if (groupSelected == Color.Unspecified) groupColor else groupSelected),
         shadowElevation = if (dragging) 6.dp else 2.dp,
         modifier = modifier
             .zIndex(if (dragging) 1f else 0f)
@@ -855,8 +853,7 @@ private fun SelectedAromasOverlay(
                 AromaChipPill(
                     label = info.label,
                     groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                    groupTint = Color(AromaWheelTheme.groupTint(info.groupId)),
-                    groupInk = Color(AromaWheelTheme.groupInk(info.groupId)),
+                    groupSelected = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
                     dragging = dragging,
                     dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
                     dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
@@ -904,8 +901,7 @@ private fun SelectedAromasOverlay(
             AromaChipPill(
                 label = info.label,
                 groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                groupTint = Color(AromaWheelTheme.groupTint(info.groupId)),
-                groupInk = Color(AromaWheelTheme.groupInk(info.groupId)),
+                groupSelected = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
                 dragging = dragging,
                 dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
                 dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,

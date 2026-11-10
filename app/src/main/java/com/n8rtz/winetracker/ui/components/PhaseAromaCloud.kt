@@ -225,9 +225,9 @@ fun AromaObservationCloud(
 
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = Color(AromaWheelTheme.groupTint(info.groupId)),
-                    contentColor = Color(AromaWheelTheme.groupInk(info.groupId)),
-                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupColor(info.groupId))),
+                    color = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(info.groupId))),
                     modifier = Modifier
                         .then(
                             if (readOnly) {

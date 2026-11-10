@@ -72,15 +72,17 @@ class TabAndChipColourTests(unittest.TestCase):
 
     def test_aroma_chips_use_full_wheel_colours(self):
         theme = (ROOT / "app/src/main/java/com/n8rtz/winetracker/aromawheel/AromaWheelTheme.kt").read_text()
-        self.assertIn("fun groupTint(groupId: String?)", theme)
-        self.assertIn("fun groupInk(groupId: String?)", theme)
+        self.assertIn("fun groupSelectedColor(groupId: String?)", theme)
         for rel in [
             "ui/components/AromaChips.kt",
             "ui/components/PhaseAromaCloud.kt",
             "ui/components/AromaWheelDialog.kt",
         ]:
             source = (APP / rel).read_text()
-            self.assertIn("AromaWheelTheme.groupTint(", source, rel)
-            self.assertIn("AromaWheelTheme.groupInk(", source, rel)
-            self.assertNotIn("groupColor(aroma.groupId)).copy(alpha = 0.16f)", source, rel)
-            self.assertNotIn("groupColor(info.groupId)).copy(alpha = 0.16f)", source, rel)
+            # Fill and border are the wheel's selected-descriptor colour;
+            # text stays the standard on-surface colour.
+            self.assertIn("AromaWheelTheme.groupSelectedColor(", source, rel)
+            self.assertIn("contentColor = MaterialTheme.colorScheme.onSurface", source, rel)
+            self.assertNotIn("groupTint(", source, rel)
+            self.assertNotIn("groupInk(", source, rel)
+            self.assertNotIn("copy(alpha = 0.16f)", source, rel)
