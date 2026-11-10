@@ -138,7 +138,15 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("visible = isMenuExpanded && showAddMenu && !wineActionBarVisible", main)
         # Deleting always asks for confirmation first.
         self.assertIn('Text(if (selectedWineIds.size == 1) "Delete wine?" else "Delete wines?")', screen)
-        self.assertIn("selectedWineIds.forEach { bottleId -> viewModel.deleteWine(bottleId) }", screen)
+        self.assertIn("selectedWineIds.forEach { bottleId ->", screen)
+        self.assertIn("viewModel.deleteWine(bottleId)", screen)
+        # ...or everywhere (cellar + notes) when the user opts in.
+        self.assertIn('"Also delete tasting notes"', screen)
+        self.assertIn("viewModel.deleteWineEverywhere(", screen)
+        repo = (APP / "data/repository/WineRepository.kt").read_text()
+        self.assertIn("tastingNoteDao.deleteNotesForWine(definitionId, vintage)", repo)
+        dao = (APP / "data/local/WineDaos.kt").read_text()
+        self.assertIn("suspend fun deleteNotesForWine(definitionId: Long, vintage: String)", dao)
         self.assertLess(screen.index("showWineDeleteConfirmation = true"),
                         screen.index("viewModel.deleteWine(bottleId)"))
 

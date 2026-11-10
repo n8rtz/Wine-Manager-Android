@@ -187,6 +187,11 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         }
     }
     fun deleteWine(bottleId: Long) { viewModelScope.launch { repository.deleteWine(bottleId) } }
+
+    /** Cellar + tasting notes (so also Tasting Notes and Rankings). */
+    fun deleteWineEverywhere(bottleId: Long, definitionId: Long, vintage: String) {
+        viewModelScope.launch { repository.deleteWineEverywhere(bottleId, definitionId, vintage) }
+    }
     
     fun importJsonFile(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {

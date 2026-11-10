@@ -68,6 +68,7 @@ fun CellarScreen(
     var selectedWineIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var wineMenuBottleId by remember { mutableStateOf<Long?>(null) }
     var showWineDeleteConfirmation by remember { mutableStateOf(false) }
+    var alsoDeleteTastingNotes by remember { mutableStateOf(false) }
     val wineSelectionMode = selectedWineIds.isNotEmpty()
     // The wine action popup is a transparent single-line bar docked at the
     // bottom of the screen (above the main navigation); while it is up the
@@ -680,6 +681,7 @@ fun CellarScreen(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         wineMenuBottleId = null
+                        alsoDeleteTastingNotes = false
                         showWineDeleteConfirmation = true
                     }
                 )
@@ -737,18 +739,61 @@ fun CellarScreen(
             onDismissRequest = { showWineDeleteConfirmation = false },
             title = { Text(if (selectedWineIds.size == 1) "Delete wine?" else "Delete wines?") },
             text = {
-                Text(
-                    if (selectedWineIds.size == 1) {
-                        "This wine will be removed from your cellar. This cannot be undone."
-                    } else {
-                        "${selectedWineIds.size} wines will be removed from your cellar. This cannot be undone."
+                val selectedItems = inventory.filter { it.bottle.bottleId in selectedWineIds }
+                val anySelectedHasNotes = selectedItems.any { item ->
+                    notesMap[item.definition.definitionId to
+                        com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)]
+                        .orEmpty().isNotEmpty()
+                }
+                Column {
+                    Text(
+                        if (selectedWineIds.size == 1) {
+                            "This wine will be removed from your cellar. This cannot be undone."
+                        } else {
+                            "${selectedWineIds.size} wines will be removed from your cellar. This cannot be undone."
+                        }
+                    )
+                    if (anySelectedHasNotes) {
+                        // Deleting a bottle alone keeps its tasting notes, so
+                        // the wine would stay in Tasting Notes and Rankings.
+                        // Offer the everywhere option right here.
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = alsoDeleteTastingNotes,
+                                onCheckedChange = { alsoDeleteTastingNotes = it }
+                            )
+                            Column {
+                                Text("Also delete tasting notes", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Removes the wine from Tasting Notes and Rankings too. Leave unchecked to keep them.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
-                )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    selectedWineIds.forEach { bottleId -> viewModel.deleteWine(bottleId) }
+                    val deleteNotes = alsoDeleteTastingNotes
+                    selectedWineIds.forEach { bottleId ->
+                        val item = inventory.firstOrNull { it.bottle.bottleId == bottleId }
+                        if (deleteNotes && item != null) {
+                            viewModel.deleteWineEverywhere(
+                                bottleId,
+                                item.definition.definitionId,
+                                item.bottle.vintage
+                            )
+                        } else {
+                            viewModel.deleteWine(bottleId)
+                        }
+                    }
                     selectedWineIds = emptySet()
+                    alsoDeleteTastingNotes = false
                     showWineDeleteConfirmation = false
                 }) { Text("Delete") }
             },
