@@ -175,21 +175,23 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
         # The rating fill is a continuous scale with extra stops where most
         # wines land (80-95), and nothing 85+ is Yellow: 85 is already a
-        # clear green, running through emerald/teal to violet at 95+.
+        # clear green, getting progressively more (deeper) green through
+        # the 90s up to 95+.
         self.assertIn("internal fun ratingColor(score: Int): Color", sensory)
         for stop in (
             "80 to Color(0xFFA8B93C)",
             "82 to Color(0xFF86B04A)",
             "85 to Color(0xFF55A04A)",
-            "88 to Color(0xFF3E9B5F)",
-            "90 to Color(0xFF2E9E77)",
-            "93 to Color(0xFF1F8A8A)",
-            # 95+ leaves the greens for violet/lavender (exceptional).
-            "95 to Color(0xFF7B5EA7)",
-            "98 to Color(0xFF6D54A8)",
-            "100 to Color(0xFF5B3E99)",
+            "88 to Color(0xFF439F4E)",
+            "90 to Color(0xFF2E8B47)",
+            "92 to Color(0xFF227A41)",
+            "95 to Color(0xFF146B3A)",
+            "100 to Color(0xFF0E5230)",
         ):
             self.assertIn(stop, sensory)
+        # No teal or violet at the top of the scale any more.
+        self.assertNotIn("0xFF7B5EA7", sensory)
+        self.assertNotIn("0xFF1F8A8A", sensory)
         # Unrated wines show "NR" on a plain grey fill instead of no box.
         self.assertIn('val ratingText = rating?.takeIf { it.isNotBlank() } ?: "NR"', card)
         self.assertIn("Modifier.background(Color(0xFF9E9E9E))", card)
