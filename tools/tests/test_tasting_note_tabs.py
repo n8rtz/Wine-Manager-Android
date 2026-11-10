@@ -110,7 +110,7 @@ class RatingPhaseAndValueStylingTests(unittest.TestCase):
     def test_expanded_value_matches_detail_styling(self):
         detail = (APP / "ui/screens/TastingNoteDetailScreen.kt").read_text()
         for snippet in [
-            'Text("Value", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)',
+            'Text("Value", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)',
             "color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)",
             'Text("/10", style = MaterialTheme.typography.labelSmall)',
         ]:

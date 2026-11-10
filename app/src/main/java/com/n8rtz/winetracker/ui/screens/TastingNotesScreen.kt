@@ -531,7 +531,7 @@ fun CompactNoteItem(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Value", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text("Value", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
