@@ -1333,15 +1333,17 @@ fun PhaseAromaWheelDialog(
                     }
                 }
 
-                // All four phases share one line at their natural widths
-                // instead of wrapping onto a second row. Compact pills with
-                // tight padding (FilterChip's fixed internal padding left
-                // "Finish" clipped to "Fi").
+                // All four phases share one line at their natural widths,
+                // spread across the full screen width (first pill at the
+                // left edge, last at the right) instead of wrapping or
+                // clustering at the left. Compact pills with tight padding
+                // (FilterChip's fixed internal padding left "Finish"
+                // clipped to "Fi").
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     TastingPhase.values().forEach { phase ->
                         val isSelected = activePhase == phase || hoveredPhase == phase
