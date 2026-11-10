@@ -12,11 +12,19 @@ class TastingNoteTabsTests(unittest.TestCase):
         source = NOTES.read_text()
         # Tabs show even for a single-note wine (no size > 1 gate).
         self.assertNotIn("if (orderedGroup.size > 1) {", source)
-        self.assertIn("ScrollableTabRow(", source)
-        # Attached square tabs: the open tab matches the note body colour,
-        # the others a different shade, so boundaries are visible.
-        self.assertIn("if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)", source)
-        self.assertIn("else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)", source)
+        self.assertIn(".horizontalScroll(rememberScrollState())", source)
+        # Attached tabs with only the top corners rounded: the open tab
+        # matches the note body colour (same as Cellar's expanded cards),
+        # the others a fainter shade; no underline indicator anywhere.
+        self.assertIn("if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)", source)
+        self.assertIn("else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.14f)", source)
+        self.assertIn("color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)", source)
+        self.assertNotIn("ScrollableTabRow(", source)
+        self.assertIn("RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)", source)
+        self.assertIn("RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)", source)
+        # Compact tabs and a narrow "+" tab.
+        self.assertIn(".height(36.dp)", source)
+        self.assertIn(".size(width = 40.dp, height = 36.dp)", source)
         # Tapping the card expands it rather than opening the detail.
         self.assertIn("onClick = onExpandToggle,", source)
         # "+" tab adds a note for this wine.

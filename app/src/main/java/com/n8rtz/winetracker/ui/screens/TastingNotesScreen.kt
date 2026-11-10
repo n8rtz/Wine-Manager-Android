@@ -3,6 +3,7 @@ package com.n8rtz.winetracker.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -329,46 +330,64 @@ fun CompactNoteItem(
             val selectedIndex = orderedGroup.indexOfFirst { it.note.noteId == selectedNoteId }.coerceAtLeast(0)
             val selectedNote = orderedGroup[selectedIndex]
             Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ScrollableTabRow(
-                    selectedTabIndex = selectedIndex,
-                    edgePadding = 0.dp,
-                    divider = {},
-                    containerColor = Color.Transparent
-                ) {
-                    orderedGroup.forEachIndexed { index, item ->
-                        val isSelected = selectedIndex == index
-                        Tab(
-                            selected = isSelected,
-                            onClick = { selectedNoteId = item.note.noteId },
-                            modifier = Modifier.background(
-                                // Open tab matches the note body below so
-                                // the two read as one attached piece.
-                                if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
-                            ),
-                            text = { Text(listDateFormat.format(Date(item.note.dateTasted))) }
-                        )
-                    }
-                    // "+" tab: add another tasting note for this wine.
-                    Tab(
-                        selected = false,
-                        onClick = { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },
-                        modifier = Modifier.background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
-                        ),
-                        icon = {
+                // Date tabs sit directly on the note body: the open tab
+                // shares the body's colour (and square bottom corners) so
+                // the two connect; closed tabs are a fainter shade. No
+                // underline indicator.
+                Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        orderedGroup.forEachIndexed { index, item ->
+                            val isSelected = selectedIndex == index
+                            Box(
+                                modifier = Modifier
+                                    .height(36.dp)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
+                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.14f),
+                                        RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+                                    )
+                                    .clickable { selectedNoteId = item.note.noteId }
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    listDateFormat.format(Date(item.note.dateTasted)),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                            Spacer(Modifier.width(2.dp))
+                        }
+                        // Narrow "+" tab: add another note for this wine.
+                        Box(
+                            modifier = Modifier
+                                .size(width = 40.dp, height = 36.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.14f),
+                                    RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+                                )
+                                .clickable { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 Icons.Default.Add,
-                                contentDescription = "Add a tasting note for this wine"
+                                contentDescription = "Add a tasting note for this wine",
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                    )
-                }
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNoteClick(selectedNote.note.noteId) }
-                        .pointerInput(selectedIndex, orderedGroup.size) {
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNoteClick(selectedNote.note.noteId) }
+                            .pointerInput(selectedIndex, orderedGroup.size) {
                             var dragTotal = 0f
                             detectHorizontalDragGestures(
                                 onDragStart = { dragTotal = 0f },
@@ -387,10 +406,10 @@ fun CompactNoteItem(
                                 },
                                 onDragCancel = { dragTotal = 0f }
                             )
-                        },
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
-                ) {
+                            },
+                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
+                    ) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         val score = selectedNote.note.rating.takeIf { it > 0.0 }?.toInt()?.let { "$it points" } ?: "Unrated"
                         Text(
@@ -440,6 +459,7 @@ fun CompactNoteItem(
                         selectedNote.note.reviewerRating?.let { Text("Reviewer rating: $it", style = MaterialTheme.typography.bodySmall) }
                         selectedNote.note.valueScore?.let { Text("Value: $it/10", style = MaterialTheme.typography.bodySmall) }
                         selectedNote.note.price?.let { Text("Price: $${"%.2f".format(it)}", style = MaterialTheme.typography.bodySmall) }
+                    }
                     }
                 }
             }

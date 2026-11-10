@@ -168,7 +168,7 @@ class CardClickTests(unittest.TestCase):
         self.assertIn("onExpandToggle = onExpandToggle", source)
         self.assertIn("onClick = onExpandToggle,", source)
         self.assertIn("group.maxByOrNull { it.note.dateTasted }", source)
-        self.assertIn("ScrollableTabRow(", source)
+        self.assertIn(".horizontalScroll(rememberScrollState())", source)
         self.assertIn("selectedNote.note.noteId", source)
         self.assertIn("PhaseAromaCloud(", source)
         self.assertIn("AromaChips(sensory?.aromas.orEmpty())", source)
