@@ -251,7 +251,7 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("toggleAromaObservation(", wheel)
         self.assertIn("fun PhaseAromaCloud(", cloud)
         self.assertIn("FlowRow(", cloud)
-        self.assertIn("detectTransformGestures", cloud)
+        self.assertIn("calculateZoom()", cloud)
         self.assertIn("sortAromaObservationsByIntensity", cloud)
         self.assertNotIn('Text("%.1f".format', cloud)
         self.assertNotIn('"${info.label} %.1f"', sections)

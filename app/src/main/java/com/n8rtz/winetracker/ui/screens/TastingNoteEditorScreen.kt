@@ -76,6 +76,7 @@ import com.n8rtz.winetracker.data.local.withDerivedAromas
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.components.LegacyAromaPhaseSheet
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
+import com.n8rtz.winetracker.ui.components.AromaRemovalUndoBar
 import com.n8rtz.winetracker.ui.components.PhaseAromaWheelDialog
 import com.n8rtz.winetracker.ui.components.SectionedSensoryFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
@@ -135,6 +136,16 @@ fun TastingNoteEditorScreen(
     var activePhase by remember { mutableStateOf(TastingPhase.AROMA_BEFORE_TASTING) }
     var showLegacyPhaseSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    // Bottom undo popup state after an aroma chip is deleted.
+    var aromaUndoLabel by remember { mutableStateOf<String?>(null) }
+    var aromaUndoAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    LaunchedEffect(aromaUndoLabel, aromaUndoAction) {
+        if (aromaUndoLabel != null) {
+            kotlinx.coroutines.delay(4000)
+            aromaUndoLabel = null
+            aromaUndoAction = null
+        }
+    }
 
     LaunchedEffect(noteId) {
         if (noteId != null) {
@@ -297,6 +308,18 @@ fun TastingNoteEditorScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp),
+        snackbarHost = {
+            aromaUndoLabel?.let { label ->
+                AromaRemovalUndoBar(
+                    removedLabel = label,
+                    onUndo = {
+                        aromaUndoAction?.invoke()
+                        aromaUndoLabel = null
+                        aromaUndoAction = null
+                    }
+                )
+            }
+        },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(if (noteId == null) "Add Tasting Note" else "Edit Tasting Note") },
@@ -610,7 +633,11 @@ fun TastingNoteEditorScreen(
                 legacyAromasUnresolved = legacyAromasUnresolved,
                 onDataChange = { sensoryData = it },
                 onOpenWheel = { showAromaWheel = true },
-                onAssignLegacy = { showLegacyPhaseSheet = true }
+                onAssignLegacy = { showLegacyPhaseSheet = true },
+                onAromaRemoved = { label, undo ->
+                    aromaUndoLabel = label
+                    aromaUndoAction = undo
+                }
             )
 
             OutlinedTextField(

@@ -2,7 +2,6 @@
 
 package com.n8rtz.winetracker.ui.components
 
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -17,12 +16,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.calculateZoom
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -37,12 +39,60 @@ import com.n8rtz.winetracker.data.local.intensityAfterPinch
 import com.n8rtz.winetracker.data.local.sortAromaObservationsByIntensity
 import com.n8rtz.winetracker.data.local.visualAromaIntensity
 
+/**
+ * Chip text spans 10sp (intensity 0) to 32sp (intensity 1); the default
+ * intensity of 0.5 renders at 21sp, so chips can shrink noticeably below
+ * the default size as well as grow above it.
+ */
 private fun aromaFontSize(intensity: Float?): androidx.compose.ui.unit.TextUnit =
-    (14f + visualAromaIntensity(intensity) * 14f).sp
+    (10f + visualAromaIntensity(intensity) * 22f).sp
 
+/**
+ * Bottom popup shown after an aroma chip is deleted, offering Undo.
+ * Shared by the aroma wheel dialogs and the tasting-note editor.
+ */
 @Composable
-fun PhaseAromaCloud(
-    phase: TastingPhase,
+fun AromaRemovalUndoBar(
+    removedLabel: String,
+    onUndo: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.inverseSurface,
+        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        shadowElevation = 6.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Removed $removedLabel",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onUndo) {
+                Text(
+                    "Undo",
+                    color = MaterialTheme.colorScheme.inversePrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+/**
+ * All selected aromas as one cloud of resizable chips, regardless of phase.
+ * This is the single place aromas are listed in a tasting note (below the
+ * aroma wheel); each chip still knows its own phase for resize/remove.
+ */
+@Composable
+fun AromaObservationCloud(
     observations: List<AromaObservation>,
     onIntensityChange: (String, TastingPhase, Float?) -> Unit,
     onRemove: (String, TastingPhase) -> Unit,
@@ -60,21 +110,34 @@ fun PhaseAromaCloud(
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         sortedObservations.forEach { observation ->
-            key(observation.descriptorId, observation.displayOrder) {
+            key(observation.descriptorId, observation.phase, observation.displayOrder) {
                 val info = AromaTaxonomy.describe(observation.descriptorId)
                 val currentIntensity = rememberUpdatedState(observation.intensity)
                 val fontSize = aromaFontSize(observation.intensity)
                 val zoomModifier = if (!allowIntensityAdjustment) {
                     Modifier
                 } else {
-                    Modifier.pointerInput(observation.descriptorId, phase) {
-                        detectTransformGestures { _, _, zoom, _ ->
-                            if (zoom != 1f) {
-                                currentOnIntensityChange.value(
-                                    observation.descriptorId,
-                                    phase,
-                                    intensityAfterPinch(currentIntensity.value, zoom)
-                                )
+                    Modifier.pointerInput(observation.descriptorId, observation.phase) {
+                        // Angle-independent pinch: zoom is the ratio of the
+                        // distance between the two pointers (calculateZoom),
+                        // so vertical, horizontal and diagonal pinches all
+                        // resize equally. Two-pointer changes are consumed
+                        // on the initial pass so a surrounding scroll view
+                        // cannot steal a vertical pinch.
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                if (event.changes.count { it.pressed } >= 2) {
+                                    val zoom = event.calculateZoom()
+                                    if (zoom != 1f) {
+                                        currentOnIntensityChange.value(
+                                            observation.descriptorId,
+                                            observation.phase,
+                                            intensityAfterPinch(currentIntensity.value, zoom)
+                                        )
+                                    }
+                                    event.changes.forEach { it.consume() }
+                                }
                             }
                         }
                     }
@@ -110,7 +173,7 @@ fun PhaseAromaCloud(
                         )
                         if (!readOnly) {
                             IconButton(
-                                onClick = { currentOnRemove.value(observation.descriptorId, phase) },
+                                onClick = { currentOnRemove.value(observation.descriptorId, observation.phase) },
                                 modifier = Modifier.size(24.dp)
                             ) {
                                 Icon(
@@ -125,4 +188,24 @@ fun PhaseAromaCloud(
             }
         }
     }
+}
+
+@Composable
+fun PhaseAromaCloud(
+    phase: TastingPhase,
+    observations: List<AromaObservation>,
+    onIntensityChange: (String, TastingPhase, Float?) -> Unit,
+    onRemove: (String, TastingPhase) -> Unit,
+    readOnly: Boolean = false,
+    allowIntensityAdjustment: Boolean = !readOnly,
+    modifier: Modifier = Modifier
+) {
+    AromaObservationCloud(
+        observations = observations.filter { it.phase == phase },
+        onIntensityChange = onIntensityChange,
+        onRemove = onRemove,
+        readOnly = readOnly,
+        allowIntensityAdjustment = allowIntensityAdjustment,
+        modifier = modifier
+    )
 }

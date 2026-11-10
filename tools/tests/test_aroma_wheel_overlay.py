@@ -43,6 +43,36 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("onConfirm(selected.toList())", source)
         self.assertIn("onConfirm(activePhase, observations.toList())", source)
 
+    def test_chip_deletion_shows_bottom_undo_popup_in_wheel_and_note(self):
+        wheel = DIALOG.read_text()
+        cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        editor = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/TastingNoteEditorScreen.kt").read_text()
+        self.assertIn("fun AromaRemovalUndoBar(", cloud)
+        self.assertIn('"Undo"', cloud)
+        self.assertEqual(2, wheel.count("fun removeChipWithUndo(id: String)"))
+        self.assertEqual(2, wheel.count("AromaRemovalUndoBar("))
+        self.assertIn("onAromaRemoved = { label, undo ->", editor)
+        self.assertIn("snackbarHost = {", editor)
+
+    def test_note_lists_aromas_only_with_the_wheel_not_per_phase(self):
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        editor_sections = sections.split("fun SectionedSensoryFields(", 1)[1].split(
+            "private fun roundedSteppedCardPath", 1
+        )[0]
+        self.assertIn("AromaObservationCloud(", editor_sections)
+        self.assertNotIn("PhaseAromaCloud(", editor_sections)
+
+    def test_pinch_resize_is_sensitive_angle_independent_and_shrinks_below_default(self):
+        cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
+        structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()
+        # Zoom derives from two-pointer distance, so any pinch angle works.
+        self.assertIn("event.calculateZoom()", cloud)
+        self.assertIn("PointerEventPass.Initial", cloud)
+        # 10sp at intensity 0 up to 32sp at 1 (default 0.5 -> 21sp).
+        self.assertIn("(10f + visualAromaIntensity(intensity) * 22f).sp", cloud)
+        self.assertIn("* 0.9f", structure)
+
 
 if __name__ == "__main__":
     unittest.main()

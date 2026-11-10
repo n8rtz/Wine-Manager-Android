@@ -68,11 +68,13 @@ fun SectionedSensoryFields(
     onOpenWheel: () -> Unit,
     onAssignLegacy: () -> Unit,
     readOnly: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Reports a chip deletion (label + restore action) so the host screen
+    // can show a bottom undo popup.
+    onAromaRemoved: ((String, () -> Unit) -> Unit)? = null
 ) {
     val normalized = normalizeSensoryData(data)
     val traits = sensoryTraitControls(normalized, onDataChange)
-    val byPhase = groupByPhase(normalized.aromaObservations)
     val selectedAromaIds = (
         sortAromaObservationsByIntensity(normalized.aromaObservations).map { it.descriptorId } +
             normalized.aromas
@@ -163,13 +165,39 @@ fun SectionedSensoryFields(
                         if (selectedAromaIds.isNotEmpty()) {
                             Spacer(Modifier.height(aromaSummaryGap))
                         }
-                        AromaWheelSummaryPanel(
-                            selectedIds = selectedAromaIds,
-                            onClick = onOpenWheel,
-                            enabled = !readOnly,
-                            compact = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        if (normalized.aromaObservations.isNotEmpty()) {
+                            // The single listing of selected aromas in the
+                            // note: resizable/removable chips under the
+                            // aroma wheel (not repeated per phase below).
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                            ) {
+                                AromaObservationCloud(
+                                    observations = normalized.aromaObservations,
+                                    onIntensityChange = { id, phaseValue, intensity ->
+                                        onDataChange(setAromaIntensity(normalized, id, phaseValue, intensity))
+                                    },
+                                    onRemove = { id, phaseValue ->
+                                        val before = normalized
+                                        onDataChange(removeAromaObservation(normalized, id, phaseValue))
+                                        onAromaRemoved?.invoke(
+                                            com.n8rtz.winetracker.aromawheel.AromaTaxonomy.describe(id).label
+                                        ) { onDataChange(before) }
+                                    },
+                                    readOnly = readOnly
+                                )
+                            }
+                        } else {
+                            AromaWheelSummaryPanel(
+                                selectedIds = selectedAromaIds,
+                                onClick = onOpenWheel,
+                                enabled = !readOnly,
+                                compact = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                     if (legacyAromasUnresolved && !readOnly) {
                         TextButton(onClick = onAssignLegacy) { Text("Assign") }
@@ -183,17 +211,8 @@ fun SectionedSensoryFields(
             traits.filter { it.title in traitTitlesFor(phase) }.forEach { trait ->
                 SensoryTraitSlider(trait, enabled = !readOnly)
             }
-            PhaseAromaCloud(
-                phase = phase,
-                observations = byPhase[phase].orEmpty(),
-                onIntensityChange = { id, phaseValue, intensity ->
-                    onDataChange(setAromaIntensity(normalized, id, phaseValue, intensity))
-                },
-                onRemove = { id, phaseValue ->
-                    onDataChange(removeAromaObservation(normalized, id, phaseValue))
-                },
-                readOnly = readOnly
-            )
+            // Aromas are listed only once, with the aroma wheel above;
+            // the per-phase sections below carry just their sliders.
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
         }
     }

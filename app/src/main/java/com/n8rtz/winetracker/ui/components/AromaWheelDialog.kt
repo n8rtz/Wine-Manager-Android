@@ -583,6 +583,23 @@ fun AromaWheelDialog(
     val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
     var notice by remember { mutableStateOf<String?>(null) }
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    var removedChipLabel by remember { mutableStateOf<String?>(null) }
+    var removedChipSnapshot by remember { mutableStateOf<List<String>?>(null) }
+    LaunchedEffect(removedChipSnapshot) {
+        if (removedChipSnapshot != null) {
+            delay(4000)
+            removedChipSnapshot = null
+            removedChipLabel = null
+        }
+    }
+    fun removeChipWithUndo(id: String) {
+        val snapshot = selected.toList()
+        applyToggle(id)
+        if (id !in selected) {
+            removedChipSnapshot = snapshot
+            removedChipLabel = AromaTaxonomy.describe(id).label
+        }
+    }
     val hasUnsavedChanges = selected.toSet() != initiallySelectedIds.toSet()
     fun requestDismiss() {
         if (hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
@@ -717,7 +734,7 @@ fun AromaWheelDialog(
                             if (selected.isNotEmpty()) {
                                 SelectedAromasOverlay(
                                     selectedIds = selected.toList(),
-                                    onRemove = { id -> applyToggle(id) },
+                                    onRemove = { id -> removeChipWithUndo(id) },
                                     onClear = { selected.clear() },
                                     modifier = Modifier
                                         .align(Alignment.TopCenter)
@@ -727,6 +744,17 @@ fun AromaWheelDialog(
                             }
                         }
                     }
+                }
+                if (removedChipSnapshot != null && removedChipLabel != null) {
+                    AromaRemovalUndoBar(
+                        removedLabel = removedChipLabel!!,
+                        onUndo = {
+                            selected.clear()
+                            selected.addAll(removedChipSnapshot!!)
+                            removedChipSnapshot = null
+                            removedChipLabel = null
+                        }
+                    )
                 }
             }
         }
@@ -1130,6 +1158,15 @@ fun PhaseAromaWheelDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
     var notice by remember { mutableStateOf<String?>(null) }
+    var removedChipLabel by remember { mutableStateOf<String?>(null) }
+    var removedChipSnapshot by remember { mutableStateOf<List<AromaObservation>?>(null) }
+    LaunchedEffect(removedChipSnapshot) {
+        if (removedChipSnapshot != null) {
+            delay(4000)
+            removedChipSnapshot = null
+            removedChipLabel = null
+        }
+    }
     val initialObservationSnapshot = remember { observations.toList() }
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
     val hasUnsavedChanges = observations.toList() != initialObservationSnapshot
@@ -1158,6 +1195,17 @@ fun PhaseAromaWheelDialog(
 
     fun clearActivePhase() {
         observations.removeAll { it.phase == activePhase }
+    }
+
+    fun removeChipWithUndo(id: String) {
+        val snapshot = observations.toList()
+        applyToggle(id)
+        if (snapshot.any { it.descriptorId == id && it.phase == activePhase } &&
+            observations.none { it.descriptorId == id && it.phase == activePhase }
+        ) {
+            removedChipSnapshot = snapshot
+            removedChipLabel = AromaTaxonomy.describe(id).label
+        }
     }
 
     // Dragging a selected chip up to the phase bar reassigns it. The phase
@@ -1329,7 +1377,7 @@ fun PhaseAromaWheelDialog(
                             if (activeIds.isNotEmpty()) {
                                 SelectedAromasOverlay(
                                     selectedIds = activeIds,
-                                    onRemove = { id -> applyToggle(id) },
+                                    onRemove = { id -> removeChipWithUndo(id) },
                                     onClear = { clearActivePhase() },
                                     modifier = Modifier
                                         .align(Alignment.TopCenter)
@@ -1346,6 +1394,17 @@ fun PhaseAromaWheelDialog(
                             }
                         }
                     }
+                }
+                if (removedChipSnapshot != null && removedChipLabel != null) {
+                    AromaRemovalUndoBar(
+                        removedLabel = removedChipLabel!!,
+                        onUndo = {
+                            observations.clear()
+                            observations.addAll(removedChipSnapshot!!)
+                            removedChipSnapshot = null
+                            removedChipLabel = null
+                        }
+                    )
                 }
             }
         }

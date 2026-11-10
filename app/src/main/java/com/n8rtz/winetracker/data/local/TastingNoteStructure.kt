@@ -50,11 +50,18 @@ fun visualAromaIntensity(intensity: Float?): Float {
     return if (value.isNaN() || value.isInfinite()) 0.5f else value.coerceIn(0f, 1f)
 }
 
-/** Visual size is adjusted continuously by pinching; no numeric value is needed on the chip. */
+/**
+ * Visual size is adjusted continuously by pinching; no numeric value is
+ * needed on the chip. The gain is deliberately high so a modest pinch makes
+ * an obvious difference, and the full 0..1 range is reachable in either
+ * direction: chips can shrink well below the default (0.5) size as well as
+ * grow above it. [zoom] is the ratio of the two-pointer distance, which is
+ * independent of the direction/angle the pinch is performed at.
+ */
 fun intensityAfterPinch(intensity: Float?, zoom: Float): Float {
     val current = visualAromaIntensity(intensity)
     val safeZoom = zoom.takeIf { it > 0f && !it.isNaN() && !it.isInfinite() } ?: 1f
-    val sizeDelta = ln(safeZoom.toDouble()).toFloat() * 0.35f
+    val sizeDelta = ln(safeZoom.toDouble()).toFloat() * 0.9f
     return (current + sizeDelta).coerceIn(0f, 1f)
 }
 
