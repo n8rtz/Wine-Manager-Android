@@ -1343,8 +1343,8 @@ fun PhaseAromaWheelDialog(
                     }
                 }
 
-                // All four phases share one line (equal widths) instead of
-                // wrapping onto a second row.
+                // All four phases share one line at their natural widths
+                // instead of wrapping onto a second row.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1363,7 +1363,7 @@ fun PhaseAromaWheelDialog(
                                     softWrap = false
                                 )
                             },
-                            modifier = Modifier.weight(1f).onGloballyPositioned { coordinates ->
+                            modifier = Modifier.onGloballyPositioned { coordinates ->
                                 val origin = coordinates.positionInRoot()
                                 phaseChipBounds[phase] = Rect(
                                     origin.x, origin.y,

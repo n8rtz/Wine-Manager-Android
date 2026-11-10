@@ -130,5 +130,6 @@ class ChipHeightTests(unittest.TestCase):
 class PhaseBarLayoutTests(unittest.TestCase):
     def test_all_four_phases_share_one_line(self):
         source = DIALOG.read_text()
-        self.assertIn("modifier = Modifier.weight(1f).onGloballyPositioned { coordinates ->", source)
+        self.assertNotIn("Modifier.weight(1f).onGloballyPositioned { coordinates ->", source)
+        self.assertIn("All four phases share one line at their natural widths", source)
         self.assertIn("style = MaterialTheme.typography.labelMedium,\n                                    maxLines = 1,", source)
