@@ -3,6 +3,7 @@
 package com.n8rtz.winetracker.ui.components
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -545,6 +546,29 @@ fun AromaDescriptorSection(
  * paired with an equivalent list + search mode over the same taxonomy and
  * selection state, as required for TalkBack users and small screens.
  */
+/** Shown when backing out of an aroma wheel with unsaved changes. */
+@Composable
+private fun UnsavedAromaChangesDialog(
+    onSave: () -> Unit,
+    onDiscard: () -> Unit,
+    onStay: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onStay,
+        title = { Text("Unsaved changes") },
+        text = { Text("You have unsaved changes to the aroma wheel. Save them before leaving?") },
+        confirmButton = {
+            TextButton(onClick = onSave) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDiscard) { Text("Don't save") }
+                TextButton(onClick = onStay) { Text("Cancel") }
+            }
+        }
+    )
+}
+
 @Composable
 fun AromaWheelDialog(
     initiallySelectedIds: List<String>,
@@ -558,6 +582,12 @@ fun AromaWheelDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
     var notice by remember { mutableStateOf<String?>(null) }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    val hasUnsavedChanges = selected.toSet() != initiallySelectedIds.toSet()
+    fun requestDismiss() {
+        if (hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
+    }
+    BackHandler { requestDismiss() }
 
     fun applyToggle(id: String) {
         val result = AromaSelection.toggle(selected.toList(), id)
@@ -583,8 +613,22 @@ fun AromaWheelDialog(
         }
     }
 
+    if (showUnsavedChangesDialog) {
+        UnsavedAromaChangesDialog(
+            onSave = {
+                showUnsavedChangesDialog = false
+                onConfirm(selected.toList())
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                onDismiss()
+            },
+            onStay = { showUnsavedChangesDialog = false }
+        )
+    }
+
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = ::requestDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -601,7 +645,7 @@ fun AromaWheelDialog(
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = ::requestDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
                     }
                     Column(modifier = Modifier.weight(1f)) {
@@ -1086,6 +1130,13 @@ fun PhaseAromaWheelDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
     var notice by remember { mutableStateOf<String?>(null) }
+    val initialObservationSnapshot = remember { observations.toList() }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    val hasUnsavedChanges = observations.toList() != initialObservationSnapshot
+    fun requestDismiss() {
+        if (hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
+    }
+    BackHandler { requestDismiss() }
 
     fun applyToggle(id: String) {
         val result = toggleAromaObservation(
@@ -1154,8 +1205,22 @@ fun PhaseAromaWheelDialog(
         .map { it.descriptorId }
     val distinctCount = toFlatAromaIds(observations).size
 
+    if (showUnsavedChangesDialog) {
+        UnsavedAromaChangesDialog(
+            onSave = {
+                showUnsavedChangesDialog = false
+                onConfirm(activePhase, observations.toList())
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                onDismiss()
+            },
+            onStay = { showUnsavedChangesDialog = false }
+        )
+    }
+
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = ::requestDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -1172,7 +1237,7 @@ fun PhaseAromaWheelDialog(
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = ::requestDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
                     }
                     Column(modifier = Modifier.weight(1f)) {

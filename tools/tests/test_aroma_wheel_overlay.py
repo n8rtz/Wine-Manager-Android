@@ -30,6 +30,19 @@ class AromaWheelOverlayTests(unittest.TestCase):
         structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()
         self.assertIn("fun moveAromaObservation(", structure)
 
+    def test_back_with_unsaved_changes_prompts_to_save_in_both_wheel_dialogs(self):
+        source = DIALOG.read_text()
+        self.assertEqual(2, source.count("var showUnsavedChangesDialog by remember"))
+        self.assertEqual(2, source.count("BackHandler { requestDismiss() }"))
+        self.assertEqual(2, source.count("onDismissRequest = ::requestDismiss,"))
+        self.assertIn("selected.toSet() != initiallySelectedIds.toSet()", source)
+        self.assertIn("observations.toList() != initialObservationSnapshot", source)
+        self.assertIn("Unsaved changes", source)
+        self.assertIn('Text("Save")', source)
+        self.assertIn('Text("Don\'t save")', source)
+        self.assertIn("onConfirm(selected.toList())", source)
+        self.assertIn("onConfirm(activePhase, observations.toList())", source)
+
 
 if __name__ == "__main__":
     unittest.main()
