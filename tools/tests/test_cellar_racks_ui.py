@@ -47,7 +47,7 @@ class CellarRacksUiTests(unittest.TestCase):
         # Cellar count, add-note and Tasting notes share one inline row.
         row = screen.split('text = "Cellar: ${item.bottle.quantity}"', 1)[1].split("if (formattedAddedDate != null)", 1)[0]
         self.assertIn("Icons.Default.NoteAdd", row)
-        self.assertIn('Text("Tasting notes")', row)
+        self.assertIn('Text("Tasting notes", maxLines = 1, softWrap = false)', row)
         # Aromas come from the most recent note that has aromas.
         self.assertIn(".sortedByDescending { it.note.dateTasted }", screen)
         # The "+N" overflow chip is a button straight to that tasting note.

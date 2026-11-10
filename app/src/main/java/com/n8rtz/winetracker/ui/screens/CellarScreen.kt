@@ -508,6 +508,7 @@ fun CellarScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 IconButton(
+                                    modifier = Modifier.size(36.dp),
                                     onClick = {
                                         viewModel.consumeBottle(
                                             bottleId = item.bottle.bottleId,
@@ -527,27 +528,33 @@ fun CellarScreen(
                                 Text(
                                     text = "Cellar: ${item.bottle.quantity}",
                                     style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
-                                IconButton(onClick = { viewModel.addBottleToStock(item.bottle.bottleId) }) {
+                                IconButton(
+                                    onClick = { viewModel.addBottleToStock(item.bottle.bottleId) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
                                     Icon(Icons.Default.Add, contentDescription = "Add one bottle")
                                 }
                                 Spacer(Modifier.weight(1f))
                                 IconButton(
                                     onClick = {
                                         onAddNote(item.definition.definitionId, item.bottle.vintage)
-                                    }
+                                    },
+                                    modifier = Modifier.size(40.dp)
                                 ) {
                                     Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
                                 }
                                 if (itemNotes.isNotEmpty()) {
                                     OutlinedButton(
                                         onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) },
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                                     ) {
                                         Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Tasting notes")
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Tasting notes", maxLines = 1, softWrap = false)
                                     }
                                 }
                             }
