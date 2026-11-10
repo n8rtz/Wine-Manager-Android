@@ -74,9 +74,6 @@ fun CellarScreen(
     // bottom of the screen (above the main navigation); while it is up the
     // "+" Add menu in the host scaffold is hidden.
     val wineActionBarVisible = wineMenuBottleId != null && wineSelectionMode
-    LaunchedEffect(wineActionBarVisible, rackPickMode, rackPickConfirmation) {
-        onWineActionBarVisibleChange(wineActionBarVisible || rackPickMode || rackPickConfirmation != null)
-    }
     // Bottles (0) and Racks (1) live in a pager so swipes and tab taps slide
     // smoothly between pages instead of swapping content instantaneously.
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
@@ -103,6 +100,9 @@ fun CellarScreen(
     }
     BackHandler(enabled = rackPickMode && cellarTab == 0) {
         rackPickWineIds = emptySet()
+    }
+    LaunchedEffect(wineActionBarVisible, rackPickMode, rackPickConfirmation) {
+        onWineActionBarVisibleChange(wineActionBarVisible || rackPickMode || rackPickConfirmation != null)
     }
     BackHandler(enabled = wineSelectionMode && cellarTab == 0) {
         selectedWineIds = emptySet()
@@ -421,6 +421,7 @@ fun CellarScreen(
         // locked while a rack is open, while assigning a bottle to racks, or
         // while a rack tile is being drag-reordered, so those gestures are
         // never stolen by a page change.
+        Box(modifier = Modifier.weight(1f)) {
         HorizontalPager(
             state = pagerState,
             // Keep the off-screen page composed so swiping Bottles <-> Racks
@@ -429,7 +430,7 @@ fun CellarScreen(
             // selection state, ...). With only two pages this is cheap.
             beyondViewportPageCount = 1,
             userScrollEnabled = selectedRack == null && assignmentBottleId == null && !rackDragActive,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.fillMaxSize()
         ) { page ->
             if (page == 0) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -868,6 +869,7 @@ fun CellarScreen(
                     }
                 }
             }
+        }
         }
     }
 
