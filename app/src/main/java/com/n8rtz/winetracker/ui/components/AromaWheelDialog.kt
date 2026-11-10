@@ -1322,34 +1322,43 @@ fun PhaseAromaWheelDialog(
                 }
 
                 // All four phases share one line at their natural widths
-                // instead of wrapping onto a second row.
+                // instead of wrapping onto a second row. Compact pills with
+                // tight padding (FilterChip's fixed internal padding left
+                // "Finish" clipped to "Fi").
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     TastingPhase.values().forEach { phase ->
-                        FilterChip(
-                            selected = activePhase == phase || hoveredPhase == phase,
-                            onClick = { activePhase = phase },
-                            label = {
-                                Text(
-                                    phase.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            },
-                            modifier = Modifier.onGloballyPositioned { coordinates ->
-                                val origin = coordinates.positionInRoot()
-                                phaseChipBounds[phase] = Rect(
-                                    origin.x, origin.y,
-                                    origin.x + coordinates.size.width,
-                                    origin.y + coordinates.size.height
-                                )
-                            }
-                        )
+                        val isSelected = activePhase == phase || hoveredPhase == phase
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                            else Color.Transparent,
+                            contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier
+                                .clickable { activePhase = phase }
+                                .onGloballyPositioned { coordinates ->
+                                    val origin = coordinates.positionInRoot()
+                                    phaseChipBounds[phase] = Rect(
+                                        origin.x, origin.y,
+                                        origin.x + coordinates.size.width,
+                                        origin.y + coordinates.size.height
+                                    )
+                                }
+                        ) {
+                            Text(
+                                phase.label,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
                     }
                 }
 

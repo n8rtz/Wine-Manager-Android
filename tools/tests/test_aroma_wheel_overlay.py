@@ -135,4 +135,5 @@ class PhaseBarLayoutTests(unittest.TestCase):
         source = DIALOG.read_text()
         self.assertNotIn("Modifier.weight(1f).onGloballyPositioned { coordinates ->", source)
         self.assertIn("All four phases share one line at their natural widths", source)
-        self.assertIn("style = MaterialTheme.typography.labelMedium,\n                                    maxLines = 1,", source)
+        # Compact custom pills (8.dp label padding) so "Finish" fits whole.
+        self.assertIn("Modifier.padding(horizontal = 8.dp, vertical = 6.dp)", source)
