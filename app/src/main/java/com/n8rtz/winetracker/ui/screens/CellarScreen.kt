@@ -1343,9 +1343,9 @@ private fun CellarSectionHeader(text: String) {
         HorizontalDivider(modifier = Modifier.width(24.dp))
         Text(
             text,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             softWrap = false,
             modifier = Modifier.padding(horizontal = 8.dp)

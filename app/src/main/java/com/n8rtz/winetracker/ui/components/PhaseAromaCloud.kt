@@ -24,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -118,6 +120,9 @@ fun AromaObservationCloud(
     // enters delete mode (every chip shows its X) until the host reports
     // a tap elsewhere via [chipDeleteMode].
     chipDeleteMode: Boolean? = null,
+    // When set, chips are capped at this many wrapped lines; the rest are
+    // replaced by a "+N" indicator (used by the expanded note card).
+    maxChipLines: Int? = null,
     onChipDeleteModeChange: (Boolean) -> Unit = {}
 ) {
     var internalDeleteMode by remember { mutableStateOf(false) }
@@ -150,6 +155,22 @@ fun AromaObservationCloud(
         val frozenKeys = frozen.map { chipKey(it) }.toSet()
         frozenLive + sortedObservations.filter { chipKey(it) !in frozenKeys }
     } ?: sortedObservations
+
+    // Two-pass line cap: first lay out every chip and record which wrapped
+    // row each lands on (chipBounds below), then keep only the chips that
+    // fit the allowed rows -- reserving room for the "+N" indicator -- and
+    // swap the rest for that indicator.
+    var fittedChipCount by remember(displayedObservations.map { chipKey(it) }, maxChipLines) {
+        mutableStateOf<Int?>(null)
+    }
+    var flowWidthPx by remember { mutableIntStateOf(0) }
+    val indicatorWidthPx = with(LocalDensity.current) { 52.dp.toPx() }
+    val visibleObservations = if (maxChipLines != null && fittedChipCount != null) {
+        displayedObservations.take(fittedChipCount!!)
+    } else {
+        displayedObservations
+    }
+    val chipOverflowCount = displayedObservations.size - visibleObservations.size
 
     val pinchModifier = if (!allowIntensityAdjustment) {
         Modifier
@@ -218,11 +239,12 @@ fun AromaObservationCloud(
     FlowRow(
         modifier = modifier
             .fillMaxWidth()
+            .onGloballyPositioned { flowWidthPx = it.size.width }
             .then(pinchModifier),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        displayedObservations.forEach { observation ->
+        visibleObservations.forEach { observation ->
             key(observation.descriptorId, observation.phase, observation.displayOrder) {
                 val info = AromaTaxonomy.describe(observation.descriptorId)
                 val fontSize = aromaFontSize(observation.intensity)
@@ -251,6 +273,29 @@ fun AromaObservationCloud(
                                 origin.x + coordinates.size.width,
                                 origin.y + coordinates.size.height
                             )
+                            if (maxChipLines != null && fittedChipCount == null) {
+                                val keys = displayedObservations.map { chipKey(it) }
+                                val rects = keys.mapNotNull { chipBounds[it] }
+                                if (rects.size == keys.size && rects.isNotEmpty()) {
+                                    val rowTops = rects.map { it.top }.distinct().sorted()
+                                    fittedChipCount = if (rowTops.size <= maxChipLines) {
+                                        displayedObservations.size
+                                    } else {
+                                        val lastAllowedTop = rowTops[maxChipLines - 1]
+                                        var count = rects.count { it.top <= lastAllowedTop + 1f }
+                                        val lastRowRight = rects
+                                            .filter { it.top <= lastAllowedTop + 1f }
+                                            .maxOf { it.right }
+                                        if (count < displayedObservations.size &&
+                                            flowWidthPx > 0 &&
+                                            lastRowRight + indicatorWidthPx > flowWidthPx
+                                        ) {
+                                            count = (count - 1).coerceAtLeast(0)
+                                        }
+                                        count
+                                    }
+                                }
+                            }
                         }
                         .semantics {
                             contentDescription = if (!allowIntensityAdjustment) {
@@ -293,6 +338,20 @@ fun AromaObservationCloud(
                 }
             }
         }
+        if (chipOverflowCount > 0) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    "+$chipOverflowCount",
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -304,7 +363,8 @@ fun PhaseAromaCloud(
     onRemove: (String, TastingPhase) -> Unit,
     readOnly: Boolean = false,
     allowIntensityAdjustment: Boolean = !readOnly,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    maxChipLines: Int? = null
 ) {
     AromaObservationCloud(
         observations = observations.filter { it.phase == phase },
@@ -312,6 +372,7 @@ fun PhaseAromaCloud(
         onRemove = onRemove,
         readOnly = readOnly,
         allowIntensityAdjustment = allowIntensityAdjustment,
-        modifier = modifier
+        modifier = modifier,
+        maxChipLines = maxChipLines
     )
 }

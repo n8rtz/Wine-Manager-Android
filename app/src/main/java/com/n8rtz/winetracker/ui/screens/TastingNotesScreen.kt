@@ -1,5 +1,11 @@
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -395,6 +401,18 @@ fun CompactNoteItem(
                             )
                         }
                     }
+                    AnimatedContent(
+                        targetState = selectedIndex,
+                        transitionSpec = {
+                            // Slide in the direction of travel, cross-fading,
+                            // so switching date tabs feels like paging.
+                            val direction = if (targetState > initialState) 1 else -1
+                            (slideInHorizontally { width -> direction * width / 3 } + fadeIn()) togetherWith
+                                (slideOutHorizontally { width -> -direction * width / 3 } + fadeOut())
+                        },
+                        label = "tastingNoteTabTransition",
+                        modifier = Modifier.fillMaxWidth()
+                    ) { animatedIndex ->
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -423,6 +441,7 @@ fun CompactNoteItem(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
                     ) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        val selectedNote = orderedGroup[animatedIndex.coerceIn(0, orderedGroup.lastIndex)]
                         // Rating is the focal point: a large colour-banded
                         // badge (same stepped colours as elsewhere) with the
                         // score big and bold, not plain text.
@@ -483,6 +502,7 @@ fun CompactNoteItem(
                                         PhaseAromaCloud(
                                             phase = phase,
                                             observations = phaseObservations,
+                                            maxChipLines = 2,
                                             onIntensityChange = { descriptorId, updatedPhase, intensity ->
                                                 onAromaIntensityChange(
                                                     selectedNote.note.noteId, descriptorId, updatedPhase, intensity
@@ -495,6 +515,11 @@ fun CompactNoteItem(
                                     }
                                 }
                             }
+                        }
+                        if (selectedNote.note.valueScore != null &&
+                            (aromaObservations.isNotEmpty() || sensory?.aromas?.isNotEmpty() == true)
+                        ) {
+                            HorizontalDivider()
                         }
                         selectedNote.note.recommendedBy?.takeIf { it.isNotBlank() }?.let {
                             Text("Recommended by $it", style = MaterialTheme.typography.bodySmall)
@@ -528,6 +553,7 @@ fun CompactNoteItem(
                             }
                         }
                         selectedNote.note.price?.let { Text("Price: $${"%.2f".format(it)}", style = MaterialTheme.typography.bodySmall) }
+                    }
                     }
                     }
                 }

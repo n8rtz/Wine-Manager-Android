@@ -116,3 +116,32 @@ class RatingPhaseAndValueStylingTests(unittest.TestCase):
         ]:
             self.assertIn(snippet, NOTES.read_text())
             self.assertIn(snippet, detail)
+
+
+class TabTransitionAndChipCapTests(unittest.TestCase):
+    def test_tab_switches_are_animated(self):
+        source = NOTES.read_text()
+        self.assertIn("AnimatedContent(", source)
+        self.assertIn("slideInHorizontally", source)
+        self.assertIn("togetherWith", source)
+
+    def test_divider_between_aromas_and_value(self):
+        source = NOTES.read_text()
+        aromas = source.index("val aromaObservations = sensory?.aromaObservations.orEmpty()")
+        divider = source.index("HorizontalDivider()", aromas)
+        value = source.index('Text("Value", style = MaterialTheme.typography.titleSmall', aromas)
+        self.assertLess(divider, value)
+
+    def test_phase_chips_capped_at_two_lines_with_overflow(self):
+        self.assertIn("maxChipLines = 2,", NOTES.read_text())
+        cloud = (APP / "ui/components/PhaseAromaCloud.kt").read_text()
+        self.assertIn("maxChipLines: Int? = null", cloud)
+        self.assertIn('"+$chipOverflowCount"', cloud)
+        self.assertIn("rowTops.size <= maxChipLines", cloud)
+
+    def test_cellar_headers_match_phase_title_styling(self):
+        cellar = (APP / "ui/screens/CellarScreen.kt").read_text()
+        header = cellar[cellar.index("private fun CellarSectionHeader"):]
+        self.assertIn("style = MaterialTheme.typography.titleMedium", header)
+        self.assertIn("fontWeight = FontWeight.Bold", header)
+        self.assertIn("color = MaterialTheme.colorScheme.onSurface", header)
