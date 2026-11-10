@@ -1,13 +1,14 @@
 package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +39,7 @@ import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.AromaChips
 import com.n8rtz.winetracker.ui.components.PhaseAromaCloud
+import com.n8rtz.winetracker.ui.components.ratingColor
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -67,10 +70,14 @@ fun TastingNotesScreen(
     val filterState by tastingNoteViewModel.filterState.collectAsState()
     val locationData by tastingNoteViewModel.tastingNotesLocationData.collectAsState()
     val prices by tastingNoteViewModel.rankingsPrices.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
-    var searchExpanded by remember { mutableStateOf(false) }
-    var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    var searchExpanded by rememberSaveable { mutableStateOf(false) }
+    // Saveable so returning from a note's detail restores the open card.
+    var expandedGroupId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var expandedGroupVintage by rememberSaveable { mutableStateOf<String?>(null) }
+    val expandedGroupKey: Pair<Long, String>? =
+        expandedGroupId?.let { id -> expandedGroupVintage?.let { vintage -> id to vintage } }
     val wineNotesRequest by tastingNoteViewModel.wineNotesRequest.collectAsState()
     val isFilterActive = filterState.types.isNotEmpty() ||
             filterState.status != "All" ||
@@ -122,10 +129,8 @@ fun TastingNotesScreen(
         }
     }
 
-    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
-    // screen where it was scrolled to instead of at the top.
-    val notesListState = remember { LazyListState() }
-    LaunchedEffect(Unit) { notesListState.scrollToItem(0) }
+    // Saveable so returning from a note's detail restores the scroll spot.
+    val notesListState = rememberLazyListState()
     // The restored top search row scrolls away with the list; the compact controls appear once
     // both the title and the search row are out of view, and stay visible while scrolling.
     val showCompactControls by remember {
@@ -160,7 +165,8 @@ fun TastingNotesScreen(
                 com.n8rtz.winetracker.data.local.displayVintage(note.vintage) == targetVintage
         }
         if (targetIndex >= 0) {
-            expandedGroupKey = request.definitionId to targetVintage
+            expandedGroupId = request.definitionId
+            expandedGroupVintage = targetVintage
             notesListState.scrollToItem(targetIndex + 2)
             tastingNoteViewModel.consumeWineTastingNotesRequest(request.requestId)
         }
@@ -245,7 +251,13 @@ fun TastingNotesScreen(
                         rating = ratingsMap[groupKey],
                         listDateFormat = listDateFormat,
                         onExpandToggle = {
-                            expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
+                            if (expandedGroupKey == groupKey) {
+                                expandedGroupId = null
+                                expandedGroupVintage = null
+                            } else {
+                                expandedGroupId = groupKey.first
+                                expandedGroupVintage = groupKey.second
+                            }
                         },
                         price = prices[groupKey],
                         onNoteClick = onNoteClick,
@@ -324,8 +336,8 @@ fun CompactNoteItem(
         onClick = onExpandToggle,
         details = {
             val orderedGroup = remember(group) { group.sortedByDescending { it.note.dateTasted } }
-            var selectedNoteId by remember(orderedGroup.first().note.noteId) {
-                mutableLongStateOf(orderedGroup.first().note.noteId)
+            var selectedNoteId by rememberSaveable(orderedGroup.first().note.noteId) {
+                mutableStateOf(orderedGroup.first().note.noteId)
             }
             val selectedIndex = orderedGroup.indexOfFirst { it.note.noteId == selectedNoteId }.coerceAtLeast(0)
             val selectedNote = orderedGroup[selectedIndex]
@@ -345,10 +357,10 @@ fun CompactNoteItem(
                             val isSelected = selectedIndex == index
                             Box(
                                 modifier = Modifier
-                                    .height(36.dp)
+                                    .height(32.dp)
                                     .background(
                                         if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.14f),
+                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                                         RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                                     )
                                     .clickable { selectedNoteId = item.note.noteId }
@@ -357,8 +369,8 @@ fun CompactNoteItem(
                             ) {
                                 Text(
                                     listDateFormat.format(Date(item.note.dateTasted)),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     softWrap = false
                                 )
@@ -368,9 +380,9 @@ fun CompactNoteItem(
                         // Narrow "+" tab: add another note for this wine.
                         Box(
                             modifier = Modifier
-                                .size(width = 40.dp, height = 36.dp)
+                                .size(width = 40.dp, height = 32.dp)
                                 .background(
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.14f),
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                                     RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                                 )
                                 .clickable { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },
@@ -411,12 +423,48 @@ fun CompactNoteItem(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
                     ) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        val score = selectedNote.note.rating.takeIf { it > 0.0 }?.toInt()?.let { "$it points" } ?: "Unrated"
-                        Text(
-                            score,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        // Rating is the focal point: a large colour-banded
+                        // badge (same stepped colours as elsewhere) with the
+                        // score big and bold, not plain text.
+                        val ratingValue = selectedNote.note.rating.takeIf { it > 0.0 }?.toInt()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (ratingValue != null) ratingColor(ratingValue) else Color(0xFF9E9E9E),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .border(1.5.dp, Color(0xFF333333), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 14.dp, vertical = 5.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    ratingValue?.toString() ?: "NR",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                            Column {
+                                Text(
+                                    "MY RATING",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    if (ratingValue != null) "out of 100 points" else "Not rated yet",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         Text(
                             selectedNote.note.notes?.takeIf { it.isNotBlank() } ?: "No written notes",
                             style = MaterialTheme.typography.bodyMedium,

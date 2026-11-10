@@ -15,16 +15,18 @@ class TastingNoteTabsTests(unittest.TestCase):
         self.assertIn(".horizontalScroll(rememberScrollState())", source)
         # Attached tabs with only the top corners rounded: the open tab
         # matches the note body colour (same as Cellar's expanded cards),
-        # the others a fainter shade; no underline indicator anywhere.
+        # the others a darker shade; no underline indicator anywhere.
         self.assertIn("if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)", source)
-        self.assertIn("else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.14f)", source)
         self.assertIn("color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)", source)
         self.assertNotIn("ScrollableTabRow(", source)
         self.assertIn("RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)", source)
         self.assertIn("RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp)", source)
-        # Compact tabs and a narrow "+" tab.
-        self.assertIn(".height(36.dp)", source)
-        self.assertIn(".size(width = 40.dp, height = 36.dp)", source)
+        # Compact tabs (trimmed vertical padding only, full-size bold
+        # text) and a narrow "+" tab; closed tabs are the darker shade.
+        self.assertIn(".height(32.dp)", source)
+        self.assertIn(".size(width = 40.dp, height = 32.dp)", source)
+        self.assertIn("style = MaterialTheme.typography.labelLarge,\n                                    fontWeight = FontWeight.Bold,", source)
+        self.assertIn("else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)", source)
         # Tapping the card expands it rather than opening the detail.
         self.assertIn("onClick = onExpandToggle,", source)
         # "+" tab adds a note for this wine.
@@ -43,3 +45,19 @@ class TastingNoteTabsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TastingNoteStateAndRatingTests(unittest.TestCase):
+    def test_notes_state_survives_detail_navigation(self):
+        source = NOTES.read_text()
+        self.assertIn("val notesListState = rememberLazyListState()", source)
+        self.assertNotIn("scrollToItem(0)", source.split("val notesListState")[0][-200:])
+        self.assertIn("var searchQuery by rememberSaveable", source)
+        self.assertIn("var selectedNoteId by rememberSaveable(orderedGroup.first().note.noteId)", source)
+
+    def test_rating_is_a_prominent_colour_badge(self):
+        source = NOTES.read_text()
+        self.assertIn("ratingColor(ratingValue)", source)
+        self.assertIn("MaterialTheme.typography.headlineSmall", source)
+        self.assertIn('"MY RATING"', source)
+        self.assertIn('ratingValue?.toString() ?: "NR"', source)

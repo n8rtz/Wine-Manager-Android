@@ -117,8 +117,12 @@ class ScrollPositionTests(unittest.TestCase):
             self.assertNotIn("lastRankedHash", source, name)
             self.assertNotIn("lastListKey", source, name)
             matches = re.findall(r"LaunchedEffect\([^)]*\) \{[^{}]*scrollToItem\(0\)", source)
-            self.assertEqual(len(matches), 1, (name, matches))
-            self.assertIn("LaunchedEffect(Unit)", matches[0], name)
+            # Notes no longer forces the top: its scroll state is saved so
+            # returning from a note detail restores the previous position.
+            expected = 0 if name == "notes" else 1
+            self.assertEqual(len(matches), expected, (name, matches))
+            if matches:
+                self.assertIn("LaunchedEffect(Unit)", matches[0], name)
 
     def test_opening_search_does_not_change_the_list_state(self):
         for name, path in LIST_SCREENS.items():
@@ -126,7 +130,7 @@ class ScrollPositionTests(unittest.TestCase):
             self.assertNotIn("LaunchedEffect(searchQuery)", source, name)
             self.assertNotIn("LaunchedEffect(filterState)", source, name)
             self.assertIn("onOpenSearch = { searchExpanded = true }", source, name)
-            self.assertEqual(source.count("scrollToItem(0)"), 1, name)
+            self.assertEqual(source.count("scrollToItem(0)"), 0 if name == "notes" else 1, name)
 
 
 class CardClickTests(unittest.TestCase):
@@ -163,8 +167,8 @@ class CardClickTests(unittest.TestCase):
 
     def test_notes_hoists_one_open_group_and_body_opens_the_latest_note(self):
         source = NOTES.read_text()
-        self.assertIn("var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }", source)
-        self.assertIn("expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey", source)
+        self.assertIn("var expandedGroupId by rememberSaveable { mutableStateOf<Long?>(null) }", source)
+        self.assertIn("expandedGroupId = groupKey.first", source)
         self.assertIn("onExpandToggle = onExpandToggle", source)
         self.assertIn("onClick = onExpandToggle,", source)
         self.assertIn("group.maxByOrNull { it.note.dateTasted }", source)
