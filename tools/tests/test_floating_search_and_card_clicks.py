@@ -166,7 +166,7 @@ class CardClickTests(unittest.TestCase):
         self.assertIn("var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }", source)
         self.assertIn("expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey", source)
         self.assertIn("onExpandToggle = onExpandToggle", source)
-        self.assertIn("onClick = { onNoteClick(latestNoteId) }", source)
+        self.assertIn("onClick = onExpandToggle,", source)
         self.assertIn("group.maxByOrNull { it.note.dateTasted }", source)
         self.assertIn("ScrollableTabRow(", source)
         self.assertIn("selectedNote.note.noteId", source)
