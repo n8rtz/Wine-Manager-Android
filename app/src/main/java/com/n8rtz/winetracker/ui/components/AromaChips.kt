@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.n8rtz.winetracker.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
@@ -52,10 +53,14 @@ fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8, onOverflowClick: (()
                 )
             }
             if (onOverflowClick != null) {
+                // Plain clickable rather than Surface(onClick): the
+                // clickable Surface enforces a 48dp minimum interactive
+                // height, which made "+N" taller than the other chips and
+                // knocked it out of line with its row.
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    onClick = onOverflowClick
+                    modifier = Modifier.clickable(onClick = onOverflowClick)
                 ) { overflowLabel() }
             } else {
                 Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {

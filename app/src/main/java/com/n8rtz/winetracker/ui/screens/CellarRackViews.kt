@@ -65,12 +65,6 @@ internal fun RackAssignmentControl(
     onOpenRackSelection: () -> Unit
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            "Rack",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.width(6.dp))
         AssistChip(
             onClick = onOpenRackSelection,
             label = {

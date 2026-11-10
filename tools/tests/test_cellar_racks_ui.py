@@ -83,8 +83,16 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('Text("Notes", maxLines = 1, softWrap = false)', row)
         # Aromas come from the most recent note that has aromas.
         self.assertIn(".sortedByDescending { it.note.dateTasted }", screen)
-        # The "+N" overflow chip is a button straight to that tasting note.
+        # No redundant "Rack" text label next to the rack chip.
+        racks_source = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        control = racks_source.split("fun RackAssignmentControl(", 1)[1].split("fun RackQuickAddButton", 1)[0]
+        self.assertNotIn('Text(\n            "Rack",', control)
+        # The "+N" overflow chip is a button straight to that tasting note,
+        # and uses a plain clickable so it stays the same height as (and in
+        # line with) the other aroma chips.
         self.assertIn("onOverflowClick: (() -> Unit)? = null", chips)
+        self.assertIn("modifier = Modifier.clickable(onClick = onOverflowClick)", chips)
+        self.assertNotIn("onClick = onOverflowClick\n", chips)
         self.assertIn("onOverflowClick = { onNoteClick(aromaNote.note.noteId) }", screen)
 
     def test_rack_order_is_persisted_and_long_press_supports_live_drag_reordering(self):
