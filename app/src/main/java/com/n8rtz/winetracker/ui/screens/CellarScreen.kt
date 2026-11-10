@@ -598,7 +598,7 @@ fun CellarScreen(
                         // corner so it never overlaps the wine's name.
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .offset(x = (-2).dp, y = (-8).dp)
+                            .offset(x = 3.dp, y = 1.dp)
                             .size(28.dp)
                             .graphicsLayer { scaleX = 0.8f; scaleY = 0.8f }
                     )
@@ -1147,9 +1147,6 @@ private fun WineActionBarAction(
         onClick = onClick,
         shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-        ),
         shadowElevation = 6.dp,
         modifier = modifier
     ) {

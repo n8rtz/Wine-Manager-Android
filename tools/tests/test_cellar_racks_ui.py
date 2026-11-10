@@ -103,7 +103,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("uncheckedColor = Color.Gray", screen)
         self.assertIn(".align(Alignment.TopStart)", screen)
         # The checkbox is small and tucked up above the wine's name.
-        self.assertIn(".offset(x = (-2).dp, y = (-8).dp)", screen)
+        self.assertIn(".offset(x = 3.dp, y = 1.dp)", screen)
         self.assertIn(".size(28.dp)", screen)
         self.assertIn("scaleX = 0.8f; scaleY = 0.8f", screen)
         # Action-bar pill labels never wrap mid-word.
@@ -126,6 +126,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("animateFloatAsState(", screen)
         self.assertNotIn("AnimatedVisibility(", screen)
         self.assertIn("MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)", screen)
+        self.assertNotIn("BorderStroke(\n            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)", screen)
         self.assertIn("onWineActionBarVisibleChange: (Boolean) -> Unit = {}", screen)
         main = (ROOT / "app/src/main/java/com/n8rtz/winetracker/MainActivity.kt").read_text()
         self.assertIn("onWineActionBarVisibleChange = { wineActionBarVisible = it }", main)
