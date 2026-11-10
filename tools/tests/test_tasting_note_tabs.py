@@ -142,6 +142,10 @@ class TabTransitionAndChipCapTests(unittest.TestCase):
     def test_cellar_headers_match_phase_title_styling(self):
         cellar = (APP / "ui/screens/CellarScreen.kt").read_text()
         header = cellar[cellar.index("private fun CellarSectionHeader"):]
-        self.assertIn("style = MaterialTheme.typography.titleMedium", header)
+        # Section name smaller than the phase titles but still bold/dark;
+        # the aromas date is smaller again and not bold.
+        self.assertIn("style = MaterialTheme.typography.labelLarge", header)
         self.assertIn("fontWeight = FontWeight.Bold", header)
-        self.assertIn("color = MaterialTheme.colorScheme.onSurface", header)
+        self.assertIn("style = MaterialTheme.typography.labelSmall", header)
+        self.assertIn("fontWeight = FontWeight.Normal", header)
+        self.assertIn('CellarSectionHeader("Aromas", suffix =', cellar)

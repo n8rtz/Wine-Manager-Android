@@ -558,7 +558,7 @@ fun CellarScreen(
                                 .sortedByDescending { it.note.dateTasted }
                                 .firstOrNull { it.note.sensoryData?.aromas.orEmpty().isNotEmpty() }
                             if (aromaNote != null) {
-                                CellarSectionHeader("Aromas · ${dateFormat.format(Date(aromaNote.note.dateTasted))}")
+                                CellarSectionHeader("Aromas", suffix = "· ${dateFormat.format(Date(aromaNote.note.dateTasted))}")
                                 AromaChips(
                                     aromaNote.note.sensoryData?.aromas.orEmpty(),
                                     maxVisible = 7,
@@ -1335,7 +1335,7 @@ fun FilterSheet(
  * card width — ------- Aromas --------------------------
  */
 @Composable
-private fun CellarSectionHeader(text: String) {
+private fun CellarSectionHeader(text: String, suffix: String? = null) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -1343,13 +1343,25 @@ private fun CellarSectionHeader(text: String) {
         HorizontalDivider(modifier = Modifier.width(24.dp))
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             softWrap = false,
-            modifier = Modifier.padding(horizontal = 8.dp)
+            modifier = Modifier.padding(start = 8.dp, end = if (suffix == null) 8.dp else 4.dp)
         )
+        if (suffix != null) {
+            // The aromas date: smaller again, and not bold.
+            Text(
+                suffix,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
         HorizontalDivider(modifier = Modifier.weight(1f))
     }
 }
