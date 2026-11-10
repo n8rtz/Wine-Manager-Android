@@ -3,6 +3,7 @@ package com.n8rtz.winetracker.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -138,7 +139,7 @@ fun HistoryScreen(
         )
     }
 
-    Scaffold { padding ->
+    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             TabRow(selectedTabIndex = historyTab) {
                 Tab(selected = historyTab == 0, onClick = { selectHistoryTab(0) }, text = { Text("Consumed") })
@@ -157,13 +158,6 @@ fun HistoryScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                     ) {
-                        item(key = "history_header") {
-                            Text(
-                                text = "Consumption History",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                         if (history.isEmpty()) {
                             item(key = "history_empty") {
                                 Box(
@@ -208,13 +202,6 @@ fun HistoryScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                     ) {
-                        item(key = "added_header") {
-                            Text(
-                                text = "Added to Cellar",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                         if (addedWines.isEmpty()) {
                             item(key = "added_empty") {
                                 Box(

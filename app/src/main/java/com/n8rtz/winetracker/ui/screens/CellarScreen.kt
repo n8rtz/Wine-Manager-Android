@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -58,11 +59,13 @@ fun CellarScreen(
     val filterState by viewModel.filterState.collectAsState()
     val cellarLocationData by viewModel.cellarLocationData.collectAsState()
     val cellarResetKey by viewModel.cellarResetKey.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
-    var searchExpanded by remember { mutableStateOf(false) }
+    // Saveable so leaving for a tasting note / rack flow and backing out
+    // returns to the same view: same search, same expanded card.
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var searchExpanded by rememberSaveable { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showStatsDialog by remember { mutableStateOf(false) }
-    var expandedBottleId by remember { mutableStateOf<Long?>(null) }
+    var expandedBottleId by rememberSaveable { mutableStateOf<Long?>(null) }
     // Long-pressing a cellar wine selects it and opens the Edit/Delete popup;
     // while anything is selected every card shows a selection checkbox.
     var selectedWineIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -83,7 +86,7 @@ fun CellarScreen(
         pagerScope.launch { pagerState.animateScrollToPage(page) }
     }
     var rackDragActive by remember { mutableStateOf(false) }
-    var selectedRack by remember { mutableStateOf<String?>(null) }
+    var selectedRack by rememberSaveable { mutableStateOf<String?>(null) }
     var assignmentBottleId by remember { mutableStateOf<Long?>(null) }
     var selectedAssignmentRacks by remember { mutableStateOf<Set<String>>(emptySet()) }
     // Multi-wine rack pick: long-pressing a card's add-to-rack button starts
@@ -278,13 +281,17 @@ fun CellarScreen(
     val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val parseFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
 
+    var lastResetKey by rememberSaveable { mutableStateOf<Int?>(null) }
     LaunchedEffect(cellarResetKey) {
-        searchQuery = ""
-        searchExpanded = false
-        showFilterSheet = false
-        expandedBottleId = null
-        pagerState.animateScrollToPage(0)
-        selectedRack = null
+        if (lastResetKey != null && lastResetKey != cellarResetKey) {
+            searchQuery = ""
+            searchExpanded = false
+            showFilterSheet = false
+            expandedBottleId = null
+            pagerState.animateScrollToPage(0)
+            selectedRack = null
+        }
+        lastResetKey = cellarResetKey
     }
 
     val ratingsMap = remember(tastingHistory) {

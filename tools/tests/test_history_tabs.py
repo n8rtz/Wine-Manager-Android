@@ -20,6 +20,12 @@ class HistoryTabsTests(unittest.TestCase):
         self.assertIn("pagerState.animateScrollToPage(page)", source)
         self.assertIn("BackHandler(enabled = historyTab == 1) { selectHistoryTab(0) }", source)
 
+    def test_no_excess_top_padding_and_no_duplicate_titles(self):
+        source = HISTORY.read_text()
+        self.assertIn("Scaffold(contentWindowInsets = WindowInsets(0.dp))", source)
+        self.assertNotIn("Consumption History", source)
+        self.assertNotIn("Added to Cellar", source)
+
     def test_added_tab_lists_wines_by_date_added_newest_first(self):
         source = HISTORY.read_text()
         self.assertIn("viewModel.activeInventory", source)

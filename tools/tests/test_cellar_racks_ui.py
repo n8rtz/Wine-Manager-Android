@@ -57,6 +57,17 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("HorizontalDivider(modifier = Modifier.width(24.dp))", screen)
         self.assertIn("HorizontalDivider(modifier = Modifier.weight(1f))", screen)
 
+    def test_cellar_view_state_survives_leaving_and_backing_out(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        # Expanded card and search are saveable, so returning from a
+        # tasting note / rack flow restores them (filters/sort already
+        # live in the ViewModel).
+        self.assertIn("var expandedBottleId by rememberSaveable", screen)
+        self.assertIn("var searchQuery by rememberSaveable", screen)
+        self.assertIn("var selectedRack by rememberSaveable", screen)
+        # The bottom-bar reset still applies, but only on a real key change.
+        self.assertIn("if (lastResetKey != null && lastResetKey != cellarResetKey)", screen)
+
     def test_long_press_rack_button_picks_multiple_wines_for_one_rack(self):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
         racks = (APP / "ui/screens/CellarRackViews.kt").read_text()
