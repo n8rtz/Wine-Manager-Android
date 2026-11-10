@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
+import com.n8rtz.winetracker.data.local.withDerivedAromas
 import com.n8rtz.winetracker.ui.components.CommonFaultsFields
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
 import com.n8rtz.winetracker.data.local.TastingPhase
@@ -70,6 +71,7 @@ fun TastingNoteDetailScreen(
     var note by remember(noteId) { mutableStateOf<TastingNote?>(null) }
     var loaded by remember(noteId) { mutableStateOf(false) }
     var showAromaWheel by remember { mutableStateOf(false) }
+    var aromaWheelEditMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
         note = viewModel.getTastingNoteById(noteId)
@@ -196,7 +198,7 @@ fun TastingNoteDetailScreen(
                 definitionColor = definition?.defaultColorHsv,
                 legacyAromasUnresolved = sensoryData.aromaObservations.isEmpty() && sensoryData.aromas.isNotEmpty(),
                 onDataChange = {},
-                onOpenWheel = { showAromaWheel = true },
+                onOpenWheel = { aromaWheelEditMode = false; showAromaWheel = true },
                 onAssignLegacy = {},
                 readOnly = true
             )
@@ -207,9 +209,22 @@ fun TastingNoteDetailScreen(
                 PhaseAromaWheelDialog(
                     initialObservations = sensoryData.aromaObservations,
                     initialPhase = TastingPhase.AROMA_BEFORE_TASTING,
-                    onConfirm = { _, _ -> showAromaWheel = false },
+                    // Confirm only fires after switching to edit mode via
+                    // the pencil: persist the new aromas on the note.
+                    onConfirm = { _, observations ->
+                        val updatedNote = currentNote.copy(
+                            sensoryData = withDerivedAromas(
+                                sensoryData.copy(aromaObservations = observations)
+                            )
+                        )
+                        viewModel.saveTastingNote(updatedNote) {
+                            note = updatedNote
+                            showAromaWheel = false
+                        }
+                    },
                     onDismiss = { showAromaWheel = false },
-                    readOnly = true
+                    readOnly = !aromaWheelEditMode,
+                    onEditRequest = { aromaWheelEditMode = true }
                 )
             }
             CommonFaultsFields(data = sensoryData, onChange = {}, readOnly = true)

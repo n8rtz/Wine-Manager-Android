@@ -40,6 +40,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DonutLarge
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
@@ -1154,7 +1155,10 @@ fun PhaseAromaWheelDialog(
     initialPhase: TastingPhase,
     onConfirm: (TastingPhase, List<AromaObservation>) -> Unit,
     onDismiss: () -> Unit,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    // Shown as a pencil in view-only mode: switches the caller to editing
+    // (the dialog itself stays open; only its readOnly flag flips).
+    onEditRequest: (() -> Unit)? = null
 ) {
     val observations = remember {
         mutableStateListOf<AromaObservation>().apply {
@@ -1302,6 +1306,14 @@ fun PhaseAromaWheelDialog(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
                     }
                     Spacer(modifier = Modifier.weight(1f))
+                    if (readOnly && onEditRequest != null) {
+                        IconButton(onClick = onEditRequest) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Edit aromas"
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = { showListMode = !showListMode },
                         modifier = Modifier.semantics {

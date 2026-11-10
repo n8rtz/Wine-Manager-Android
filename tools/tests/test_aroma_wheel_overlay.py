@@ -137,3 +137,15 @@ class PhaseBarLayoutTests(unittest.TestCase):
         self.assertIn("All four phases share one line at their natural widths", source)
         # Compact custom pills (8.dp label padding) so "Finish" fits whole.
         self.assertIn("Modifier.padding(horizontal = 8.dp, vertical = 6.dp)", source)
+
+
+class ViewOnlyEditPencilTests(unittest.TestCase):
+    def test_pencil_switches_view_only_wheel_to_edit_and_saves(self):
+        source = DIALOG.read_text()
+        self.assertIn("onEditRequest: (() -> Unit)? = null", source)
+        self.assertIn("if (readOnly && onEditRequest != null)", source)
+        self.assertIn('contentDescription = "Edit aromas"', source)
+        detail = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/TastingNoteDetailScreen.kt").read_text()
+        self.assertIn("readOnly = !aromaWheelEditMode", detail)
+        self.assertIn("onEditRequest = { aromaWheelEditMode = true }", detail)
+        self.assertIn("viewModel.saveTastingNote(updatedNote)", detail)
