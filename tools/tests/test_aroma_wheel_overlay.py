@@ -72,6 +72,16 @@ class AromaWheelOverlayTests(unittest.TestCase):
         # 10sp at intensity 0 up to 32sp at 1 (default 0.5 -> 21sp).
         self.assertIn("(10f + visualAromaIntensity(intensity) * 22f).sp", cloud)
         self.assertIn("* 0.9f", structure)
+        # Pinch is handled by the whole cloud: the chip between the two
+        # fingers (under their midpoint / nearest to it) is the target, so
+        # the fingers do not need to touch the chip itself.
+        self.assertIn("val centroid = Offset(", cloud)
+        self.assertIn(".firstOrNull { it.value.contains(centroid) }", cloud)
+        self.assertIn("Modifier.pointerInput(Unit)", cloud)
+        # Order is frozen mid-pinch and only re-sorts on release.
+        self.assertIn("var frozenOrder by remember", cloud)
+        self.assertIn("frozenOrder = currentObservations.value", cloud)
+        self.assertIn("frozenOrder = null", cloud)
 
 
 if __name__ == "__main__":
