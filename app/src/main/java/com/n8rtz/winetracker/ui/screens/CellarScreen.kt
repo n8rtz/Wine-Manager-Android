@@ -539,14 +539,6 @@ fun CellarScreen(
                                     Icon(Icons.Default.Add, contentDescription = "Add one bottle")
                                 }
                                 Spacer(Modifier.weight(1f))
-                                IconButton(
-                                    onClick = {
-                                        onAddNote(item.definition.definitionId, item.bottle.vintage)
-                                    },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
-                                }
                                 if (itemNotes.isNotEmpty()) {
                                     OutlinedButton(
                                         onClick = { onTastingNotesClick(item.definition.definitionId, item.bottle.vintage) },
@@ -556,6 +548,14 @@ fun CellarScreen(
                                         Spacer(Modifier.width(6.dp))
                                         Text("Notes", maxLines = 1, softWrap = false)
                                     }
+                                }
+                                IconButton(
+                                    onClick = {
+                                        onAddNote(item.definition.definitionId, item.bottle.vintage)
+                                    },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(Icons.Default.NoteAdd, contentDescription = "Add tasting note")
                                 }
                             }
                             if (formattedAddedDate != null) {
