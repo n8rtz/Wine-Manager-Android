@@ -55,7 +55,11 @@ class CellarStockContractTests(unittest.TestCase):
         self.assertIn('contentDescription = "Add tasting note"', cellar)
         self.assertIn("onAddNote(item.definition.definitionId, item.bottle.vintage)", cellar)
         self.assertNotIn('contentDescription = "Edit wine"', cellar)
-        self.assertIn("onLongClick = { onEditWine(item.bottle.bottleId) }", cellar)
+        # Long-press now selects the wine and opens the Edit/Delete popup;
+        # Edit (single selection only) is what opens the editor.
+        self.assertIn("selectedWineIds = selectedWineIds + item.bottle.bottleId", cellar)
+        self.assertIn("wineMenuBottleId = item.bottle.bottleId", cellar)
+        self.assertIn("onEditWine(target)", cellar)
 
     def test_wine_edit_is_separate_from_the_removed_detail_and_consumption_flow(self):
         edit = EDIT.read_text()

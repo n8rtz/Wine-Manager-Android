@@ -60,6 +60,12 @@ fun CellarScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var showStatsDialog by remember { mutableStateOf(false) }
     var expandedBottleId by remember { mutableStateOf<Long?>(null) }
+    // Long-pressing a cellar wine selects it and opens the Edit/Delete popup;
+    // while anything is selected every card shows a selection checkbox.
+    var selectedWineIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var wineMenuBottleId by remember { mutableStateOf<Long?>(null) }
+    var showWineDeleteConfirmation by remember { mutableStateOf(false) }
+    val wineSelectionMode = selectedWineIds.isNotEmpty()
     // Bottles (0) and Racks (1) live in a pager so swipes and tab taps slide
     // smoothly between pages instead of swapping content instantaneously.
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
@@ -72,6 +78,10 @@ fun CellarScreen(
     var selectedRack by remember { mutableStateOf<String?>(null) }
     var assignmentBottleId by remember { mutableStateOf<Long?>(null) }
     var selectedAssignmentRacks by remember { mutableStateOf<Set<String>>(emptySet()) }
+    BackHandler(enabled = wineSelectionMode && cellarTab == 0) {
+        selectedWineIds = emptySet()
+        wineMenuBottleId = null
+    }
     BackHandler(enabled = cellarTab == 1) {
         if (assignmentBottleId != null) {
             assignmentBottleId = null
@@ -430,6 +440,7 @@ fun CellarScreen(
                     expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId
                 }
 
+                Box(modifier = Modifier.fillMaxWidth()) {
                 WineCard(
                     title = "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)})",
                     subtitle = run {
@@ -464,7 +475,11 @@ fun CellarScreen(
                             )
                         )?.let { it.startYear to it.endYear }
                     },
-                    onLongClick = { onEditWine(item.bottle.bottleId) },
+                    onLongClick = {
+                        // Select the long-pressed wine and pop up its menu.
+                        selectedWineIds = selectedWineIds + item.bottle.bottleId
+                        wineMenuBottleId = item.bottle.bottleId
+                    },
                     details = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             RackAssignmentControl(
@@ -544,8 +559,60 @@ fun CellarScreen(
                             }
                         }
                     },
-                    onClick = toggleExpanded
+                    onClick = {
+                        if (wineSelectionMode) {
+                            selectedWineIds = if (item.bottle.bottleId in selectedWineIds) {
+                                selectedWineIds - item.bottle.bottleId
+                            } else {
+                                selectedWineIds + item.bottle.bottleId
+                            }
+                        } else {
+                            toggleExpanded()
+                        }
+                    }
                 )
+                if (wineSelectionMode) {
+                    Checkbox(
+                        checked = item.bottle.bottleId in selectedWineIds,
+                        onCheckedChange = { checked ->
+                            selectedWineIds = if (checked) {
+                                selectedWineIds + item.bottle.bottleId
+                            } else {
+                                selectedWineIds - item.bottle.bottleId
+                            }
+                        },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            uncheckedColor = Color.Gray,
+                            checkmarkColor = Color.White
+                        ),
+                        modifier = Modifier.align(Alignment.TopStart).padding(2.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = wineMenuBottleId == item.bottle.bottleId,
+                    onDismissRequest = { wineMenuBottleId = null }
+                ) {
+                    // Edit only makes sense for a single selected wine.
+                    if (selectedWineIds.size == 1) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            onClick = {
+                                val target = selectedWineIds.single()
+                                wineMenuBottleId = null
+                                onEditWine(target)
+                            }
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text(if (selectedWineIds.size == 1) "Delete" else "Delete ${selectedWineIds.size} wines") },
+                        onClick = {
+                            wineMenuBottleId = null
+                            showWineDeleteConfirmation = true
+                        }
+                    )
+                }
+                }
             }
             
             if (filteredInventory.isEmpty()) {
@@ -609,6 +676,32 @@ fun CellarScreen(
                 )
             }
         }
+    }
+
+    if (showWineDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showWineDeleteConfirmation = false },
+            title = { Text(if (selectedWineIds.size == 1) "Delete wine?" else "Delete wines?") },
+            text = {
+                Text(
+                    if (selectedWineIds.size == 1) {
+                        "This wine will be removed from your cellar. This cannot be undone."
+                    } else {
+                        "${selectedWineIds.size} wines will be removed from your cellar. This cannot be undone."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedWineIds.forEach { bottleId -> viewModel.deleteWine(bottleId) }
+                    selectedWineIds = emptySet()
+                    showWineDeleteConfirmation = false
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWineDeleteConfirmation = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (showStatsDialog) {

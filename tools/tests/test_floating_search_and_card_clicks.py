@@ -154,7 +154,10 @@ class CardClickTests(unittest.TestCase):
         self.assertIn("isExpanded = expandedBottleId == item.bottle.bottleId", source)
         self.assertIn("expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId", source)
         self.assertIn("onExpandToggle = toggleExpanded", source)
-        self.assertIn("onClick = toggleExpanded", source)
+        # Body clicks toggle expansion normally, but toggle selection while
+        # wine selection mode is active (after a long-press).
+        self.assertIn("if (wineSelectionMode)", source)
+        self.assertIn("toggleExpanded()", source)
         self.assertIn("CellarRacks(", source)
         self.assertIn("expandedBottleId = null", source)
 

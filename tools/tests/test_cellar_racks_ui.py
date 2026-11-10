@@ -90,6 +90,28 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertNotIn("notes.map { it.note.rating }.average()", screen)
         self.assertIn("CellarSortField.RATING -> compareSortValues(aRating, bRating, filterState.sortAscending)", screen)
 
+    def test_long_press_selects_cellar_wine_with_popup_edit_and_confirmed_delete(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        # Long-press selects the wine and opens its popup menu.
+        self.assertIn("selectedWineIds = selectedWineIds + item.bottle.bottleId", screen)
+        self.assertIn("wineMenuBottleId = item.bottle.bottleId", screen)
+        self.assertIn("DropdownMenu(", screen)
+        # Every card shows a top-left checkbox while selecting; the selected
+        # wine's is checked (checkmark), the rest are empty grey boxes.
+        self.assertIn("if (wineSelectionMode)", screen)
+        self.assertIn("checked = item.bottle.bottleId in selectedWineIds", screen)
+        self.assertIn("uncheckedColor = Color.Gray", screen)
+        self.assertIn("Modifier.align(Alignment.TopStart)", screen)
+        # Edit disappears once 2+ wines are selected; Delete stays.
+        self.assertIn("if (selectedWineIds.size == 1)", screen)
+        self.assertIn('Text("Edit")', screen)
+        self.assertIn("showWineDeleteConfirmation = true", screen)
+        # Deleting always asks for confirmation first.
+        self.assertIn('Text(if (selectedWineIds.size == 1) "Delete wine?" else "Delete wines?")', screen)
+        self.assertIn("selectedWineIds.forEach { bottleId -> viewModel.deleteWine(bottleId) }", screen)
+        self.assertLess(screen.index("showWineDeleteConfirmation = true"),
+                        screen.index("viewModel.deleteWine(bottleId)"))
+
     def test_automatic_new_additions_does_not_disable_other_rack_assignments(self):
         source = (APP / "ui/screens/CellarRackViews.kt").read_text()
         self.assertNotIn("enabled = !automaticNewAddition", source)
