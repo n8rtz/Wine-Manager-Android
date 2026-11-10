@@ -1319,8 +1319,6 @@ fun FilterSheet(
     }
 }
 
-/** One solid pill action in the bottom wine action bar. */
-@Composable
 /**
  * Small section header for the expanded wine card: a short line segment,
  * the header text inline with it, then a line filling the rest of the
@@ -1346,6 +1344,8 @@ private fun CellarSectionHeader(text: String) {
     }
 }
 
+/** One solid pill action in the bottom wine action bar. */
+@Composable
 private fun WineActionBarAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
