@@ -30,7 +30,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp as colorLerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,41 +96,24 @@ internal fun overallScoreBand(score: Int): OverallScoreBand = when {
 }
 
 /**
- * Continuous colour for a 50-100 rating, used to fill the WineCard rating
- * box. Most rated wines land between 80 and 95, so that stretch of the
- * scale gets the most stops: it runs Yellow-green (80) through clear green
- * (85 -- anything 85+ is decent, so Yellow, which reads as mediocre, is
- * gone by then), then simply gets progressively more green through the
- * 90s: a strong green at 90 deepening step by step to a rich, dark green
- * at 95 and above. Below 80 the scale runs back through Yellow and amber
- * to orange-red and deep red, so weaker wines are just as easy to tell
- * apart.
+ * Stepped colour for a rating, used to fill the WineCard rating box. Each
+ * band below gets one flat, easily distinguishable colour (nothing 85+ is
+ * Yellow, which reads as mediocre): 98-100 near-black green, 95-97 rich
+ * dark green, 92-94 deep green, 89-91 strong green, 85-88 clear green,
+ * 80-84 light green, 75-79 Yellow, 70-74 orange, 60-69 orange-red, and
+ * 0-59 dark red.
  */
-private val ratingColorStops: List<Pair<Int, Color>> = listOf(
-    50 to Color(0xFFB03A3A),
-    60 to Color(0xFFD3542E),
-    70 to Color(0xFFE39A1E),
-    75 to Color(0xFFD9B81F),
-    80 to Color(0xFFA8B93C),
-    82 to Color(0xFF86B04A),
-    85 to Color(0xFF55A04A),
-    88 to Color(0xFF439F4E),
-    90 to Color(0xFF2E8B47),
-    92 to Color(0xFF227A41),
-    95 to Color(0xFF146B3A),
-    100 to Color(0xFF0E5230)
-)
-
-internal fun ratingColor(score: Int): Color {
-    val clamped = score.coerceIn(
-        ratingColorStops.first().first,
-        ratingColorStops.last().first
-    )
-    val lower = ratingColorStops.last { it.first <= clamped }
-    val upper = ratingColorStops.first { it.first >= clamped }
-    if (lower.first == upper.first) return lower.second
-    val fraction = (clamped - lower.first).toFloat() / (upper.first - lower.first)
-    return colorLerp(lower.second, upper.second, fraction)
+internal fun ratingColor(score: Int): Color = when {
+    score >= 98 -> Color(0xFF0A2E1F)
+    score >= 95 -> Color(0xFF146B3A)
+    score >= 92 -> Color(0xFF1E7A3C)
+    score >= 89 -> Color(0xFF2E8B47)
+    score >= 85 -> Color(0xFF55A04A)
+    score >= 80 -> Color(0xFFA8B93C)
+    score >= 75 -> Color(0xFFD9B81F)
+    score >= 70 -> Color(0xFFE39A1E)
+    score >= 60 -> Color(0xFFD3542E)
+    else -> Color(0xFF8E2323)
 }
 
 @Composable

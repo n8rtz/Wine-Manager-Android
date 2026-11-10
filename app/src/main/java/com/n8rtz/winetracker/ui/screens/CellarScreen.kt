@@ -243,11 +243,13 @@ fun CellarScreen(
             }
     }
 
+    // Sorting by rating uses each wine's most recent rating, not an average
+    // across all of its tasting notes.
     val ratingSortMap = remember(tastingHistory) {
         tastingHistory
             .filter { it.note.rating > 0.0 }
             .groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
-            .mapValues { (_, notes) -> notes.map { it.note.rating }.average() }
+            .mapValues { (_, notes) -> notes.maxByOrNull { it.note.dateTasted }?.note?.rating }
     }
 
     val notesMap = remember(tastingHistory) {

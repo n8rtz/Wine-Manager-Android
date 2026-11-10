@@ -83,6 +83,13 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("onRackDragActiveChange = { rackDragActive = it }", screen)
         self.assertIn("LaunchedEffect(draggingRack != null) { onRackDragActiveChange(draggingRack != null) }", views)
 
+    def test_rating_sort_uses_each_wines_most_recent_rating(self):
+        screen = (APP / "ui/screens/CellarScreen.kt").read_text()
+        # Most recent rating (by date tasted) wins; never the average.
+        self.assertIn("notes.maxByOrNull { it.note.dateTasted }?.note?.rating", screen)
+        self.assertNotIn("notes.map { it.note.rating }.average()", screen)
+        self.assertIn("CellarSortField.RATING -> compareSortValues(aRating, bRating, filterState.sortAscending)", screen)
+
     def test_automatic_new_additions_does_not_disable_other_rack_assignments(self):
         source = (APP / "ui/screens/CellarRackViews.kt").read_text()
         self.assertNotIn("enabled = !automaticNewAddition", source)
@@ -173,25 +180,26 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("0.58f to upperColor", card)
         sensory = (APP / "ui/components/SensoryEvaluationFields.kt").read_text()
         self.assertIn("internal fun overallScoreBand(score: Int)", sensory)
-        # The rating fill is a continuous scale with extra stops where most
-        # wines land (80-95), and nothing 85+ is Yellow: 85 is already a
-        # clear green, getting progressively more (deeper) green through
-        # the 90s up to 95+.
-        self.assertIn("internal fun ratingColor(score: Int): Color", sensory)
-        for stop in (
-            "80 to Color(0xFFA8B93C)",
-            "82 to Color(0xFF86B04A)",
-            "85 to Color(0xFF55A04A)",
-            "88 to Color(0xFF439F4E)",
-            "90 to Color(0xFF2E8B47)",
-            "92 to Color(0xFF227A41)",
-            "95 to Color(0xFF146B3A)",
-            "100 to Color(0xFF0E5230)",
+        # The rating fill uses one flat, stepped colour per band so wines
+        # in adjacent bands are easy to tell apart; 98-100 is a near-black
+        # green and nothing 85+ is Yellow.
+        self.assertIn("internal fun ratingColor(score: Int): Color = when {", sensory)
+        for band in (
+            "score >= 98 -> Color(0xFF0A2E1F)",
+            "score >= 95 -> Color(0xFF146B3A)",
+            "score >= 92 -> Color(0xFF1E7A3C)",
+            "score >= 89 -> Color(0xFF2E8B47)",
+            "score >= 85 -> Color(0xFF55A04A)",
+            "score >= 80 -> Color(0xFFA8B93C)",
+            "score >= 75 -> Color(0xFFD9B81F)",
+            "score >= 70 -> Color(0xFFE39A1E)",
+            "score >= 60 -> Color(0xFFD3542E)",
+            "else -> Color(0xFF8E2323)",
         ):
-            self.assertIn(stop, sensory)
-        # No teal or violet at the top of the scale any more.
-        self.assertNotIn("0xFF7B5EA7", sensory)
-        self.assertNotIn("0xFF1F8A8A", sensory)
+            self.assertIn(band, sensory)
+        # Stepped, not interpolated: no gradient-stop list or colour lerp.
+        self.assertNotIn("ratingColorStops", sensory)
+        self.assertNotIn("colorLerp", sensory)
         # Unrated wines show "NR" on a plain grey fill instead of no box.
         self.assertIn('val ratingText = rating?.takeIf { it.isNotBlank() } ?: "NR"', card)
         self.assertIn("Modifier.background(Color(0xFF9E9E9E))", card)
