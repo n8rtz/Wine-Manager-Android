@@ -1,11 +1,7 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.n8rtz.winetracker.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.viewmodels.WineViewModel
@@ -630,15 +627,22 @@ fun CellarScreen(
         // Single-line transparent action bar docked at the bottom of the
         // screen, just above the main navigation buttons. It has no solid
         // backdrop -- only the individual action pills carry a translucent
-        // fill so they stay readable over the list.
-        AnimatedVisibility(
-            visible = wineActionBarVisible,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
+        // fill so they stay readable over the list. (Animated by hand with
+        // an alpha/translation fade-slide: AnimatedVisibility resolves to
+        // the ColumnScope overload inside this Column-nested pager and
+        // refuses to compile.)
+        val wineBarProgress by animateFloatAsState(
+            targetValue = if (wineActionBarVisible) 1f else 0f,
+            label = "WineActionBar"
+        )
+        if (wineBarProgress > 0f) {
             Row(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .graphicsLayer {
+                        alpha = wineBarProgress
+                        translationY = (1f - wineBarProgress) * 48.dp.toPx()
+                    }
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),

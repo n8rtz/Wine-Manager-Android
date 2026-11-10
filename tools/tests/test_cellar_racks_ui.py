@@ -114,6 +114,10 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn("Icons.Default.Edit", screen)
         self.assertIn("Icons.Default.Delete", screen)
         self.assertIn("Alignment.BottomCenter", screen)
+        # Animated by hand: AnimatedVisibility picks the ColumnScope
+        # overload inside the Column-nested pager and fails to compile.
+        self.assertIn("animateFloatAsState(", screen)
+        self.assertNotIn("AnimatedVisibility(", screen)
         self.assertIn("MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)", screen)
         self.assertIn("onWineActionBarVisibleChange: (Boolean) -> Unit = {}", screen)
         main = (ROOT / "app/src/main/java/com/n8rtz/winetracker/MainActivity.kt").read_text()
