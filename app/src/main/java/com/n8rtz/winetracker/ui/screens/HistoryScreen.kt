@@ -1,5 +1,6 @@
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Restore
@@ -20,10 +23,13 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +44,7 @@ import com.n8rtz.winetracker.data.local.ConsumptionEventWithDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.ui.components.HistoryWineCard
 import com.n8rtz.winetracker.viewmodels.WineViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,7 +56,24 @@ fun HistoryScreen(
     onOpenNote: (noteId: Long?, eventId: Long, definitionId: Long, vintage: String, consumedAt: Long?) -> Unit
 ) {
     val history by viewModel.consumptionHistory.collectAsStateWithLifecycle(initialValue = emptyList())
+    val inventory by viewModel.activeInventory.collectAsStateWithLifecycle(initialValue = emptyList())
     val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    val addedParseFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    // Wines by date added, newest first (unparseable/missing dates last).
+    val addedWines = inventory.sortedByDescending {
+        it.bottle.dateAdded?.let { raw -> runCatching { addedParseFormat.parse(raw)?.time }.getOrNull() }
+            ?: Long.MIN_VALUE
+    }
+    // Two tabs across the top, exactly like the Cellar screen: tab taps and
+    // swipes both move the pager, and Back from the second tab returns to
+    // the first.
+    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val historyTab = pagerState.currentPage
+    val pagerScope = rememberCoroutineScope()
+    val selectHistoryTab: (Int) -> Unit = { page ->
+        pagerScope.launch { pagerState.animateScrollToPage(page) }
+    }
+    BackHandler(enabled = historyTab == 1) { selectHistoryTab(0) }
     // Long-pressing a card opens the action sheet for that entry; the chosen action then asks to confirm.
     var sheetTarget by remember { mutableStateOf<ConsumptionEventWithDefinition?>(null) }
     // The entry waiting for the owner to confirm "Restore to cellar" (true) or "Delete log entry" (false).
@@ -115,53 +139,110 @@ fun HistoryScreen(
     }
 
     Scaffold { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
-        ) {
-            item(key = "history_header") {
-                Text(
-                    text = "Consumption History",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            TabRow(selectedTabIndex = historyTab) {
+                Tab(selected = historyTab == 0, onClick = { selectHistoryTab(0) }, text = { Text("Consumed") })
+                Tab(selected = historyTab == 1, onClick = { selectHistoryTab(1) }, text = { Text("Added") })
             }
-            if (history.isEmpty()) {
-                item(key = "history_empty") {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
-                        contentAlignment = Alignment.Center
+            HorizontalPager(
+                state = pagerState,
+                // Keep the off-screen page composed so swiping back and
+                // forth does not reset scroll positions, as in Cellar.
+                beyondViewportPageCount = 1,
+                modifier = Modifier.weight(1f)
+            ) { page ->
+                if (page == 0) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "No wines consumed yet",
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
-            } else {
-                items(history, key = { it.event.eventId }) { item ->
-                    val event = item.event
-                    val note = item.note
-                    val date = event.consumedAt?.let { dateFormat.format(Date(it)) } ?: "Date not recorded"
-                    val rating = note?.rating?.takeIf { it > 0.0 }?.toInt()?.toString()
-                    HistoryWineCard(
-                        maker = item.definition.maker,
-                        name = item.definition.name,
-                        vintage = displayVintage(event.vintage),
-                        date = date,
-                        quantity = event.quantity,
-                        rating = rating,
-                        hasNote = note != null,
-                        onClick = {
-                            onOpenNote(note?.noteId, event.eventId, event.definitionId, event.vintage, event.consumedAt)
-                        },
-                        onLongClick = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            sheetTarget = item
+                        item(key = "history_header") {
+                            Text(
+                                text = "Consumption History",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    )
+                        if (history.isEmpty()) {
+                            item(key = "history_empty") {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No wines consumed yet",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
+                        } else {
+                            items(history, key = { it.event.eventId }) { item ->
+                                val event = item.event
+                                val note = item.note
+                                val date = event.consumedAt?.let { dateFormat.format(Date(it)) } ?: "Date not recorded"
+                                val rating = note?.rating?.takeIf { it > 0.0 }?.toInt()?.toString()
+                                HistoryWineCard(
+                                    maker = item.definition.maker,
+                                    name = item.definition.name,
+                                    vintage = displayVintage(event.vintage),
+                                    date = date,
+                                    quantity = event.quantity,
+                                    rating = rating,
+                                    hasNote = note != null,
+                                    onClick = {
+                                        onOpenNote(note?.noteId, event.eventId, event.definitionId, event.vintage, event.consumedAt)
+                                    },
+                                    onLongClick = {
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        sheetTarget = item
+                                    }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                    ) {
+                        item(key = "added_header") {
+                            Text(
+                                text = "Added to Cellar",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        if (addedWines.isEmpty()) {
+                            item(key = "added_empty") {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No wines added yet",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
+                        } else {
+                            items(addedWines, key = { it.bottle.bottleId }) { item ->
+                                val addedDate = item.bottle.dateAdded?.let { raw ->
+                                    runCatching { addedParseFormat.parse(raw) }.getOrNull()
+                                }?.let { dateFormat.format(it) } ?: "Date not recorded"
+                                HistoryWineCard(
+                                    maker = item.definition.maker,
+                                    name = item.definition.name,
+                                    vintage = displayVintage(item.bottle.vintage),
+                                    date = addedDate,
+                                    quantity = item.bottle.quantity
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
