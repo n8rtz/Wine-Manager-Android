@@ -320,7 +320,7 @@ fun CompactNoteItem(
         rating = rating,
         isExpanded = expanded,
         onExpandToggle = onExpandToggle,
-        onClick = { onNoteClick(latestNoteId) },
+        onClick = onExpandToggle,
         details = {
             val orderedGroup = remember(group) { group.sortedByDescending { it.note.dateTasted } }
             var selectedNoteId by remember(orderedGroup.first().note.noteId) {
@@ -340,36 +340,26 @@ fun CompactNoteItem(
                         Tab(
                             selected = isSelected,
                             onClick = { selectedNoteId = item.note.noteId },
-                            modifier = Modifier
-                                .padding(end = 4.dp)
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(8.dp)
-                                ),
-                            text = {
-                                Text(
-                                    listDateFormat.format(Date(item.note.dateTasted)),
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            modifier = Modifier.background(
+                                // Open tab matches the note body below so
+                                // the two read as one attached piece.
+                                if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+                            ),
+                            text = { Text(listDateFormat.format(Date(item.note.dateTasted))) }
                         )
                     }
                     // "+" tab: add another tasting note for this wine.
                     Tab(
                         selected = false,
                         onClick = { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.secondaryContainer,
-                                RoundedCornerShape(8.dp)
-                            ),
+                        modifier = Modifier.background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+                        ),
                         icon = {
                             Icon(
                                 Icons.Default.Add,
-                                contentDescription = "Add a tasting note for this wine",
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                contentDescription = "Add a tasting note for this wine"
                             )
                         }
                     )

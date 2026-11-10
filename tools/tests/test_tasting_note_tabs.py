@@ -13,9 +13,12 @@ class TastingNoteTabsTests(unittest.TestCase):
         # Tabs show even for a single-note wine (no size > 1 gate).
         self.assertNotIn("if (orderedGroup.size > 1) {", source)
         self.assertIn("ScrollableTabRow(", source)
-        # Coloured tabs make boundaries visible; selected stands out.
-        self.assertIn("MaterialTheme.colorScheme.primaryContainer", source)
-        self.assertIn("MaterialTheme.colorScheme.surfaceVariant,\n                                    RoundedCornerShape(8.dp)", source)
+        # Attached square tabs: the open tab matches the note body colour,
+        # the others a different shade, so boundaries are visible.
+        self.assertIn("if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)", source)
+        self.assertIn("else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)", source)
+        # Tapping the card expands it rather than opening the detail.
+        self.assertIn("onClick = onExpandToggle,", source)
         # "+" tab adds a note for this wine.
         self.assertIn("onAddNote(firstItem.note.definitionId, firstItem.note.vintage)", source)
         self.assertIn('"Add a tasting note for this wine"', source)
