@@ -534,7 +534,12 @@ fun MainAppScaffold(
             composable("notes") {
                 TastingNotesScreen(
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
+                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") },
+                    onAddNote = { definitionId, vintage ->
+                        navController.navigate(
+                            "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}"
+                        )
+                    }
                 )
             }
             composable("rankings") {

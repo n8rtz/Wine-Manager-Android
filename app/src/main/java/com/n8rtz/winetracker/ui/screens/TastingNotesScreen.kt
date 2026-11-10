@@ -1,12 +1,15 @@
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Search
@@ -16,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -40,7 +44,8 @@ import java.util.Locale
 @Composable
 fun TastingNotesScreen(
     tastingNoteViewModel: TastingNoteViewModel = viewModel(),
-    onNoteClick: (Long) -> Unit
+    onNoteClick: (Long) -> Unit,
+    onAddNote: (Long, String) -> Unit = { _, _ -> }
 ) {
     val history by tastingNoteViewModel.tastingNotes.collectAsState(initial = emptyList())
     
@@ -243,6 +248,7 @@ fun TastingNotesScreen(
                         },
                         price = prices[groupKey],
                         onNoteClick = onNoteClick,
+                        onAddNote = onAddNote,
                         onAromaIntensityChange = { noteId, descriptorId, phase, intensity ->
                             tastingNoteViewModel.updateAromaIntensity(noteId, descriptorId, phase, intensity)
                         }
@@ -290,7 +296,8 @@ fun CompactNoteItem(
     price: Double?,
     onExpandToggle: () -> Unit,
     onNoteClick: (Long) -> Unit,
-    onAromaIntensityChange: (Long, String, TastingPhase, Float?) -> Unit
+    onAromaIntensityChange: (Long, String, TastingPhase, Float?) -> Unit,
+    onAddNote: (Long, String) -> Unit = { _, _ -> }
 ) {
     val firstItem = group.first()
     val latestNoteId = remember(group) {
@@ -322,26 +329,82 @@ fun CompactNoteItem(
             val selectedIndex = orderedGroup.indexOfFirst { it.note.noteId == selectedNoteId }.coerceAtLeast(0)
             val selectedNote = orderedGroup[selectedIndex]
             Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (orderedGroup.size > 1) {
-                    ScrollableTabRow(selectedTabIndex = selectedIndex, edgePadding = 0.dp, divider = {}) {
-                        orderedGroup.forEachIndexed { index, item ->
-                            Tab(
-                                selected = selectedIndex == index,
-                                onClick = { selectedNoteId = item.note.noteId },
-                                text = { Text(listDateFormat.format(Date(item.note.dateTasted))) }
+                ScrollableTabRow(
+                    selectedTabIndex = selectedIndex,
+                    edgePadding = 0.dp,
+                    divider = {},
+                    containerColor = Color.Transparent
+                ) {
+                    orderedGroup.forEachIndexed { index, item ->
+                        val isSelected = selectedIndex == index
+                        Tab(
+                            selected = isSelected,
+                            onClick = { selectedNoteId = item.note.noteId },
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(8.dp)
+                                ),
+                            text = {
+                                Text(
+                                    listDateFormat.format(Date(item.note.dateTasted)),
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                    }
+                    // "+" tab: add another tasting note for this wine.
+                    Tab(
+                        selected = false,
+                        onClick = { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.secondaryContainer,
+                                RoundedCornerShape(8.dp)
+                            ),
+                        icon = {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Add a tasting note for this wine",
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
-                    }
+                    )
                 }
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable { onNoteClick(selectedNote.note.noteId) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNoteClick(selectedNote.note.noteId) }
+                        .pointerInput(selectedIndex, orderedGroup.size) {
+                            var dragTotal = 0f
+                            detectHorizontalDragGestures(
+                                onDragStart = { dragTotal = 0f },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    dragTotal += dragAmount
+                                    change.consume()
+                                },
+                                onDragEnd = {
+                                    val threshold = 48.dp.toPx()
+                                    when {
+                                        dragTotal <= -threshold && selectedIndex < orderedGroup.lastIndex ->
+                                            selectedNoteId = orderedGroup[selectedIndex + 1].note.noteId
+                                        dragTotal >= threshold && selectedIndex > 0 ->
+                                            selectedNoteId = orderedGroup[selectedIndex - 1].note.noteId
+                                    }
+                                },
+                                onDragCancel = { dragTotal = 0f }
+                            )
+                        },
                     shape = RoundedCornerShape(8.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
                 ) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         val score = selectedNote.note.rating.takeIf { it > 0.0 }?.toInt()?.let { "$it points" } ?: "Unrated"
                         Text(
-                            "${listDateFormat.format(Date(selectedNote.note.dateTasted))} · $score",
+                            score,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold
                         )

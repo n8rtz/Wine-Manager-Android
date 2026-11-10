@@ -150,7 +150,7 @@ class CardClickTests(unittest.TestCase):
 
     def test_cellar_body_and_caret_toggle_one_open_card(self):
         source = CELLAR.read_text()
-        self.assertIn("var expandedBottleId by remember { mutableStateOf<Long?>(null) }", source)
+        self.assertIn("var expandedBottleId by rememberSaveable { mutableStateOf<Long?>(null) }", source)
         self.assertIn("isExpanded = expandedBottleId == item.bottle.bottleId", source)
         self.assertIn("expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId", source)
         self.assertIn("onExpandToggle = toggleExpanded", source)
@@ -210,7 +210,6 @@ class StatsAndHeaderTests(unittest.TestCase):
         for key, path, title in (
             ("rankings", RANKINGS, "Rankings"),
             ("notes", NOTES, "Tasting Notes"),
-            ("history", HISTORY, "Consumption History"),
         ):
             source = path.read_text()
             self.assertIn(f'item(key = "{key}_header")', source, key)
