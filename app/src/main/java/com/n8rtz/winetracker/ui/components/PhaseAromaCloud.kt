@@ -3,6 +3,9 @@
 package com.n8rtz.winetracker.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -27,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -51,12 +55,12 @@ import com.n8rtz.winetracker.data.local.sortAromaObservationsByIntensity
 import com.n8rtz.winetracker.data.local.visualAromaIntensity
 
 /**
- * Chip text spans 10sp (intensity 0) to 32sp (intensity 1); the default
- * intensity of 0.5 renders at 21sp, so chips can shrink noticeably below
+ * Chip text spans 9sp (intensity 0) to 29sp (intensity 1); the default
+ * intensity of 0.5 renders at 19sp, so chips can shrink noticeably below
  * the default size as well as grow above it.
  */
 private fun aromaFontSize(intensity: Float?): androidx.compose.ui.unit.TextUnit =
-    (10f + visualAromaIntensity(intensity) * 22f).sp
+    (9f + visualAromaIntensity(intensity) * 20f).sp
 
 /**
  * Bottom popup shown after an aroma chip is deleted, offering Undo.
@@ -226,7 +230,7 @@ fun AromaObservationCloud(
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
-                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    contentColor = Color.White,
                     border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(info.groupId))),
                     modifier = Modifier
                         .then(
@@ -259,16 +263,19 @@ fun AromaObservationCloud(
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(AromaWheelTheme.groupColor(info.groupId)))
+                        )
                         Text(
                             text = info.label,
                             style = MaterialTheme.typography.labelLarge.copy(fontSize = fontSize),
-                            fontWeight = if (visualAromaIntensity(observation.intensity) >= 0.7f) {
-                                FontWeight.SemiBold
-                            } else {
-                                FontWeight.Normal
-                            }
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                         if (!readOnly && deleteMode) {
                             IconButton(

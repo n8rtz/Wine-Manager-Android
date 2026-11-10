@@ -103,7 +103,7 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("event.calculateZoom()", cloud)
         self.assertIn("PointerEventPass.Initial", cloud)
         # 10sp at intensity 0 up to 32sp at 1 (default 0.5 -> 21sp).
-        self.assertIn("(10f + visualAromaIntensity(intensity) * 22f).sp", cloud)
+        self.assertIn("(9f + visualAromaIntensity(intensity) * 20f).sp", cloud)
         self.assertIn("* 0.9f", structure)
         # Pinch is handled by the whole cloud: the chip between the two
         # fingers (under their midpoint / nearest to it) is the target, so

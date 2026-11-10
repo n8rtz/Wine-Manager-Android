@@ -2,6 +2,11 @@
 package com.n8rtz.winetracker.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
@@ -11,7 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,16 +43,30 @@ fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8, onOverflowClick: (()
             Surface(
                 shape = RoundedCornerShape(50),
                 color = Color(AromaWheelTheme.groupSelectedColor(aroma.groupId)),
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = Color.White,
                 border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(aroma.groupId)))
             ) {
-                Text(
-                    aroma.label,
+                Row(
                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    // Coloured dot, as on the aroma wheel screen's chips.
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(AromaWheelTheme.groupColor(aroma.groupId)))
+                    )
+                    Text(
+                        aroma.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
         if (uniqueIds.size > visible.size) {

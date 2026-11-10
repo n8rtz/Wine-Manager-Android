@@ -233,7 +233,7 @@ private fun AromaSummaryChipRow(
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
-                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    contentColor = Color.White,
                     border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(info.groupId)))
                 ) {
                     Row(
@@ -251,7 +251,9 @@ private fun AromaSummaryChipRow(
                         )
                         Text(
                             info.label,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
                             modifier = Modifier.padding(start = 6.dp)
                         )
                     }
@@ -368,7 +370,7 @@ private fun AromaChipPill(
     Surface(
         shape = RoundedCornerShape(50),
         color = if (groupSelected == Color.Unspecified) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else groupSelected,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        contentColor = Color.White,
         border = BorderStroke(1.dp, if (groupSelected == Color.Unspecified) groupColor else groupSelected),
         shadowElevation = if (dragging) 6.dp else 2.dp,
         modifier = modifier
@@ -393,7 +395,9 @@ private fun AromaChipPill(
             )
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 6.dp)

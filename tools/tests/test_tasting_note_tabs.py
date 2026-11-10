@@ -79,10 +79,13 @@ class TabAndChipColourTests(unittest.TestCase):
             "ui/components/AromaWheelDialog.kt",
         ]:
             source = (APP / rel).read_text()
-            # Fill and border are the wheel's selected-descriptor colour;
-            # text stays the standard on-surface colour.
+            # Fill and border are the wheel's selected-descriptor colour
+            # (the background the wheel screen chips use); text is white,
+            # bold, and the chips carry the wheel chips' coloured dot.
             self.assertIn("AromaWheelTheme.groupSelectedColor(", source, rel)
-            self.assertIn("contentColor = MaterialTheme.colorScheme.onSurface", source, rel)
+            self.assertIn("contentColor = Color.White", source, rel)
+            self.assertIn("FontWeight.Bold", source, rel)
+            self.assertIn(".background(Color(AromaWheelTheme.groupColor(", source, rel)
             self.assertNotIn("groupTint(", source, rel)
             self.assertNotIn("groupInk(", source, rel)
             self.assertNotIn("copy(alpha = 0.16f)", source, rel)
