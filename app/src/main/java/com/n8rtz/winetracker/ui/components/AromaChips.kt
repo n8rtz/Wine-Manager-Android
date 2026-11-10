@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.n8rtz.winetracker.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
@@ -29,10 +30,14 @@ fun AromaChips(aromaIds: List<String>, maxVisible: Int = 8, onOverflowClick: (()
     ) {
         visible.forEach { id ->
             val aroma = AromaTaxonomy.describe(id)
+            // Wheel colours at full strength: the group's wheel tint
+            // behind its wheel ink, ringed by the saturated group colour --
+            // not a faint wash of the group colour over white.
             Surface(
                 shape = RoundedCornerShape(50),
-                color = Color(AromaWheelTheme.groupColor(aroma.groupId)).copy(alpha = 0.16f),
-                contentColor = MaterialTheme.colorScheme.onSurface
+                color = Color(AromaWheelTheme.groupTint(aroma.groupId)),
+                contentColor = Color(AromaWheelTheme.groupInk(aroma.groupId)),
+                border = BorderStroke(1.dp, Color(AromaWheelTheme.groupColor(aroma.groupId)))
             ) {
                 Text(
                     aroma.label,

@@ -96,4 +96,10 @@ object AromaWheelTheme {
 
     /** Saturated colour for a group id: handy for chips and list swatches elsewhere in your app. */
     fun groupColor(groupId: String?): Int = forGroup(groupId)?.main ?: fallback
+
+    /** Pale wheel tint behind a group's descriptor labels (ring 3): chip background. */
+    fun groupTint(groupId: String?): Int = forGroup(groupId)?.tint ?: fallback
+
+    /** Wheel label colour on the tint: chip text colour. */
+    fun groupInk(groupId: String?): Int = forGroup(groupId)?.ink ?: white
 }

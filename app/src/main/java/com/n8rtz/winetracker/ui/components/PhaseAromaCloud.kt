@@ -2,6 +2,7 @@
 
 package com.n8rtz.winetracker.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -224,8 +225,9 @@ fun AromaObservationCloud(
 
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
-                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    color = Color(AromaWheelTheme.groupTint(info.groupId)),
+                    contentColor = Color(AromaWheelTheme.groupInk(info.groupId)),
+                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupColor(info.groupId))),
                     modifier = Modifier
                         .then(
                             if (readOnly) {

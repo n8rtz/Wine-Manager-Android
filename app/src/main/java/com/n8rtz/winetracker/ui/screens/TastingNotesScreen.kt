@@ -360,7 +360,7 @@ fun CompactNoteItem(
                                     .height(32.dp)
                                     .background(
                                         if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                                         RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                                     )
                                     .clickable { selectedNoteId = item.note.noteId }
@@ -382,7 +382,7 @@ fun CompactNoteItem(
                             modifier = Modifier
                                 .size(width = 40.dp, height = 32.dp)
                                 .background(
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                                     RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                                 )
                                 .clickable { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },

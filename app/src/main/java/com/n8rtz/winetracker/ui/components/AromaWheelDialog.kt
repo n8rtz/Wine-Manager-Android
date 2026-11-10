@@ -5,6 +5,7 @@ package com.n8rtz.winetracker.ui.components
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.background
@@ -231,8 +232,9 @@ private fun AromaSummaryChipRow(
                 val info = AromaTaxonomy.describe(id)
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
+                    color = Color(AromaWheelTheme.groupTint(info.groupId)),
+                    contentColor = Color(AromaWheelTheme.groupInk(info.groupId)),
+                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupColor(info.groupId)))
                 ) {
                     Row(
                         modifier = Modifier.padding(
@@ -300,6 +302,8 @@ fun ReorderableAromaChipRow(
                 AromaChipPill(
                     label = info.label,
                     groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                    groupTint = Color(AromaWheelTheme.groupTint(info.groupId)),
+                    groupInk = Color(AromaWheelTheme.groupInk(info.groupId)),
                     dragging = dragging,
                     dragOffsetPx = offset.x,
                     dragOffsetYPx = offset.y,
@@ -354,6 +358,8 @@ fun ReorderableAromaChipRow(
 private fun AromaChipPill(
     label: String,
     groupColor: Color,
+    groupTint: Color = Color.Unspecified,
+    groupInk: Color = Color.Unspecified,
     dragging: Boolean,
     dragOffsetPx: Float,
     onRemove: () -> Unit,
@@ -363,8 +369,9 @@ private fun AromaChipPill(
 ) {
     Surface(
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        color = if (groupTint == Color.Unspecified) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else groupTint,
+        contentColor = if (groupInk == Color.Unspecified) MaterialTheme.colorScheme.onSurface else groupInk,
+        border = BorderStroke(1.dp, groupColor),
         shadowElevation = if (dragging) 6.dp else 2.dp,
         modifier = modifier
             .zIndex(if (dragging) 1f else 0f)
@@ -848,6 +855,8 @@ private fun SelectedAromasOverlay(
                 AromaChipPill(
                     label = info.label,
                     groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                    groupTint = Color(AromaWheelTheme.groupTint(info.groupId)),
+                    groupInk = Color(AromaWheelTheme.groupInk(info.groupId)),
                     dragging = dragging,
                     dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
                     dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
@@ -895,6 +904,8 @@ private fun SelectedAromasOverlay(
             AromaChipPill(
                 label = info.label,
                 groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                groupTint = Color(AromaWheelTheme.groupTint(info.groupId)),
+                groupInk = Color(AromaWheelTheme.groupInk(info.groupId)),
                 dragging = dragging,
                 dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
                 dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,

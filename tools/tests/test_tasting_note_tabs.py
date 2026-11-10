@@ -26,7 +26,7 @@ class TastingNoteTabsTests(unittest.TestCase):
         self.assertIn(".height(32.dp)", source)
         self.assertIn(".size(width = 40.dp, height = 32.dp)", source)
         self.assertIn("style = MaterialTheme.typography.labelLarge,\n                                    fontWeight = FontWeight.Bold,", source)
-        self.assertIn("else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)", source)
+        self.assertIn("else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)", source)
         # Tapping the card expands it rather than opening the detail.
         self.assertIn("onClick = onExpandToggle,", source)
         # "+" tab adds a note for this wine.
@@ -61,3 +61,26 @@ class TastingNoteStateAndRatingTests(unittest.TestCase):
         self.assertIn("MaterialTheme.typography.headlineSmall", source)
         self.assertIn('"MY RATING"', source)
         self.assertIn('ratingValue?.toString() ?: "NR"', source)
+
+
+class TabAndChipColourTests(unittest.TestCase):
+    def test_unselected_tabs_are_clearly_darker(self):
+        source = NOTES.read_text()
+        # Open tab matches the body; closed tabs use a much darker shade.
+        self.assertIn("if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)", source)
+        self.assertEqual(source.count("MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)"), 2)
+
+    def test_aroma_chips_use_full_wheel_colours(self):
+        theme = (ROOT / "app/src/main/java/com/n8rtz/winetracker/aromawheel/AromaWheelTheme.kt").read_text()
+        self.assertIn("fun groupTint(groupId: String?)", theme)
+        self.assertIn("fun groupInk(groupId: String?)", theme)
+        for rel in [
+            "ui/components/AromaChips.kt",
+            "ui/components/PhaseAromaCloud.kt",
+            "ui/components/AromaWheelDialog.kt",
+        ]:
+            source = (APP / rel).read_text()
+            self.assertIn("AromaWheelTheme.groupTint(", source, rel)
+            self.assertIn("AromaWheelTheme.groupInk(", source, rel)
+            self.assertNotIn("groupColor(aroma.groupId)).copy(alpha = 0.16f)", source, rel)
+            self.assertNotIn("groupColor(info.groupId)).copy(alpha = 0.16f)", source, rel)
