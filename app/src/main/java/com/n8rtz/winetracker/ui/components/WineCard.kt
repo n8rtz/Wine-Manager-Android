@@ -3,7 +3,6 @@ package com.n8rtz.winetracker.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -167,7 +166,6 @@ fun WineCard(
                                             Modifier.background(MaterialTheme.colorScheme.primary)
                                         }
                                     )
-                                    .border(1.5.dp, Color(0xFF333333), ratingShape)
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                                     .semantics { contentDescription = if (rated) "Rating $ratingText" else "Not rated" },
                                 contentAlignment = Alignment.Center

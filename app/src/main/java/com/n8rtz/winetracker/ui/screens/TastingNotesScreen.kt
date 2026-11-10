@@ -1,7 +1,6 @@
 package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
@@ -438,7 +437,6 @@ fun CompactNoteItem(
                                         if (ratingValue != null) ratingColor(ratingValue) else Color(0xFF9E9E9E),
                                         RoundedCornerShape(8.dp)
                                     )
-                                    .border(1.5.dp, Color(0xFF333333), RoundedCornerShape(8.dp))
                                     .padding(horizontal = 14.dp, vertical = 5.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -482,8 +480,9 @@ fun CompactNoteItem(
                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text(
                                             phase.label,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                         PhaseAromaCloud(
                                             phase = phase,
@@ -505,7 +504,33 @@ fun CompactNoteItem(
                             Text("Recommended by $it", style = MaterialTheme.typography.bodySmall)
                         }
                         selectedNote.note.reviewerRating?.let { Text("Reviewer rating: $it", style = MaterialTheme.typography.bodySmall) }
-                        selectedNote.note.valueScore?.let { Text("Value: $it/10", style = MaterialTheme.typography.bodySmall) }
+                        selectedNote.note.valueScore?.let { value ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Value", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalAlignment = Alignment.Bottom
+                                    ) {
+                                        Text(
+                                            value.toString(),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text("/10", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+                        }
                         selectedNote.note.price?.let { Text("Price: $${"%.2f".format(it)}", style = MaterialTheme.typography.bodySmall) }
                     }
                     }

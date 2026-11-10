@@ -89,3 +89,23 @@ class TabAndChipColourTests(unittest.TestCase):
             self.assertNotIn("groupTint(", source, rel)
             self.assertNotIn("groupInk(", source, rel)
             self.assertNotIn("copy(alpha = 0.16f)", source, rel)
+
+class RatingPhaseAndValueStylingTests(unittest.TestCase):
+    def test_rating_boxes_have_no_border(self):
+        self.assertNotIn("0xFF333333", (APP / "ui/components/WineCard.kt").read_text())
+        self.assertNotIn("0xFF333333", NOTES.read_text())
+
+    def test_phase_titles_are_larger_bold_and_dark(self):
+        sections = (APP / "ui/components/TastingPhaseSections.kt").read_text()
+        self.assertEqual(sections.count("style = MaterialTheme.typography.titleMedium,\n                fontWeight = FontWeight.Bold,"), 2)
+        self.assertIn("style = MaterialTheme.typography.titleMedium,\n                                            fontWeight = FontWeight.Bold,", NOTES.read_text())
+
+    def test_expanded_value_matches_detail_styling(self):
+        detail = (APP / "ui/screens/TastingNoteDetailScreen.kt").read_text()
+        for snippet in [
+            'Text("Value", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)',
+            "color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)",
+            'Text("/10", style = MaterialTheme.typography.labelSmall)',
+        ]:
+            self.assertIn(snippet, NOTES.read_text())
+            self.assertIn(snippet, detail)
