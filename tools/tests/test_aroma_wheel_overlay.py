@@ -89,7 +89,8 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("var aromaEditMode by remember", sections)
         self.assertIn("onEnterEditMode = if (canEditAromas)", sections)
         self.assertIn("rememberInfiniteTransition(label = \"chipWiggle\")", cloud)
-        self.assertIn("rotationZ = wiggleAngle", cloud)
+        self.assertIn("translationX = wiggleOffset * wiggleAmplitudePx", cloud)
+        self.assertNotIn("rotationZ = wiggle", cloud)
         self.assertIn("aromaGroupBounds[groupPhase] = Rect(", sections)
 
     def test_note_chips_hide_x_until_long_press_delete_mode(self):

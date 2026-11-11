@@ -147,16 +147,18 @@ fun AromaObservationCloud(
     var internalDeleteMode by remember { mutableStateOf(false) }
     val deleteMode = editMode || (chipDeleteMode ?: internalDeleteMode)
     val currentEditMode = rememberUpdatedState(editMode)
-    // Little wiggle while in aroma edit mode, alternating per chip.
+    // Gentle side-to-side slide while in aroma edit mode, alternating
+    // direction per chip. Purely translational, about a 1dp drift.
+    val wiggleAmplitudePx = with(LocalDensity.current) { 1.dp.toPx() }
     val wiggleTransition = rememberInfiniteTransition(label = "chipWiggle")
-    val wiggleAngle by wiggleTransition.animateFloat(
-        initialValue = -1.4f,
-        targetValue = 1.4f,
+    val wiggleOffset by wiggleTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 160, easing = LinearEasing),
+            animation = tween(durationMillis = 240, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "chipWiggleAngle"
+        label = "chipWiggleOffset"
     )
     fun setDeleteMode(value: Boolean) {
         internalDeleteMode = value
@@ -298,7 +300,8 @@ fun AromaObservationCloud(
                                 scaleX = 1.05f
                                 scaleY = 1.05f
                             } else if (editMode) {
-                                rotationZ = wiggleAngle * if (chipIndex % 2 == 0) 1f else -1f
+                                translationX = wiggleOffset * wiggleAmplitudePx *
+                                    if (chipIndex % 2 == 0) 1f else -1f
                             }
                         }
                         .onGloballyPositioned { coordinates ->
