@@ -57,6 +57,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.runtime.key
@@ -1334,49 +1337,61 @@ fun PhaseAromaWheelDialog(
                 }
 
                 // All four phases share one line whose total width is
-                // the full screen width. Each pill's width is weighted by
-                // its label length (not equal quarters, which starved
-                // "Mid-palate"), and every label uses the same font size.
-                // Compact pills with tight padding (FilterChip's fixed
-                // internal padding left "Finish" clipped to "Fi").
-                Row(
+                // the full screen width, with the SAME padding around
+                // every label and one font size for all four: the labels
+                // are measured, then the font is scaled so text + uniform
+                // padding + gaps exactly fills the available width.
+                // (FilterChip's fixed internal padding left "Finish"
+                // clipped to "Fi".)
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
-                    TastingPhase.values().forEach { phase ->
-                        val isSelected = activePhase == phase || hoveredPhase == phase
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                            else Color.Transparent,
-                            contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier
-                                .weight(phase.label.length.toFloat())
-                                .clickable { activePhase = phase }
-                                .onGloballyPositioned { coordinates ->
-                                    val origin = coordinates.positionInRoot()
-                                    phaseChipBounds[phase] = Rect(
-                                        origin.x, origin.y,
-                                        origin.x + coordinates.size.width,
-                                        origin.y + coordinates.size.height
-                                    )
-                                }
-                        ) {
-                            Box(
+                    val phases = TastingPhase.values()
+                    val textMeasurer = rememberTextMeasurer()
+                    val baseStyle = MaterialTheme.typography.labelLarge
+                    val density = LocalDensity.current
+                    val gapPx = with(density) { 4.dp.toPx() }
+                    val padPx = with(density) { 10.dp.toPx() }
+                    val totalTextPx = phases.sumOf {
+                        textMeasurer.measure(it.label, baseStyle).size.width
+                    }.toFloat()
+                    val fixedPx = gapPx * (phases.size - 1) + padPx * 2 * phases.size
+                    val scale = if (totalTextPx > 0f) {
+                        ((constraints.maxWidth - fixedPx) / totalTextPx).coerceIn(0.5f, 1.6f)
+                    } else 1f
+                    val phaseFontSize = baseStyle.fontSize * scale
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        phases.forEach { phase ->
+                            val isSelected = activePhase == phase || hoveredPhase == phase
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                else Color.Transparent,
+                                contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 2.dp, vertical = 7.dp),
-                                contentAlignment = Alignment.Center
+                                    .clickable { activePhase = phase }
+                                    .onGloballyPositioned { coordinates ->
+                                        val origin = coordinates.positionInRoot()
+                                        phaseChipBounds[phase] = Rect(
+                                            origin.x, origin.y,
+                                            origin.x + coordinates.size.width,
+                                            origin.y + coordinates.size.height
+                                        )
+                                    }
                             ) {
                                 Text(
                                     phase.label,
-                                    style = MaterialTheme.typography.labelLarge,
+                                    style = baseStyle.copy(fontSize = phaseFontSize),
                                     maxLines = 1,
-                                    softWrap = false
+                                    softWrap = false,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                                 )
                             }
                         }
