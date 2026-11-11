@@ -191,7 +191,8 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("modifier = Modifier.weight(1f)", aroma_row)
         self.assertIn("modifier = Modifier.fillMaxWidth()", aroma_row)
         self.assertIn("Arrangement.spacedBy(8.dp)", aroma_row)
-        self.assertNotIn("Arrangement.spacedBy(4.dp)", aroma_row)
+        # Phase groups inside the card use tight 4dp spacing.
+        self.assertIn("Arrangement.spacedBy(4.dp)", aroma_row)
         self.assertLess(aroma_row.index("NoteColorField("), aroma_row.index("AromaWheelLauncherHeader("))
         self.assertLess(aroma_row.index("AromaWheelLauncherHeader("), aroma_row.index("AromaWheelSummaryPanel("))
         self.assertIn(".drawBehind {", aroma_row)

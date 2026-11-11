@@ -77,6 +77,9 @@ fun SectionedSensoryFields(
     onOpenWheel: () -> Unit,
     onAssignLegacy: () -> Unit,
     readOnly: Boolean = false,
+    // Read-only hosts (note detail) can still let long-pressing a chip
+    // call up aroma edit mode; changes flow through onDataChange.
+    allowAromaEdit: Boolean = false,
     modifier: Modifier = Modifier,
     // Reports a chip deletion (label + restore action) so the host screen
     // can show a bottom undo popup.
@@ -91,13 +94,19 @@ fun SectionedSensoryFields(
     // Chip categorising: phase headers register their root bounds;
     // dragging an aroma chip (in the cloud below) onto one assigns it.
     val phaseHeaderBounds = remember { mutableStateMapOf<TastingPhase, Rect>() }
+    // Bounds of each phase's chip group in the aroma card: dropping a
+    // chip on a group (or on the matching phase header below) assigns it.
+    val aromaGroupBounds = remember { mutableStateMapOf<TastingPhase, Rect>() }
     var chipDragId by remember { mutableStateOf<String?>(null) }
     var chipDragPointerRoot by remember { mutableStateOf(Offset.Zero) }
-    val hoveredPhase = if (chipDragId != null) {
-        phaseHeaderBounds.entries.firstOrNull { it.value.contains(chipDragPointerRoot) }?.key
-    } else {
-        null
-    }
+    fun phaseAt(pointerRoot: Offset): TastingPhase? =
+        aromaGroupBounds.entries.firstOrNull { it.value.contains(pointerRoot) }?.key
+            ?: phaseHeaderBounds.entries.firstOrNull { it.value.contains(pointerRoot) }?.key
+    val hoveredPhase = if (chipDragId != null) phaseAt(chipDragPointerRoot) else null
+    // Aroma edit mode: long-pressing a chip calls it up; chips wiggle,
+    // show their delete X, and can be dragged into another phase section.
+    var aromaEditMode by remember { mutableStateOf(false) }
+    val canEditAromas = !readOnly || allowAromaEdit
     var colorFieldWidthPx by remember { mutableIntStateOf(0) }
     var colorFieldHeightPx by remember { mutableIntStateOf(0) }
     var aromaHeaderHeightPx by remember { mutableIntStateOf(0) }
@@ -117,6 +126,7 @@ fun SectionedSensoryFields(
     // tapping anywhere else in these sections dismisses them again.
     var aromaDeleteMode by remember { mutableStateOf(false) }
     val currentAromaDeleteMode = rememberUpdatedState(aromaDeleteMode)
+    val currentAromaEditMode = rememberUpdatedState(aromaEditMode)
     Column(
         modifier = modifier.pointerInput(Unit) {
             awaitPointerEventScope {
@@ -132,11 +142,13 @@ fun SectionedSensoryFields(
                         downTime = change.uptimeMillis
                         downPosition = change.position
                     } else if (!change.pressed && change.previousPressed &&
-                        currentAromaDeleteMode.value && !change.isConsumed &&
+                        (currentAromaDeleteMode.value || currentAromaEditMode.value) &&
+                        !change.isConsumed &&
                         change.uptimeMillis - downTime < 500 &&
                         (change.position - downPosition).getDistance() < 24f
                     ) {
                         aromaDeleteMode = false
+                        aromaEditMode = false
                     }
                 }
             }
@@ -235,53 +247,121 @@ fun SectionedSensoryFields(
                             Spacer(Modifier.height(aromaSummaryGap))
                         }
                         if (normalized.aromaObservations.isNotEmpty()) {
-                            // The single listing of selected aromas in the
-                            // note: resizable/removable chips under the
-                            // aroma wheel (not repeated per phase below).
-                            Box(
+                            // Chips grouped by tasting phase again: the
+                            // Uncategorized pool picked on the wheel sits
+                            // on top, then the Aroma / Entry / Mid-palate /
+                            // Finish sections below it.
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                AromaObservationCloud(
-                                    observations = normalized.aromaObservations,
-                                    // The note lists each aroma once, even if
-                                    // it was picked for several phases, so
-                                    // resizing/removing its chip applies to
-                                    // every phase instance of that aroma.
-                                    onIntensityChange = { id, _, intensity ->
-                                        onDataChange(
-                                            TastingPhase.values().fold(normalized) { data, phaseValue ->
-                                                setAromaIntensity(data, id, phaseValue, intensity)
-                                            }
+                                if (aromaEditMode) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            "Drag chips into a section",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.weight(1f)
                                         )
-                                    },
-                                    onRemove = { id, _ ->
-                                        val before = normalized
-                                        onDataChange(
-                                            TastingPhase.values().fold(normalized) { data, phaseValue ->
-                                                removeAromaObservation(data, id, phaseValue)
+                                        TextButton(
+                                            onClick = {
+                                                aromaEditMode = false
+                                                aromaDeleteMode = false
                                             }
-                                        )
-                                        onAromaRemoved?.invoke(
-                                            com.n8rtz.winetracker.aromawheel.AromaTaxonomy.describe(id).label
-                                        ) { onDataChange(before) }
-                                    },
-                                    readOnly = readOnly,
-                                    chipDeleteMode = aromaDeleteMode,
-                                    onChipDeleteModeChange = { aromaDeleteMode = it },
-                                    onDropChipAt = if (readOnly) null else { id, pointerRoot ->
-                                        val target = phaseHeaderBounds.entries
-                                            .firstOrNull { it.value.contains(pointerRoot) }?.key
-                                        if (target != null) {
-                                            onDataChange(assignAromaPhase(normalized, id, target))
-                                        }
-                                    },
-                                    onChipDragChange = if (readOnly) null else { id, pointerRoot ->
-                                        chipDragId = id
-                                        chipDragPointerRoot = pointerRoot
+                                        ) { Text("Done") }
                                     }
-                                )
+                                }
+                                TastingPhase.values().forEach { groupPhase ->
+                                    val groupObservations = normalized.aromaObservations
+                                        .filter { it.phase == groupPhase }
+                                    // In edit mode every section shows, even
+                                    // empty ones, so chips can be dragged in.
+                                    if (groupObservations.isNotEmpty() || aromaEditMode) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    if (hoveredPhase == groupPhase) {
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                                    } else {
+                                                        Color.Transparent
+                                                    },
+                                                    RoundedCornerShape(8.dp)
+                                                )
+                                                .onGloballyPositioned { coordinates ->
+                                                    val origin = coordinates.positionInRoot()
+                                                    aromaGroupBounds[groupPhase] = Rect(
+                                                        origin.x, origin.y,
+                                                        origin.x + coordinates.size.width,
+                                                        origin.y + coordinates.size.height
+                                                    )
+                                                }
+                                                .padding(horizontal = 4.dp, vertical = 2.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                groupPhase.label,
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            if (groupObservations.isEmpty()) {
+                                                Text(
+                                                    "Drag chips here",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            AromaObservationCloud(
+                                                observations = groupObservations,
+                                                onIntensityChange = { id, _, intensity ->
+                                                    onDataChange(
+                                                        TastingPhase.values().fold(normalized) { data, phaseValue ->
+                                                            setAromaIntensity(data, id, phaseValue, intensity)
+                                                        }
+                                                    )
+                                                },
+                                                onRemove = { id, _ ->
+                                                    val before = normalized
+                                                    onDataChange(
+                                                        TastingPhase.values().fold(normalized) { data, phaseValue ->
+                                                            removeAromaObservation(data, id, phaseValue)
+                                                        }
+                                                    )
+                                                    onAromaRemoved?.invoke(
+                                                        com.n8rtz.winetracker.aromawheel.AromaTaxonomy.describe(id).label
+                                                    ) { onDataChange(before) }
+                                                },
+                                                readOnly = !canEditAromas,
+                                                allowIntensityAdjustment = !readOnly,
+                                                chipDeleteMode = aromaDeleteMode,
+                                                onChipDeleteModeChange = { aromaDeleteMode = it },
+                                                editMode = aromaEditMode,
+                                                onEnterEditMode = if (canEditAromas) {
+                                                    { aromaEditMode = true }
+                                                } else {
+                                                    null
+                                                },
+                                                onDropChipAt = if (canEditAromas) { id, pointerRoot ->
+                                                    val target = phaseAt(pointerRoot)
+                                                    if (target != null) {
+                                                        onDataChange(assignAromaPhase(normalized, id, target))
+                                                    }
+                                                } else {
+                                                    null
+                                                },
+                                                onChipDragChange = if (canEditAromas) { id, pointerRoot ->
+                                                    chipDragId = id
+                                                    chipDragPointerRoot = pointerRoot
+                                                } else {
+                                                    null
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         } else {
                             AromaWheelSummaryPanel(

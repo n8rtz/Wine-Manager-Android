@@ -21,6 +21,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -130,13 +136,28 @@ fun AromaObservationCloud(
     onChipDeleteModeChange: (Boolean) -> Unit = {},
     // Categorising drag (edit mode): long-press a chip and drag it; the
     // drop reports the pointer's root coordinates so the host can work out
-    // which phase header it landed on. A long-press released without
-    // dragging still enters delete mode, as before.
+    // which phase section it landed on.
     onDropChipAt: ((String, Offset) -> Unit)? = null,
-    onChipDragChange: ((String?, Offset) -> Unit)? = null
+    onChipDragChange: ((String?, Offset) -> Unit)? = null,
+    // Aroma edit mode (entered by long-pressing a chip): chips wiggle,
+    // show their delete X, and can be dragged between phase sections.
+    editMode: Boolean = false,
+    onEnterEditMode: (() -> Unit)? = null
 ) {
     var internalDeleteMode by remember { mutableStateOf(false) }
-    val deleteMode = chipDeleteMode ?: internalDeleteMode
+    val deleteMode = editMode || (chipDeleteMode ?: internalDeleteMode)
+    val currentEditMode = rememberUpdatedState(editMode)
+    // Little wiggle while in aroma edit mode, alternating per chip.
+    val wiggleTransition = rememberInfiniteTransition(label = "chipWiggle")
+    val wiggleAngle by wiggleTransition.animateFloat(
+        initialValue = -1.4f,
+        targetValue = 1.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 160, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "chipWiggleAngle"
+    )
     fun setDeleteMode(value: Boolean) {
         internalDeleteMode = value
         onChipDeleteModeChange(value)
@@ -258,7 +279,7 @@ fun AromaObservationCloud(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        visibleObservations.forEach { observation ->
+        visibleObservations.forEachIndexed { chipIndex, observation ->
             key(observation.descriptorId, observation.phase, observation.displayOrder) {
                 val info = AromaTaxonomy.describe(observation.descriptorId)
                 val fontSize = aromaFontSize(observation.intensity)
@@ -276,6 +297,8 @@ fun AromaObservationCloud(
                                 translationY = chipDragOffset.y
                                 scaleX = 1.05f
                                 scaleY = 1.05f
+                            } else if (editMode) {
+                                rotationZ = wiggleAngle * if (chipIndex % 2 == 0) 1f else -1f
                             }
                         }
                         .onGloballyPositioned { coordinates ->
@@ -289,10 +312,21 @@ fun AromaObservationCloud(
                         .then(
                             if (readOnly) {
                                 Modifier
-                            } else if (onDropChipAt != null) {
+                            } else if (onDropChipAt != null || onEnterEditMode != null) {
                                 Modifier.pointerInput(observation.descriptorId) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = { start ->
+                                            if (!currentEditMode.value) {
+                                                // Long-press calls up aroma
+                                                // edit mode; dragging starts
+                                                // on the next long-press.
+                                                if (onEnterEditMode != null) {
+                                                    onEnterEditMode()
+                                                } else {
+                                                    setDeleteMode(true)
+                                                }
+                                                return@detectDragGesturesAfterLongPress
+                                            }
                                             draggingChipId = observation.descriptorId
                                             chipDragOffset = Offset.Zero
                                             chipDragPointerRoot =
@@ -312,13 +346,11 @@ fun AromaObservationCloud(
                                         },
                                         onDragEnd = {
                                             if (draggingChipId == observation.descriptorId) {
-                                                if (chipDragOffset.getDistance() < 24f) {
-                                                    // Long-press without a drag:
-                                                    // the old delete-mode entry.
-                                                    setDeleteMode(true)
-                                                } else {
-                                                    onDropChipAt(observation.descriptorId, chipDragPointerRoot)
+                                                if (chipDragOffset.getDistance() >= 24f) {
+                                                    onDropChipAt?.invoke(observation.descriptorId, chipDragPointerRoot)
                                                 }
+                                                // A tap-like long-press in edit
+                                                // mode just stays in edit mode.
                                             }
                                             draggingChipId = null
                                             chipDragOffset = Offset.Zero
@@ -446,7 +478,9 @@ fun PhaseAromaCloud(
     modifier: Modifier = Modifier,
     maxChipLines: Int? = null,
     onDropChipAt: ((String, Offset) -> Unit)? = null,
-    onChipDragChange: ((String?, Offset) -> Unit)? = null
+    onChipDragChange: ((String?, Offset) -> Unit)? = null,
+    editMode: Boolean = false,
+    onEnterEditMode: (() -> Unit)? = null
 ) {
     AromaObservationCloud(
         observations = observations.filter { it.phase == phase },
@@ -457,6 +491,8 @@ fun PhaseAromaCloud(
         modifier = modifier,
         maxChipLines = maxChipLines,
         onDropChipAt = onDropChipAt,
-        onChipDragChange = onChipDragChange
+        onChipDragChange = onChipDragChange,
+        editMode = editMode,
+        onEnterEditMode = onEnterEditMode
     )
 }

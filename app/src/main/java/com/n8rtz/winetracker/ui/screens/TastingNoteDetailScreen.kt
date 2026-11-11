@@ -197,10 +197,18 @@ fun TastingNoteDetailScreen(
                 data = sensoryData,
                 definitionColor = definition?.defaultColorHsv,
                 legacyAromasUnresolved = sensoryData.aromaObservations.isEmpty() && sensoryData.aromas.isNotEmpty(),
-                onDataChange = {},
+                // Long-pressing a chip here calls up aroma edit mode;
+                // categorising/deleting chips saves straight to the note.
+                onDataChange = { newData ->
+                    val updatedNote = currentNote.copy(
+                        sensoryData = withDerivedAromas(newData)
+                    )
+                    viewModel.saveTastingNote(updatedNote) { note = updatedNote }
+                },
                 onOpenWheel = { aromaWheelEditMode = false; showAromaWheel = true },
                 onAssignLegacy = {},
-                readOnly = true
+                readOnly = true,
+                allowAromaEdit = true
             )
 
             if (showAromaWheel) {

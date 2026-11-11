@@ -73,14 +73,24 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("AromaObservationCloud(", editor_sections)
         self.assertNotIn("PhaseAromaCloud(", editor_sections)
 
-    def test_aroma_picked_for_multiple_phases_is_listed_once_in_the_note(self):
+    def test_note_chips_are_grouped_by_phase_with_edit_mode(self):
         cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
         sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
         # Display dedupes by descriptor (intensity-sorted, so largest wins).
         self.assertIn(".distinctBy { it.descriptorId }", cloud)
-        # Resizing/removing the single chip applies across all its phases.
-        self.assertIn("TastingPhase.values().fold(normalized) { data, phaseValue ->\n                                                setAromaIntensity(data, id, phaseValue, intensity)", sections)
-        self.assertIn("TastingPhase.values().fold(normalized) { data, phaseValue ->\n                                                removeAromaObservation(data, id, phaseValue)", sections)
+        # Chips render grouped under their phase section label, with the
+        # Uncategorized pool first; resizing/removing applies across phases.
+        self.assertIn("val groupObservations = normalized.aromaObservations", sections)
+        self.assertIn("groupPhase.label", sections)
+        self.assertIn("setAromaIntensity(data, id, phaseValue, intensity)", sections)
+        self.assertIn("removeAromaObservation(data, id, phaseValue)", sections)
+        # Long-press calls up aroma edit mode: wiggling chips that can be
+        # dragged onto a section (or the phase headers further down).
+        self.assertIn("var aromaEditMode by remember", sections)
+        self.assertIn("onEnterEditMode = if (canEditAromas)", sections)
+        self.assertIn("rememberInfiniteTransition(label = \"chipWiggle\")", cloud)
+        self.assertIn("rotationZ = wiggleAngle", cloud)
+        self.assertIn("aromaGroupBounds[groupPhase] = Rect(", sections)
 
     def test_note_chips_hide_x_until_long_press_delete_mode(self):
         cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
