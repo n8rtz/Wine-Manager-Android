@@ -1333,17 +1333,15 @@ fun PhaseAromaWheelDialog(
                     }
                 }
 
-                // All four phases share one line at their natural widths,
-                // spread across the full screen width (first pill at the
-                // left edge, last at the right) instead of wrapping or
-                // clustering at the left. Compact pills with tight padding
-                // (FilterChip's fixed internal padding left "Finish"
-                // clipped to "Fi").
+                // All four phases share one line, stretched across the
+                // full screen width so the labels can be as large as
+                // possible. Compact pills with tight padding (FilterChip's
+                // fixed internal padding left "Finish" clipped to "Fi").
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     TastingPhase.values().forEach { phase ->
                         val isSelected = activePhase == phase || hoveredPhase == phase
@@ -1355,6 +1353,7 @@ fun PhaseAromaWheelDialog(
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier
+                                .weight(1f)
                                 .clickable { activePhase = phase }
                                 .onGloballyPositioned { coordinates ->
                                     val origin = coordinates.positionInRoot()
@@ -1365,13 +1364,19 @@ fun PhaseAromaWheelDialog(
                                     )
                                 }
                         ) {
-                            Text(
-                                phase.label,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                softWrap = false,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 7.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    phase.label,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                     }
                 }
