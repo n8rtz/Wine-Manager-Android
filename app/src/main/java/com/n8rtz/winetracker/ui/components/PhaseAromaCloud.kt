@@ -21,7 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -147,18 +147,32 @@ fun AromaObservationCloud(
     var internalDeleteMode by remember { mutableStateOf(false) }
     val deleteMode = editMode || (chipDeleteMode ?: internalDeleteMode)
     val currentEditMode = rememberUpdatedState(editMode)
-    // Gentle side-to-side slide while in aroma edit mode, alternating
-    // direction per chip. Purely translational, about a 1dp drift.
-    val wiggleAmplitudePx = with(LocalDensity.current) { 1.dp.toPx() }
+    // Soft, natural drift while in aroma edit mode: chips float a
+    // fraction of a dp on both axes. The two axes run at different
+    // periods with smooth ease-in-out, so the path curves instead of
+    // shaking along one line, and each chip varies slightly.
+    val density = LocalDensity.current
+    val wiggleAmplitudeXPx = with(density) { 0.7.dp.toPx() }
+    val wiggleAmplitudeYPx = with(density) { 0.45.dp.toPx() }
+    val wiggleEasing = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
     val wiggleTransition = rememberInfiniteTransition(label = "chipWiggle")
-    val wiggleOffset by wiggleTransition.animateFloat(
+    val wiggleOffsetX by wiggleTransition.animateFloat(
         initialValue = -1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 240, easing = LinearEasing),
+            animation = tween(durationMillis = 270, easing = wiggleEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "chipWiggleOffset"
+        label = "chipWiggleOffsetX"
+    )
+    val wiggleOffsetY by wiggleTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 390, easing = wiggleEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "chipWiggleOffsetY"
     )
     fun setDeleteMode(value: Boolean) {
         internalDeleteMode = value
@@ -300,8 +314,13 @@ fun AromaObservationCloud(
                                 scaleX = 1.05f
                                 scaleY = 1.05f
                             } else if (editMode) {
-                                translationX = wiggleOffset * wiggleAmplitudePx *
+                                // Slight per-chip variation so the chips
+                                // don't drift in lockstep.
+                                val chipScale = 0.85f + (chipIndex % 3) * 0.12f
+                                translationX = wiggleOffsetX * wiggleAmplitudeXPx * chipScale *
                                     if (chipIndex % 2 == 0) 1f else -1f
+                                translationY = wiggleOffsetY * wiggleAmplitudeYPx * chipScale *
+                                    if (chipIndex % 3 == 0) -1f else 1f
                             }
                         }
                         .onGloballyPositioned { coordinates ->

@@ -89,7 +89,8 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn("var aromaEditMode by remember", sections)
         self.assertIn("onEnterEditMode = if (canEditAromas)", sections)
         self.assertIn("rememberInfiniteTransition(label = \"chipWiggle\")", cloud)
-        self.assertIn("translationX = wiggleOffset * wiggleAmplitudePx", cloud)
+        self.assertIn("translationX = wiggleOffsetX * wiggleAmplitudeXPx", cloud)
+        self.assertIn("translationY = wiggleOffsetY * wiggleAmplitudeYPx", cloud)
         self.assertNotIn("rotationZ = wiggle", cloud)
         self.assertIn("aromaGroupBounds[groupPhase] = Rect(", sections)
 
