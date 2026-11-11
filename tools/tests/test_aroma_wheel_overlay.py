@@ -133,7 +133,7 @@ class ChipHeightTests(unittest.TestCase):
 class PhaseBarLayoutTests(unittest.TestCase):
     def test_all_four_phases_share_one_line(self):
         source = DIALOG.read_text()
-        self.assertIn("Modifier\n                                .weight(1f)", source)
+        self.assertIn(".weight(phase.label.length.toFloat())", source)
         # Compact custom pills (8.dp label padding) so "Finish" fits whole.
         self.assertIn("style = MaterialTheme.typography.labelLarge,", source)
 

@@ -1333,10 +1333,12 @@ fun PhaseAromaWheelDialog(
                     }
                 }
 
-                // All four phases share one line, stretched across the
-                // full screen width so the labels can be as large as
-                // possible. Compact pills with tight padding (FilterChip's
-                // fixed internal padding left "Finish" clipped to "Fi").
+                // All four phases share one line whose total width is
+                // the full screen width. Each pill's width is weighted by
+                // its label length (not equal quarters, which starved
+                // "Mid-palate"), and every label uses the same font size.
+                // Compact pills with tight padding (FilterChip's fixed
+                // internal padding left "Finish" clipped to "Fi").
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1353,7 +1355,7 @@ fun PhaseAromaWheelDialog(
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(phase.label.length.toFloat())
                                 .clickable { activePhase = phase }
                                 .onGloballyPositioned { coordinates ->
                                     val origin = coordinates.positionInRoot()
@@ -1367,7 +1369,7 @@ fun PhaseAromaWheelDialog(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 4.dp, vertical = 7.dp),
+                                    .padding(horizontal = 2.dp, vertical = 7.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
