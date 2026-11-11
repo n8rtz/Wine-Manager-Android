@@ -143,6 +143,26 @@ fun toggleAromaObservation(
     }
 }
 
+/**
+ * Assigns one aroma to a single phase (its categorised home): every
+ * existing instance of the descriptor collapses into one observation in
+ * [targetPhase], keeping the first instance's intensity and order. Used
+ * when a chip is dragged onto a phase in the tasting note.
+ */
+fun assignAromaPhase(
+    state: SensoryData,
+    descriptorId: String,
+    targetPhase: TastingPhase
+): SensoryData {
+    val normalized = normalizeSensoryData(state)
+    val instances = normalized.aromaObservations.filter { it.descriptorId == descriptorId }
+    if (instances.isEmpty()) return normalized
+    val kept = instances.first()
+    val remaining = normalized.aromaObservations.filterNot { it.descriptorId == descriptorId }
+    val assigned = kept.copy(phase = targetPhase)
+    return withDerivedAromas(normalized.copy(aromaObservations = remaining + assigned))
+}
+
 /** Moves one aroma from one tasting phase to another (keeping its intensity). */
 fun moveAromaObservation(
     state: SensoryData,

@@ -104,7 +104,7 @@ class RatingPhaseAndValueStylingTests(unittest.TestCase):
         self.assertIn("color = MaterialTheme.colorScheme.onSurface", header)
         self.assertIn("HorizontalDivider(modifier = Modifier.weight(1f))", header)
         sections = (APP / "ui/components/TastingPhaseSections.kt").read_text()
-        self.assertEqual(sections.count("SectionHeaderLine(phase.sectionLabel)"), 2)
+        self.assertEqual(sections.count("phase.sectionLabel"), 2)
         self.assertIn("SectionHeaderLine(phase.label)", NOTES.read_text())
 
     def test_expanded_value_matches_detail_styling(self):

@@ -20,9 +20,9 @@ import androidx.compose.ui.unit.dp
  * Aromas/Racks headers, with the larger bold phase-title styling.
  */
 @Composable
-fun SectionHeaderLine(text: String) {
+fun SectionHeaderLine(text: String, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         HorizontalDivider(modifier = Modifier.width(24.dp))

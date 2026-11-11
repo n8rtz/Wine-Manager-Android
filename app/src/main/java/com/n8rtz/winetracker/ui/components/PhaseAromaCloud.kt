@@ -32,6 +32,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -40,6 +43,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -123,7 +127,13 @@ fun AromaObservationCloud(
     // When set, chips are capped at this many wrapped lines; the rest are
     // replaced by a "+N" indicator (used by the expanded note card).
     maxChipLines: Int? = null,
-    onChipDeleteModeChange: (Boolean) -> Unit = {}
+    onChipDeleteModeChange: (Boolean) -> Unit = {},
+    // Categorising drag (edit mode): long-press a chip and drag it; the
+    // drop reports the pointer's root coordinates so the host can work out
+    // which phase header it landed on. A long-press released without
+    // dragging still enters delete mode, as before.
+    onDropChipAt: ((String, Offset) -> Unit)? = null,
+    onChipDragChange: ((String?, Offset) -> Unit)? = null
 ) {
     var internalDeleteMode by remember { mutableStateOf(false) }
     val deleteMode = chipDeleteMode ?: internalDeleteMode
@@ -171,6 +181,10 @@ fun AromaObservationCloud(
         displayedObservations
     }
     val chipOverflowCount = displayedObservations.size - visibleObservations.size
+    var draggingChipId by remember { mutableStateOf<String?>(null) }
+    var chipDragOffset by remember { mutableStateOf(Offset.Zero) }
+    var chipDragPointerRoot by remember { mutableStateOf(Offset.Zero) }
+    val chipBoundsRoot = remember { mutableStateMapOf<String, Rect>() }
 
     val pinchModifier = if (!allowIntensityAdjustment) {
         Modifier
@@ -255,9 +269,68 @@ fun AromaObservationCloud(
                     contentColor = Color.White,
                     border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(info.groupId))),
                     modifier = Modifier
+                        .zIndex(if (draggingChipId == observation.descriptorId) 1f else 0f)
+                        .graphicsLayer {
+                            if (draggingChipId == observation.descriptorId) {
+                                translationX = chipDragOffset.x
+                                translationY = chipDragOffset.y
+                                scaleX = 1.05f
+                                scaleY = 1.05f
+                            }
+                        }
+                        .onGloballyPositioned { coordinates ->
+                            val origin = coordinates.positionInRoot()
+                            chipBoundsRoot[chipKey(observation)] = Rect(
+                                origin.x, origin.y,
+                                origin.x + coordinates.size.width,
+                                origin.y + coordinates.size.height
+                            )
+                        }
                         .then(
                             if (readOnly) {
                                 Modifier
+                            } else if (onDropChipAt != null) {
+                                Modifier.pointerInput(observation.descriptorId) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = { start ->
+                                            draggingChipId = observation.descriptorId
+                                            chipDragOffset = Offset.Zero
+                                            chipDragPointerRoot =
+                                                (chipBoundsRoot[chipKey(observation)]?.topLeft ?: Offset.Zero) + start
+                                            onChipDragChange?.invoke(
+                                                observation.descriptorId, chipDragPointerRoot
+                                            )
+                                        },
+                                        onDrag = { change, amount ->
+                                            change.consume()
+                                            if (draggingChipId != observation.descriptorId) return@detectDragGesturesAfterLongPress
+                                            chipDragOffset += amount
+                                            chipDragPointerRoot += amount
+                                            onChipDragChange?.invoke(
+                                                observation.descriptorId, chipDragPointerRoot
+                                            )
+                                        },
+                                        onDragEnd = {
+                                            if (draggingChipId == observation.descriptorId) {
+                                                if (chipDragOffset.getDistance() < 24f) {
+                                                    // Long-press without a drag:
+                                                    // the old delete-mode entry.
+                                                    setDeleteMode(true)
+                                                } else {
+                                                    onDropChipAt(observation.descriptorId, chipDragPointerRoot)
+                                                }
+                                            }
+                                            draggingChipId = null
+                                            chipDragOffset = Offset.Zero
+                                            onChipDragChange?.invoke(null, chipDragPointerRoot)
+                                        },
+                                        onDragCancel = {
+                                            draggingChipId = null
+                                            chipDragOffset = Offset.Zero
+                                            onChipDragChange?.invoke(null, chipDragPointerRoot)
+                                        }
+                                    )
+                                }
                             } else {
                                 Modifier.pointerInput(observation.descriptorId) {
                                     detectTapGestures(
@@ -371,7 +444,9 @@ fun PhaseAromaCloud(
     readOnly: Boolean = false,
     allowIntensityAdjustment: Boolean = !readOnly,
     modifier: Modifier = Modifier,
-    maxChipLines: Int? = null
+    maxChipLines: Int? = null,
+    onDropChipAt: ((String, Offset) -> Unit)? = null,
+    onChipDragChange: ((String?, Offset) -> Unit)? = null
 ) {
     AromaObservationCloud(
         observations = observations.filter { it.phase == phase },
@@ -380,6 +455,8 @@ fun PhaseAromaCloud(
         readOnly = readOnly,
         allowIntensityAdjustment = allowIntensityAdjustment,
         modifier = modifier,
-        maxChipLines = maxChipLines
+        maxChipLines = maxChipLines,
+        onDropChipAt = onDropChipAt,
+        onChipDragChange = onChipDragChange
     )
 }

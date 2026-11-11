@@ -21,14 +21,10 @@ class AromaWheelOverlayTests(unittest.TestCase):
         # and keeps Clear all.
         self.assertIn('"Clear all"', source)
         self.assertNotIn("heightIn(max = 148.dp)", source)
-        # Long-pressing a chip and dragging it to a phase chip reassigns it.
-        self.assertIn("onDropChipAt = if (readOnly) null else { id, pointerRoot ->", source)
-        self.assertIn("moveChipToPhaseAt(id, pointerRoot)", source)
-        self.assertIn("moveAromaObservation(", source)
-        self.assertIn("phaseChipBounds[phase] = Rect(", source)
-        self.assertIn("hoveredPhase == phase", source)
+        # Categorising moved to the tasting note: chips there drag onto
+        # phase headers (see PoolWheelAndNoteDragTests).
         structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()
-        self.assertIn("fun moveAromaObservation(", structure)
+        self.assertIn("fun assignAromaPhase(", structure)
 
     def test_back_with_unsaved_changes_prompts_to_save_in_both_wheel_dialogs(self):
         source = DIALOG.read_text()
@@ -41,7 +37,7 @@ class AromaWheelOverlayTests(unittest.TestCase):
         self.assertIn('Text("Save")', source)
         self.assertIn('Text("Don\'t save")', source)
         self.assertIn("onConfirm(selected.toList())", source)
-        self.assertIn("onConfirm(activePhase, observations.toList())", source)
+        self.assertIn("onConfirm(initialPhase, observations.toList())", source)
 
     def test_phase_wheel_can_open_locked_for_viewing_a_note(self):
         source = DIALOG.read_text()
@@ -130,25 +126,22 @@ class ChipHeightTests(unittest.TestCase):
         self.assertIn("lineHeight = fontSize * 1.2f", cloud)
 
 
-class PhaseBarLayoutTests(unittest.TestCase):
-    def test_all_four_phases_share_one_line(self):
+class PoolWheelAndNoteDragTests(unittest.TestCase):
+    def test_wheel_has_no_phase_bar_and_shows_all_aromas(self):
         source = DIALOG.read_text()
-        # Measured text + uniform padding fills the full width at one
-        # scaled font size for all four pills.
-        self.assertIn("rememberTextMeasurer()", source)
-        self.assertIn("val phaseFontSize = baseStyle.fontSize * scale", source)
-        self.assertIn("Modifier.padding(horizontal = 10.dp, vertical = 7.dp)", source)
-        # Compact custom pills (8.dp label padding) so "Finish" fits whole.
-        self.assertIn("style = baseStyle.copy(fontSize = phaseFontSize)", source)
+        self.assertIn("The whole screen is the wheel: no top bar, no phase pills.", source)
+        self.assertIn("TastingPhase.UNCATEGORIZED", source)
+        self.assertIn("selectedIds = activeIds.toSet()", source)
+        self.assertNotIn("phaseChipBounds", source)
 
-
-class ViewOnlyEditPencilTests(unittest.TestCase):
-    def test_pencil_switches_view_only_wheel_to_edit_and_saves(self):
-        source = DIALOG.read_text()
-        self.assertIn("onEditRequest: (() -> Unit)? = null", source)
-        self.assertIn("if (readOnly && onEditRequest != null)", source)
-        self.assertIn('contentDescription = "Edit aromas"', source)
-        detail = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/screens/TastingNoteDetailScreen.kt").read_text()
-        self.assertIn("readOnly = !aromaWheelEditMode", detail)
-        self.assertIn("onEditRequest = { aromaWheelEditMode = true }", detail)
-        self.assertIn("viewModel.saveTastingNote(updatedNote)", detail)
+    def test_note_chips_drag_onto_phase_headers(self):
+        cloud = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/PhaseAromaCloud.kt").read_text()
+        self.assertIn("detectDragGesturesAfterLongPress(", cloud)
+        self.assertIn("onDropChipAt: ((String, Offset) -> Unit)? = null", cloud)
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        self.assertIn("phaseHeaderBounds[phase] = Rect(", sections)
+        self.assertIn("assignAromaPhase(normalized, id, target)", sections)
+        structure = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteStructure.kt").read_text()
+        self.assertIn("fun assignAromaPhase(", structure)
+        models = (ROOT / "app/src/main/java/com/n8rtz/winetracker/data/local/TastingNoteModels.kt").read_text()
+        self.assertIn('UNCATEGORIZED("Uncategorized")', models)

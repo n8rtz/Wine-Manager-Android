@@ -243,12 +243,13 @@ class W061SourceContractTests(unittest.TestCase):
         sections = read(UI / "components/TastingPhaseSections.kt")
         legacy = read(UI / "components/LegacyAromaPhaseSheet.kt")
         self.assertIn("fun PhaseAromaWheelDialog(", wheel)
-        self.assertIn("TastingPhase.values().forEach", wheel)
+        # The wheel no longer switches phases: it edits all aromas at once.
+        self.assertIn("TastingPhase.UNCATEGORIZED", wheel)
         launcher = wheel.split("fun AromaWheelLauncherHeader(", 1)[1].split("/** Drag positions", 1)[0]
         self.assertIn("AromaWheelGlyph(", launcher)
         self.assertIn("AromaSummaryChipRow(", launcher)
         self.assertNotIn("ReorderableAromaChipRow(", launcher)
-        self.assertIn("toggleAromaObservation(", wheel)
+        self.assertIn("addAromaObservation(", wheel)
         self.assertIn("fun PhaseAromaCloud(", cloud)
         self.assertIn("FlowRow(", cloud)
         self.assertIn("calculateZoom()", cloud)

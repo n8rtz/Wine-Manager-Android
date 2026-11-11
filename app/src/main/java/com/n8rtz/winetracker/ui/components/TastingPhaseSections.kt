@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -36,7 +37,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +50,7 @@ import kotlin.math.sqrt
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.data.local.assignAromaPhase
 import com.n8rtz.winetracker.data.local.groupByPhase
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.removeAromaObservation
@@ -54,6 +59,7 @@ import com.n8rtz.winetracker.data.local.setAromaIntensity
 import com.n8rtz.winetracker.data.local.sortAromaObservationsByIntensity
 
 private fun traitTitlesFor(phase: TastingPhase): List<String> = when (phase) {
+    TastingPhase.UNCATEGORIZED -> emptyList()
     TastingPhase.AROMA_BEFORE_TASTING -> listOf("Aroma")
     TastingPhase.ENTRY -> listOf("Sweetness")
     TastingPhase.MID_PALATE -> listOf(
@@ -82,6 +88,16 @@ fun SectionedSensoryFields(
         sortAromaObservationsByIntensity(normalized.aromaObservations).map { it.descriptorId } +
             normalized.aromas
         ).distinct()
+    // Chip categorising: phase headers register their root bounds;
+    // dragging an aroma chip (in the cloud below) onto one assigns it.
+    val phaseHeaderBounds = remember { mutableStateMapOf<TastingPhase, Rect>() }
+    var chipDragId by remember { mutableStateOf<String?>(null) }
+    var chipDragPointerRoot by remember { mutableStateOf(Offset.Zero) }
+    val hoveredPhase = if (chipDragId != null) {
+        phaseHeaderBounds.entries.firstOrNull { it.value.contains(chipDragPointerRoot) }?.key
+    } else {
+        null
+    }
     var colorFieldWidthPx by remember { mutableIntStateOf(0) }
     var colorFieldHeightPx by remember { mutableIntStateOf(0) }
     var aromaHeaderHeightPx by remember { mutableIntStateOf(0) }
@@ -127,8 +143,27 @@ fun SectionedSensoryFields(
         },
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        TastingPhase.values().forEach { phase ->
-            SectionHeaderLine(phase.sectionLabel)
+        TastingPhase.values().filter { it != TastingPhase.UNCATEGORIZED }.forEach { phase ->
+            SectionHeaderLine(
+                phase.sectionLabel,
+                modifier = Modifier
+                    .background(
+                        if (hoveredPhase == phase) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        } else {
+                            Color.Transparent
+                        },
+                        RoundedCornerShape(8.dp)
+                    )
+                    .onGloballyPositioned { coordinates ->
+                        val origin = coordinates.positionInRoot()
+                        phaseHeaderBounds[phase] = Rect(
+                            origin.x, origin.y,
+                            origin.x + coordinates.size.width,
+                            origin.y + coordinates.size.height
+                        )
+                    }
+            )
             when (phase) {
                 TastingPhase.AROMA_BEFORE_TASTING -> {
                     Column(
@@ -234,7 +269,18 @@ fun SectionedSensoryFields(
                                     },
                                     readOnly = readOnly,
                                     chipDeleteMode = aromaDeleteMode,
-                                    onChipDeleteModeChange = { aromaDeleteMode = it }
+                                    onChipDeleteModeChange = { aromaDeleteMode = it },
+                                    onDropChipAt = if (readOnly) null else { id, pointerRoot ->
+                                        val target = phaseHeaderBounds.entries
+                                            .firstOrNull { it.value.contains(pointerRoot) }?.key
+                                        if (target != null) {
+                                            onDataChange(assignAromaPhase(normalized, id, target))
+                                        }
+                                    },
+                                    onChipDragChange = if (readOnly) null else { id, pointerRoot ->
+                                        chipDragId = id
+                                        chipDragPointerRoot = pointerRoot
+                                    }
                                 )
                             }
                         } else {
