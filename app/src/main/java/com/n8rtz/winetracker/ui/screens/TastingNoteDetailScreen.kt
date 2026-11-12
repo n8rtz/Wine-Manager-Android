@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -106,9 +106,6 @@ fun TastingNoteDetailScreen(
         if (name.isBlank()) displayVintage(currentNote.vintage)
         else "$name (${displayVintage(currentNote.vintage)})"
     }
-    val location = listOfNotNull(definition?.subregion, definition?.region, definition?.country)
-        .filter { it.isNotBlank() }
-        .joinToString(", ")
     val formattedDate = remember(currentNote.dateTasted) {
         SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(currentNote.dateTasted))
     }
@@ -149,15 +146,6 @@ fun TastingNoteDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
-                value = wineTitle,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Wine") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            OutlinedTextField(
                 value = formattedDate,
                 onValueChange = {},
                 readOnly = true,
@@ -166,25 +154,11 @@ fun TastingNoteDetailScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (definition != null) {
-                Text(
-                    text = "${definition.maker} - ${definition.name} (${displayVintage(currentNote.vintage)})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (location.isNotBlank()) {
-                    Text(
-                        text = location,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Text(
-                    text = "Price: ${recordedPrice?.let { "$${"%.2f".format(it)}" } ?: "Not recorded"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = wineTitle,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
 
             OverallScoreSlider(
                 score = rating,
@@ -292,6 +266,18 @@ fun TastingNoteDetailScreen(
                         disabledInactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                     )
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Price", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        recordedPrice?.let { "$${"%.2f".format(it)}" } ?: "Not recorded",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             FilterChip(
