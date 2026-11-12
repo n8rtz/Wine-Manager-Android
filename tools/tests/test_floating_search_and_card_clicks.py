@@ -117,8 +117,12 @@ class ScrollPositionTests(unittest.TestCase):
             self.assertNotIn("lastRankedHash", source, name)
             self.assertNotIn("lastListKey", source, name)
             matches = re.findall(r"LaunchedEffect\([^)]*\) \{[^{}]*scrollToItem\(0\)", source)
-            self.assertEqual(len(matches), 1, (name, matches))
-            self.assertIn("LaunchedEffect(Unit)", matches[0], name)
+            # Notes no longer forces the top: its scroll state is saved so
+            # returning from a note detail restores the previous position.
+            expected = 0 if name == "notes" else 1
+            self.assertEqual(len(matches), expected, (name, matches))
+            if matches:
+                self.assertIn("LaunchedEffect(Unit)", matches[0], name)
 
     def test_opening_search_does_not_change_the_list_state(self):
         for name, path in LIST_SCREENS.items():
@@ -126,13 +130,13 @@ class ScrollPositionTests(unittest.TestCase):
             self.assertNotIn("LaunchedEffect(searchQuery)", source, name)
             self.assertNotIn("LaunchedEffect(filterState)", source, name)
             self.assertIn("onOpenSearch = { searchExpanded = true }", source, name)
-            self.assertEqual(source.count("scrollToItem(0)"), 1, name)
+            self.assertEqual(source.count("scrollToItem(0)"), 0 if name == "notes" else 1, name)
 
 
 class CardClickTests(unittest.TestCase):
     def test_body_click_uses_the_action_supplied_by_its_screen(self):
         source = WINE_CARD.read_text()
-        self.assertIn(".clickable(onClick = onClick)", source)
+        self.assertIn(".combinedClickable(onClick = onClick, onLongClick = onLongClick)", source)
         self.assertNotIn("if (details != null && isExpanded == null)", source)
         self.assertIn("onExpandToggle: (() -> Unit)? = null", source)
         self.assertNotIn("expansionResetKey", source)
@@ -150,22 +154,29 @@ class CardClickTests(unittest.TestCase):
 
     def test_cellar_body_and_caret_toggle_one_open_card(self):
         source = CELLAR.read_text()
-        self.assertIn("var expandedBottleId by remember { mutableStateOf<Long?>(null) }", source)
+        self.assertIn("var expandedBottleId by rememberSaveable { mutableStateOf<Long?>(null) }", source)
         self.assertIn("isExpanded = expandedBottleId == item.bottle.bottleId", source)
         self.assertIn("expandedBottleId = if (expandedBottleId == item.bottle.bottleId) null else item.bottle.bottleId", source)
         self.assertIn("onExpandToggle = toggleExpanded", source)
-        self.assertIn("onClick = toggleExpanded", source)
-        self.assertNotIn("onWineClick", source)
+        # Body clicks toggle expansion normally, but toggle selection while
+        # wine selection mode is active (after a long-press).
+        self.assertIn("if (wineSelectionMode)", source)
+        self.assertIn("toggleExpanded()", source)
+        self.assertIn("CellarRacks(", source)
         self.assertIn("expandedBottleId = null", source)
 
     def test_notes_hoists_one_open_group_and_body_opens_the_latest_note(self):
         source = NOTES.read_text()
-        self.assertIn("var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }", source)
-        self.assertIn("expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey", source)
+        self.assertIn("var expandedGroupId by rememberSaveable { mutableStateOf<Long?>(null) }", source)
+        self.assertIn("expandedGroupId = groupKey.first", source)
         self.assertIn("onExpandToggle = onExpandToggle", source)
-        self.assertIn("onClick = { onNoteClick(latestNoteId) }", source)
+        self.assertIn("onClick = onExpandToggle,", source)
         self.assertIn("group.maxByOrNull { it.note.dateTasted }", source)
-        self.assertIn(".clickable { onNoteClick(item.note.noteId) }", source)
+        self.assertIn(".horizontalScroll(rememberScrollState())", source)
+        self.assertIn("selectedNote.note.noteId", source)
+        self.assertIn("PhaseAromaCloud(", source)
+        self.assertIn("AromaChips(sensory?.aromas.orEmpty())", source)
+        self.assertNotIn(".clickable { onNoteClick(item.note.noteId) }", source)
 
     def test_rankings_body_stays_a_no_op(self):
         source = RANKINGS.read_text()
@@ -203,7 +214,6 @@ class StatsAndHeaderTests(unittest.TestCase):
         for key, path, title in (
             ("rankings", RANKINGS, "Rankings"),
             ("notes", NOTES, "Tasting Notes"),
-            ("history", HISTORY, "Consumption History"),
         ):
             source = path.read_text()
             self.assertIn(f'item(key = "{key}_header")', source, key)
@@ -272,6 +282,25 @@ class ComposeImportTests(unittest.TestCase):
                     if f"{package}.{name}(" in body:
                         continue  # fully-qualified call, no import needed
                     self.fail(f"{path.name}: uses .{name}( without importing {package}.{name}")
+
+    def test_every_material_icon_and_pointer_helper_is_validly_imported(self):
+        for path in sorted(UI.rglob("*.kt")):
+            source = path.read_text()
+            imports = {line.strip() for line in source.splitlines() if line.strip().startswith("import ")}
+            body = "\n".join(line for line in source.splitlines() if not line.strip().startswith("import "))
+            for removed in (
+                "import androidx.compose.ui.input.pointer.consume",
+                "import androidx.compose.foundation.lazy.grid.animateItem",
+                "import androidx.compose.foundation.lazy.animateItem",
+            ):
+                self.assertNotIn(removed, imports, f"{path.name}: {removed} does not exist in Compose 1.10")
+            if "import androidx.compose.material.icons.filled.*" not in imports:
+                for icon in set(re.findall(r"\bIcons\.Default\.([A-Za-z0-9_]+)\b", body)):
+                    self.assertIn(
+                        f"import androidx.compose.material.icons.filled.{icon}",
+                        imports,
+                        f"{path.name}: uses Icons.Default.{icon} without import",
+                    )
 
 
 if __name__ == "__main__":

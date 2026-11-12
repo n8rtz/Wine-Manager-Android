@@ -50,11 +50,18 @@ fun visualAromaIntensity(intensity: Float?): Float {
     return if (value.isNaN() || value.isInfinite()) 0.5f else value.coerceIn(0f, 1f)
 }
 
-/** Visual size is adjusted continuously by pinching; no numeric value is needed on the chip. */
+/**
+ * Visual size is adjusted continuously by pinching; no numeric value is
+ * needed on the chip. The gain is deliberately high so a modest pinch makes
+ * an obvious difference, and the full 0..1 range is reachable in either
+ * direction: chips can shrink well below the default (0.5) size as well as
+ * grow above it. [zoom] is the ratio of the two-pointer distance, which is
+ * independent of the direction/angle the pinch is performed at.
+ */
 fun intensityAfterPinch(intensity: Float?, zoom: Float): Float {
     val current = visualAromaIntensity(intensity)
     val safeZoom = zoom.takeIf { it > 0f && !it.isNaN() && !it.isInfinite() } ?: 1f
-    val sizeDelta = ln(safeZoom.toDouble()).toFloat() * 0.35f
+    val sizeDelta = ln(safeZoom.toDouble()).toFloat() * 0.9f
     return (current + sizeDelta).coerceIn(0f, 1f)
 }
 
@@ -134,6 +141,50 @@ fun toggleAromaObservation(
     } else {
         addAromaObservation(normalized, descriptorId, phase)
     }
+}
+
+/**
+ * Assigns one aroma to a single phase (its categorised home): every
+ * existing instance of the descriptor collapses into one observation in
+ * [targetPhase], keeping the first instance's intensity and order. Used
+ * when a chip is dragged onto a phase in the tasting note.
+ */
+fun assignAromaPhase(
+    state: SensoryData,
+    descriptorId: String,
+    targetPhase: TastingPhase
+): SensoryData {
+    val normalized = normalizeSensoryData(state)
+    val instances = normalized.aromaObservations.filter { it.descriptorId == descriptorId }
+    if (instances.isEmpty()) return normalized
+    val kept = instances.first()
+    val remaining = normalized.aromaObservations.filterNot { it.descriptorId == descriptorId }
+    val assigned = kept.copy(phase = targetPhase)
+    return withDerivedAromas(normalized.copy(aromaObservations = remaining + assigned))
+}
+
+/** Moves one aroma from one tasting phase to another (keeping its intensity). */
+fun moveAromaObservation(
+    state: SensoryData,
+    descriptorId: String,
+    fromPhase: TastingPhase,
+    toPhase: TastingPhase
+): Result<SensoryData> = runCatching {
+    val normalized = normalizeSensoryData(state)
+    if (fromPhase == toPhase) return@runCatching normalized
+    val duplicate = normalized.aromaObservations.any {
+        it.descriptorId == descriptorId && it.phase == toPhase
+    }
+    if (duplicate) throw AromaEditException(AromaEditReason.DUPLICATE)
+    val movedOrder = nextDisplayOrder(normalized.aromaObservations)
+    val updated = normalized.aromaObservations.map { observation ->
+        if (observation.descriptorId == descriptorId && observation.phase == fromPhase) {
+            observation.copy(phase = toPhase, displayOrder = movedOrder)
+        } else {
+            observation
+        }
+    }
+    withDerivedAromas(normalized.copy(aromaObservations = updated))
 }
 
 fun setAromaIntensity(

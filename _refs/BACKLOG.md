@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-065**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-067**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -74,7 +74,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 ## 2. Open wishes — in priority order
 
-*Rewritten 2026-10-15 against the current architecture (schema v21, `WineCard` shared by Cellar/Rankings/Notes, in-memory filter states, still-photo scanner, aroma wheel, Open Food Facts importer). Several entries originally described an app that no longer exists; the original lists (`wishes.md`, `wishes-v2.md`, `PLAN.md`) remain in git history at `d4ba796`, and where the old wording still helps it is kept in a collapsed “Original specification” block.*
+*Rewritten 2026-10-15 against the current architecture (schema v22, `WineCard` shared by Cellar/Rankings/Notes, in-memory filter states, still-photo scanner, aroma wheel, Open Food Facts importer). Several entries originally described an app that no longer exists; the original lists (`wishes.md`, `wishes-v2.md`, `PLAN.md`) remain in git history at `d4ba796`, and where the old wording still helps it is kept in a collapsed “Original specification” block.*
 *How the order is used, how complexity is defined, and the release plan: [`PIPELINE.md`](PIPELINE.md).*
 
 **Complexity:** **S** = one component/screen, no schema change · **M** = several files across UI + ViewModel, new pure-Kotlin logic with JVM tests, no schema change · **L** = Room migration or a new subsystem; needs a brief · **XL** = multi-release program with external content/licensing.
@@ -93,6 +93,8 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 9 | W-061 | Structured tasting notes — color picker, phase-aware aromas, aroma intensity, four sections | L (implemented; Android verification pending) | Fixed – awaiting device check | TBD (owner to rank) |
 | 10 | W-062 | Wine wishlist — wines to buy later, not yet owned | L (persistent list + UI; brief needed) | Open — placement and scope TBD | TBD (owner to rank) |
 | 11 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
+| 12 | W-065 | Wine-card UI cleanup: improve layout and rating prominence | M | Open — logged only; do not implement yet | TBD |
+| 13 | W-066 | Ratings dot plot (Fed-style): one dot per wine, coloured by wine type | M | Open — logged only; do not implement yet | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 *(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
@@ -355,6 +357,21 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Current state (verified in source 2026-11-07):** the production pipeline does not crop at all — it reads the full photo (decode is downsample + EXIF only; `LOCALIZE`/`WARP` exist only in the legacy `OfflineWineScanner` and the `PhoneCorpusRunner` benchmark paths). The photo kept on Add Wine therefore already shows exactly what the pipeline reads, so there is no display/pipeline mismatch to fix today.
 * **Constraints for the brief:** edge detection must be conservative — an uncertain crop falls back to the full photo (cutting the label is worse than showing background); must run on-device with no new paid provider; any pipeline-input change needs a before/after benchmark comparison (recognition behaviour change, cf. W-058).
 * **Revisit when:** the owner asks, or measurement shows cropping would help OCR accuracy.
+
+### 12. W-065 — Wine-card UI cleanup: improve layout and rating prominence *(logged 2026-11-09)*
+**Complexity:** M (shared card UI across Cellar, Notes and Rankings; no data/schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** Improve the overall layout of the shared wine cards and make their existing rating display more prominent.
+* **UI-Trigger / Location:** Shared `WineCard` in `ui/components/WineCard.kt`, used by Cellar, Tasting Notes and Rankings.
+* **Scope:** Revisit the card's visual hierarchy and spacing, and increase the at-a-glance prominence of the existing rating or rating range. Preserve current rating data and behavior.
+* **Design:** Not specified yet; work out the card layout with the owner before implementation.
+* **Owner instruction:** Record this cleanup item only. Do not change the wine-card layout or rating presentation until the owner asks to work on W-065.
+
+### 13. W-066 — Ratings distribution dot plot *(logged 2026-11-10)*
+**Complexity:** M (new chart UI; data already available from tasting notes, no schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** A dot plot, like the Federal Reserve's dot plot, showing the distribution of wine ratings. Each dot represents one wine, positioned by its rating (dots stack at the same rating so frequency is visible at a glance), and coloured by wine type — red, white, or rosé.
+* **UI-Trigger / Location:** TBD with the owner (candidates: Rankings, the Pareto/analytics area, or its own chart view).
+* **Design needed before implementation:** which rating represents a wine with several tasting notes (most recent is the app convention), the rating axis range/buckets, how sparkling/other types are coloured, and whether dot tap should jump to the wine. Record this feature only; do not build it until the owner asks to work on W-066.
+* **Extension — two-group comparison (owner, 2026-11-10):** advanced analytics filters let the owner define two groups and overlay their dot plots on the same axes to compare rating distributions — e.g. red vs white, France vs Spain, bottles under $10 vs $15–20 bottles. Group definitions can combine the app's existing filter dimensions (wine type, country/region, price range, and similar). Design questions for implementation time: how the two overlaid groups stay visually distinguishable when dots share the type colouring (e.g. shape/opacity split, or group colour replacing type colour in compare mode), whether groups are mutually exclusive or may overlap, and whether more than two groups are ever needed (owner specified two).
 
 ---
 

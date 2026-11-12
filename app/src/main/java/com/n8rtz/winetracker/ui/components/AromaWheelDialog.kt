@@ -3,7 +3,9 @@
 package com.n8rtz.winetracker.ui.components
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.background
@@ -38,9 +40,11 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DonutLarge
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -54,6 +58,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.runtime.key
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -97,9 +102,9 @@ import com.n8rtz.winetracker.data.local.AromaEditReason
 import com.n8rtz.winetracker.data.local.AromaObservation
 import com.n8rtz.winetracker.data.local.SensoryData
 import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.data.local.addAromaObservation
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.toFlatAromaIds
-import com.n8rtz.winetracker.data.local.toggleAromaObservation
 
 /** Header card for the live tasting-note launcher. */
 @Composable
@@ -227,8 +232,9 @@ private fun AromaSummaryChipRow(
                 val info = AromaTaxonomy.describe(id)
                 Surface(
                     shape = RoundedCornerShape(50),
-                    color = Color(AromaWheelTheme.groupColor(info.groupId)).copy(alpha = 0.16f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
+                    color = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
+                    contentColor = Color.White,
+                    border = BorderStroke(1.dp, Color(AromaWheelTheme.groupSelectedColor(info.groupId)))
                 ) {
                     Row(
                         modifier = Modifier.padding(
@@ -245,7 +251,9 @@ private fun AromaSummaryChipRow(
                         )
                         Text(
                             info.label,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
                             modifier = Modifier.padding(start = 6.dp)
                         )
                     }
@@ -296,6 +304,7 @@ fun ReorderableAromaChipRow(
                 AromaChipPill(
                     label = info.label,
                     groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                    groupSelected = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
                     dragging = dragging,
                     dragOffsetPx = offset.x,
                     dragOffsetYPx = offset.y,
@@ -350,16 +359,19 @@ fun ReorderableAromaChipRow(
 private fun AromaChipPill(
     label: String,
     groupColor: Color,
+    groupSelected: Color = Color.Unspecified,
     dragging: Boolean,
     dragOffsetPx: Float,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
-    dragOffsetYPx: Float = 0f
+    dragOffsetYPx: Float = 0f,
+    showRemove: Boolean = true
 ) {
     Surface(
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        color = if (groupSelected == Color.Unspecified) MaterialTheme.colorScheme.surface.copy(alpha = 0.92f) else groupSelected,
+        contentColor = Color.White,
+        border = BorderStroke(1.dp, if (groupSelected == Color.Unspecified) groupColor else groupSelected),
         shadowElevation = if (dragging) 6.dp else 2.dp,
         modifier = modifier
             .zIndex(if (dragging) 1f else 0f)
@@ -383,20 +395,26 @@ private fun AromaChipPill(
             )
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 6.dp)
             )
-            Icon(
-                Icons.Default.Close,
-                contentDescription = "Remove $label",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onRemove)
-                    .padding(3.dp)
-                    .size(14.dp)
-            )
+            if (showRemove) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove $label",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(start = 2.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onRemove)
+                        .padding(3.dp)
+                        .size(14.dp)
+                )
+            }
         }
     }
 }
@@ -541,6 +559,29 @@ fun AromaDescriptorSection(
  * paired with an equivalent list + search mode over the same taxonomy and
  * selection state, as required for TalkBack users and small screens.
  */
+/** Shown when backing out of an aroma wheel with unsaved changes. */
+@Composable
+private fun UnsavedAromaChangesDialog(
+    onSave: () -> Unit,
+    onDiscard: () -> Unit,
+    onStay: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onStay,
+        title = { Text("Unsaved changes") },
+        text = { Text("You have unsaved changes to the aroma wheel. Save them before leaving?") },
+        confirmButton = {
+            TextButton(onClick = onSave) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDiscard) { Text("Don't save") }
+                TextButton(onClick = onStay) { Text("Cancel") }
+            }
+        }
+    )
+}
+
 @Composable
 fun AromaWheelDialog(
     initiallySelectedIds: List<String>,
@@ -554,6 +595,21 @@ fun AromaWheelDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
     var notice by remember { mutableStateOf<String?>(null) }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    var removedChipLabel by remember { mutableStateOf<String?>(null) }
+    var removedChipSnapshot by remember { mutableStateOf<List<String>?>(null) }
+    LaunchedEffect(removedChipSnapshot) {
+        if (removedChipSnapshot != null) {
+            delay(4000)
+            removedChipSnapshot = null
+            removedChipLabel = null
+        }
+    }
+    val hasUnsavedChanges = selected.toSet() != initiallySelectedIds.toSet()
+    fun requestDismiss() {
+        if (hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
+    }
+    BackHandler { requestDismiss() }
 
     fun applyToggle(id: String) {
         val result = AromaSelection.toggle(selected.toList(), id)
@@ -572,6 +628,15 @@ fun AromaWheelDialog(
         }
     }
 
+    fun removeChipWithUndo(id: String) {
+        val snapshot = selected.toList()
+        applyToggle(id)
+        if (id !in selected) {
+            removedChipSnapshot = snapshot
+            removedChipLabel = AromaTaxonomy.describe(id).label
+        }
+    }
+
     LaunchedEffect(notice) {
         if (notice != null) {
             delay(2600)
@@ -579,8 +644,22 @@ fun AromaWheelDialog(
         }
     }
 
+    if (showUnsavedChangesDialog) {
+        UnsavedAromaChangesDialog(
+            onSave = {
+                showUnsavedChangesDialog = false
+                onConfirm(selected.toList())
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                onDismiss()
+            },
+            onStay = { showUnsavedChangesDialog = false }
+        )
+    }
+
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = ::requestDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -588,7 +667,7 @@ fun AromaWheelDialog(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
-            color = MaterialTheme.colorScheme.surface
+            color = Color(AromaWheelTheme.backgroundMid)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
@@ -597,21 +676,10 @@ fun AromaWheelDialog(
                         .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = ::requestDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Aroma wheel",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            "${selected.size} selected",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(
                         onClick = { showListMode = !showListMode },
                         modifier = Modifier.semantics {
@@ -669,7 +737,7 @@ fun AromaWheelDialog(
                             if (selected.isNotEmpty()) {
                                 SelectedAromasOverlay(
                                     selectedIds = selected.toList(),
-                                    onRemove = { id -> applyToggle(id) },
+                                    onRemove = { id -> removeChipWithUndo(id) },
                                     onClear = { selected.clear() },
                                     modifier = Modifier
                                         .align(Alignment.TopCenter)
@@ -679,6 +747,17 @@ fun AromaWheelDialog(
                             }
                         }
                     }
+                }
+                if (removedChipSnapshot != null && removedChipLabel != null) {
+                    AromaRemovalUndoBar(
+                        removedLabel = removedChipLabel!!,
+                        onUndo = {
+                            selected.clear()
+                            selected.addAll(removedChipSnapshot!!)
+                            removedChipSnapshot = null
+                            removedChipLabel = null
+                        }
+                    )
                 }
             }
         }
@@ -690,40 +769,178 @@ private fun SelectedAromasOverlay(
     selectedIds: List<String>,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Phase reassignment (phase wheel dialog only): long-press a chip and
+    // drag it up to a phase chip; the drop reports the pointer's root
+    // coordinates so the caller can resolve which phase it landed on.
+    onDropChipAt: ((String, Offset) -> Unit)? = null,
+    onChipDragChange: ((String?, Offset) -> Unit)? = null,
+    locked: Boolean = false
 ) {
     val orderedIds = selectedIds
-    // Wraps into rows so nothing is pushed off-screen; capped at roughly three rows and
-    // scrollable beyond that so a very large selection can never cover the whole wheel.
+    var draggingChipId by remember { mutableStateOf<String?>(null) }
+    var chipDragOffset by remember { mutableStateOf(Offset.Zero) }
+    var chipDragPointerRoot by remember { mutableStateOf(Offset.Zero) }
+    val chipBoundsRoot = remember { mutableStateMapOf<String, Rect>() }
+    val chipDragModifier: (String) -> Modifier = { id ->
+        if (onDropChipAt == null) {
+            Modifier
+        } else {
+            Modifier
+                .onGloballyPositioned { coordinates ->
+                    val origin = coordinates.positionInRoot()
+                    chipBoundsRoot[id] = Rect(
+                        origin.x, origin.y,
+                        origin.x + coordinates.size.width,
+                        origin.y + coordinates.size.height
+                    )
+                }
+                .pointerInput(id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { start ->
+                            draggingChipId = id
+                            chipDragOffset = Offset.Zero
+                            chipDragPointerRoot =
+                                (chipBoundsRoot[id]?.topLeft ?: Offset.Zero) + start
+                            onChipDragChange?.invoke(id, chipDragPointerRoot)
+                        },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            if (draggingChipId != id) return@detectDragGesturesAfterLongPress
+                            chipDragOffset += amount
+                            chipDragPointerRoot += amount
+                            onChipDragChange?.invoke(id, chipDragPointerRoot)
+                        },
+                        onDragEnd = {
+                            if (draggingChipId == id) {
+                                onDropChipAt(id, chipDragPointerRoot)
+                            }
+                            draggingChipId = null
+                            chipDragOffset = Offset.Zero
+                            onChipDragChange?.invoke(null, chipDragPointerRoot)
+                        },
+                        onDragCancel = {
+                            draggingChipId = null
+                            chipDragOffset = Offset.Zero
+                            onChipDragChange?.invoke(null, chipDragPointerRoot)
+                        }
+                    )
+                }
+        }
+    }
+    // Collapsed by default to a single line -- the first two chips plus a
+    // "+N" chip -- so a big selection never covers the wheel. Tapping "+N"
+    // expands the full wrapping list (capped and scrollable); tapping
+    // "Show less" collapses it again.
+    var expanded by remember { mutableStateOf(false) }
+    val showExpanded = expanded && orderedIds.size > 2
+    if (!showExpanded && orderedIds.size > 2) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            orderedIds.take(2).forEach { id ->
+                val info = AromaTaxonomy.describe(id)
+                val dragging = draggingChipId == id
+                AromaChipPill(
+                    label = info.label,
+                    groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
+                    groupSelected = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
+                    dragging = dragging,
+                    dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
+                    dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
+                    onRemove = { onRemove(id) },
+                    showRemove = !locked,
+                    modifier = Modifier.weight(1f, fill = false).then(chipDragModifier(id))
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = 2.dp,
+                modifier = Modifier.clickable { expanded = true }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "+${orderedIds.size - 2}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Icon(
+                        Icons.Default.ExpandMore,
+                        contentDescription = "Show all selected aromas",
+                        modifier = Modifier.padding(start = 2.dp).size(16.dp)
+                    )
+                }
+            }
+        }
+        return
+    }
+    // Expanded: every chip is shown at once, however much of the wheel it
+    // covers -- no height cap and no scrolling.
     FlowRow(
-        modifier = modifier
-            .heightIn(max = 148.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         orderedIds.forEach { id ->
             val info = AromaTaxonomy.describe(id)
+            val dragging = draggingChipId == id
             AromaChipPill(
                 label = info.label,
                 groupColor = Color(AromaWheelTheme.groupColor(info.groupId)),
-                dragging = false,
-                dragOffsetPx = 0f,
-                onRemove = { onRemove(id) }
+                groupSelected = Color(AromaWheelTheme.groupSelectedColor(info.groupId)),
+                dragging = dragging,
+                dragOffsetPx = if (dragging) chipDragOffset.x else 0f,
+                dragOffsetYPx = if (dragging) chipDragOffset.y else 0f,
+                onRemove = { onRemove(id) },
+                showRemove = !locked,
+                modifier = chipDragModifier(id)
             )
         }
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-            contentColor = MaterialTheme.colorScheme.primary,
-            shadowElevation = 2.dp,
-            modifier = Modifier.clickable(onClick = onClear)
-        ) {
-            Text(
-                "Clear all",
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-            )
+        if (!locked) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.primary,
+                shadowElevation = 2.dp,
+                modifier = Modifier.clickable(onClick = onClear)
+            ) {
+                Text(
+                    "Clear all",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
+            }
+        }
+        if (orderedIds.size > 2) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                contentColor = MaterialTheme.colorScheme.primary,
+                shadowElevation = 2.dp,
+                modifier = Modifier.clickable { expanded = false }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Show less",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Icon(
+                        Icons.Default.ExpandLess,
+                        contentDescription = "Collapse selected aromas",
+                        modifier = Modifier.padding(start = 2.dp).size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -936,7 +1153,11 @@ fun PhaseAromaWheelDialog(
     initialObservations: List<AromaObservation>,
     initialPhase: TastingPhase,
     onConfirm: (TastingPhase, List<AromaObservation>) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    readOnly: Boolean = false,
+    // Shown as a pencil in view-only mode: switches the caller to editing
+    // (the dialog itself stays open; only its readOnly flag flips).
+    onEditRequest: (() -> Unit)? = null
 ) {
     val observations = remember {
         mutableStateListOf<AromaObservation>().apply {
@@ -946,19 +1167,41 @@ fun PhaseAromaWheelDialog(
             )
         }
     }
-    var activePhase by remember { mutableStateOf(initialPhase) }
     var showListMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
     var notice by remember { mutableStateOf<String?>(null) }
+    var removedChipLabel by remember { mutableStateOf<String?>(null) }
+    var removedChipSnapshot by remember { mutableStateOf<List<AromaObservation>?>(null) }
+    LaunchedEffect(removedChipSnapshot) {
+        if (removedChipSnapshot != null) {
+            delay(4000)
+            removedChipSnapshot = null
+            removedChipLabel = null
+        }
+    }
+    val initialObservationSnapshot = remember { observations.toList() }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    val hasUnsavedChanges = observations.toList() != initialObservationSnapshot
+    fun requestDismiss() {
+        if (!readOnly && hasUnsavedChanges) showUnsavedChangesDialog = true else onDismiss()
+    }
+    BackHandler { requestDismiss() }
 
+    // No phases in the wheel any more: it shows and edits every aroma at
+    // once. New picks land in the Uncategorized pool; categorising them
+    // happens later by dragging chips in the tasting note.
     fun applyToggle(id: String) {
-        val result = toggleAromaObservation(
+        if (readOnly) return
+        if (observations.any { it.descriptorId == id }) {
+            observations.removeAll { it.descriptorId == id }
+            return
+        }
+        addAromaObservation(
             SensoryData(aromaObservations = observations.toList()),
             id,
-            activePhase
-        )
-        result.onSuccess { updated ->
+            TastingPhase.UNCATEGORIZED
+        ).onSuccess { updated ->
             observations.clear()
             observations.addAll(updated.aromaObservations)
         }.onFailure { error ->
@@ -970,8 +1213,15 @@ fun PhaseAromaWheelDialog(
         }
     }
 
-    fun clearActivePhase() {
-        observations.removeAll { it.phase == activePhase }
+    fun removeChipWithUndo(id: String) {
+        val snapshot = observations.toList()
+        applyToggle(id)
+        if (snapshot.any { it.descriptorId == id } &&
+            observations.none { it.descriptorId == id }
+        ) {
+            removedChipSnapshot = snapshot
+            removedChipLabel = AromaTaxonomy.describe(id).label
+        }
     }
 
     LaunchedEffect(notice) {
@@ -981,14 +1231,28 @@ fun PhaseAromaWheelDialog(
         }
     }
 
+    // Every selected aroma, across all phases, shown at once.
     val activeIds = observations
-        .filter { it.phase == activePhase }
         .sortedBy { it.displayOrder }
         .map { it.descriptorId }
-    val distinctCount = toFlatAromaIds(observations).size
+        .distinct()
+
+    if (showUnsavedChangesDialog) {
+        UnsavedAromaChangesDialog(
+            onSave = {
+                showUnsavedChangesDialog = false
+                onConfirm(initialPhase, observations.toList())
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                onDismiss()
+            },
+            onStay = { showUnsavedChangesDialog = false }
+        )
+    }
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = ::requestDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -996,60 +1260,42 @@ fun PhaseAromaWheelDialog(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
-            color = MaterialTheme.colorScheme.surface
+            color = Color(AromaWheelTheme.backgroundMid)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Aroma wheel",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            "$distinctCount/$MAX_SELECTED_DESCRIPTORS",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    IconButton(
-                        onClick = { showListMode = !showListMode },
-                        modifier = Modifier.semantics {
-                            contentDescription =
-                                if (showListMode) "Switch to wheel view" else "Switch to list view"
+            // The whole screen is the wheel: no top bar, no phase pills.
+            // Back / list / edit / Done float over the wheel.
+            Box(modifier = Modifier.fillMaxSize()) {
+                Crossfade(targetState = showListMode, label = "PhaseAromaWheelMode") { listMode ->
+                    if (listMode) {
+                        Box(modifier = Modifier.fillMaxSize().padding(top = 64.dp)) {
+                            AromaListContent(
+                                selectedIds = activeIds,
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                expandedGroups = expandedGroups,
+                                onToggleLeaf = { id -> applyToggle(id) }
+                            )
                         }
-                    ) {
-                        Icon(
-                            if (showListMode) Icons.Default.DonutLarge else Icons.AutoMirrored.Filled.List,
-                            contentDescription = null
-                        )
-                    }
-                    TextButton(onClick = { onConfirm(activePhase, observations.toList()) }) {
-                        Text("Done")
-                    }
-                }
-
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    TastingPhase.values().forEach { phase ->
-                        FilterChip(
-                            selected = activePhase == phase,
-                            onClick = { activePhase = phase },
-                            label = { Text(phase.label) }
-                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            AromaWheel(
+                                selectedIds = activeIds.toSet(),
+                                onToggle = { id -> applyToggle(id) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            if (activeIds.isNotEmpty()) {
+                                SelectedAromasOverlay(
+                                    selectedIds = activeIds,
+                                    onRemove = { id -> removeChipWithUndo(id) },
+                                    onClear = { observations.clear() },
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .fillMaxWidth()
+                                        .padding(top = 64.dp),
+                                    locked = readOnly
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -1060,44 +1306,89 @@ fun PhaseAromaWheelDialog(
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 2.dp)
+                            .align(Alignment.TopCenter)
+                            .padding(top = 112.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
 
-                Crossfade(targetState = showListMode, label = "PhaseAromaWheelMode") { listMode ->
-                    if (listMode) {
-                        AromaListContent(
-                            selectedIds = activeIds,
-                            query = searchQuery,
-                            onQueryChange = { searchQuery = it },
-                            expandedGroups = expandedGroups,
-                            onToggleLeaf = { id -> applyToggle(id) }
-                        )
-                    } else {
-                        val selectedSet: Set<String> = activeIds.toSet()
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
+                // Floating controls over the wheel.
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        shadowElevation = 4.dp
+                    ) {
+                        IconButton(onClick = ::requestDismiss) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close")
+                        }
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (readOnly && onEditRequest != null) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                            shadowElevation = 4.dp
                         ) {
-                            AromaWheel(
-                                selectedIds = selectedSet,
-                                onToggle = { id -> applyToggle(id) },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            if (activeIds.isNotEmpty()) {
-                                SelectedAromasOverlay(
-                                    selectedIds = activeIds,
-                                    onRemove = { id -> applyToggle(id) },
-                                    onClear = { clearActivePhase() },
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp)
-                                )
+                            IconButton(onClick = onEditRequest) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit aromas")
                             }
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        shadowElevation = 4.dp
+                    ) {
+                        IconButton(
+                            onClick = { showListMode = !showListMode },
+                            modifier = Modifier.semantics {
+                                contentDescription =
+                                    if (showListMode) "Switch to wheel view" else "Switch to list view"
+                            }
+                        ) {
+                            Icon(
+                                if (showListMode) Icons.Default.DonutLarge else Icons.AutoMirrored.Filled.List,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                    if (!readOnly) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                            shadowElevation = 4.dp
+                        ) {
+                            TextButton(onClick = { onConfirm(initialPhase, observations.toList()) }) {
+                                Text("Done")
+                            }
+                        }
+                    }
+                }
+
+                if (removedChipSnapshot != null && removedChipLabel != null) {
+                    Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                        AromaRemovalUndoBar(
+                            removedLabel = removedChipLabel!!,
+                            onUndo = {
+                                observations.clear()
+                                observations.addAll(removedChipSnapshot!!)
+                                removedChipSnapshot = null
+                                removedChipLabel = null
+                            }
+                        )
                     }
                 }
             }

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
@@ -55,6 +56,7 @@ import com.n8rtz.winetracker.scanner.scanProgressFraction
 import com.n8rtz.winetracker.scanner.scanStepLabel
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
+import com.n8rtz.winetracker.ui.components.UnsavedChangesDialog
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
@@ -196,6 +198,14 @@ fun AddWineScreen(
             selectedCountry, selectedRegion, selectedAppellation,
             scanForm.fields.filterValues { it.edited }.keys)
     }
+    // Same unsaved-changes prompt as the other editors: leaving with a
+    // changed form asks first. "Save" keeps the auto-saved draft for next
+    // time; "Don't save" clears it.
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    fun requestClose() {
+        if (currentDraft() != initialDraft) showUnsavedChangesDialog = true else onClose()
+    }
+    BackHandler(onBack = ::requestClose)
     SideEffect { if (keepDraft) draftStore.save(currentDraft()) }
     val clearField: (FieldId) -> Unit = { field ->
         scanForm = scanForm.clearSuggestion(field, lastScanReport?.fill, formValues(), currentYear)
@@ -773,7 +783,26 @@ fun AddWineScreen(
             onRetryCamera = { cameraError = null; scanHint = null; cameraMountKey++ },
             onAllowCamera = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
             onEnterManually = { scope.launch { scaffoldState.bottomSheetState.expand() } },
-            onClose = onClose
+            onClose = ::requestClose
+        )
+    }
+
+    if (showUnsavedChangesDialog) {
+        UnsavedChangesDialog(
+            text = "You have unsaved changes to this wine. Save them before leaving?",
+            onSave = {
+                // The draft is already auto-saved as you type; keeping it
+                // is the save.
+                showUnsavedChangesDialog = false
+                onClose()
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                keepDraft = false
+                draftStore.clear()
+                onClose()
+            },
+            onCancel = { showUnsavedChangesDialog = false }
         )
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -47,8 +47,11 @@ import androidx.compose.ui.unit.dp
 import com.n8rtz.winetracker.data.local.TastingNote
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
+import com.n8rtz.winetracker.data.local.withDerivedAromas
 import com.n8rtz.winetracker.ui.components.CommonFaultsFields
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
+import com.n8rtz.winetracker.data.local.TastingPhase
+import com.n8rtz.winetracker.ui.components.PhaseAromaWheelDialog
 import com.n8rtz.winetracker.ui.components.SectionedSensoryFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
@@ -67,6 +70,8 @@ fun TastingNoteDetailScreen(
     val cellarPrices by viewModel.cellarPrices.collectAsState(initial = emptyMap())
     var note by remember(noteId) { mutableStateOf<TastingNote?>(null) }
     var loaded by remember(noteId) { mutableStateOf(false) }
+    var showAromaWheel by remember { mutableStateOf(false) }
+    var aromaWheelEditMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(noteId) {
         note = viewModel.getTastingNoteById(noteId)
@@ -101,9 +106,6 @@ fun TastingNoteDetailScreen(
         if (name.isBlank()) displayVintage(currentNote.vintage)
         else "$name (${displayVintage(currentNote.vintage)})"
     }
-    val location = listOfNotNull(definition?.subregion, definition?.region, definition?.country)
-        .filter { it.isNotBlank() }
-        .joinToString(", ")
     val formattedDate = remember(currentNote.dateTasted) {
         SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(currentNote.dateTasted))
     }
@@ -144,15 +146,6 @@ fun TastingNoteDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
-                value = wineTitle,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Wine") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            OutlinedTextField(
                 value = formattedDate,
                 onValueChange = {},
                 readOnly = true,
@@ -161,25 +154,11 @@ fun TastingNoteDetailScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (definition != null) {
-                Text(
-                    text = "${definition.maker} - ${definition.name} (${displayVintage(currentNote.vintage)})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                if (location.isNotBlank()) {
-                    Text(
-                        text = location,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Text(
-                    text = "Price: ${recordedPrice?.let { "$${"%.2f".format(it)}" } ?: "Not recorded"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = wineTitle,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
 
             OverallScoreSlider(
                 score = rating,
@@ -192,11 +171,44 @@ fun TastingNoteDetailScreen(
                 data = sensoryData,
                 definitionColor = definition?.defaultColorHsv,
                 legacyAromasUnresolved = sensoryData.aromaObservations.isEmpty() && sensoryData.aromas.isNotEmpty(),
-                onDataChange = {},
-                onOpenWheel = {},
+                // Long-pressing a chip here calls up aroma edit mode;
+                // categorising/deleting chips saves straight to the note.
+                onDataChange = { newData ->
+                    val updatedNote = currentNote.copy(
+                        sensoryData = withDerivedAromas(newData)
+                    )
+                    viewModel.saveTastingNote(updatedNote) { note = updatedNote }
+                },
+                onOpenWheel = { aromaWheelEditMode = false; showAromaWheel = true },
                 onAssignLegacy = {},
-                readOnly = true
+                readOnly = true,
+                allowAromaEdit = true
             )
+
+            if (showAromaWheel) {
+                // Viewing mode: the wheel opens locked — aromas can be
+                // browsed by phase but not changed.
+                PhaseAromaWheelDialog(
+                    initialObservations = sensoryData.aromaObservations,
+                    initialPhase = TastingPhase.AROMA_BEFORE_TASTING,
+                    // Confirm only fires after switching to edit mode via
+                    // the pencil: persist the new aromas on the note.
+                    onConfirm = { _, observations ->
+                        val updatedNote = currentNote.copy(
+                            sensoryData = withDerivedAromas(
+                                sensoryData.copy(aromaObservations = observations)
+                            )
+                        )
+                        viewModel.saveTastingNote(updatedNote) {
+                            note = updatedNote
+                            showAromaWheel = false
+                        }
+                    },
+                    onDismiss = { showAromaWheel = false },
+                    readOnly = !aromaWheelEditMode,
+                    onEditRequest = { aromaWheelEditMode = true }
+                )
+            }
             CommonFaultsFields(data = sensoryData, onChange = {}, readOnly = true)
 
             OutlinedTextField(
@@ -214,7 +226,7 @@ fun TastingNoteDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Value", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Value", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
@@ -254,6 +266,18 @@ fun TastingNoteDetailScreen(
                         disabledInactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                     )
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Price", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        recordedPrice?.let { "$${"%.2f".format(it)}" } ?: "Not recorded",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             FilterChip(

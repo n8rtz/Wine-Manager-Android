@@ -1,5 +1,6 @@
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
@@ -27,6 +28,7 @@ import coil.request.ImageRequest
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.image.resolveWineImageModel
 import com.n8rtz.winetracker.ui.components.DefaultColorField
+import com.n8rtz.winetracker.ui.components.UnsavedChangesDialog
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import java.util.Calendar
 import java.io.File
@@ -90,6 +92,64 @@ fun WineEditScreen(
 
     var drinkingWindowError by remember { mutableStateOf<String?>(null) }
 
+    // Unsaved-changes tracking: any field differing from the loaded wine
+    // prompts before leaving (same behaviour as the tasting-note editor).
+    val isDirty = listOf(
+        maker, name, vintage, type, quantity, price,
+        drinkingWindowStart, drinkingWindowEnd,
+        selectedCountry, selectedRegion, selectedAppellation
+    ) != listOf(
+        item.definition.maker, item.definition.name, item.bottle.vintage,
+        item.definition.type, item.bottle.quantity.toString(),
+        item.bottle.price?.toString() ?: "",
+        item.definition.drinkingWindowStart?.toString() ?: "",
+        item.definition.drinkingWindowEnd?.toString() ?: "",
+        item.definition.country, item.definition.region ?: "",
+        item.definition.subregion ?: ""
+    ) || defaultColorHsv != item.definition.defaultColorHsv
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+
+    /** Saves the edited wine; returns false when validation blocks it. */
+    fun saveWine(): Boolean {
+        val startYear = drinkingWindowStart.toIntOrNull()
+        val endYear = drinkingWindowEnd.toIntOrNull()
+        val yearsAreComplete = (drinkingWindowStart.isBlank() || drinkingWindowStart.length == 4) &&
+                (drinkingWindowEnd.isBlank() || drinkingWindowEnd.length == 4)
+        if (!yearsAreComplete) {
+            drinkingWindowError = "Enter each drinking-window year as four digits."
+            return false
+        }
+        if (startYear != null && endYear != null && startYear > endYear) {
+            drinkingWindowError = "Start year must be no later than its end year."
+            return false
+        }
+        drinkingWindowError = null
+        viewModel.updateWine(
+            editedWine.copy(
+                maker = maker,
+                name = name,
+                type = type,
+                country = selectedCountry,
+                region = selectedRegion.takeIf { it.isNotBlank() },
+                subregion = selectedAppellation.takeIf { it.isNotBlank() },
+                drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
+                drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
+                defaultColorHsv = defaultColorHsv
+            ),
+            editedBottle.copy(
+                vintage = vintage,
+                quantity = quantity.toIntOrNull() ?: editedBottle.quantity,
+                price = price.toDoubleOrNull()
+            )
+        )
+        return true
+    }
+
+    fun requestBack() {
+        if (isDirty) showUnsavedChangesDialog = true else onBack()
+    }
+    BackHandler(onBack = ::requestBack)
+
     // Keep the title, but let the header scroll away with the content.
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
@@ -104,45 +164,12 @@ fun WineEditScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = ::requestBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        val startYear = drinkingWindowStart.toIntOrNull()
-                        val endYear = drinkingWindowEnd.toIntOrNull()
-                        val yearsAreComplete = (drinkingWindowStart.isBlank() || drinkingWindowStart.length == 4) &&
-                                (drinkingWindowEnd.isBlank() || drinkingWindowEnd.length == 4)
-                        if (!yearsAreComplete) {
-                            drinkingWindowError = "Enter each drinking-window year as four digits."
-                            return@IconButton
-                        }
-                        if (startYear != null && endYear != null && startYear > endYear) {
-                            drinkingWindowError = "Start year must be no later than its end year."
-                            return@IconButton
-                        }
-                        drinkingWindowError = null
-                        viewModel.updateWine(
-                            editedWine.copy(
-                                maker = maker,
-                                name = name,
-                                type = type,
-                                country = selectedCountry,
-                                region = selectedRegion.takeIf { it.isNotBlank() },
-                                subregion = selectedAppellation.takeIf { it.isNotBlank() },
-                                drinkingWindowStart = drinkingWindowStart.toIntOrNull(),
-                                drinkingWindowEnd = drinkingWindowEnd.toIntOrNull(),
-                                defaultColorHsv = defaultColorHsv
-                            ),
-                            editedBottle.copy(
-                                vintage = vintage,
-                                quantity = quantity.toIntOrNull() ?: editedBottle.quantity,
-                                price = price.toDoubleOrNull()
-                            )
-                        )
-                        onBack()
-                    }) {
+                    IconButton(onClick = { if (saveWine()) onBack() }) {
                         Icon(Icons.Default.Check, contentDescription = "Save wine")
                     }
                 },
@@ -464,6 +491,19 @@ fun WineEditScreen(
                 }
         }
 
-
+    if (showUnsavedChangesDialog) {
+        UnsavedChangesDialog(
+            text = "You have unsaved changes to this wine. Save them before leaving?",
+            onSave = {
+                showUnsavedChangesDialog = false
+                if (saveWine()) onBack()
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                onBack()
+            },
+            onCancel = { showUnsavedChangesDialog = false }
+        )
+    }
     }
 }

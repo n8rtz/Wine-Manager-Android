@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -74,9 +75,9 @@ import com.n8rtz.winetracker.data.local.normalizeSensoryData
 import com.n8rtz.winetracker.data.local.validateForSave
 import com.n8rtz.winetracker.data.local.withDerivedAromas
 import com.n8rtz.winetracker.data.repository.WineRepository
-import com.n8rtz.winetracker.ui.components.CommonFaultsFields
 import com.n8rtz.winetracker.ui.components.LegacyAromaPhaseSheet
 import com.n8rtz.winetracker.ui.components.OverallScoreSlider
+import com.n8rtz.winetracker.ui.components.AromaRemovalUndoBar
 import com.n8rtz.winetracker.ui.components.PhaseAromaWheelDialog
 import com.n8rtz.winetracker.ui.components.SectionedSensoryFields
 import com.n8rtz.winetracker.ui.components.WheelPicker
@@ -136,6 +137,16 @@ fun TastingNoteEditorScreen(
     var activePhase by remember { mutableStateOf(TastingPhase.AROMA_BEFORE_TASTING) }
     var showLegacyPhaseSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    // Bottom undo popup state after an aroma chip is deleted.
+    var aromaUndoLabel by remember { mutableStateOf<String?>(null) }
+    var aromaUndoAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    LaunchedEffect(aromaUndoLabel, aromaUndoAction) {
+        if (aromaUndoLabel != null) {
+            kotlinx.coroutines.delay(4000)
+            aromaUndoLabel = null
+            aromaUndoAction = null
+        }
+    }
 
     LaunchedEffect(noteId) {
         if (noteId != null) {
@@ -174,6 +185,10 @@ fun TastingNoteEditorScreen(
     } else {
         "Not recorded"
     }
+    // Price shown with the Value section: the note's recorded price if
+    // it has one, otherwise the cellar price.
+    val displayPriceText = existingNote?.price?.let { "$${"%.2f".format(it)}" }
+        ?: selectedCellarPriceText
     val manualPriceValue = manualPrice.trim()
         .takeIf { it.isNotEmpty() }
         ?.toDoubleOrNull()
@@ -276,6 +291,40 @@ fun TastingNoteEditorScreen(
     val canSave = loaded && !missingNote && wineFieldsAreValid && ratingSelected && manualPriceIsValid &&
         !legacyAromasUnresolved && !showLegacyPhaseSheet && validateForSave(sensoryData).isEmpty()
 
+    // Unsaved-changes guard for both the in-app and Android back buttons.
+    var initialSnapshot by remember(noteId) { mutableStateOf<TastingNoteFormSnapshot?>(null) }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    fun currentSnapshot() = TastingNoteFormSnapshot(
+        entryMode = entryMode,
+        selectedDefinitionId = selectedDefinitionId,
+        vintage = vintage,
+        dateTasted = dateTasted,
+        rating = rating,
+        ratingSelected = ratingSelected,
+        notes = notes,
+        rebuy = rebuy,
+        recommendedBy = recommendedBy,
+        reviewerRating = reviewerRating,
+        valueScore = valueScore,
+        valueScoreSelected = valueScoreSelected,
+        manualMaker = manualMaker,
+        manualWineName = manualWineName,
+        manualVintage = manualVintage,
+        manualPrice = manualPrice,
+        manualCountry = manualCountry,
+        manualRegion = manualRegion,
+        manualSubregion = manualSubregion,
+        sensoryData = sensoryData
+    )
+    LaunchedEffect(loaded) {
+        if (loaded && initialSnapshot == null) initialSnapshot = currentSnapshot()
+    }
+    val hasUnsavedChanges = initialSnapshot != null && initialSnapshot != currentSnapshot()
+    fun requestDismiss() {
+        if (hasUnsavedChanges) showUnsavedChangesDialog = true else onBack()
+    }
+    BackHandler { requestDismiss() }
+
     if (!loaded) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             androidx.compose.material3.CircularProgressIndicator()
@@ -295,14 +344,74 @@ fun TastingNoteEditorScreen(
     // Keep the title, but let the header scroll away with the content.
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
+    fun performSave() {
+                    val definition = selectedDefinition
+                    val note = TastingNote(
+                        noteId = existingNote?.noteId ?: 0L,
+                        definitionId = definition?.definitionId ?: 0L,
+                        vintage = normalizeVintageInput(
+                            if (entryMode == TastingNoteEntryMode.CELLAR) vintage else manualVintage
+                        ),
+                        dateTasted = dateTasted,
+                        rating = rating.toDouble(),
+                        valueScore = valueScore.takeIf { valueScoreSelected } ?: existingNote?.valueScore,
+                        price = when {
+                            entryMode == TastingNoteEntryMode.MANUAL -> manualPriceValue
+                            existingNote != null -> existingNote?.price
+                            else -> selectedCellarPrice
+                        },
+                        notes = notes.takeIf { it.isNotBlank() },
+                        rebuy = rebuy,
+                        recommendedBy = recommendedBy.takeIf { it.isNotBlank() },
+                        reviewerRating = reviewerRating.takeIf {
+                            recommendedBy.isNotBlank() || existingNote?.reviewerRating != null
+                        },
+                        initialRating = existingNote?.initialRating,
+                        bottleId = if (entryMode == TastingNoteEntryMode.CELLAR) existingNote?.bottleId else null,
+                        sensoryData = withDerivedAromas(
+                            sensoryData.copy(overallScore = rating.roundToInt().coerceIn(50, 100))
+                        ),
+                        importKey = existingNote?.importKey
+                    )
+                    if (entryMode == TastingNoteEntryMode.CELLAR) {
+                        val cellarDefinition = definition ?: return
+                        viewModel.saveTastingNote(
+                            note.copy(definitionId = cellarDefinition.definitionId),
+                            linkedEventId
+                        ) { onBack() }
+                    } else {
+                        viewModel.saveManualTastingNote(
+                            note = note.copy(definitionId = 0L, bottleId = null),
+                            maker = manualMaker.trim(),
+                            name = manualWineName.trim(),
+                            country = manualCountry.trim(),
+                            region = manualRegion.trim().takeIf { it.isNotEmpty() },
+                            subregion = manualSubregion.trim().takeIf { it.isNotEmpty() },
+                            onSaved = { onBack() }
+                        )
+                    }
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp),
+        snackbarHost = {
+            aromaUndoLabel?.let { label ->
+                AromaRemovalUndoBar(
+                    removedLabel = label,
+                    onUndo = {
+                        aromaUndoAction?.invoke()
+                        aromaUndoLabel = null
+                        aromaUndoAction = null
+                    }
+                )
+            }
+        },
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(if (noteId == null) "Add Tasting Note" else "Edit Tasting Note") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = ::requestDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -391,6 +500,9 @@ fun TastingNoteEditorScreen(
             }
 
             if (entryMode == TastingNoteEntryMode.CELLAR) {
+                // The wine of an existing note can't be changed, so the
+                // search bar only appears when creating a note.
+                if (noteId == null) {
                 ExposedDropdownMenuBox(
                     expanded = wineMenuExpanded,
                     onExpandedChange = { wineMenuExpanded = !wineMenuExpanded },
@@ -458,6 +570,7 @@ fun TastingNoteEditorScreen(
                     }
                 }
 
+                }
                 OutlinedTextField(
                     value = formattedDate,
                     onValueChange = {},
@@ -574,18 +687,6 @@ fun TastingNoteEditorScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = listOfNotNull(selectedDefinition.subregion, selectedDefinition.region, selectedDefinition.country)
-                        .filter { it.isNotBlank() }
-                        .joinToString(", "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Price: $selectedCellarPriceText",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             OverallScoreSlider(
@@ -611,12 +712,11 @@ fun TastingNoteEditorScreen(
                 legacyAromasUnresolved = legacyAromasUnresolved,
                 onDataChange = { sensoryData = it },
                 onOpenWheel = { showAromaWheel = true },
-                onAssignLegacy = { showLegacyPhaseSheet = true }
-            )
-
-            CommonFaultsFields(
-                data = sensoryData,
-                onChange = { sensoryData = it }
+                onAssignLegacy = { showLegacyPhaseSheet = true },
+                onAromaRemoved = { label, undo ->
+                    aromaUndoLabel = label
+                    aromaUndoAction = undo
+                }
             )
 
             OutlinedTextField(
@@ -634,8 +734,8 @@ fun TastingNoteEditorScreen(
                 ) {
                     Text(
                         "Value",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Surface(
@@ -674,6 +774,24 @@ fun TastingNoteEditorScreen(
                         inactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                     )
                 )
+                if (entryMode == TastingNoteEntryMode.CELLAR) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Price",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            displayPriceText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
 
             FilterChip(
@@ -759,59 +877,39 @@ fun TastingNoteEditorScreen(
 
             Spacer(Modifier.height(8.dp))
             Button(
-                onClick = {
-                    val definition = selectedDefinition
-                    val note = TastingNote(
-                        noteId = existingNote?.noteId ?: 0L,
-                        definitionId = definition?.definitionId ?: 0L,
-                        vintage = normalizeVintageInput(
-                            if (entryMode == TastingNoteEntryMode.CELLAR) vintage else manualVintage
-                        ),
-                        dateTasted = dateTasted,
-                        rating = rating.toDouble(),
-                        valueScore = valueScore.takeIf { valueScoreSelected } ?: existingNote?.valueScore,
-                        price = when {
-                            entryMode == TastingNoteEntryMode.MANUAL -> manualPriceValue
-                            existingNote != null -> existingNote?.price
-                            else -> selectedCellarPrice
-                        },
-                        notes = notes.takeIf { it.isNotBlank() },
-                        rebuy = rebuy,
-                        recommendedBy = recommendedBy.takeIf { it.isNotBlank() },
-                        reviewerRating = reviewerRating.takeIf {
-                            recommendedBy.isNotBlank() || existingNote?.reviewerRating != null
-                        },
-                        initialRating = existingNote?.initialRating,
-                        bottleId = if (entryMode == TastingNoteEntryMode.CELLAR) existingNote?.bottleId else null,
-                        sensoryData = withDerivedAromas(
-                            sensoryData.copy(overallScore = rating.roundToInt().coerceIn(50, 100))
-                        ),
-                        importKey = existingNote?.importKey
-                    )
-                    if (entryMode == TastingNoteEntryMode.CELLAR) {
-                        val cellarDefinition = definition ?: return@Button
-                        viewModel.saveTastingNote(
-                            note.copy(definitionId = cellarDefinition.definitionId),
-                            linkedEventId
-                        ) { onBack() }
-                    } else {
-                        viewModel.saveManualTastingNote(
-                            note = note.copy(definitionId = 0L, bottleId = null),
-                            maker = manualMaker.trim(),
-                            name = manualWineName.trim(),
-                            country = manualCountry.trim(),
-                            region = manualRegion.trim().takeIf { it.isNotEmpty() },
-                            subregion = manualSubregion.trim().takeIf { it.isNotEmpty() },
-                            onSaved = { onBack() }
-                        )
-                    }
-                },
+                onClick = { performSave() },
                 enabled = canSave,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (noteId == null) "Save Tasting Note" else "Save Changes")
             }
         }
+    }
+
+    if (showUnsavedChangesDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedChangesDialog = false },
+            title = { Text("Unsaved changes") },
+            text = { Text("You have unsaved changes to this tasting note. Save them before leaving?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUnsavedChangesDialog = false
+                        performSave()
+                    },
+                    enabled = canSave
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        showUnsavedChangesDialog = false
+                        onBack()
+                    }) { Text("Don't save") }
+                    TextButton(onClick = { showUnsavedChangesDialog = false }) { Text("Cancel") }
+                }
+            }
+        )
     }
 
     if (showDatePicker) {
@@ -964,6 +1062,30 @@ private fun normalizeSuggestionValue(value: String): String =
     value.lowercase(Locale.ROOT).filter { it.isLetterOrDigit() }
 
 private enum class TastingNoteEntryMode { CELLAR, MANUAL }
+
+/** Snapshot of every editable field, used to detect unsaved changes. */
+private data class TastingNoteFormSnapshot(
+    val entryMode: TastingNoteEntryMode,
+    val selectedDefinitionId: Long?,
+    val vintage: String,
+    val dateTasted: Long,
+    val rating: Float,
+    val ratingSelected: Boolean,
+    val notes: String,
+    val rebuy: Boolean,
+    val recommendedBy: String,
+    val reviewerRating: Int,
+    val valueScore: Int,
+    val valueScoreSelected: Boolean,
+    val manualMaker: String,
+    val manualWineName: String,
+    val manualVintage: String,
+    val manualPrice: String,
+    val manualCountry: String,
+    val manualRegion: String,
+    val manualSubregion: String,
+    val sensoryData: SensoryData
+)
 
 private data class WineVintageChoice(
     val definition: WineDefinition,

@@ -23,6 +23,7 @@ import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
+import com.n8rtz.winetracker.ui.screens.CellarSortField
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -61,13 +62,47 @@ data class RankedWineDisplay(
 
 class WineViewModel(application: Application, val repository: WineRepository) : AndroidViewModel(application) {
 
-    private val _filterState = MutableStateFlow(CellarFilterState())
+    // The user's chosen default cellar sort (Settings), persisted across
+    // launches. The cellar starts with this sort and returns to it whenever
+    // the cellar screen is reset (e.g. tapping the Cellar tab again).
+    private val settingsPreferences = application.getSharedPreferences(
+        "wine_manager_settings", android.content.Context.MODE_PRIVATE
+    )
+    private val _defaultCellarSort = MutableStateFlow(loadDefaultCellarSort())
+    val defaultCellarSort: StateFlow<CellarFilterState> = _defaultCellarSort.asStateFlow()
+
+    private fun loadDefaultCellarSort(): CellarFilterState {
+        val field = runCatching {
+            CellarSortField.valueOf(
+                settingsPreferences.getString("default_cellar_sort_field", null)
+                    ?: CellarSortField.DATE_ADDED.name
+            )
+        }.getOrDefault(CellarSortField.DATE_ADDED)
+        return CellarFilterState(
+            sortField = field,
+            sortAscending = settingsPreferences.getBoolean("default_cellar_sort_ascending", false)
+        )
+    }
+
+    fun setDefaultCellarSort(field: CellarSortField, ascending: Boolean) {
+        val newDefault = CellarFilterState(sortField = field, sortAscending = ascending)
+        _defaultCellarSort.value = newDefault
+        settingsPreferences.edit()
+            .putString("default_cellar_sort_field", field.name)
+            .putBoolean("default_cellar_sort_ascending", ascending)
+            .apply()
+        // Apply the new default to the live cellar sort right away, keeping
+        // any active filters untouched.
+        _filterState.value = _filterState.value.copy(sortField = field, sortAscending = ascending)
+    }
+
+    private val _filterState = MutableStateFlow(_defaultCellarSort.value)
     val filterState: StateFlow<CellarFilterState> = _filterState.asStateFlow()
     private val _cellarResetKey = MutableStateFlow(0)
     val cellarResetKey: StateFlow<Int> = _cellarResetKey.asStateFlow()
 
     fun resetCellarScreen() {
-        _filterState.value = CellarFilterState()
+        _filterState.value = _defaultCellarSort.value
         _cellarResetKey.value += 1
     }
 
@@ -152,6 +187,11 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
         }
     }
     fun deleteWine(bottleId: Long) { viewModelScope.launch { repository.deleteWine(bottleId) } }
+
+    /** Cellar + tasting notes (so also Tasting Notes and Rankings). */
+    fun deleteWineEverywhere(bottleId: Long, definitionId: Long, vintage: String) {
+        viewModelScope.launch { repository.deleteWineEverywhere(bottleId, definitionId, vintage) }
+    }
     
     fun importJsonFile(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {

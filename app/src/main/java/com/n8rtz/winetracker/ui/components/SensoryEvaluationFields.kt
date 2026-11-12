@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -72,25 +70,9 @@ fun SensoryEvaluationFields(
     val traits = sensoryTraitControls(data, onChange)
     traits.forEach { trait -> SensoryTraitSlider(trait) }
 
-    Spacer(Modifier.height(12.dp))
-    Text("Common faults", style = MaterialTheme.typography.titleSmall)
-    val flaws = listOf("Cork taint (TCA)", "Oxidation", "Volatile acidity", "Brettanomyces", "Reduction / sulfur", "Heat damage")
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        flaws.forEach { flaw ->
-            val selected = flaw in data.flaws
-            FilterChip(
-                selected = selected,
-                onClick = {
-                    val updated = if (selected) data.flaws - flaw else data.flaws + flaw
-                    onChange(data.copy(flaws = updated))
-                },
-                label = { Text(flaw) }
-            )
-        }
-    }
 }
 
-private data class OverallScoreBand(val label: String, val color: Color)
+internal data class OverallScoreBand(val label: String, val color: Color)
 
 private val overallScoreMarkers = listOf(50, 60, 70, 80, 90, 100)
 private val overallScoreGradient = listOf(
@@ -102,7 +84,7 @@ private val overallScoreGradient = listOf(
     Color(0xFF347A59)
 )
 
-private fun overallScoreBand(score: Int): OverallScoreBand = when {
+internal fun overallScoreBand(score: Int): OverallScoreBand = when {
     score >= 98 -> OverallScoreBand("Extraordinary", Color(0xFF27664A))
     score >= 94 -> OverallScoreBand("Outstanding", Color(0xFF347A59))
     score >= 90 -> OverallScoreBand("Excellent", Color(0xFF3E7448))
@@ -111,6 +93,27 @@ private fun overallScoreBand(score: Int): OverallScoreBand = when {
     score >= 70 -> OverallScoreBand("Average", Color(0xFF8A6B1E))
     score >= 60 -> OverallScoreBand("Below Average", Color(0xFFA85F31))
     else -> OverallScoreBand("Unacceptable", Color(0xFFA9444D))
+}
+
+/**
+ * Stepped colour for a rating, used to fill the WineCard rating box. Each
+ * band below gets one flat, easily distinguishable colour (nothing 85+ is
+ * Yellow, which reads as mediocre): 98-100 near-black green, 95-97 rich
+ * dark green, 92-94 deep green, 89-91 strong green, 85-88 clear green,
+ * 80-84 light green, 75-79 Yellow, 70-74 orange, 60-69 orange-red, and
+ * 0-59 dark red.
+ */
+internal fun ratingColor(score: Int): Color = when {
+    score >= 98 -> Color(0xFF0A2E1F)
+    score >= 95 -> Color(0xFF146B3A)
+    score >= 92 -> Color(0xFF1E7A3C)
+    score >= 89 -> Color(0xFF2E8B47)
+    score >= 85 -> Color(0xFF55A04A)
+    score >= 80 -> Color(0xFFA8B93C)
+    score >= 75 -> Color(0xFFD9B81F)
+    score >= 70 -> Color(0xFFE39A1E)
+    score >= 60 -> Color(0xFFD3542E)
+    else -> Color(0xFF8E2323)
 }
 
 @Composable
@@ -130,27 +133,26 @@ fun OverallScoreSlider(
     val indicatorColor = if (scoreSelected) band.color else MaterialTheme.colorScheme.primary
 
     Column {
-        Row(
+        // Same lined header treatment as the phase sections.
+        SectionHeaderLine("Overall Score")
+        // Rating description centred under the header; the score pill
+        // stays at the right edge of the same row.
+        Box(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Overall score",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    if (scoreSelected) band.label else "Choose a score",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (scoreSelected) band.color else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Text(
+                if (scoreSelected) band.label else "Choose a score",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (scoreSelected) band.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = indicatorColor.copy(alpha = 0.13f),
-                contentColor = indicatorColor
+                contentColor = indicatorColor,
+                modifier = Modifier.align(Alignment.CenterEnd)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
