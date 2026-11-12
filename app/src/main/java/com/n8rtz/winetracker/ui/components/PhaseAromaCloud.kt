@@ -147,20 +147,21 @@ fun AromaObservationCloud(
     var internalDeleteMode by remember { mutableStateOf(false) }
     val deleteMode = editMode || (chipDeleteMode ?: internalDeleteMode)
     val currentEditMode = rememberUpdatedState(editMode)
-    // Soft, natural drift while in aroma edit mode: chips float a
-    // fraction of a dp on both axes. The two axes run at different
-    // periods with smooth ease-in-out, so the path curves instead of
-    // shaking along one line, and each chip varies slightly.
+    // Barely-there drift while in aroma edit mode: chips float a
+    // quarter dp on the horizontal axis and even less vertically. The
+    // two axes run at different slow periods with smooth ease-in-out,
+    // so the path curves instead of shaking along one line, and each
+    // chip varies slightly.
     val density = LocalDensity.current
-    val wiggleAmplitudeXPx = with(density) { 0.7.dp.toPx() }
-    val wiggleAmplitudeYPx = with(density) { 0.45.dp.toPx() }
+    val wiggleAmplitudeXPx = with(density) { 0.25.dp.toPx() }
+    val wiggleAmplitudeYPx = with(density) { 0.15.dp.toPx() }
     val wiggleEasing = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
     val wiggleTransition = rememberInfiniteTransition(label = "chipWiggle")
     val wiggleOffsetX by wiggleTransition.animateFloat(
         initialValue = -1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 270, easing = wiggleEasing),
+            animation = tween(durationMillis = 600, easing = wiggleEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "chipWiggleOffsetX"
@@ -169,7 +170,7 @@ fun AromaObservationCloud(
         initialValue = -1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 390, easing = wiggleEasing),
+            animation = tween(durationMillis = 900, easing = wiggleEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "chipWiggleOffsetY"
