@@ -95,11 +95,11 @@ class RatingPhaseAndValueStylingTests(unittest.TestCase):
         self.assertNotIn("0xFF333333", (APP / "ui/components/WineCard.kt").read_text())
         self.assertNotIn("0xFF333333", NOTES.read_text())
 
-    def test_phase_titles_are_larger_bold_and_dark(self):
+    def test_phase_titles_match_cellar_card_header_style(self):
         # Phase titles now go through the shared lined header, which keeps
         # the larger bold dark styling.
         header = (APP / "ui/components/SectionHeaderLine.kt").read_text()
-        self.assertIn("style = MaterialTheme.typography.titleMedium", header)
+        self.assertIn("style = MaterialTheme.typography.labelLarge", header)
         self.assertIn("fontWeight = FontWeight.Bold", header)
         self.assertIn("color = MaterialTheme.colorScheme.onSurface", header)
         self.assertIn("HorizontalDivider(modifier = Modifier.weight(1f))", header)
@@ -110,7 +110,7 @@ class RatingPhaseAndValueStylingTests(unittest.TestCase):
     def test_expanded_value_matches_detail_styling(self):
         detail = (APP / "ui/screens/TastingNoteDetailScreen.kt").read_text()
         for snippet in [
-            'Text("Value", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)',
+            'Text("Value", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)',
             "color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)",
             'Text("/10", style = MaterialTheme.typography.labelSmall)',
         ]:
@@ -129,7 +129,7 @@ class TabTransitionAndChipCapTests(unittest.TestCase):
         source = NOTES.read_text()
         aromas = source.index("val aromaObservations = sensory?.aromaObservations.orEmpty()")
         divider = source.index("HorizontalDivider()", aromas)
-        value = source.index('Text("Value", style = MaterialTheme.typography.titleMedium', aromas)
+        value = source.index('Text("Value", style = MaterialTheme.typography.labelLarge', aromas)
         self.assertLess(divider, value)
 
     def test_phase_chips_capped_at_two_lines_with_overflow(self):

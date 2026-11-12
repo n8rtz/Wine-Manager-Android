@@ -734,8 +734,8 @@ fun TastingNoteEditorScreen(
                 ) {
                     Text(
                         "Value",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Surface(
@@ -781,8 +781,8 @@ fun TastingNoteEditorScreen(
                     ) {
                         Text(
                             "Price",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Text(

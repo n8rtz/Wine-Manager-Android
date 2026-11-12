@@ -226,7 +226,7 @@ fun TastingNoteDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Value", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Value", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
@@ -270,7 +270,7 @@ fun TastingNoteDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Price", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Price", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         recordedPrice?.let { "$${"%.2f".format(it)}" } ?: "Not recorded",

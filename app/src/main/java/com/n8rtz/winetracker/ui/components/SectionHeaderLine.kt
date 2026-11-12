@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
 /**
  * Section header with a horizontal line running across the full width,
  * the title sitting inline in the line (---- Title ------------), so
- * sections are visually separated. Same treatment as the Cellar card's
- * Aromas/Racks headers, with the larger bold phase-title styling.
+ * sections are visually separated. Title styling copied from the Cellar
+ * expanded card's Aromas/Racks headers: labelLarge, bold, onSurface.
  */
 @Composable
 fun SectionHeaderLine(text: String, modifier: Modifier = Modifier) {
@@ -28,7 +28,7 @@ fun SectionHeaderLine(text: String, modifier: Modifier = Modifier) {
         HorizontalDivider(modifier = Modifier.width(24.dp))
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
