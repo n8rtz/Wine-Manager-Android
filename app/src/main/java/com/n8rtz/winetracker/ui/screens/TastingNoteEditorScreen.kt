@@ -185,6 +185,10 @@ fun TastingNoteEditorScreen(
     } else {
         "Not recorded"
     }
+    // Price shown with the Value section: the note's recorded price if
+    // it has one, otherwise the cellar price.
+    val displayPriceText = existingNote?.price?.let { "$${"%.2f".format(it)}" }
+        ?: selectedCellarPriceText
     val manualPriceValue = manualPrice.trim()
         .takeIf { it.isNotEmpty() }
         ?.toDoubleOrNull()
@@ -496,6 +500,9 @@ fun TastingNoteEditorScreen(
             }
 
             if (entryMode == TastingNoteEntryMode.CELLAR) {
+                // The wine of an existing note can't be changed, so the
+                // search bar only appears when creating a note.
+                if (noteId == null) {
                 ExposedDropdownMenuBox(
                     expanded = wineMenuExpanded,
                     onExpandedChange = { wineMenuExpanded = !wineMenuExpanded },
@@ -563,6 +570,7 @@ fun TastingNoteEditorScreen(
                     }
                 }
 
+                }
                 OutlinedTextField(
                     value = formattedDate,
                     onValueChange = {},
@@ -679,18 +687,6 @@ fun TastingNoteEditorScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = listOfNotNull(selectedDefinition.subregion, selectedDefinition.region, selectedDefinition.country)
-                        .filter { it.isNotBlank() }
-                        .joinToString(", "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Price: $selectedCellarPriceText",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             OverallScoreSlider(
@@ -778,6 +774,24 @@ fun TastingNoteEditorScreen(
                         inactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                     )
                 )
+                if (entryMode == TastingNoteEntryMode.CELLAR) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Price",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            displayPriceText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
 
             FilterChip(
