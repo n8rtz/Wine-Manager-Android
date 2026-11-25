@@ -46,6 +46,22 @@ class W067FragmentSearchTests(unittest.TestCase):
             self.assertNotIn("maker.contains(searchQuery", (APP / relative).read_text())
             self.assertNotIn("maker.contains(query", (APP / relative).read_text())
 
+    def test_suggestions_are_wired_into_every_wine_search(self):
+        matcher = (APP / "data/local/WineSearch.kt").read_text()
+        self.assertIn("fun topWineSearchSuggestions(", matcher)
+        for relative in [
+            "ui/screens/CellarScreen.kt",
+            "ui/screens/TastingNotesScreen.kt",
+            "ui/screens/RankingsScreen.kt",
+        ]:
+            source = (APP / relative).read_text()
+            self.assertIn("SearchSuggestionList(", source, relative)
+            self.assertIn("onSuggestionPick = { query ->", source, relative)
+        # Rankings suggestions come from the unfiltered rated wines.
+        view_model = (APP / "viewmodels/RankingsViewModel.kt").read_text()
+        self.assertIn("val rankingsSearchSuggestions", view_model)
+        self.assertIn("topWineSearchSuggestions(", view_model)
+
     def test_cellar_suggestions_are_wired(self):
         cellar = (APP / "ui/screens/CellarScreen.kt").read_text()
         self.assertIn("val searchSuggestions = remember", cellar)

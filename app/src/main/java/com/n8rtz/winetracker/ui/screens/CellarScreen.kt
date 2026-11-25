@@ -355,21 +355,11 @@ fun CellarScreen(
 
     // Search-as-you-type suggestions (W-067): the six best fragment
     // matches; tapping one applies that wine as the query.
-    val searchSuggestions = remember(inventory, cellarSearchScores, searchQuery) {
-        if (searchQuery.isBlank()) {
-            emptyList()
-        } else {
-            inventory
-                .filter { cellarSearchScores.containsKey(it.bottle.bottleId) }
-                .sortedBy { cellarSearchScores[it.bottle.bottleId] ?: Int.MAX_VALUE }
-                .distinctBy { it.definition.definitionId to it.bottle.vintage }
-                .take(6)
-                .map { item ->
-                    val vintageLabel = com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)
-                    "${item.definition.maker} - ${item.definition.name} ($vintageLabel)" to
-                        "${item.definition.maker} ${item.definition.name} $vintageLabel"
-                }
-        }
+    val searchSuggestions = remember(inventory, searchQuery) {
+        com.n8rtz.winetracker.data.local.topWineSearchSuggestions(
+            searchQuery,
+            inventory.map { it.definition to it.bottle.vintage }
+        )
     }
     var pickedSuggestionQuery by remember { mutableStateOf<String?>(null) }
     val showSearchSuggestions = searchQuery.isNotBlank() &&
