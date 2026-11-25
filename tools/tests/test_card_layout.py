@@ -25,6 +25,19 @@ class CardLayoutTests(unittest.TestCase):
         self.assertIn("verticalArrangement = Arrangement.spacedBy(2.dp)", s)
         self.assertNotIn("Spacer(Modifier.height(3.dp))", s)
 
+    def test_cellar_count_line_anchors_to_card_bottom(self):
+        s = CARD.read_text()
+        # The metadata line is NOT part of the flowing text column; it is
+        # rendered after the header row (the card's bottom row, above the
+        # optional date row), so it sits in the same spot regardless of
+        # which lines above it are populated.
+        text_col = s.split("verticalArrangement = Arrangement.spacedBy(2.dp)", 1)[1].split("if (trailingAction", 1)[0]
+        self.assertNotIn("text = compactMetadata", text_col)
+        bottom = s.split("if (compactMetadata.isNotBlank())", 1)[1].split("if (!dateAdded.isNullOrBlank())", 1)[0]
+        self.assertIn("text = compactMetadata", bottom)
+        self.assertIn("padding(start = 17.dp", bottom)
+
+
     def test_call_sites_pass_structured_fields(self):
         for rel in (
             "ui/screens/CellarScreen.kt",

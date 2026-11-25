@@ -139,14 +139,6 @@ fun WineCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    if (compactMetadata.isNotBlank()) {
-                        Text(
-                            text = compactMetadata,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
                 if (trailingAction != null || details != null || !rating.isNullOrBlank()) {
                     // End-anchored, top-anchored: every child right-aligns
@@ -238,6 +230,22 @@ fun WineCard(
                         }
                     }
                 }
+            }
+
+            // The counting line ("Cellar: X" / price) is anchored to the
+            // bottom of the card: it always sits in the same spot (just
+            // above the date row when there is one), no matter which of
+            // the lines above it are populated on a given wine.
+            if (compactMetadata.isNotBlank()) {
+                Text(
+                    text = compactMetadata,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 17.dp, end = 10.dp, bottom = if (dateAdded.isNullOrBlank()) 10.dp else 4.dp)
+                )
             }
 
             if (!dateAdded.isNullOrBlank()) {
