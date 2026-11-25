@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.displayVintage
+import com.n8rtz.winetracker.data.local.scoreWineSearch
+import com.n8rtz.winetracker.data.local.searchDocument
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.RankingsFilterState
 import kotlinx.coroutines.flow.*
@@ -116,10 +118,10 @@ class RankingsViewModel(application: Application, val repository: WineRepository
         val result = history
             .filter { it.note.rating > 0 }
             .filter { item ->
+                // Fragment search (W-067): every query word can hit a
+                // different field, in any order.
                 val matchesSearch = query.isBlank() ||
-                        item.definition.maker.contains(query, ignoreCase = true) ||
-                        item.definition.name.contains(query, ignoreCase = true) ||
-                        displayVintage(item.note.vintage).contains(query, ignoreCase = true)
+                        scoreWineSearch(query, item.definition.searchDocument(item.note.vintage)) != null
 
                 val matchesType = filter.types.isEmpty() ||
                         item.definition.type in filter.types
@@ -149,6 +151,12 @@ class RankingsViewModel(application: Application, val repository: WineRepository
                         matchesCountry && matchesRegion && matchesSubregion
             }
             .sortedWith { a, b ->
+                // While searching, best fragment match first.
+                if (query.isNotBlank()) {
+                    val scoreA = scoreWineSearch(query, a.definition.searchDocument(a.note.vintage)) ?: Int.MAX_VALUE
+                    val scoreB = scoreWineSearch(query, b.definition.searchDocument(b.note.vintage)) ?: Int.MAX_VALUE
+                    if (scoreA != scoreB) return@sortedWith scoreA.compareTo(scoreB)
+                }
                 val priceA = prices[Pair(a.note.definitionId, displayVintage(a.note.vintage))] ?: 0.0
                 val priceB = prices[Pair(b.note.definitionId, displayVintage(b.note.vintage))] ?: 0.0
                 when (filter.sortOrder) {

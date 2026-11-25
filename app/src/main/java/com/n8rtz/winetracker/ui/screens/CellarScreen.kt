@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.n8rtz.winetracker.data.local.scoreWineSearch
+import com.n8rtz.winetracker.data.local.searchDocument
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.AnalyticsCard
 import com.n8rtz.winetracker.ui.components.WineCard
@@ -30,6 +32,7 @@ import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
+import com.n8rtz.winetracker.ui.components.SearchSuggestionList
 import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
@@ -330,10 +333,51 @@ fun CellarScreen(
         Triple(total, unique, value)
     }
 
-    val filteredInventory = remember(inventory, searchQuery, filterState, ratingSortMap) {
+    // Precomputed fragment-search documents (W-067): every query word
+    // can match a different field, in any order.
+    val cellarSearchDocuments = remember(inventory) {
+        inventory.associate { it.bottle.bottleId to it.definition.searchDocument(it.bottle.vintage) }
+    }
+
+    // Fragment-search scores for the current query (bottleId -> score,
+    // lower is better). Blank query: no scores, everything matches.
+    val cellarSearchScores = remember(inventory, searchQuery, cellarSearchDocuments) {
+        if (searchQuery.isBlank()) {
+            emptyMap()
+        } else {
+            inventory.mapNotNull { item ->
+                val document = cellarSearchDocuments[item.bottle.bottleId]
+                    ?: item.definition.searchDocument(item.bottle.vintage)
+                scoreWineSearch(searchQuery, document)?.let { item.bottle.bottleId to it }
+            }.toMap()
+        }
+    }
+
+    // Search-as-you-type suggestions (W-067): the six best fragment
+    // matches; tapping one applies that wine as the query.
+    val searchSuggestions = remember(inventory, cellarSearchScores, searchQuery) {
+        if (searchQuery.isBlank()) {
+            emptyList()
+        } else {
+            inventory
+                .filter { cellarSearchScores.containsKey(it.bottle.bottleId) }
+                .sortedBy { cellarSearchScores[it.bottle.bottleId] ?: Int.MAX_VALUE }
+                .distinctBy { it.definition.definitionId to it.bottle.vintage }
+                .take(6)
+                .map { item ->
+                    val vintageLabel = com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)
+                    "${item.definition.maker} - ${item.definition.name} ($vintageLabel)" to
+                        "${item.definition.maker} ${item.definition.name} $vintageLabel"
+                }
+        }
+    }
+    var pickedSuggestionQuery by remember { mutableStateOf<String?>(null) }
+    val showSearchSuggestions = searchQuery.isNotBlank() &&
+        searchSuggestions.isNotEmpty() && searchQuery != pickedSuggestionQuery
+
+    val filteredInventory = remember(inventory, searchQuery, filterState, ratingSortMap, cellarSearchScores) {
         inventory.filter {
-            val matchesSearch = it.definition.maker.contains(searchQuery, ignoreCase = true) ||
-                    it.definition.name.contains(searchQuery, ignoreCase = true)
+            val matchesSearch = searchQuery.isBlank() || cellarSearchScores.containsKey(it.bottle.bottleId)
 
             val matchesType = filterState.types.isEmpty() || filterState.types.contains(it.definition.type)
 
@@ -369,6 +413,15 @@ fun CellarScreen(
             matchesSearch && matchesType && matchesCountry && matchesRegion && matchesSubregion &&
                     matchesPrice && matchesDrinkingWindow && matchesDrinkingWindowRange && matchesVintage
         }.sortedWith { a, b ->
+            // While searching, best fragment match first; the chosen
+            // sort breaks ties (and rules completely on a blank query).
+            val byScore = if (searchQuery.isBlank()) {
+                0
+            } else {
+                (cellarSearchScores[a.bottle.bottleId] ?: Int.MAX_VALUE)
+                    .compareTo(cellarSearchScores[b.bottle.bottleId] ?: Int.MAX_VALUE)
+            }
+            if (byScore != 0) return@sortedWith byScore
             val aRating = ratingSortMap[
                 a.definition.definitionId to com.n8rtz.winetracker.data.local.displayVintage(a.bottle.vintage)
             ]
@@ -480,6 +533,16 @@ fun CellarScreen(
                                 tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                    if (showSearchSuggestions) {
+                        SearchSuggestionList(
+                            suggestions = searchSuggestions,
+                            onPick = { query ->
+                                searchQuery = query
+                                pickedSuggestionQuery = query
+                            },
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
                     }
                     Text(
                         text = "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}",
@@ -714,6 +777,11 @@ fun CellarScreen(
                 onCloseSearch = { searchExpanded = false },
                 onOpenFilters = { showFilterSheet = true },
                 filterActive = isFilterActive,
+                suggestions = if (showSearchSuggestions) searchSuggestions else emptyList(),
+                onSuggestionPick = { query ->
+                    searchQuery = query
+                    pickedSuggestionQuery = query
+                },
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         }

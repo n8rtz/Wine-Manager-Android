@@ -39,6 +39,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.matchesAromaQuery
+import com.n8rtz.winetracker.data.local.scoreWineSearch
+import com.n8rtz.winetracker.data.local.searchDocument
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
@@ -92,10 +94,10 @@ fun TastingNotesScreen(
 
     val filteredHistory = remember(history, searchQuery, filterState, prices) {
         history.filter { item ->
+            // Fragment search (W-067): every query word can hit a
+            // different field, in any order.
             val matchesSearch = searchQuery.isBlank() ||
-                    item.definition.maker.contains(searchQuery, ignoreCase = true) ||
-                    item.definition.name.contains(searchQuery, ignoreCase = true) ||
-                    com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage).contains(searchQuery, ignoreCase = true)
+                    scoreWineSearch(searchQuery, item.definition.searchDocument(item.note.vintage)) != null
 
             val matchesType = filterState.types.isEmpty() || item.definition.type in filterState.types
             
@@ -124,6 +126,12 @@ fun TastingNotesScreen(
             matchesSearch && matchesType && matchesStatus && matchesPrice &&
                     matchesCountry && matchesRegion && matchesSubregion && matchesAroma
         }.sortedWith { a, b ->
+            // While searching, best fragment match first.
+            if (searchQuery.isNotBlank()) {
+                val scoreA = scoreWineSearch(searchQuery, a.definition.searchDocument(a.note.vintage)) ?: Int.MAX_VALUE
+                val scoreB = scoreWineSearch(searchQuery, b.definition.searchDocument(b.note.vintage)) ?: Int.MAX_VALUE
+                if (scoreA != scoreB) return@sortedWith scoreA.compareTo(scoreB)
+            }
             val priceA = prices[Pair(a.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(a.note.vintage))] ?: 0.0
             val priceB = prices[Pair(b.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(b.note.vintage))] ?: 0.0
             when (filterState.sortOrder) {

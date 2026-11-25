@@ -72,6 +72,8 @@ import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.WineDefinition
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.local.normalizeSensoryData
+import com.n8rtz.winetracker.data.local.scoreWineSearch
+import com.n8rtz.winetracker.data.local.searchDocument
 import com.n8rtz.winetracker.data.local.validateForSave
 import com.n8rtz.winetracker.data.local.withDerivedAromas
 import com.n8rtz.winetracker.data.repository.WineRepository
@@ -217,16 +219,15 @@ fun TastingNoteEditorScreen(
         )
     }
     val matchingWineChoices = remember(availableWineChoices, wineSearch) {
-        val query = wineSearch.trim()
-        availableWineChoices.filter { choice ->
-            val searchText = listOf(
-                choice.definition.maker,
-                choice.definition.name,
-                displayVintage(choice.vintage),
-                formatWineChoice(choice.definition, choice.vintage)
-            ).joinToString(" ")
-            query.isBlank() || searchText.contains(query, ignoreCase = true)
-        }.take(30)
+        // Fragment search (W-067), best matches first.
+        if (wineSearch.isBlank()) {
+            availableWineChoices.take(30)
+        } else {
+            availableWineChoices.mapNotNull { choice ->
+                scoreWineSearch(wineSearch, choice.definition.searchDocument(choice.vintage))
+                    ?.let { choice to it }
+            }.sortedBy { it.second }.map { it.first }.take(30)
+        }
     }
     val reviewerOptions = remember(reviewerNames, recommendedBy) {
         (reviewerNames + listOfNotNull(recommendedBy.takeIf { it.isNotBlank() }))

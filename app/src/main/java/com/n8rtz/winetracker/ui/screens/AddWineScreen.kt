@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.data.local.HsvColor
+import com.n8rtz.winetracker.data.local.matchesWineSearch
 import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
 import com.n8rtz.winetracker.scanner.AddWineDraft
@@ -365,7 +366,7 @@ fun AddWineScreen(
                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
                     
-                    val filteredDefs = allDefinitions.filter { it.maker.contains(maker, ignoreCase = true) }.distinctBy { it.maker }
+                    val filteredDefs = allDefinitions.filter { matchesWineSearch(maker, it.maker) }.distinctBy { it.maker }
                     if (maker.isNotEmpty() && filteredDefs.isNotEmpty()) {
                         ExposedDropdownMenu(
                             expanded = producerSearchExpanded, 
