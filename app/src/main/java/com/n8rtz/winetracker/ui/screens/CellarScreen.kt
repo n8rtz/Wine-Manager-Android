@@ -91,6 +91,16 @@ fun CellarScreen(
     // Bottles (0) and Racks (1) live in a pager so swipes and tab taps slide
     // smoothly between pages instead of swapping content instantaneously.
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    // Tell the main-tab swipe whether this pager can still move in each
+    // direction, so a swipe at the pager's edge spills over to the
+    // neighbouring main screen instead of doing nothing.
+    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) {
+        com.n8rtz.winetracker.InnerPagerSwipeGate.blocksSwipeToNext = pagerState.currentPage < 1
+        com.n8rtz.winetracker.InnerPagerSwipeGate.blocksSwipeToPrevious = pagerState.currentPage > 0
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { com.n8rtz.winetracker.InnerPagerSwipeGate.reset() }
+    }
     val cellarTab = pagerState.currentPage
     val pagerScope = rememberCoroutineScope()
     val selectCellarTab: (Int) -> Unit = { page ->

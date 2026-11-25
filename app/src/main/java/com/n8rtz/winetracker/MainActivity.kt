@@ -361,6 +361,7 @@ fun MainAppScaffold(
         val thresholdPx = 72.dp.toPx()
         awaitPointerEventScope {
             var downPosition: Offset? = null
+            var downTimeMs = 0L
             var moveConsumed = false
             var fired = false
             while (true) {
@@ -368,6 +369,7 @@ fun MainAppScaffold(
                 val change = event.changes.firstOrNull() ?: continue
                 if (change.pressed && !change.previousPressed) {
                     downPosition = change.position
+                    downTimeMs = change.uptimeMillis
                     moveConsumed = false
                     fired = false
                 } else if (change.pressed) {
@@ -376,9 +378,22 @@ fun MainAppScaffold(
                     // lists do not consume horizontal movement.
                     if (change.isConsumed) moveConsumed = true
                     val start = downPosition
-                    if (start != null && !moveConsumed && !fired) {
+                    if (start != null && !fired) {
                         val delta = change.position - start
-                        if (kotlin.math.abs(delta.x) >= thresholdPx &&
+                        // A consumed drag normally means a child claimed
+                        // it — unless the current screen's inner pager is
+                        // at its edge in this direction, in which case a
+                        // quick swipe spills over to the main tab. The
+                        // quickness requirement keeps slow claimed drags
+                        // (pager scrolls, long-press rack reorders, note
+                        // date-tab drags) from ever triggering this.
+                        val toNext = delta.x < 0
+                        val pagerAtEdge = currentRouteState.value in PAGER_SWIPE_ROUTES &&
+                            (change.uptimeMillis - downTimeMs) <= 600L &&
+                            !(if (toNext) InnerPagerSwipeGate.blocksSwipeToNext
+                              else InnerPagerSwipeGate.blocksSwipeToPrevious)
+                        if ((!moveConsumed || pagerAtEdge) &&
+                            kotlin.math.abs(delta.x) >= thresholdPx &&
                             kotlin.math.abs(delta.x) >= kotlin.math.abs(delta.y) * 1.5f
                         ) {
                             val route = currentRouteState.value
@@ -951,7 +966,29 @@ private fun StartupDbErrorScreen(detail: String, onRetry: () -> Unit) {
 private val TOP_LEVEL_MENU_ROUTES = setOf("cellar", "notes", "history", "rankings", "profile")
 
 /** Bottom-bar order, for left/right swipe navigation between main screens. */
+private val PAGER_SWIPE_ROUTES = setOf("cellar", "history")
+
 private val TOP_LEVEL_MENU_ORDER = listOf("cellar", "notes", "history", "rankings", "profile")
+
+/**
+ * Edge-overflow gate for the main-tab swipe. Screens with an inner
+ * horizontal pager (Cellar's Bottles/Racks, History's two tabs) report
+ * here whether that pager can still move in each direction. The pager
+ * consumes horizontal drags even at its edge, so consumption alone
+ * cannot tell "pager is using this swipe" from "pager is at its edge
+ * and the swipe should spill over to the next/previous main screen".
+ * The values only describe whichever pager screen is currently shown;
+ * that screen resets them when it leaves composition.
+ */
+internal object InnerPagerSwipeGate {
+    var blocksSwipeToNext by mutableStateOf(false)
+    var blocksSwipeToPrevious by mutableStateOf(false)
+
+    fun reset() {
+        blocksSwipeToNext = false
+        blocksSwipeToPrevious = false
+    }
+}
 
 private fun navigateToTab(navController: androidx.navigation.NavHostController, route: String) {
     Log.d("WineTracker", "navigateToTab: target=$route")

@@ -69,6 +69,14 @@ fun HistoryScreen(
     // swipes both move the pager, and Back from the second tab returns to
     // the first.
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    // Same edge-overflow reporting as the Cellar pager (see there).
+    androidx.compose.runtime.LaunchedEffect(pagerState.currentPage) {
+        com.n8rtz.winetracker.InnerPagerSwipeGate.blocksSwipeToNext = pagerState.currentPage < 1
+        com.n8rtz.winetracker.InnerPagerSwipeGate.blocksSwipeToPrevious = pagerState.currentPage > 0
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { com.n8rtz.winetracker.InnerPagerSwipeGate.reset() }
+    }
     val historyTab = pagerState.currentPage
     val pagerScope = rememberCoroutineScope()
     val selectHistoryTab: (Int) -> Unit = { page ->

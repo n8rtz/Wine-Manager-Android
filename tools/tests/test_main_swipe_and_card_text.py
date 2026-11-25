@@ -24,8 +24,19 @@ class MainSwipeTests(unittest.TestCase):
         # disqualifies it — never the consumed down event, which every
         # card/button produces and would kill the swipe everywhere.
         self.assertIn("if (change.isConsumed) moveConsumed = true", source)
-        self.assertIn("if (start != null && !moveConsumed && !fired)", source)
         self.assertNotIn("downConsumed", source)
+        # Edge-overflow: a consumed drag may still switch tabs when the
+        # current screen's inner pager is at its edge in that direction
+        # (and the swipe is quick); screens with such pagers report the
+        # edge state through InnerPagerSwipeGate.
+        self.assertIn("internal object InnerPagerSwipeGate", source)
+        self.assertIn("pagerAtEdge", source)
+        self.assertIn("PAGER_SWIPE_ROUTES = setOf(\"cellar\", \"history\")", source)
+        for screen in ("CellarScreen.kt", "HistoryScreen.kt"):
+            src = (APP / "ui/screens" / screen).read_text()
+            self.assertIn("InnerPagerSwipeGate.blocksSwipeToNext = pagerState.currentPage < 1", src, screen)
+            self.assertIn("InnerPagerSwipeGate.blocksSwipeToPrevious = pagerState.currentPage > 0", src, screen)
+            self.assertIn("InnerPagerSwipeGate.reset()", src, screen)
 
 
 class CardTextTests(unittest.TestCase):
