@@ -1,7 +1,12 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +41,7 @@ import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -64,6 +70,9 @@ fun CellarScreen(
     // Saveable so leaving for a tasting note / rack flow and backing out
     // returns to the same view: same search, same expanded card.
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    // Tapping the search field expands it to the full row width (the
+    // stats/filter buttons animate away) so long queries stay readable.
+    var searchFieldFocused by remember { mutableStateOf(false) }
     var searchExpanded by rememberSaveable { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showStatsDialog by remember { mutableStateOf(false) }
@@ -483,13 +492,21 @@ fun CellarScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
-                            onClick = { showStatsDialog = true },
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        AnimatedVisibility(
+                            visible = !searchFieldFocused,
+                            enter = fadeIn() + expandHorizontally(),
+                            exit = fadeOut() + shrinkHorizontally()
                         ) {
-                            Icon(Icons.Default.QueryStats, "Stats")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { showStatsDialog = true },
+                                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    Icon(Icons.Default.QueryStats, "Stats")
+                                }
+                                Spacer(Modifier.width(4.dp))
+                            }
                         }
-                        Spacer(Modifier.width(4.dp))
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -502,20 +519,30 @@ fun CellarScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .onFocusChanged { searchFieldFocused = it.isFocused },
                             shape = RoundedCornerShape(8.dp),
                             singleLine = true
                         )
-                        Spacer(Modifier.width(8.dp))
-                        IconButton(
-                            onClick = { showFilterSheet = true },
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        AnimatedVisibility(
+                            visible = !searchFieldFocused,
+                            enter = fadeIn() + expandHorizontally(),
+                            exit = fadeOut() + shrinkHorizontally()
                         ) {
-                            Icon(
-                                Icons.Default.Tune,
-                                "Filter & Sort",
-                                tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Spacer(Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = { showFilterSheet = true },
+                                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Tune,
+                                        "Filter & Sort",
+                                        tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                     Text(

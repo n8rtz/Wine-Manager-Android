@@ -1,6 +1,9 @@
 package com.n8rtz.winetracker.ui.screens
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -28,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -79,6 +83,8 @@ fun TastingNotesScreen(
     val locationData by tastingNoteViewModel.tastingNotesLocationData.collectAsState()
     val prices by tastingNoteViewModel.rankingsPrices.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    // Tapping the search field expands it to the full row width.
+    var searchFieldFocused by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var searchExpanded by rememberSaveable { mutableStateOf(false) }
     // Saveable so returning from a note's detail restores the open card.
@@ -211,7 +217,9 @@ fun TastingNotesScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { searchFieldFocused = it.isFocused },
                         placeholder = { Text("Search", maxLines = 1) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                         trailingIcon = {
@@ -228,16 +236,24 @@ fun TastingNotesScreen(
                             focusedContainerColor = MaterialTheme.colorScheme.surface
                         )
                     )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { showFilterSheet = true },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    AnimatedVisibility(
+                        visible = !searchFieldFocused,
+                        enter = fadeIn() + expandHorizontally(),
+                        exit = fadeOut() + shrinkHorizontally()
                     ) {
-                        Icon(
-                            Icons.Default.Tune,
-                            contentDescription = "Filter Notes",
-                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { showFilterSheet = true },
+                                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Icon(
+                                    Icons.Default.Tune,
+                                    contentDescription = "Filter Notes",
+                                    tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
                 }

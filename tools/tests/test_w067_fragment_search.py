@@ -68,3 +68,19 @@ class W067FragmentSearchTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExpandingSearchBarTests(unittest.TestCase):
+    def test_search_fields_expand_to_full_width_on_focus(self):
+        for relative in [
+            "ui/screens/CellarScreen.kt",
+            "ui/screens/TastingNotesScreen.kt",
+            "ui/screens/RankingsScreen.kt",
+        ]:
+            source = (APP / relative).read_text()
+            self.assertIn("var searchFieldFocused by remember", source, relative)
+            self.assertIn(".onFocusChanged { searchFieldFocused = it.isFocused }", source, relative)
+            # The neighbouring icon buttons animate away while focused.
+            self.assertIn("visible = !searchFieldFocused", source, relative)
+            self.assertIn("shrinkHorizontally()", source, relative)
+            self.assertIn("expandHorizontally()", source, relative)
