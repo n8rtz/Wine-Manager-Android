@@ -128,31 +128,3 @@ internal fun editDistanceAtMostOne(a: String, b: String): Boolean {
     if (i < a.length || j < b.length) edits++
     return edits <= 1
 }
-
-/**
- * Search-as-you-type suggestions (W-067): the best fragment matches as
- * (display label, query to apply) pairs. Shared by every search field
- * so they all behave the same. [wines] is (definition, vintage) pairs;
- * duplicates of the same wine+vintage collapse into one suggestion.
- */
-fun topWineSearchSuggestions(
-    query: String,
-    wines: List<Pair<WineDefinition, String?>>,
-    limit: Int = 6
-): List<Pair<String, String>> {
-    if (query.isBlank()) return emptyList()
-    return wines
-        .distinctBy { (definition, vintage) -> definition.definitionId to displayVintage(vintage) }
-        .mapNotNull { (definition, vintage) ->
-            scoreWineSearch(query, definition.searchDocument(vintage))?.let { score ->
-                Triple(definition, vintage, score)
-            }
-        }
-        .sortedBy { it.third }
-        .take(limit)
-        .map { (definition, vintage, _) ->
-            val vintageLabel = displayVintage(vintage)
-            "${definition.maker} - ${definition.name} ($vintageLabel)" to
-                "${definition.maker} ${definition.name} $vintageLabel"
-        }
-}

@@ -46,31 +46,25 @@ class W067FragmentSearchTests(unittest.TestCase):
             self.assertNotIn("maker.contains(searchQuery", (APP / relative).read_text())
             self.assertNotIn("maker.contains(query", (APP / relative).read_text())
 
-    def test_suggestions_are_wired_into_every_wine_search(self):
-        matcher = (APP / "data/local/WineSearch.kt").read_text()
-        self.assertIn("fun topWineSearchSuggestions(", matcher)
+    def test_suggestion_dropdowns_are_removed(self):
+        # The dropdown added no information (names/vintages were cut
+        # off) and covered the cards, so it was removed everywhere.
         for relative in [
+            "data/local/WineSearch.kt",
+            "ui/components/FloatingSearchFilterControls.kt",
             "ui/screens/CellarScreen.kt",
             "ui/screens/TastingNotesScreen.kt",
             "ui/screens/RankingsScreen.kt",
+            "viewmodels/RankingsViewModel.kt",
         ]:
             source = (APP / relative).read_text()
-            self.assertIn("SearchSuggestionList(", source, relative)
-            self.assertIn("onSuggestionPick = { query ->", source, relative)
-        # Rankings suggestions come from the unfiltered rated wines.
-        view_model = (APP / "viewmodels/RankingsViewModel.kt").read_text()
-        self.assertIn("val rankingsSearchSuggestions", view_model)
-        self.assertIn("topWineSearchSuggestions(", view_model)
+            self.assertNotIn("SearchSuggestionList", source, relative)
+            self.assertNotIn("topWineSearchSuggestions", source, relative)
+            self.assertNotIn("rankingsSearchSuggestions", source, relative)
 
-    def test_cellar_suggestions_are_wired(self):
+    def test_cellar_search_has_a_one_tap_clear(self):
         cellar = (APP / "ui/screens/CellarScreen.kt").read_text()
-        self.assertIn("val searchSuggestions = remember", cellar)
-        self.assertIn("SearchSuggestionList(", cellar)
-        self.assertIn("onSuggestionPick = { query ->", cellar)
-        controls = (APP / "ui/components/FloatingSearchFilterControls.kt").read_text()
-        self.assertIn("fun SearchSuggestionList(", controls)
-        self.assertIn("suggestions: List<Pair<String, String>> = emptyList()", controls)
-
+        self.assertIn('Icon(Icons.Default.Clear, contentDescription = "Clear search")', cellar)
 
 if __name__ == "__main__":
     unittest.main()

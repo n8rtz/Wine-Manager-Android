@@ -28,7 +28,6 @@ import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.ui.components.WineCard
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
 import com.n8rtz.winetracker.ui.components.EmptyState
-import com.n8rtz.winetracker.ui.components.SearchSuggestionList
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import kotlinx.coroutines.launch
 
@@ -42,10 +41,6 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
     val rankingsLocationData by viewModel.rankingsLocationData.collectAsState()
     val rankingsPrices by viewModel.rankingsPrices.collectAsState()
     val searchQuery by viewModel.rankingsSearchQuery.collectAsState()
-    val searchSuggestions by viewModel.rankingsSearchSuggestions.collectAsState()
-    var pickedSuggestionQuery by remember { mutableStateOf<String?>(null) }
-    val showSearchSuggestions = searchQuery.isNotBlank() &&
-        searchSuggestions.isNotEmpty() && searchQuery != pickedSuggestionQuery
     var showFilterSheet by remember { mutableStateOf(false) }
     var searchExpanded by remember { mutableStateOf(false) }
     // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
@@ -122,16 +117,6 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                         )
                     }
                 }
-                if (showSearchSuggestions) {
-                    SearchSuggestionList(
-                        suggestions = searchSuggestions,
-                        onPick = { query ->
-                            viewModel.updateRankingsSearchQuery(query)
-                            pickedSuggestionQuery = query
-                        },
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
                 }
             }
             if (rankedWines.isEmpty()) {
@@ -180,11 +165,6 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                 onCloseSearch = { searchExpanded = false },
                 onOpenFilters = { showFilterSheet = true },
                 filterActive = isFilterActive,
-                suggestions = if (showSearchSuggestions) searchSuggestions else emptyList(),
-                onSuggestionPick = { query ->
-                    viewModel.updateRankingsSearchQuery(query)
-                    pickedSuggestionQuery = query
-                },
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         }

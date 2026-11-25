@@ -8,7 +8,6 @@ import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.displayVintage
 import com.n8rtz.winetracker.data.local.scoreWineSearch
 import com.n8rtz.winetracker.data.local.searchDocument
-import com.n8rtz.winetracker.data.local.topWineSearchSuggestions
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.ui.screens.RankingsFilterState
 import kotlinx.coroutines.flow.*
@@ -106,22 +105,6 @@ class RankingsViewModel(application: Application, val repository: WineRepository
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyMap()
         )
-
-    // Search-as-you-type suggestions from all rated wines, before the
-    // search filter itself narrows the list.
-    val rankingsSearchSuggestions: StateFlow<List<Pair<String, String>>> = combine(
-        tastingHistory,
-        rankingsSearchQuery
-    ) { history, query ->
-        topWineSearchSuggestions(
-            query,
-            history.filter { it.note.rating > 0 }.map { it.definition to it.note.vintage }
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
 
     val filteredRankings: StateFlow<List<RankedWineDisplay>> = combine(
         tastingHistory,

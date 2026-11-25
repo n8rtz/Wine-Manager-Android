@@ -1,7 +1,6 @@
 package com.n8rtz.winetracker.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,44 +32,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-
-/**
- * Search-as-you-type suggestions (W-067): (display label, query to
- * apply) pairs, best fragment matches first. Tapping one applies its
- * query.
- */
-@Composable
-fun SearchSuggestionList(
-    suggestions: List<Pair<String, String>>,
-    onPick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (suggestions.isEmpty()) return
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp
-    ) {
-        Column {
-            suggestions.forEachIndexed { index, (label, query) ->
-                Text(
-                    label,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onPick(query) }
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                )
-                if (index < suggestions.lastIndex) HorizontalDivider()
-            }
-        }
-    }
-}
 
 /**
  * Vertically stacked upper-right buttons for when the list's own top search row has scrolled away. Opening the
@@ -87,9 +48,7 @@ fun FloatingSearchFilterControls(
     onCloseSearch: () -> Unit,
     onOpenFilters: () -> Unit,
     filterActive: Boolean,
-    modifier: Modifier = Modifier,
-    suggestions: List<Pair<String, String>> = emptyList(),
-    onSuggestionPick: (String) -> Unit = {}
+    modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         if (searchExpanded) {
@@ -130,13 +89,6 @@ fun FloatingSearchFilterControls(
                 IconButton(onClick = onCloseSearch) {
                     Icon(Icons.Default.Close, "Close search")
                 }
-            }
-            if (suggestions.isNotEmpty()) {
-                SearchSuggestionList(
-                    suggestions = suggestions,
-                    onPick = onSuggestionPick,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
             }
             }
         } else {

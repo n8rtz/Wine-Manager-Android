@@ -32,7 +32,6 @@ import com.n8rtz.winetracker.drinkingwindow.WineDescription
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
-import com.n8rtz.winetracker.ui.components.SearchSuggestionList
 import com.n8rtz.winetracker.ui.components.EmptyState
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.screens.CellarFilterState
@@ -353,18 +352,6 @@ fun CellarScreen(
         }
     }
 
-    // Search-as-you-type suggestions (W-067): the six best fragment
-    // matches; tapping one applies that wine as the query.
-    val searchSuggestions = remember(inventory, searchQuery) {
-        com.n8rtz.winetracker.data.local.topWineSearchSuggestions(
-            searchQuery,
-            inventory.map { it.definition to it.bottle.vintage }
-        )
-    }
-    var pickedSuggestionQuery by remember { mutableStateOf<String?>(null) }
-    val showSearchSuggestions = searchQuery.isNotBlank() &&
-        searchSuggestions.isNotEmpty() && searchQuery != pickedSuggestionQuery
-
     val filteredInventory = remember(inventory, searchQuery, filterState, ratingSortMap, cellarSearchScores) {
         inventory.filter {
             val matchesSearch = searchQuery.isBlank() || cellarSearchScores.containsKey(it.bottle.bottleId)
@@ -508,6 +495,13 @@ fun CellarScreen(
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Search", maxLines = 1) },
                             leadingIcon = { Icon(Icons.Default.Search, null) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                                    }
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(8.dp),
                             singleLine = true
@@ -523,16 +517,6 @@ fun CellarScreen(
                                 tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                    if (showSearchSuggestions) {
-                        SearchSuggestionList(
-                            suggestions = searchSuggestions,
-                            onPick = { query ->
-                                searchQuery = query
-                                pickedSuggestionQuery = query
-                            },
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
                     }
                     Text(
                         text = "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}",
@@ -767,11 +751,6 @@ fun CellarScreen(
                 onCloseSearch = { searchExpanded = false },
                 onOpenFilters = { showFilterSheet = true },
                 filterActive = isFilterActive,
-                suggestions = if (showSearchSuggestions) searchSuggestions else emptyList(),
-                onSuggestionPick = { query ->
-                    searchQuery = query
-                    pickedSuggestionQuery = query
-                },
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         }

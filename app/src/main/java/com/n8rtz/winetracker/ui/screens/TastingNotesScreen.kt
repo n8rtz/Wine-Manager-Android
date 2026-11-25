@@ -41,11 +41,9 @@ import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.matchesAromaQuery
 import com.n8rtz.winetracker.data.local.scoreWineSearch
 import com.n8rtz.winetracker.data.local.searchDocument
-import com.n8rtz.winetracker.data.local.topWineSearchSuggestions
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
-import com.n8rtz.winetracker.ui.components.SearchSuggestionList
 import com.n8rtz.winetracker.ui.components.AromaChips
 import com.n8rtz.winetracker.ui.components.PhaseAromaCloud
 import com.n8rtz.winetracker.ui.components.ratingColor
@@ -159,17 +157,6 @@ fun TastingNotesScreen(
 
     // Opening search or changing a filter keeps the list exactly where it is.
 
-    // Search-as-you-type suggestions (W-067), same as Cellar.
-    val searchSuggestions = remember(history, searchQuery) {
-        topWineSearchSuggestions(
-            searchQuery,
-            history.map { it.definition to it.note.vintage }
-        )
-    }
-    var pickedSuggestionQuery by remember { mutableStateOf<String?>(null) }
-    val showSearchSuggestions = searchQuery.isNotBlank() &&
-        searchSuggestions.isNotEmpty() && searchQuery != pickedSuggestionQuery
-
     val groupedHistory = remember(filteredHistory) {
         filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .values.toList()
@@ -253,16 +240,6 @@ fun TastingNotesScreen(
                         )
                     }
                 }
-                if (showSearchSuggestions) {
-                    SearchSuggestionList(
-                        suggestions = searchSuggestions,
-                        onPick = { query ->
-                            searchQuery = query
-                            pickedSuggestionQuery = query
-                        },
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
                 }
             }
             if (groupedHistory.isEmpty()) {
@@ -318,11 +295,6 @@ fun TastingNotesScreen(
                 onCloseSearch = { searchExpanded = false },
                 onOpenFilters = { showFilterSheet = true },
                 filterActive = isFilterActive,
-                suggestions = if (showSearchSuggestions) searchSuggestions else emptyList(),
-                onSuggestionPick = { query ->
-                    searchQuery = query
-                    pickedSuggestionQuery = query
-                },
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         }
