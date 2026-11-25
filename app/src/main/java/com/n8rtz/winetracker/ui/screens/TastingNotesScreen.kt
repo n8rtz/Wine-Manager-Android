@@ -98,12 +98,28 @@ fun TastingNotesScreen(
             filterState.country != null || filterState.region != null || filterState.subregion != null ||
             filterState.priceRange != null || filterState.aromaQuery.isNotBlank() || filterState.aromaPhase != null
 
-    val filteredHistory = remember(history, searchQuery, filterState, prices) {
+    // Precomputed fragment-search documents and scores (W-067): typing
+    // used to re-normalise every wine's fields on every keystroke (and
+    // again inside the sort comparator), which made search laggy.
+    val notesSearchDocuments = remember(history) {
+        history.associate { it.note.noteId to it.definition.searchDocument(it.note.vintage) }
+    }
+    val notesSearchScores = remember(history, searchQuery, notesSearchDocuments) {
+        if (searchQuery.isBlank()) {
+            emptyMap()
+        } else {
+            history.mapNotNull { item ->
+                val document = notesSearchDocuments[item.note.noteId]
+                    ?: item.definition.searchDocument(item.note.vintage)
+                scoreWineSearch(searchQuery, document)?.let { item.note.noteId to it }
+            }.toMap()
+        }
+    }
+
+    val filteredHistory = remember(history, searchQuery, filterState, prices, notesSearchScores) {
         history.filter { item ->
-            // Fragment search (W-067): every query word can hit a
-            // different field, in any order.
-            val matchesSearch = searchQuery.isBlank() ||
-                    scoreWineSearch(searchQuery, item.definition.searchDocument(item.note.vintage)) != null
+            // Fragment search (W-067), scored once above.
+            val matchesSearch = searchQuery.isBlank() || notesSearchScores.containsKey(item.note.noteId)
 
             val matchesType = filterState.types.isEmpty() || item.definition.type in filterState.types
             
@@ -134,8 +150,8 @@ fun TastingNotesScreen(
         }.sortedWith { a, b ->
             // While searching, best fragment match first.
             if (searchQuery.isNotBlank()) {
-                val scoreA = scoreWineSearch(searchQuery, a.definition.searchDocument(a.note.vintage)) ?: Int.MAX_VALUE
-                val scoreB = scoreWineSearch(searchQuery, b.definition.searchDocument(b.note.vintage)) ?: Int.MAX_VALUE
+                val scoreA = notesSearchScores[a.note.noteId] ?: Int.MAX_VALUE
+                val scoreB = notesSearchScores[b.note.noteId] ?: Int.MAX_VALUE
                 if (scoreA != scoreB) return@sortedWith scoreA.compareTo(scoreB)
             }
             val priceA = prices[Pair(a.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(a.note.vintage))] ?: 0.0
@@ -357,6 +373,11 @@ fun CompactNoteItem(
     val latestNoteId = remember(group) {
         group.maxByOrNull { it.note.dateTasted }?.note?.noteId ?: firstItem.note.noteId
     }
+    // Bottom row of the card: the most recent note's date, MM/dd/yyyy.
+    val bottomDateFormat = remember { java.text.SimpleDateFormat("MM/dd/yyyy", java.util.Locale.US) }
+    val mostRecentNoteDate = remember(group) {
+        group.maxByOrNull { it.note.dateTasted }?.note?.dateTasted
+    }
     com.n8rtz.winetracker.ui.components.WineCard(
         title = run {
             "${firstItem.definition.maker} - ${firstItem.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)})"
@@ -372,6 +393,7 @@ fun CompactNoteItem(
         imageUrl = firstItem.definition.imageUrl.takeIf { firstItem.imageAsset == null },
         imageLocalPath = firstItem.imageAsset?.relativePath,
         rating = rating,
+        dateAdded = mostRecentNoteDate?.let { bottomDateFormat.format(Date(it)) },
         isExpanded = expanded,
         onExpandToggle = onExpandToggle,
         onClick = onExpandToggle,

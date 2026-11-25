@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.BorderStroke
@@ -343,6 +346,46 @@ fun MainAppScaffold(
         if (menuHistory.lastOrNull() != route) menuHistory = menuHistory + route
         navigateToTab(navController, route)
     }
+    // Swipe between the main screens (Cellar, Notes, History, Rankings,
+    // Profile), mirroring the Bottles/Racks swipe in the cellar. The
+    // observer runs on the Final pointer pass: horizontal drags a child
+    // already consumed (the cellar pager, note-card date tabs, History
+    // tabs) are ignored, so only unclaimed swipes change the main tab.
+    val currentRouteState = rememberUpdatedState(currentRoute)
+    val navigateToMenuState = rememberUpdatedState { route: String -> navigateToMenu(route) }
+    val tabSwipeModifier = Modifier.pointerInput(Unit) {
+        val thresholdPx = 72.dp.toPx()
+        awaitPointerEventScope {
+            var downPosition: Offset? = null
+            var downConsumed = false
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Final)
+                val change = event.changes.firstOrNull() ?: continue
+                if (change.pressed && !change.previousPressed) {
+                    downPosition = change.position
+                    downConsumed = change.isConsumed
+                } else if (change.pressed && change.isConsumed) {
+                    downConsumed = true
+                } else if (!change.pressed && change.previousPressed) {
+                    val start = downPosition
+                    downPosition = null
+                    if (start == null || downConsumed || change.isConsumed) continue
+                    val route = currentRouteState.value ?: continue
+                    val index = TOP_LEVEL_MENU_ORDER.indexOf(route)
+                    if (index < 0) continue
+                    val delta = change.position - start
+                    if (kotlin.math.abs(delta.x) < thresholdPx) continue
+                    if (kotlin.math.abs(delta.x) < kotlin.math.abs(delta.y) * 1.5f) continue
+                    val target = if (delta.x < 0) {
+                        TOP_LEVEL_MENU_ORDER.getOrNull(index + 1)
+                    } else {
+                        TOP_LEVEL_MENU_ORDER.getOrNull(index - 1)
+                    }
+                    if (target != null) navigateToMenuState.value(target)
+                }
+            }
+        }
+    }
     val hasPreviousMenu = menuHistory.size > 1
     BackHandler(enabled = isMenuExpanded || currentRoute != null && (currentRoute !in TOP_LEVEL_MENU_ROUTES || hasPreviousMenu)) {
         if (isMenuExpanded) {
@@ -511,7 +554,7 @@ fun MainAppScaffold(
         NavHost(
             navController = navController,
             startDestination = "cellar",
-            modifier = Modifier.padding(padding).fillMaxSize()
+            modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier)
         ) {
             composable("cellar") {
                 CellarScreen(
@@ -888,6 +931,9 @@ private fun StartupDbErrorScreen(detail: String, onRetry: () -> Unit) {
 }
 
 private val TOP_LEVEL_MENU_ROUTES = setOf("cellar", "notes", "history", "rankings", "profile")
+
+/** Bottom-bar order, for left/right swipe navigation between main screens. */
+private val TOP_LEVEL_MENU_ORDER = listOf("cellar", "notes", "history", "rankings", "profile")
 
 private fun navigateToTab(navController: androidx.navigation.NavHostController, route: String) {
     Log.d("WineTracker", "navigateToTab: target=$route")
