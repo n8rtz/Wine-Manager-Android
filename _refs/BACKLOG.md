@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-067**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-068**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -95,6 +95,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 11 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
 | 12 | W-065 | Wine-card UI cleanup: improve layout and rating prominence | M | Open — logged only; do not implement yet | TBD |
 | 13 | W-066 | Ratings dot plot (Fed-style): one dot per wine, coloured by wine type | M | Open — logged only; do not implement yet | TBD |
+| 14 | W-067 | Global fragment search: tokenised, cross-field, typo-tolerant wine search (Cellar first) | M | Open — logged only; do not implement yet | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 *(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
@@ -372,6 +373,20 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **UI-Trigger / Location:** TBD with the owner (candidates: Rankings, the Pareto/analytics area, or its own chart view).
 * **Design needed before implementation:** which rating represents a wine with several tasting notes (most recent is the app convention), the rating axis range/buckets, how sparkling/other types are coloured, and whether dot tap should jump to the wine. Record this feature only; do not build it until the owner asks to work on W-066.
 * **Extension — two-group comparison (owner, 2026-11-10):** advanced analytics filters let the owner define two groups and overlay their dot plots on the same axes to compare rating distributions — e.g. red vs white, France vs Spain, bottles under $10 vs $15–20 bottles. Group definitions can combine the app's existing filter dimensions (wine type, country/region, price range, and similar). Design questions for implementation time: how the two overlaid groups stay visually distinguishable when dots share the type colouring (e.g. shape/opacity split, or group colour replacing type colour in compare mode), whether groups are mutually exclusive or may overlap, and whether more than two groups are ever needed (owner specified two).
+
+### 14. W-067 — Global fragment / dynamic wine search *(logged 2026-11-11)*
+**Complexity:** M (one shared pure-JVM matcher + call-site swaps; no schema change) · **Status:** Open — logged only; do not implement yet
+* **Problem (owner, 2026-11-11):** In a store, searching the Cellar for "Kirkland Chablis" returned nothing because the wine is stored as maker "Kirkland Signature" + name "Chablis". Cellar search today (`CellarScreen.kt`, `matchesSearch`) is a single-phrase substring test against maker OR name separately, so a query whose words are split across fields — or reordered, abbreviated or slightly mistyped — can never match. The same single-phrase logic is duplicated in Notes (`TastingNotesScreen.kt`) and Rankings (`RankingsViewModel.kt`).
+* **Goal:** A powerful global search that takes fragments and pieces them together: every word the user types must be found *somewhere* in the wine (maker, name, vintage, type, country/region/subregion), in any order, across field boundaries.
+* **Precedent in codebase:** `AromaTaxonomy.search()` already tokenises the query, diacritic-folds text (`fold()` via `Normalizer` NFD + strip marks), requires all tokens to match, and ranks hits — the wine search should follow the same pattern so the app has one search philosophy.
+* **Plan framework:**
+  1. **Shared matcher (pure JVM, unit-testable):** e.g. `data/local/WineSearch.kt` with `normalizeSearchText()` (lowercase, strip diacritics so "chateau" finds "Château", drop punctuation/apostrophes, collapse whitespace), a per-wine `WineSearchDocument` (precomputed normalised word list built once from maker/name/vintage/type/country/region/subregion), and `scoreWineSearch(queryTokens, document): Int?` (null = no match).
+  2. **Matching tiers per token** (best first): exact word → word prefix ("chab" → "Chablis") → substring → fuzzy (edit distance ≤1, only for tokens of length ≥5, e.g. "chabls"). A wine matches when *every* query token matches at some tier (AND semantics across the whole document, not per field).
+  3. **Ranking:** exact-phrase boost, then sum of token tiers (name/maker word hits outrank location hits, prefixes outrank substrings outrank fuzzy). While a query is active, sort by score; keep the user's chosen sort as tie-break / when the query is blank.
+  4. **Rollout order:** Phase 1 Cellar (the in-store use case) → Phase 2 Notes + Rankings + editor wine picker (`matchingWineChoices`) → Phase 3 suggestion dropdown under the Cellar search field (top matches as you type) if the owner wants it.
+  5. **Tests:** pure-JVM tests over a fixed corpus — "Kirkland Chablis", reversed "Chablis Kirkland", abbreviation "kirk sig", accent "chateau" vs "Château", typo "chablis"→"chabls", vintage "2019 chablis" — plus Python source contracts for each call site using the shared matcher (no remaining `maker.contains(searchQuery` single-phrase checks).
+* **Open decisions for implementation time:** whether fuzzy matching is on by default (risk: surprising matches); whether type/region tokens should count ("french red"); relevance sort vs respecting the user's sort while searching; how far suggestions go (plain ranked list vs dropdown UI).
+* **Owner instruction:** Record this plan only. Do not build it until the owner asks to work on W-067.
 
 ---
 
