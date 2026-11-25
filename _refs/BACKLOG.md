@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-068**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-069**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -96,6 +96,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 12 | W-065 | Wine-card UI cleanup: improve layout and rating prominence | M | Open — logged only; do not implement yet | TBD |
 | 13 | W-066 | Ratings dot plot (Fed-style): one dot per wine, coloured by wine type | M | Open — logged only; do not implement yet | TBD |
 | 14 | W-067 | Global fragment search: tokenised, cross-field, typo-tolerant wine search (Cellar first) | M | Implemented — Android build/device check pending | TBD |
+| 15 | W-068 | Welcome tour overlays for new users (feature coach marks: aroma wheel, chips, pinch-resize, racks…) | L | Open — logged only; do not implement yet | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 *(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
@@ -388,6 +389,26 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Open decisions for implementation time:** whether fuzzy matching is on by default (risk: surprising matches); whether type/region tokens should count ("french red"); relevance sort vs respecting the user's sort while searching; how far suggestions go (plain ranked list vs dropdown UI).
 * **Owner instruction:** Record this plan only. Do not build it until the owner asks to work on W-067.
 * **As built (2026-11-11):** shared matcher in `data/local/WineSearch.kt` (`normalizeSearchText`, `WineSearchDocument`, `scoreWineSearch`; tiers exact/prefix/substring/fuzzy≤1 for tokens ≥5 chars, diacritic folding, phrase bonus, maker/name fields weigh first). Wired into Cellar (precomputed documents + relevance-first sort while searching), Notes, Rankings, note-editor wine picker, and Add Wine producer suggestions. Search-as-you-type suggestions (top 6, best first, shared `topWineSearchSuggestions`) appear under the search field and the floating search field in Cellar, Tasting Notes and Rankings (Rankings' come from the unfiltered rated wines via `rankingsSearchSuggestions`); tapping one applies that wine as the query. The note-editor wine picker and Add Wine producer field already had dropdown suggestions and now rank by fragment score too. JVM tests in `WineSearchTest.kt` cover the store case; Python contracts in `tools/tests/test_w067_fragment_search.py`. Decisions taken: fuzzy on by default (long tokens only), type/country/region tokens count, relevance sort while a query is active with the user's sort as tie-break.
+
+### 15. W-068 — Welcome tour overlays for new users *(logged 2026-11-11)*
+**Complexity:** L (app-wide overlay system + per-screen targets + persisted progress; no schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** When a new user first opens the app, a guided welcome tour walks them through the features and nuances that aren't self-evident — spotlighting the actual UI elements (dimmed overlay, highlighted control, short caption, Next/Skip) instead of a wall of text. Existing users should never be nagged; the tour runs once, can be skipped at any step, and can be replayed on demand.
+* **UI-Trigger / Location:** App-wide. First-run trigger from `MainActivity` hosting (after first data load); replay entry in Profile/Settings ("Replay welcome tour"). Steps anchored to real controls on Cellar, tasting note view/edit, aroma wheel, Notes and Racks screens.
+* **Candidate stops (owner examples first):**
+  1. **Aroma wheel** — tap segments to pick aromas; list/wheel toggle; selected chips float at the top; Done saves.
+  2. **Aroma chips in the note** — chips are grouped into Uncategorized/Aroma/Entry/Mid-palate/Finish sections; long-press calls up aroma edit mode (chips wiggle) and chips can be dragged into a section.
+  3. **Chip resizing** — two-finger pinch on/near a chip grows/shrinks it (aroma intensity); deleting via the ✕ shown in edit mode, with Undo.
+  4. **Cellar basics** — fragment search (type partial words, suggestions appear), long-press to select wines, racks (switch to Racks tab, assign wines), expanded card layout (Aromas → bottle controls → Racks).
+  5. **Tasting note flow** — date tabs on note cards, Overall Score and Value sliders, edit pencil on the note view.
+  6. **Wrap-up** — where Settings/Profile, backup and this tour's replay live.
+* **Implementation framework (suggested):**
+  1. **Tour engine (shared component):** a `TourOverlay` composable — full-screen scrim with a cut-out/highlight over a target's bounds (targets register their root bounds via `onGloballyPositioned`, the same technique already used for aroma chip drag drop-targets), caption card anchored near the target, Back/Next/Skip/Done controls. Pure state machine: `TourStep(id, screen, targetKey, title, body)`.
+  2. **Step registry:** steps declared per screen and filtered to those whose target exists (e.g. skip rack steps when no racks; skip chip steps until a note has aromas), so the tour adapts and never points at nothing.
+  3. **Persistence:** `tour_completed` / per-step progress in SharedPreferences (follow the existing `cellar_racks_v1` prefs pattern); app version bump re-offers only *new* steps, never the whole tour again.
+  4. **First-run gating:** show after the very first successful load; "Skip tour" always visible; replay from Profile resets progress. Consider a tiny sample/demo state so the aroma steps have a note with chips to point at, or gate those steps on the user creating their first note.
+  5. **Copy & design pass:** one sentence per stop, verb-first ("Pinch a chip to size it by intensity"); visual style follows existing floating surfaces (surface @ ~92% alpha, 4dp elevation).
+* **Open decisions for implementation time:** tour length (all stops at once vs per-screen mini-tours triggered on first visit to each screen — the latter is likely better), whether steps are interactive ("try it: long-press this chip") or passive, demo data vs gating on real content, and whether existing installs (owner) see it once or only via Replay.
+* **Owner instruction:** Record this feature only. Do not build it until the owner asks to work on W-068.
 
 ---
 
