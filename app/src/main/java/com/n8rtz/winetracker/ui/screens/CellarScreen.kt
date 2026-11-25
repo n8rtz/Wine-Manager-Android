@@ -443,6 +443,12 @@ fun CellarScreen(
             filterState.sortField != CellarSortField.DATE_ADDED || filterState.sortAscending ||
             filterState.drinkingWindowFilter != "Any" || filterState.drinkingWindowRange != null
     val displayedBottleCount = remember(filteredInventory) { filteredInventory.sumOf { it.bottle.quantity } }
+    val displayedWineCount = remember(filteredInventory) {
+        filteredInventory.distinctBy {
+            it.definition.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.bottle.vintage)
+        }.size
+    }
+    val cellarCountShowsBottles by viewModel.cellarCountShowsBottles.collectAsState()
     val formattedDatesMap = remember(filteredInventory, dateFormat, parseFormat) {
         filteredInventory.associate { item ->
             val formatted = item.bottle.dateAdded?.let {
@@ -546,7 +552,11 @@ fun CellarScreen(
                         }
                     }
                     Text(
-                        text = "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}",
+                        text = if (cellarCountShowsBottles) {
+                            "Showing $displayedBottleCount ${if (displayedBottleCount == 1) "bottle" else "bottles"}"
+                        } else {
+                            "Showing $displayedWineCount ${if (displayedWineCount == 1) "wine" else "wines"}"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)

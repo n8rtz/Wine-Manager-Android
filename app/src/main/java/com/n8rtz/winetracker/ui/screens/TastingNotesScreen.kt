@@ -256,6 +256,15 @@ fun TastingNotesScreen(
                         }
                     }
                 }
+                Text(
+                    text = "Showing ${groupedHistory.size} " +
+                        "${if (groupedHistory.size == 1) "wine" else "wines"} " +
+                        "(${filteredHistory.size} tasting " +
+                        "${if (filteredHistory.size == 1) "note" else "notes"})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                )
                 }
             }
             if (groupedHistory.isEmpty()) {

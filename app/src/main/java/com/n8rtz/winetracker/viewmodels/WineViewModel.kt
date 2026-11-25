@@ -71,6 +71,21 @@ class WineViewModel(application: Application, val repository: WineRepository) : 
     private val _defaultCellarSort = MutableStateFlow(loadDefaultCellarSort())
     val defaultCellarSort: StateFlow<CellarFilterState> = _defaultCellarSort.asStateFlow()
 
+    // Whether the "Showing X" line under the Cellar search bar counts
+    // bottles (sum of quantities) or wines (distinct wines). Bottles by
+    // default; persisted across launches.
+    private val _cellarCountShowsBottles = MutableStateFlow(
+        settingsPreferences.getBoolean("cellar_count_shows_bottles", true)
+    )
+    val cellarCountShowsBottles: StateFlow<Boolean> = _cellarCountShowsBottles.asStateFlow()
+
+    fun setCellarCountShowsBottles(showsBottles: Boolean) {
+        _cellarCountShowsBottles.value = showsBottles
+        settingsPreferences.edit()
+            .putBoolean("cellar_count_shows_bottles", showsBottles)
+            .apply()
+    }
+
     private fun loadDefaultCellarSort(): CellarFilterState {
         val field = runCatching {
             CellarSortField.valueOf(

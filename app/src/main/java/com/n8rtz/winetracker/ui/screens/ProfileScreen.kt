@@ -71,6 +71,8 @@ fun ProfileScreen(
     var showReviewerSettings by remember { mutableStateOf(false) }
     val defaultCellarSort by viewModel.defaultCellarSort.collectAsState()
     var showDefaultSortSettings by remember { mutableStateOf(false) }
+    val cellarCountShowsBottles by viewModel.cellarCountShowsBottles.collectAsState()
+    var showCountDisplaySettings by remember { mutableStateOf(false) }
     var reviewerDraft by remember { mutableStateOf(emptyList<String>()) }
     var newReviewer by remember { mutableStateOf("") }
 
@@ -240,6 +242,33 @@ fun ProfileScreen(
                             )
                         },
                         modifier = Modifier.fillMaxWidth().clickable { showDefaultSortSettings = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    ListItem(
+                        headlineContent = { Text("Cellar count display") },
+                        supportingContent = {
+                            Text(
+                                if (cellarCountShowsBottles) {
+                                    "The Cellar shows \"Showing X bottles\""
+                                } else {
+                                    "The Cellar shows \"Showing X wines\""
+                                }
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = null,
+                                tint = bordeauxRed
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable { showCountDisplaySettings = true }
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -458,6 +487,38 @@ fun ProfileScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showDefaultSortSettings = false }) { Text("Done") }
+            }
+        )
+    }
+
+    if (showCountDisplaySettings) {
+        AlertDialog(
+            onDismissRequest = { showCountDisplaySettings = false },
+            title = { Text("Cellar count display") },
+            text = {
+                Column {
+                    Text(
+                        "Choose what the line under the Cellar search bar counts while filtering or searching.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    listOf(true to "Bottles", false to "Wines").forEach { (showsBottles, label) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                viewModel.setCellarCountShowsBottles(showsBottles)
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = cellarCountShowsBottles == showsBottles,
+                                onClick = { viewModel.setCellarCountShowsBottles(showsBottles) }
+                            )
+                            Text(label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCountDisplaySettings = false }) { Text("Done") }
             }
         )
     }
