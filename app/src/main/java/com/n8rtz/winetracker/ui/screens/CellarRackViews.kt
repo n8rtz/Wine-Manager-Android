@@ -535,9 +535,12 @@ internal fun CellarRacks(
                         val selectionMode = selectedForRemoval.isNotEmpty()
                         val isSelected = item.bottle.bottleId in selectedForRemoval
                         WineCard(
-                            title = "${item.definition.maker} - ${item.definition.name} ($vintage)",
-                            subtitle = listOfNotNull(item.definition.subregion, item.definition.region, item.definition.country)
-                                .filter { it.isNotBlank() && !it.equals("null", true) }.joinToString(", "),
+                            producer = item.definition.maker,
+                            wineName = item.definition.name,
+                            vintage = vintage,
+                            subregion = item.definition.subregion,
+                            region = item.definition.region,
+                            country = item.definition.country,
                             type = item.definition.type,
                             metadata = "Qty: ${item.bottle.quantity}",
                             imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },

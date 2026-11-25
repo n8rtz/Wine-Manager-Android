@@ -575,13 +575,12 @@ fun CellarScreen(
 
                 Box(modifier = Modifier.fillMaxWidth()) {
                 WineCard(
-                    title = "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.bottle.vintage)})",
-                    subtitle = run {
-                        val validSub = item.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                        val validRegion = item.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                        val validCountry = item.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                        listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
-                    },
+                    producer = item.definition.maker,
+                    wineName = item.definition.name,
+                    vintage = displayVintage,
+                    subregion = item.definition.subregion,
+                    region = item.definition.region,
+                    country = item.definition.country,
                     type = item.definition.type,
                     metadata = "Cellar: ${item.bottle.quantity}",
                     imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },

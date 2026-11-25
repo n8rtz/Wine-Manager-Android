@@ -35,8 +35,12 @@ import java.io.File
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WineCard(
-    title: String,
-    subtitle: String,
+    producer: String,
+    wineName: String,
+    vintage: String,
+    subregion: String? = null,
+    region: String? = null,
+    country: String? = null,
     type: String,
     metadata: String,
     imageUrl: String? = null,
@@ -67,7 +71,7 @@ fun WineCard(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .semantics { contentDescription = "$title, $type wine" },
+            .semantics { contentDescription = "$producer $wineName, $type wine" },
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = stripeColor)
@@ -80,25 +84,62 @@ fun WineCard(
             Row(
                 modifier = Modifier.fillMaxWidth()
                     .padding(start = 12.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                // Top-anchored so the trailing stack (add-to-rack icon
+                // first) starts at the same spot regardless of how tall
+                // the text column or rating box makes the card.
+                verticalAlignment = Alignment.Top
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    // Card text is never cut off: a long maker/name or
-                    // place line wraps onto as many lines as it needs
-                    // instead of ellipsising mid-word.
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                    if (subtitle.isNotBlank()) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    // Standardized card layout, one field per line:
+                    //   Producer -
+                    //   Name
+                    //   (Vintage)
+                    //   Subregion, Region   (or just Region)
+                    //   Country
+                    //   metadata (e.g. "Cellar: X")
+                    // Blank fields omit their line entirely (no empty
+                    // lines, no large white gaps), and text is never cut
+                    // off: a long line wraps instead of ellipsising.
+                    fun valid(value: String?): String? =
+                        value?.takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) }
+                    valid(producer)?.let {
                         Text(
-                            text = subtitle,
+                            text = "$it -",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                    valid(wineName)?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                    valid(vintage)?.let {
+                        Text(
+                            text = "($it)",
                             style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    val place = listOfNotNull(valid(subregion), valid(region)).joinToString(", ")
+                    if (place.isNotBlank()) {
+                        Text(
+                            text = place,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    valid(country)?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     if (compactMetadata.isNotBlank()) {
-                        Spacer(Modifier.height(3.dp))
                         Text(
                             text = compactMetadata,
                             style = MaterialTheme.typography.labelSmall,
@@ -108,10 +149,13 @@ fun WineCard(
                     }
                 }
                 if (trailingAction != null || details != null || !rating.isNullOrBlank()) {
-                    // The whole rack-button / rating / caret stack sits a
-                    // little lower on the card than its natural position.
+                    // Fixed width, top-anchored: the add-to-rack icon
+                    // sits in the same spot on every card, whether there
+                    // is no rating, a single score, or a wide score range
+                    // from several reviews (the range box may overflow
+                    // this width, centred, without pushing the icon).
                     Column(
-                        modifier = Modifier.offset(y = 6.dp),
+                        modifier = Modifier.width(52.dp).offset(y = 6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         trailingAction?.invoke()
@@ -134,6 +178,7 @@ fun WineCard(
                             val ratingShape = RoundedCornerShape(6.dp)
                             Box(
                                 modifier = Modifier
+                                    .wrapContentWidth(Alignment.CenterHorizontally, unbounded = true)
                                     .padding(vertical = 2.dp)
                                     .clip(ratingShape)
                                     .then(

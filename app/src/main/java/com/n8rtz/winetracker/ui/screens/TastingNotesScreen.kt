@@ -379,15 +379,12 @@ fun CompactNoteItem(
         group.maxByOrNull { it.note.dateTasted }?.note?.dateTasted
     }
     com.n8rtz.winetracker.ui.components.WineCard(
-        title = run {
-            "${firstItem.definition.maker} - ${firstItem.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)})"
-        },
-        subtitle = run {
-            val validSub = firstItem.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-            val validRegion = firstItem.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-            val validCountry = firstItem.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-            listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
-        },
+        producer = firstItem.definition.maker,
+        wineName = firstItem.definition.name,
+        vintage = com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage),
+        subregion = firstItem.definition.subregion,
+        region = firstItem.definition.region,
+        country = firstItem.definition.country,
         type = firstItem.definition.type,
         metadata = if (price != null && price > 0.0) "$${"%.2f".format(price)}" else "",
         imageUrl = firstItem.definition.imageUrl.takeIf { firstItem.imageAsset == null },

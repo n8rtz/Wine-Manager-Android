@@ -145,15 +145,12 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                 items(rankedWines, key = { it.item.note.noteId }) { displayItem ->
                     val item = displayItem.item
                     WineCard(
-                        title = run {
-                            "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage)})"
-                        },
-                        subtitle = run {
-                            val validSub = item.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                            val validRegion = item.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                            val validCountry = item.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                            listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
-                        },
+                        producer = item.definition.maker,
+                        wineName = item.definition.name,
+                        vintage = com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage),
+                        subregion = item.definition.subregion,
+                        region = item.definition.region,
+                        country = item.definition.country,
                         type = item.definition.type,
                         metadata = displayItem.priceStr,
                         imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },

@@ -293,7 +293,7 @@ class CellarRacksUiTests(unittest.TestCase):
         # rating text is larger, and its bordered box is filled with the
         # colour assigned to the rating -- an ombre between the colours of
         # the lower and upper bounds for a rating range.
-        self.assertIn("Modifier.offset(y = 6.dp)", card)
+        self.assertIn("Modifier.width(52.dp).offset(y = 6.dp)", card)
         self.assertIn("style = MaterialTheme.typography.titleMedium", card)
         # The rating box outline is a neutral black/dark gray.
         self.assertNotIn("0xFF333333", card)  # rating box has no border; fill colour only
