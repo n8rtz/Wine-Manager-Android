@@ -104,7 +104,7 @@ fun WineCard(
                     // Styling hierarchy: the eye lands on the producer
                     // (largest, bold, full-contrast) and the wine name
                     // (next size down, semibold) first; vintage, place
-                    // and country are smaller, regular/italic and muted
+                    // and country are smaller, italic and muted
                     // so they read as secondary detail. Blank fields
                     // omit their line entirely (no empty lines, no large
                     // white gaps), and text is never cut off: a long
@@ -143,14 +143,14 @@ fun WineCard(
                     if (place.isNotBlank()) {
                         Text(
                             text = place,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     valid(country)?.let {
                         Text(
                             text = it,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

@@ -39,6 +39,9 @@ class CardLayoutTests(unittest.TestCase):
         self.assertIn("Spacer(Modifier.height(3.dp))", s)
         vintage_block = s.split("valid(vintage)?.let {", 1)[1].split("val place", 1)[0]
         self.assertIn("color = MaterialTheme.colorScheme.onSurfaceVariant", vintage_block)
+        # Geography lines (place + country) are italic too, like vintage:
+        # exactly three italic secondary lines on the card.
+        self.assertEqual(s.count("copy(fontStyle = FontStyle.Italic)"), 3)
 
     def test_cellar_count_line_anchors_to_card_bottom(self):
         s = CARD.read_text()
