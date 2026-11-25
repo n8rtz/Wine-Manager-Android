@@ -34,9 +34,14 @@ class MainSwipeTests(unittest.TestCase):
             self.assertIn("InnerPagerSwipeGate.blocksSwipeToNext = pagerState.currentPage < 1", src, screen)
             self.assertIn("InnerPagerSwipeGate.blocksSwipeToPrevious = pagerState.currentPage > 0", src, screen)
             self.assertIn("InnerPagerSwipeGate.reset()", src, screen)
-        # Main-tab switches animate: direction-aware slides on the NavHost.
+        # Main-tab switches animate with a shared-axis transition
+        # (quick fade-out, fade-in + 1/3-width slide) rather than a
+        # full-width slide, which kept both heavy screens rendering
+        # for the whole animation and looked laggy.
         self.assertIn("slideInHorizontally", source)
         self.assertIn("slideOutHorizontally", source)
+        self.assertIn("FastOutSlowInEasing", source)
+        self.assertIn("fadeOut(animationSpec = tween(90))", source)
 
 class CardTextTests(unittest.TestCase):
     def test_wine_card_never_truncates_text(self):

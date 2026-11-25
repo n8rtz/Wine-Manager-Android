@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
@@ -586,43 +587,51 @@ fun MainAppScaffold(
             navController = navController,
             startDestination = "cellar",
             modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier),
-            // Adjacent main tabs slide horizontally in the direction of
-            // travel (bottom-bar order); anything else just fades. This
-            // animates both swipes and bottom-bar taps.
+            // Adjacent main tabs use a shared-axis transition: the
+            // outgoing screen fades out quickly while the incoming one
+            // fades in with a short (1/3 width) slide in the direction
+            // of travel. A full-width slide kept both heavy screens
+            // (e.g. Cellar and Notes) fully rendering for the whole
+            // animation and looked laggy; this reads as the same move
+            // with a fraction of the overdraw. Other routes just fade.
             enterTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideInHorizontally(animationSpec = tween(300)) { full -> if (to > from) full else -full } + fadeIn(animationSpec = tween(300))
+                    slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) full else -full) / 3 } +
+                        fadeIn(animationSpec = tween(200, delayMillis = 70))
                 } else {
-                    fadeIn(animationSpec = tween(300))
+                    fadeIn(animationSpec = tween(200))
                 }
             },
             exitTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideOutHorizontally(animationSpec = tween(300)) { full -> if (to > from) -full else full } + fadeOut(animationSpec = tween(300))
+                    slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) -full else full) / 3 } +
+                        fadeOut(animationSpec = tween(90))
                 } else {
-                    fadeOut(animationSpec = tween(300))
+                    fadeOut(animationSpec = tween(90))
                 }
             },
             popEnterTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideInHorizontally(animationSpec = tween(300)) { full -> if (to > from) full else -full } + fadeIn(animationSpec = tween(300))
+                    slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) full else -full) / 3 } +
+                        fadeIn(animationSpec = tween(200, delayMillis = 70))
                 } else {
-                    fadeIn(animationSpec = tween(300))
+                    fadeIn(animationSpec = tween(200))
                 }
             },
             popExitTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideOutHorizontally(animationSpec = tween(300)) { full -> if (to > from) -full else full } + fadeOut(animationSpec = tween(300))
+                    slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) -full else full) / 3 } +
+                        fadeOut(animationSpec = tween(90))
                 } else {
-                    fadeOut(animationSpec = tween(300))
+                    fadeOut(animationSpec = tween(90))
                 }
             }
         ) {
