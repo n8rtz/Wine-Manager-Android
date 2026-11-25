@@ -149,14 +149,17 @@ fun WineCard(
                     }
                 }
                 if (trailingAction != null || details != null || !rating.isNullOrBlank()) {
-                    // Fixed width, top-anchored: the add-to-rack icon
-                    // sits in the same spot on every card, whether there
-                    // is no rating, a single score, or a wide score range
-                    // from several reviews (the range box may overflow
-                    // this width, centred, without pushing the icon).
+                    // End-anchored, top-anchored: every child right-aligns
+                    // to the card edge, so the add-to-rack icon sits in
+                    // the same spot on every card whether there is no
+                    // rating, a single score, or a wide score range from
+                    // several reviews — a wide range box simply grows
+                    // leftward from the same right edge instead of
+                    // re-centring (and shifting) the icon, and never
+                    // overflows the card.
                     Column(
-                        modifier = Modifier.width(52.dp).offset(y = 6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.offset(y = 6.dp),
+                        horizontalAlignment = Alignment.End
                     ) {
                         trailingAction?.invoke()
                         run {
@@ -178,7 +181,6 @@ fun WineCard(
                             val ratingShape = RoundedCornerShape(6.dp)
                             Box(
                                 modifier = Modifier
-                                    .wrapContentWidth(Alignment.CenterHorizontally, unbounded = true)
                                     .padding(vertical = 2.dp)
                                     .clip(ratingShape)
                                     .then(

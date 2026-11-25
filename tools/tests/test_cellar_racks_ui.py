@@ -273,8 +273,11 @@ class CellarRacksUiTests(unittest.TestCase):
         # the button's centred row, so its centre is 7.5.dp right of the
         # button centre; the button is shifted left by exactly that so the
         # rack icon is centred over the caret, which is centred in the same
-        # WineCard trailing column (Column is CenterHorizontally).
-        self.assertIn("horizontalAlignment = Alignment.CenterHorizontally", card)
+        # WineCard trailing column is end-anchored: the icon, the rating
+        # box and the caret all right-align to the same card edge, so a
+        # wide multi-review score range grows leftward and can neither
+        # shift the icon nor clip the card edge.
+        self.assertIn("horizontalAlignment = Alignment.End", card)
         self.assertIn('.offset(y = (-8).dp)', views)
         self.assertNotIn('.offset(x = (-4).dp, y = (-4).dp)', views)
         self.assertIn("trailingAction = {", cellar)
@@ -293,7 +296,7 @@ class CellarRacksUiTests(unittest.TestCase):
         # rating text is larger, and its bordered box is filled with the
         # colour assigned to the rating -- an ombre between the colours of
         # the lower and upper bounds for a rating range.
-        self.assertIn("Modifier.width(52.dp).offset(y = 6.dp)", card)
+        self.assertIn("Modifier.offset(y = 6.dp)", card)
         self.assertIn("style = MaterialTheme.typography.titleMedium", card)
         # The rating box outline is a neutral black/dark gray.
         self.assertNotIn("0xFF333333", card)  # rating box has no border; fill colour only

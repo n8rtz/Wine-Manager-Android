@@ -40,14 +40,15 @@ class CardLayoutTests(unittest.TestCase):
 
     def test_icon_anchor_does_not_depend_on_rating(self):
         s = CARD.read_text()
-        # Header row is top-anchored and the trailing column has a fixed
-        # width, so the icon's spot is the same with no rating, a single
-        # score, or a wide multi-review range.
+        # Header row is top-anchored and the trailing stack is
+        # end-anchored: children right-align to the card edge, so the
+        # icon's spot is the same with no rating, a single score, or a
+        # wide multi-review range (which grows leftward from the same
+        # right edge rather than shifting the icon or clipping).
         self.assertIn("verticalAlignment = Alignment.Top", s)
-        self.assertIn("Modifier.width(52.dp).offset(y = 6.dp)", s)
-        # The rating box may overflow the fixed column width (centred,
-        # unbounded) instead of widening the column and shifting the icon.
-        self.assertIn("wrapContentWidth(Alignment.CenterHorizontally, unbounded = true)", s)
+        self.assertIn("horizontalAlignment = Alignment.End", s)
+        self.assertNotIn("wrapContentWidth", s)
+        self.assertNotIn("Modifier.width(52.dp)", s)
 
 
 if __name__ == "__main__":
