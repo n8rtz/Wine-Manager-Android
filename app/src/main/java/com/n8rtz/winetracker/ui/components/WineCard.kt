@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -100,23 +101,37 @@ fun WineCard(
                     //   Subregion, Region   (or just Region)
                     //   Country
                     //   metadata (e.g. "Cellar: X")
-                    // Blank fields omit their line entirely (no empty
-                    // lines, no large white gaps), and text is never cut
-                    // off: a long line wraps instead of ellipsising.
+                    // Styling hierarchy: the eye lands on the producer
+                    // (largest, bold, full-contrast) and the wine name
+                    // (next size down, semibold) first; vintage, place
+                    // and country are smaller, regular/italic and muted
+                    // so they read as secondary detail. Blank fields
+                    // omit their line entirely (no empty lines, no large
+                    // white gaps), and text is never cut off: a long
+                    // line wraps instead of ellipsising.
                     fun valid(value: String?): String? =
                         value?.takeIf { it.isNotBlank() && !it.equals("null", ignoreCase = true) }
                     valid(producer)?.let {
                         Text(
                             text = "$it -",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                lineHeight = 22.sp
+                            )
                         )
                     }
                     valid(wineName)?.let {
                         Text(
                             text = it,
-                            style = MaterialTheme.typography.titleSmall
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                lineHeight = 20.sp
+                            )
                         )
                     }
+                    // Small breathing gap between the primary block
+                    // (producer/name) and the secondary details.
+                    Spacer(Modifier.height(3.dp))
                     valid(vintage)?.let {
                         Text(
                             text = "($it)",
@@ -239,8 +254,8 @@ fun WineCard(
             if (compactMetadata.isNotBlank()) {
                 Text(
                     text = compactMetadata,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .fillMaxWidth()

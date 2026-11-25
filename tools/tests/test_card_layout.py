@@ -23,7 +23,22 @@ class CardLayoutTests(unittest.TestCase):
         # Blank fields omit their line: no fixed spacers between lines,
         # just a tight 2.dp arrangement so no large white gaps appear.
         self.assertIn("verticalArrangement = Arrangement.spacedBy(2.dp)", s)
-        self.assertNotIn("Spacer(Modifier.height(3.dp))", s)
+
+    def test_text_hierarchy_draws_eye_to_producer_and_name(self):
+        s = CARD.read_text()
+        # Primary tier, in order: producer (titleLarge + Bold) then wine
+        # name (titleMedium + SemiBold), both before any muted text.
+        self.assertLess(s.index("typography.titleLarge"), s.index("typography.titleMedium"))
+        producer_block = s.split("valid(producer)?.let {", 1)[1].split("valid(wineName)", 1)[0]
+        self.assertIn("FontWeight.Bold", producer_block)
+        name_block = s.split("valid(wineName)?.let {", 1)[1].split("Spacer(Modifier.height(3.dp))", 1)[0]
+        self.assertIn("FontWeight.SemiBold", name_block)
+        # Secondary tier stays small/italic/muted, and a breathing gap
+        # separates the primary block from the details.
+        self.assertIn("FontStyle.Italic", s)
+        self.assertIn("Spacer(Modifier.height(3.dp))", s)
+        vintage_block = s.split("valid(vintage)?.let {", 1)[1].split("val place", 1)[0]
+        self.assertIn("color = MaterialTheme.colorScheme.onSurfaceVariant", vintage_block)
 
     def test_cellar_count_line_anchors_to_card_bottom(self):
         s = CARD.read_text()
