@@ -15,29 +15,28 @@ class MainSwipeTests(unittest.TestCase):
             'private val TOP_LEVEL_MENU_ORDER = listOf("cellar", "notes", "history", "rankings", "profile")',
             source,
         )
-        # Final-pass observer: swipes already claimed by child pagers or
-        # card tab drags must not also switch the main tab.
-        self.assertIn("awaitPointerEvent(PointerEventPass.Final)", source)
+        # Initial-pass detection: the swipe is seen before children, so
+        # no card/list/tab-row can veto it wherever it starts; crossing
+        # the threshold quickly claims (consumes) the gesture.
+        self.assertIn("awaitPointerEvent(PointerEventPass.Initial)", source)
         self.assertIn(".then(tabSwipeModifier)", source)
-        # It fires mid-drag once the threshold is crossed, and only a
-        # consumed *movement* (a child pager/tab row claiming the drag)
-        # disqualifies it — never the consumed down event, which every
-        # card/button produces and would kill the swipe everywhere.
-        self.assertIn("if (change.isConsumed) moveConsumed = true", source)
+        self.assertIn("change.consume()", source)
+        self.assertIn("change.uptimeMillis - downTimeMs <= 450L", source)
         self.assertNotIn("downConsumed", source)
-        # Edge-overflow: a consumed drag may still switch tabs when the
-        # current screen's inner pager is at its edge in that direction
-        # (and the swipe is quick); screens with such pagers report the
-        # edge state through InnerPagerSwipeGate.
+        # Inner pagers keep priority while they can move in the swipe
+        # direction; at their edge the swipe spills over (gate reported
+        # by the pager screens).
         self.assertIn("internal object InnerPagerSwipeGate", source)
-        self.assertIn("pagerAtEdge", source)
+        self.assertIn("pagerCanMove", source)
         self.assertIn("PAGER_SWIPE_ROUTES = setOf(\"cellar\", \"history\")", source)
         for screen in ("CellarScreen.kt", "HistoryScreen.kt"):
             src = (APP / "ui/screens" / screen).read_text()
             self.assertIn("InnerPagerSwipeGate.blocksSwipeToNext = pagerState.currentPage < 1", src, screen)
             self.assertIn("InnerPagerSwipeGate.blocksSwipeToPrevious = pagerState.currentPage > 0", src, screen)
             self.assertIn("InnerPagerSwipeGate.reset()", src, screen)
-
+        # Main-tab switches animate: direction-aware slides on the NavHost.
+        self.assertIn("slideInHorizontally", source)
+        self.assertIn("slideOutHorizontally", source)
 
 class CardTextTests(unittest.TestCase):
     def test_wine_card_never_truncates_text(self):

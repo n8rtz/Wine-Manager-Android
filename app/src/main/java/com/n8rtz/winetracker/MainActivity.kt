@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -347,74 +348,71 @@ fun MainAppScaffold(
         navigateToTab(navController, route)
     }
     // Swipe between the main screens (Cellar, Notes, History, Rankings,
-    // Profile), mirroring the Bottles/Racks swipe in the cellar. The
-    // observer runs on the Final pointer pass and fires as soon as a
-    // mostly-horizontal drag crosses the threshold. It must NOT
-    // disqualify a gesture just because the down (or up) event was
-    // consumed: cards/buttons consume those, which would make the swipe
-    // dead almost everywhere. What disqualifies a gesture is a child
-    // consuming the *movement* — that is how the cellar pager, the
-    // note-card date tabs and the History tabs claim a horizontal drag.
+    // Profile). Detection runs on the Initial pointer pass — before any
+    // child sees the event — so no card, list, tab row or text field can
+    // veto it, wherever the swipe starts. A gesture becomes a tab swipe
+    // when it crosses the threshold quickly and mostly horizontally;
+    // then it is claimed (consumed) so children stop reacting to it.
+    // Two kinds of child gestures keep priority:
+    //  - inner pagers (Cellar Bottles/Racks, History tabs) while they can
+    //    still move in the swipe direction — at their edge the swipe
+    //    spills over to the main tab (see InnerPagerSwipeGate);
+    //  - slow drags (long-press rack reorders, note date-tab drags,
+    //    text-field drags): if the threshold is crossed slowly, the
+    //    gesture is left entirely to the child.
     val currentRouteState = rememberUpdatedState(currentRoute)
     val navigateToMenuState = rememberUpdatedState { route: String -> navigateToMenu(route) }
     val tabSwipeModifier = Modifier.pointerInput(Unit) {
-        val thresholdPx = 72.dp.toPx()
+        val thresholdPx = 60.dp.toPx()
         awaitPointerEventScope {
             var downPosition: Offset? = null
             var downTimeMs = 0L
-            var moveConsumed = false
-            var fired = false
+            var decided = false
+            var claimed = false
             while (true) {
-                val event = awaitPointerEvent(PointerEventPass.Final)
+                val event = awaitPointerEvent(PointerEventPass.Initial)
                 val change = event.changes.firstOrNull() ?: continue
                 if (change.pressed && !change.previousPressed) {
                     downPosition = change.position
                     downTimeMs = change.uptimeMillis
-                    moveConsumed = false
-                    fired = false
-                } else if (change.pressed) {
-                    // A child pager/tab row claiming the drag consumes the
-                    // position changes; ordinary clickables and vertical
-                    // lists do not consume horizontal movement.
-                    if (change.isConsumed) moveConsumed = true
-                    val start = downPosition
-                    if (start != null && !fired) {
-                        val delta = change.position - start
-                        // A consumed drag normally means a child claimed
-                        // it — unless the current screen's inner pager is
-                        // at its edge in this direction, in which case a
-                        // quick swipe spills over to the main tab. The
-                        // quickness requirement keeps slow claimed drags
-                        // (pager scrolls, long-press rack reorders, note
-                        // date-tab drags) from ever triggering this.
-                        val toNext = delta.x < 0
-                        val pagerAtEdge = currentRouteState.value in PAGER_SWIPE_ROUTES &&
-                            (change.uptimeMillis - downTimeMs) <= 600L &&
-                            !(if (toNext) InnerPagerSwipeGate.blocksSwipeToNext
-                              else InnerPagerSwipeGate.blocksSwipeToPrevious)
-                        if ((!moveConsumed || pagerAtEdge) &&
-                            kotlin.math.abs(delta.x) >= thresholdPx &&
-                            kotlin.math.abs(delta.x) >= kotlin.math.abs(delta.y) * 1.5f
-                        ) {
-                            val route = currentRouteState.value
-                            val index = route?.let { TOP_LEVEL_MENU_ORDER.indexOf(it) } ?: -1
-                            if (index >= 0) {
-                                val target = if (delta.x < 0) {
+                    decided = false
+                    claimed = false
+                } else if (change.pressed && downPosition != null && !decided) {
+                    val delta = change.position - downPosition!!
+                    val absX = kotlin.math.abs(delta.x)
+                    val absY = kotlin.math.abs(delta.y)
+                    // Wait until the gesture has a clear direction.
+                    if (absX >= thresholdPx || absY >= thresholdPx) {
+                        decided = true
+                        val route = currentRouteState.value
+                        val index = route?.let { TOP_LEVEL_MENU_ORDER.indexOf(it) } ?: -1
+                        val quick = change.uptimeMillis - downTimeMs <= 450L
+                        if (index >= 0 && quick && absX >= thresholdPx && absX >= absY * 1.4f) {
+                            val toNext = delta.x < 0
+                            val pagerCanMove = route in PAGER_SWIPE_ROUTES &&
+                                (if (toNext) InnerPagerSwipeGate.blocksSwipeToNext
+                                 else InnerPagerSwipeGate.blocksSwipeToPrevious)
+                            if (!pagerCanMove) {
+                                val target = if (toNext) {
                                     TOP_LEVEL_MENU_ORDER.getOrNull(index + 1)
                                 } else {
                                     TOP_LEVEL_MENU_ORDER.getOrNull(index - 1)
                                 }
                                 if (target != null) {
-                                    fired = true
+                                    claimed = true
+                                    change.consume()
                                     navigateToMenuState.value(target)
                                 }
                             }
                         }
                     }
+                } else if (change.pressed && claimed) {
+                    change.consume()
                 } else if (!change.pressed && change.previousPressed) {
+                    if (claimed) change.consume()
                     downPosition = null
-                    moveConsumed = false
-                    fired = false
+                    decided = false
+                    claimed = false
                 }
             }
         }
@@ -587,7 +585,46 @@ fun MainAppScaffold(
         NavHost(
             navController = navController,
             startDestination = "cellar",
-            modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier)
+            modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier),
+            // Adjacent main tabs slide horizontally in the direction of
+            // travel (bottom-bar order); anything else just fades. This
+            // animates both swipes and bottom-bar taps.
+            enterTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (from >= 0 && to >= 0 && from != to) {
+                    slideInHorizontally(animationSpec = tween(300)) { full -> if (to > from) full else -full } + fadeIn(animationSpec = tween(300))
+                } else {
+                    fadeIn(animationSpec = tween(300))
+                }
+            },
+            exitTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (from >= 0 && to >= 0 && from != to) {
+                    slideOutHorizontally(animationSpec = tween(300)) { full -> if (to > from) -full else full } + fadeOut(animationSpec = tween(300))
+                } else {
+                    fadeOut(animationSpec = tween(300))
+                }
+            },
+            popEnterTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (from >= 0 && to >= 0 && from != to) {
+                    slideInHorizontally(animationSpec = tween(300)) { full -> if (to > from) full else -full } + fadeIn(animationSpec = tween(300))
+                } else {
+                    fadeIn(animationSpec = tween(300))
+                }
+            },
+            popExitTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (from >= 0 && to >= 0 && from != to) {
+                    slideOutHorizontally(animationSpec = tween(300)) { full -> if (to > from) -full else full } + fadeOut(animationSpec = tween(300))
+                } else {
+                    fadeOut(animationSpec = tween(300))
+                }
+            }
         ) {
             composable("cellar") {
                 CellarScreen(
